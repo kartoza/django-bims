@@ -1,6 +1,6 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
 # Note this base image is based on debian
-FROM bims_uwsgi
+FROM bims_uwsgi:latest
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
 # This section taken on 2 July 2015 from

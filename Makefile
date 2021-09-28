@@ -48,15 +48,15 @@ build:
 	@echo "------------------------------------------------------------------"
 	@git submodule init
 	@git submodule update
-	@docker-compose ${ARGS} build bims_uwsgi
 	@docker-compose ${ARGS} build uwsgi
+	@docker-compose ${ARGS} build dev
 
 web:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d web webpack-watcher
+	@docker-compose ${ARGS} up -d web webpack-watcher dev
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container

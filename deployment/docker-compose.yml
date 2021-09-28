@@ -11,11 +11,15 @@ version: '2'
 volumes:
   geodatadir:
   rabbitmq:
+  static-data:
+  media-data:
 x-common-django:
   &default-common-django
   image: bims_uwsgi:latest
   build:
-    context: docker
+    context: ../
+    dockerfile: deployment/docker/Dockerfile
+  command: uwsgi --ini /home/web/django_project/uwsgi.ini
   hostname: uwsgi
   working_dir: /home/web/django_project
   entrypoint: [ ]
@@ -36,6 +40,10 @@ x-common-django:
     - DATABASE_URL=postgis://docker:docker@db:5432/gis
     - GEOSERVER_LOCATION=http://geoserver/geoserver/
     - APP_NAME=bims
+  volumes:
+    - static-data:/home/web/static
+    - media-data:/home/web/media
+    - ./logs:/var/log/
   links:
     - smtp:smtp
     - db:db
@@ -173,6 +181,9 @@ services:
     links:
       - uwsgi:uwsgi"
     restart: unless-stopped
+    volumes:
+      - static-data:/home/web/static
+      - media-data:/home/web/media
 
   rabbitmq:
     image: rabbitmq:3.7-alpine

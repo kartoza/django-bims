@@ -26,18 +26,18 @@ services:
       # for geoserver
       - "63305:8080"
 
-  uwsgi:
+  dev:
     build:
       context: docker
       dockerfile: Dockerfile-dev
-    # command: python manage.py runserver 0.0.0.0:8080
+    command: ''
     environment:
       - SITE_DOMAIN_NAME=http://django-bims.test
       - GEOCONTEXT_URL=https://geocontext.kartoza.com
       - GEOCONTEXT_COLLECTION_KEY=climate
       - CONTACT_US_EMAIL=dimas@kartoza.com
-      - DEBUG=True
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      # - DEBUG=True
+      # - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
       - RABBITMQ_HOST=rabbitmq
       - PYTHONPATH=/usr/src/app:/home/web/django_project
       - ROOT_URLCONF=core.urls
@@ -67,16 +67,11 @@ services:
       - ADMIN_EMAILS=dimas@kartoza.com
       - GEOSERVER_ADMIN_PASSWORD=admingeoserver
       - ASYNC_SIGNALS_GEONODE=True
-
-      
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
-      - ./logs:/var/log/
-      - ../.pycharm_helpers:/root/.pycharm_helpers
       - ./backups:/home/web/backups
-      - /home/dimas/.config/JetBrains/PyCharm2021.2:/home/dimas/.config/JetBrains/PyCharm2021.2
     ports:
       # for django test server
       - "63302:8080"
@@ -87,11 +82,12 @@ services:
 
   web:
     volumes:
-      - ./sites-enabled:/etc/nginx/conf.d:ro
+      - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
       # I dont use volumes_from as I want to use the ro modifier
-      - ./static:/home/web/static:ro
-      - ./media:/home/web/media:ro
       - ./logs:/var/log/nginx
+    ports:
+      # for django test server
+      - "63307:80"
 
   
   worker:
