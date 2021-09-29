@@ -90,7 +90,7 @@ from bims.models import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
-from bims.utils.gbif import search_exact_match, get_species
+from bims.utils.gbif import search_exact_match, get_species, suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
@@ -904,18 +904,18 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
-        if gbif_key is None:
-            extra_context['key'] = None
+        scientific_name = Taxonomy.objects.get(pk=object_id).scientific_name
+
+        # gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        if scientific_name is None:
+            extra_context['results'] = None
             return super().change_view(
                 request, object_id, form_url, extra_context=extra_context,
             )
-        species = get_species(gbif_key)
-        extra_context['key'] = gbif_key
-        extra_context['taxonomicStatus'] = species['taxonomicStatus']
-        extra_context['authorship'] = species['authorship']
-        extra_context['scientificName'] = species['scientificName']
-        extra_context['canonicalName'] = species['canonicalName']
+        name = Taxonomy.objects.get(pk=object_id).scientific_name.split(' ')
+        parameter = {'limit': 10, 'q': name[0]}
+        results = suggest_search(parameter)
+        extra_context['results'] = json.dumps(results)
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
