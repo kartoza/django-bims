@@ -434,7 +434,7 @@ define([
             sassDashboardButton.hide();
             sassDashboardButton.removeClass('disabled');
             sassDashboardButton.attr('href', '#');
-            $('#metadata-table-list').html('');
+            $('#metadata-table-list').find('.content-body').html('');
             this.clearSiteImages();
             this.siteName.html('');
             this.siteNameWrapper.hide();
