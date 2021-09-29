@@ -305,6 +305,10 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         doi = post_dict.get('doi', None)
         source = post_dict.get('source', None)
         source_id = post_dict.get('source_id', None)
+        url = post_dict.get('url', None)
+        pdf_file = self.request.FILES.get('pdf_file', None)
+        pdf_file_id = post_dict.get('pdf_file_id', None)
+
         # - Check required fields
         if not title or not year:
             raise Http404('Incorrect POST body')
@@ -318,8 +322,31 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                 )
             )
         # - Update DOI
-        if doi:
+        if doi or self.object.source.doi:
             self.object.source.doi = doi
+
+        if not pdf_file_id and self.object.document:
+            self.object.document.delete()
+            self.object.document = None
+
+        if pdf_file:
+            document, _ = Document.objects.get_or_create(
+                owner=self.request.user,
+                is_published=True,
+                abstract=title,
+                title=pdf_file.name,
+                doc_file=pdf_file,
+                supplemental_information=json.dumps({
+                    'document_source': source
+                })
+            )
+            if self.object.document:
+                if self.object.document != document:
+                    self.object.document.delete()
+                    self.object.document = None
+
+            self.object.document = document
+
         # - Update journal name
         if source_id:
             try:
@@ -344,6 +371,10 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                         name=source.strip()
                     )
                     self.object.source.journal = journal
+
+        if url or self.object.source.url:
+            self.object.source.url = url
+
         self.object.source.authors.clear()
         # - Update authors
         for key in post_dict:
