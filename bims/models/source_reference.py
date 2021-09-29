@@ -329,11 +329,20 @@ class SourceReferenceBibliography(SourceReference):
 
     def link_template(self):
         """Returns html template containing the reference data"""
+        link = 'http://dx.doi.org/{doi}'.format(doi=self.source.doi)
+        if not self.source.doi:
+            if self.source.url:
+                link = self.source.url
+            elif self.document:
+                link = '{media}{url}'.format(
+                    media=settings.MEDIA_URL,
+                    url=self.document.doc_file,
+                )
         return (
             '<i class="fa fa-newspaper-o" aria-hidden="true"></i>'
-            ' <a href="http://dx.doi.org/{doi}" '
+            ' <a href="{link}" '
             'target="_blank">{source}</a>'.format(
-                doi=self.source.doi,
+                link=link,
                 source=self.title
             )
         )
