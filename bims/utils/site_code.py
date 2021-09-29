@@ -76,6 +76,7 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
     """
     catchment_key = 'river_catchment_areas_group'
     catchment_code = ''
+    river_name = ''
     catchments, catchments_data = _get_catchments_data(
         location_site=location_site,
         lat=lat,
@@ -86,17 +87,20 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
         if 'secondary_catchment_area' in key and not catchment_code:
             catchment_code = value[:2].upper()
             break
-    if lat and lon:
+    if location_site:
+        if location_site.river:
+            river_name = location_site.river.name
+        else:
+            river_name = fetch_river_name(
+                location_site.geometry_point[1],
+                location_site.geometry_point[0]
+            )
+    elif lat and lon:
         river_name = fetch_river_name(lat, lon)
-        if river_name:
-            catchment_code += river_name[:4].upper()
-    elif location_site:
-        river_name = fetch_river_name(
-            location_site.geometry_point[1],
-            location_site.geometry_point[0]
-        )
-        if river_name:
-            catchment_code += river_name[:4].upper()
+
+    if river_name:
+        river_name = river_name.replace(' ', '')
+        catchment_code += river_name[:4].upper()
     return catchment_code, catchments_data
 
 
