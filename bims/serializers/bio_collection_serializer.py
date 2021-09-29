@@ -234,6 +234,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_taxon(self, obj):
+        if obj.taxonomy:
+            if obj.taxonomy.canonical_name:
+                return obj.taxonomy.canonical_name
         if obj.original_species_name:
             return obj.original_species_name
         return '-'
