@@ -391,7 +391,7 @@ reset-search-results:
 	@echo "Reset search results"
 	@echo "------------------------------------------------------------------"
 	@docker-compose exec uwsgi python /home/web/django_project/manage.py clear_search_results
-	@docker-compose ${ARGS} restart worker
+	@docker-compose ${ARGS} restart searchworker
 	@docker-compose ${ARGS} restart cache
 
 # Run pep8 style checking
