@@ -16,7 +16,7 @@ function downloadCSV(url, downloadButton, csv_name=null, email = false) {
                 } else {
                     setTimeout(
                         function () {
-                            downloadCSV(url, downloadButton);
+                            downloadCSV(url, downloadButton, csv_name, email);
                         }, 5000);
                 }
             } else {
