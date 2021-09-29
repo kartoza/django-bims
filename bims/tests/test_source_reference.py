@@ -1,5 +1,6 @@
 # coding=utf-8
 """Tests for source reference."""
+import logging
 
 from django.test import TestCase
 from bims.models.source_reference import SourceReference
@@ -8,12 +9,14 @@ from bims.tests.model_factories import (
     SourceReferenceBibliographyF,
     SourceReferenceDatabaseF,
     DatabaseRecordF,
-    BiologicalCollectionRecordF
+    BiologicalCollectionRecordF, UserF
 )
 from td_biblio.tests.model_factories import (
     JournalF,
     EntryF
 )
+
+logger = logging.getLogger('bims')
 
 
 class TestSourceReferences(TestCase):
@@ -112,3 +115,24 @@ class TestSourceReferences(TestCase):
             self.record.source_reference.source.name,
             self.db_name
         )
+
+    def test_source_reference_unpublished(self):
+        """
+        Tests Source reference unpublished data
+        """
+
+        user = UserF.create(
+            id=1
+        )
+        self.client.login(
+            username=user.username,
+            password='password'
+        )
+        result = self.client.post(
+            '/source-reference/unpublished/',
+            {"note": "test", "source": "test"},
+            follow=True
+        )
+
+        self.assertEqual(result.status_code, 200)
+        self.assertIsNotNone(SourceReference.objects.filter(note='test', source_name='test'))
