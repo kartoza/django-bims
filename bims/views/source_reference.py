@@ -490,7 +490,7 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
     template_name = 'source_references/add_source_reference.html'
     model = SourceReference
     fields = '__all__'
-    success_url = '/add-source-reference/'
+    success_url = '/source-references/'
 
     def test_func(self):
         if self.request.user.is_anonymous:
