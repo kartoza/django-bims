@@ -218,7 +218,7 @@ function renderSassSummaryTable(data) {
             '<td>' + data['sass_score_chart_data']['aspt_score'][index] + '</td>'
         );
         $tr.append(
-            '<td> <a href="/sass/view/' + data['sass_score_chart_data']['sass_ids'][index] + '">' + data['sass_score_chart_data']['date'][index] + '</a></td>'
+            '<td> <a href="/sass/view/' + data['sass_score_chart_data']['sass_ids'][index] + '">' + data['sass_score_chart_data']['date'][index] +'</a></td>'
         );
 
         table.append($tr);

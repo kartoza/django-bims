@@ -239,7 +239,7 @@
                                        class="btn btn-warning btn-sm">Edit Site</a>
                                 {% endif %}
                             </td>
-                            <td>{{ site_visit.date }}</td>
+                            <td>{{ site_visit.date|date:'Y-m-d' }}</td>
                             <td>{{ site_visit.source_collection|upper }}</td>
                             <td>
                                 {% if site_visit.source_collection.upper != 'GBIF' %}
