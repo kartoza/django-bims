@@ -122,6 +122,9 @@
                                     <p class="card-text"><i class="fa fa-calendar"
                                                             aria-hidden="true"></i> {{ source_reference.year }} <span class="vertical-separator"></span>  <i class="fa fa-users"
                                                             aria-hidden="true"></i> {{ source_reference.authors }}
+                                        {% if 'Published' in source_reference.reference_type %}
+                                            <span class="vertical-separator"></span> <button class="btn btn-light copy-document-id" data-document-id="{{ source_reference.source.id }}">Copy Document ID</button>
+                                        {% endif %}
                                     </p>
                                 </div>
                             </div>
@@ -168,6 +171,14 @@
 
         const csrfToken = '{{ csrf_token }}';
         const authorIds = [];
+
+        $('.copy-document-id').click(function (e) {
+          let documentId = window.location.origin + '/documents/' + $(e.target).data('document-id');
+          /* Copy the text inside the text field */
+          navigator.clipboard.writeText(documentId);
+          /* Alert the copied text */
+          alert("Copied the text: " + documentId);
+        })
 
         $('.custom-control-input').change(function (e) {
             let $parent = $(e.target).parent().parent();
