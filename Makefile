@@ -51,6 +51,13 @@ build:
 	@docker-compose ${ARGS} build uwsgi
 	@docker-compose ${ARGS} build dev
 
+dev:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in dev mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} up -d webpack-watcher dev
+
 web:
 	@echo
 	@echo "------------------------------------------------------------------"

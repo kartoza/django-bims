@@ -139,15 +139,6 @@ def process_source_reference(
                     entry_fields,
                     create=False
                 )
-                if entry:
-                    source_reference = (
-                        SourceReference.create_source_reference(
-                            category='bibliography',
-                            source_id=entry.id,
-                            note=None
-                        )
-                    )
-                    source_reference_found = True
             except (
                     DOILoaderError,
                     requests.exceptions.HTTPError) as e:
@@ -156,18 +147,19 @@ def process_source_reference(
                 if not entry:
                     return 'Error Fetching DOI : {doi}'.format(
                         doi=doi), None
-                if entry and not source_reference:
-                    SourceReference.create_source_reference(
-                        category='bibliography',
-                        source_id=entry.id,
-                        note=None
-                    )
-                    source_reference, _ = (
-                        SourceReferenceBibliography.objects.get_or_create(
-                            source=entry
-                        )
-                    )
-                    source_reference_found = True
+
+        if entry and not source_reference:
+            SourceReference.create_source_reference(
+                category='bibliography',
+                source_id=entry.id,
+                note=None
+            )
+            source_reference, _ = (
+                SourceReferenceBibliography.objects.get_or_create(
+                    source=entry
+                )
+            )
+            source_reference_found = True
 
     if not source_reference_found:
         if (
