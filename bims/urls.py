@@ -6,6 +6,8 @@ from django.urls import reverse_lazy
 from django.views.generic import RedirectView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+
+from bims.api_views.unpublished_data import UnpublishedData
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
@@ -215,6 +217,9 @@ urlpatterns = [
         NonValidatedSiteView.as_view(), name='nonvalidated-site'),
     url(r'^nonvalidated-site/detail/(?P<locationsiteid>\d+)/$',
         SiteLocationDetailView.as_view(), name='nonvalidated-site'),
+    url(r'^source-reference/unpublished/',
+        UnpublishedData.as_view(),
+        name='source-reference-unpublished'),
 ]
 
 # Api urls
