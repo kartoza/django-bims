@@ -242,8 +242,6 @@ def process_source_reference(
         else:
             # Unpublished data
             reference_name = reference
-            if source_year:
-                reference_name += ', ' + source_year
             source_reference = (
                 SourceReference.create_source_reference(
                     category=None,
