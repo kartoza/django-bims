@@ -1006,9 +1006,11 @@ class SamplingMethodAdmin(admin.ModelAdmin):
 
 
 class SiteImageAdmin(admin.ModelAdmin):
+
     list_display = (
         'get_site_code',
-        'image'
+        'image',
+        'date'
     )
     raw_id_fields = (
         'site',
