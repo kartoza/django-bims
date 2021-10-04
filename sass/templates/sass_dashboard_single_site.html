@@ -26,6 +26,8 @@
     <style>
         .carousel-inner, .carousel-item {
             height: 100% !important;
+            text-align: justify;
+            display: flex;
         }
 
         .carousel-item img {
@@ -33,12 +35,12 @@
             max-width: 100%;
             width: auto;
             height: auto;
-            position: absolute;
+            position: relative;
             top: 0;
             bottom: 0;
             left: 0;
             right: 0;
-            margin: auto;
+            margin: 5px;
         }
         #legend-summary-id{
             width: 90%;
@@ -59,6 +61,9 @@
             height: 12px;
             display: inline-block;
 
+        }
+        .date-image {
+           margin: 5px;
         }
     </style>
 
@@ -347,6 +352,7 @@
                                                     </a>
                                                 {% endthumbnail %}
                                             {% endif %}
+                                            <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.date|date:'Y-m-d' }}</span>
                                         </div>
                                     {% endfor %}
                                 </div>
