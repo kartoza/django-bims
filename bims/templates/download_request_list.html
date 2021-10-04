@@ -60,7 +60,7 @@
                         {% for obj in download_requests %}
                             <tr>
                                 <td>
-                                    {{ obj.request_date|date:'M. d, Y' }}
+                                    {{ obj.request_date|date:'Y-m-d' }}
                                 </td>
                                 <td>
                                     {{ obj.get_formatted_name }}
