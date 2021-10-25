@@ -85,7 +85,8 @@ from bims.models import (
     BaseMapLayer,
     RequestLog,
     IngestedData,
-    TaxonImage
+    TaxonImage,
+    WaterTemperature
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -1263,6 +1264,15 @@ class LocationContextGroupAdmin(admin.ModelAdmin):
     merge_group.short_description = 'Merge groups'
 
 
+class WaterTemperatureAdmin(admin.ModelAdmin):
+    list_display = (
+        'value', 'date_time', 'is_daily', 'maximum', 'minimum'
+    )
+    raw_id_fields = (
+        'location_site', 'uploader', 'owner'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1340,3 +1350,5 @@ from geonode.themes.models import *  # noqa
 
 admin.site.unregister(GeoNodeThemeCustomization)
 admin.site.unregister(Partner)
+
+admin.site.register(WaterTemperature, WaterTemperatureAdmin)
