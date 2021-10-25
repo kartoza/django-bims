@@ -411,6 +411,45 @@ $(function () {
         form.submit();
     });
 
+    $('#upload').click((event) => {
+        let required_inputs = $('input,textarea,select').filter('[required]:visible');
+        let isError = false;
+        let alertMessage = '';
+        $.each(required_inputs, (index, input) => {
+            let $input = $(input);
+            if (!$input.val()) {
+                isError = true;
+                $input.addClass('error');
+                $input.keyup((e) => {
+                    let $target = $(e.target);
+                    if ($target.val()) {
+                        $target.removeClass('error');
+                        $target.next().hide();
+                        $target.unbind();
+                    }
+                });
+                $input.next().show();
+            } else {
+                $input.unbind();
+            }
+        });
+        if (alertMessage) {
+            let alertDiv = $('.alert-danger');
+            alertDiv.html(alertMessage);
+            alertDiv.show();
+        }
+        if (isError) {
+            event.preventDefault();
+            event.stopPropagation();
+            setTimeout(function () {
+                window.scrollTo(0, 0);
+            }, 500);
+            return;
+        }
+
+        $('#water-temperature-form').submit();
+    });
+
     $('#add-taxon').click((e) => {
         let $findTaxonContainer = $('.find-taxon-container');
         let $findTaxonContainerClone = $findTaxonContainer.clone();

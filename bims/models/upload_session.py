@@ -15,6 +15,8 @@ class UploadSession(models.Model):
     CATEGORY_CHOICES = (
         ('taxa', 'Taxa'),
         ('collections', 'Collections'),
+        ('water_temperature', 'Water Temperature'),
+
     )
 
     uploader = models.ForeignKey(

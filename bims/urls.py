@@ -85,6 +85,7 @@ from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
 from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
+from bims.views.water_temperature import WaterTemperatureView
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -220,6 +221,8 @@ urlpatterns = [
     url(r'^source-reference/unpublished/',
         UnpublishedData.as_view(),
         name='source-reference-unpublished'),
+    url(r'^water-temperature-form/$', WaterTemperatureView.as_view(), name='water-temperature-form'),
+
 ]
 
 # Api urls
