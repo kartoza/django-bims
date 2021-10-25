@@ -44,6 +44,13 @@ class Taxonomy(models.Model):
             'Non-native: non-invasive'
         )
     )
+    CATEGORY_CHOICES_DICT = {
+        ORIGIN_CATEGORIES['non-native']: 'Non-Native',
+        ORIGIN_CATEGORIES['native']: 'Native',
+        ORIGIN_CATEGORIES['unknown']: 'Unknown',
+        ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
+        ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
+    }
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
