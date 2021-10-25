@@ -26,6 +26,8 @@ from bims.models.survey import SurveyData, SurveyDataValue
 from bims.scripts.collection_csv_keys import *  # noqa
 from bims.models.location_context_group import LocationContextGroup
 from bims.models.taxonomy import Taxonomy
+from bims.utils.gbif import get_species
+from bims.utils.occurences import get_fields_from_occurrences
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -108,6 +110,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
+    gbif_id = serializers.SerializerMethodField()
+    dataset_key = serializers.SerializerMethodField()
+    occurrence_id = serializers.SerializerMethodField()
+    basis_of_record = serializers.SerializerMethodField()
+    institution_code = serializers.SerializerMethodField()
+    collection_code = serializers.SerializerMethodField()
+    catalog_number = serializers.SerializerMethodField()
+    identified_by = serializers.SerializerMethodField()
+    rights_holder = serializers.SerializerMethodField()
+    recorded_by = serializers.SerializerMethodField()
 
     def spatial_data(self, obj, key):
         if 'context_cache' not in self.context:
@@ -234,6 +246,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_taxon(self, obj):
+        if obj.taxonomy:
+            if obj.taxonomy.canonical_name:
+                return obj.taxonomy.canonical_name
         if obj.original_species_name:
             return obj.original_species_name
         return '-'
@@ -411,6 +426,45 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.substratum.name.capitalize()
         return '-'
 
+    def occurrences_fields(self, obj, field):
+        if obj.upstream_id:
+            data = get_fields_from_occurrences(obj)
+            try:
+                return data[field]
+            except:  # noqa
+                return '-'
+        return '-'
+
+    def get_gbif_id(self, obj):
+        return self.occurrences_fields(obj, 'gbifID')
+
+    def get_dataset_key(self, obj):
+        return self.occurrences_fields(obj, 'datasetKey')
+
+    def get_occurrence_id(self, obj):
+        return self.occurrences_fields(obj, 'occurrenceID')
+
+    def get_basis_of_record(self, obj):
+        return self.occurrences_fields(obj, 'basisOfRecord')
+
+    def get_institution_code(self, obj):
+        return self.occurrences_fields(obj, 'institutionCode')
+
+    def get_collection_code(self, obj):
+        return self.occurrences_fields(obj, 'collectionCode')
+
+    def get_catalog_number(self, obj):
+        return self.occurrences_fields(obj, 'catalogNumber')
+
+    def get_identified_by(self, obj):
+        return self.occurrences_fields(obj, 'identifiedBy')
+
+    def get_rights_holder(self, obj):
+        return self.occurrences_fields(obj, 'rightsHolder')
+
+    def get_recorded_by(self, obj):
+        return self.occurrences_fields(obj, 'recordedBy')
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -455,6 +509,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'title',
             'doi_or_url',
             'notes',
+            'gbif_id',
+            'dataset_key',
+            'occurrence_id',
+            'basis_of_record',
+            'institution_code',
+            'collection_code',
+            'catalog_number',
+            'identified_by',
+            'rights_holder',
+            'recorded_by',
         ]
 
     def to_representation(self, instance):

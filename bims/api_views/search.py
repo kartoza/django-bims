@@ -581,21 +581,22 @@ class CollectionSearch(object):
                 ))
 
         if self.modules:
-            if len(self.modules) > 1:
-                module_filter = []
-                for taxon_group in self.modules:
-                    module_filter.append(
-                        bio.filter(
-                            module_group__id=taxon_group
-                        ).values_list('site_id'))
-                intersections = module_filter[0].intersection(
-                    *module_filter[1:]
-                )
-                bio = bio.filter(site_id__in=intersections)
-            else:
-                bio = bio.filter(
-                    module_group__id=self.modules[0]
-                )
+            # For Intersection methods :
+            # if len(self.modules) > 1:
+            #     module_filter = []
+            #     for taxon_group in self.modules:
+            #         module_filter.append(
+            #             bio.filter(
+            #                 module_group__id=taxon_group
+            #             ).values_list('site_id'))
+            #     intersections = module_filter[0].intersection(
+            #         *module_filter[1:]
+            #     )
+            #     bio = bio.filter(site_id__in=intersections)
+            # else:
+            bio = bio.filter(
+                module_group__id__in=self.modules
+            )
 
         if self.get_request_data('polygon'):
             if not filtered_location_sites:

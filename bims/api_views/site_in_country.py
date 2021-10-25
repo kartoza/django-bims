@@ -26,10 +26,13 @@ class SiteInCountry(LoginRequiredMixin, APIView):
                 lat=lat,
                 lon=lon
             ))
-            base_country_code = preferences.SiteSetting.base_country_code
+            base_country_codes = [
+                country_code.lower() for country_code in
+                preferences.SiteSetting.base_country_code.split(',')
+            ]
             if (
-                location.raw['address']['country_code'] ==
-                base_country_code.lower()
+                location.raw['address']['country_code'] in
+                base_country_codes
             ):
                 return Response(True)
         except Exception as e:  # noqa

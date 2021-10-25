@@ -1,5 +1,6 @@
 # coding=utf-8
 import json
+
 import requests
 from requests.exceptions import HTTPError
 from braces.views import LoginRequiredMixin
@@ -17,21 +18,24 @@ class GetGeomorphologicalZone(LoginRequiredMixin, APIView):
         geomorphological_zone = ''
 
         url = (
-            '{base_url}/api/v1/geocontext/value/group/'
-            '{lon}/{lat}/geomorphological_group/'
+            '{base_url}/api/v2/query?registry=group&key=geomorphological_group&'
+            'x={lon}&y={lat}&outformat=json'
         ).format(
             base_url=get_key('GEOCONTEXT_URL'),
             lon=lon,
             lat=lat
         )
-
         try:
             response = requests.get(url)
             if response.status_code == 200:
                 geomorphological_group = json.loads(response.content)
+                if 'services' in geomorphological_group:
+                    if 'service_registry_values' not in geomorphological_group:
+                        geomorphological_group['service_registry_values'] = (
+                            geomorphological_group['services']
+                        )
                 geomorphological_zone = (
-                    geomorphological_group['service_registry_values'][1][
-                        'value']
+                    geomorphological_group['services'][1]['value']
                 )
         except (HTTPError, ValueError, KeyError):
             pass

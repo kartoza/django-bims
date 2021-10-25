@@ -3,6 +3,20 @@
 {% block submit_buttons_bottom %}
     {{ block.super }}
     <script>
+        function comfirmGBIF(key, scientificName, canonicalName, taxonomicStatus) {
+            const $gbifKey = document.getElementById('id_gbif_key');
+            const $scientificName = document.getElementById('id_scientific_name');
+            const $canonicalName = document.getElementById('id_canonical_name');
+            const $taxonomicStatus = document.getElementById('id_taxonomic_status')
+            const $table = document.getElementById('list-gbif');
+            const $button = document.getElementById('find-gbif');
+            $gbifKey.value = key;
+            $scientificName.value = scientificName;
+            $canonicalName.value = canonicalName;
+            $taxonomicStatus.value = taxonomicStatus;
+            $table.innerText = "";
+
+        }
 
         (function($) {
             $(document).ready(function() {
@@ -39,29 +53,42 @@
                         }
                     })
                 });
+
                 $('#grp-content').find('.gbif_key').find('.c-2').append(
                     `<button class="grp-button" style="width: 150px; margin-left: 10px" id="find-gbif">Find GBIF</button>`
                 );
+
                 $('#find-gbif').click(function(e) {
                     e.preventDefault();
                     const $target = $(e.target);
                     const originalButtonText = $target.html();
-                    const $gbifKey = $('#id_gbif_key');
-                    const $scientificName = $('#id_scientific_name');
-                    const $canonicalName = $('#id_canonical_name');
-                    const $taxonomicStatus = $('#id_taxonomic_status')
-                    const $author = $('#id_author');
                     $target.html('Fetching...');
-                    let key = '{{ key }}';
-                    if(key === "None") key = "";
-                    if(key !== "") {
-                        $target.html(originalButtonText);
-                        $gbifKey.val(key);
-                        $scientificName.val("{{ scientificName }}");
-                        $canonicalName.val("{{ canonicalName }}");
-                        $taxonomicStatus.val("{{taxonomicStatus}}");
-                        $author.val("{{ authorship }}");
-                        
+                    let results = '{{ results|safe }}';
+                    if(results === "None") results = "";
+                    if(results !== "") {
+                        let row = `<table class="grp-table grp-sortable" id="list-gbif" style="border: none; display: block"><tbody style="border: none">`
+                        let suggest = JSON.parse(results);
+                        suggest.forEach(function (value){
+                            row += `<tr style="border: none"><td style="border: none">`+value.key+`</td>
+                                    <td style="border: none">`+value.kingdom+`</td>
+                                    <td style="border: none">`+value.scientificName+`</td>
+                                    <td style="border: none">`+value.canonicalName+`</td>
+                                    <td style="border: none">`+value.rank+`</td>
+                                    <td style="border: none"><button class="grp-button" style="width: 150px; margin-left: 10px"
+                                    id="confirm-gbif" data-taxonomic-status="`+value.status+`" data-key="`+value.key+`"
+                                    data-scientific-name="`+value.scientificName+`"data-canonical-name="`+value.canonicalName+`"
+                                    onclick="comfirmGBIF('`+value.key+`', '`+value.scientificName+`',
+                                    '`+value.canonicalName+`', '`+value.status+`'
+                                    ); return false;">
+                                    Add</button></td></tr>`
+
+                        });
+                        row += '</tbody></table>'
+                        $('#grp-content').find('.gbif_key').find('.c-2').append(
+                            row
+                        );
+                        $target.attr('disabled', 'disabled')
+
                     }
                     else{
                         $target.html("GBIF Key not found");

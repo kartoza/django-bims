@@ -296,6 +296,20 @@ $(document).ready(function () {
             zoom: 10
         })
     });
+    
+    let options = {
+        url: 'https://maps.kartoza.com/geoserver/wms',
+        params: {
+            layers: 'kartoza:sa_rivers',
+            format: 'image/png'
+        }
+    };
+
+    let riverLayer = new ol.layer.Tile({
+        source: new ol.source.TileWMS(options)
+    });
+
+    map.addLayer(riverLayer);
     let biodiversityLayersOptions = {
         url: geoserverPublicUrl + 'wms',
         params: {

@@ -237,8 +237,16 @@ class OccurrenceProcessor(object):
             )
             return None
 
-        latitude = float(DataCSVUpload.row_value(record, LATITUDE))
-        longitude = float(DataCSVUpload.row_value(record, LONGITUDE))
+        try:
+            latitude = float(DataCSVUpload.row_value(record, LATITUDE))
+            longitude = float(DataCSVUpload.row_value(record, LONGITUDE))
+        except ValueError:
+            self.handle_error(
+                row=record,
+                message='Incorrect latitude or longitude format'
+            )
+            return None
+
         record_point = Point(
             longitude,
             latitude)
@@ -258,11 +266,12 @@ class OccurrenceProcessor(object):
             ).first()
 
         # Find existing location site by lat and lon
-        if len(str(latitude)) > 5 and len(str(longitude)) > 5:
-            location_site = LocationSite.objects.filter(
-                latitude__startswith=latitude,
-                longitude__startswith=longitude
-            ).first()
+        if not location_site:
+            if len(str(latitude)) > 5 and len(str(longitude)) > 5:
+                location_site = LocationSite.objects.filter(
+                    latitude__startswith=latitude,
+                    longitude__startswith=longitude
+                ).first()
 
         if not location_site:
             try:

@@ -162,7 +162,7 @@ class SassDashboardMultipleSitesApiView(APIView):
             chart_data['sass_score'].append(sass_score)
             chart_data['aspt_score'].append(aspt)
             chart_data['date'].append(
-                latest_site_visit.site_visit_date.strftime('%d-%m-%Y')
+                latest_site_visit.site_visit_date.strftime('%Y-%m-%d')
             )
             chart_data['number_assessments'].append(
                 site_visit.count()
@@ -299,7 +299,7 @@ class SassDashboardMultipleSitesApiView(APIView):
         biotope_labels = []
 
         for rating_data in biotope_ratings:
-            date = rating_data['date'].strftime('%d-%m-%Y')
+            date = rating_data['date'].strftime('%Y-%m-%d')
             site_id = rating_data['site_id']
             if site_id not in data:
                 data[site_id] = {}

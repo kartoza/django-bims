@@ -48,15 +48,22 @@ build:
 	@echo "------------------------------------------------------------------"
 	@git submodule init
 	@git submodule update
-	@docker-compose ${ARGS} build bims_uwsgi
 	@docker-compose ${ARGS} build uwsgi
+	@docker-compose ${ARGS} build dev
+
+dev:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in dev mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} up -d webpack-watcher dev
 
 web:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d web
+	@docker-compose ${ARGS} up -d web webpack-watcher dev
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container
@@ -391,7 +398,7 @@ reset-search-results:
 	@echo "Reset search results"
 	@echo "------------------------------------------------------------------"
 	@docker-compose exec uwsgi python /home/web/django_project/manage.py clear_search_results
-	@docker-compose ${ARGS} restart worker
+	@docker-compose ${ARGS} restart searchworker
 	@docker-compose ${ARGS} restart cache
 
 # Run pep8 style checking

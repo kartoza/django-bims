@@ -1,0 +1,90 @@
+<!-- Modal -->
+<div id="new-unpublished-data-modal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <form id="new-unpublished-data-form" action="{% url 'source-reference-unpublished' %}" method="post"
+                  class="needs-validation" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h4 class="modal-title">New Unpublished Data</h4>
+                </div>
+                <div class="modal-body">
+                    <div id="new-unpublished-data-modal-error" class="alert alert-danger" role="alert"
+                         style="display: none;">
+                    </div>
+                    <div class="form-group row">
+                        <label for="unpublished-note"
+                               class="col-sm-2 col-form-label col-form-label"><b>Note</b></label>
+                        <div class="col-sm-10">
+                            <textarea id="unpublished-note" type="text" class="form-control form-control-sm" name="note" maxlength="512" required></textarea>
+                            <div id="unpublished-note-error" class="alert alert-danger" role="alert"
+                                 style="display: none;">Note is required
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="unpublished-source-name"
+                               class="col-sm-2 col-form-label col-form-label"><b>Source Name</b></label>
+                        <div class="col-sm-10">
+                            <input id="unpublished-source-name" type="text" class="form-control form-control-sm" name="source" maxlength="512" required>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.alert').hide()">Close</button>
+                    <button id="new-unpublished-data-upload" type="button" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    let newUnpublishedDataSubmitCallback = (response) => {
+
+    };
+    $(function () {
+        let $form = $('#new-unpublished-data-form');
+        let $button = $('#new-unpublished-data-upload');
+        let $modal = $('#new-unpublished-data-modal');
+        let $error = $('#new-unpublished-data-modal-error');
+        $form.submit(function (e) {
+            e.preventDefault();
+            $('.alert-danger').hide();
+
+            {# validation #}
+            if (!$('#unpublished-note').val()) {
+                $('#unpublished-note-error').show();
+                return;
+            }
+
+            $modal.find('button').prop('disabled', true);
+            $.ajax({
+                type: 'POST',
+                url: $form.attr('action'),
+                data: new FormData(this),
+                dataType: 'json',
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    console.log(response)
+                    newUnpublishedDataSubmitCallback(response);
+                    $modal.find('button').prop('disabled', false);
+                    $modal.find('input').val('');
+                    $('#new-unpublished-data-modal').modal('toggle');
+                },
+                error: function (error) {
+                    $error.show();
+                    $error.html(error['responseText']);
+                    $modal.find('button').prop('disabled', false);
+                }
+            });
+            return false;
+        });
+        $button.click(function () {
+            $form.submit();
+        })
+    });
+</script>

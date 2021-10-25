@@ -15,11 +15,17 @@ def get_user_from_name(first_name, last_name):
         return None
     User = get_user_model()
     try:
-        user = User.objects.get(
-            Q(last_name__iexact=last_name),
-            Q(first_name__iexact=first_name) |
-            Q(first_name__istartswith=first_name[0])
-        )
+        if last_name.strip():
+            print(last_name)
+            user = User.objects.get(
+                Q(last_name__iexact=last_name),
+                Q(first_name__iexact=first_name) |
+                Q(first_name__istartswith=first_name[0])
+            )
+        else:
+            user = User.objects.get(
+                Q(first_name__iexact=first_name)
+            )
     except User.DoesNotExist:
         username = slugify('{first_name} {last_name}'.format(
             first_name=first_name,

@@ -31,13 +31,10 @@ class ChemicalRecordDownloader(APIView):
                 'message': 'Data is empty'
             })
 
-        if queryset:
-            query_count = queryset.count()
-
         today_date = datetime.date.today()
         filename = sha256(
             'chem{}{}'.format(
-                query_count,
+                str(queryset.query),
                 today_date).encode('utf-8')
         ).hexdigest()
         filename += '.csv'

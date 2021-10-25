@@ -392,6 +392,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             survey = self.create_or_get_survey(
                 site_visit
             )
+            self.sass_version = site_visit.sass_version
 
         biotope_fractions = self.get_biotope_fractions(self.request.POST)
         sass_biotope_fractions = SassBiotopeFraction.objects.filter(

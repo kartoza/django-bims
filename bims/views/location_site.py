@@ -1,3 +1,4 @@
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 from rest_framework.test import APIClient
 
 from bims.permissions.api_permission import user_has_permission_to_validate
@@ -431,7 +432,8 @@ class NonValidatedSiteView(
         filter_river_name = self.request.GET.get('river_name', None)
         filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
-            queryset = LocationSite.objects.filter(validated=False).order_by('site_code')
+            gbif_site = BiologicalCollectionRecord.objects.filter(source_collection='gbif').values('site_id')
+            queryset = LocationSite.objects.filter(validated=False).exclude(pk__in=gbif_site).order_by('site_code')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
             if filter_site_code is not None:
