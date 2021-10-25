@@ -431,7 +431,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             data = get_fields_from_occurrences(obj)
             try:
                 return data[field]
-            except KeyError:
+            except:  # noqa
                 return '-'
         return '-'
 
