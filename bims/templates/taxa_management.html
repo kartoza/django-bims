@@ -165,6 +165,17 @@
         .list-form {
             height: calc(100% + 125px);
         }
+        .remove-extra-attribute {
+            padding: 10px;
+            height: 36px;
+            padding-top: 5px;
+        }
+        .btn-add-extra-attribute {
+            font-size: 10pt;
+            padding: 5px 20px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
     </style>
     <script>
         const sourceCollection = {{ source_collections | safe }};
@@ -188,11 +199,11 @@
                         <div class="row">
                             <div class="col-sm-3 img-container">
                                 {% if taxa_group.logo %}
-                                <img src="{{ taxa_group.logo.url }}"/>
+                                    <img src="{{ taxa_group.logo }}"/>
                                 {% endif %}
                             </div>
                             <div class="col-sm-9">
-                                <div class="taxon-group-title">
+                                <div class="taxon-group-title" data-extra-attributes="{{ taxa_group.extra_attributes }}">
                                     {{ taxa_group.name }}
                                 </div>
                                 <div>
@@ -357,8 +368,7 @@
                         <th scope="col">Action</th>
                     </tr>
                     </thead>
-                    <tbody id="taxa-list">
-                    </tbody>
+                    <tbody id="taxa-list"></tbody>
                 </table>
             </div>
             <div class="pagination-centered" style="display:none">
@@ -416,14 +426,14 @@
                     <div class="container" style="max-height: 600px; overflow-y: auto">
                         <table class="table table-sm table-striped find-taxon-table" style="display:none;">
                             <thead>
-                            <tr>
-                                <th scope="col">Scientific Name</th>
-                                <th scope="col">Canonical Name</th>
-                                <th scope="col">Rank</th>
-                                <th scope="col">Source</th>
-                                <th scope="col">Stored</th>
-                                <th scope="col">Action</th>
-                            </tr>
+                                <tr>
+                                    <th scope="col">Scientific Name</th>
+                                    <th scope="col">Canonical Name</th>
+                                    <th scope="col">Rank</th>
+                                    <th scope="col">Source</th>
+                                    <th scope="col">Stored</th>
+                                    <th scope="col">Action</th>
+                                </tr>
                             </thead>
                             <tbody>
                             </tbody>
@@ -439,12 +449,12 @@
                         </div>
                         <table class="table table-sm">
                             <thead>
-                            <tr>
-                                <th scope="col" style="width: 30%">Family</th>
-                                <th scope="col" style="width: 30%">Taxon Name</th>
-                                <th scope="col" style="width: 30%">Rank</th>
-                                <th scope="col">Action</th>
-                            </tr>
+                                <tr>
+                                    <th scope="col" style="width: 30%">Family</th>
+                                    <th scope="col" style="width: 30%">Taxon Name</th>
+                                    <th scope="col" style="width: 30%">Rank</th>
+                                    <th scope="col">Action</th>
+                                </tr>
                             </thead>
                             <tbody>
                             <tr>
@@ -458,10 +468,12 @@
                                         {% endfor %}
                                     </select>
                                 </td>
-                                <td><button
+                                <td>
+                                    <button
                                         type="button"
                                         class="btn btn-success add-new-taxon-btn"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;ADD
-                                </button></td>
+                                    </button>
+                                </td>
                             </tr>
                             <tr>
                                 <td style="border-top-width: 0"><span class="text-muted" style="font-size: 10pt; font-style: italic">
@@ -515,6 +527,11 @@
                                 </div>
                                 <div class="col-8">
                                     <input type="file" class="form-control" id="inputLogo" name="module_logo">
+
+                                    <button class="btn btn-warning btn-add-extra-attribute">Add attribute +</button>
+                                    <div class="extra-attribute-field">
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
