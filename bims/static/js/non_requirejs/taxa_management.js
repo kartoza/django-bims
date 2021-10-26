@@ -303,6 +303,8 @@ $('#moduleEditForm').on('submit', function (e) {
     e.preventDefault();
     let formData = new FormData(this);
     let url = '/api/update-taxon-group/';
+    $(e.target).find('.btn-submit').prop('disabled', true);
+    $(e.target).find('.loading-btn').show();
     $.ajax({
         type: 'POST',
         headers: {"X-CSRFToken": csrfToken},
