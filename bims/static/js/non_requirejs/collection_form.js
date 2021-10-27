@@ -447,8 +447,35 @@ $(function () {
             return;
         }
 
-        $('#water-temperature-form').submit();
-    });
+        const formData = new FormData();
+        formData.append("water_file", $('#water_file')[0].files[0])
+        formData.append("site-id", $('#site-id').val())
+        formData.append("owner_id", $('#owner_id').val())
+        formData.append("interval", $('#logging-interval').val())
+        formData.append("format", $('#format-date').val())
+
+        $.ajax({
+                url: `/upload_water-temperature/`,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    $('html, body').animate({
+                        scrollTop: $(".dashboard-title").offset().top
+                    }, 1);
+                    if(data['status'] == 'failed'){
+                        let alertDiv = $('.alert-danger');
+                        alertDiv.html(data['message']);
+                        alertDiv.show();
+                    }
+                    if(data['status'] == 'success'){
+                        let alertDiv = $('.alert-success');
+                        alertDiv.html(data['message']);
+                        alertDiv.show();
+                    }
+                }
+            });    });
 
     $('#add-taxon').click((e) => {
         let $findTaxonContainer = $('.find-taxon-container');

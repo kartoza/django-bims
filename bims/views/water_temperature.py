@@ -1,20 +1,21 @@
+import csv
 from datetime import datetime
-
-import openpyxl
+from braces.views import LoginRequiredMixin
+from django.views import View
 from bims.models.basemap_layer import BaseMapLayer
 import logging
 from bims.utils.get_key import get_key
-
+from django.http import HttpResponseForbidden
 from bims.models.location_site import LocationSite
-from django.contrib import messages
 from django.http import JsonResponse
+from django.contrib.auth import get_user_model
 from bims.models import WaterTemperature, UploadSession
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect, Http404
+from django.http import Http404
 
 logger = logging.getLogger('bims')
 
@@ -24,9 +25,6 @@ LOGGING_INTERVAL = [0.5, 1, 2, 3, 24]
 class WaterTemperatureView(TemplateView, SessionFormMixin):
     """View for water temperature form"""
     template_name = 'water_temperature_form.html'
-    location_site = None
-    category = 'water_temperature'
-    upload_task = None
 
     def get_context_data(self, **kwargs):
 
@@ -69,67 +67,109 @@ class WaterTemperatureView(TemplateView, SessionFormMixin):
         """
         return
 
-    @method_decorator(login_required)
+
+class WaterTemperatureUploadView(View, LoginRequiredMixin):
+    location_site = None
+    category = 'water_temperature'
+    upload_task = None
+
     def post(self, request, *args, **kwargs):
+
+        if not request.is_ajax():
+            return HttpResponseForbidden()
         owner_id = request.POST.get('owner_id', '').strip()
         interval = request.POST.get('interval')
-        xlsx_file = request.FILES.get('xlsx_file')
+        water_file = request.FILES.get('water_file')
+        date_format = request.POST.get('format')
+
+        if float(interval) != 24:
+            date_format = date_format + ' %H:%M'
 
         upload_session = UploadSession.objects.create(
             uploader=request.user,
-            process_file=xlsx_file,
+            process_file=water_file,
             uploaded_at=datetime.now(),
             category=self.category
         )
         if self.upload_task:
             self.upload_task.delay(upload_session.id)
 
-        work_book = openpyxl.load_workbook(upload_session.process_file, data_only=True)
-        work_sheet = work_book.active
-        row_number = work_sheet.max_row
-        column_number = work_sheet.max_column
-        date_start = work_sheet.cell(3, 1)
-        date_end = work_sheet.cell(row_number, 1)
-
-        days = date_end.value - date_start.value
-        rows = int(days * float(interval))
-        if interval == 24:
-            if column_number < 4:
+        with open(upload_session.process_file.path) as file:
+            reader = csv.DictReader(file)
+            data = list(reader)
+            real_row = len(data)
+            try:
+                date_start = datetime.strptime(data[0]['Date Time'], date_format)
+                date_end = datetime.strptime(data[-1]['Date Time'], date_format)
+            except ValueError:
                 return JsonResponse({
                     'status': 'failed',
-                    'message': 'Missing minimum amd maximum data value'
+                    'message': 'Please check your date format'
+                })
+            except KeyError:
+                try:
+                    date_start = datetime.strptime(data[0]['Date'], date_format)
+                    date_end = datetime.strptime(data[-1]['Date'], date_format)
+                except ValueError:
+                    return JsonResponse({
+                        'status': 'failed',
+                        'message': 'Please check your date format'
+                    })
+            row_by_date = (date_end - date_start).days * int(24 / float(interval))
+
+            if real_row != row_by_date:
+                return JsonResponse({
+                    'status': 'failed',
+                    'message': 'Date start: {0} \n Date end: {1} \n ' \
+                               'Logging interval: {2} \n' \
+                               'The number of row should be: {3} \n' \
+                               'But there is: {4} in the file'.format(
+                        date_start.strftime(date_format),
+                        date_end.strftime(date_format),
+                        interval,
+                        row_by_date,
+                        real_row,
+                        real_row - row_by_date)
                 })
 
-        if rows > row_number:
-            return JsonResponse({
-                'status': 'failed',
-                'message': 'Missing {} rows'.format(rows - row_number - 1)
-            })
-        elif rows < row_number:
-            return JsonResponse({
-                'status': 'failed',
-                'message': 'Got more {} rows'.format(rows - row_number - 1)
-            })
-        else:
-            for i in row_number - 1:
-                if column_number > 2:
-                    mean = work_sheet.cell(i, 2).value
-                    minimum = work_sheet.cell(i, 3).value
-                    maximum = work_sheet.cell(i, 4).value
-                    value = work_sheet.cell(i, 2).value
+            for temperature in data:
+                if int(interval) == 24:
+                    if any(header in ['Mean', 'Minimum', 'Maximum'] for header in reader.fieldnames):
+                        water_temp, created = WaterTemperature.objects.get_or_create(
+                            date_time=datetime.strptime(temperature['Date'], date_format),
+                            location_site=LocationSite.objects.get(pk=request.POST.get('site-id', None)),
+                            is_daily=True,
+                            value=temperature['Mean']
+                        )
+
+                    else:
+                        return JsonResponse({
+                            'status': 'failed',
+                            'message': 'Missing minimum amd maximum data value'
+                        })
+
                 else:
-                    mean = minimum = maximum = value = None
-                WaterTemperature.objects.create(
-                    date_time=work_sheet.cell(i, 1).value,
-                    location_site=request.POST.get('site-id', None),
-                    is_daily=False,
-                    mean=mean,
-                    minimum=minimum,
-                    maximum=maximum,
-                    value=value,
-                    owner=owner_id,
-                    source_file=upload_session.process_file
-                )
+                    water_temp, created = WaterTemperature.objects.get_or_create(
+                        date_time=datetime.strptime(temperature['Date Time'], date_format),
+                        location_site=LocationSite.objects.get(pk=request.POST.get('site-id', None)),
+                        is_daily=False,
+                        value=temperature['Water temperature']
+
+                    )
+                try:
+                    water_temp.value = temperature['Mean']
+                    water_temp.minimum = temperature['Minimum']
+                    water_temp.maximum = temperature['Maximum']
+
+                except KeyError:
+                    water_temp.value = temperature['Water temperature']
+
+                water_temp.source_file = upload_session.process_file.path
+                water_temp.uploader = self.request.user
+                water_temp.owner = get_user_model().objects.get(
+                    id=int(owner_id))
+                water_temp.save()
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Water temperature date being uploaded. Thank you'
