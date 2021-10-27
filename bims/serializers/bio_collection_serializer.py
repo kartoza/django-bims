@@ -6,6 +6,10 @@ from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
 from django.urls import reverse
+
+from bims.enums import TaxonomicGroupCategory
+from bims.models.taxon_group import TaxonGroup
+from bims.models.taxon_extra_attribute import TaxonExtraAttribute
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.taxon_serializer import (
     TaxonSerializer,
@@ -226,7 +230,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_origin(self, obj):
         category = obj.taxonomy.origin.lower()
         if category in Taxonomy.CATEGORY_CHOICES_DICT:
-            return ORIGIN[category]
+            return Taxonomy.CATEGORY_CHOICES_DICT[category]
         else:
             if category:
                 return category
@@ -682,6 +686,30 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                      ),
                      args=[instance.id]
                  )])
+
+        # Taxon attribute
+        taxon_group = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies__in=[instance.taxonomy]).first()
+
+        if taxon_group:
+            taxon_extra_attributes = TaxonExtraAttribute.objects.filter(
+                taxon_group=taxon_group
+            )
+            if taxon_extra_attributes.exists():
+                for taxon_extra_attribute in taxon_extra_attributes:
+                    taxon_attribute_name = taxon_extra_attribute.name
+                    key_title = taxon_attribute_name.lower().replace(' ', '_')
+                    if key_title not in self.context['header']:
+                        self.context['header'].append(key_title)
+                    if taxon_attribute_name in instance.taxonomy.additional_data:
+                        result[key_title] = (
+                            instance.taxonomy.additional_data
+                            [taxon_attribute_name]
+                        )
+                    else:
+                        result[key_title] = ''
+
         return result
 
 

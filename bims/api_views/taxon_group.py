@@ -3,7 +3,10 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from bims.models import TaxonGroup, Taxonomy, BiologicalCollectionRecord
+from bims.models import (
+    TaxonGroup, Taxonomy, BiologicalCollectionRecord,
+    TaxonExtraAttribute
+)
 
 
 def update_taxon_group_orders(taxon_group_ids):
@@ -154,6 +157,7 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         module_name = self.request.POST.get('module_name', None)
         module_logo = self.request.FILES.get('module_logo', None)
         module_id = self.request.POST.get('module_id', None)
+        extra_attributes = self.request.POST.getlist('extra_attribute', [])
         if not module_id:
             raise Http404('Missing required parameter')
         try:
@@ -166,6 +170,21 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
 
         if module_logo:
             taxon_group.logo = module_logo
+
+        TaxonExtraAttribute.objects.filter(taxon_group=taxon_group).exclude(
+            name__in=extra_attributes).delete()
+
+        if extra_attributes:
+            for extra_attribute in extra_attributes:
+                if not extra_attribute:
+                    continue
+                try:
+                    TaxonExtraAttribute.objects.get_or_create(
+                        name=extra_attribute,
+                        taxon_group=taxon_group
+                    )
+                except TaxonExtraAttribute.MultipleObjectsReturned:
+                    pass
 
         taxon_group.save()
         return Response('Updated')

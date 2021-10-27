@@ -20,6 +20,7 @@ let $updateLogoBtn = $('.update-logo-btn');
 let $removeAllBtn = $('.remove-all-btn');
 let $clearSearchBtn = $('#clear-search-button');
 let $sortBtn = $('.sort-button');
+let $addAttributeBtn = $('.btn-add-extra-attribute');
 
 const popupCenter = ({url, title, w, h}) => {
     // Fixes dual-screen position                             Most browsers      Firefox
@@ -225,6 +226,11 @@ $removeModuleBtn.click((e) => {
     });
 })
 
+removeExtraAttribute = (event) => {
+    event.preventDefault();
+    $(event.target).parent().remove();
+}
+
 $updateLogoBtn.click((event) => {
     event.preventDefault();
     const _maxTries = 10;
@@ -235,6 +241,19 @@ $updateLogoBtn.click((event) => {
         _currentTry += 1;
     }
     const moduleName = _element.find('.taxon-group-title').html().trim();
+    const extraAttributesContainer = $('#editModuleModal').find('.extra-attribute-field');
+    let extraAttributes = _element.find('.taxon-group-title').data('extra-attributes');
+    extraAttributesContainer.html('')
+    if (extraAttributes.length > 0) {
+        extraAttributes = JSON.parse(extraAttributes.replace(/'/g, '"'));
+        for (let i=0; i<extraAttributes.length; i++) {
+            let exAtEl = '<div style="display: flex" >' +
+                    '<input aria-label="extra-attribute" type="text" class="form-control" name="extra_attribute" value="' + extraAttributes[i] + '" />' +
+                    '<button class="btn btn-danger remove-extra-attribute" onclick="removeExtraAttribute(event)">-</button>'
+                '</div>';
+            extraAttributesContainer.append(exAtEl);
+        }
+    }
     $('#edit-module-img-container').html(
         `<img style="max-width: 100%" src=${_element.find('img').attr('src')}>`
     )
@@ -245,6 +264,18 @@ $updateLogoBtn.click((event) => {
     })
     return false;
 });
+
+$addAttributeBtn.click((event) => {
+    event.preventDefault();
+
+    const extraAttributesContainer = $('#editModuleModal').find('.extra-attribute-field');
+    let exAtEl = '<div style="display: flex" >' +
+                    '<input aria-label="extra-attribute" type="text" class="form-control" name="extra_attribute" value="" />' +
+                    '<button class="btn btn-danger remove-extra-attribute" onclick="removeExtraAttribute(event)">-</button>'
+                '</div>';
+    extraAttributesContainer.append(exAtEl);
+
+})
 
 $('#moduleRemoveForm').on('submit', function (e) {
     e.preventDefault();
@@ -272,6 +303,8 @@ $('#moduleEditForm').on('submit', function (e) {
     e.preventDefault();
     let formData = new FormData(this);
     let url = '/api/update-taxon-group/';
+    $(e.target).find('.btn-submit').prop('disabled', true);
+    $(e.target).find('.loading-btn').show();
     $.ajax({
         type: 'POST',
         headers: {"X-CSRFToken": csrfToken},

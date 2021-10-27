@@ -4,9 +4,12 @@ import os
 from django.http import HttpResponseForbidden, JsonResponse
 from django.conf import settings
 from rest_framework import serializers
+
+from bims.enums import TaxonomicGroupCategory
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
+from bims.models.taxon_extra_attribute import TaxonExtraAttribute
 from bims.api_views.csv_download import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_csv_taxa_list as download_csv_taxa_list_task
@@ -127,27 +130,28 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             instance)
         if 'headers' not in self.context:
             self.context['headers'] = list(result.keys())
-        if 'additional_data' not in self.context:
-            self.context['additional_data'] = []
 
-        for additional_data_key in self.context['additional_data']:
-            if additional_data_key not in result:
-                result[additional_data_key] = ''
+        taxon_group = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies__in=[instance]).first()
 
-        if instance.additional_data:
-            for key, value in instance.additional_data.items():
-                key_title = key.lower().replace(' ', '_')
-                # Skip class and link in the additional data
-                if key_title == 'class' or key_title == 'link':
-                    continue
-                if key_title not in self.context['headers']:
-                    self.context['headers'].append(key_title)
-                if (
-                        key_title not in self.context['additional_data'] and
-                        key not in result):
-                    self.context['additional_data'].append(key_title)
-                if key not in result:
-                    result[key_title] = value
+        if taxon_group:
+            taxon_extra_attributes = TaxonExtraAttribute.objects.filter(
+                taxon_group=taxon_group
+            )
+            if taxon_extra_attributes.exists():
+                for taxon_extra_attribute in taxon_extra_attributes:
+                    taxon_attribute_name = taxon_extra_attribute.name
+                    key_title = taxon_attribute_name.lower().replace(' ', '_')
+                    if key_title not in self.context['headers']:
+                        self.context['headers'].append(key_title)
+                    if taxon_attribute_name in instance.additional_data:
+                        result[key_title] = (
+                            instance.additional_data[taxon_attribute_name]
+                        )
+                    else:
+                        result[key_title] = ''
+
         return result
 
 
@@ -166,7 +170,7 @@ def download_csv_taxa_list(request):
     filename = (
         f'{taxon_group}-{current_time.year}-'
         f'{current_time.month}-{current_time.day}-'
-        f'{current_time.hour}'
+        f'{current_time.hour}-{current_time.minute}'
     ).replace(' ', '_')
     folder = settings.PROCESSED_CSV_PATH
     path_folder = os.path.join(

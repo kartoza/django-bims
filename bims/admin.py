@@ -86,7 +86,8 @@ from bims.models import (
     RequestLog,
     IngestedData,
     TaxonImage,
-    WaterTemperature
+    WaterTemperature,
+    TaxonExtraAttribute
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -1273,6 +1274,12 @@ class WaterTemperatureAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonExtraAttributeAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'taxon_group'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1352,3 +1359,4 @@ admin.site.unregister(GeoNodeThemeCustomization)
 admin.site.unregister(Partner)
 
 admin.site.register(WaterTemperature, WaterTemperatureAdmin)
+admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
