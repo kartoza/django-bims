@@ -86,6 +86,7 @@ from bims.views.download_request import DownloadRequestListView
 from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
 from bims.views.water_temperature import WaterTemperatureView, WaterTemperatureUploadView
+from bims.views.download_taxa_template import download_taxa_template
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -221,6 +222,9 @@ urlpatterns = [
     url(r'^source-reference/unpublished/',
         UnpublishedData.as_view(),
         name='source-reference-unpublished'),
+    url(r'^download-taxa-template/',
+        download_taxa_template,
+        name='download-taxa-template'),
     url(r'^water-temperature-form/$', WaterTemperatureView.as_view(), name='water-temperature-form'),
     url(r'^upload_water-temperature/$', csrf_exempt(WaterTemperatureUploadView.as_view()),
         name='upload_water-temperature'),
