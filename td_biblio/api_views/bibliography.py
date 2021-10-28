@@ -31,6 +31,8 @@ class GetBibliographyByDOI(LoginRequiredMixin, APIView):
                 entry = Entry.objects.get(url__iexact=query)
             except Entry.DoesNotExist:
                 return HttpResponseBadRequest('%s is not found' % query)
+            except Entry.MultipleObjectsReturned:
+                entry = Entry.objects.filter(url__iexact=query).first()
         except ValidationError:
             try:
                 BibliographyFormatValidator.doi_format_validation(query)
