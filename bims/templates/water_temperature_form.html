@@ -11,6 +11,7 @@
           rel="stylesheet">
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
 
     <script type="text/javascript">
@@ -24,6 +25,13 @@
         const bingKey = '{{ bing_key }}';
     </script>
 
+    <style>
+        .alert-danger {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+
 {% endblock %}
 
 {% block body_content %}
@@ -35,6 +43,9 @@
             <div class="dashboard-title">
                 <h2>Add water temperature data for site {% if location_site_code %}{{ location_site_code }} {% else %}
                     {{ location_site_name }}{% endif %}</h2>
+                <div class="dashboard-close" onclick="window.location.href='/location-site-form/update/?id={{ site_id }}'">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </div>
             </div>
             <div class="alert alert-danger" role="alert"
                  style="display: none;">
@@ -43,8 +54,8 @@
             <div class="alert alert-success" role="alert"
                  style="display: none;">
             </div>
-            <div id="fish-map"></div>
-            <div class="form-group row">
+            <div id="map"></div>
+            <div class="form-group row" style="margin-top: 20px;">
                 <label for="date"
                        class="col-sm-1 col-form-label col-form-label">Latitude</label>
                 <input type="text" id="latitude" name="latitude"
@@ -55,12 +66,6 @@
                 <input type="text" id="longitude" name="longitude"
                        class="col-sm-2 form-control form-control-sm"
                        value="{{ location_site_long }}">
-                <div class="update-taxon-container col-sm-2">
-                    <button id="update-coordinate" type="button"
-                            class="btn btn-default" disabled>
-                        Update coordinate
-                    </button>
-                </div>
             </div>
 
             <div class="separator-line"></div>
@@ -178,6 +183,6 @@
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static 'js/utils/effect.js' %}"></script>
-    <script src="{% static "js/non_requirejs/collection_form.js" %}"></script>
+    <script src="{% static 'js/non_requirejs/water_temperature_form.js' %}"></script>
 
 {% endblock %}

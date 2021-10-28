@@ -1,6 +1,8 @@
+import codecs
 import csv
 from datetime import datetime
 from braces.views import LoginRequiredMixin
+from django.utils.timezone import make_aware
 from django.views import View
 from bims.models.basemap_layer import BaseMapLayer
 import logging
@@ -20,6 +22,13 @@ from django.http import Http404
 logger = logging.getLogger('bims')
 
 LOGGING_INTERVAL = [0.5, 1, 2, 3, 24]
+RECORDS_PER_INTERVAL = {
+    '0.5': 48,
+    '1': 24,
+    '2': 12,
+    '3': 8
+}
+CATEGORY = 'water_temperature'
 
 
 class WaterTemperatureView(TemplateView, SessionFormMixin):
@@ -60,17 +69,107 @@ class WaterTemperatureView(TemplateView, SessionFormMixin):
 
         return super(WaterTemperatureView, self).get(request, *args, **kwargs)
 
-    def extra_post(self, post):
-        """
-        Override this method to process the POST request.
-        :param post: POST request
-        """
-        return
+
+class WaterTemperatureValidateView(View, LoginRequiredMixin):
+
+    is_valid = True
+    error_messages = []
+
+    def add_error_messages(self, row, message):
+        self.is_valid = False
+        self.error_messages.append(
+            f'{row} : {message}'
+        )
+
+    def post(self, request, *args, **kwargs):
+        self.error_messages = []
+        self.is_valid = True
+        is_daily = False
+        finished = False
+        times = []
+
+        water_file = request.FILES.get('water_file')
+
+        date_format = request.POST.get('format')
+        interval = request.POST.get('interval')
+
+        if float(interval) != 24:
+            date_format = date_format + ' %H:%M'
+        else:
+            is_daily = True
+
+        row = 2
+        reader = csv.DictReader(codecs.iterdecode(water_file, 'utf-8'))
+        headers = reader.fieldnames
+        data = list(reader)
+        date_field = 'Date Time' if 'Date Time' in headers else 'Date'
+
+        if is_daily:
+            if not any(header in ['Mean', 'Minimum', 'Maximum'] for header in
+                   headers):
+                self.add_error_messages(
+                    row,
+                    'Missing minimum and maximum data value'
+                )
+                finished = True
+
+        if not finished:
+            for temperature_data in data:
+                # Check date format
+                try:
+                    date = datetime.strptime(
+                        temperature_data[date_field], date_format)
+                    # Check interval
+                    if not is_daily:
+                        if len(times) == 0 and date.hour != 0:
+                            self.add_error_messages(
+                                row,
+                                'Non daily data should start at 00'
+                            )
+                        if date.hour == 0 and len(times) > 1:
+                            if times[len(times)-1].hour != 23:
+                                self.add_error_messages(
+                                    row-1,
+                                    'Non daily data should end at 23'
+                                )
+                            if len(times) < RECORDS_PER_INTERVAL[interval]:
+                                self.add_error_messages(
+                                    row-1,
+                                    'Data for this day is not complete'
+                                )
+                            times = []
+                        times.append(date)
+                except ValueError:
+                    self.add_error_messages(
+                        row,
+                        'Date format should be {}'.format(
+                            date_format
+                        )
+                    )
+
+                row += 1
+
+        if not self.is_valid:
+            return JsonResponse({
+                'status': 'failed',
+                'message': self.error_messages
+            })
+        else:
+            upload_session = UploadSession.objects.create(
+                uploader=request.user,
+                process_file=water_file,
+                uploaded_at=datetime.now(),
+                category=CATEGORY
+            )
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Water temperature is validated',
+                'upload_session_id': upload_session.id
+            })
 
 
 class WaterTemperatureUploadView(View, LoginRequiredMixin):
     location_site = None
-    category = 'water_temperature'
     upload_task = None
 
     def post(self, request, *args, **kwargs):
@@ -79,96 +178,65 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
             return HttpResponseForbidden()
         owner_id = request.POST.get('owner_id', '').strip()
         interval = request.POST.get('interval')
-        water_file = request.FILES.get('water_file')
         date_format = request.POST.get('format')
+        upload_session_id = request.POST.get('upload_session_id')
+        location_site = LocationSite.objects.get(
+            pk=request.POST.get('site-id', None)
+        )
+        is_daily = False
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
+        else:
+            is_daily = True
 
-        upload_session = UploadSession.objects.create(
-            uploader=request.user,
-            process_file=water_file,
-            uploaded_at=datetime.now(),
-            category=self.category
-        )
-        if self.upload_task:
-            self.upload_task.delay(upload_session.id)
+        try:
+            upload_session = UploadSession.objects.get(
+                id=upload_session_id
+            )
+        except UploadSession.DoesNotExist:
+            raise Http404('Upload session not found')
 
         with open(upload_session.process_file.path) as file:
             reader = csv.DictReader(file)
+            headers = reader.fieldnames
             data = list(reader)
-            real_row = len(data)
-            try:
-                date_start = datetime.strptime(data[0]['Date Time'], date_format)
-                date_end = datetime.strptime(data[-1]['Date Time'], date_format)
-            except ValueError:
-                return JsonResponse({
-                    'status': 'failed',
-                    'message': 'Please check your date format'
-                })
-            except KeyError:
-                try:
-                    date_start = datetime.strptime(data[0]['Date'], date_format)
-                    date_end = datetime.strptime(data[-1]['Date'], date_format)
-                except ValueError:
-                    return JsonResponse({
-                        'status': 'failed',
-                        'message': 'Please check your date format'
-                    })
-            row_by_date = (date_end - date_start).days * int(24 / float(interval))
-
-            if real_row != row_by_date:
-                return JsonResponse({
-                    'status': 'failed',
-                    'message': 'Date start: {0} \n Date end: {1} \n ' \
-                               'Logging interval: {2} \n' \
-                               'The number of row should be: {3} \n' \
-                               'But there is: {4} in the file'.format(
-                        date_start.strftime(date_format),
-                        date_end.strftime(date_format),
-                        interval,
-                        row_by_date,
-                        real_row,
-                        real_row - row_by_date)
-                })
+            date_field = 'Date Time' if 'Date Time' in headers else 'Date'
 
             for temperature in data:
-                if int(interval) == 24:
-                    if any(header in ['Mean', 'Minimum', 'Maximum'] for header in reader.fieldnames):
-                        water_temp, created = WaterTemperature.objects.get_or_create(
-                            date_time=datetime.strptime(temperature['Date'], date_format),
-                            location_site=LocationSite.objects.get(pk=request.POST.get('site-id', None)),
-                            is_daily=True,
-                            value=temperature['Mean']
-                        )
 
-                    else:
-                        return JsonResponse({
-                            'status': 'failed',
-                            'message': 'Missing minimum amd maximum data value'
-                        })
-
+                if is_daily:
+                    water_temp_value = temperature['Mean']
                 else:
-                    water_temp, created = WaterTemperature.objects.get_or_create(
-                        date_time=datetime.strptime(temperature['Date Time'], date_format),
-                        location_site=LocationSite.objects.get(pk=request.POST.get('site-id', None)),
-                        is_daily=False,
-                        value=temperature['Water temperature']
+                    water_temp_value = temperature['Water temperature']
 
-                    )
-                try:
-                    water_temp.value = temperature['Mean']
+                water_temp, created = WaterTemperature.objects.get_or_create(
+                    date_time=make_aware(
+                        datetime.strptime(
+                            temperature[date_field],
+                            date_format)
+                    ),
+                    location_site=location_site,
+                    is_daily=is_daily,
+                    defaults={
+                        'value': water_temp_value
+                    }
+                )
+                if is_daily:
+                    water_temp.value = water_temp_value
                     water_temp.minimum = temperature['Minimum']
                     water_temp.maximum = temperature['Maximum']
-
-                except KeyError:
-                    water_temp.value = temperature['Water temperature']
+                else:
+                    water_temp.value = water_temp_value
 
                 water_temp.source_file = upload_session.process_file.path
                 water_temp.uploader = self.request.user
                 water_temp.owner = get_user_model().objects.get(
                     id=int(owner_id))
                 water_temp.save()
+
+            upload_session.processed = True
+            upload_session.save()
 
             return JsonResponse({
                 'status': 'success',
