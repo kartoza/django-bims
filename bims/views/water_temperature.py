@@ -10,7 +10,6 @@ from bims.utils.get_key import get_key
 from django.http import HttpResponseForbidden
 from bims.models.location_site import LocationSite
 from django.http import JsonResponse
-from django.contrib.auth import get_user_model
 from bims.models import WaterTemperature, UploadSession
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
@@ -93,6 +92,9 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
         date_format = request.POST.get('format')
         interval = request.POST.get('interval')
 
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
         else:
@@ -121,16 +123,25 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                         temperature_data[date_field], date_format)
                     # Check interval
                     if not is_daily:
-                        if len(times) == 0 and date.hour != 0:
+                        time_string = date.strftime('%H:%M')
+                        if len(times) == 0 and time_string != start_time:
                             self.add_error_messages(
                                 row,
-                                'Non daily data should start at 00'
+                                'Non daily data should start at {}'.format(
+                                    start_time
+                                )
                             )
-                        if date.hour == 0 and len(times) > 1:
-                            if times[len(times)-1].hour != 23:
+                        if time_string == start_time and len(times) > 1:
+                            if (
+                                times[len(times)-1].strftime(
+                                    '%H:%M'
+                                ) != end_time
+                            ):
                                 self.add_error_messages(
                                     row-1,
-                                    'Non daily data should end at 23'
+                                    'Non daily data should end at {}'.format(
+                                        end_time
+                                    )
                                 )
                             if len(times) < RECORDS_PER_INTERVAL[interval]:
                                 self.add_error_messages(
@@ -184,6 +195,8 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
             pk=request.POST.get('site-id', None)
         )
         is_daily = False
+        new_data = []
+        existing_data = []
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
@@ -210,35 +223,63 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                 else:
                     water_temp_value = temperature['Water temperature']
 
-                water_temp, created = WaterTemperature.objects.get_or_create(
-                    date_time=make_aware(
-                        datetime.strptime(
-                            temperature[date_field],
-                            date_format)
-                    ),
-                    location_site=location_site,
-                    is_daily=is_daily,
-                    defaults={
-                        'value': water_temp_value
-                    }
+                date_time = make_aware(
+                    datetime.strptime(
+                        temperature[date_field],
+                        date_format)
                 )
-                if is_daily:
-                    water_temp.value = water_temp_value
-                    water_temp.minimum = temperature['Minimum']
-                    water_temp.maximum = temperature['Maximum']
-                else:
-                    water_temp.value = water_temp_value
 
-                water_temp.source_file = upload_session.process_file.path
-                water_temp.uploader = self.request.user
-                water_temp.owner = get_user_model().objects.get(
-                    id=int(owner_id))
-                water_temp.save()
+                water_data = {
+                    'date_time': date_time,
+                    'location_site': location_site,
+                    'is_daily': is_daily
+                }
+
+                query = WaterTemperature.objects.filter(
+                    **water_data
+                )
+                is_data_exists = query.exists()
+                water_data['value'] = water_temp_value
+                water_data['minimum'] = temperature['Minimum'] if is_daily else 0
+                water_data['maximum'] = temperature['Maximum'] if is_daily else 0
+
+                if is_data_exists:
+                    new_query = query.filter(**water_data)
+                    if not new_query.exists():
+                        existing_water_data = query.first()
+                        existing_water_data.value = water_temp_value
+                        existing_water_data.minimum = water_data['minimum']
+                        existing_water_data.maximum = water_data['maximum']
+                        existing_data.append(existing_water_data)
+                else:
+                    new_data.append(
+                        WaterTemperature(**water_data)
+                    )
+
+            success_response = ''
+            if new_data:
+                WaterTemperature.objects.bulk_create(
+                    new_data
+                )
+                success_response = '{} data has been added. '.format(
+                    len(new_data)
+                )
+            if existing_data:
+                WaterTemperature.objects.bulk_update(
+                    existing_data,
+                    ['value', 'minimum', 'maximum']
+                )
+                success_response += '{} data has been updated.'.format(
+                    len(existing_data)
+                )
+
+            if not success_response:
+                success_response = 'No new data added or updated.'
 
             upload_session.processed = True
             upload_session.save()
 
             return JsonResponse({
                 'status': 'success',
-                'message': 'Water temperature date being uploaded. Thank you'
+                'message': success_response
             })
