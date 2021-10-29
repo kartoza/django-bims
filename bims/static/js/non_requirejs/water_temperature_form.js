@@ -126,6 +126,8 @@ $('#upload').click((event) => {
     formData.append("owner_id", $('#owner_id').val())
     formData.append("interval", $('#logging-interval').val())
     formData.append("format", $('#format-date').val())
+    formData.append("start_time", $('#start-time').val())
+    formData.append("end_time", $('#end-time').val())
 
     document.getElementById('upload').disabled = true;
     document.getElementById('upload').value = 'Checking data...';
