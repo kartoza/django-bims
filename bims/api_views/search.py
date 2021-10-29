@@ -315,10 +315,16 @@ class CollectionSearch(object):
                         spatial_filter_splitted[1],
                     'locationcontext__value': spatial_filter_splitted[2]}
                                   )
-            if spatial_filter_groups:
-                or_condition |= Q(**{
-                    'locationcontext__group__key__in':
-                        spatial_filter_groups})
+        if spatial_filter_groups:
+            or_condition |= Q(**{
+                'locationcontext__group__key__in':
+                    spatial_filter_groups})
+            or_condition &= ~Q(**{
+                'locationcontext__value': 'None'
+            })
+            or_condition &= ~Q(**{
+                'locationcontext__value': ''
+            })
         return or_condition
 
     @property

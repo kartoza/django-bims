@@ -24,23 +24,23 @@
         const sassExists = {% if sass_exists %}true{% else %}false{% endif %};
     </script>
     <style>
-        .carousel-inner, .carousel-item {
-            height: 100% !important;
-            text-align: justify;
-            display: flex;
+          .carousel-inner, .carousel-item {
+              height: 100% !important;
         }
 
         .carousel-item img {
             max-height: 100%;
             max-width: 100%;
+        }
+        .carousel-item-content {
             width: auto;
             height: auto;
-            position: relative;
+            position: absolute;
             top: 0;
             bottom: 0;
             left: 0;
             right: 0;
-            margin: 5px;
+            margin: auto;
         }
         #legend-summary-id{
             width: 90%;
@@ -63,7 +63,9 @@
 
         }
         .date-image {
-           margin: 5px;
+            margin-top: 15px;
+            margin-right: 80%;
+
         }
     </style>
 
@@ -317,7 +319,7 @@
                 <div class="col-md-6 mp">
                     <div class="chart-container">
                         {% if site_image %}
-                            <div id="siteImageCarousel" class="carousel slide" data-ride="carousel" style="height: 500px">
+                            <div id="siteImageCarousel" class="carousel slide" data-ride="carousel" style="height: 450px">
                                 <!-- Indicators -->
                                 <ol class="carousel-indicators">
                                     {% for image in site_image %}
@@ -328,8 +330,6 @@
                                         {% endif %}
                                     {% endfor %}
                                 </ol>
-
-                                <!-- Wrapper for slides -->
                                 <div class="carousel-inner">
                                     {% for image in site_image %}
                                         {% if forloop.counter0 == 0 %}
@@ -337,6 +337,7 @@
                                         {% else %}
                                             <div class="carousel-item">
                                         {% endif %}
+                                        <div class="carousel-item-content">
                                             {% if image.image|is_portrait %}
                                                 {% thumbnail image.image "x500" crop="center" as thumb %}
                                                     <a href="/uploaded/{{ image.image }}" target="_blank"><img src="{{ thumb.url }}"
@@ -352,7 +353,8 @@
                                                     </a>
                                                 {% endthumbnail %}
                                             {% endif %}
-                                            <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.date|date:'Y-m-d' }}</span>
+                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.date|date:'Y-m-d' }}</span>
+                                        </div>
                                         </div>
                                     {% endfor %}
                                 </div>

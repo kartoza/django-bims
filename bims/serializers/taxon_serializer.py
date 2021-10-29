@@ -146,3 +146,16 @@ class TaxonSimpleSerialializer(serializers.ModelSerializer):
     class Meta:
         model = Taxonomy
         fields = ['id', 'common_name', 'scientific_name']
+
+
+class TaxonGroupSerializer(serializers.ModelSerializer):
+    extra_attributes = serializers.SerializerMethodField()
+
+    def get_extra_attributes(self, obj):
+        return list(
+            obj.taxonextraattribute_set.all().values_list('name', flat=True)
+        )
+
+    class Meta:
+        model = TaxonGroup
+        fields = ['id', 'name', 'category', 'logo', 'extra_attributes']
