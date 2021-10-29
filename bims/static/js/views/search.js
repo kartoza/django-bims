@@ -453,7 +453,16 @@ define([
                 filterParameters['abioticData'] = '';
             }
 
-            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || abioticData);
+             // Thermal Module
+            let thermalModule = false;
+            if ($('#thermal-module-filter').is(':checked')) {
+                thermalModule = true;
+                filterParameters['thermalModule'] = 'True';
+            } else {
+                filterParameters['thermalModule'] = '';
+            }
+
+            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || abioticData || thermalModule);
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -499,7 +508,8 @@ define([
                 && !filterParameters['sourceCollection']
                 && !filterParameters['abioticData']
                 && !filterParameters['polygon']
-                && !filterParameters['boundary']) {
+                && !filterParameters['boundary']
+                && !filterParameters['thermalModule']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
                 return false
@@ -555,6 +565,7 @@ define([
                 filterParameters['modules'] = '';
             }
             $('#abiotic-data-filter').prop('checked', false);
+            $('#thermal-module-filter').prop('checked', false);
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
@@ -849,6 +860,14 @@ define([
                 filterParameters['abioticData'] = allFilters['abioticData'];
                 if (filterParameters['abioticData'] === 'True') {
                     $('#abiotic-data-filter').prop('checked', true);
+                }
+            }
+
+            // Thermal module
+            if (allFilters.hasOwnProperty('thermalModule')) {
+                filterParameters['thermalModule'] = allFilters['thermalModule'];
+                if (filterParameters['thermalModule'] === 'True') {
+                    $('#thermal-module-filter').prop('checked', true);
                 }
             }
 

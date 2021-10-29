@@ -2,7 +2,10 @@ import json
 import operator
 import hashlib
 import ast
+import logging
 from functools import reduce
+
+from bims.models.water_temperature import WaterTemperature
 from django.db.models import Q, Count, F, Value, Case, When
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
@@ -30,6 +33,7 @@ from sass.models import (
 from bims.utils.search_process import get_or_create_search_process
 from bims.utils.api_view import BimsApiView
 
+logger = logging.getLogger('bims')
 
 MAX_PAGINATED_SITES = 20
 MAX_PAGINATED_RECORDS = 50
@@ -331,6 +335,17 @@ class CollectionSearch(object):
                 spatial_filter_group_ids.append(spatial_filter)
         return spatial_filter_group_ids
 
+    @property
+    def thermal_module(self):
+        thermal_module = self.get_request_data('thermalModule')
+        if thermal_module:
+            try:
+                return ast.literal_eval(thermal_module)
+            except ValueError:
+                return False
+        else:
+            return False
+
     def filter_taxa_records(self, query_dict):
         """
         Filter taxa records
@@ -621,6 +636,20 @@ class CollectionSearch(object):
                 filtered_location_sites = filtered_location_sites.filter(
                     Q(survey__chemical_collection_record__isnull=False) |
                     Q(chemical_collection_record__isnull=False)
+                )
+
+        if self.thermal_module:
+            water_temperature = list(WaterTemperature.objects.all().order_by(
+                'location_site').distinct('location_site').values_list(
+                'location_site', flat=True))
+            if not filtered_location_sites:
+                filtered_location_sites = LocationSite.objects.filter(
+                    id__in=water_temperature
+                )
+
+            else:
+                filtered_location_sites = filtered_location_sites.filter(
+                    id__in=water_temperature
                 )
 
         if filtered_location_sites.exists():
