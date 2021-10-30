@@ -39,6 +39,7 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
+            'click .clear-filter-biodiversity-module': 'clearFilterBiodiversityModule',
             'click .clear-filter-module': 'clearFilterModule',
             'click .clear-filter': 'clearFilter',
             'click .search-reset': 'clearSearch',
@@ -461,8 +462,10 @@ define([
             } else {
                 filterParameters['thermalModule'] = '';
             }
+            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || false);
 
-            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || abioticData || thermalModule);
+            self.highlightPanel('.thermal-module-filters-wrapper', thermalModule !== false || abioticData);
+
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -559,11 +562,14 @@ define([
                 this.search(searchValue);
             }
         },
-        clearFilterModule: function () {
+        clearFilterBiodiversityModule: function () {
             this.clearClickedModuleSpecies();
             if (filterParameters.hasOwnProperty('modules')) {
                 filterParameters['modules'] = '';
             }
+        },
+        clearFilterModule: function () {
+            this.clearClickedModuleSpecies();
             $('#abiotic-data-filter').prop('checked', false);
             $('#thermal-module-filter').prop('checked', false);
         },
