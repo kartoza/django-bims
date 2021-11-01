@@ -15,7 +15,14 @@ class UploadSession(models.Model):
     CATEGORY_CHOICES = (
         ('taxa', 'Taxa'),
         ('collections', 'Collections'),
+        ('water_temperature', 'Water Temperature'),
+
     )
+
+    def file_storage(self, filename):
+        if self.category == 'water_temperature':
+            return 'water_temperature_file/'+filename
+        return 'taxa-file/'+filename
 
     uploader = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -69,27 +76,27 @@ class UploadSession(models.Model):
     )
 
     process_file = models.FileField(
-        upload_to='taxa-file/',
+        upload_to=file_storage,
         max_length=512,
         null=True
     )
 
     success_file = models.FileField(
-        upload_to='taxa-file/',
+        upload_to=file_storage,
         null=True,
         max_length=512,
         blank=True
     )
 
     error_file = models.FileField(
-        upload_to='taxa-file/',
+        upload_to=file_storage,
         null=True,
         max_length=512,
         blank=True
     )
 
     updated_file = models.FileField(
-        upload_to='taxa-file/',
+        upload_to=file_storage,
         null=True,
         max_length=512,
         blank=True
