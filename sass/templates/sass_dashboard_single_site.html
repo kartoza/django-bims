@@ -62,11 +62,7 @@
             display: inline-block;
 
         }
-        .date-image {
-            margin-top: 15px;
-            margin-right: 80%;
 
-        }
     </style>
 
 {% endblock %}
@@ -240,8 +236,8 @@
                         <div class="table-title">
                             SASS Taxa per biotope
                             <span class="pull-right">
-                            {{ sass_taxon_table_data.site_visit_date }}
-                            <i data-download-title="SASS Taxa per biotope - {{ sass_taxon_table_data.site_visit_date }}"
+                            {{ sass_taxon_table_data.site_visit_date|date:'Y-m-d' }}
+                            <i data-download-title="SASS Taxa per biotope - {{ sass_taxon_table_data.site_visit_date|date:'Y-m-d' }}"
                                data-toggle="tooltip" data-placement="left"
                                title="Download table as PNG"
                                class="fa fa-download pull-right download-icon download-table"></i>
@@ -353,7 +349,6 @@
                                                     </a>
                                                 {% endthumbnail %}
                                             {% endif %}
-                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.date|date:'Y-m-d' }}</span>
                                         </div>
                                         </div>
                                     {% endfor %}
@@ -369,6 +364,9 @@
                                     <span class="sr-only">Next</span>
                                 </a>
                               </div>
+                            <div class="site-image-date" style="text-align: center">
+                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ sass_score_chart_data.date_labels.0 }}</span>
+                            </div>
                         {% else %}
                             <img width="100%" src="{% static 'img/river.jpg' %}"/>
                         {% endif %}
