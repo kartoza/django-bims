@@ -366,7 +366,7 @@ except ValueError:
 # Bims site preferences
 BIMS_PREFERENCES = {
     'enable_module_filter': ast.literal_eval(
-        os.environ.get('ENABLE_MODULE_FILTER', 'False')
+        os.environ.get('ENABLE_MODULE_FILTER', 'True')
     ),
     'enable_catchment_filter': ast.literal_eval(
         os.environ.get('ENABLE_CATCHMENT_FILTER', 'False')
