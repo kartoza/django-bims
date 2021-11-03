@@ -40,7 +40,7 @@
         {% if bims_preferences.enable_module_filter %}
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    MODULE <i
+                    BIODIVERSITY MODULE <i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
@@ -48,7 +48,29 @@
             <div style="display: none;"
                  data-toggle="tooltip" data-placement="top" class="module-filters-wrapper">
                 <div class="module-filters row"></div>
-                <hr class="module-hr"/>
+                <div class="button-filter-wrapper button-filter-module">
+                    <button class="apply-filter"><i class="fa fa-check"
+                                                    aria-hidden="true"></i> Apply
+                    </button>
+                    <button class="clear-filter clear-filter-biodiversity-module"><i class="fa fa-times"
+                                                    aria-hidden="true"></i> Clear
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+        <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    MODULE <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div style="display: none;"
+                 data-toggle="tooltip" data-placement="top" class="thermal-module-filters-wrapper">
+                <div class="form-check module-checkbox-wrapper">
+                    <input type="checkbox" class="form-check-input" id="thermal-module-filter">
+                    <label class="form-check-label" for="thermal-module-filter">Temperature</label>
+                </div>
                 <div class="form-check module-checkbox-wrapper">
                     <input type="checkbox" class="form-check-input" id="abiotic-data-filter">
                     <label class="form-check-label" for="abiotic-data-filter">Abiotic Data</label>
@@ -62,7 +84,6 @@
                     </button>
                 </div>
             </div>
-        {% endif %}
 
         <div class="source-collection-wrapper">
         </div>
