@@ -164,7 +164,7 @@
                    class="col-sm-2 col-form-label col-form-label">Date</label>
             <div class="col-sm-10">
                 <input type="text" name="date"
-                       class="form-control form-control-sm" value="{{ object.date.day }}/{{ object.date.month }}/{{ object.date.year }}"
+                       class="form-control form-control-sm" value="{{ object.date|date:'Y-m-d'}}"
                        id="date" placeholder="" disabled>
             </div>
         </div>

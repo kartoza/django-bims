@@ -39,6 +39,7 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
+            'click .clear-filter-biodiversity-module': 'clearFilterBiodiversityModule',
             'click .clear-filter-module': 'clearFilterModule',
             'click .clear-filter': 'clearFilter',
             'click .search-reset': 'clearSearch',
@@ -453,7 +454,18 @@ define([
                 filterParameters['abioticData'] = '';
             }
 
-            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || abioticData);
+             // Thermal Module
+            let thermalModule = false;
+            if ($('#thermal-module-filter').is(':checked')) {
+                thermalModule = true;
+                filterParameters['thermalModule'] = 'True';
+            } else {
+                filterParameters['thermalModule'] = '';
+            }
+            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || false);
+
+            self.highlightPanel('.thermal-module-filters-wrapper', thermalModule !== false || abioticData);
+
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -499,7 +511,8 @@ define([
                 && !filterParameters['sourceCollection']
                 && !filterParameters['abioticData']
                 && !filterParameters['polygon']
-                && !filterParameters['boundary']) {
+                && !filterParameters['boundary']
+                && !filterParameters['thermalModule']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
                 return false
@@ -549,12 +562,16 @@ define([
                 this.search(searchValue);
             }
         },
-        clearFilterModule: function () {
+        clearFilterBiodiversityModule: function () {
             this.clearClickedModuleSpecies();
             if (filterParameters.hasOwnProperty('modules')) {
                 filterParameters['modules'] = '';
             }
+        },
+        clearFilterModule: function () {
+            this.clearClickedModuleSpecies();
             $('#abiotic-data-filter').prop('checked', false);
+            $('#thermal-module-filter').prop('checked', false);
         },
         clearSearch: function () {
             Shared.CurrentState.SEARCH = false;
@@ -849,6 +866,14 @@ define([
                 filterParameters['abioticData'] = allFilters['abioticData'];
                 if (filterParameters['abioticData'] === 'True') {
                     $('#abiotic-data-filter').prop('checked', true);
+                }
+            }
+
+            // Thermal module
+            if (allFilters.hasOwnProperty('thermalModule')) {
+                filterParameters['thermalModule'] = allFilters['thermalModule'];
+                if (filterParameters['thermalModule'] === 'True') {
+                    $('#thermal-module-filter').prop('checked', true);
                 }
             }
 

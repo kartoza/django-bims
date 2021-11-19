@@ -9,6 +9,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
 from bims.models.endemism import Endemism
 from bims.models.iucn_status import IUCNStatus
+from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
 class TaxaManagementView(
@@ -25,9 +26,10 @@ class TaxaManagementView(
         context = super(TaxaManagementView, self).get_context_data(
             **kwargs
         )
-        context['taxa_groups'] = TaxonGroup.objects.filter(
-            category='SPECIES_MODULE'
-        ).order_by('display_order')
+        context['taxa_groups'] = TaxonGroupSerializer(
+            TaxonGroup.objects.filter(
+                category='SPECIES_MODULE'
+            ).order_by('display_order'), many=True).data
         context['source_collections'] = list(
             BiologicalCollectionRecord.objects.all().values_list(
                 'source_collection', flat=True

@@ -51,3 +51,4 @@ from bims.models.basemap_layer import *  # noqa
 from bims.models.request_log import *  # noqa
 from bims.models.ingested_data import *  # noqa
 from bims.models.water_temperature import *  # noqa
+from bims.models.taxon_extra_attribute import *  # noqa
