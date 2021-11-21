@@ -136,7 +136,7 @@
                        class="col-sm-2 col-form-label col-form-label required-text">Date</label>
                 <div class="col-sm-10">
                     <input type="text" name="date"
-                           class="form-control form-control-sm" value="{{ object.date.month }}/{{ object.date.day }}/{{ object.date.year }}"
+                           class="form-control form-control-sm" value="{{ object.date|date:'Y-m-d'}}"
                            id="date" placeholder="" required>
                     <div class="invalid-feedback">
                         Please provide a valid date

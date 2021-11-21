@@ -13,6 +13,7 @@
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "lib/clockpicker/jquery-clockpicker.min.css" %}" rel="stylesheet"/>
 
     <script type="text/javascript">
         const location_site_lat = '{{ location_site_lat }}';
@@ -29,6 +30,12 @@
         .alert-danger {
             max-height: 300px;
             overflow-y: auto;
+        }
+        #map {
+            height: 500px !important;
+        }
+        body {
+            position: inherit !important;
         }
     </style>
 
@@ -100,6 +107,26 @@
                     </select>
                 </div>
             </div>
+            <div class="form-group row  clockpicker-container">
+                <label for="start-time"
+                       class="col-sm-2 col-form-label col-form-label">Start Time</label>
+                <div class="col-sm-10">
+                    <div class="input-group clockpicker" data-autoclose="true">
+                        <input type="text" class="form-control" value="00:00" id="start-time">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row clockpicker-container">
+                <label for="end-time"
+                       class="col-sm-2 col-form-label col-form-label">End Time</label>
+                <div class="col-sm-10">
+                    <div class="input-group clockpicker" data-autoclose="true">
+                        <input type="text" class="form-control" value="23:00" id="end-time">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+                    </div>
+                </div>
+            </div>
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Date Format</label>
@@ -127,7 +154,7 @@
                     <div class="form-group">
                         <div class="input-group input-file">
                             <input type="file" class="form-control"
-                                   accept=".xlsx, .xls, .csv" name="water_file" id="water_file"
+                                   accept=".csv" name="water_file" id="water_file"
                                    placeholder='Choose a file...'/>
 {#                            <div class="invalid-feedback">#}
 {#                            Please provide a xlsx file#}
@@ -179,10 +206,20 @@
 
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
-    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
-    <script src="{% static 'js/utils/effect.js' %}"></script>
     <script src="{% static 'js/non_requirejs/water_temperature_form.js' %}"></script>
+    <script src="{% static "lib/clockpicker/jquery-clockpicker.min.js" %}"></script>
+    <script>
+        $('.clockpicker').clockpicker();
+        $('#logging-interval').change((e) => {
+            let val = $(e.target).val();
+            if (val == 24) {
+                $('.clockpicker-container').hide();
+            } else {
+                $('.clockpicker-container').show();
+            }
+        })
+    </script>
 
 {% endblock %}
