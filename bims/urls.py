@@ -86,7 +86,7 @@ from bims.views.download_request import DownloadRequestListView
 from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
 from bims.views.water_temperature import WaterTemperatureView, \
-    WaterTemperatureUploadView, WaterTemperatureValidateView
+    WaterTemperatureUploadView, WaterTemperatureValidateView, WaterTemperatureSiteView
 from bims.views.download_taxa_template import download_taxa_template
 
 urlpatterns = [
@@ -233,6 +233,9 @@ urlpatterns = [
     url(r'^validate-water-temperature/$',
         WaterTemperatureValidateView.as_view(),
         name='validate-water-temperature'),
+    url(r'^water-temperature/(?P<site_id>\d+)/$',
+        WaterTemperatureSiteView.as_view(),
+        name='water-temperature-site'),
 ]
 
 # Api urls

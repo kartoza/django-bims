@@ -10,7 +10,7 @@ from bims.utils.get_key import get_key
 from django.http import HttpResponseForbidden
 from bims.models.location_site import LocationSite
 from django.http import JsonResponse
-from bims.models import WaterTemperature, UploadSession
+from bims.models import WaterTemperature, UploadSession, LocationContext
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -70,7 +70,6 @@ class WaterTemperatureView(TemplateView, SessionFormMixin):
 
 
 class WaterTemperatureValidateView(View, LoginRequiredMixin):
-
     is_valid = True
     error_messages = []
 
@@ -108,7 +107,7 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
 
         if is_daily:
             if not any(header in ['Mean', 'Minimum', 'Maximum'] for header in
-                   headers):
+                       headers):
                 self.add_error_messages(
                     row,
                     'Missing minimum and maximum data value'
@@ -133,19 +132,19 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                             )
                         if time_string == start_time and len(times) > 1:
                             if (
-                                times[len(times)-1].strftime(
-                                    '%H:%M'
-                                ) != end_time
+                                    times[len(times) - 1].strftime(
+                                        '%H:%M'
+                                    ) != end_time
                             ):
                                 self.add_error_messages(
-                                    row-1,
+                                    row - 1,
                                     'Non daily data should end at {}'.format(
                                         end_time
                                     )
                                 )
                             if len(times) < RECORDS_PER_INTERVAL[interval]:
                                 self.add_error_messages(
-                                    row-1,
+                                    row - 1,
                                     'Data for this day is not complete'
                                 )
                             times = []
@@ -283,3 +282,43 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                 'status': 'success',
                 'message': success_response
             })
+
+
+class WaterTemperatureSiteView(TemplateView):
+    template_name = 'water_temperature_single_site.html'
+    location_site = LocationSite.objects.none()
+    use_combined_geo = False
+    location_context = LocationContext.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super(WaterTemperatureSiteView, self).get_context_data(**kwargs)
+        context['coord'] = [
+            self.location_site.get_centroid().x,
+            self.location_site.get_centroid().y
+        ]
+        context['site_code'] = self.location_site.site_code
+        context['site_id'] = self.location_site.id
+        context['original_site_code'] = self.location_site.legacy_site_code
+        context['original_river_name'] = self.location_site.legacy_river_name
+        site_description = self.location_site.site_description
+        if not site_description:
+            site_description = self.location_site.name
+        context['site_description'] = site_description
+        try:
+            context['river'] = self.location_site.river.name
+        except AttributeError:
+            context['river'] = '-'
+
+    def get(self, request, *args, **kwargs):
+        site_id = kwargs.get('site_id', None)
+        if not site_id or not request.GET or not request.GET.get(
+                'siteId', None):
+            raise Http404()
+        self.location_site = get_object_or_404(
+            LocationSite,
+            pk=site_id
+        )
+        self.location_context = LocationContext.objects.filter(
+            site=self.location_site
+        )
+        return super(WaterTemperatureSiteView, self).get(request, *args, **kwargs)
