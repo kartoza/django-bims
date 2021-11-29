@@ -331,9 +331,10 @@
                                         {% if forloop.counter0 == 0 %}
                                             <div class="carousel-item active">
                                         {% else %}
-                                            <div class="carousel-item">
+                                    <div class="carousel-item" style="height: auto">
                                         {% endif %}
-                                        <div class="carousel-item-content">
+                                        <div class="carousel-item-content" style="align-items: center; display: table">
+                                        <div class="site-image" style="height: auto; display: table-row">
                                             {% if image.image|is_portrait %}
                                                 {% thumbnail image.image "x500" crop="center" as thumb %}
                                                     <a href="/uploaded/{{ image.image }}" target="_blank"><img src="{{ thumb.url }}"
@@ -349,9 +350,12 @@
                                                     </a>
                                                 {% endthumbnail %}
                                             {% endif %}
-
+                                        </div>
+                                        <div class="site-image-date" style="text-align: center; display: table-row">
+                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.site_visit.site_visit_date | date:'Y-m-d' }}</span>
                                         </div>
                                         </div>
+                                    </div>
                                     {% endfor %}
                                 </div>
 
@@ -365,9 +369,6 @@
                                     <span class="sr-only">Next</span>
                                 </a>
                               </div>
-                            <div class="site-image-date" style="text-align: center">
-                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ sass_score_chart_data.date_labels.0 }}</span>
-                            </div>
                         {% else %}
                             <img width="100%" src="{% static 'img/river.jpg' %}"/>
                         {% endif %}
