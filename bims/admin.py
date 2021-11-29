@@ -151,7 +151,8 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'site_code',
         'location_type',
         'get_centroid',
-        'geocontext_data_percentage')
+        'geocontext_data_percentage',
+        'indicator_thermal')
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
     raw_id_fields = ('river',)
@@ -166,6 +167,17 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         return ['original_geomorphological']
+
+    def indicator_thermal(self, obj):
+        if obj.watertemperature_set.all().exists():
+            return format_html(
+                '''
+                <a href="/thermal-dashboard/?site-id={0}">Open Thermal Indicator Dashboard</a>
+                ''',
+                obj.id
+            )
+        else:
+            return '-'
 
     def geocontext_data_percentage(self, obj):
         site_setting_group_keys = (

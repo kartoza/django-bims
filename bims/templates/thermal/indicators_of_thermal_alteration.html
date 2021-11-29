@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Indicators of Thermal Alteration</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <style>
+        .col-header {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            font-size: 13pt;
+            font-weight: bold;
+        }
+        .row-indicator {
+            padding-top: 1em;
+            padding-left: 1em;
+        }
+        .row-indicator .col-lg-3, .row-indicator .col-lg-4, .row-indicator .col-lg-2 {
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .row-indicator p {
+            border-bottom: 1px solid rgba(138, 138, 138, 0.31);
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>{{ location_site.site_code }}</h1>
+<h2>Year : <select id="years" onchange="changeYear(this)">
+    {% for year_opt in years %}
+        <option value="{{ year_opt }}" {% if year_opt == indicators.year %}selected{% endif %}>{{ year_opt }}</option>
+    {% endfor %}
+</select></h2>
+<p>Execution time : {{ execution_time }}</p>
+
+<div class="row row-indicator">
+    <div class="col-lg-4">
+        <div class="col-header">
+            Annual descriptive statistics
+        </div>
+        <p>Mean Annual temperature (MAT)</p>
+        <p>Standard deviation of MAT</p>
+        <p>Annual coefficient of variability</p>
+        <p>Mean of annual range</p>
+        <p>Standard deviation of annual range</p>
+        <p>Mean of annual minima</p>
+        <p>Mean of annual maxima</p>
+    </div>
+    <div class="col-lg-3">
+        <div class="col-header">
+            &nbsp;
+        </div>
+        <p>{{ indicators.annual.annual_mean|floatformat:2 }}</p>
+        <p>{{ indicators.annual.annual_sd|floatformat:2 }}</p>
+        <p>{{ indicators.annual.annual_cv|floatformat:2 }}</p>
+        <p>{{ indicators.annual.annual_range|floatformat:2 }}</p>
+        <p>{{ indicators.annual.annual_range_sd|floatformat:2 }}</p>
+        <p>{{ indicators.annual.annual_min|floatformat:2 }}</p>
+        <p>{{ indicators.annual.annual_max|floatformat:2 }}</p>
+    </div>
+</div>
+
+<div class="row row-indicator">
+    <div class="col-lg-2">
+        <div class="col-header">
+            Monthly magnitudes
+        </div>
+        {% for key, value in indicators.monthly.items %}
+            <p> {{ key }} </p>
+        {% endfor %}
+    </div>
+    <div class="col-lg-2">
+        <div class="col-header">
+            Mean
+        </div>
+        {% for key, value in indicators.monthly.items %}
+            <p> {{ value.monthly_mean|floatformat:2 }} </p>
+        {% endfor %}
+    </div>
+    <div class="col-lg-2">
+        <div class="col-header">
+            Min
+        </div>
+        {% for key, value in indicators.monthly.items %}
+            <p> {{ value.monthly_min|floatformat:2 }} </p>
+        {% endfor %}
+    </div>
+    <div class="col-lg-2">
+        <div class="col-header">
+            Max
+        </div>
+        {% for key, value in indicators.monthly.items %}
+            <p> {{ value.monthly_max|floatformat:2 }} </p>
+        {% endfor %}
+    </div>
+    <div class="col-lg-2">
+        <div class="col-header">
+            Range
+        </div>
+        {% for key, value in indicators.monthly.items %}
+            <p> {{ value.monthly_range|floatformat:2 }} </p>
+        {% endfor %}
+    </div>
+</div>
+
+
+<div class="row row-indicator">
+    <div class="col-lg-3">
+        <div class="col-header">
+            Magnitudes of extreme water temperature conditions
+        </div>
+        <p>Mean7</p>
+        <p>Min7</p>
+        <p>Min_30</p>
+        <p>Min_90</p>
+        <p>Max7</p>
+        <p>Max_30</p>
+        <p>Max_90</p>
+    </div>
+    <div class="col-lg-3">
+        <div class="col-header">
+            &nbsp;<div>&nbsp;</div>
+        </div>
+        <p>{{ indicators.weekly.weekly_mean_avg|floatformat:2 }}</p>
+        <p>{{ indicators.weekly.weekly_min_avg|floatformat:2 }}</p>
+        <p>{{ indicators.thirty_days.thirty_min_avg|floatformat:2 }}</p>
+        <p>{{ indicators.ninety_days.ninety_min_avg|floatformat:2 }}</p>
+        <p>{{ indicators.weekly.weekly_max_avg|floatformat:2 }}</p>
+        <p>{{ indicators.thirty_days.thirty_max_avg|floatformat:2 }}</p>
+        <p>{{ indicators.ninety_days.ninety_max_avg|floatformat:2 }}</p>
+    </div>
+</div>
+
+</div>
+
+<script>
+    function changeYear(selectObject) {
+      let value = selectObject.value;
+      let url = new URL(window.location);
+      let siteId = url.searchParams.get("site-id");
+      window.location.href = `/thermal-dashboard/?site-id=${siteId}&year=${value}`;
+    }
+</script>
+
+</body>
+</html>
