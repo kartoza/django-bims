@@ -11,6 +11,7 @@ from bims.api_views.unpublished_data import UnpublishedData
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
+from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
 
@@ -240,4 +241,12 @@ urlpatterns += [  # '',
     url(r'^api/',
         include('bims.api_urls')),
     url(r'^wagtail-api/v2/', api_router.urls),
+]
+
+
+# Thermals
+urlpatterns += [
+    url(r'^thermal-dashboard/$',
+        ThermalDashboardView.as_view(),
+        name='thermal-dashboard'),
 ]

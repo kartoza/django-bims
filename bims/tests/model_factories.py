@@ -35,7 +35,8 @@ from bims.models import (
     TaxonImage,
     VernacularName,
     ChemicalRecord,
-    SiteImage
+    SiteImage,
+    WaterTemperature
 )
 
 
@@ -383,3 +384,8 @@ class TaxonImageF(factory.django.DjangoModelFactory):
 class SiteImageF(factory.django.DjangoModelFactory):
     class Meta:
         model = SiteImage
+
+
+class WaterTemperatureF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = WaterTemperature
