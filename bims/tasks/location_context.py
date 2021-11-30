@@ -3,6 +3,8 @@ import os
 import json
 from celery import shared_task
 from collections import OrderedDict
+
+from django.core.cache import cache
 from django.db.models import F
 from django.utils.text import slugify
 from django.conf import settings
@@ -115,7 +117,7 @@ LAYER_NAMES = {
 @shared_task(
     name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
 @single_instance_task(60 * 10)
-def generate_spatial_scale_filter(file_path=None):
+def generate_spatial_scale_filter():
     spatial_tree = []
     location_context_filters = LocationContextFilter.objects.all(
     ).order_by(
@@ -170,12 +172,4 @@ def generate_spatial_scale_filter(file_path=None):
         )
 
     if spatial_tree:
-        if not file_path:
-            file_name = 'spatial_scale_filter_list.txt'
-            file_path = os.path.join(
-                settings.MEDIA_ROOT,
-                file_name
-            )
-        log(file_path)
-        with open(file_path, 'w') as file_handle:
-            json.dump(spatial_tree, file_handle)
+        cache.set('spatial_scale_filter_list', spatial_tree)

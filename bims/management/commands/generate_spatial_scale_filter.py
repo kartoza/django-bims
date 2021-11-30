@@ -9,9 +9,4 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        file_name = 'spatial_scale_filter_list.txt'
-        file_path = os.path.join(
-            settings.MEDIA_ROOT,
-            file_name
-        )
-        generate_spatial_scale_filter(file_path)
+        generate_spatial_scale_filter()
