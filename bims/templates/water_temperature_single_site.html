@@ -20,8 +20,7 @@
         const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
         const siteCode = "{{ site_code }}";
         const siteId = "{{ site_id }}";
-        const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
-        const sassExists = {% if sass_exists %}true{% else %}false{% endif %};
+        const data = '{{ water_temperature_data}}'.replace(/&quot;/g,'"');
     </script>
     <style>
           .carousel-inner, .carousel-item {
@@ -69,18 +68,6 @@
 
 {% block body_content %}
         <script type="text/javascript">
-            const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
-            const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
-            const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
-            const geomorphologicalGroup = {% if geomorphological_group %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
-            const freshwaterEcoregion = {% if freshwater_ecoregion_of_the_world %}{{ freshwater_ecoregion_of_the_world | safe }}{% else %}[]{% endif %};
-            const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
-            const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
-            const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
-            const originalGeomorphologicalZone = '{{ original_geomorphological }}';
-            const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
-            const sourceReferences = {{ source_references | safe }};
-            const chemicalRecords = {{ chemical_records | safe }};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -104,7 +91,7 @@
             </div>
 
             <div class="dashboard-title">
-                <h2>Single Site Water Temperature</h2>
+                <h2>Water Temperature for {{ site_code }}</h2>
                 <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
             </div>
             <div class="row">
@@ -184,10 +171,14 @@
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/libs/canvas2svg.js" %}"></script>
-    <script src="{% static "js/libs/highcharts.src.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/highcharts.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/data.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/exporting.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/export-data.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/accessibility.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/utils/svg_download.js" %}"></script>
     <script src="{% static "js/sass_dashboard_close.js" %}"></script>
-    <script src="{% static "js/non_requirejs/water_temperature_time_series.js" %}"></script>
+    <script src="{% static "js/non_requirejs/water_temperature.js" %}"></script>
 
 {% endblock %}

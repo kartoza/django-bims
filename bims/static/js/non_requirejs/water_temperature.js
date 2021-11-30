@@ -60,64 +60,65 @@ function drawMap() {
 }
 
 function renderWaterTemperatureChart(){
-    return Highcharts.getJSON(
-    'https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/usdeur.json',
-    function (data) {
-
-        Highcharts.chart('water-temperature', {
-            chart: {
-                zoomType: 'x'
-            },
+    let temperature_data = JSON.parse(data)
+    let data_chart = []
+    for(let i in temperature_data){
+        let item = []
+        item[0] = temperature_data[i]['date'].split(' ')[0];
+        item[1] = temperature_data[i]['mean'];
+        data_chart.push(item)
+    }
+    console.log(temperature_data)
+    const chart = new Highcharts.Chart({
+        chart: {
+            renderTo: 'water-temperature'
+        },
+        title: {
+            text: 'Water Temperature'
+        },
+        xAxis: {
+            type: 'datetime',
+        },
+        yAxis: {
             title: {
-                text: 'Water Temperature'
-            },
-
-            xAxis: {
-                type: 'datetime'
-            },
-            yAxis: {
-                title: {
-                    text: 'Temperature'
-                }
-            },
-            legend: {
-                enabled: false
-            },
-            plotOptions: {
-                area: {
-                    fillColor: {
-                        linearGradient: {
-                            x1: 0,
-                            y1: 0,
-                            x2: 0,
-                            y2: 1
-                        },
-                        stops: [
-                            [0, Highcharts.getOptions().colors[0]],
-                            [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                text: 'Temperature'
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            area: {
+                fillColor: {
+                    linearGradient: {
+                        x1: 0,
+                        y1: 0,
+                        x2: 0,
+                        y2: 1
+                    },
+                    stops: [
+                        [0, Highcharts.getOptions().colors[0]],
+                        [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
                         ]
                     },
-                    marker: {
-                        radius: 2
-                    },
-                    lineWidth: 1,
-                    states: {
-                        hover: {
-                            lineWidth: 1
-                        }
-                    },
-                    threshold: null
+                marker: {
+                    radius: 2
+                },
+                lineWidth: 1,
+                states: {
+                    hover: {
+                        lineWidth: 1
+                    }
+                },
+                threshold: null
                 }
             },
-
-            series: [{
-                type: 'area',
-                name: 'Water Temperature',
-                data: data
-            }]
-        });
-    }
-);
+        series: [{
+            type: 'area',
+            data: data_chart.reverse(),
+        }]
+    });
+    return chart
 }
 
 

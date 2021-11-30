@@ -1,7 +1,10 @@
 import codecs
 import csv
+import json
 from datetime import datetime
 from braces.views import LoginRequiredMixin
+from django.db.models import Window, Avg, F, RowRange, CharField
+from django.db.models.functions import Cast
 from django.utils.timezone import make_aware
 from django.views import View
 from bims.models.basemap_layer import BaseMapLayer
@@ -287,8 +290,21 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 class WaterTemperatureSiteView(TemplateView):
     template_name = 'water_temperature_single_site.html'
     location_site = LocationSite.objects.none()
-    use_combined_geo = False
-    location_context = LocationContext.objects.none()
+
+    def water_temperature_data(self):
+
+        water_temperature = WaterTemperature.objects.filter(
+            location_site=self.location_site
+        )
+        data = water_temperature.annotate(
+            mean=Window(
+                expression=Avg('value'),
+                order_by=F('date_time').asc(),
+                frame=RowRange(start=-1, end=0)
+            ),
+            date=Cast('date_time', CharField())
+        ).values('date', 'mean')
+        return json.dumps(list(data))
 
     def get_context_data(self, **kwargs):
         context = super(WaterTemperatureSiteView, self).get_context_data(**kwargs)
@@ -300,6 +316,7 @@ class WaterTemperatureSiteView(TemplateView):
         context['site_id'] = self.location_site.id
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
+        context['water_temperature_data'] = self.water_temperature_data()
         site_description = self.location_site.site_description
         if not site_description:
             site_description = self.location_site.name
@@ -309,6 +326,8 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
+        return context
+
     def get(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
         if not site_id or not request.GET or not request.GET.get(
@@ -317,8 +336,5 @@ class WaterTemperatureSiteView(TemplateView):
         self.location_site = get_object_or_404(
             LocationSite,
             pk=site_id
-        )
-        self.location_context = LocationContext.objects.filter(
-            site=self.location_site
         )
         return super(WaterTemperatureSiteView, self).get(request, *args, **kwargs)
