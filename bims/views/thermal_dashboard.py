@@ -143,7 +143,7 @@ def calculate_indicators(location_site: LocationSite, year: int):
     weekly_max_threshold_dur = 0
     weekly_max_threshold_dur_max = 0
 
-    for day in range(6, len(temperature_data_annual)):
+    for day in range(len(temperature_data_annual)):
         mean_data = []
         min_data = []
         max_data = []
@@ -154,13 +154,13 @@ def calculate_indicators(location_site: LocationSite, year: int):
         min_data_90 = []
         max_data_90 = []
 
-        for temp_data in temperature_data_annual[day - 6:day+1]:
+        for temp_data in temperature_data_annual[day:day + 7]:
             mean_data.append(temp_data[mean_key])
             min_data.append(temp_data[min_key])
             max_data.append(temp_data[max_key])
 
-        if day >= 29:
-            for temp_data in temperature_data_annual[day - 29:day+1]:
+        if day >= 30:
+            for temp_data in temperature_data_annual[day:day + 30]:
                 min_data_30.append(temp_data[min_key])
                 max_data_30.append(temp_data[max_key])
 
@@ -169,8 +169,8 @@ def calculate_indicators(location_site: LocationSite, year: int):
             thirty_data['thirty_max_data'].append(
                 sum(max_data_30) / len(max_data_30))
 
-        if day >= 89:
-            for temp_data in temperature_data_annual[day - 89:day+1]:
+        if day >= 90:
+            for temp_data in temperature_data_annual[day:day + 90]:
                 min_data_90.append(temp_data[min_key])
                 max_data_90.append(temp_data[max_key])
 
@@ -182,70 +182,77 @@ def calculate_indicators(location_site: LocationSite, year: int):
         weekly_mean_data = sum(mean_data) / len(mean_data)
         weekly_data['weekly_mean_data'].append(weekly_mean_data)
         # Check if weekly mean is exceeding the threshold
-        if weekly_mean_data > THRESHOLD_VALUE[site_zone]['mean_threshold']:
-            weekly_mean_threshold += 1
-            weekly_mean_threshold_dur += 1
-        else:
-            if weekly_mean_threshold_dur > weekly_mean_threshold_dur_max:
-                weekly_mean_threshold_dur_max = weekly_mean_threshold_dur
-            weekly_mean_threshold_dur = 0
+        if day <= len(temperature_data_annual) - 7:
+            if (
+                weekly_mean_data >=
+                THRESHOLD_VALUE[site_zone]['mean_threshold']
+            ):
+                weekly_mean_threshold += 1
+                weekly_mean_threshold_dur += 1
+            else:
+                if weekly_mean_threshold_dur > weekly_mean_threshold_dur_max:
+                    weekly_mean_threshold_dur_max = weekly_mean_threshold_dur
+                weekly_mean_threshold_dur = 0
 
         weekly_min_data = sum(min_data) / len(min_data)
         weekly_data['weekly_min_data'].append(weekly_min_data)
         # Check if weekly min is exceeding the threshold
-        if weekly_min_data > THRESHOLD_VALUE[site_zone]['minimum_threshold']:
-            weekly_min_threshold += 1
-            weekly_min_threshold_dur += 1
-        else:
-            if weekly_min_threshold_dur > weekly_min_threshold_dur_max:
-                weekly_min_threshold_dur_max = weekly_min_threshold_dur
-            weekly_min_threshold_dur = 0
+        if day <= len(temperature_data_annual) - 7:
+            if (
+                weekly_min_data <=
+                THRESHOLD_VALUE[site_zone]['minimum_threshold']
+            ):
+                if weekly_min_threshold == 0:
+                    weekly_min_threshold = 6
+                weekly_min_threshold += 1
+                weekly_min_threshold_dur += 1
+            else:
+                if weekly_min_threshold_dur > weekly_min_threshold_dur_max:
+                    weekly_min_threshold_dur_max = weekly_min_threshold_dur
+                weekly_min_threshold_dur = 0
 
         weekly_max_data = sum(max_data) / len(max_data)
         weekly_data['weekly_max_data'].append(weekly_max_data)
         # Check if weekly max is exceeding the threshold
-        if weekly_max_data > THRESHOLD_VALUE[site_zone]['maximum_threshold']:
-            weekly_max_threshold += 1
-            weekly_max_threshold_dur += 1
-        else:
-            if weekly_max_threshold_dur > weekly_max_threshold_dur_max:
-                weekly_max_threshold_dur_max = weekly_max_threshold_dur
-            weekly_max_threshold_dur = 0
+        if day <= len(temperature_data_annual) - 7:
+            if (
+                weekly_max_data >=
+                    THRESHOLD_VALUE[site_zone]['maximum_threshold']
+            ):
+                weekly_max_threshold += 1
+                weekly_max_threshold_dur += 1
+            else:
+                if weekly_max_threshold_dur > weekly_max_threshold_dur_max:
+                    weekly_max_threshold_dur_max = weekly_max_threshold_dur
+                weekly_max_threshold_dur = 0
 
     indicators['weekly'] = {
         'weekly_mean_avg': (
-            sum(weekly_data['weekly_mean_data']) /
-            len(weekly_data['weekly_mean_data'])
+            max(weekly_data['weekly_mean_data'])
         ),
         'weekly_min_avg': (
-            sum(weekly_data['weekly_min_data']) /
-            len(weekly_data['weekly_min_data'])
+            min(weekly_data['weekly_min_data'])
         ),
         'weekly_max_avg': (
-            sum(weekly_data['weekly_max_data']) /
-            len(weekly_data['weekly_max_data'])
+            max(weekly_data['weekly_max_data'])
         ),
     }
 
     indicators['thirty_days'] = {
         'thirty_max_avg': (
-            sum(thirty_data['thirty_max_data']) /
-            len(thirty_data['thirty_max_data'])
+            max(thirty_data['thirty_max_data'])
         ),
         'thirty_min_avg': (
-            sum(thirty_data['thirty_min_data']) /
-            len(thirty_data['thirty_min_data'])
+            min(thirty_data['thirty_min_data'])
         ),
     }
 
     indicators['ninety_days'] = {
         'ninety_max_avg': (
-            sum(ninety_data['ninety_max_data']) /
-            len(ninety_data['ninety_max_data'])
+            max(ninety_data['ninety_max_data'])
         ),
         'ninety_min_avg': (
-            sum(ninety_data['ninety_min_data']) /
-            len(ninety_data['ninety_min_data'])
+            min(ninety_data['ninety_min_data'])
         ),
     }
 
