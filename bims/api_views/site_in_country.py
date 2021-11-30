@@ -1,10 +1,12 @@
 # coding=utf-8
+import requests
+import json
+
+from bims.utils.get_key import get_key
 from django.http import Http404
-from geopy.geocoders import Nominatim
 from braces.views import LoginRequiredMixin
 from rest_framework.views import APIView, Response
 from rest_framework import status
-from preferences import preferences
 
 
 class SiteInCountry(LoginRequiredMixin, APIView):
@@ -14,27 +16,26 @@ class SiteInCountry(LoginRequiredMixin, APIView):
     def get(self, request):
         lat = request.GET.get('lat', None)
         lon = request.GET.get('lon', None)
+
         if not lat or not lon:
             raise Http404('Missing coordinates')
-        base_country_code = preferences.SiteSetting.base_country_code
-        if not base_country_code:
-            return Response(True)
+        url = (
+            '{base_url}/api/v2/query?registry=service&key=combination_saprovince_sadc_boundary&'
+            'x={lon}&y={lat}&outformat=json'
+        ).format(
+            base_url=get_key('GEOCONTEXT_URL'),
+            lon=lon,
+            lat=lat
+        )
 
-        geo_locator = Nominatim(user_agent='bims')
         try:
-            location = geo_locator.reverse('{lat}, {lon}'.format(
-                lat=lat,
-                lon=lon
-            ))
-            base_country_codes = [
-                country_code.lower() for country_code in
-                preferences.SiteSetting.base_country_code.split(',')
-            ]
-            if (
-                location.raw['address']['country_code'] in
-                base_country_codes
-            ):
-                return Response(True)
+            response = requests.get(url)
+            if response.status_code == 200:
+                province = json.loads(response.content)
+                if province['value'] is not None:
+                    return Response(True)
+                return Response(False)
+
         except Exception as e:  # noqa
             pass
 
