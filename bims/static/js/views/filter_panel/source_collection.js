@@ -58,7 +58,6 @@ define([
                 // If source_collection named fbis is first => set the checkbox disabled
                 if (data[i].get('source_collection') === 'fbis' && i === 0) {
                     isFBIS = true;
-                    checked += ' disabled';
                 }
 
                 let dataSourceCaption = '';
