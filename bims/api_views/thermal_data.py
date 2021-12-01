@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from bims.models import LocationSite
 from bims.models.water_temperature import calculate_indicators, \
-    WaterTemperature
+    WaterTemperature, thermograph_data
 
 logger = logging.getLogger('bims')
 
@@ -32,6 +32,9 @@ class ThermalDataApiView(APIView):
         else:
             year = int(year.strip())
 
-        indicator = calculate_indicators(location_site, year)
+        indicator = calculate_indicators(location_site, year, True)
+        thermograph = {}
+        if 'weekly' in indicator:
+            thermograph = thermograph_data(indicator['weekly'])
 
-        return JsonResponse(indicator)
+        return JsonResponse(thermograph)

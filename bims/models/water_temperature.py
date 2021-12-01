@@ -8,6 +8,8 @@ from django.db.models.aggregates import StdDev
 from django.db.models.functions import TruncDay
 from django.conf import settings
 
+import numpy as np
+
 from bims.models.location_site import LocationSite
 
 
@@ -113,7 +115,10 @@ def get_thermal_zone(location_site: LocationSite):
     return zone
 
 
-def calculate_indicators(location_site: LocationSite, year: int):
+def calculate_indicators(
+        location_site: LocationSite,
+        year: int,
+        return_weekly: bool = False):
 
     month_name = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
@@ -307,6 +312,17 @@ def calculate_indicators(location_site: LocationSite, year: int):
         ),
     }
 
+    if return_weekly:
+        indicators['weekly']['weekly_mean_data'] = (
+            weekly_data['weekly_mean_data']
+        )
+        indicators['weekly']['weekly_min_data'] = (
+            weekly_data['weekly_min_data']
+        )
+        indicators['weekly']['weekly_max_data'] = (
+            weekly_data['weekly_max_data']
+        )
+
     indicators['thirty_days'] = {
         'thirty_max_avg': (
             max(thirty_data['thirty_max_data'])
@@ -342,3 +358,101 @@ def calculate_indicators(location_site: LocationSite, year: int):
     }
 
     return indicators
+
+
+def thermograph_data(weekly_temperature_data):
+    range_min = []
+    range_max = []
+    range_min_percentage = []
+    range_max_percentage = []
+    critical_value = 1.96
+
+    for data_index in range(len(weekly_temperature_data['weekly_mean_data'])):
+        mean_data = weekly_temperature_data['weekly_mean_data'][data_index]
+        min_data = weekly_temperature_data['weekly_min_data'][data_index]
+        max_data = weekly_temperature_data['weekly_max_data'][data_index]
+
+        range_min_data = mean_data - min_data
+        range_max_data = max_data - mean_data
+
+        range_min.append(range_min_data)
+        range_max.append(range_max_data)
+
+        range_min_percentage.append(
+            range_min_data / mean_data * 100
+        )
+        range_max_percentage.append(
+            range_max_data / mean_data * 100
+        )
+
+    mean_departure = {
+        'daily_min': np.average(range_min_percentage),
+        'daily_max': np.average(range_max_percentage),
+    }
+
+    standard_deviation = {
+        'daily_min': np.std(range_min_percentage),
+        'daily_max': np.std(range_max_percentage)
+    }
+
+    upper_ci_95 = {
+        'daily_min': mean_departure['daily_min'] + (
+            standard_deviation['daily_min'] * critical_value
+        ),
+        'daily_max': mean_departure['daily_max'] + (
+            standard_deviation['daily_max'] * critical_value
+        )
+    }
+
+    one_sd_range = (
+        standard_deviation['daily_max'] - standard_deviation['daily_min']
+    )
+
+    two_sd_range = 2 * one_sd_range
+
+    # Calculate 95% up and 95% low data
+    low_95_percentage = []
+    up_95_percentage = []
+    l_95_1_sd = []
+    u_95_1_sd = []
+    l_95_2_sd = []
+    u_95_2_sd = []
+
+    for data_index in range(len(range_min_percentage)):
+        mean_data = weekly_temperature_data['weekly_mean_data'][data_index]
+        low_95_percentage_data = (
+            mean_data * (1 - (upper_ci_95['daily_min'] / 100))
+        )
+        up_95_percentage_data = (
+            mean_data * (1 + (upper_ci_95['daily_max'] / 100))
+        )
+        low_95_percentage.append(
+            low_95_percentage_data
+        )
+        up_95_percentage.append(
+            up_95_percentage_data
+        )
+        l_95_1_sd.append(
+            low_95_percentage_data - one_sd_range
+        )
+        u_95_1_sd.append(
+            up_95_percentage_data + one_sd_range
+        )
+        l_95_2_sd.append(
+            low_95_percentage_data - two_sd_range
+        )
+        u_95_2_sd.append(
+            up_95_percentage_data + two_sd_range
+        )
+
+    return {
+        'mean_7': weekly_temperature_data['weekly_mean_data'],
+        'min_7': weekly_temperature_data['weekly_min_data'],
+        'max_7': weekly_temperature_data['weekly_max_data'],
+        '95%_low': low_95_percentage,
+        '95%_up': up_95_percentage,
+        'L95%_1SD': l_95_1_sd,
+        'U95%_1SD': u_95_1_sd,
+        'L95%_2SD': l_95_2_sd,
+        'U95%_2SD': u_95_2_sd,
+    }

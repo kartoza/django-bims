@@ -9,7 +9,8 @@ from bims.tests.model_factories import (
 )
 from bims.models.water_temperature import (
     get_thermal_zone,
-    calculate_indicators
+    calculate_indicators,
+    thermograph_data
 )
 
 logger = logging.getLogger('bims')
@@ -29,12 +30,6 @@ class TestThermalData(TestCase):
             group=lcg,
             value='upper'
         )
-
-    def test_get_thermal_zone(self):
-        zone = get_thermal_zone(self.location_site)
-        self.assertEqual(zone, 'upper')
-
-    def test_thermal_calculation(self):
         thermal_data_file = os.path.join(
             test_data_directory, 'thermal_data_sample.csv')
         with open(thermal_data_file) as csv_file:
@@ -50,6 +45,11 @@ class TestThermalData(TestCase):
                         location_site=self.location_site
                     )
 
+    def test_get_thermal_zone(self):
+        zone = get_thermal_zone(self.location_site)
+        self.assertEqual(zone, 'upper')
+
+    def test_thermal_calculation(self):
         result = calculate_indicators(self.location_site, 2009)
 
         # Check with the result from xls
@@ -93,4 +93,37 @@ class TestThermalData(TestCase):
         self.assertEqual(
             result['threshold']['weekly_max_dur'],
             0
+        )
+
+    def test_thermograph_calculation(self):
+        annual_data = calculate_indicators(self.location_site, 2009, True)
+        thermograph = thermograph_data(annual_data['weekly'])
+
+        self.assertEqual(
+            len(thermograph['95%_up']),
+            len(annual_data['weekly']['weekly_mean_data']))
+
+        self.assertEqual(
+            round(thermograph['95%_low'][50], 2),
+            16.0
+        )
+        self.assertEqual(
+            round(thermograph['95%_up'][40], 2),
+            22.80
+        )
+        self.assertEqual(
+            round(thermograph['L95%_1SD'][290], 2),
+            12.09
+        )
+        self.assertEqual(
+            round(thermograph['U95%_1SD'][330], 2),
+            20.72
+        )
+        self.assertEqual(
+            round(thermograph['L95%_2SD'][60], 2),
+            14.28
+        )
+        self.assertEqual(
+            round(thermograph['U95%_2SD'][10], 2),
+            24.48
         )
