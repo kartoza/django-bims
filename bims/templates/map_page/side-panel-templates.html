@@ -77,6 +77,14 @@
                     <button class="fbis-button-small fbis-red sp-add-sass" style="width: 100%; height: 30px">Add SASS</button>
                 </div>
             </div>
+            <div class="row" style="padding: 10px;">
+                <div class="col-sm-<% if (!add_data) { %>12<%  } else { %>6<% } %>" style="padding-right: 0">
+                    <button class="fbis-button-small <% if (water_temperature_exist) { %> sp-water-temperature <% } else { %> disabled <% } %>" style="width: 100%; height: 30px">Water Temperature</button>
+                </div>
+                <div class="col-sm-6" style="padding-left: 0;<% if (!add_data) { %> display:none <% } %>">
+                    <button class="fbis-button-small fbis-red sp-add-water-temperature" style="width: 100%; height: 30px">Add water temperature data</button>
+                </div>
+            </div>
         <% } %>
     </div>
 </script>
