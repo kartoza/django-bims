@@ -7,7 +7,7 @@ from django.test import TestCase
 from bims.tests.model_factories import (
     LocationSiteF, LocationContextF, LocationContextGroupF, WaterTemperatureF
 )
-from bims.views.thermal_dashboard import (
+from bims.models.water_temperature import (
     get_thermal_zone,
     calculate_indicators
 )

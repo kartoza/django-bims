@@ -32,6 +32,7 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
+from bims.api_views.thermal_data import ThermalDataApiView
 from bims.api_views.validate_object import ValidateObject, ValidateSite
 from bims.api_views.reject_object import RejectCollectionData, RejectSite
 from bims.api_views.taxon_images import TaxonImageList
@@ -256,5 +257,8 @@ urlpatterns = [
         name='merge-sites'),
     url(r'^duplicate-records/download/$',
         DuplicateRecordsApiView.as_view(),
+        ),
+    url(r'^thermal-data/$',
+        ThermalDataApiView.as_view(),
         )
 ]
