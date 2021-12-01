@@ -79,6 +79,14 @@ def process_source_reference(
             doc_split = document_link.split('/')
             document_id = int(doc_split[len(doc_split) - 1])
             document = Document.objects.get(id=document_id)
+
+            # Check existing source reference from the document id
+            source_reference = SourceReference.objects.filter(
+                sourcereferencedocument__source_id=document.id
+            ).first()
+            if source_reference:
+                return 'Reference found', source_reference
+
         except (ValueError, Document.DoesNotExist):
             return 'Document {} does not exist'.format(document_id), None
 
