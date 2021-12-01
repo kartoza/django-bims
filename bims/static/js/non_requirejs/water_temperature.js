@@ -60,14 +60,7 @@ function drawMap() {
 }
 
 function renderWaterTemperatureChart(){
-    // let temperature_data = JSON.parse(data)
-    // let data_chart = []
-    // for(let i in temperature_data){
-    //     let item = []
-    //     item[0] = temperature_data[i]['date'].split(' ')[0];
-    //     item[1] = temperature_data[i]['mean'];
-    //     data_chart.push(item)
-    // }
+
     let url = '/api/thermal-data/?site-id='+ siteId
     fetch(url).then((response => {
         return response.json()
