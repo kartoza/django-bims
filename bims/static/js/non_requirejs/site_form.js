@@ -433,9 +433,7 @@ let checkSiteInCountry = (latitude, longitude, callback) => {
         url: url,
         success: function (data) {
             try {
-                if (data) {
-                    callback(true);
-                }
+                callback(data);
             } catch (e) {
                 callback(false);
             }
