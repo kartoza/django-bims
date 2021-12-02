@@ -61,7 +61,7 @@ function drawMap() {
 
 function renderWaterTemperatureChart(){
 
-    let url = '/api/thermal-data/?site-id='+ siteId
+    let url = '/api/thermal-data/?site-id='+ siteId  + '&year=' + year
     fetch(url).then(
       response => response.json()
     ).then((data =>{
@@ -178,8 +178,15 @@ function renderWaterTemperatureChart(){
     }))
 }
 
+function changeYear(selectObject) {
+  let value = selectObject.value;
+  let url = new URL(window.location);
+  console.log(url);
+  window.location.href = `/water-temperature/${siteId}/${value}/${url.search}`;
+}
 
 $(function () {
     drawMap();
     renderWaterTemperatureChart()
+
 });

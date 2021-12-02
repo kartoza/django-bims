@@ -20,6 +20,7 @@
         const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
         const siteCode = "{{ site_code }}";
         const siteId = "{{ site_id }}";
+        const year = "{{ year }}";
     </script>
     <style>
           .carousel-inner, .carousel-item {
@@ -60,6 +61,13 @@
             display: inline-block;
 
         }
+        .year-container {
+            display: flex;
+            max-width: 250px;
+        }
+        .col-form-label {
+            width: 50px;
+        }
 
     </style>
 
@@ -91,6 +99,14 @@
 
             <div class="dashboard-title">
                 <h2>Water Temperature for {{ site_code }}</h2>
+                <div class="form-group year-container">
+                    <label class="col-form-label">Year :</label>
+                    <select class="form-control" id="years" onchange="changeYear(this)">
+                        {% for year_opt in years %}
+                            <option value="{{ year_opt }}" {% if year_opt == year %}selected{% endif %}>{{ year_opt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
             </div>
             <div class="row">
