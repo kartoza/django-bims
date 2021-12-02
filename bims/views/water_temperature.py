@@ -290,9 +290,11 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 class WaterTemperatureSiteView(TemplateView):
     template_name = 'water_temperature_single_site.html'
     location_site = LocationSite.objects.none()
+    year = None
 
     def get_context_data(self, **kwargs):
-        context = super(WaterTemperatureSiteView, self).get_context_data(**kwargs)
+        context = super(
+            WaterTemperatureSiteView, self).get_context_data(**kwargs)
         context['coord'] = [
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
@@ -301,6 +303,15 @@ class WaterTemperatureSiteView(TemplateView):
         context['site_id'] = self.location_site.id
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
+        context['years'] = list(WaterTemperature.objects.filter(
+            location_site=self.location_site
+        ).values_list('date_time__year', flat=True).distinct(
+            'date_time__year').order_by('date_time__year'))
+        if len(context['years']) > 0 :
+            context['year'] = int(
+                self.year if self.year else context['years'][-1]
+            )
+
         site_description = self.location_site.site_description
         if not site_description:
             site_description = self.location_site.name
@@ -314,6 +325,7 @@ class WaterTemperatureSiteView(TemplateView):
 
     def get(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
+        self.year = kwargs.get('year', None)
         if not site_id or not request.GET or not request.GET.get(
                 'siteId', None):
             raise Http404()
@@ -321,4 +333,5 @@ class WaterTemperatureSiteView(TemplateView):
             LocationSite,
             pk=site_id
         )
-        return super(WaterTemperatureSiteView, self).get(request, *args, **kwargs)
+        return super(
+            WaterTemperatureSiteView, self).get(request, *args, **kwargs)
