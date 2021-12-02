@@ -162,8 +162,13 @@
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <div class="table-title"> Monthly magnitudes </div>
-                    <div class="row row-indicator" style="width: 100%;">
+                        <div class="table-title"> Monthly magnitudes
+                            <i data-download-title="Monthly magnitudes"
+                               data-toggle="tooltip" data-placement="left"
+                               class="fa fa-download pull-right download-icon download-table"></i>
+                        </div>
+
+                    <div class="row row-indicator table" style="width: 100%;">
                         <div class="col-lg-4">
                             <div class="col-header">
                                 Monthly magnitudes
@@ -218,6 +223,9 @@
                  <div class="vertical-space"></div>
                 <div class="table-container">
                         <div class="table-title">Thermal Metrics
+                            <i data-download-title="Water Temperature"
+                               data-toggle="tooltip" data-placement="left"
+                               class="fa fa-download pull-right download-icon download-table"></i>
                     </div>
                     <table class="sass-summary table">
                             <tbody>
@@ -252,10 +260,6 @@
                                 <td>Mean of annual maxima</td>
                                 <td>{{ indicators.annual.annual_max|floatformat:2 }}</td>
                             </tr>
-                            </tbody>
-                    </table>
-                    <table class="sass-summary table">
-                            <tbody>
                             <tr>
                                 <th class="title-row" colspan="2">Magnitudes of extreme water temperature conditions</th>
                             </tr>
@@ -287,10 +291,6 @@
                                 <td>Max_90</td>
                                 <td>{{ indicators.ninety_days.ninety_max_avg|floatformat:2 }}</td>
                             </tr>
-                            </tbody>
-                    </table>
-                    <table class="sass-summary table">
-                            <tbody>
                             <tr>
                                 <th class="title-row" colspan="2">Frequency and duration (successive days exceeding thresholds) of
                                 extreme water temperature conditions</th>
