@@ -398,13 +398,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             $('.sp-add-water-temperature').click(function () {
                 window.location.href = '/water-temperature-form/?siteId=' + self.siteId;
             });
-            $('.sp-water-temperature').click(function () {
+            $('.sp-water-temperature').click(function (e) {
                 let waterTemperatureUrl = '';
                 if (typeof self.siteId !== 'undefined') {
                     waterTemperatureUrl = '/water-temperature/' + self.siteId + '/';
                 }
                 waterTemperatureUrl += self.apiParameters(filterParameters);
                 window.location.href = waterTemperatureUrl;
+
             });
         },
         flatten_arr: function (arr) {

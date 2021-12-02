@@ -60,65 +60,94 @@ function drawMap() {
 }
 
 function renderWaterTemperatureChart(){
-    let temperature_data = JSON.parse(data)
-    let data_chart = []
-    for(let i in temperature_data){
-        let item = []
-        item[0] = temperature_data[i]['date'].split(' ')[0];
-        item[1] = temperature_data[i]['mean'];
-        data_chart.push(item)
-    }
-    console.log(temperature_data)
-    const chart = new Highcharts.Chart({
+
+    let url = '/api/thermal-data/?site-id='+ siteId
+    fetch(url).then((response => {
+        return response.json()
+        })
+    ).then((data =>{
+        const chart = new Highcharts.Chart({
         chart: {
-            renderTo: 'water-temperature'
+            renderTo: 'water-temperature',
+            type: 'spline',
+
         },
         title: {
-            text: 'Water Temperature'
+            text: '',
         },
         xAxis: {
             type: 'datetime',
+            title: {
+                text: 'Date'
+            }
         },
         yAxis: {
             title: {
-                text: 'Temperature'
+                text: 'Water Temperature (°C)'
             }
         },
+
         legend: {
-            enabled: false
+            layout: 'horizontal',
+            enabled: true,
+            verticalAlign: 'top'
         },
-        plotOptions: {
-            area: {
-                fillColor: {
-                    linearGradient: {
-                        x1: 0,
-                        y1: 0,
-                        x2: 0,
-                        y2: 1
-                    },
-                    stops: [
-                        [0, Highcharts.getOptions().colors[0]],
-                        [1, Highcharts.color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
-                        ]
-                    },
-                marker: {
-                    radius: 2
-                },
-                lineWidth: 1,
-                states: {
-                    hover: {
-                        lineWidth: 1
-                    }
-                },
-                threshold: null
-                }
+        series: [
+            {
+                name: '95%_low',
+                data: data['95%_low'],
+                color: '#7f7f7f'
             },
-        series: [{
-            type: 'area',
-            data: data_chart.reverse(),
-        }]
+            {
+                name: '95%_up',
+                data: data['95%_up'],
+                color: '#7f7f7f'
+            },
+            {
+                name: 'L95%_1SD',
+                data: data['L95%_1SD'],
+                color: '#bfbfbf'
+
+            },
+            {
+                name: 'U95%_1SD',
+                data: data['U95%_1SD'],
+                color: '#bfbfbf'
+
+            },
+            {
+                name: 'L95%_2SD',
+                data: data['L95%_2SD'],
+                color: '#bfbfbf'
+
+            },
+            {
+                name: 'U95%_2SD',
+                data: data['U95%_2SD'],
+                color: '#bfbfbf'
+
+            },
+            {
+                name: 'Mean_7',
+                data: data['mean_7'],
+                color: '#000000'
+            },
+            {
+                name: 'Min_7',
+                data: data['min_7'],
+                color: '#0070c0'
+            },
+            {
+                name: 'Max_7',
+                data: data['max_7'],
+                color: '#ff0000'
+            },
+
+        ]
     });
-    return chart
+            return chart
+
+    }))
 }
 
 

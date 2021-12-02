@@ -291,21 +291,6 @@ class WaterTemperatureSiteView(TemplateView):
     template_name = 'water_temperature_single_site.html'
     location_site = LocationSite.objects.none()
 
-    def water_temperature_data(self):
-
-        water_temperature = WaterTemperature.objects.filter(
-            location_site=self.location_site
-        )
-        data = water_temperature.annotate(
-            mean=Window(
-                expression=Avg('value'),
-                order_by=F('date_time').asc(),
-                frame=RowRange(start=-1, end=0)
-            ),
-            date=Cast('date_time', CharField())
-        ).values('date', 'mean')
-        return json.dumps(list(data))
-
     def get_context_data(self, **kwargs):
         context = super(WaterTemperatureSiteView, self).get_context_data(**kwargs)
         context['coord'] = [
@@ -316,7 +301,6 @@ class WaterTemperatureSiteView(TemplateView):
         context['site_id'] = self.location_site.id
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
-        context['water_temperature_data'] = self.water_temperature_data()
         site_description = self.location_site.site_description
         if not site_description:
             site_description = self.location_site.name
