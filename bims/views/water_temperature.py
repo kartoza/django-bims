@@ -1,10 +1,8 @@
 import codecs
 import csv
-import json
+import time
 from datetime import datetime
 from braces.views import LoginRequiredMixin
-from django.db.models import Window, Avg, F, RowRange, CharField
-from django.db.models.functions import Cast
 from django.utils.timezone import make_aware
 from django.views import View
 from bims.models.basemap_layer import BaseMapLayer
@@ -13,7 +11,7 @@ from bims.utils.get_key import get_key
 from django.http import HttpResponseForbidden
 from bims.models.location_site import LocationSite
 from django.http import JsonResponse
-from bims.models import WaterTemperature, UploadSession, LocationContext
+from bims.models import WaterTemperature, UploadSession, calculate_indicators
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -290,9 +288,13 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 class WaterTemperatureSiteView(TemplateView):
     template_name = 'water_temperature_single_site.html'
     location_site = LocationSite.objects.none()
+    year = None
 
     def get_context_data(self, **kwargs):
-        context = super(WaterTemperatureSiteView, self).get_context_data(**kwargs)
+        start_time = time.time()
+
+        context = super(
+            WaterTemperatureSiteView, self).get_context_data(**kwargs)
         context['coord'] = [
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
@@ -301,6 +303,15 @@ class WaterTemperatureSiteView(TemplateView):
         context['site_id'] = self.location_site.id
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
+        context['years'] = list(WaterTemperature.objects.filter(
+            location_site=self.location_site
+        ).values_list('date_time__year', flat=True).distinct(
+            'date_time__year').order_by('date_time__year'))
+        if len(context['years']) > 0 :
+            context['year'] = int(
+                self.year if self.year else context['years'][-1]
+            )
+
         site_description = self.location_site.site_description
         if not site_description:
             site_description = self.location_site.name
@@ -310,10 +321,20 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
+        if not self.year:
+            year = context['years'][-1]
+        else:
+            year = int(self.year.strip())
+
+        context['location_site'] = self.location_site
+        context['indicators'] = calculate_indicators(self.location_site, year)
+        context['execution_time'] = time.time() - start_time
+
         return context
 
     def get(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
+        self.year = kwargs.get('year', None)
         if not site_id or not request.GET or not request.GET.get(
                 'siteId', None):
             raise Http404()
@@ -321,4 +342,6 @@ class WaterTemperatureSiteView(TemplateView):
             LocationSite,
             pk=site_id
         )
-        return super(WaterTemperatureSiteView, self).get(request, *args, **kwargs)
+
+        return super(
+            WaterTemperatureSiteView, self).get(request, *args, **kwargs)

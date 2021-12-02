@@ -61,97 +61,132 @@ function drawMap() {
 
 function renderWaterTemperatureChart(){
 
-    let url = '/api/thermal-data/?site-id='+ siteId
-    fetch(url).then((response => {
-        return response.json()
-        })
+    let url = '/api/thermal-data/?site-id='+ siteId  + '&year=' + year
+    fetch(url).then(
+      response => response.json()
     ).then((data =>{
+
+        for (let i = 0; i < data['date_time'].length; i++) {
+            const timestamp = new Date(data['date_time'][i]).getTime()
+            for (let dataKey in data) {
+                if (dataKey !== 'date_time') {
+                    if (data[dataKey][i]) {
+                        data[dataKey][i] = [timestamp, data[dataKey][i]]
+                    }
+                }
+            }
+        }
+
         const chart = new Highcharts.Chart({
-        chart: {
-            renderTo: 'water-temperature',
-            type: 'spline',
-
-        },
-        title: {
-            text: '',
-        },
-        xAxis: {
-            type: 'datetime',
+            chart: {
+                renderTo: 'water-temperature',
+                type: 'spline',
+            },
             title: {
-                text: 'Date'
-            }
-        },
-        yAxis: {
-            title: {
-                text: 'Water Temperature (°C)'
-            }
-        },
+                text: '',
+            },
+            xAxis: {
+                type: 'datetime',
+                title: {
+                    text: 'Date'
+                },
+                labels: {
+                    formatter: function () {
+                        return Highcharts.dateFormat('%b %y', this.value)
+                    },
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Water Temperature (°C)'
+                }
+            },
+            legend: {
+                layout: 'horizontal',
+                enabled: true,
+                verticalAlign: 'top'
+            },
+            exporting: {
+                buttons: {
+                    contextButton: {
+                        menuItems: ["printChart",
+                            "separator",
+                            "downloadPNG",
+                            "downloadJPEG",
+                            "downloadPDF",
+                            "downloadSVG",
+                            "separator",
+                            "downloadCSV",
+                            "downloadXLS"]
+                    }
+                }
+            },
+            series: [
+                {
+                    name: 'Mean_7',
+                    data: data['mean_7'],
+                    color: '#000000'
+                },
+                {
+                    name: '95%_low',
+                    data: data['95%_low'],
+                    color: '#7f7f7f'
+                },
+                {
+                    name: '95%_up',
+                    data: data['95%_up'],
+                    color: '#7f7f7f'
+                },
+                {
+                    name: 'L95%_1SD',
+                    data: data['L95%_1SD'],
+                    color: '#bfbfbf'
 
-        legend: {
-            layout: 'horizontal',
-            enabled: true,
-            verticalAlign: 'top'
-        },
-        series: [
-            {
-                name: '95%_low',
-                data: data['95%_low'],
-                color: '#7f7f7f'
-            },
-            {
-                name: '95%_up',
-                data: data['95%_up'],
-                color: '#7f7f7f'
-            },
-            {
-                name: 'L95%_1SD',
-                data: data['L95%_1SD'],
-                color: '#bfbfbf'
+                },
+                {
+                    name: 'U95%_1SD',
+                    data: data['U95%_1SD'],
+                    color: '#bfbfbf'
 
-            },
-            {
-                name: 'U95%_1SD',
-                data: data['U95%_1SD'],
-                color: '#bfbfbf'
+                },
+                {
+                    name: 'L95%_2SD',
+                    data: data['L95%_2SD'],
+                    color: '#bfbfbf'
 
-            },
-            {
-                name: 'L95%_2SD',
-                data: data['L95%_2SD'],
-                color: '#bfbfbf'
+                },
+                {
+                    name: 'U95%_2SD',
+                    data: data['U95%_2SD'],
+                    color: '#bfbfbf'
 
-            },
-            {
-                name: 'U95%_2SD',
-                data: data['U95%_2SD'],
-                color: '#bfbfbf'
-
-            },
-            {
-                name: 'Mean_7',
-                data: data['mean_7'],
-                color: '#000000'
-            },
-            {
-                name: 'Min_7',
-                data: data['min_7'],
-                color: '#0070c0'
-            },
-            {
-                name: 'Max_7',
-                data: data['max_7'],
-                color: '#ff0000'
-            },
-
-        ]
-    });
-            return chart
+                },
+                {
+                    name: 'Min_7',
+                    data: data['min_7'],
+                    color: '#0070c0'
+                },
+                {
+                    name: 'Max_7',
+                    data: data['max_7'],
+                    color: '#ff0000'
+                }
+            ]
+        });
+        return chart
 
     }))
 }
 
+function changeYear(selectObject) {
+  let value = selectObject.value;
+  let url = new URL(window.location);
+  console.log(url);
+  window.location.href = `/water-temperature/${siteId}/${value}/${url.search}`;
+}
 
 $(function () {
     drawMap();
     renderWaterTemperatureChart()
+
 });

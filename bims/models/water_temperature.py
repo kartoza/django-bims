@@ -141,11 +141,13 @@ def calculate_indicators(
     mean_key = 'value'
     max_key = 'maximum'
     min_key = 'minimum'
+    date_key = 'date_time'
 
     if not is_daily:
         mean_key = 'mean'
         max_key = 'max'
         min_key = 'min'
+        date_key = 'start_day'
         temperature_data_annual = temperature_data_annual.annotate(
             start_day=TruncDay('date_time')).values('start_day').order_by(
             'start_day').annotate(mean=Avg('value'), max=Max('value'),
@@ -216,6 +218,7 @@ def calculate_indicators(
     weekly_max_threshold = 0
     weekly_max_threshold_dur = 0
     weekly_max_threshold_dur_max = 0
+    date_time = []
 
     for day in range(len(temperature_data_annual)):
         mean_data = []
@@ -227,6 +230,8 @@ def calculate_indicators(
 
         min_data_90 = []
         max_data_90 = []
+
+        date_time.append(str(temperature_data_annual[day][date_key].date()))
 
         for temp_data in temperature_data_annual[day:day + 7]:
             mean_data.append(temp_data[mean_key])
@@ -313,6 +318,7 @@ def calculate_indicators(
     }
 
     if return_weekly:
+        indicators['date_time'] = date_time
         indicators['weekly']['weekly_mean_data'] = (
             weekly_data['weekly_mean_data']
         )

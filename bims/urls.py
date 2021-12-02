@@ -237,6 +237,9 @@ urlpatterns = [
     url(r'^water-temperature/(?P<site_id>\d+)/$',
         WaterTemperatureSiteView.as_view(),
         name='water-temperature-site'),
+    url(r'^water-temperature/(?P<site_id>\d+)/(?P<year>\d{4})/$',
+        WaterTemperatureSiteView.as_view(),
+        name='water-temperature-site'),
 ]
 
 # Api urls

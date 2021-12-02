@@ -20,32 +20,10 @@
         const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
         const siteCode = "{{ site_code }}";
         const siteId = "{{ site_id }}";
+        const year = "{{ year }}";
     </script>
     <style>
-          .carousel-inner, .carousel-item {
-              height: 100% !important;
-        }
 
-        .carousel-item img {
-            max-height: 100%;
-            max-width: 100%;
-        }
-        .carousel-item-content {
-            width: auto;
-            height: auto;
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
-        }
-        #legend-summary-id{
-            width: 90%;
-            margin-top: auto;
-            color: gray;
-            position:absolute;
-        }
         #legend-summary-id ul {
             list-style: none;
             font-size: 12px;
@@ -59,6 +37,34 @@
             height: 12px;
             display: inline-block;
 
+        }
+        .year-container {
+            display: flex;
+            max-width: 250px;
+        }
+        .col-form-label {
+            width: 50px;
+        }
+        .col-header {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            font-size: 13pt;
+            font-weight: bold;
+        }
+        .row-indicator {
+            padding-top: 1em;
+            padding-left: 1em;
+        }
+        .row-indicator .col-lg-3, .row-indicator .col-lg-4, .row-indicator .col-lg-2 {
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .row-indicator p {
+            border-bottom: 1px solid rgba(138, 138, 138, 0.31);
+            height: 20px;
         }
 
     </style>
@@ -91,6 +97,14 @@
 
             <div class="dashboard-title">
                 <h2>Water Temperature for {{ site_code }}</h2>
+                <div class="form-group year-container">
+                    <label class="col-form-label">Year :</label>
+                    <select class="form-control" id="years" onchange="changeYear(this)">
+                        {% for year_opt in years %}
+                            <option value="{{ year_opt }}" {% if year_opt == year %}selected{% endif %}>{{ year_opt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
             </div>
             <div class="row">
@@ -147,14 +161,169 @@
                         </table>
                     </div>
                     <div class="vertical-space"></div>
+                    <div class="table-container">
+                        <div class="table-title"> Monthly magnitudes </div>
+                    <div class="row row-indicator" style="width: 100%;">
+                        <div class="col-lg-4">
+                            <div class="col-header">
+                                Monthly magnitudes
+                            </div>
+                            {% for key, value in indicators.monthly.items %}
+                                <p> {{ key }} </p>
+                            {% endfor %}
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="col-header">
+                                Mean
+                            </div>
+                            {% for key, value in indicators.monthly.items %}
+                                <p> {{ value.monthly_mean|floatformat:2 }} </p>
+                            {% endfor %}
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="col-header">
+                                Min
+                            </div>
+                            {% for key, value in indicators.monthly.items %}
+                                <p> {{ value.monthly_min|floatformat:2 }} </p>
+                            {% endfor %}
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="col-header">
+                                Max
+                            </div>
+                            {% for key, value in indicators.monthly.items %}
+                                <p> {{ value.monthly_max|floatformat:2 }} </p>
+                            {% endfor %}
+                        </div>
+                        <div class="col-lg-2">
+                            <div class="col-header">
+                                Range
+                            </div>
+                            {% for key, value in indicators.monthly.items %}
+                                <p> {{ value.monthly_range|floatformat:2 }} </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
                 </div>
-        <div class="col-md-6 mp">
-        <div class="chart-container">
-            <div class="chart-title">Water Temperature
-            </div>
-            <div id="water-temperature"></div>
-        </div>
-        </div>
+
+                </div>
+                <div class="col-md-6 mp">
+                <div class="chart-container">
+                    <div class="chart-title">Water Temperature
+                    </div>
+                    <div id="water-temperature"></div>
+                </div>
+                 <div class="vertical-space"></div>
+                <div class="table-container">
+                        <div class="table-title">Thermal Metrics
+                    </div>
+                    <table class="sass-summary table">
+                            <tbody>
+                            <tr>
+                                <th class="title-row" colspan="2">Annual descriptive statistics</th>
+                            </tr>
+                            <tr>
+                              <td>Mean Annual temperature (MAT)</td>
+                              <td>{{ indicators.annual.annual_mean|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Standard deviation of MAT</td>
+                                <td>{{ indicators.annual.annual_sd|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Annual coefficient of variability</td>
+                                <td>{{ indicators.annual.annual_cv|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                               <td>Mean of annual range</td>
+                                <td>{{ indicators.annual.annual_range|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                               <td>Standard deviation of annual range</td>
+                                <td>{{ indicators.annual.annual_range_sd|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Mean of annual minima</td>
+                                <td>{{ indicators.annual.annual_min|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Mean of annual maxima</td>
+                                <td>{{ indicators.annual.annual_max|floatformat:2 }}</td>
+                            </tr>
+                            </tbody>
+                    </table>
+                    <table class="sass-summary table">
+                            <tbody>
+                            <tr>
+                                <th class="title-row" colspan="2">Magnitudes of extreme water temperature conditions</th>
+                            </tr>
+                            <tr>
+                            <td>Mean7</td>
+                            <td>{{ indicators.weekly.weekly_mean_avg|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                             <td>Min7</td>
+                             <td>{{ indicators.weekly.weekly_min_avg|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Min_30</td>
+                                <td>{{ indicators.thirty_days.thirty_min_avg|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Min_90</td>
+                                <td>{{ indicators.ninety_days.ninety_min_avg|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Max7</td>
+                                <td>{{ indicators.weekly.weekly_max_avg|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Max_30</td>
+                                <td>{{ indicators.thirty_days.thirty_max_avg|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td>Max_90</td>
+                                <td>{{ indicators.ninety_days.ninety_max_avg|floatformat:2 }}</td>
+                            </tr>
+                            </tbody>
+                    </table>
+                    <table class="sass-summary table">
+                            <tbody>
+                            <tr>
+                                <th class="title-row" colspan="2">Frequency and duration (successive days exceeding thresholds) of
+                                extreme water temperature conditions</th>
+                            </tr>
+                            <tr>
+                                <td>Mean7cnt</td>
+                                <td>{{ indicators.threshold.weekly_mean }}</td>
+                            </tr>
+                            <tr>
+                                <td>Min7cnt</td>
+                                <td>{{ indicators.threshold.weekly_min }}</td>
+                            </tr>
+                            <tr>
+                                <td>Max7cnt</td>
+                                <td>{{ indicators.threshold.weekly_max }}</td>
+                            </tr>
+                            <tr>
+                                <td>Mean7dur</td>
+                                <td>{{ indicators.threshold.weekly_mean_dur }}</td>
+                            </tr>
+                            <tr>
+                                <td>Min7dur</td>
+                                <td>{{ indicators.threshold.weekly_min_dur }}</td>
+                            </tr>
+                            <tr>
+                                <td>Max7dur</td>
+                                <td>{{ indicators.threshold.weekly_max_dur }}</td>
+                            </tr>
+                            </tbody>
+                    </table>
+                    </div>
+                </div>
+                </div>
 
         </div>
         </div>
