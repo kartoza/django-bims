@@ -243,6 +243,14 @@ class SiteSetting(Preferences):
         )
     )
 
+    boundary_key = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='The key of the boundary data form GeoContext'
+
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
