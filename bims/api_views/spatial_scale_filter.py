@@ -11,7 +11,7 @@ class SpatialScaleFilterList(APIView):
         spatial_scale_filter = cache.get('spatial_scale_filter_list')
         if not spatial_scale_filter:
             groups = []
-            generate_spatial_scale_filter()
+            generate_spatial_scale_filter.delay()
         else:
             groups = spatial_scale_filter
 

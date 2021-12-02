@@ -49,6 +49,7 @@ x-common-django:
     - db:db
     - geoserver:geoserver
     - rabbitmq:rabbitmq
+    - cache:cache
     - worker:worker
     - searchworker:searchworker
     - geocontextworker:geocontextworker

@@ -439,3 +439,10 @@ CELERY_TASK_QUEUES += (
     Queue('geocontext',
           GEONODE_EXCHANGE, routing_key='geocontext', priority=0),
 )
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': 'cache:11211',
+    }
+}
