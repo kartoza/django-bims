@@ -36,5 +36,6 @@ class ThermalDataApiView(APIView):
         thermograph = {}
         if 'weekly' in indicator:
             thermograph = thermograph_data(indicator['weekly'])
+            thermograph['date_time'] = indicator['date_time']
 
         return JsonResponse(thermograph)
