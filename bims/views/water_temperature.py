@@ -1,10 +1,8 @@
 import codecs
 import csv
-import json
+import time
 from datetime import datetime
 from braces.views import LoginRequiredMixin
-from django.db.models import Window, Avg, F, RowRange, CharField
-from django.db.models.functions import Cast
 from django.utils.timezone import make_aware
 from django.views import View
 from bims.models.basemap_layer import BaseMapLayer
@@ -13,7 +11,7 @@ from bims.utils.get_key import get_key
 from django.http import HttpResponseForbidden
 from bims.models.location_site import LocationSite
 from django.http import JsonResponse
-from bims.models import WaterTemperature, UploadSession, LocationContext
+from bims.models import WaterTemperature, UploadSession, calculate_indicators
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -293,6 +291,8 @@ class WaterTemperatureSiteView(TemplateView):
     year = None
 
     def get_context_data(self, **kwargs):
+        start_time = time.time()
+
         context = super(
             WaterTemperatureSiteView, self).get_context_data(**kwargs)
         context['coord'] = [
@@ -321,6 +321,15 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
+        if not self.year:
+            year = context['years'][-1]
+        else:
+            year = int(self.year.strip())
+
+        context['location_site'] = self.location_site
+        context['indicators'] = calculate_indicators(self.location_site, year)
+        context['execution_time'] = time.time() - start_time
+
         return context
 
     def get(self, request, *args, **kwargs):
@@ -333,5 +342,6 @@ class WaterTemperatureSiteView(TemplateView):
             LocationSite,
             pk=site_id
         )
+
         return super(
             WaterTemperatureSiteView, self).get(request, *args, **kwargs)
