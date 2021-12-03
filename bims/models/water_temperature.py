@@ -305,17 +305,20 @@ def calculate_indicators(
                     weekly_max_threshold_dur_max = weekly_max_threshold_dur
                 weekly_max_threshold_dur = 0
 
-    indicators['weekly'] = {
-        'weekly_mean_avg': (
-            max(weekly_data['weekly_mean_data'])
-        ),
-        'weekly_min_avg': (
-            min(weekly_data['weekly_min_data'])
-        ),
-        'weekly_max_avg': (
-            max(weekly_data['weekly_max_data'])
-        ),
-    }
+    try:
+        indicators['weekly'] = {
+            'weekly_mean_avg': (
+                max(weekly_data['weekly_mean_data'])
+            ),
+            'weekly_min_avg': (
+                min(weekly_data['weekly_min_data'])
+            ),
+            'weekly_max_avg': (
+                max(weekly_data['weekly_max_data'])
+            ),
+        }
+    except ValueError:
+        pass
 
     if return_weekly:
         indicators['date_time'] = date_time
@@ -329,23 +332,29 @@ def calculate_indicators(
             weekly_data['weekly_max_data']
         )
 
-    indicators['thirty_days'] = {
-        'thirty_max_avg': (
-            max(thirty_data['thirty_max_data'])
-        ),
-        'thirty_min_avg': (
-            min(thirty_data['thirty_min_data'])
-        ),
-    }
+    try:
+        indicators['thirty_days'] = {
+            'thirty_max_avg': (
+                max(thirty_data['thirty_max_data'])
+            ),
+            'thirty_min_avg': (
+                min(thirty_data['thirty_min_data'])
+            ),
+        }
+    except ValueError:
+        pass
 
-    indicators['ninety_days'] = {
-        'ninety_max_avg': (
-            max(ninety_data['ninety_max_data'])
-        ),
-        'ninety_min_avg': (
-            min(ninety_data['ninety_min_data'])
-        ),
-    }
+    try:
+        indicators['ninety_days'] = {
+            'ninety_max_avg': (
+                max(ninety_data['ninety_max_data'])
+            ),
+            'ninety_min_avg': (
+                min(ninety_data['ninety_min_data'])
+            ),
+        }
+    except ValueError:
+        pass
 
     if weekly_mean_threshold_dur > weekly_mean_threshold_dur_max:
         weekly_mean_threshold_dur_max = weekly_mean_threshold_dur

@@ -30,9 +30,9 @@ class TestThermalData(TestCase):
             group=lcg,
             value='upper'
         )
-        thermal_data_file = os.path.join(
+        self.thermal_data_file = os.path.join(
             test_data_directory, 'thermal_data_sample.csv')
-        with open(thermal_data_file) as csv_file:
+        with open(self.thermal_data_file) as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 if row.get('Date'):
@@ -127,3 +127,30 @@ class TestThermalData(TestCase):
             round(thermograph['U95%_2SD'][10], 2),
             24.48
         )
+
+    def test_ninetydays_data(self):
+
+        max_day = 28
+        location_site = LocationSiteF.create()
+        with open(self.thermal_data_file) as csv_file:
+            csv_reader = csv.DictReader(csv_file)
+            index = 0
+            for row in csv_reader:
+                if index > max_day:
+                    break
+                index += 1
+                if row.get('Date'):
+                    WaterTemperatureF.create(
+                        date_time=datetime.strptime(
+                            row.get('Date'), '%m/%d/%y'),
+                        is_daily=True,
+                        value=row.get('Mean'),
+                        maximum=row.get('Max'),
+                        minimum=row.get('Min'),
+                        location_site=location_site
+                    )
+        result = calculate_indicators(location_site, 2009)
+
+        self.assertTrue('ninety_days' not in result)
+        self.assertTrue('thirty_days' not in result)
+        self.assertTrue('weekly' in result)
