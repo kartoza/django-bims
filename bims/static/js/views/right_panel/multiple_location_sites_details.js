@@ -66,7 +66,14 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
             container.append($sectionWrapper);
-            $sectionWrapper.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist, add_data: false }));
+            $sectionWrapper.append(biodiversitySectionTemplate(
+              {
+                  data: data.biodiversity_data,
+                  is_sass_enabled: is_sass_enabled,
+                  sass_exist: data.sass_exist,
+                  add_data: false,
+                  water_temperature_exist: false
+              }));
             $.each(data['biodiversity_data'], function (key, value) {
                 self.charts.push({
                     'canvas': $sectionWrapper.find("#origin-chart-" + value.module),
