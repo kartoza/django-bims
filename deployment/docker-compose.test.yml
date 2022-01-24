@@ -9,6 +9,8 @@ services:
   dev:
     image: ${APP_IMAGE}:dev
     command: ''
+    links:
+      - db:db
     environment:
       - SITE_DOMAIN_NAME=http://django-bims.test
       - CONTACT_US_EMAIL=dimas@kartoza.com
