@@ -20,6 +20,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 # End of cut & paste section
 
 ADD REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python get-pip.py
 RUN pip install -r /REQUIREMENTS-dev.txt
 ADD bashrc /root/.bashrc
 

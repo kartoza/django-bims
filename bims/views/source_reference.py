@@ -8,6 +8,10 @@ from django.http import Http404
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from geonode.base.models import HierarchicalKeyword, TaggedContentItem
+from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
+
 
 from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
@@ -15,6 +19,9 @@ from bims.models.source_reference import (
     SourceReferenceBibliography,
     SourceReferenceDatabase,
     SourceReferenceDocument, DatabaseRecord
+)
+from bims.serializers.source_reference_serializer import (
+    SourceReferenceSerializer
 )
 from td_biblio.models.bibliography import (
     Author, AuthorEntryRank, Journal, Entry
@@ -30,6 +37,93 @@ from bims.models.biological_collection_record import (
 from bims.models.chemical_record import (
     ChemicalRecord
 )
+
+
+class SourceReferencePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
+class SourceReferenceAPIView(ListAPIView):
+    pagination_class = SourceReferencePagination
+    serializer_class = SourceReferenceSerializer
+    source_reference_type = {
+        'database': SourceReferenceDatabase,
+        'bibliography': SourceReferenceBibliography,
+        'document': SourceReferenceDocument
+    }
+
+    def get(self, request, *args, **kwargs):
+        """Check GET request parameters validity and store them"""
+        # -- Type query
+        source_reference_type = self.request.GET.get('type', None)
+        if source_reference_type:
+            self.type_filter = source_reference_type
+        else:
+            self.type_filter = ''
+
+        # -- Search query
+        self.search_query = self.request.GET.get('q', '')
+
+        # -- Collectors
+        self.collectors = self.request.GET.get('collectors', None)
+        if self.collectors:
+            self.collectors = self.collectors.split(',')
+        return super(SourceReferenceAPIView, self).get(
+            request, *args, **kwargs)
+
+    def get_queryset(self):
+        """
+        Add GET requests filters
+        """
+        filters = dict()
+        qs = SourceReference.objects.all()
+
+        if self.collectors:
+            qs = qs.filter(
+                Q(sourcereferencebibliography__source__authors__user__in=
+                  self.collectors) |
+                Q(sourcereferencebibliography__document__bimsdocument__authors__in=  # noqa
+                  self.collectors) |
+                Q(sourcereferencedocument__source__bimsdocument__authors__in=
+                  self.collectors) |
+                Q(sourcereferencedocument__source__owner__in=self.collectors)
+            )
+
+        if self.type_filter:
+            or_condition = Q()
+            type_filters = self.type_filter.split(',')
+            for type_filter in type_filters:
+                if type_filter in self.source_reference_type:
+                    or_condition |= Q(**{
+                        'instance_of':
+                            self.source_reference_type[type_filter]
+                    })
+                else:
+                    for source_reference_type in self.source_reference_type:
+                        or_condition &= Q(**{
+                            'not_instance_of':
+                                self.source_reference_type[
+                                    source_reference_type]})
+            qs = qs.filter(or_condition)
+
+        if self.search_query:
+            qs = qs.filter(
+                Q(sourcereferencebibliography__source__title__icontains =
+                  self.search_query) |
+                Q(sourcereferencedocument__source__title__icontains =
+                  self.search_query) |
+                Q(sourcereferencedatabase__source__name__icontains =
+                  self.search_query) |
+                Q(note__icontains = self.search_query) |
+                Q(source_name__icontains = self.search_query)
+            )
+
+        qs = qs.filter(**filters).distinct('id')
+
+        # Return filtered queryset
+        return qs
 
 
 class SourceReferenceListView(ListView):

@@ -11,6 +11,7 @@ from django.conf import settings
 import numpy as np
 
 from bims.models.location_site import LocationSite
+from bims.models.source_reference import SourceReference
 
 
 THRESHOLD_VALUE = {
@@ -94,6 +95,13 @@ class WaterTemperature(models.Model):
         blank=True,
         help_text='Name of the source file',
         max_length=255
+    )
+
+    source_reference = models.ForeignKey(
+        SourceReference,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     class Meta:

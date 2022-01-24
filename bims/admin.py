@@ -1282,7 +1282,7 @@ class WaterTemperatureAdmin(admin.ModelAdmin):
         'value', 'date_time', 'is_daily', 'maximum', 'minimum'
     )
     raw_id_fields = (
-        'location_site', 'uploader', 'owner'
+        'location_site', 'uploader', 'owner', 'source_reference'
     )
 
 
