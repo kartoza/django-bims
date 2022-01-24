@@ -376,7 +376,7 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up --no-deps -d devweb
+	@docker-compose ${ARGS} up --no-recreate --no-deps -d dev
 
 build-devweb: db
 	@echo
