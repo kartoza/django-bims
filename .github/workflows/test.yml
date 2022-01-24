@@ -41,7 +41,6 @@ jobs:
           echo "Override docker-compose for testing purposes"
           cp docker-compose.test.yml docker-compose.override.yml
           cd ../
-          make up
           make devweb
           make wait-db
           make create-test-db
