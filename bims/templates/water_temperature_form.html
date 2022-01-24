@@ -1,0 +1,225 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+{% block subtitle %}
+    {{ taxon_group_name }} Form
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "lib/clockpicker/jquery-clockpicker.min.css" %}" rel="stylesheet"/>
+
+    <script type="text/javascript">
+        const location_site_lat = '{{ location_site_lat }}';
+        const location_site_long = '{{ location_site_long }}';
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
+        const taxonGroupName = '{{ taxon_group_name }}';
+        const csrfToken = '{{ csrf_token }}';
+        const bingKey = '{{ bing_key }}';
+    </script>
+
+    <style>
+        .alert-danger {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #map {
+            height: 500px !important;
+        }
+        body {
+            position: inherit !important;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <form action="{{ request.path }}" method="post" id="water-temperature-form"
+          class="needs-validation" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" id="site-id" name="site-id" value="{{ site_id }}">
+        <div class="body-form container">
+            <div class="dashboard-title">
+                <h2>Add water temperature data for site {% if location_site_code %}{{ location_site_code }} {% else %}
+                    {{ location_site_name }}{% endif %}</h2>
+                <div class="dashboard-close" onclick="window.location.href='/location-site-form/update/?id={{ site_id }}'">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </div>
+            </div>
+            <div class="alert alert-danger" role="alert"
+                 style="display: none;">
+
+            </div>
+            <div class="alert alert-success" role="alert"
+                 style="display: none;">
+            </div>
+            <div id="map"></div>
+            <div class="form-group row" style="margin-top: 20px;">
+                <label for="date"
+                       class="col-sm-1 col-form-label col-form-label">Latitude</label>
+                <input type="text" id="latitude" name="latitude"
+                       class="col-sm-2 form-control form-control-sm"
+                       value="{{ location_site_lat }}">
+                <label for="date"
+                       class="col-sm-1 col-form-label col-form-label">Longitude</label>
+                <input type="text" id="longitude" name="longitude"
+                       class="col-sm-2 form-control form-control-sm"
+                       value="{{ location_site_long }}">
+            </div>
+
+            <div class="separator-line"></div>
+
+            <div class="form-group row even-row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Owner</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control form-control-sm"
+                           onClick="this.setSelectionRange(0, this.value.length)"
+                           id="owner" placeholder="" name="owner" value="{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}"
+                           required>
+                    <small class="form-text text-muted">Please select the
+                        Owner, if you are the data capturer and not the
+                        Owner</small>
+                    <div class="invalid-feedback">
+                        Please provide a owner
+                    </div>
+                    <input type="hidden" name="owner_id" id="owner_id"
+                           value="{{ user.id }}">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Logging interval</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="interval" id="logging-interval">
+                        {% for interval in logging_interval %}
+                            <option value="{{ interval}}"> {{ interval }}h </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row  clockpicker-container">
+                <label for="start-time"
+                       class="col-sm-2 col-form-label col-form-label">Start Time</label>
+                <div class="col-sm-10">
+                    <div class="input-group clockpicker" data-autoclose="true">
+                        <input type="text" class="form-control" value="00:00" id="start-time">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row clockpicker-container">
+                <label for="end-time"
+                       class="col-sm-2 col-form-label col-form-label">End Time</label>
+                <div class="col-sm-10">
+                    <div class="input-group clockpicker" data-autoclose="true">
+                        <input type="text" class="form-control" value="23:00" id="end-time">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-time"></span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Date Format</label>
+                <div class="col-sm-10">
+                    <select class="form-control"
+                            name="format" id="format-date">
+                            <option value="%Y-%m-%d">YYYY-MM-DD</option>
+                            <option value="%m-%d-%Y">MM-DD-YYYY</option>
+                            <option value="%d-%m-%Y">DD-MM-YYYY</option>
+                            <option value="%Y/%m/%d">YYYY/MM/DD</option>
+                            <option value="%m/%d/%Y">MM/DD/YYYY</option>
+                            <option value="%d/%m/%Y">DD/MM/YYYY</option>
+                            <option value="%d/%m/%Y">DD/MM/YYYY</option>
+                            <option value="%d-%b-%Y">01-Jan-2021</option>
+                            <option value="%d-%b-%y">01-Jan-21</option>
+                            <option value="%d %B %Y">01 January 2021</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label"></label>
+                <div class="col-sm-10">
+                    <div class="form-group">
+                        <div class="input-group input-file">
+                            <input type="file" class="form-control"
+                                   accept=".csv" name="water_file" id="water_file"
+                                   placeholder='Choose a file...'/>
+{#                            <div class="invalid-feedback">#}
+{#                            Please provide a xlsx file#}
+{#                        </div>#}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="disclaimer" style="margin-bottom: 10px;">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   value="" id="disclaimerCheck">
+                            <label class="form-check-label"
+                                   for="disclaimerCheck" style="padding-top: 2px;">
+                                {{ preferences.SiteSetting.disclaimer_form_text|urlize|linebreaks }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="submit-wrapper">
+                <input type="button" name="btn" id="upload"
+                       data-toggle="modal"
+                       data-target="#confirm-submit"
+                       class="btn btn-info"
+                       value="Upload" disabled>
+            </div>
+            <script>
+                const checkbox = document.getElementById('disclaimerCheck');
+                const upload = document.getElementById('upload');
+                checkbox.addEventListener('change', (event) => {
+                    if (event.target.checked) {
+                        upload.disabled = false;
+                    } else {
+                        upload.disabled = true;
+                    }
+                })
+
+            </script>
+
+    </form>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/non_requirejs/water_temperature_form.js' %}"></script>
+    <script src="{% static "lib/clockpicker/jquery-clockpicker.min.js" %}"></script>
+    <script>
+        $('.clockpicker').clockpicker();
+        $('#logging-interval').change((e) => {
+            let val = $(e.target).val();
+            if (val == 24) {
+                $('.clockpicker-container').hide();
+            } else {
+                $('.clockpicker-container').show();
+            }
+        })
+    </script>
+
+{% endblock %}

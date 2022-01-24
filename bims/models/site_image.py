@@ -3,6 +3,7 @@
     Site Image model definition.
     To store images for location site.
 """
+from django.utils import timezone
 
 from django.db import models
 from sass.models.site_visit import SiteVisit
@@ -36,4 +37,10 @@ class SiteImage(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL
+    )
+
+    date = models.DateField(
+        null=False,
+        blank=False,
+        default=timezone.now
     )

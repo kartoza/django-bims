@@ -85,12 +85,14 @@ from bims.models import (
     BaseMapLayer,
     RequestLog,
     IngestedData,
-    TaxonImage
+    TaxonImage,
+    WaterTemperature,
+    TaxonExtraAttribute
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
-from bims.utils.gbif import search_exact_match, get_species
+from bims.utils.gbif import search_exact_match, get_species, suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
@@ -149,7 +151,8 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'site_code',
         'location_type',
         'get_centroid',
-        'geocontext_data_percentage')
+        'geocontext_data_percentage',
+        'indicator_thermal')
     search_fields = ('name', 'site_code', 'legacy_site_code')
     list_filter = (HasLocationContextDocument,)
     raw_id_fields = ('river',)
@@ -164,6 +167,17 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         return ['original_geomorphological']
+
+    def indicator_thermal(self, obj):
+        if obj.watertemperature_set.all().exists():
+            return format_html(
+                '''
+                <a href="/thermal-dashboard/?site-id={0}">Open Thermal Indicator Dashboard</a>
+                ''',
+                obj.id
+            )
+        else:
+            return '-'
 
     def geocontext_data_percentage(self, obj):
         site_setting_group_keys = (
@@ -904,18 +918,18 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
-        gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
-        if gbif_key is None:
-            extra_context['key'] = None
+        scientific_name = Taxonomy.objects.get(pk=object_id).scientific_name
+
+        # gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
+        if scientific_name is None:
+            extra_context['results'] = None
             return super().change_view(
                 request, object_id, form_url, extra_context=extra_context,
             )
-        species = get_species(gbif_key)
-        extra_context['key'] = gbif_key
-        extra_context['taxonomicStatus'] = species['taxonomicStatus']
-        extra_context['authorship'] = species['authorship']
-        extra_context['scientificName'] = species['scientificName']
-        extra_context['canonicalName'] = species['canonicalName']
+        name = Taxonomy.objects.get(pk=object_id).scientific_name.split(' ')
+        parameter = {'limit': 10, 'q': name[0]}
+        results = suggest_search(parameter)
+        extra_context['results'] = json.dumps(results)
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
@@ -1006,9 +1020,11 @@ class SamplingMethodAdmin(admin.ModelAdmin):
 
 
 class SiteImageAdmin(admin.ModelAdmin):
+
     list_display = (
         'get_site_code',
-        'image'
+        'image',
+        'date'
     )
     raw_id_fields = (
         'site',
@@ -1261,6 +1277,21 @@ class LocationContextGroupAdmin(admin.ModelAdmin):
     merge_group.short_description = 'Merge groups'
 
 
+class WaterTemperatureAdmin(admin.ModelAdmin):
+    list_display = (
+        'value', 'date_time', 'is_daily', 'maximum', 'minimum'
+    )
+    raw_id_fields = (
+        'location_site', 'uploader', 'owner'
+    )
+
+
+class TaxonExtraAttributeAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'taxon_group'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1338,3 +1369,6 @@ from geonode.themes.models import *  # noqa
 
 admin.site.unregister(GeoNodeThemeCustomization)
 admin.site.unregister(Partner)
+
+admin.site.register(WaterTemperature, WaterTemperatureAdmin)
+admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)

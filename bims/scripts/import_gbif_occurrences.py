@@ -76,8 +76,8 @@ def import_gbif_occurrences(
     # We don't need data with geospatial issue
     api_url += '&hasGeospatialIssue=false'
     # Only fetch from Specific country
-    api_url += '&country={}'.format(
-        preferences.SiteSetting.base_country_code.upper())
+    for country_code in preferences.SiteSetting.base_country_code.split(','):
+        api_url += '&country={}'.format(country_code.upper())
 
     if log_file:
         log_file.write('URL : {}\n'.format(api_url))
@@ -87,10 +87,14 @@ def import_gbif_occurrences(
         json_result = response.json()
         data_count = json_result['count']
     except (HTTPError, simplejson.errors.JSONDecodeError) as e:
-        if log_file:
-            log_file.write(e.message)
+        if isinstance(e, simplejson.errors.JSONDecodeError):
+            error_message = str(e)
         else:
-            logger.error(e.message)
+            error_message = e.message
+        if log_file:
+            log_file.write(error_message)
+        else:
+            logger.error(error_message)
         return
 
     if log_file:
@@ -199,7 +203,8 @@ def import_gbif_occurrences(
             collection_record = BiologicalCollectionRecord.objects.create(
                 upstream_id=upstream_id,
                 site=location_site,
-                taxonomy=taxonomy
+                taxonomy=taxonomy,
+                source_collection=source_collection
             )
         if event_date:
             collection_record.collection_date = parse(event_date)

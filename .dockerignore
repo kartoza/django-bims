@@ -9,6 +9,7 @@ visual_changelog.db
 .vagrant
 
 node_modules
+bims/node_modules
 id_dsa.pub
 id_rsa.pub
 docs/build
@@ -95,13 +96,12 @@ scrap.html
 .sudo_as_admin_successful
 
 # Pg cluster for docker
-deployment/pg/postgres_data/9.6
-deployment/pg/postgres_staging_data/9.6
-deployment/pg/postgres_dev_data/9.6
+deployment/pg
 # Template for apt-cacher
 # static and media dirs
 deployment/static
 deployment/media
+deployment/ansible
 deployment/docker/71-apt-cacher-ng
 django_project/static
 django_project/core/settings/secret.py
@@ -115,17 +115,6 @@ django_project/media
 # Backups
 *.dmp
 deployment/backups
-
-# We should never version the btsync keys
-deployment/btsync-media.env
-deployment/btsync-db.env
-deployment/btsync-db.env.PRODUCTION
-deployment/btsync-media.env.PRODUCTION
-.sync/
-# These don't get versioned since they are generated on the fly
-deployment/docker/Dockerfile-prod
-deployment/docker/projecta.tar.gz
-
 
 docs
 deployment/pg

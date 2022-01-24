@@ -1,6 +1,6 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
 # Note this base image is based on debian
-FROM bims_uwsgi
+FROM bims_uwsgi:latest
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
 # This section taken on 2 July 2015 from
@@ -23,10 +23,10 @@ ADD REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
 RUN pip install -r /REQUIREMENTS-dev.txt
 ADD bashrc /root/.bashrc
 
-RUN apt-get install -y chromium
-RUN mkdir -p /opt/karma
-RUN npm install -g karma
-RUN cd / && npm install
+# RUN apt-get install -y chromium
+# RUN mkdir -p /opt/karma
+# RUN npm install -g karma
+# RUN cd / && npm install
 
 RUN apt-get install vim -y
 ADD karma.conf.docker.js /karma.conf.js

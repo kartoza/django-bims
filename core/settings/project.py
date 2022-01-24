@@ -98,3 +98,10 @@ if PROXY_ALLOWED_HOSTS_ENV:
 
 PROCESSED_CSV_PATH = 'processed_csv'
 SESSION_COOKIE_DOMAIN = os.environ.get('SESSION_COOKIE_DOMAIN', None)
+
+WEBPACK_LOADER = {
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'bims/bundles/',
+        'STATS_FILE': absolute_path('bims', 'webpack-stats.json'),
+    }
+}

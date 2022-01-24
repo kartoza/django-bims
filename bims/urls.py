@@ -6,9 +6,12 @@ from django.urls import reverse_lazy
 from django.views.generic import RedirectView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
+
+from bims.api_views.unpublished_data import UnpublishedData
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
+from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
 
@@ -74,6 +77,7 @@ from bims.views.harvest_collection_data import HarvestCollectionView
 from bims.views.source_reference import (
     SourceReferenceListView,
     EditSourceReferenceView,
+    AddSourceReferenceView,
     DeleteSourceReferenceView
 )
 from bims.views.profile import ProfileView
@@ -82,6 +86,9 @@ from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
 from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
+from bims.views.water_temperature import WaterTemperatureView, \
+    WaterTemperatureUploadView, WaterTemperatureValidateView, WaterTemperatureSiteView
+from bims.views.download_taxa_template import download_taxa_template
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -191,6 +198,9 @@ urlpatterns = [
     url(r'^edit-source-reference/(?P<pk>\d+)/$',
         EditSourceReferenceView.as_view(),
         name='edit-source-reference'),
+    url(r'^add-source-reference/$',
+        AddSourceReferenceView.as_view(),
+        name='add-source-reference'),
     url(r'^summary-report/$', SummaryReportView.as_view(),
         name='summary-report'),
     url(r'^profile/(?P<slug>\w+)/$', ProfileView.as_view(),
@@ -211,6 +221,25 @@ urlpatterns = [
         NonValidatedSiteView.as_view(), name='nonvalidated-site'),
     url(r'^nonvalidated-site/detail/(?P<locationsiteid>\d+)/$',
         SiteLocationDetailView.as_view(), name='nonvalidated-site'),
+    url(r'^source-reference/unpublished/',
+        UnpublishedData.as_view(),
+        name='source-reference-unpublished'),
+    url(r'^download-taxa-template/',
+        download_taxa_template,
+        name='download-taxa-template'),
+    url(r'^water-temperature-form/$', WaterTemperatureView.as_view(), name='water-temperature-form'),
+    url(r'^upload-water-temperature/$',
+        WaterTemperatureUploadView.as_view(),
+        name='upload-water-temperature'),
+    url(r'^validate-water-temperature/$',
+        WaterTemperatureValidateView.as_view(),
+        name='validate-water-temperature'),
+    url(r'^water-temperature/(?P<site_id>\d+)/$',
+        WaterTemperatureSiteView.as_view(),
+        name='water-temperature-site'),
+    url(r'^water-temperature/(?P<site_id>\d+)/(?P<year>\d{4})/$',
+        WaterTemperatureSiteView.as_view(),
+        name='water-temperature-site'),
 ]
 
 # Api urls
@@ -218,4 +247,12 @@ urlpatterns += [  # '',
     url(r'^api/',
         include('bims.api_urls')),
     url(r'^wagtail-api/v2/', api_router.urls),
+]
+
+
+# Thermals
+urlpatterns += [
+    url(r'^thermal-dashboard/$',
+        ThermalDashboardView.as_view(),
+        name='thermal-dashboard'),
 ]

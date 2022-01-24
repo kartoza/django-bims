@@ -24,13 +24,15 @@
         const sassExists = {% if sass_exists %}true{% else %}false{% endif %};
     </script>
     <style>
-        .carousel-inner, .carousel-item {
-            height: 100% !important;
+          .carousel-inner, .carousel-item {
+              height: 100% !important;
         }
 
         .carousel-item img {
             max-height: 100%;
             max-width: 100%;
+        }
+        .carousel-item-content {
             width: auto;
             height: auto;
             position: absolute;
@@ -60,6 +62,7 @@
             display: inline-block;
 
         }
+
     </style>
 
 {% endblock %}
@@ -233,8 +236,8 @@
                         <div class="table-title">
                             SASS Taxa per biotope
                             <span class="pull-right">
-                            {{ sass_taxon_table_data.site_visit_date }}
-                            <i data-download-title="SASS Taxa per biotope - {{ sass_taxon_table_data.site_visit_date }}"
+                            {{ sass_taxon_table_data.site_visit_date|date:'Y-m-d' }}
+                            <i data-download-title="SASS Taxa per biotope - {{ sass_taxon_table_data.site_visit_date|date:'Y-m-d' }}"
                                data-toggle="tooltip" data-placement="left"
                                title="Download table as PNG"
                                class="fa fa-download pull-right download-icon download-table"></i>
@@ -312,7 +315,7 @@
                 <div class="col-md-6 mp">
                     <div class="chart-container">
                         {% if site_image %}
-                            <div id="siteImageCarousel" class="carousel slide" data-ride="carousel" style="height: 500px">
+                            <div id="siteImageCarousel" class="carousel slide" data-ride="carousel" style="height: 450px">
                                 <!-- Indicators -->
                                 <ol class="carousel-indicators">
                                     {% for image in site_image %}
@@ -323,15 +326,15 @@
                                         {% endif %}
                                     {% endfor %}
                                 </ol>
-
-                                <!-- Wrapper for slides -->
                                 <div class="carousel-inner">
                                     {% for image in site_image %}
                                         {% if forloop.counter0 == 0 %}
                                             <div class="carousel-item active">
                                         {% else %}
-                                            <div class="carousel-item">
+                                    <div class="carousel-item" style="height: auto">
                                         {% endif %}
+                                        <div class="carousel-item-content" style="align-items: center; display: table">
+                                        <div class="site-image" style="height: auto; display: table-row">
                                             {% if image.image|is_portrait %}
                                                 {% thumbnail image.image "x500" crop="center" as thumb %}
                                                     <a href="/uploaded/{{ image.image }}" target="_blank"><img src="{{ thumb.url }}"
@@ -348,6 +351,11 @@
                                                 {% endthumbnail %}
                                             {% endif %}
                                         </div>
+                                        <div class="site-image-date" style="text-align: center; display: table-row">
+                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.site_visit.site_visit_date | date:'Y-m-d' }}</span>
+                                        </div>
+                                        </div>
+                                    </div>
                                     {% endfor %}
                                 </div>
 
@@ -447,19 +455,19 @@
                     {% if is_chem_exists  %}
                     <div class="vertical-space"></div>
                     <div class="chart-container" id="chem-chart-wrapper">
-                        <div class="chart-title">Abiotic Data
+                        <div class="chart-title">Physico-chemical data
                             <div class="btn-group pull-right">
                                 <i data-placement="left" data-toggle="dropdown" aria-haspopup="true"
                                    aria-expanded="false" title="Download chart as svg which you can insert the svg to excel or word"
                                    class="fa fa-download pull-right download-icon" ></i>
                                 <div class="dropdown-menu">
-                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - COND"
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Physico-chemical data - COND"
                                                data-download-chart="COND" >Download Conductivity (mS/m)</a>
-                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - TEMP"
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Physico-chemical data - TEMP"
                                                data-download-chart="TEMP" >Download Temperature (degrees C) </a>
-                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - pH"
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Physico-chemical data - pH"
                                                data-download-chart="PH" >Download pH </a>
-                                    <a class="download-chart-new btn dropdown-item" data-download-title="Abiotic Data - DO"
+                                    <a class="download-chart-new btn dropdown-item" data-download-title="Physico-chemical data - DO"
                                        data-download-chart="DO" >Download Oxygen: dissolved (mg/l)</a>
                                 </div>
 

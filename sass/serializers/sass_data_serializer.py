@@ -436,7 +436,7 @@ class SassSummaryDataSerializer(
 
     def get_sampling_date(self, obj):
         site_visit_date = obj['sampling_date']
-        return site_visit_date.strftime('%d-%m-%Y')
+        return site_visit_date.strftime('%Y-%m-%d')
 
     def get_geomorphological_zone(self, obj):
         site = LocationSite.objects.get(id=obj['site_id'])

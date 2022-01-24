@@ -106,6 +106,7 @@
 
 {% block body_content %}
     {% include "source_references/new_database_record_modal.html" %}
+    {% include "source_references/new_unpublished_data_modal.html" %}
     {% include "source_references/new_document_modal.html" %}
     {% if sessions %}
         <!-- Modal -->
@@ -153,13 +154,13 @@
                     </div>
                 </div>
                 <div class="form-group row references-row">
-                    <label for="date" class="col-sm-2 col-form-label col-form-label"><b>DOI</b></label>
+                    <label for="date" class="col-sm-2 col-form-label col-form-label"><b>DOI/URL</b></label>
                     <div class="col-sm-10">
                         <table style="width: 100%">
                             <tr>
                                 <td>
                                     <input id="doi-input" type="text" class="form-control form-control-sm"
-                                           placeholder="Insert the DOI in this format: 10.1007/s11230-017-9737, and then click the search button to generate the study reference.">
+                                           placeholder="Insert the DOI in this format: 10.1007/s11230-017-9737, and then click the search button to generate or find the study reference.">
                                 </td>
                                 <td style="width: 46px;">
                                     <button id="fetch-doi-button" type="button" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i></button>
@@ -236,18 +237,31 @@
                     <label for="notes-reference"
                            class="col-sm-2 col-form-label col-form-label">Notes</label>
                     <div class="col-sm-10">
-                        <select id="unpublished-list" class="form-control" onchange="$('#notes-reference').html($(this).val())" style="margin-bottom: 20px;">
-                        {% for unpublished in list_unpublished %}
-                            {% if unpublished.source_reference__note == additional_context_data.note %}
-                                <option value="{{ unpublished.source_reference__note }}" selected>{{ unpublished.source_reference__note }}</option>
-                            {% else %}
-                                <option value="{{ unpublished.source_reference__note }}">{{ unpublished.source_reference__note }}</option>
-                            {% endif %}
-                        {% endfor %}
-                        {% if not unpublished_data_in_list %}
-                            {% if additional_context_data.note %}<option value="{{ additional_context_data.note }}" selected>{{ additional_context_data.note }}</option>{% else %}<option value="" selected>-</option>{% endif %}
-                        {% endif %}
-                        </select>
+                        <table style="width: 100%" id="unpublished-list">
+                            <tr>
+                                <td>
+                                    <select id="unpublished-data" class="form-control" onchange="$('#notes-reference').html($(this).val())" style="margin-bottom: 20px;">
+                                {% for unpublished in list_unpublished %}
+                                    {% if unpublished.source_reference__note == additional_context_data.note %}
+                                        <option value="{{ unpublished.source_reference__note }}" selected>{{ unpublished.source_reference__note }}</option>
+                                    {% else %}
+                                        <option value="{{ unpublished.source_reference__note }}">{{ unpublished.source_reference__note }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not unpublished_data_in_list %}
+                                    {% if additional_context_data.note %}<option value="{{ additional_context_data.note }}" selected>{{ additional_context_data.note }}</option>{% else %}<option value="" selected>-</option>{% endif %}
+                                {% endif %}
+                                </select>
+                                </td>
+                                <td style="width: 46px;">
+                                    <input type="button" data-toggle="modal"
+                                           data-target="#new-unpublished-data-modal" class="btn btn-primary form-control"
+                                           value="Add new ..." style="height: 36px;">
+                                </td>
+
+                            </tr>
+                        </table>
+
                         <textarea id="notes-reference" type="text" class="form-control form-control-sm" name="note">{% if additional_context_data.note %}{{ additional_context_data.note }}{% endif %}</textarea>
                     </div>
                 </div>

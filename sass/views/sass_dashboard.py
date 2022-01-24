@@ -67,7 +67,7 @@ class SassDashboardView(TemplateView):
         ).order_by('date')
 
         data['date_labels'] = (
-            [dt.strftime('%d-%m-%Y')
+            [dt.strftime('%Y-%m-%d')
              for dt in summary.values_list('date', flat=True)])
         data['taxa_numbers'] = list(
             summary.values_list('count', flat=True))
@@ -225,7 +225,7 @@ class SassDashboardView(TemplateView):
         biotope_labels = []
 
         for rating_data in biotope_ratings:
-            date = rating_data['date'].strftime('%d-%m-%Y')
+            date = rating_data['date'].strftime('%Y-%m-%d')
             if date not in data:
                 data[date] = {}
             rate = rating_data['rate']

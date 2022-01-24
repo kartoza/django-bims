@@ -6,6 +6,10 @@ from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
 from django.urls import reverse
+
+from bims.enums import TaxonomicGroupCategory
+from bims.models.taxon_group import TaxonGroup
+from bims.models.taxon_extra_attribute import TaxonExtraAttribute
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.taxon_serializer import (
     TaxonSerializer,
@@ -26,6 +30,8 @@ from bims.models.survey import SurveyData, SurveyDataValue
 from bims.scripts.collection_csv_keys import *  # noqa
 from bims.models.location_context_group import LocationContextGroup
 from bims.models.taxonomy import Taxonomy
+from bims.utils.gbif import get_species
+from bims.utils.occurences import get_fields_from_occurrences
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -108,6 +114,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
+    gbif_id = serializers.SerializerMethodField()
+    dataset_key = serializers.SerializerMethodField()
+    occurrence_id = serializers.SerializerMethodField()
+    basis_of_record = serializers.SerializerMethodField()
+    institution_code = serializers.SerializerMethodField()
+    collection_code = serializers.SerializerMethodField()
+    catalog_number = serializers.SerializerMethodField()
+    identified_by = serializers.SerializerMethodField()
+    rights_holder = serializers.SerializerMethodField()
+    recorded_by = serializers.SerializerMethodField()
 
     def spatial_data(self, obj, key):
         if 'context_cache' not in self.context:
@@ -212,10 +228,12 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return lon
 
     def get_origin(self, obj):
-        category = obj.taxonomy.origin
-        if category in Taxonomy.CATEGORY_CHOICES:
-            return ORIGIN[category]
+        category = obj.taxonomy.origin.lower()
+        if category in Taxonomy.CATEGORY_CHOICES_DICT:
+            return Taxonomy.CATEGORY_CHOICES_DICT[category]
         else:
+            if category:
+                return category
             return 'Unknown'
 
     def get_endemism(self, obj):
@@ -234,6 +252,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_taxon(self, obj):
+        if obj.taxonomy:
+            if obj.taxonomy.canonical_name:
+                return obj.taxonomy.canonical_name
         if obj.original_species_name:
             return obj.original_species_name
         return '-'
@@ -411,6 +432,45 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.substratum.name.capitalize()
         return '-'
 
+    def occurrences_fields(self, obj, field):
+        if obj.upstream_id:
+            data = get_fields_from_occurrences(obj)
+            try:
+                return data[field]
+            except:  # noqa
+                return '-'
+        return '-'
+
+    def get_gbif_id(self, obj):
+        return self.occurrences_fields(obj, 'gbifID')
+
+    def get_dataset_key(self, obj):
+        return self.occurrences_fields(obj, 'datasetKey')
+
+    def get_occurrence_id(self, obj):
+        return self.occurrences_fields(obj, 'occurrenceID')
+
+    def get_basis_of_record(self, obj):
+        return self.occurrences_fields(obj, 'basisOfRecord')
+
+    def get_institution_code(self, obj):
+        return self.occurrences_fields(obj, 'institutionCode')
+
+    def get_collection_code(self, obj):
+        return self.occurrences_fields(obj, 'collectionCode')
+
+    def get_catalog_number(self, obj):
+        return self.occurrences_fields(obj, 'catalogNumber')
+
+    def get_identified_by(self, obj):
+        return self.occurrences_fields(obj, 'identifiedBy')
+
+    def get_rights_holder(self, obj):
+        return self.occurrences_fields(obj, 'rightsHolder')
+
+    def get_recorded_by(self, obj):
+        return self.occurrences_fields(obj, 'recordedBy')
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -455,6 +515,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'title',
             'doi_or_url',
             'notes',
+            'gbif_id',
+            'dataset_key',
+            'occurrence_id',
+            'basis_of_record',
+            'institution_code',
+            'collection_code',
+            'catalog_number',
+            'identified_by',
+            'rights_holder',
+            'recorded_by',
         ]
 
     def to_representation(self, instance):
@@ -616,6 +686,30 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                      ),
                      args=[instance.id]
                  )])
+
+        # Taxon attribute
+        taxon_group = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies__in=[instance.taxonomy]).first()
+
+        if taxon_group:
+            taxon_extra_attributes = TaxonExtraAttribute.objects.filter(
+                taxon_group=taxon_group
+            )
+            if taxon_extra_attributes.exists():
+                for taxon_extra_attribute in taxon_extra_attributes:
+                    taxon_attribute_name = taxon_extra_attribute.name
+                    key_title = taxon_attribute_name.lower().replace(' ', '_')
+                    if key_title not in self.context['header']:
+                        self.context['header'].append(key_title)
+                    if taxon_attribute_name in instance.taxonomy.additional_data:
+                        result[key_title] = (
+                            instance.taxonomy.additional_data
+                            [taxon_attribute_name]
+                        )
+                    else:
+                        result[key_title] = ''
+
         return result
 
 

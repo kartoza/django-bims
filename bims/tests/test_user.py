@@ -2,7 +2,7 @@ from django.test import TestCase
 from bims.tests.model_factories import (
     UserF, BiologicalCollectionRecordF
 )
-from bims.utils.user import merge_users
+from bims.utils.user import merge_users, get_user
 from bims.models import BiologicalCollectionRecord
 
 
@@ -50,3 +50,16 @@ class TestUser(TestCase):
                 owner=user_2
             ).exists()
         )
+
+    def test_get_user_from_username(self):
+        username_1 = 'Dimas Ciputra'
+        user = get_user(username_1)
+        username_2 = 'Dimas T Ciputra'
+        user_2 = get_user(username_2)
+        self.assertEqual(user, user_2)
+
+        username_3 = 'D_Ciputra'
+        user_3 = get_user(username_3)
+        username_4 = 'Dim_Ciputra'
+        user_4 = get_user(username_4)
+        self.assertNotEqual(user_3, user_4)

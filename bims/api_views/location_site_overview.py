@@ -1,4 +1,6 @@
 from collections import OrderedDict
+
+from bims.models.water_temperature import WaterTemperature
 from django.db.models import F, Value, Case, When, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -19,7 +21,6 @@ from bims.serializers.location_site_detail_serializer import (
 
 
 class LocationSiteOverviewData(object):
-
     BIODIVERSITY_DATA = 'biodiversity_data'
     MODULE = 'module'
     SASS_EXIST = 'sass_exist'
@@ -30,6 +31,8 @@ class LocationSiteOverviewData(object):
     GROUP_NUM_OF_TAXA = 'number_of_taxa'
     GROUP_ORIGIN = 'origin'
     GROUP_CONS_STATUS = 'cons_status'
+    WATER_TEMPERATURE_EXIST = 'water_temperature_exist'
+    WATER_TEMPERATURE_DATA = 'water_temperature_data'
 
     search_filters = None
     is_sass_exist = False
@@ -59,8 +62,12 @@ class LocationSiteOverviewData(object):
             )
 
             if group_records.exists() and not self.is_sass_exist:
-                self.is_sass_exist = SiteVisitTaxon.objects.filter(
-                    id__in=group_records).exists()
+                try:
+                    self.is_sass_exist = group_records.filter(
+                        sitevisittaxon__isnull=False
+                    ).exists()
+                except:  # noqa
+                    self.is_sass_exist = False
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
             group_data[self.GROUP_SITES] = group_records.distinct(
@@ -133,6 +140,7 @@ class MultiLocationSitesOverview(APIView, LocationSiteOverviewData):
 
 
 class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
+    is_water_temperature_exist = False
 
     def get_object(self, pk):
         try:
@@ -148,6 +156,12 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
 
         site_id = request.GET.get('siteId')
         location_site = self.get_object(site_id)
+        water_temperature_data = WaterTemperature.objects.filter(
+            location_site=location_site
+        )
+        if water_temperature_data.count() > 0:
+            self.is_water_temperature_exist = True
+        response_data[self.WATER_TEMPERATURE_EXIST] = self.is_water_temperature_exist
         serializer = LocationSiteDetailSerializer(
             location_site)
         response_data.update(serializer.data)

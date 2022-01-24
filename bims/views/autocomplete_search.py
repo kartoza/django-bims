@@ -124,6 +124,7 @@ def user_autocomplete(request):
             names = q.split(' ')
             if len(names[1]) > 2:
                 last_name = names[1].strip()
+                first_name = names[0].strip()
         if first_name != last_name:
             search_qs = user_model.objects.filter(
                 first_name__istartswith=first_name,

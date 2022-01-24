@@ -5,6 +5,8 @@ let $notesReference = $('#notes-reference');
 let $referenceCategory = $('#reference-category');
 let $unpublishedList = $('#unpublished-list');
 let $notes = $('#notes-reference');
+let $unpublishedData = $('#unpublished-data');
+
 
 let showReferenceRow = ($row) => {
     $($row.closest('.references-row')).removeClass('hidden');
@@ -106,10 +108,17 @@ $(document).ready(function () {
     });
 });
 
-newDatabaseRecordSubmitCallback = (response) => {
+newDatabaseRecordSubmitCallback  = (response) => {
     $databaseReference.append('<option value="' + response.id + '">' + response.name + '</option>');
     $databaseReference.val(response.id);
 };
+
+newUnpublishedDataSubmitCallback = (response) => {
+    $unpublishedData.append('<option value="' + response.id + '">' + response.note + '</option>');
+    $unpublishedData.val(response.id);
+    $notes.val(response.note);
+};
+
 
 newDocumentSubmitCallback = (response) => {
     $studyReference.append('<option ' +

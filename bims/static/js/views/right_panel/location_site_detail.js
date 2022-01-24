@@ -331,7 +331,12 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         renderBiodiversityDataSection: function (container, data) {
             let self = this;
             let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
-            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data, is_sass_enabled: is_sass_enabled, sass_exist: data.sass_exist, add_data: true }));
+            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data,
+                is_sass_enabled: is_sass_enabled,
+                sass_exist: data.sass_exist,
+                add_data: true,
+                water_temperature_exist:data.water_temperature_exist
+            }));
             $.each(data['biodiversity_data'], function (key, value) {
                 self.charts.push({
                     'canvas': $("#origin-chart-" + value.module),
@@ -355,7 +360,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 if ($target.hasClass("disabled")) {
                     return false;
                 }
-                parameters['modules'] = $target.data('module');
+                parameters['modules'] = $target.data('module')
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
             $('.sp-add-record').click(function (e) {
@@ -389,6 +394,18 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             });
             $('.sp-add-sass').click(function () {
                 window.location.href = '/sass/' + self.siteId;
+            });
+            $('.sp-add-water-temperature').click(function () {
+                window.location.href = '/water-temperature-form/?siteId=' + self.siteId;
+            });
+            $('.sp-water-temperature').click(function (e) {
+                let waterTemperatureUrl = '';
+                if (typeof self.siteId !== 'undefined') {
+                    waterTemperatureUrl = '/water-temperature/' + self.siteId + '/';
+                }
+                waterTemperatureUrl += self.apiParameters(filterParameters);
+                window.location.href = waterTemperatureUrl;
+
             });
         },
         flatten_arr: function (arr) {

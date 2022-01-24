@@ -79,6 +79,14 @@ def process_source_reference(
             doc_split = document_link.split('/')
             document_id = int(doc_split[len(doc_split) - 1])
             document = Document.objects.get(id=document_id)
+
+            # Check existing source reference from the document id
+            source_reference = SourceReference.objects.filter(
+                sourcereferencedocument__source_id=document.id
+            ).first()
+            if source_reference:
+                return 'Reference found', source_reference
+
         except (ValueError, Document.DoesNotExist):
             return 'Document {} does not exist'.format(document_id), None
 
@@ -139,15 +147,6 @@ def process_source_reference(
                     entry_fields,
                     create=False
                 )
-                if entry:
-                    source_reference = (
-                        SourceReference.create_source_reference(
-                            category='bibliography',
-                            source_id=entry.id,
-                            note=None
-                        )
-                    )
-                    source_reference_found = True
             except (
                     DOILoaderError,
                     requests.exceptions.HTTPError) as e:
@@ -156,18 +155,19 @@ def process_source_reference(
                 if not entry:
                     return 'Error Fetching DOI : {doi}'.format(
                         doi=doi), None
-                if entry and not source_reference:
-                    SourceReference.create_source_reference(
-                        category='bibliography',
-                        source_id=entry.id,
-                        note=None
-                    )
-                    source_reference, _ = (
-                        SourceReferenceBibliography.objects.get_or_create(
-                            source=entry
-                        )
-                    )
-                    source_reference_found = True
+
+        if entry and not source_reference:
+            SourceReference.create_source_reference(
+                category='bibliography',
+                source_id=entry.id,
+                note=None
+            )
+            source_reference, _ = (
+                SourceReferenceBibliography.objects.get_or_create(
+                    source=entry
+                )
+            )
+            source_reference_found = True
 
     if not source_reference_found:
         if (
@@ -235,8 +235,6 @@ def process_source_reference(
                 )
         elif 'database' in reference_category.lower():
             reference_name = reference
-            if source_year:
-                reference_name += ', ' + source_year
             database_record, dr_created = (
                 DatabaseRecord.objects.get_or_create(
                     name=reference_name
@@ -252,8 +250,6 @@ def process_source_reference(
         else:
             # Unpublished data
             reference_name = reference
-            if source_year:
-                reference_name += ', ' + source_year
             source_reference = (
                 SourceReference.create_source_reference(
                     category=None,
