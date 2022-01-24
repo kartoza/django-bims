@@ -35,6 +35,17 @@ jobs:
             type=gha,scope=prod
           cache-to: type=gha,scope=test
 
+      - name: Run docker-compose services
+        working-directory: deployment
+        run: |
+          echo "Override docker-compose for testing purposes"
+          cp docker-compose.test.yml docker-compose.override.yml
+          cd ../
+          make up
+          make devweb
+          make wait-db
+          make create-test-db
+
 # Service containers to run with `container-job`
 #    services:
 #      # Label used to access the service container
