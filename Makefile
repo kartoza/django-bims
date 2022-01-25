@@ -391,7 +391,7 @@ devweb-test:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose exec dev python manage.py test
+	@docker-compose exec -T dev python manage.py test
 
 build-devweb: db
 	@echo
