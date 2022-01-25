@@ -43,6 +43,7 @@ jobs:
           cd ../
           make devweb
           make wait-db
+          make sleep
           make create-test-db
 
 # Service containers to run with `container-job`
