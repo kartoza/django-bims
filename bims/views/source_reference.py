@@ -45,14 +45,15 @@ class SourceReferencePagination(PageNumberPagination):
     max_page_size = 1000
 
 
-class SourceReferenceAPIView(ListAPIView):
-    pagination_class = SourceReferencePagination
-    serializer_class = SourceReferenceSerializer
+class SourceReferenceList(View):
     source_reference_type = {
         'database': SourceReferenceDatabase,
         'bibliography': SourceReferenceBibliography,
         'document': SourceReferenceDocument
     }
+    collectors = None
+    type_filter = ''
+    search_query = ''
 
     def get(self, request, *args, **kwargs):
         """Check GET request parameters validity and store them"""
@@ -70,7 +71,7 @@ class SourceReferenceAPIView(ListAPIView):
         self.collectors = self.request.GET.get('collectors', None)
         if self.collectors:
             self.collectors = self.collectors.split(',')
-        return super(SourceReferenceAPIView, self).get(
+        return super(SourceReferenceList, self).get(
             request, *args, **kwargs)
 
     def get_queryset(self):
@@ -126,88 +127,15 @@ class SourceReferenceAPIView(ListAPIView):
         return qs
 
 
-class SourceReferenceListView(ListView):
+class SourceReferenceAPIView(SourceReferenceList, ListAPIView):
+    pagination_class = SourceReferencePagination
+    serializer_class = SourceReferenceSerializer
+
+
+class SourceReferenceListView(ListView, SourceReferenceList):
     model = SourceReference
     template_name = 'source_reference_list.html'
     paginate_by = 15
-    source_reference_type = {
-        'database': SourceReferenceDatabase,
-        'bibliography': SourceReferenceBibliography,
-        'document': SourceReferenceDocument
-    }
-
-    def get(self, request, *args, **kwargs):
-        """Check GET request parameters validity and store them"""
-        # -- Type query
-        source_reference_type = self.request.GET.get('type', None)
-        if source_reference_type:
-            self.type_filter = source_reference_type
-        else:
-            self.type_filter = ''
-
-        # -- Search query
-        self.search_query = self.request.GET.get('q', '')
-
-        # -- Collectors
-        self.collectors = self.request.GET.get('collectors', None)
-        if self.collectors:
-            self.collectors = self.collectors.split(',')
-
-        return super(SourceReferenceListView, self).get(
-            request, *args, **kwargs)
-
-    def get_queryset(self):
-        """
-        Add GET requests filters
-        """
-        filters = dict()
-        # Base queryset
-        qs = super(SourceReferenceListView, self).get_queryset()
-
-        if self.collectors:
-            qs = qs.filter(
-                Q(sourcereferencebibliography__source__authors__user__in=
-                  self.collectors) |
-                Q(sourcereferencebibliography__document__bimsdocument__authors__in=  # noqa
-                  self.collectors) |
-                Q(sourcereferencedocument__source__bimsdocument__authors__in=
-                  self.collectors) |
-                Q(sourcereferencedocument__source__owner__in=self.collectors)
-            )
-
-        if self.type_filter:
-            or_condition = Q()
-            type_filters = self.type_filter.split(',')
-            for type_filter in type_filters:
-                if type_filter in self.source_reference_type:
-                    or_condition |= Q(**{
-                        'instance_of':
-                            self.source_reference_type[type_filter]
-                    })
-                else:
-                    for source_reference_type in self.source_reference_type:
-                        or_condition &= Q(**{
-                            'not_instance_of':
-                                self.source_reference_type[
-                                    source_reference_type]})
-            qs = qs.filter(or_condition)
-
-        if self.search_query:
-            qs = qs.filter(
-                Q(sourcereferencebibliography__source__title__icontains =
-                  self.search_query) |
-                Q(sourcereferencedocument__source__title__icontains =
-                  self.search_query) |
-                Q(sourcereferencedatabase__source__name__icontains =
-                  self.search_query) |
-                Q(note__icontains = self.search_query) |
-                Q(source_name__icontains = self.search_query)
-            )
-
-        qs = qs.filter(**filters).distinct('id')
-
-        # Return filtered queryset
-        return qs
 
     def get_context_data(self, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
