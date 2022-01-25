@@ -23,10 +23,11 @@ class BimsDocument(models.Model):
     @property
     def authors_string(self):
         author_string = ''
-        for author in self.authors.all():
-            if author_string:
-                author_string += ', '
-            author_string += author.first_name + ' ' + author.last_name
+        if self.authors:
+            for author in self.authors.all():
+                if author_string:
+                    author_string += ', '
+                author_string += author.first_name + ' ' + author.last_name
         return author_string
 
     def update_metadata(self, data, silent=False):
