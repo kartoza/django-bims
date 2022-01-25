@@ -48,11 +48,7 @@ jobs:
 
       - name: Run test
         run: |
-          cat << EOF | make devweb-bash
-          python manage.py makemigrations
-          python manage.py migrate
-          python manage.py test
-          EOF
+          make devweb-test
 
 # Service containers to run with `container-job`
 #    services:

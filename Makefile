@@ -386,12 +386,12 @@ sleep:
 	@sleep 50
 	@echo "Done"
 
-devweb-bash:
+devweb-test:
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} exec dev /bin/bash
+	@docker-compose ${ARGS} exec dev bash -c "python manage.py test"
 
 build-devweb: db
 	@echo
