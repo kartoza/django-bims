@@ -1,7 +1,6 @@
 # coding=utf-8
 """Vernacular name model definition.
 """
-
 from django.db import models
 from django.db.models import Avg, F, Max, Min, Count
 from django.db.models.aggregates import StdDev
@@ -12,6 +11,9 @@ import numpy as np
 
 from bims.models.location_site import LocationSite
 from bims.models.source_reference import SourceReference
+from bims.models.biological_collection_record import (
+    BiologicalCollectionQuerySet
+)
 
 
 THRESHOLD_VALUE = {
@@ -32,7 +34,17 @@ THRESHOLD_VALUE = {
 }
 
 
+class WaterTemperatureManager(models.Manager):
+    def get_queryset(self):
+        return BiologicalCollectionQuerySet(self.model, using=self._db)
+
+    def source_references(self):
+        return self.get_queryset().source_references()
+
+
 class WaterTemperature(models.Model):
+
+    objects = WaterTemperatureManager()
 
     date_time = models.DateTimeField(
         null=False,

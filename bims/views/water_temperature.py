@@ -1,5 +1,6 @@
 import codecs
 import csv
+import json
 import time
 from datetime import datetime
 from braces.views import LoginRequiredMixin
@@ -377,6 +378,16 @@ class WaterTemperatureSiteView(TemplateView):
         context['location_site'] = self.location_site
         context['indicators'] = calculate_indicators(self.location_site, year)
         context['execution_time'] = time.time() - start_time
+        source_references = (
+            WaterTemperature.objects.filter(
+                location_site=self.location_site
+            ).exclude(
+                source_reference__isnull=True
+            ).order_by(
+                'source_reference').distinct(
+            'source_reference').source_references()
+        )
+        context['source_references'] = json.dumps(source_references)
 
         return context
 

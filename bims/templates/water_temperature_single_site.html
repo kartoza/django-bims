@@ -21,6 +21,7 @@
         const siteCode = "{{ site_code }}";
         const siteId = "{{ site_id }}";
         const year = "{{ year }}";
+        const sourceReferences = {{ source_references | safe }};
     </script>
     <style>
 
@@ -72,8 +73,9 @@
 {% endblock %}
 
 {% block body_content %}
-        <script type="text/javascript">
-        </script>
+    <script type="text/javascript">
+    </script>
+    <div style="padding-bottom: 0.2em">
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
                                                         src="{% static 'img/bims-stamp.png' %}">
@@ -99,13 +101,16 @@
                 <h2>Water Temperature for {{ site_code }}</h2>
                 <div class="form-group year-container">
                     <label class="col-form-label">Year :</label>
-                    <select class="form-control" id="years" onchange="changeYear(this)">
+                    <select class="form-control" id="years"
+                            onchange="changeYear(this)">
                         {% for year_opt in years %}
-                            <option value="{{ year_opt }}" {% if year_opt == year %}selected{% endif %}>{{ year_opt }}</option>
+                            <option value="{{ year_opt }}"
+                                    {% if year_opt == year %}selected{% endif %}>{{ year_opt }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+                <div class="dashboard-close"><i class="fa fa-times"
+                                                aria-hidden="true"></i></div>
             </div>
             <div class="row">
                 <div class="col-md-6">
@@ -147,7 +152,9 @@
                                 <td>{{ site_description }}</td>
                             </tr>
                             <tr>
-                                <th class="title-row" colspan="2">River and Geomorphological Zone</th>
+                                <th class="title-row" colspan="2">River and
+                                    Geomorphological Zone
+                                </th>
                             </tr>
                             <tr>
                                 <td scope="row">Original River Name</td>
@@ -168,73 +175,75 @@
                                class="fa fa-download pull-right download-icon download-table"></i>
                         </div>
 
-                    <div class="row row-indicator table" style="width: 100%;">
-                        <div class="col-lg-4">
-                            <div class="col-header">
-                                Monthly magnitudes
+                        <div class="row row-indicator table" style="width: 100%;">
+                            <div class="col-lg-4">
+                                <div class="col-header">
+                                    Monthly magnitudes
+                                </div>
+                                {% for key, value in indicators.monthly.items %}
+                                    <p> {{ key }} </p>
+                                {% endfor %}
                             </div>
-                            {% for key, value in indicators.monthly.items %}
-                                <p> {{ key }} </p>
-                            {% endfor %}
-                        </div>
-                        <div class="col-lg-2">
-                            <div class="col-header">
-                                Mean
+                            <div class="col-lg-2">
+                                <div class="col-header">
+                                    Mean
+                                </div>
+                                {% for key, value in indicators.monthly.items %}
+                                    <p> {{ value.monthly_mean|floatformat:2 }} </p>
+                                {% endfor %}
                             </div>
-                            {% for key, value in indicators.monthly.items %}
-                                <p> {{ value.monthly_mean|floatformat:2 }} </p>
-                            {% endfor %}
-                        </div>
-                        <div class="col-lg-2">
-                            <div class="col-header">
-                                Min
+                            <div class="col-lg-2">
+                                <div class="col-header">
+                                    Min
+                                </div>
+                                {% for key, value in indicators.monthly.items %}
+                                    <p> {{ value.monthly_min|floatformat:2 }} </p>
+                                {% endfor %}
                             </div>
-                            {% for key, value in indicators.monthly.items %}
-                                <p> {{ value.monthly_min|floatformat:2 }} </p>
-                            {% endfor %}
-                        </div>
-                        <div class="col-lg-2">
-                            <div class="col-header">
-                                Max
+                            <div class="col-lg-2">
+                                <div class="col-header">
+                                    Max
+                                </div>
+                                {% for key, value in indicators.monthly.items %}
+                                    <p> {{ value.monthly_max|floatformat:2 }} </p>
+                                {% endfor %}
                             </div>
-                            {% for key, value in indicators.monthly.items %}
-                                <p> {{ value.monthly_max|floatformat:2 }} </p>
-                            {% endfor %}
-                        </div>
-                        <div class="col-lg-2">
-                            <div class="col-header">
-                                Range
+                            <div class="col-lg-2">
+                                <div class="col-header">
+                                    Range
+                                </div>
+                                {% for key, value in indicators.monthly.items %}
+                                    <p> {{ value.monthly_range|floatformat:2 }} </p>
+                                {% endfor %}
                             </div>
-                            {% for key, value in indicators.monthly.items %}
-                                <p> {{ value.monthly_range|floatformat:2 }} </p>
-                            {% endfor %}
                         </div>
-                    </div>
 
-                </div>
+                    </div>
 
                 </div>
                 <div class="col-md-6 mp">
-                <div class="chart-container">
-                    <div class="chart-title">Water Temperature
+                    <div class="chart-container">
+                        <div class="chart-title">Water Temperature
+                        </div>
+                        <div id="water-temperature"></div>
                     </div>
-                    <div id="water-temperature"></div>
-                </div>
-                 <div class="vertical-space"></div>
-                <div class="table-container">
+                    <div class="vertical-space"></div>
+                    <div class="table-container">
                         <div class="table-title">Thermal Metrics
                             <i data-download-title="Water Temperature"
                                data-toggle="tooltip" data-placement="left"
                                class="fa fa-download pull-right download-icon download-table"></i>
-                    </div>
-                    <table class="sass-summary table">
+                        </div>
+                        <table class="sass-summary table">
                             <tbody>
                             <tr>
-                                <th class="title-row" colspan="2">Annual descriptive statistics</th>
+                                <th class="title-row" colspan="2">Annual
+                                    descriptive statistics
+                                </th>
                             </tr>
                             <tr>
-                              <td>Mean Annual temperature (MAT)</td>
-                              <td>{{ indicators.annual.annual_mean|floatformat:2 }}</td>
+                                <td>Mean Annual temperature (MAT)</td>
+                                <td>{{ indicators.annual.annual_mean|floatformat:2 }}</td>
                             </tr>
                             <tr>
                                 <td>Standard deviation of MAT</td>
@@ -245,11 +254,11 @@
                                 <td>{{ indicators.annual.annual_cv|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                               <td>Mean of annual range</td>
+                                <td>Mean of annual range</td>
                                 <td>{{ indicators.annual.annual_range|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                               <td>Standard deviation of annual range</td>
+                                <td>Standard deviation of annual range</td>
                                 <td>{{ indicators.annual.annual_range_sd|floatformat:2 }}</td>
                             </tr>
                             <tr>
@@ -261,15 +270,17 @@
                                 <td>{{ indicators.annual.annual_max|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <th class="title-row" colspan="2">Magnitudes of extreme water temperature conditions</th>
+                                <th class="title-row" colspan="2">Magnitudes of
+                                    extreme water temperature conditions
+                                </th>
                             </tr>
                             <tr>
-                            <td>Mean7</td>
-                            <td>{{ indicators.weekly.weekly_mean_avg|floatformat:2 }}</td>
+                                <td>Mean7</td>
+                                <td>{{ indicators.weekly.weekly_mean_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                             <td>Min7</td>
-                             <td>{{ indicators.weekly.weekly_min_avg|floatformat:2 }}</td>
+                                <td>Min7</td>
+                                <td>{{ indicators.weekly.weekly_min_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
                                 <td>Min_30</td>
@@ -292,8 +303,11 @@
                                 <td>{{ indicators.ninety_days.ninety_max_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <th class="title-row" colspan="2">Frequency and duration (successive days exceeding thresholds) of
-                                extreme water temperature conditions</th>
+                                <th class="title-row" colspan="2">Frequency and
+                                    duration (successive days exceeding thresholds)
+                                    of
+                                    extreme water temperature conditions
+                                </th>
                             </tr>
                             <tr>
                                 <td>Mean7cnt</td>
@@ -320,13 +334,30 @@
                                 <td>{{ indicators.threshold.weekly_max_dur }}</td>
                             </tr>
                             </tbody>
-                    </table>
+                        </table>
                     </div>
                 </div>
-                </div>
+            </div>
 
+
+            <div class="row">
+                <div class="col-md-12" style="margin-top: 10px;">
+                    <div class="table-container">
+                        <div class="table-title">
+                            Metadata Table
+                            <i data-download-title=" Metadata Table"
+                               data-toggle="tooltip" data-placement="left"
+                               class="fa fa-download pull-right download-icon download-table"></i>
+                        </div>
+                        <div class="data-content">
+                            <table id="data-source-list" class="table table-hover custom-table metadata-table">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        </div>
+    </div>
 {% endblock %}
 
 {% block foot %}
