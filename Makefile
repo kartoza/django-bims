@@ -407,13 +407,6 @@ build-worker: db
 	@echo "------------------------------------------------------------------"
 	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up -d worker
 
-devweb-test:
-	@echo
-	@echo "------------------------------------------------------------------"
-	@echo "Running karma tests in devweb"
-	@echo "------------------------------------------------------------------"
-	@docker exec bims-dev-web bash -c 'cd / ; karma start --single-run'
-
 reset-search-results:
 	@echo
 	@echo "------------------------------------------------------------------"
