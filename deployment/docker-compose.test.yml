@@ -7,7 +7,7 @@ version: '2'
 services:
 
   dev:
-    image: kartoza/kbims_uwsgi:latest
+    image: ${APP_IMAGE}:dev
     command: ''
     links:
       - db:db
