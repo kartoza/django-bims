@@ -46,6 +46,15 @@ jobs:
           make sleep
           make create-test-db
 
+      - name: Run test
+        working-directory: deployment
+        run: |
+          cat << EOF | make devweb-bash
+          python manage.py makemigrations
+          python manage.py migrate
+          python manage.py test
+          EOF
+
 # Service containers to run with `container-job`
 #    services:
 #      # Label used to access the service container
