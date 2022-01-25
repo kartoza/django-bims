@@ -1,0 +1,6 @@
+/*!
+ * pagination v1.4.1 (https://github.com/nashaofu/pagination)
+ * Copyright 2018 nashaofu
+ * Licensed under MIT
+ */
+ul.pagination:after,ul.pagination:before{display:table;content:' '}ul.pagination{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:18px;line-height:36px;display:table;margin:0 auto;padding:0;list-style:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;color:#428bca}ul.pagination:after{clear:both}ul.pagination>li{float:left;margin:0 2px;padding:0}ul.pagination>li>a{display:block;margin:0;padding:0 14px;cursor:pointer;text-align:center;text-decoration:none;color:#428bca;border:1px solid #0ff;border-radius:4px;background-color:#fff}ul.pagination>li>a:hover{border:1px solid #08f}ul.pagination>li>span{display:inline;padding:7px 10px;cursor:default;text-align:center;color:#428bca}ul.pagination>li.active>a,ul.pagination>li.active>a:focus,ul.pagination>li.active>a:hover{cursor:default;color:#fff;border:1px solid #428bca;outline:0;background-color:#428bca}ul.pagination>li.disabled>a,ul.pagination>li.disabled>a:focus,ul.pagination>li.disabled>a:hover{cursor:not-allowed;color:#999;border:1px solid #ccc;outline:0;background-color:#fff}

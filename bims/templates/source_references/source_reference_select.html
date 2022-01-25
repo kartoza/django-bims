@@ -1,3 +1,5 @@
+{% load static from staticfiles %}
+<link href="{% static "lib/pagination/bs-pagination.min.css" %}" rel="stylesheet"/>
 <div style="margin-bottom: 20px;">
 
    <div class="form-group row  clockpicker-container">
@@ -33,6 +35,7 @@
         <div class="col-9">
             <div id="source-reference-list-container">
             </div>
+            <ul id="pagination" class="pagination"></ul>
         </div>
     </div>
 </div>
@@ -48,6 +51,7 @@
     }
 </style>
 
+<script src="{% static "lib/pagination/pagination.min.js" %}"></script>
 <script type="text/html" id="source-reference-card">
     <div class="card" style="margin-bottom: 10px;">
         <div class="card-body">
@@ -80,19 +84,37 @@
     let currentQuery = '';
     let selectedSourceReference = null;
     let sourceReferences = {};
+    let currentPage = 1;
 
-    function getSourceReferenceList(type = '', query = '') {
-        if (type) {
-          currentType = type;
-        }
-        if (query) {
-          currentQuery = query
-        }
+    function updatePagination(totalEntries) {
+       	$('#pagination').pagination({
+          // the number of entries
+          total: totalEntries,
+          // current page
+          current: currentPage,
+          // the number of entries per page
+          length: 20,
+          // pagination size
+          size: 10,
+          // Prev/Next text
+          prev: "&lt;",
+          next: "&gt;",
+          // fired on each click
+          click: function (e) {
+            currentPage = e.current;
+            getSourceReferenceList();
+          }
+        });
+    }
+
+    function getSourceReferenceList() {
         let $sourceReferenceListContainer = $('#source-reference-list-container');
         $sourceReferenceListContainer.html('Fetching data...');
-        $.get(`/api/source-reference-list?type=${currentType}&q=${currentQuery}`, function (data) {
+        $.get(`/api/source-reference-list?type=${currentType}&q=${currentQuery}&page=${currentPage}`, function (data) {
           $sourceReferenceListContainer.html('');
           sourceReferences = {};
+          updatePagination(data['count']);
+          console.log(data);
           if (data['results'].length > 0) {
             for (let i = 0; i < data['results'].length; i++) {
               let result = data['results'][i];
@@ -109,19 +131,25 @@
     }
 
     $('#source-reference-type-select').change((e) => {
-      let type = $(e.target).val()
-      getSourceReferenceList(type);
+      let type = $(e.target).val();
+      currentPage = 1;
+      currentType = type;
+      getSourceReferenceList();
     })
 
     $('#search-input').keypress(function (e) {
       if (e.which === 13) {
-        getSourceReferenceList('', $(e.target).val());
+        currentPage = 1;
+        currentQuery = $(e.target).val();
+        getSourceReferenceList();
       }
     })
 
     $('.input-group-append').click(function (e) {
       let value = $('#search-input').val();
-      getSourceReferenceList('', value);
+      currentPage = 1;
+      currentQuery = value;
+      getSourceReferenceList();
     })
 
     function selectSourceReference(sourceReferenceId) {
