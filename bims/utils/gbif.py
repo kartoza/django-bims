@@ -139,20 +139,23 @@ def find_species(
                 if key_found and 'taxonomicStatus' in result:
                     if result['taxonomicStatus'] == 'ACCEPTED':
                         if accepted_data:
-                            if result['key'] < accepted_data['key']:
-                                accepted_data = result
+                            if result['canonicalName'] == original_species_name:
+                                if result['key'] < accepted_data['key']:
+                                    accepted_data = result
                         else:
                             accepted_data = result
                     if result['taxonomicStatus'] == 'SYNONYM':
                         if synonym_data:
-                            if result['key'] < synonym_data['key']:
-                                synonym_data = result
+                            if result['canonicalName'] == original_species_name:
+                                if result['key'] < synonym_data['key']:
+                                    synonym_data = result
                         else:
                             synonym_data = result
                     else:
                         if other_data:
-                            if result['key'] < other_data['key']:
-                                other_data = result
+                            if result['canonicalName'] == original_species_name:
+                                if result['key'] < other_data['key']:
+                                    other_data = result
                         else:
                             other_data = result
         if accepted_data:
