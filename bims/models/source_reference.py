@@ -128,6 +128,8 @@ class SourceReference(PolymorphicModel):
 
     @property
     def title(self):
+        if self.note:
+            return self.note
         if self.source_name:
             return self.source_name
         else:

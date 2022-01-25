@@ -211,6 +211,8 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
         interval = request.POST.get('interval')
         date_format = request.POST.get('format')
         upload_session_id = request.POST.get('upload_session_id')
+        source_reference_id = request.POST.get('source_reference', '')
+        source_reference = None
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
@@ -228,6 +230,14 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                 pass
         else:
             owner = self.request.user
+
+        if source_reference_id:
+            try:
+                source_reference = SourceReference.objects.get(
+                    id=source_reference_id
+                )
+            except SourceReference.DoesNotExist:
+                pass
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
@@ -279,6 +289,7 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                 )
                 water_data['owner'] = owner
                 water_data['uploader'] = self.request.user
+                water_data['source_reference'] = source_reference
 
                 if is_data_exists:
                     new_query = query.filter(**water_data)
