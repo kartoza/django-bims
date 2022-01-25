@@ -132,7 +132,7 @@ class SourceReferenceAPIView(SourceReferenceList, ListAPIView):
     serializer_class = SourceReferenceSerializer
 
 
-class SourceReferenceListView(ListView, SourceReferenceList):
+class SourceReferenceListView(SourceReferenceList, ListView):
     model = SourceReference
     template_name = 'source_reference_list.html'
     paginate_by = 15
