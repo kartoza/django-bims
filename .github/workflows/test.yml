@@ -47,7 +47,6 @@ jobs:
           make create-test-db
 
       - name: Run test
-        working-directory: deployment
         run: |
           cat << EOF | make devweb-bash
           python manage.py makemigrations
