@@ -1,5 +1,5 @@
 export COMPOSE_PROJECT_NAME=bims
-export COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.override.yml
+export COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.test.yml
 export ANSIBLE_PROJECT_SETUP_DIR=deployment/ansible
 
 SHELL := /bin/bash
@@ -103,7 +103,7 @@ db:
 	@echo "------------------------------------------------------------------"
 	@echo "Running db in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose up -d db
+	@docker-compose ${ARGS} up -d db
 
 wait-db:
 	@docker-compose ${ARGS} exec -T db su - postgres -c "until pg_isready; do sleep 5; done"
@@ -377,6 +377,13 @@ devweb: db
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} up --no-recreate --no-deps -d dev
+
+devweb-bash:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in DEVELOPMENT mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} exec dev /bin/bash
 
 build-devweb: db
 	@echo
