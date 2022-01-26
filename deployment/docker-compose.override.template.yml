@@ -3,7 +3,7 @@
 
 # Exactly the same as production but for dev env, we expose the port and uses
 # different port for the web.
-version: '2'
+version: '3.7'
 services:
 
   db:
@@ -71,6 +71,8 @@ services:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
+      - ./logs:/var/log/
+      - ../.pycharm_helpers:/root/.pycharm_helpers
       - ./backups:/home/web/backups
     ports:
       # for django test server
@@ -82,7 +84,11 @@ services:
 
   web:
     volumes:
-      - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
+      - ./sites-enabled:/etc/nginx/conf.d:ro
+      # I dont use volumes_from as I want to use the ro modifier
+      - ./static:/home/web/static:ro
+      - ./media:/home/web/media:ro
+      - ./logs:/var/log/nginx
       # I dont use volumes_from as I want to use the ro modifier
       - ./logs:/var/log/nginx
     ports:

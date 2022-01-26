@@ -103,7 +103,11 @@ deployment/static
 deployment/media
 deployment/ansible
 deployment/docker/71-apt-cacher-ng
-core/settings/secret.py
+django_project/static
+django_project/core/settings/secret.py
+
+# local media
+django_project/media
 
 # OSX Crap
 .DS_Store
@@ -111,7 +115,6 @@ core/settings/secret.py
 # Backups
 *.dmp
 deployment/backups
-
 
 docs
 deployment/pg

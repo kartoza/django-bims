@@ -55,12 +55,11 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
             Survey,
             id=self.kwargs.get('sitevisitid', None)
         )
-        biological_records = BiologicalCollectionRecord.objects.filter(survey=site_visit)
         surveys = Survey.objects.filter(site=site_visit.site)
         if len(surveys) == 1:
             LocationSite.objects.get(pk=site_visit.site.id).delete()
-        site_visit.delete()
-        biological_records.delete()
+        BiologicalCollectionRecord.objects.filter(survey=site_visit).delete()
+        Survey.objects.filter(id=site_visit.id).delete()
         messages.success(
             request,
             'Site visit successfully deleted!',

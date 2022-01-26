@@ -103,7 +103,14 @@ db:
 	@echo "------------------------------------------------------------------"
 	@echo "Running db in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose up -d db
+	@docker-compose ${ARGS} up -d db
+
+wait-db:
+	@docker-compose ${ARGS} exec -T db su - postgres -c "until pg_isready; do sleep 5; done"
+
+create-test-db:
+	@docker-compose ${ARGS} exec -T db su - postgres -c "psql -c 'create database test_db;'"
+	@docker-compose ${ARGS} exec -T db su - postgres -c "psql -d test_db -c 'create extension postgis;'"
 
 nginx:
 	@echo
@@ -369,14 +376,29 @@ devweb: db
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up --no-deps -d devweb
+	@docker-compose ${ARGS} up --no-recreate --no-deps -d dev
+
+sleep:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Sleep for 50 seconds"
+	@echo "------------------------------------------------------------------"
+	@sleep 50
+	@echo "Done"
+
+devweb-test:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in DEVELOPMENT mode"
+	@echo "------------------------------------------------------------------"
+	@docker-compose exec -T dev python manage.py test --keepdb --noinput
 
 build-devweb: db
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Building devweb"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build devweb
+	@docker-compose build dev
 
 build-worker: db
 	@echo
@@ -384,13 +406,6 @@ build-worker: db
 	@echo "Building worker"
 	@echo "------------------------------------------------------------------"
 	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) up -d worker
-
-devweb-test:
-	@echo
-	@echo "------------------------------------------------------------------"
-	@echo "Running karma tests in devweb"
-	@echo "------------------------------------------------------------------"
-	@docker exec bims-dev-web bash -c 'cd / ; karma start --single-run'
 
 reset-search-results:
 	@echo

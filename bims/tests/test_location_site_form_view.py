@@ -1,7 +1,7 @@
 import json
+import os
 
 from django.test import TestCase
-from django.contrib.staticfiles.storage import staticfiles_storage
 from django.shortcuts import reverse
 from django.db.models import signals
 
@@ -14,6 +14,9 @@ from bims.models import (
     LocationSite, LocationContext, location_site_post_save_handler
 )
 
+test_data_directory = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), 'data')
+
 
 class TestLocationSiteFormView(TestCase):
     """
@@ -24,8 +27,8 @@ class TestLocationSiteFormView(TestCase):
         """
         Sets up before each test
         """
-        post_data_path = staticfiles_storage.path(
-            'data/site_form_post_data.json')
+        post_data_path = os.path.join(
+            test_data_directory, 'site_form_post_data.json')
         post_data_file = open(post_data_path)
         self.post_data = json.load(post_data_file)
         signals.post_save.disconnect(
@@ -118,8 +121,8 @@ class TestLocationSiteFormView(TestCase):
         self.assertEqual(post_request_3.status_code, 200)
 
     def test_LocationSiteFormUpdateView_post_data(self):
-        location_context_path = staticfiles_storage.path(
-            'data/location_context_document.json')
+        location_context_path = os.path.join(
+            test_data_directory, 'location_context_document.json')
         location_context_file = open(location_context_path)
         location_context_document = json.load(location_context_file)
         post_data = self.post_data

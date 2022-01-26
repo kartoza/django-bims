@@ -7,7 +7,7 @@
 #
 # See accompanying Make commands for easy collectstatic etc.
 
-version: '2'
+version: '3'
 volumes:
   geoserver-data-dir:
 services:

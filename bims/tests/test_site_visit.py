@@ -223,7 +223,8 @@ class TestSiteVisitView(TestCase):
         )
 
         self.assertFalse(
-            BiologicalCollectionRecord.objects.filter(id=bio.id).exists()
+            BiologicalCollectionRecord.objects.filter(
+                survey_id=survey.id).exists()
         )
 
         self.assertFalse(

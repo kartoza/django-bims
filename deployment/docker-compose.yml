@@ -7,7 +7,7 @@
 #
 # See accompanying Make commands for easy collectstatic etc.
 
-version: '2'
+version: '3.7'
 volumes:
   geodatadir:
   rabbitmq:

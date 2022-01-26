@@ -119,9 +119,6 @@ class TestCollectionUpload(TestCase):
             source_year='2012',
             reference_category='database'
         )
-        self.assertTrue(
-            '2012' in source_reference.title
-        )
         self.assertIsNotNone(
             source_reference
         )
