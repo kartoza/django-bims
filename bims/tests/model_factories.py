@@ -277,6 +277,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     notes = factory.Sequence(
             lambda n: u'Test notes %s' % n)
     taxonomy = factory.SubFactory(TaxonomyF)
+    survey = factory.SubFactory(SurveyF)
     validated = True
 
 
