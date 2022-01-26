@@ -31,7 +31,6 @@ from bims.models import (
     DatabaseRecord,
     LocationContext,
     LocationContextGroup,
-    VernacularName,
     TaxonImage,
     VernacularName,
     ChemicalRecord,

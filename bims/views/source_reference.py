@@ -8,6 +8,10 @@ from django.http import Http404
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from geonode.base.models import HierarchicalKeyword, TaggedContentItem
+from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
+
 
 from bims.utils.user import get_user_from_name
 from bims.models.source_reference import (
@@ -15,6 +19,9 @@ from bims.models.source_reference import (
     SourceReferenceBibliography,
     SourceReferenceDatabase,
     SourceReferenceDocument, DatabaseRecord
+)
+from bims.serializers.source_reference_serializer import (
+    SourceReferenceSerializer
 )
 from td_biblio.models.bibliography import (
     Author, AuthorEntryRank, Journal, Entry
@@ -32,15 +39,21 @@ from bims.models.chemical_record import (
 )
 
 
-class SourceReferenceListView(ListView):
-    model = SourceReference
-    template_name = 'source_reference_list.html'
-    paginate_by = 15
+class SourceReferencePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
+class SourceReferenceList(View):
     source_reference_type = {
         'database': SourceReferenceDatabase,
         'bibliography': SourceReferenceBibliography,
         'document': SourceReferenceDocument
     }
+    collectors = None
+    type_filter = ''
+    search_query = ''
 
     def get(self, request, *args, **kwargs):
         """Check GET request parameters validity and store them"""
@@ -58,8 +71,7 @@ class SourceReferenceListView(ListView):
         self.collectors = self.request.GET.get('collectors', None)
         if self.collectors:
             self.collectors = self.collectors.split(',')
-
-        return super(SourceReferenceListView, self).get(
+        return super(SourceReferenceList, self).get(
             request, *args, **kwargs)
 
     def get_queryset(self):
@@ -67,8 +79,7 @@ class SourceReferenceListView(ListView):
         Add GET requests filters
         """
         filters = dict()
-        # Base queryset
-        qs = super(SourceReferenceListView, self).get_queryset()
+        qs = SourceReference.objects.all()
 
         if self.collectors:
             qs = qs.filter(
@@ -114,6 +125,17 @@ class SourceReferenceListView(ListView):
 
         # Return filtered queryset
         return qs
+
+
+class SourceReferenceAPIView(SourceReferenceList, ListAPIView):
+    pagination_class = SourceReferencePagination
+    serializer_class = SourceReferenceSerializer
+
+
+class SourceReferenceListView(SourceReferenceList, ListView):
+    model = SourceReference
+    template_name = 'source_reference_list.html'
+    paginate_by = 15
 
     def get_context_data(self, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)

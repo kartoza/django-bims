@@ -65,6 +65,8 @@ const processWaterData = (formData) => {
             document.getElementById('upload').disabled = false;
             document.getElementById('upload').value = 'Upload';
 
+            $('#water_file').val('');
+
             if (data['status'] == 'failed') {
                 let alertDiv = $('.alert-danger');
                 alertDiv.html('Errors : <br>')
@@ -128,6 +130,7 @@ $('#upload').click((event) => {
     formData.append("format", $('#format-date').val())
     formData.append("start_time", $('#start-time').val())
     formData.append("end_time", $('#end-time').val())
+    formData.append("source_reference", $('#selected-source-reference-id').val())
 
     document.getElementById('upload').disabled = true;
     document.getElementById('upload').value = 'Checking data...';
@@ -152,6 +155,7 @@ $('#upload').click((event) => {
                 alertDiv.show();
                 document.getElementById('upload').disabled = false;
                 document.getElementById('upload').value = 'Upload';
+                $('#water_file').val('');
             }
             if (data['status'] == 'success') {
                 document.getElementById('upload').value = 'Processing data...';

@@ -1,23 +1,43 @@
 import codecs
 import csv
+import json
 import time
 from datetime import datetime
 from braces.views import LoginRequiredMixin
 from django.utils.timezone import make_aware
+from django.contrib.auth import get_user_model
 from django.views import View
-from bims.models.basemap_layer import BaseMapLayer
 import logging
-from bims.utils.get_key import get_key
 from django.http import HttpResponseForbidden
-from bims.models.location_site import LocationSite
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Count
 from django.http import JsonResponse
-from bims.models import WaterTemperature, UploadSession, calculate_indicators
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from bims.views.mixin.session_form.mixin import SessionFormMixin
 from django.shortcuts import get_object_or_404
 from django.http import Http404
+from django.conf import settings
+
+from geonode.documents.models import Document
+
+from bims.models.basemap_layer import BaseMapLayer
+from bims.utils.get_key import get_key
+from bims.models.location_site import LocationSite
+from bims.models import (
+    WaterTemperature,
+    UploadSession,
+    calculate_indicators,
+    BiologicalCollectionRecord,
+    DatabaseRecord,
+    SourceReference,
+    SourceReferenceDatabase,
+    SourceReferenceDocument,
+    SourceReferenceBibliography
+)
+
+from bims.serializers.database_record import DatabaseRecordSerializer
+from bims.views.mixin.session_form import SessionFormMixin
 
 logger = logging.getLogger('bims')
 
@@ -34,6 +54,7 @@ CATEGORY = 'water_temperature'
 class WaterTemperatureView(TemplateView, SessionFormMixin):
     """View for water temperature form"""
     template_name = 'water_temperature_form.html'
+    additional_context = {}
 
     def get_context_data(self, **kwargs):
 
@@ -191,12 +212,33 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
         interval = request.POST.get('interval')
         date_format = request.POST.get('format')
         upload_session_id = request.POST.get('upload_session_id')
+        source_reference_id = request.POST.get('source_reference', '')
+        source_reference = None
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
         is_daily = False
         new_data = []
         existing_data = []
+
+        # If collector id exist then get the user object
+        owner = None
+        if owner_id:
+            try:
+                owner = get_user_model().objects.get(
+                    id=int(owner_id))
+            except get_user_model().DoesNotExist:
+                pass
+        else:
+            owner = self.request.user
+
+        if source_reference_id:
+            try:
+                source_reference = SourceReference.objects.get(
+                    id=source_reference_id
+                )
+            except SourceReference.DoesNotExist:
+                pass
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
@@ -240,8 +282,15 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                 )
                 is_data_exists = query.exists()
                 water_data['value'] = water_temp_value
-                water_data['minimum'] = temperature['Minimum'] if is_daily else 0
-                water_data['maximum'] = temperature['Maximum'] if is_daily else 0
+                water_data['minimum'] = (
+                    temperature['Minimum'] if is_daily else 0
+                )
+                water_data['maximum'] = (
+                    temperature['Maximum'] if is_daily else 0
+                )
+                water_data['owner'] = owner
+                water_data['uploader'] = self.request.user
+                water_data['source_reference'] = source_reference
 
                 if is_data_exists:
                     new_query = query.filter(**water_data)
@@ -329,6 +378,16 @@ class WaterTemperatureSiteView(TemplateView):
         context['location_site'] = self.location_site
         context['indicators'] = calculate_indicators(self.location_site, year)
         context['execution_time'] = time.time() - start_time
+        source_references = (
+            WaterTemperature.objects.filter(
+                location_site=self.location_site
+            ).exclude(
+                source_reference__isnull=True
+            ).order_by(
+                'source_reference').distinct(
+            'source_reference').source_references()
+        )
+        context['source_references'] = json.dumps(source_references)
 
         return context
 

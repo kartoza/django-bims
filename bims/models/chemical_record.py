@@ -70,10 +70,16 @@ class ChemicalRecord(models.Model):
         is_dictionary = False
 
         if not self.survey and self.location_site:
-            survey, _ = Survey.objects.get_or_create(
+            survey = Survey.objects.filter(
                 site=self.location_site,
                 date=self.date
-            )
+            ).first()
+
+            if not survey:
+                survey = Survey.objects.create(
+                    site=self.location_site,
+                    data=self.date
+                )
             self.survey = survey
 
         while not is_dictionary and attempt < max_allowed:
