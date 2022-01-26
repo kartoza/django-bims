@@ -27,7 +27,7 @@ class SiteVisitBiotopeTaxon(models.Model):
 
     biotope = models.ForeignKey(
         'bims.Biotope',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True
     )

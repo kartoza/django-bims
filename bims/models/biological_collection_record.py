@@ -273,7 +273,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         'bims.Biotope',
         null=True,
         blank=True,
-        on_delete=models.SET_NULL
+        on_delete=models.CASCADE
     )
 
     specific_biotope = models.ForeignKey(
@@ -281,7 +281,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         null=True,
         blank=True,
         related_name='specific_biotope',
-        on_delete=models.SET_NULL
+        on_delete=models.CASCADE
     )
 
     substratum = models.ForeignKey(
@@ -289,7 +289,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         null=True,
         blank=True,
         related_name='biotope_substratum',
-        on_delete=models.SET_NULL
+        on_delete=models.CASCADE
     )
 
     source_reference = models.ForeignKey(
