@@ -130,3 +130,9 @@
     height: -moz-calc(100% - 51px); /* firefox */
     overflow: auto;
 }
+
+.btn-xs {
+    font-size: 9pt;
+    padding-top: 0;
+    padding-bottom: 0;
+}
