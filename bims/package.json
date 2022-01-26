@@ -57,7 +57,7 @@
     "react-rnd": "^10.3.4",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-test-renderer": "^15.6.1",
+    "react-test-renderer": "^17.0.2",
     "reactstrap": "^8.9.0",
     "sass": "^1.22.7",
     "sass-loader": "^12.1.0",
