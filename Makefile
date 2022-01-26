@@ -1,5 +1,5 @@
 export COMPOSE_PROJECT_NAME=bims
-export COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.test.yml
+export COMPOSE_FILE=deployment/docker-compose.yml:deployment/docker-compose.override.yml
 export ANSIBLE_PROJECT_SETUP_DIR=deployment/ansible
 
 SHELL := /bin/bash
@@ -391,14 +391,14 @@ devweb-test:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in DEVELOPMENT mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose exec -T dev python manage.py test
+	@docker-compose exec -T dev python manage.py test --keepdb --noinput
 
 build-devweb: db
 	@echo
 	@echo "------------------------------------------------------------------"
 	@echo "Building devweb"
 	@echo "------------------------------------------------------------------"
-	@docker-compose -f deployment/docker-compose.yml -p $(PROJECT_ID) build devweb
+	@docker-compose build dev
 
 build-worker: db
 	@echo
