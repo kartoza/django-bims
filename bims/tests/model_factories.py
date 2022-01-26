@@ -136,14 +136,14 @@ class EndemismF(factory.django.DjangoModelFactory):
     )
 
 
-class GroupF(factory.DjangoModelFactory):
+class GroupF(factory.django.DjangoModelFactory):
     class Meta:
         model = Group
 
     name = factory.Sequence(lambda n: 'group %s' % n)
 
 
-class ContentTypeF(factory.DjangoModelFactory):
+class ContentTypeF(factory.django.DjangoModelFactory):
     class Meta:
         model = ContentType
 
@@ -151,7 +151,7 @@ class ContentTypeF(factory.DjangoModelFactory):
     model = factory.Sequence(lambda n: 'model %s' % n)
 
 
-class PermissionF(factory.DjangoModelFactory):
+class PermissionF(factory.django.DjangoModelFactory):
     class Meta:
         model = Permission
 
@@ -159,7 +159,7 @@ class PermissionF(factory.DjangoModelFactory):
     content_type = factory.SubFactory(ContentTypeF)
 
 
-class UserF(factory.DjangoModelFactory):
+class UserF(factory.django.DjangoModelFactory):
     class Meta:
         model = settings.AUTH_USER_MODEL
         django_get_or_create = ('id', )
