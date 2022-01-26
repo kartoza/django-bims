@@ -730,6 +730,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     'data-tab="info-' + key_feature + '">' +
                     layerName + '</li>';
                 content += '<div class="info-wrapper" data-tab="info-' + key_feature + '">';
+
+                // For ticket https://github.com/kartoza/django-bims/issues/2838
+                // Add a download button for specific layer
+                if (key_feature.includes('mv_flow_regime_type')) {
+                    content += '<a class="btn btn-xs btn-primary" href="/static/data/Flow type metrics.xlsx">Download data</a>'
+                }
+
                 content += '<table>';
                 $.each(feature['properties'], function (key, property) {
                     content += '<tr>';
