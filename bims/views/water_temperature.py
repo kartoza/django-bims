@@ -33,7 +33,7 @@ from bims.models import (
     SourceReference,
     SourceReferenceDatabase,
     SourceReferenceDocument,
-    SourceReferenceBibliography
+    SourceReferenceBibliography, SiteImage
 )
 
 from bims.serializers.database_record import DatabaseRecordSerializer
@@ -193,6 +193,7 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                 uploaded_at=datetime.now(),
                 category=CATEGORY
             )
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Water temperature is validated',
@@ -213,10 +214,23 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
         date_format = request.POST.get('format')
         upload_session_id = request.POST.get('upload_session_id')
         source_reference_id = request.POST.get('source_reference', '')
+        site_image_file = request.FILES.get('site_image')
+
         source_reference = None
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
+
+        site_image = None
+        success_response_image = ''
+        if site_image_file:
+            site_image = SiteImage.objects.get_or_create(
+                site=location_site,
+                image=site_image_file)
+
+        if site_image:
+            success_response_image = 'Site image has been uploaded'
+
         is_daily = False
         new_data = []
         existing_data = []
@@ -330,7 +344,7 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 
             return JsonResponse({
                 'status': 'success',
-                'message': success_response
+                'message': success_response + '\n' + success_response_image
             })
 
 

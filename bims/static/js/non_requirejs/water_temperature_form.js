@@ -131,6 +131,8 @@ $('#upload').click((event) => {
     formData.append("start_time", $('#start-time').val())
     formData.append("end_time", $('#end-time').val())
     formData.append("source_reference", $('#selected-source-reference-id').val())
+    formData.append("site_image", $('#site_image')[0].files[0])
+
 
     document.getElementById('upload').disabled = true;
     document.getElementById('upload').value = 'Checking data...';
