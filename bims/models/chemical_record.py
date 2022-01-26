@@ -78,7 +78,7 @@ class ChemicalRecord(models.Model):
             if not survey:
                 survey = Survey.objects.create(
                     site=self.location_site,
-                    data=self.date
+                    date=self.date
                 )
             self.survey = survey
 
