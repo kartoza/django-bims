@@ -127,6 +127,13 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                     'Missing minimum and maximum data value'
                 )
                 finished = True
+        else:
+            if 'Water temperature' not in headers:
+                self.add_error_messages(
+                    row,
+                    'Missing "Water temperature" header'
+                )
+                finished = True
 
         if not finished:
             for temperature_data in data:
