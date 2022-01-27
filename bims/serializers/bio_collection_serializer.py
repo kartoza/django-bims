@@ -321,8 +321,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_source(self, obj):
         if obj.source_reference:
-            if obj.source_reference.source_name:
-                return obj.source_reference.source_name
+            if obj.source_reference.reference_source:
+                return obj.source_reference.reference_source
         return '-'
 
     def get_year(self, obj):
