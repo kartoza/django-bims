@@ -51,6 +51,16 @@ let iconFeature = new ol.Feature({
 markerSource.addFeature(iconFeature);
 
 const processWaterData = (formData) => {
+
+    let alertError = $('.alert-danger');
+    let alertSuccess = $('.alert-danger');
+
+    alertError.html('');
+    alertSuccess.html('');
+
+    alertSuccess.hide();
+    alertError.hide();
+
     $.ajax({
         url: `/upload-water-temperature/`,
         headers: {"X-CSRFToken": csrfToken},
@@ -67,20 +77,19 @@ const processWaterData = (formData) => {
 
             $('#water_file').val('');
 
+
             if (data['status'] == 'failed') {
-                let alertDiv = $('.alert-danger');
-                alertDiv.html('Errors : <br>')
+                alertError.html('Errors : <br>')
                 for (let i = 0; i < data['message'].length; i++) {
-                    alertDiv.append(`${data['message'][i]}<br>`)
+                    alertError.append(`${data['message'][i]}<br>`)
                 }
-                alertDiv.show();
+                alertError.show();
                 document.getElementById('upload').disabled = false;
                 document.getElementById('upload').value = 'Upload';
             }
             if (data['status'] == 'success') {
-                let alertDiv = $('.alert-success');
-                alertDiv.html(data['message']);
-                alertDiv.show();
+                alertSuccess.html(data['message']);
+                alertSuccess.show();
             }
         }
     });
