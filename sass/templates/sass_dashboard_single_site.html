@@ -314,64 +314,7 @@
                 </div>
                 <div class="col-md-6 mp">
                     <div class="chart-container">
-                        {% if site_image %}
-                            <div id="siteImageCarousel" class="carousel slide" data-ride="carousel" style="height: 450px">
-                                <!-- Indicators -->
-                                <ol class="carousel-indicators">
-                                    {% for image in site_image %}
-                                        {% if forloop.counter0 == 0 %}
-                                            <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}" class="active"></li>
-                                        {% else %}
-                                            <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}"></li>
-                                        {% endif %}
-                                    {% endfor %}
-                                </ol>
-                                <div class="carousel-inner">
-                                    {% for image in site_image %}
-                                        {% if forloop.counter0 == 0 %}
-                                            <div class="carousel-item active">
-                                        {% else %}
-                                    <div class="carousel-item" style="height: auto">
-                                        {% endif %}
-                                        <div class="carousel-item-content" style="align-items: center; display: table">
-                                        <div class="site-image" style="height: auto; display: table-row">
-                                            {% if image.image|is_portrait %}
-                                                {% thumbnail image.image "x500" crop="center" as thumb %}
-                                                    <a href="/uploaded/{{ image.image }}" target="_blank"><img src="{{ thumb.url }}"
-                                                         height="{{ thumb.height }}"
-                                                         width="{{ thumb.width }}"/>
-                                                    </a>
-                                                {% endthumbnail %}
-                                            {% else %}
-                                                {% thumbnail image.image "500" crop="center" as thumb %}
-                                                   <a href="/uploaded/{{ image.image }}" target="_blank"><img src="{{ thumb.url }}"
-                                                         height="{{ thumb.height }}"
-                                                         width="{{ thumb.width }}"/>
-                                                    </a>
-                                                {% endthumbnail %}
-                                            {% endif %}
-                                        </div>
-                                        <div class="site-image-date" style="text-align: center; display: table-row">
-                                        <span class="date-image"> <i class="fa fa-camera" style="margin-right: 5px"></i>{{ image.site_visit.site_visit_date | date:'Y-m-d' }}</span>
-                                        </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Left and right controls -->
-                                <a class="carousel-control-prev" href="#siteImageCarousel" role="button" data-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="sr-only">Previous</span>
-                                </a>
-                                <a class="carousel-control-next" href="#siteImageCarousel" role="button" data-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="sr-only">Next</span>
-                                </a>
-                              </div>
-                        {% else %}
-                            <img width="100%" src="{% static 'img/river.jpg' %}"/>
-                        {% endif %}
+                        {% include 'site_image/site_image_carousel.html' with site_image=site_image %}
                     </div>
                     <div class="vertical-space"></div>
                     <div class="chart-container">

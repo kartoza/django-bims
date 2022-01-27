@@ -1,0 +1,85 @@
+{% load static from staticfiles %}
+{% load thumbnail %}
+<style>
+    .site-image-date-container {
+        position: absolute; height: 100%; display: flex; align-items: end; padding-bottom: 2em;
+    }
+    .site-image-date {
+        text-align: center; background-color: #606060c7; padding: 2px 5px; color: white; border-radius: 3px;
+    }
+</style>
+{% if site_image %}
+    <div id="siteImageCarousel" class="carousel slide" data-ride="carousel"
+         style="height: 450px">
+        <!-- Indicators -->
+        <ol class="carousel-indicators">
+            {% for image in site_image %}
+                {% if forloop.counter0 == 0 %}
+                    <li data-target="#siteImageCarousel"
+                        data-slide-to="{{ forloop.counter0 }}"
+                        class="active"></li>
+                {% else %}
+                    <li data-target="#siteImageCarousel"
+                        data-slide-to="{{ forloop.counter0 }}"></li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+
+        <div class="carousel-inner">
+            {% for image in site_image %}
+                {% if forloop.counter0 == 0 %}
+                    <div class="carousel-item active">
+                {% else %}
+                    <div class="carousel-item" style="height: auto">
+                {% endif %}
+                        <div class="carousel-item-content"
+                             style="align-items: center; display: flex; flex-direction: column">
+                            <div class="site-image"
+                                 style="height: auto;">
+                                {% if image.image|is_portrait %}
+                                    {% thumbnail image.image "x500" crop="center" as thumb %}
+                                        <a href="/uploaded/{{ image.image }}"
+                                           target="_blank"><img src="{{ thumb.url }}"
+                                                                height="{{ thumb.height }}"
+                                                                width="{{ thumb.width }}"/>
+                                        </a>
+                                    {% endthumbnail %}
+                                {% else %}
+                                    {% thumbnail image.image "500" crop="center" as thumb %}
+                                        <a href="/uploaded/{{ image.image }}"
+                                           target="_blank"><img src="{{ thumb.url }}"
+                                                                height="{{ thumb.height }}"
+                                                                width="{{ thumb.width }}"/>
+                                        </a>
+                                    {% endthumbnail %}
+                                {% endif %}
+                            </div>
+                            <div class="site-image-date-container">
+                                <div class="site-image-date">
+                                    <span class="date-image">
+                                        <i class="fa fa-camera"
+                                           style="margin-right: 5px"></i>{{ image.image_date | date:'Y-m-d' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            {% endfor %}
+        </div>
+
+        <!-- Left and right controls -->
+        <a class="carousel-control-prev" href="#siteImageCarousel"
+           role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon"
+                  aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#siteImageCarousel"
+           role="button" data-slide="next">
+            <span class="carousel-control-next-icon"
+                  aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    </div>
+{% else %}
+        <img width="100%" src="{% static 'img/river.jpg' %}"/>
+{% endif %}

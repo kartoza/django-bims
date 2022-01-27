@@ -1028,7 +1028,8 @@ class SiteImageAdmin(admin.ModelAdmin):
     )
     raw_id_fields = (
         'site',
-        'site_visit'
+        'site_visit',
+        'survey'
     )
     search_fields = (
         'site__site_code',

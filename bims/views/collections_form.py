@@ -27,7 +27,7 @@ from bims.models import (
     BIOTOPE_TYPE_SUBSTRATUM,
     Survey,
     Chem, ChemicalRecord,
-    BaseMapLayer
+    BaseMapLayer, COLLECTION_RECORD_KEY
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
@@ -323,17 +323,21 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 id=post_data.get('site-id', None)
             )
 
-        site_image_file = request.FILES.get('site-image', None)
-        if site_image_file:
-            SiteImage.objects.get_or_create(
-                site=self.location_site,
-                image=site_image_file
-            )
         taxa_id_list = post_data.get('taxa-id-list', '').split(',')
         taxa_id_list = filter(None, taxa_id_list)
 
         # Create a survey
         self.survey = self.create_or_get_survey(collection_date, owner)
+
+        site_image_file = request.FILES.get('site-image', None)
+        if site_image_file:
+            SiteImage.objects.get_or_create(
+                site=self.location_site,
+                image=site_image_file,
+                date=collection_date,
+                form_uploader=COLLECTION_RECORD_KEY,
+                survey=self.survey
+            )
 
         collection_record_ids = []
         for taxon in taxa_id_list:
