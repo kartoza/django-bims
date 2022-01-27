@@ -53,7 +53,7 @@ markerSource.addFeature(iconFeature);
 const processWaterData = (formData) => {
 
     let alertError = $('.alert-danger');
-    let alertSuccess = $('.alert-danger');
+    let alertSuccess = $('.alert-success');
 
     alertError.html('');
     alertSuccess.html('');
