@@ -19,7 +19,7 @@ from bims.enums.geomorphological_zone import (
 )
 from bims.models import (
     LocationSite, LocationType, LocationContext, LocationContextGroup,
-    SiteImage, Survey, ChemicalRecord, BaseMapLayer
+    SiteImage, Survey, ChemicalRecord, BaseMapLayer, SITE_KEY
 )
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
@@ -46,7 +46,8 @@ class LocationSiteFormView(TemplateView):
             if site_image_file:
                 SiteImage.objects.get_or_create(
                     site=location_site,
-                    image=site_image_file
+                    image=site_image_file,
+                    form_uploader=SITE_KEY
                 )
         site_image_to_delete = self.request.POST.get(
             'id_site_image_delete', None)

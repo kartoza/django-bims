@@ -9,17 +9,12 @@ from django.contrib.auth import get_user_model
 from django.views import View
 import logging
 from django.http import HttpResponseForbidden
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Count
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404
 from django.http import Http404
-from django.conf import settings
-
-from geonode.documents.models import Document
 
 from bims.models.basemap_layer import BaseMapLayer
 from bims.utils.get_key import get_key
@@ -28,15 +23,10 @@ from bims.models import (
     WaterTemperature,
     UploadSession,
     calculate_indicators,
-    BiologicalCollectionRecord,
-    DatabaseRecord,
     SourceReference,
-    SourceReferenceDatabase,
-    SourceReferenceDocument,
-    SourceReferenceBibliography
+    SiteImage, WATER_TEMPERATURE_KEY
 )
 
-from bims.serializers.database_record import DatabaseRecordSerializer
 from bims.views.mixin.session_form import SessionFormMixin
 
 logger = logging.getLogger('bims')
@@ -58,7 +48,8 @@ class WaterTemperatureView(TemplateView, SessionFormMixin):
 
     def get_context_data(self, **kwargs):
 
-        context = super(WaterTemperatureView, self).get_context_data(**kwargs)
+        context = super(
+            WaterTemperatureView, self).get_context_data(**kwargs)
         if not self.location_site:
             return context
         context['geoserver_public_location'] = get_key(
@@ -71,7 +62,8 @@ class WaterTemperatureView(TemplateView, SessionFormMixin):
         context['logging_interval'] = LOGGING_INTERVAL
 
         try:
-            context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key
+            context['bing_key'] = BaseMapLayer.objects.get(
+                source_type='bing').key
         except BaseMapLayer.DoesNotExist:
             context['bing_key'] = ''
 
@@ -193,6 +185,7 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                 uploaded_at=datetime.now(),
                 category=CATEGORY
             )
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Water temperature is validated',
@@ -213,10 +206,26 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
         date_format = request.POST.get('format')
         upload_session_id = request.POST.get('upload_session_id')
         source_reference_id = request.POST.get('source_reference', '')
+        site_image_file = request.FILES.get('site_image')
+
         source_reference = None
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
+
+        site_image = None
+        success_response_image = ''
+        if site_image_file:
+            site_image = SiteImage.objects.get_or_create(
+                site=location_site,
+                image=site_image_file,
+                notes='Upload session id = {}'.format(upload_session_id),
+                form_uploader=WATER_TEMPERATURE_KEY,
+            )
+
+        if site_image:
+            success_response_image = 'Site image has been uploaded'
+
         is_daily = False
         new_data = []
         existing_data = []
@@ -330,7 +339,7 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 
             return JsonResponse({
                 'status': 'success',
-                'message': success_response
+                'message': success_response + '\n' + success_response_image
             })
 
 
@@ -352,6 +361,8 @@ class WaterTemperatureSiteView(TemplateView):
         context['site_id'] = self.location_site.id
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
+        context['site_image'] = SiteImage.objects.filter(
+            site=self.location_site)
         context['years'] = list(WaterTemperature.objects.filter(
             location_site=self.location_site
         ).values_list('date_time__year', flat=True).distinct(

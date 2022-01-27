@@ -9,8 +9,32 @@ from django.db import models
 from sass.models.site_visit import SiteVisit
 from bims.models.survey import Survey
 
+COLLECTION_RECORD_KEY = 'collection_record'
+SITE_KEY = 'site'
+WATER_TEMPERATURE_KEY = 'water_temperature'
+
+
+FORM_CHOICES = (
+    (COLLECTION_RECORD_KEY, 'Collection Record'),
+    (SITE_KEY, 'Site'),
+    (WATER_TEMPERATURE_KEY, 'Water Temperature'),
+)
+
 
 class SiteImage(models.Model):
+
+    form_uploader = models.CharField(
+        max_length=100,
+        default='',
+        blank=True,
+        choices=FORM_CHOICES
+    )
+
+    notes = models.TextField(
+        default='',
+        null=True,
+        blank=True
+    )
 
     site = models.ForeignKey(
         'bims.LocationSite',
@@ -44,3 +68,11 @@ class SiteImage(models.Model):
         blank=False,
         default=timezone.now
     )
+
+    @property
+    def image_date(self):
+        if self.survey:
+            return self.survey.date
+        if self.site_visit:
+            return self.site_visit.site_visit_date
+        return self.date
