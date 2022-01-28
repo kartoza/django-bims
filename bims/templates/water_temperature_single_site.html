@@ -95,6 +95,9 @@
         .row-indicator .col-lg-4 p {
             padding-left: 10px;
         }
+        .fa-question-circle {
+            cursor: pointer;
+        }
 
     </style>
 
@@ -223,7 +226,8 @@
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <div class="table-title">Thermal Metrics
+                        <div class="table-title">Thermal Metrics <a target="_blank" href="{% static 'data/Help.PDF.for.Thermal.Metrics.table.in.dashboard.pdf' %}"><i class="fa fa-question-circle" aria-hidden="true"></i></a>
+
                             <i data-download-title="Water Temperature"
                                data-toggle="tooltip" data-placement="left"
                                class="fa fa-download pull-right download-icon download-table"></i>
@@ -269,11 +273,11 @@
                                 </th>
                             </tr>
                             <tr>
-                                <td>Mean7</td>
+                                <td>Mean_7</td>
                                 <td>{{ indicators.weekly.weekly_mean_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <td>Min7</td>
+                                <td>Min_7</td>
                                 <td>{{ indicators.weekly.weekly_min_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
@@ -285,7 +289,7 @@
                                 <td>{{ indicators.ninety_days.ninety_min_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <td>Max7</td>
+                                <td>Max_7</td>
                                 <td>{{ indicators.weekly.weekly_max_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
@@ -304,27 +308,27 @@
                                 </th>
                             </tr>
                             <tr>
-                                <td>Mean7cnt</td>
+                                <td>Mean_7cnt</td>
                                 <td>{{ indicators.threshold.weekly_mean }}</td>
                             </tr>
                             <tr>
-                                <td>Min7cnt</td>
+                                <td>Min_7cnt</td>
                                 <td>{{ indicators.threshold.weekly_min }}</td>
                             </tr>
                             <tr>
-                                <td>Max7cnt</td>
+                                <td>Max_7cnt</td>
                                 <td>{{ indicators.threshold.weekly_max }}</td>
                             </tr>
                             <tr>
-                                <td>Mean7dur</td>
+                                <td>Mean_7dur</td>
                                 <td>{{ indicators.threshold.weekly_mean_dur }}</td>
                             </tr>
                             <tr>
-                                <td>Min7dur</td>
+                                <td>Min_7dur</td>
                                 <td>{{ indicators.threshold.weekly_min_dur }}</td>
                             </tr>
                             <tr>
-                                <td>Max7dur</td>
+                                <td>Max_7dur</td>
                                 <td>{{ indicators.threshold.weekly_max_dur }}</td>
                             </tr>
                             </tbody>
