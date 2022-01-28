@@ -14,7 +14,7 @@ jobs:
     - name: Build and Publish the Docker Django Bims Image	
       uses: elgohr/Publish-Docker-Github-Action@master	
       with:	
-        name: kartoza/kbims_uwsgi:v3.0
+        name: kartoza/kbims_uwsgi:latest
         workdir: deployment/production
         username: ${{ secrets.DOCKER_USERNAME }}	
         password: ${{ secrets.DOCKER_PASSWORD }}	
