@@ -22,6 +22,16 @@
         const siteId = "{{ site_id }}";
         const year = "{{ year }}";
         const sourceReferences = {{ source_references | safe }};
+        const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
+        const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
+        const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
+        const geomorphologicalGroup = {% if geomorphological_group %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
+        const freshwaterEcoregion = {% if freshwater_ecoregion_of_the_world %}{{ freshwater_ecoregion_of_the_world | safe }}{% else %}[]{% endif %};
+        const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
+        const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
+        const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
+        const originalGeomorphologicalZone = '{{ original_geomorphological }}';
+        const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
     </script>
     <style>
 
@@ -124,49 +134,9 @@
                         <div id="map"></div>
                     </div>
                     <div class="vertical-space"></div>
-                    <div class="table-container">
-                        <div class="table-title">Overview
-                            <i data-download-title="Overview"
-                               data-toggle="tooltip" data-placement="left"
-                               class="fa fa-download pull-right download-icon download-table"></i>
-                        </div>
-                        <table class="sass-summary table">
-                            <tbody>
-                            <tr>
-                                <th class="title-row" colspan="2">Site Details</th>
-                            </tr>
-                            <tr>
-                                <td scope="row">FBIS Site Code</td>
-                                <td>{{ site_code }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Original Site Code</td>
-                                <td>{{ original_site_code }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Site coordinates</td>
-                                <td>{{ coord.0 }}, {{ coord.1 }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Site description</td>
-                                <td>{{ site_description }}</td>
-                            </tr>
-                            <tr>
-                                <th class="title-row" colspan="2">River and
-                                    Geomorphological Zone
-                                </th>
-                            </tr>
-                            <tr>
-                                <td scope="row">Original River Name</td>
-                                <td>{{ original_river_name }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">River</td>
-                                <td>{{ river }}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+
+                    {% include 'includes/overview_table.html' %}
+
                     <div class="vertical-space"></div>
                     <div class="table-container">
                         <div class="table-title"> Monthly magnitudes
@@ -224,7 +194,7 @@
                 <div class="col-md-6 mp">
 
                     <div class="chart-container">
-                        {% include 'site_image/site_image_carousel.html' with site_image=site_image %}
+                        {% include 'includes/site_image_carousel.html' with site_image=site_image %}
                     </div>
                     <div class="vertical-space"></div>
 

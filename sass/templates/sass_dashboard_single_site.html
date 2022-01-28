@@ -141,47 +141,9 @@
                         <div id="map"></div>
                     </div>
                     <div class="vertical-space"></div>
-                    <div class="table-container">
-                        <div class="table-title">Overview
-                            <i data-download-title="Overview"
-                               data-toggle="tooltip" data-placement="left"
-                               class="fa fa-download pull-right download-icon download-table"></i>
-                        </div>
-                        <table class="sass-summary table">
-                            <tbody>
-                            <tr>
-                                <th class="title-row" colspan="2">Site Details</th>
-                            </tr>
-                            <tr>
-                                <td scope="row">FBIS Site Code</td>
-                                <td>{{ site_code }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Original Site Code</td>
-                                <td>{{ original_site_code }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Site coordinates</td>
-                                <td>{{ coord.0 }}, {{ coord.1 }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Site description</td>
-                                <td>{{ site_description }}</td>
-                            </tr>
-                            <tr>
-                                <th class="title-row" colspan="2">River and Geomorphological Zone</th>
-                            </tr>
-                            <tr>
-                                <td scope="row">Original River Name</td>
-                                <td>{{ original_river_name }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">River</td>
-                                <td>{{ river }}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+
+                    {% include 'includes/overview_table.html' %}
+
                     <div class="vertical-space"></div>
                     <div class="table-container">
                         <table class="sass-info table">
@@ -314,7 +276,7 @@
                 </div>
                 <div class="col-md-6 mp">
                     <div class="chart-container">
-                        {% include 'site_image/site_image_carousel.html' with site_image=site_image %}
+                        {% include 'includes/site_image_carousel.html' with site_image=site_image %}
                     </div>
                     <div class="vertical-space"></div>
                     <div class="chart-container">
