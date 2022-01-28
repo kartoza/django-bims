@@ -27,7 +27,7 @@ class Command(BaseCommand):
 
         records = BiologicalCollectionRecord.objects.exclude(
             survey__date=F('collection_date')
-        ).exclude(source_collection='gbif')
+        )
 
         logger.info(f'Total records {records.count()}')
 

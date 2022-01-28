@@ -47,7 +47,11 @@ class Command(BaseCommand):
             records = BiologicalCollectionRecord.objects.filter(
                 query
             )
-            record_to_keep = records[0]
+            record_to_keep = records.filter(
+                owner__isnull=False
+            ).first()
+            if not record_to_keep:
+                record_to_keep = records.first()
             records_to_delete = records.exclude(id=record_to_keep.id)
 
             links = [
@@ -82,7 +86,6 @@ class Command(BaseCommand):
         logger.info(
             'Total duplicate records : {}'.format(duplicate.count())
         )
-
 
         logger.info('Merge GBIF duplicate records')
         gbif_duplicate = duplicate.filter(
@@ -154,7 +157,9 @@ class Command(BaseCommand):
         rows = []
         headers = []
 
-        for record in remaining[0:100]:
+        self.merge_duplicate_records(remaining)
+
+        for record in duplicate:
             survey_date = record['survey__date']
             if isinstance(survey_date, str):
                 if 'T' in survey_date:
