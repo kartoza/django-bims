@@ -3,6 +3,8 @@ import csv
 import json
 import time
 from datetime import datetime
+
+from bims.models.location_context import LocationContext
 from braces.views import LoginRequiredMixin
 from django.utils.timezone import make_aware
 from django.contrib.auth import get_user_model
@@ -353,6 +355,7 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 class WaterTemperatureSiteView(TemplateView):
     template_name = 'water_temperature_single_site.html'
     location_site = LocationSite.objects.none()
+    location_context = None
     year = None
 
     def get_context_data(self, **kwargs):
@@ -388,13 +391,17 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
-        if not self.year:
+        if not self.year and len(context['years']) > 0:
             year = context['years'][-1]
-        else:
+        elif self.year:
             year = int(self.year.strip())
+        else:
+            year = None
 
         context['location_site'] = self.location_site
-        context['indicators'] = calculate_indicators(self.location_site, year)
+        if year:
+            context['indicators'] = calculate_indicators(
+                self.location_site, year)
         context['execution_time'] = time.time() - start_time
         source_references = (
             WaterTemperature.objects.filter(
@@ -407,6 +414,42 @@ class WaterTemperatureSiteView(TemplateView):
         )
         context['source_references'] = json.dumps(source_references)
 
+        context['river_catchments'] = json.dumps(
+            self.location_context.values_from_group(
+                'river_catchment_areas_group'
+        ))
+        context['wma'] = (
+            json.dumps(self.location_context.values_from_group(
+                'water_management_area'
+            ))
+        )
+        context['geomorphological_group'] = (
+            json.dumps(self.location_context.values_from_group(
+                'geomorphological_group'
+            ))
+        )
+        context['river_ecoregion_group'] = (
+            json.dumps(self.location_context.values_from_group(
+                'river_ecoregion_group'
+            ))
+        )
+        context['freshwater_ecoregion_of_the_world'] = (
+            json.dumps(self.location_context.values_from_group(
+                'freshwater_ecoregion_of_the_world'
+            ))
+        )
+        context['political_boundary'] = (
+            json.dumps(self.location_context.values_from_group(
+                'province'
+            ))
+        )
+        refined_geomorphological = '-'
+        if self.location_site.refined_geomorphological:
+            refined_geomorphological = (
+                self.location_site.refined_geomorphological
+            )
+        context['refined_geomorphological'] = refined_geomorphological
+
         return context
 
     def get(self, request, *args, **kwargs):
@@ -418,6 +461,9 @@ class WaterTemperatureSiteView(TemplateView):
         self.location_site = get_object_or_404(
             LocationSite,
             pk=site_id
+        )
+        self.location_context = LocationContext.objects.filter(
+            site=self.location_site
         )
 
         return super(

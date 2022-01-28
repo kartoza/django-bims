@@ -22,6 +22,16 @@
         const siteId = "{{ site_id }}";
         const year = "{{ year }}";
         const sourceReferences = {{ source_references | safe }};
+        const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
+        const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
+        const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
+        const geomorphologicalGroup = {% if geomorphological_group %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
+        const freshwaterEcoregion = {% if freshwater_ecoregion_of_the_world %}{{ freshwater_ecoregion_of_the_world | safe }}{% else %}[]{% endif %};
+        const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
+        const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
+        const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
+        const originalGeomorphologicalZone = '{{ original_geomorphological }}';
+        const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
     </script>
     <style>
 
@@ -56,7 +66,8 @@
         }
         .row-indicator {
             padding-top: 1em;
-            padding-left: 1em;
+            margin-left: 0.1em;
+            padding-left: 0;
         }
         .row-indicator .col-lg-3, .row-indicator .col-lg-4, .row-indicator .col-lg-2 {
             padding-left: 0;
@@ -66,6 +77,26 @@
         .row-indicator p {
             border-bottom: 1px solid rgba(138, 138, 138, 0.31);
             height: 20px;
+        }
+
+        .col-header {
+            margin-bottom: 1em;
+            background-color: #bebebe;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            font-size: 11pt;
+            border: 0;
+        }
+
+        .col-header:first-child {
+            padding-left: 10px;
+        }
+
+        .row-indicator .col-lg-4 p {
+            padding-left: 10px;
+        }
+        .fa-question-circle {
+            cursor: pointer;
         }
 
     </style>
@@ -124,49 +155,9 @@
                         <div id="map"></div>
                     </div>
                     <div class="vertical-space"></div>
-                    <div class="table-container">
-                        <div class="table-title">Overview
-                            <i data-download-title="Overview"
-                               data-toggle="tooltip" data-placement="left"
-                               class="fa fa-download pull-right download-icon download-table"></i>
-                        </div>
-                        <table class="sass-summary table">
-                            <tbody>
-                            <tr>
-                                <th class="title-row" colspan="2">Site Details</th>
-                            </tr>
-                            <tr>
-                                <td scope="row">FBIS Site Code</td>
-                                <td>{{ site_code }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Original Site Code</td>
-                                <td>{{ original_site_code }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Site coordinates</td>
-                                <td>{{ coord.0 }}, {{ coord.1 }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">Site description</td>
-                                <td>{{ site_description }}</td>
-                            </tr>
-                            <tr>
-                                <th class="title-row" colspan="2">River and
-                                    Geomorphological Zone
-                                </th>
-                            </tr>
-                            <tr>
-                                <td scope="row">Original River Name</td>
-                                <td>{{ original_river_name }}</td>
-                            </tr>
-                            <tr>
-                                <td scope="row">River</td>
-                                <td>{{ river }}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+
+                    {% include 'includes/overview_table.html' %}
+
                     <div class="vertical-space"></div>
                     <div class="table-container">
                         <div class="table-title"> Monthly magnitudes
@@ -224,7 +215,7 @@
                 <div class="col-md-6 mp">
 
                     <div class="chart-container">
-                        {% include 'site_image/site_image_carousel.html' with site_image=site_image %}
+                        {% include 'includes/site_image_carousel.html' with site_image=site_image %}
                     </div>
                     <div class="vertical-space"></div>
 
@@ -235,7 +226,8 @@
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <div class="table-title">Thermal Metrics
+                        <div class="table-title">Thermal Metrics <a target="_blank" href="{% static 'data/Help.PDF.for.Thermal.Metrics.table.in.dashboard.pdf' %}"><i class="fa fa-question-circle" aria-hidden="true"></i></a>
+
                             <i data-download-title="Water Temperature"
                                data-toggle="tooltip" data-placement="left"
                                class="fa fa-download pull-right download-icon download-table"></i>
@@ -281,11 +273,11 @@
                                 </th>
                             </tr>
                             <tr>
-                                <td>Mean7</td>
+                                <td>Mean_7</td>
                                 <td>{{ indicators.weekly.weekly_mean_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <td>Min7</td>
+                                <td>Min_7</td>
                                 <td>{{ indicators.weekly.weekly_min_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
@@ -297,7 +289,7 @@
                                 <td>{{ indicators.ninety_days.ninety_min_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
-                                <td>Max7</td>
+                                <td>Max_7</td>
                                 <td>{{ indicators.weekly.weekly_max_avg|floatformat:2 }}</td>
                             </tr>
                             <tr>
@@ -316,27 +308,27 @@
                                 </th>
                             </tr>
                             <tr>
-                                <td>Mean7cnt</td>
+                                <td>Mean_7cnt</td>
                                 <td>{{ indicators.threshold.weekly_mean }}</td>
                             </tr>
                             <tr>
-                                <td>Min7cnt</td>
+                                <td>Min_7cnt</td>
                                 <td>{{ indicators.threshold.weekly_min }}</td>
                             </tr>
                             <tr>
-                                <td>Max7cnt</td>
+                                <td>Max_7cnt</td>
                                 <td>{{ indicators.threshold.weekly_max }}</td>
                             </tr>
                             <tr>
-                                <td>Mean7dur</td>
+                                <td>Mean_7dur</td>
                                 <td>{{ indicators.threshold.weekly_mean_dur }}</td>
                             </tr>
                             <tr>
-                                <td>Min7dur</td>
+                                <td>Min_7dur</td>
                                 <td>{{ indicators.threshold.weekly_min_dur }}</td>
                             </tr>
                             <tr>
-                                <td>Max7dur</td>
+                                <td>Max_7dur</td>
                                 <td>{{ indicators.threshold.weekly_max_dur }}</td>
                             </tr>
                             </tbody>

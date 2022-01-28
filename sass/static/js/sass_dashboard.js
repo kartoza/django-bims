@@ -752,82 +752,6 @@ function onDownloadMapClicked(e) {
     map.renderSync();
 }
 
-function renderLocationContextTable() {
-    let $table = $('.sass-summary tbody');
-    let tableData = {
-        'Geomorphological zone': '-',
-        'Refined Geomorphological zone': refinedGeomorphologicalZone,
-        'Catchments': 'title',
-        'Primary Catchment': '-',
-        'Secondary Catchment': '-',
-        'Tertiary Catchment': '-',
-        'Quaternary Catchment': '-',
-        'Management Areas': 'title',
-        'Water Management Area': '-',
-        'Sub Water Management Area': '-',
-        'River Management Unit': '-',
-        'Ecoregion and Province': 'title',
-        'SA Ecoregion Level 1': '-',
-        'SA Ecoregion Level 2': '-',
-        'Freshwater Ecoregion': '-',
-        'Province': '-',
-    };
-    try {
-        tableData['Geomorphological zone'] = geomorphologicalGroup['geo_class_recoded'];
-        tableData['SA Ecoregion Level 1'] = riverEcoregionGroup['eco_region_1'];
-        tableData['SA Ecoregion Level 2'] = riverEcoregionGroup['eco_region_2'];
-        tableData['Sub Water Management Area'] = waterManagementAreaGroup['sub_wmas'];
-        tableData['Water Management Area'] = waterManagementAreaGroup['water_management_area'];
-        if (waterManagementAreaGroup['river_management_unit']) {
-            tableData['River Management Unit'] = waterManagementAreaGroup['river_management_unit'];
-        }
-    } catch (e) {
-    }
-
-    let freshwaterEcoregionValue = '-';
-    if(freshwaterEcoregion.hasOwnProperty('feow_hydrosheds')) {
-        if (freshwaterEcoregion['feow_hydrosheds'] !== 'None') {
-            freshwaterEcoregionValue = freshwaterEcoregion['feow_hydrosheds'];
-        }
-    }
-    tableData['Freshwater Ecoregion'] = freshwaterEcoregionValue;
-
-    if (originalGeomorphologicalZone) {
-        tableData['Geomorphological zone'] = originalGeomorphologicalZone;
-    }
-
-    if (politicalBoundary) {
-        try {
-            if (politicalBoundary['sa_provinces'])
-                tableData['Province'] = politicalBoundary['sa_provinces'];
-        } catch (e) {
-        }
-    }
-    
-    if (riverCatchments) {
-        try {
-            tableData['Primary Catchment'] = riverCatchments['primary_catchment_area'];
-            tableData['Secondary Catchment'] = riverCatchments['secondary_catchment_area'];
-            tableData['Tertiary Catchment'] = riverCatchments['tertiary_catchment_area'];
-            tableData['Quaternary Catchment'] = riverCatchments['quaternary_catchment_area'];
-        } catch (e) {
-        }
-    }
-
-    $.each(tableData, function (key, value) {
-        if(value === 'title'){
-            $table.append('<tr>\n' +
-                '<th class="title-row" colspan="2"> ' + key + ' </th>' +
-                '</tr>');
-        }else {
-            $table.append('<tr>\n' +
-                '<td scope="row"> ' + key + ' </td>' +
-                '<td>' + value + '</td>\n' +
-                '</tr>');
-        }
-    });
-}
-
 function renderMetricsData() {
     let $table = $('.sass-metrics-table tbody');
     $table.append('<tr>\n' +
@@ -989,7 +913,6 @@ $(function () {
         renderSASSTaxonPerBiotope();
         renderSensitivityChart();
         renderBiotopeRatingsChart();
-        renderLocationContextTable();
         renderEcologicalCategoryChart();
         renderMetricsData();
         renderChemGraph();
