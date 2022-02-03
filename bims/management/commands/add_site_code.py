@@ -49,5 +49,6 @@ class Command(BaseCommand):
             logger.info(f'New site code {site_code}')
             location_site.site_code = site_code
             location_site.save()
+            index += 1
 
         connect_bims_signals()
