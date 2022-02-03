@@ -36,8 +36,9 @@ RUN echo "Updating apt-get" && \
     rm -rf ~/.cache/pip
 
 # install shallow clone of geonode master branch
-RUN git clone -b '3.1' --depth=1 git://github.com/GeoNode/geonode.git --branch '3.1' /usr/src/geonode
-RUN cd /usr/src/geonode/; pip install -r requirements.txt --no-cache-dir; pip install -e .
+COPY geonode /usr/src/geonode
+# RUN git clone -b '3.1' --depth=1 git://github.com/GeoNode/geonode.git --branch '3.1' /usr/src/geonode
+# RUN cd /usr/src/geonode/; pip install -r requirements.txt --no-cache-dir; pip install -e .
 
 # Install python dependencies
 RUN echo "Geonode python dependencies"
@@ -75,6 +76,7 @@ RUN cd / && npm install
 
 #USER www-data
 ADD . /home/web/django_project
+RUN rm -rf /home/web/django_project/geonode
 WORKDIR /home/web/django_project
 RUN cd bims && npm install --quiet -g webpack@5.50.0 && npm install --quiet -g webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
 

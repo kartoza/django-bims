@@ -28,7 +28,7 @@ from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
 from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
-from geonode.upload.models import Upload, UploadFile
+# from geonode.upload.models import Upload, UploadFile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
@@ -1353,8 +1353,8 @@ admin.site.register(
 admin.site.register(LocationContextFilter, LocationContextFilterAdmin)
 
 # Hide upload files from geonode in admin
-admin.site.unregister(Upload)
-admin.site.unregister(UploadFile)
+# admin.site.unregister(Upload)
+# admin.site.unregister(UploadFile)
 
 # Rerender geonode document admin
 admin.site.unregister(Document)
@@ -1366,10 +1366,6 @@ if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
 
 from bims.custom_admin import *  # noqa
-from geonode.themes.models import *  # noqa
-
-admin.site.unregister(GeoNodeThemeCustomization)
-admin.site.unregister(Partner)
 
 admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)

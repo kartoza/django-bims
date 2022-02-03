@@ -22,7 +22,7 @@ from django.urls import re_path
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.core import urls as wagtail_urls
 from wagtail.documents import urls as wagtaildocs_urls
-from geonode.urls import urlpatterns as geonode_urlpatterns
+# from geonode.urls import urlpatterns as geonode_urlpatterns
 from bims.views.documents import document_metadata, BimsDocumentUploadView
 
 
@@ -41,7 +41,7 @@ urlpatterns = [
     url(r'^', include('example.urls')),
 
     # prometheus monitoring
-    url(r'', include('django_prometheus.urls')),
+    # url(r'', include('django_prometheus.urls')),
     url(r'^documents/(?P<docid>\d+)/metadata$',
         document_metadata,
         name='document_metadata'),
@@ -56,14 +56,14 @@ urlpatterns = [
     re_path(r'^cms/', include(wagtailadmin_urls)),
 ]
 
-for geonode_pattern in geonode_urlpatterns:
-    try:
-        if 'admin' in geonode_pattern.app_dict:
-            geonode_urlpatterns.remove(geonode_pattern)
-    except AttributeError:
-        continue
-
-urlpatterns += geonode_urlpatterns
+# for geonode_pattern in geonode_urlpatterns:
+#     try:
+#         if 'admin' in geonode_pattern.app_dict:
+#             geonode_urlpatterns.remove(geonode_pattern)
+#     except AttributeError:
+#         continue
+#
+# urlpatterns += geonode_urlpatterns
 
 urlpatterns += [
     url('^admin/', admin.site.urls),

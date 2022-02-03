@@ -46,8 +46,6 @@ build:
 	@echo "------------------------------------------------------------------"
 	@echo "Building in production mode"
 	@echo "------------------------------------------------------------------"
-	@git submodule init
-	@git submodule update
 	@docker-compose ${ARGS} build uwsgi
 	@docker-compose ${ARGS} build dev
 
