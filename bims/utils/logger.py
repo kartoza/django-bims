@@ -14,7 +14,10 @@ def log(message, log_type='info', caller=None):
     :return:
     """
     if not caller:
-        caller = inspect.stack()[1][3]
+        try:
+            caller = inspect.stack()[1][3]
+        except IndexError:
+            caller = ''
     logger_function = getattr(logger, log_type)
     try:
         message = message.encode('utf-8')

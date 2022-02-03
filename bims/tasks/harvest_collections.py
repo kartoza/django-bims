@@ -1,6 +1,6 @@
 # coding=utf-8
 from celery import shared_task
-
+from bims.signals.utils import *
 
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
 def harvest_collections(session_id):
@@ -17,6 +17,8 @@ def harvest_collections(session_id):
     except HarvestSession.DoesNotExist:
         log('Session does not exist')
         return
+
+    disconnect_bims_signals()
 
     harvest_session.status = 'Processing'
     harvest_session.save()
@@ -46,3 +48,6 @@ def harvest_collections(session_id):
     harvest_session.status = 'Finished'
     harvest_session.finished = True
     harvest_session.save()
+
+    connect_bims_signals()
+
