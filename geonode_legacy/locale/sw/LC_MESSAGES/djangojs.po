@@ -1,0 +1,991 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Andres Alfonso Lemon Gomez <lemon.andres@gmail.com>, 2014
+# Machaku <bmachaku@gmail.com>, 2014-2015
+msgid ""
+msgstr ""
+"Project-Id-Version: GeoNode\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-11-28 18:12+0000\n"
+"PO-Revision-Date: 2016-08-23 11:58+0000\n"
+"Last-Translator: Julien Collaer <julien.collaer@opengeode.be>\n"
+"Language-Team: Swahili (http://www.transifex.com/geonode/geonode/language/"
+"sw/)\n"
+"Language: sw\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: geonode/monitoring/static/monitoring/bundle.js:170
+msgid "STORE_UPDATED"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileType.js:50
+#, javascript-format
+msgid "Missing a %s file, which is required"
+msgstr "Faili la %s limekosekana na linahitajika"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:7
+msgid "ESRI Shapefile"
+msgstr "Shapefile ya ESRI"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:13
+msgid "ASCII Text File"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:18
+#: geonode/static/geonode/js/upload/FileTypes.js:23
+msgid "GeoTIFF"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:29
+msgid "Comma Separated Value"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:34
+msgid "Google Earth KML"
+msgstr "KML ya Google Earth"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:39
+#, fuzzy
+#| msgid "Google Earth KML"
+msgid "Google Earth KML with a GroundOverlay"
+msgstr "KML ya Google Earth"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:45
+#, fuzzy
+#| msgid "Google Earth KML"
+msgid "Google Earth KMZ"
+msgstr "KML ya Google Earth"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:50
+msgid "GeoJSON"
+msgstr "GeoJSON"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:55
+msgid "Zip Archive"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:61
+msgid "ERDAS Imagine"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:66
+#: geonode/static/geonode/js/upload/FileTypes.js:71
+msgid "National Imagery Transmission Format"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:77
+msgid "Controlled Image Base-1 Meter"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:84
+msgid "Controlled Image Base-5 Meter"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:91
+msgid "Controlled Image Base-10 Meter"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:98
+msgid "CADRG-Global Navigation Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:105
+msgid "CADRG-Jet Navigation Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:112
+msgid "CADRG-Operational Navigation Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:119
+msgid "CADRG-Tactical Pilotage Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:126
+msgid "CADRG-Joint Operations Graphic"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:133
+msgid "CADRG-Topographic Line Map 100K"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:140
+msgid "CADRG-Topographic Line Map 50K"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:147
+msgid "JPEG2000"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:152
+msgid "MrSID-Multi-resolution Seamless Image Database"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:157
+#, fuzzy
+#| msgid "Metadata Links:"
+msgid "XML Metadata File"
+msgstr "Viungo vya metadata:"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:163
+msgid "Style Layer Descriptor"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:169
+msgid "JPEG"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:174
+msgid "PNG"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:179
+msgid "GIF"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:296
+#, fuzzy
+#| msgid "Unexpected Error"
+msgid "Unexpected error!"
+msgstr "Hitilafu isiyotarajiwa"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:299
+msgid ""
+" - 400 Bad Request. Server cannot or will not process the request due to "
+"something that is perceived to be a client error (e.g., malformed request "
+"syntax, invalid request message framing, or deceptive request routing)."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:302
+msgid ""
+" - 401 Unauthorized. Request was not sent with the proper authentication "
+"credentials."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:305
+msgid ""
+" - 403 Forbidden. This is generally related to permission rules on your "
+"server. Contact the system administrator for more information regarding this "
+"error message."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:308
+msgid ""
+" - 404 Not Found. Origin server was unable or unwilling to find the resource "
+"requested."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:311
+msgid ""
+" - 405 Method Not Allowed. Origin server is aware of the requested resource, "
+"but the request method used is not supported."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:314
+msgid ""
+" - 406 Not Acceptable. Resource is not available at the origin that adheres "
+"to negotiation headers that were  set prior (e.g. via 'Accept-Charset' and "
+"'Accept-Language' headers)."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:317
+msgid ""
+" - 407 Authentication Required. The client did not send the required "
+"authentication with the request."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:320
+msgid ""
+" - 408 Request Timeout. The origin server did not receive the complete "
+"request in what it considers a reasonable time."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:323
+msgid ""
+" - 409 Conflict. The request did not complete because of a conflict with the "
+"current state of the resource. Typically happens on a PUT request where "
+"multiple clients are attempting to edit the same resource."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:326
+msgid ""
+" - 410 Gone. The resource requested is permanently missing at the origin."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:329
+msgid ""
+" - 411 Length Required. Client did not define the 'Content-Length' of the "
+"request body in the headers and this is required to obtain the resource."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:332
+msgid ""
+" - 412 Precondition Failed. Server denies the request because the resource "
+"failed to meet the conditions specified by the client."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:335
+msgid ""
+" - 413 Payload Too Large. Refusal from the server to process the request "
+"because the payload sent from the client is larger than the server wished to "
+"accept. Server has the optional to close the connection."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:338
+msgid ""
+" - 414 URI Too Long. Refusal from the server that the URI was too long to be "
+"processed. For example, if a client is attempting a GET request with an "
+"unusually long URI after a POST, this could be seen as a security risk and a "
+"414 gets generated."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:341
+msgid ""
+" - 415 Unsupported Media Type. Refusal from the server to process the format "
+"of the current payload. One way to identify and fix this issue would be to "
+"look at the 'Content-Type' or 'Content-Encoding' headers sent in the "
+"client’s request."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:344
+msgid ""
+" - 417 Expectation Failed. Failure of server to meet the requirements "
+"specified in the 'Expect' header of the client’s request."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:347
+msgid ""
+" - 429 Too Many Requests. Client has sent too many requests in the specified "
+"amount of time according to the server."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:350
+msgid ""
+" - 499 Client Close Request. Nginx specific response code to indicate when "
+"the connection has been closed by the client while the server is still "
+"processing its request, making server unable to send a status code back."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:353
+msgid ""
+" - 500 Internal Server Error. This error indicates that the server has "
+"encountered an unexpected condition. This often occurs when an application "
+"request cannot be fulfilled due to the application being configured "
+"incorrectly on the server."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:356
+msgid ""
+" - 501 Not Implemented. This error indicates that the HTTP method sent by "
+"the client is not supported by the server. This is most often caused by the "
+"server being out of date. It is a very rare error and generally requires "
+"that the web server be updated."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:359
+msgid ""
+" - 502 Bad Gateway. This error is usually due to improperly configured proxy "
+"servers. The first step in resolving the issue is to clear the client's "
+"cache."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:362
+msgid ""
+" - 503 Service Unavailable. This error occurs when the server is unable to "
+"handle requests due to a temporary overload or due to the server being "
+"temporarily closed for maintenance. The error indicates that the server will "
+"only temporarily be down."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:365
+msgid ""
+" - 504 Gateway Timeout. GeoNode lost the connection with GeoServer or DB due "
+"to a connection timeout. Consider using the management commands to import "
+"data!"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:368
+msgid ""
+" - 505 HTTP Version Not Supported. This error occurs when the server refuses "
+"to support the HTTP protocol that has been specified by the client computer. "
+"This can be caused by the protocol not being specified properly by the "
+"client computer; for example, if an invalid version number has been "
+"specified."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:371
+msgid ""
+" - 506 Variant Also Negotiates. This error indicates that the server is not "
+"properly configured. Contact the system administrator to resolve this issue."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:374
+msgid ""
+" - 507 Insufficient Storage. This error indicates that the server is out of "
+"free memory. This is most likely to occur when an application that is being "
+"requested cannot allocate the necessary system resources to run. To resolve "
+"the issue, the server's hard disk may need to be cleaned of any unnecessary "
+"documents to free up more hard disk space, its memory may need to be "
+"expanded, or it may simply need to be restarted. Contact the system "
+"administrator for more information regarding this error message."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:377
+msgid ""
+" - 509 Bandwidth Limit Exceeded. This error occurs when the bandwidth limit "
+"imposed by the system administrator has been reached. The only fix for this "
+"issue is to wait until the limit is reset in the following cycle. Consult "
+"the system administrator for information about acquiring more bandwidth."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:380
+msgid ""
+" - 510 Not Extended. This error occurs when an extension attached to the "
+"HTTP request is not supported by the web server. To resolve the issue, you "
+"may need to update the server."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:383
+msgid ""
+" Error Code. Contact the system administrator for more information regarding "
+"this error message."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:421
+#: geonode/static/geonode/js/upload/LayerInfo.js:592
+msgid "Unexpected Error"
+msgstr "Hitilafu isiyotarajiwa"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:459
+#, fuzzy
+#| msgid "Layer Info"
+msgid " Info"
+msgstr "Maelezo ya Tabaka"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:460
+msgid "Edit Metadata"
+msgstr "Hariri Metadata"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:461
+#, fuzzy
+#| msgid "Edit Metadata"
+msgid "Upload Metadata"
+msgstr "Hariri Metadata"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:462
+msgid "Upload SLD"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:463
+msgid "Manage Styles"
+msgstr "Simamia Mitindo"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:476
+msgid "The column %1 was renamed to %2 <br/>"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:482
+msgid "Your "
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:511
+msgid "Performing Final GeoServer Config Step"
+msgstr "Inafanya hatua ya mwisho ya usanidi wa GeoServer"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:528
+#: geonode/static/geonode/js/upload/LayerInfo.js:572
+msgid "You need to specify more information in order to complete your upload"
+msgstr "Unahitajika kuainisha maelezo zaidi ili kukamilisha upakiaji wako"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:552
+msgid "Files are ready to be ingested!"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:555
+msgid "A temporal dimension may be added to this Layer."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:610
+msgid "Performing GeoServer Config Step"
+msgstr "Inafanyanya usanidi wa GeoServer"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:696
+msgid ""
+"<br>Please check your network connection. In case of Layer Upload make sure "
+"GeoServer is running and accepting connections."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:700
+#: geonode/static/geonode/js/upload/LayerInfo.js:703
+#: geonode/static/geonode/js/upload/LayerInfo.js:710
+#: geonode/static/geonode/js/upload/LayerInfo.js:713
+msgid "<br>"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:705
+msgid "<br>Bad request or URL not found."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:715
+#, fuzzy
+#| msgid "Unknown Map"
+msgid "<br>Unknown."
+msgstr "Ramani isiyojulikana"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:723
+msgid "Layer files uploaded, configuring in GeoServer"
+msgstr "Mafaili ya tabaka yamepakiwa, usanidi katika GeoServer"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:874
+msgid "Remove"
+msgstr "Ondoa"
+
+#: geonode/static/geonode/js/upload/upload.js:126
+#, javascript-format
+msgid "The file %s is an unsupported file type, please select another file."
+msgstr ""
+"Faili %s ni la aina ya faili isiyokubalika, tafadhali chagua faili lingine."
+
+#: geonode/static/geonode/js/upload/upload.js:296
+msgid ""
+"You are trying to upload an incomplete set of files or not all mandatory "
+"options have been validated.\n"
+"\n"
+"Please check for errors in the form!"
+msgstr ""
+
+#, fuzzy
+#~| msgid "Now"
+#~ msgid "No"
+#~ msgstr "Now"
+
+#~ msgid "Your layer was successfully uploaded"
+#~ msgstr "Tabaka lako limepakiwa kwa mafanikio"
+
+#~ msgid ""
+#~ "You need to specify more information in order to complete your upload."
+#~ msgstr "Unahitajika kuainisha maelezo zaidi ili kukamilisha upakiaji wako."
+
+#~ msgid "You can continue configuring your layer."
+#~ msgstr "Unaweza kuendelea kusanidi tabaka lako."
+
+#~ msgid "Cancel"
+#~ msgstr "Sitisha"
+
+#~ msgid "Save as Copy"
+#~ msgstr "Hifadhi kama Nakala"
+
+#~ msgid "About this Map"
+#~ msgstr "Kuhusu Ramani hii"
+
+#~ msgid "Abstract"
+#~ msgstr "Muhtasari"
+
+#~ msgid "Save"
+#~ msgstr "Hifadhi"
+
+#~ msgid "Title"
+#~ msgstr "Jina"
+
+#~ msgid "Connection Error"
+#~ msgstr "Hitilafu katika uunganishaji"
+
+#~ msgid "The server returned an error"
+#~ msgstr "Seva imerudisha hitilafu"
+
+#~ msgid "Details..."
+#~ msgstr "Maelezo ..."
+
+#~ msgid "Add Layers"
+#~ msgstr "Ongeza Matabaka"
+
+#~ msgid "Area"
+#~ msgstr "Eneo"
+
+#~ msgid "Background"
+#~ msgstr "Usuli"
+
+#~ msgid "Done"
+#~ msgstr "Imefanyika"
+
+#~ msgid "Available Layers"
+#~ msgstr "Mabaka yaliyomo"
+
+#~ msgid "Height"
+#~ msgstr "Kimo"
+
+#~ msgid "Get Feature Info"
+#~ msgstr "Pata taarifa za sura hii"
+
+#~ msgid "Large"
+#~ msgstr "Kubwa"
+
+#~ msgid "or add a new server."
+#~ msgstr "au ongeza seva mpya."
+
+#~ msgid "Map Layers"
+#~ msgstr "Matabaka ya ramani"
+
+#~ msgid "View available data from:"
+#~ msgstr "Tazama data zinazopatikana toka:"
+
+#~ msgid "Data"
+#~ msgstr "Data"
+
+#~ msgid "Layers"
+#~ msgstr "Matabaka"
+
+#~ msgid "Legend"
+#~ msgstr "Ufunguo"
+
+#~ msgid "Length"
+#~ msgstr "Urefu"
+
+#~ msgid "Loading Map..."
+#~ msgstr "Ramani inapakiwa ..."
+
+#~ msgid "Map Size"
+#~ msgstr "Ukubwa wa ramani"
+
+#~ msgid "Measure"
+#~ msgstr "Pima"
+
+#~ msgid "Contact"
+#~ msgstr "Mawasiliano"
+
+#~ msgid "Permalink"
+#~ msgstr "Kiungo cha kudumu"
+
+#~ msgid "Mini"
+#~ msgstr "Mini"
+
+#~ msgid "Pan Map"
+#~ msgstr "`Pan` Ramani"
+
+#~ msgid "Zoom to Next Extent"
+#~ msgstr "Kuza kufikia kiwango kinachofuata"
+
+#~ msgid "Zoom to Previous Extent"
+#~ msgstr "Kuza kufikia kiwango kilichopita"
+
+#~ msgid "This map has not yet been saved."
+#~ msgstr "Ramani hii bado haijahifadhiwa."
+
+#~ msgid "Premium"
+#~ msgstr "`Premium`"
+
+#~ msgid "Print Map"
+#~ msgstr "Chapisha Ramani"
+
+#~ msgid "Print Preview"
+#~ msgstr "Hakiki Chapisho"
+
+#~ msgid "Properties"
+#~ msgstr "Sifa"
+
+#~ msgid "Publish Map"
+#~ msgstr "Sambaza ramani"
+
+#~ msgid "Remove Layer"
+#~ msgstr "Ondoa Tabaka"
+
+#~ msgid "Sorry, your map could not be saved."
+#~ msgstr "Samahani, ramani yako hakuweza kuhifadhiwa."
+
+#~ msgid "Error While Saving"
+#~ msgstr "Hitilafu Wakati wa Kuhifadhi"
+
+#~ msgid "Save Map"
+#~ msgstr "Hifadhi Ramani"
+
+#~ msgid "You must be logged in to save this map."
+#~ msgstr "Ni lazima ujisajili ili kuhifadhi ramani hii."
+
+#~ msgid "Small"
+#~ msgstr "Ndogo"
+
+#~ msgid ""
+#~ "Error contacting server.\n"
+#~ " Please check the url and try again."
+#~ msgstr ""
+#~ "Hitilafu katika kuwasiliana na seva. Tafadhali angalia `url` kisha jaribu "
+#~ "tena."
+
+#~ msgid "Layer Properties"
+#~ msgstr "Sifa za tabaka"
+
+#~ msgid "Change layer format and style"
+#~ msgstr "Badilisha fomati na mtindo wa tabaka"
+
+#~ msgid "Edit Styles"
+#~ msgstr "Hariri mitindo"
+
+#~ msgid "Edit layer styles"
+#~ msgstr "Hariri mitindo ya tabaka"
+
+#~ msgid "Switch to Google Earth 3D Viewer"
+#~ msgstr "Badili kwenda muonekano wa 3D kwa Google Earth"
+
+#~ msgid ""
+#~ "The map that you are trying to load does not exist.  Creating a new map "
+#~ "instead."
+#~ msgstr "Ramani unayoitafuta haipo. Kutengeneza ramani mpya badala yake."
+
+#~ msgid "Width"
+#~ msgstr "Upana"
+
+#~ msgid "Zoom In"
+#~ msgstr "Zoom In"
+
+#~ msgid "Zoom Out"
+#~ msgstr "Zoom Out"
+
+#~ msgid "Zoom level"
+#~ msgstr "Ngazi ya ku-zoom"
+
+#~ msgid "Zoom Level"
+#~ msgstr "Zoom Level"
+
+#~ msgid "Zoom to Layer Extent"
+#~ msgstr "Zoom kuendana na tabaka"
+
+#~ msgid "Zoom to Visible Extent"
+#~ msgstr "Zoom hadi kiwango kinachonekana"
+
+#~ msgid "Zoom Level {zoom}"
+#~ msgstr "Kiwango cha zoom  {zoom}"
+
+#~ msgid "Create Map"
+#~ msgstr "Tengeneza Ramani"
+
+#~ msgid "Export Map"
+#~ msgstr "Export Ramani"
+
+#~ msgid "Map"
+#~ msgstr "Ramani"
+
+#~ msgid "View this Map"
+#~ msgstr "Tazama Ramani hii"
+
+#~ msgid "Open Map"
+#~ msgstr "Fungua Ramani"
+
+#~ msgid "Name"
+#~ msgstr "Jina"
+
+#~ msgid "Queryable"
+#~ msgstr "`Queryable`"
+
+#~ msgid "No background"
+#~ msgstr "Hakuna usuli"
+
+#~ msgid ""
+#~ "Your map is ready to be published to the web!  Simply copy the following "
+#~ "HTML to embed the map in your website:"
+#~ msgstr ""
+#~ "Ramani yako ni tayari kwa kutolewa kwa mtandao! Nakili msimbo wa HTML "
+#~ "ufuatao ukitaka kuambatanisha ramani katika tovuti yako:"
+
+#~ msgid "Abstract:"
+#~ msgstr "Muhtasari:"
+
+#~ msgid "No attribution information is provided for this layer."
+#~ msgstr ""
+#~ "Hakuna taarifa za `attribution` zilizotolewa kwa ajili ya tabaka hili."
+
+#~ msgid "Provided by:"
+#~ msgstr "Imetolewa na:"
+
+#~ msgid "Download:"
+#~ msgstr "Pakua:"
+
+#~ msgid "No keywords are listed for this layer."
+#~ msgstr "Hakuna maneno msingi yaliyoorodheshwa kwa ajili ya tabaka hili."
+
+#~ msgid "Keywords:"
+#~ msgstr "Maneno msingi:"
+
+#~ msgid "No metadata URLs are defined for this layer."
+#~ msgstr "Hakuna URL za metadata zilizo bainishwa kwa tabaka hili."
+
+#~ msgid "Paper size:"
+#~ msgstr "Ukubwa  wa karatasi:"
+
+#~ msgid "Resolution:"
+#~ msgstr "Msongo:"
+
+#~ msgid "Print"
+#~ msgstr "Chapisha"
+
+#~ msgid "Enter map title here."
+#~ msgstr "Ingiza jina la ramani hapa."
+
+#~ msgid "Include legend?"
+#~ msgstr "Ambatanisha ufunguo?"
+
+#~ msgid "Enter comments here."
+#~ msgstr "Ingiza maoni hapa."
+
+#~ msgid "Creating PDF..."
+#~ msgstr "PDF inatengenezwa  ..."
+
+#~ msgid "Last Modified"
+#~ msgstr "Mara ya mwisho kuboreshwa"
+
+#~ msgid "Prev"
+#~ msgstr "Yaliyopita"
+
+#~ msgid "Next"
+#~ msgstr "kfuatayo"
+
+#~ msgid "of"
+#~ msgstr "ya"
+
+#~ msgid "Your search did not match any items."
+#~ msgstr "Utafutaji wako haukushabihiana na chochote."
+
+#~ msgid "Search Maps"
+#~ msgstr "Tafuta Ramani"
+
+#~ msgid "Search"
+#~ msgstr "Tafuta"
+
+#~ msgid "Showing"
+#~ msgstr "Inaonesha"
+
+#~ msgid "Loading"
+#~ msgstr "Inapakia"
+
+#~ msgid "permalink"
+#~ msgstr "kiungo cha kudumu"
+
+#~ msgid "Select"
+#~ msgstr "Chagua"
+
+#~ msgid "Select:"
+#~ msgstr "Chagua:"
+
+#~ msgid "All"
+#~ msgstr "Vyote"
+
+#~ msgid "None"
+#~ msgstr "Hakuna"
+
+#~ msgid "Loading..."
+#~ msgstr "Inapakia ..."
+
+#~ msgid "You do not have permission to view this data"
+#~ msgstr "Huna ruhusa kutazama data hizi"
+
+#~ msgid "This data is stored on a remote server"
+#~ msgstr "Data hizi imehifadhiwa kwenye seva ya mbali"
+
+#~ msgid "No abstract is provided for this layer."
+#~ msgstr "Hakuna muhtasari uliotolewa kwa ajili ya tabaka hili."
+
+#~ msgid "No download URLs are definied for this layer."
+#~ msgstr ""
+#~ "Hakuna viungo vya kupakulia vilivyobainishwa kwa ajili ya tabaka hili"
+
+#~ msgid "Selected Layers"
+#~ msgstr "Matabaka yaliyochaguliwa"
+
+#~ msgid "No Layers Selected"
+#~ msgstr "Hakuna Tabaka Lililoshaguliwa"
+
+#~ msgid "Clear Selected"
+#~ msgstr "Safisha vilivyo chaguliwa"
+
+#~ msgid "Clear All"
+#~ msgstr "Safisha vyote"
+
+#~ msgid "Operation Failed"
+#~ msgstr "Mchakato umeshindikana"
+
+#~ msgid "No layers are currently selected."
+#~ msgstr "Hakuna matabaka yaliyochaguliwa kwa sasa."
+
+#~ msgid "Downloading..."
+#~ msgstr "Inapakua ..."
+
+#~ msgid "Please wait"
+#~ msgstr "Tafadhali subiri"
+
+#~ msgid "Available %s"
+#~ msgstr "Available %s"
+
+#~ msgid ""
+#~ "This is the list of available %s. You may choose some by selecting them "
+#~ "in the box below and then clicking the \"Choose\" arrow between the two "
+#~ "boxes."
+#~ msgstr ""
+#~ "This is the list of available %s. You may choose some by selecting them "
+#~ "in the box below and then clicking the \"Choose\" arrow between the two "
+#~ "boxes."
+
+#~ msgid "Type into this box to filter down the list of available %s."
+#~ msgstr "Type into this box to filter down the list of available %s."
+
+#~ msgid "Filter"
+#~ msgstr "Filter"
+
+#~ msgid "Choose all"
+#~ msgstr "Choose all"
+
+#~ msgid "Click to choose all %s at once."
+#~ msgstr "Click to choose all %s at once."
+
+#~ msgid "Choose"
+#~ msgstr "Choose"
+
+#~ msgid "Chosen %s"
+#~ msgstr "Chosen %s"
+
+#~ msgid ""
+#~ "This is the list of chosen %s. You may remove some by selecting them in "
+#~ "the box below and then clicking the \"Remove\" arrow between the two "
+#~ "boxes."
+#~ msgstr ""
+#~ "This is the list of chosen %s. You may remove some by selecting them in "
+#~ "the box below and then clicking the \"Remove\" arrow between the two "
+#~ "boxes."
+
+#~ msgid "Remove all"
+#~ msgstr "Remove all"
+
+#~ msgid "Click to remove all chosen %s at once."
+#~ msgstr "Click to remove all chosen %s at once."
+
+#~ msgid "%(sel)s of %(cnt)s selected"
+#~ msgid_plural "%(sel)s of %(cnt)s selected"
+#~ msgstr[0] "94d7ef36d54e81afde607d8fd121772b_pl_0"
+#~ msgstr[1] "94d7ef36d54e81afde607d8fd121772b_pl_1"
+
+#~ msgid ""
+#~ "You have unsaved changes on individual editable fields. If you run an "
+#~ "action, your unsaved changes will be lost."
+#~ msgstr ""
+#~ "You have unsaved changes on individual editable fields. If you run an "
+#~ "action, your unsaved changes will be lost."
+
+#~ msgid ""
+#~ "You have selected an action, but you haven't saved your changes to "
+#~ "individual fields yet. Please click OK to save. You'll need to re-run the "
+#~ "action."
+#~ msgstr ""
+#~ "You have selected an action, but you haven't saved your changes to "
+#~ "individual fields yet. Please click OK to save. You'll need to re-run the "
+#~ "action."
+
+#~ msgid ""
+#~ "You have selected an action, and you haven't made any changes on "
+#~ "individual fields. You're probably looking for the Go button rather than "
+#~ "the Save button."
+#~ msgstr ""
+#~ "You have selected an action, and you haven't made any changes on "
+#~ "individual fields. You're probably looking for the Go button rather than "
+#~ "the Save button."
+
+#~ msgid ""
+#~ "January February March April May June July August September October "
+#~ "November December"
+#~ msgstr ""
+#~ "January February March April May June July August September October "
+#~ "November December"
+
+#~ msgid "S M T W T F S"
+#~ msgstr "S M T W T F S"
+
+#~ msgid "Show"
+#~ msgstr "Show"
+
+#~ msgid "Hide"
+#~ msgstr "Hide"
+
+#~ msgid "Clock"
+#~ msgstr "Clock"
+
+#~ msgid "Choose a time"
+#~ msgstr "Choose a time"
+
+#~ msgid "Midnight"
+#~ msgstr "Midnight"
+
+#~ msgid "6 a.m."
+#~ msgstr "6 a.m."
+
+#~ msgid "Noon"
+#~ msgstr "Noon"
+
+#~ msgid "Today"
+#~ msgstr "Today"
+
+#~ msgid "Calendar"
+#~ msgstr "Calendar"
+
+#~ msgid "Yesterday"
+#~ msgstr "Yesterday"
+
+#~ msgid "Tomorrow"
+#~ msgstr "Tomorrow"
+
+#~ msgid "Add user..."
+#~ msgstr "Add user..."
+
+#~ msgid "Who can view and download this data?"
+#~ msgstr "Who can view and download this data?"
+
+#~ msgid "Anyone"
+#~ msgstr "Anyone"
+
+#~ msgid "Any registered user"
+#~ msgstr "Any registered user"
+
+#~ msgid "Only users who can edit"
+#~ msgstr "Only users who can edit"
+
+#~ msgid "Who can edit this data?"
+#~ msgstr "Who can edit this data?"
+
+#~ msgid "Only the following users or groups:"
+#~ msgstr "Only the following users or groups:"
+
+#~ msgid "Who can manage and edit this data?"
+#~ msgstr "Who can manage and edit this data?"
+
+#~ msgid "GeoTiff File"
+#~ msgstr "GeoTiff File"
+
+#~ msgid "Comma Separated File"
+#~ msgstr "Comma Separated File"
+
+#~ msgid "Zip Archives"
+#~ msgstr "Zip Archives"
+
+#~ msgid "You are uploading an incomplete set of files."
+#~ msgstr "You are uploading an incomplete set of files."
+
+#~ msgid "No error message supplied"
+#~ msgstr "No error message supplied"

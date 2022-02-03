@@ -1,0 +1,10 @@
+{% load i18n %}
+<body>
+{% url "notice_settings" as notices_url %}{% blocktrans %}You have received the following notice from{% endblocktrans %} {{ current_site }}:
+<p>
+{{ message }}
+</p>
+<p>
+{% blocktrans %}To change how you receive notifications, please go to {% endblocktrans %} {{ default_http_protocol }}://{{ current_site }}{{ notice_settings_url }}
+</p>
+</body>

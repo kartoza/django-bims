@@ -1,0 +1,53 @@
+{% extends "documents/document_upload_base.html" %}
+{% load bootstrap_tags %}
+{% load i18n %}
+
+{% block title %} {% trans "Upload Document" %} - {{ block.super }} {% endblock %}
+
+{% block body_class %}documents upload{% endblock body_class %}
+
+{% block body %}
+
+<div class="col-md-8">
+  <form id="upload_form"  method="post" enctype="multipart/form-data" action="{% url "document_upload" %}">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
+    {{ form.as_p }}
+    <button type="submit" id="upload-button" class="btn btn-danger">{% trans "Upload" %}</button>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block sidebar %}
+
+<div class="col-md-4">
+  <h3>{% trans "Permissions"  %}</h3>
+  <form id="permission_form">
+    {% include "_permissions.html" %}
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_script %}
+{{ block.super }}
+{% include "_permissions_form_js.html" %}
+
+<script type="text/javascript">
+    $('#id_doc_file').on('change', function(){
+        if($('#id_title').val() == ''){
+            $('#id_title').val($('#id_doc_file').val().replace("C:\\fakepath\\", ""));
+        }
+    });
+    $("#id_links").select2({
+        width: '100%'
+    });
+    $('#upload_form').submit(function(){
+      $('#permissions').val(JSON.stringify(permissionsString($('#permission_form'),'base')));
+    });
+
+    $('#upload-button').click(function(){
+      $('#_resource_uploading').modal('toggle');
+    });
+</script>
+{% endblock extra_script %}

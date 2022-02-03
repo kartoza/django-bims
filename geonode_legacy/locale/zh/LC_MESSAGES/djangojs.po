@@ -1,0 +1,1168 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Translators:
+# Andres Alfonso Lemon Gomez <lemon.andres@gmail.com>, 2014
+# Nathan Wang <nwang@opengeo.org>, 2012
+# Nathan Wang <nwang@opengeo.org>, 2012
+# Nathan Wang <nwang@opengeo.org>, 2012
+msgid ""
+msgstr ""
+"Project-Id-Version: GeoNode\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-11-28 18:12+0000\n"
+"PO-Revision-Date: 2016-08-23 11:58+0000\n"
+"Last-Translator: Julien Collaer <julien.collaer@opengeode.be>\n"
+"Language-Team: Chinese (http://www.transifex.com/geonode/geonode/language/"
+"zh/)\n"
+"Language: zh\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: geonode/monitoring/static/monitoring/bundle.js:170
+msgid "STORE_UPDATED"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileType.js:50
+#, javascript-format
+msgid "Missing a %s file, which is required"
+msgstr "缺少 %s 文件，这是必需的"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:7
+msgid "ESRI Shapefile"
+msgstr "ESRI shape文件"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:13
+msgid "ASCII Text File"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:18
+#: geonode/static/geonode/js/upload/FileTypes.js:23
+msgid "GeoTIFF"
+msgstr "GeoTIFF"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:29
+msgid "Comma Separated Value"
+msgstr "标点分隔值"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:34
+msgid "Google Earth KML"
+msgstr "谷歌地球KML"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:39
+#, fuzzy
+#| msgid "Google Earth KML"
+msgid "Google Earth KML with a GroundOverlay"
+msgstr "谷歌地球KML"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:45
+#, fuzzy
+#| msgid "Google Earth KML"
+msgid "Google Earth KMZ"
+msgstr "谷歌地球KML"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:50
+msgid "GeoJSON"
+msgstr "GeoJSON"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:55
+msgid "Zip Archive"
+msgstr "压缩文档"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:61
+msgid "ERDAS Imagine"
+msgstr "ERDAS影像"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:66
+#: geonode/static/geonode/js/upload/FileTypes.js:71
+msgid "National Imagery Transmission Format"
+msgstr "国家影像传输格式"
+
+#: geonode/static/geonode/js/upload/FileTypes.js:77
+msgid "Controlled Image Base-1 Meter"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:84
+msgid "Controlled Image Base-5 Meter"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:91
+msgid "Controlled Image Base-10 Meter"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:98
+msgid "CADRG-Global Navigation Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:105
+msgid "CADRG-Jet Navigation Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:112
+msgid "CADRG-Operational Navigation Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:119
+msgid "CADRG-Tactical Pilotage Chart"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:126
+msgid "CADRG-Joint Operations Graphic"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:133
+msgid "CADRG-Topographic Line Map 100K"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:140
+msgid "CADRG-Topographic Line Map 50K"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:147
+msgid "JPEG2000"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:152
+msgid "MrSID-Multi-resolution Seamless Image Database"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:157
+#, fuzzy
+#| msgid "Metadata Links:"
+msgid "XML Metadata File"
+msgstr "元数据链接："
+
+#: geonode/static/geonode/js/upload/FileTypes.js:163
+msgid "Style Layer Descriptor"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:169
+msgid "JPEG"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:174
+msgid "PNG"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/FileTypes.js:179
+#, fuzzy
+#| msgid "GeoTIFF"
+msgid "GIF"
+msgstr "GeoTIFF"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:296
+#, fuzzy
+#| msgid "Unexpected Error"
+msgid "Unexpected error!"
+msgstr "意外错误"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:299
+msgid ""
+" - 400 Bad Request. Server cannot or will not process the request due to "
+"something that is perceived to be a client error (e.g., malformed request "
+"syntax, invalid request message framing, or deceptive request routing)."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:302
+msgid ""
+" - 401 Unauthorized. Request was not sent with the proper authentication "
+"credentials."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:305
+msgid ""
+" - 403 Forbidden. This is generally related to permission rules on your "
+"server. Contact the system administrator for more information regarding this "
+"error message."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:308
+msgid ""
+" - 404 Not Found. Origin server was unable or unwilling to find the resource "
+"requested."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:311
+msgid ""
+" - 405 Method Not Allowed. Origin server is aware of the requested resource, "
+"but the request method used is not supported."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:314
+msgid ""
+" - 406 Not Acceptable. Resource is not available at the origin that adheres "
+"to negotiation headers that were  set prior (e.g. via 'Accept-Charset' and "
+"'Accept-Language' headers)."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:317
+msgid ""
+" - 407 Authentication Required. The client did not send the required "
+"authentication with the request."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:320
+msgid ""
+" - 408 Request Timeout. The origin server did not receive the complete "
+"request in what it considers a reasonable time."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:323
+msgid ""
+" - 409 Conflict. The request did not complete because of a conflict with the "
+"current state of the resource. Typically happens on a PUT request where "
+"multiple clients are attempting to edit the same resource."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:326
+msgid ""
+" - 410 Gone. The resource requested is permanently missing at the origin."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:329
+msgid ""
+" - 411 Length Required. Client did not define the 'Content-Length' of the "
+"request body in the headers and this is required to obtain the resource."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:332
+msgid ""
+" - 412 Precondition Failed. Server denies the request because the resource "
+"failed to meet the conditions specified by the client."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:335
+msgid ""
+" - 413 Payload Too Large. Refusal from the server to process the request "
+"because the payload sent from the client is larger than the server wished to "
+"accept. Server has the optional to close the connection."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:338
+msgid ""
+" - 414 URI Too Long. Refusal from the server that the URI was too long to be "
+"processed. For example, if a client is attempting a GET request with an "
+"unusually long URI after a POST, this could be seen as a security risk and a "
+"414 gets generated."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:341
+msgid ""
+" - 415 Unsupported Media Type. Refusal from the server to process the format "
+"of the current payload. One way to identify and fix this issue would be to "
+"look at the 'Content-Type' or 'Content-Encoding' headers sent in the "
+"client’s request."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:344
+msgid ""
+" - 417 Expectation Failed. Failure of server to meet the requirements "
+"specified in the 'Expect' header of the client’s request."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:347
+msgid ""
+" - 429 Too Many Requests. Client has sent too many requests in the specified "
+"amount of time according to the server."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:350
+msgid ""
+" - 499 Client Close Request. Nginx specific response code to indicate when "
+"the connection has been closed by the client while the server is still "
+"processing its request, making server unable to send a status code back."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:353
+msgid ""
+" - 500 Internal Server Error. This error indicates that the server has "
+"encountered an unexpected condition. This often occurs when an application "
+"request cannot be fulfilled due to the application being configured "
+"incorrectly on the server."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:356
+msgid ""
+" - 501 Not Implemented. This error indicates that the HTTP method sent by "
+"the client is not supported by the server. This is most often caused by the "
+"server being out of date. It is a very rare error and generally requires "
+"that the web server be updated."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:359
+msgid ""
+" - 502 Bad Gateway. This error is usually due to improperly configured proxy "
+"servers. The first step in resolving the issue is to clear the client's "
+"cache."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:362
+msgid ""
+" - 503 Service Unavailable. This error occurs when the server is unable to "
+"handle requests due to a temporary overload or due to the server being "
+"temporarily closed for maintenance. The error indicates that the server will "
+"only temporarily be down."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:365
+msgid ""
+" - 504 Gateway Timeout. GeoNode lost the connection with GeoServer or DB due "
+"to a connection timeout. Consider using the management commands to import "
+"data!"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:368
+msgid ""
+" - 505 HTTP Version Not Supported. This error occurs when the server refuses "
+"to support the HTTP protocol that has been specified by the client computer. "
+"This can be caused by the protocol not being specified properly by the "
+"client computer; for example, if an invalid version number has been "
+"specified."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:371
+msgid ""
+" - 506 Variant Also Negotiates. This error indicates that the server is not "
+"properly configured. Contact the system administrator to resolve this issue."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:374
+msgid ""
+" - 507 Insufficient Storage. This error indicates that the server is out of "
+"free memory. This is most likely to occur when an application that is being "
+"requested cannot allocate the necessary system resources to run. To resolve "
+"the issue, the server's hard disk may need to be cleaned of any unnecessary "
+"documents to free up more hard disk space, its memory may need to be "
+"expanded, or it may simply need to be restarted. Contact the system "
+"administrator for more information regarding this error message."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:377
+msgid ""
+" - 509 Bandwidth Limit Exceeded. This error occurs when the bandwidth limit "
+"imposed by the system administrator has been reached. The only fix for this "
+"issue is to wait until the limit is reset in the following cycle. Consult "
+"the system administrator for information about acquiring more bandwidth."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:380
+msgid ""
+" - 510 Not Extended. This error occurs when an extension attached to the "
+"HTTP request is not supported by the web server. To resolve the issue, you "
+"may need to update the server."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:383
+msgid ""
+" Error Code. Contact the system administrator for more information regarding "
+"this error message."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:421
+#: geonode/static/geonode/js/upload/LayerInfo.js:592
+msgid "Unexpected Error"
+msgstr "意外错误"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:459
+#, fuzzy
+#| msgid "Layer Info"
+msgid " Info"
+msgstr "图层信息"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:460
+msgid "Edit Metadata"
+msgstr "修改元数据"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:461
+msgid "Upload Metadata"
+msgstr "上传元数据"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:462
+msgid "Upload SLD"
+msgstr "上传SLD"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:463
+msgid "Manage Styles"
+msgstr "管理样式"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:476
+msgid "The column %1 was renamed to %2 <br/>"
+msgstr "属性列 %1 重命名为 %2 <br/>"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:482
+msgid "Your "
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:511
+msgid "Performing Final GeoServer Config Step"
+msgstr "执行最后的GeoServer配置步骤"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:528
+#: geonode/static/geonode/js/upload/LayerInfo.js:572
+msgid "You need to specify more information in order to complete your upload"
+msgstr "您需要在为了完成您指定上传的更多信息"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:552
+msgid "Files are ready to be ingested!"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:555
+msgid "A temporal dimension may be added to this Layer."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:610
+msgid "Performing GeoServer Config Step"
+msgstr "展示GeoServer的配置步骤"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:696
+msgid ""
+"<br>Please check your network connection. In case of Layer Upload make sure "
+"GeoServer is running and accepting connections."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:700
+#: geonode/static/geonode/js/upload/LayerInfo.js:703
+#: geonode/static/geonode/js/upload/LayerInfo.js:710
+#: geonode/static/geonode/js/upload/LayerInfo.js:713
+msgid "<br>"
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:705
+msgid "<br>Bad request or URL not found."
+msgstr ""
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:715
+#, fuzzy
+#| msgid "Unknown Map"
+msgid "<br>Unknown."
+msgstr "未知地图"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:723
+msgid "Layer files uploaded, configuring in GeoServer"
+msgstr "图层文件上传，配置在GeoServer的"
+
+#: geonode/static/geonode/js/upload/LayerInfo.js:874
+msgid "Remove"
+msgstr "删除"
+
+#: geonode/static/geonode/js/upload/upload.js:126
+#, javascript-format
+msgid "The file %s is an unsupported file type, please select another file."
+msgstr "文件 %s 是不支持的文件类型，请选择其他文件。"
+
+#: geonode/static/geonode/js/upload/upload.js:296
+msgid ""
+"You are trying to upload an incomplete set of files or not all mandatory "
+"options have been validated.\n"
+"\n"
+"Please check for errors in the form!"
+msgstr ""
+"你正在试图上传一个不完整的文件集或者不是全部强制的选项都已经有效。\n"
+"\n"
+"请检查表格中的错误。"
+
+#, fuzzy
+#~| msgid "Now"
+#~ msgid "No"
+#~ msgstr "现在"
+
+#~ msgid "some schema mandatory fields are missing"
+#~ msgstr "缺少一些元数据模式强制性字段"
+
+#~ msgid "Metadata Schema mandatory fields completed"
+#~ msgstr "元数据模式强制性字段已完成"
+
+#~ msgid ""
+#~ "<p class='xxs-font-size mandatory-warning'>&nbsp;&nbsp;&nbsp;<strong>* "
+#~ "Field declared Mandatory by the Metadata Schema</strong></p>"
+#~ msgstr ""
+#~ "<p class='xxs-font-size mandatory-warning'>&nbsp;&nbsp;&nbsp;<strong>* 元"
+#~ "数据模式声明的强制性字段</strong></p>"
+
+#~ msgid "Enter your text here ..."
+#~ msgstr "在这里输入你的文本"
+
+#~ msgid "Enter your region here ..."
+#~ msgstr "在这里输入你的地区"
+
+#~ msgid "Your layer was successfully uploaded"
+#~ msgstr "你的图层已成功上传"
+
+#~ msgid ""
+#~ "You need to specify more information in order to complete your upload."
+#~ msgstr "您需要在为了完成您指定上传的更多信息。"
+
+#~ msgid "You can continue configuring your layer."
+#~ msgstr "您可以继续配置图层。"
+
+#~ msgid "<iframe frameborder='0' width='0' height='0'/>"
+#~ msgstr "<iframe frameborder='0' width='0' height='0'/>"
+
+#~ msgid "<script>"
+#~ msgstr "<script>"
+
+#~ msgid "<div>"
+#~ msgstr "<div>"
+
+#~ msgid "Cancel"
+#~ msgstr "取消"
+
+#~ msgid "Save as Copy"
+#~ msgstr "另存为"
+
+#~ msgid "About this Map"
+#~ msgstr "关于此地图"
+
+#~ msgid "Abstract"
+#~ msgstr "摘要"
+
+#~ msgid "Save"
+#~ msgstr "保存"
+
+#~ msgid "Title"
+#~ msgstr "标题"
+
+#~ msgid "Connection Error"
+#~ msgstr "连接错误"
+
+#~ msgid "The server returned an error"
+#~ msgstr "服务器返回一个错误"
+
+#~ msgid "Details..."
+#~ msgstr "详情..."
+
+#~ msgid "Add Layers"
+#~ msgstr "添加图层"
+
+#~ msgid "Add ArcGIS REST Server"
+#~ msgstr "添加ArcGIS REST Server"
+
+#~ msgid "Area"
+#~ msgstr "区域"
+
+#~ msgid "Background"
+#~ msgstr "背景"
+
+#~ msgid "Done"
+#~ msgstr "完成"
+
+#~ msgid "Available Layers"
+#~ msgstr "可用图层"
+
+#~ msgid "Add feeds"
+#~ msgstr "添加供给源"
+
+#~ msgid "Flickr"
+#~ msgstr "网络相簿"
+
+#~ msgid "Google Earth"
+#~ msgstr "谷歌地球"
+
+#~ msgid "Upload your own data"
+#~ msgstr "上传你的数据"
+
+#~ msgid "Help"
+#~ msgstr "帮助"
+
+#~ msgid "Warning"
+#~ msgstr "警告"
+
+#~ msgid ""
+#~ "You now have %n layers in your map.  With more than %max layers you may "
+#~ "experience problems with layer ordering, info balloon display, and "
+#~ "general performance. "
+#~ msgstr ""
+#~ "您的地图现在拥有 %n 个图层。超过 %max 的图层可能会遇到层排序、信息激增显示"
+#~ "和其他一般性能的问题。"
+
+#~ msgid "Copy"
+#~ msgstr "拷贝"
+
+#~ msgid "About this Map View"
+#~ msgstr "关于该地图视图"
+
+#~ msgid "Abstract (brief description)"
+#~ msgstr "概述（简要描述）"
+
+#~ msgid "Introduction (tell visitors more about your map view)"
+#~ msgstr "介绍（向访问者展示更多底图信息）"
+
+#~ msgid "UserUrl"
+#~ msgstr "用户URL"
+
+#~ msgid "Add Category"
+#~ msgstr "添加分类"
+
+#~ msgid "Add a new category to the layer tree"
+#~ msgstr "向图层树添加新的分类"
+
+#~ msgid "Rename Category"
+#~ msgstr "重命名分类"
+
+#~ msgid "Rename this category"
+#~ msgstr "重命名该分类"
+
+#~ msgid "Remove Category"
+#~ msgstr "移除分类"
+
+#~ msgid "Remove this category and layers"
+#~ msgstr "移除该分类以及其内图层"
+
+#~ msgid "Share Layer"
+#~ msgstr "分享图层"
+
+#~ msgid "Unsupported Layers"
+#~ msgstr "不支持的图层"
+
+#~ msgid "The following layers cannot be printed:"
+#~ msgstr "下列图层不能打印："
+
+#~ msgid "Upload Layer"
+#~ msgstr "上传图层"
+
+#~ msgid "Create Layer"
+#~ msgstr "创建图层"
+
+#~ msgid "Rectify Layer"
+#~ msgstr "校正图层"
+
+#~ msgid "Submit a Map Service"
+#~ msgstr "提交地图服务"
+
+#~ msgid "External Data"
+#~ msgstr "外部数据"
+
+#~ msgid "If you leave this page, unsaved changes will be lost."
+#~ msgstr "如果离开该页面，将丢失未保存的设置。"
+
+#~ msgid "About"
+#~ msgstr "关于"
+
+#~ msgid "About us"
+#~ msgstr "关于我们"
+
+#~ msgid "Center for Geographic Analysis"
+#~ msgstr "哈佛大学地理分析中心"
+
+#~ msgid "Bigdata and AMAP Innovation Team"
+#~ msgstr "浙江大学大数据与学术地图创新团队"
+
+#~ msgid ""
+#~ "<p>Your map is ready to be published to the web! </p><p> Simply copy the "
+#~ "following HTML to embed the map in your website: </p>"
+#~ msgstr ""
+#~ "<p>您的地图已准备好发布到网络上！ </p><p> 只需在浏览器中复制以下链接即可打"
+#~ "开地图 ：</p>"
+
+#~ msgid "Height"
+#~ msgstr "高度"
+
+#~ msgid "Get Feature Info"
+#~ msgstr "获取要素信息"
+
+#~ msgid "Large"
+#~ msgstr "大量"
+
+#~ msgid "or add a new server."
+#~ msgstr "或添加新的服务器。"
+
+#~ msgid "Map Layers"
+#~ msgstr "地图图层"
+
+#~ msgid "View available data from:"
+#~ msgstr "查看可用的数据："
+
+#~ msgid "Data"
+#~ msgstr "数据"
+
+#~ msgid "Layers"
+#~ msgstr "图层"
+
+#~ msgid "Legend"
+#~ msgstr "图例"
+
+#~ msgid "Length"
+#~ msgstr "长度"
+
+#~ msgid "Loading Map..."
+#~ msgstr "载入地图..."
+
+#~ msgid "Map Size"
+#~ msgstr "地图大小"
+
+#~ msgid "Measure"
+#~ msgstr "测量"
+
+#~ msgid "Contact"
+#~ msgstr "联系"
+
+#~ msgid "Permalink"
+#~ msgstr "固定"
+
+#~ msgid "Mini"
+#~ msgstr "迷你"
+
+#~ msgid "Pan Map"
+#~ msgstr "平移地图"
+
+#~ msgid "Zoom to Next Extent"
+#~ msgstr "缩放到下一个区域"
+
+#~ msgid "Zoom to Previous Extent"
+#~ msgstr "缩放到下一个区域"
+
+#~ msgid "This map has not yet been saved."
+#~ msgstr "地图还没保存"
+
+#~ msgid "Premium"
+#~ msgstr "高级"
+
+#~ msgid "Print Map"
+#~ msgstr "打印地图"
+
+#~ msgid "Print Preview"
+#~ msgstr "打印预览"
+
+#~ msgid "Properties"
+#~ msgstr "属性"
+
+#~ msgid "Link"
+#~ msgstr "发布地图"
+
+#~ msgid "Publish Map"
+#~ msgstr "发布地图"
+
+#~ msgid "Remove Layer"
+#~ msgstr "删除图层"
+
+#~ msgid "Sorry, your map could not be saved."
+#~ msgstr "对不起，您的地图不能保存"
+
+#~ msgid "Error While Saving"
+#~ msgstr "保存错误"
+
+#~ msgid "Save Map"
+#~ msgstr "保存地图"
+
+#~ msgid "You must be logged in to save this map."
+#~ msgstr "您必须登录才能保存地图。"
+
+#~ msgid "Small"
+#~ msgstr "小"
+
+#~ msgid ""
+#~ "Error contacting server.\n"
+#~ " Please check the url and try again."
+#~ msgstr ""
+#~ "连接服务时出错。\n"
+#~ "请检查网址再重试。"
+
+#~ msgid "Layer Properties"
+#~ msgstr "图层属性"
+
+#~ msgid "Change layer format and style"
+#~ msgstr "更改图层格式和样式"
+
+#~ msgid "Edit Styles"
+#~ msgstr "编辑样式"
+
+#~ msgid "Edit layer styles"
+#~ msgstr "编辑图层样式"
+
+#~ msgid "Switch to Google Earth 3D Viewer"
+#~ msgstr "切换到谷歌地球3D查看器"
+
+#~ msgid ""
+#~ "The map that you are trying to load does not exist.  Creating a new map "
+#~ "instead."
+#~ msgstr "您加载的地图不存在。请创建一个新的地图"
+
+#~ msgid "Width"
+#~ msgstr "宽度"
+
+#~ msgid "Zoom In"
+#~ msgstr "放大"
+
+#~ msgid "Zoom Out"
+#~ msgstr "缩小"
+
+#~ msgid "Zoom level"
+#~ msgstr "缩放级别"
+
+#~ msgid "Zoom Level"
+#~ msgstr "缩放级别"
+
+#~ msgid "Zoom to Layer Extent"
+#~ msgstr "缩放范围"
+
+#~ msgid "Zoom to Visible Extent"
+#~ msgstr "缩放到可见范围"
+
+#~ msgid "Zoom Level {zoom}"
+#~ msgstr "缩放级别{缩放}"
+
+#~ msgid "Create Map"
+#~ msgstr "创建地图"
+
+#~ msgid "Export Map"
+#~ msgstr "导出地图"
+
+#~ msgid "Map"
+#~ msgstr "地图"
+
+#~ msgid "View this Map"
+#~ msgstr "查看地图"
+
+#~ msgid "Open Map"
+#~ msgstr "打开地图"
+
+#~ msgid "Name"
+#~ msgstr "名称"
+
+#~ msgid "Queryable"
+#~ msgstr "查询"
+
+#~ msgid "No background"
+#~ msgstr "没有背景"
+
+#~ msgid ""
+#~ "Your map is ready to be published to the web!  Simply copy the following "
+#~ "HTML to embed the map in your website:"
+#~ msgstr ""
+#~ "您可以随时发布地图到网上！只需复制下面的HTML地图代码嵌入到您的网页："
+
+#~ msgid "Abstract:"
+#~ msgstr "摘要："
+
+#~ msgid "No attribution information is provided for this layer."
+#~ msgstr "此图层提供无属性信息。"
+
+#~ msgid "Provided by:"
+#~ msgstr "提供："
+
+#~ msgid "Download:"
+#~ msgstr "下载："
+
+#~ msgid "No keywords are listed for this layer."
+#~ msgstr "无关键字列出此图层。"
+
+#~ msgid "Keywords:"
+#~ msgstr "关键词："
+
+#~ msgid "No metadata URLs are defined for this layer."
+#~ msgstr "此图层没有指定元数据链接。"
+
+#~ msgid "Click here for more information about this layer."
+#~ msgstr "点击此处查看该图层的更多信息。"
+
+#~ msgid "Paper size:"
+#~ msgstr "纸张尺寸："
+
+#~ msgid "Resolution:"
+#~ msgstr "分辨率："
+
+#~ msgid "Print"
+#~ msgstr "打印"
+
+#~ msgid "Enter map title here."
+#~ msgstr "在此处输入地图标题。"
+
+#~ msgid "Include legend?"
+#~ msgstr "包含图例吗？"
+
+#~ msgid "Enter comments here."
+#~ msgstr "在这里输入评论。"
+
+#~ msgid "Creating PDF..."
+#~ msgstr "生成PDF..."
+
+#~ msgid "Last Modified"
+#~ msgstr "最后修改"
+
+#~ msgid "Prev"
+#~ msgstr "上一页"
+
+#~ msgid "Next"
+#~ msgstr "下一页"
+
+#~ msgid "of"
+#~ msgstr "对于"
+
+#~ msgid "Your search did not match any items."
+#~ msgstr "没有搜索到您要的结果。"
+
+#~ msgid "Keyword"
+#~ msgstr "关键字"
+
+#~ msgid "Showing..."
+#~ msgstr "显示"
+
+#~ msgid "Source"
+#~ msgstr "源"
+
+#~ msgid "Data Type"
+#~ msgstr "数据类型"
+
+#~ msgid "Date"
+#~ msgstr "日期"
+
+#~ msgid "from year"
+#~ msgstr "起始日期"
+
+#~ msgid "to year"
+#~ msgstr "终止时间"
+
+#~ msgid "Reset"
+#~ msgstr "重置"
+
+#~ msgid "Search Maps"
+#~ msgstr "查询地图"
+
+#~ msgid "Search"
+#~ msgstr "查询"
+
+#~ msgid "Showing"
+#~ msgstr "显示"
+
+#~ msgid "Loading"
+#~ msgstr "加载"
+
+#~ msgid "permalink"
+#~ msgstr "永久"
+
+#~ msgid "Select"
+#~ msgstr "选择"
+
+#~ msgid "Select:"
+#~ msgstr "选择："
+
+#~ msgid "All"
+#~ msgstr "全部"
+
+#~ msgid "None"
+#~ msgstr "没有"
+
+#~ msgid "Loading..."
+#~ msgstr "载入中..."
+
+#~ msgid "You do not have permission to view this data"
+#~ msgstr "您没有权限查看此数据"
+
+#~ msgid "This data is stored on a remote server"
+#~ msgstr "此数据存储在远程服务器上"
+
+#~ msgid "Invalid Query"
+#~ msgstr "不正确的检索"
+
+#~ msgid "You need to specify a search term"
+#~ msgstr "您需要明确检索项"
+
+#~ msgid "No abstract is provided for this layer."
+#~ msgstr "此图层没有抽象摘要。"
+
+#~ msgid "No download URLs are definied for this layer."
+#~ msgstr "此图层没有下载的网址。"
+
+#~ msgid "Selected Layers"
+#~ msgstr "选定图层"
+
+#~ msgid "No Layers Selected"
+#~ msgstr "没有选择任何图层"
+
+#~ msgid "Clear Selected"
+#~ msgstr "清除选定"
+
+#~ msgid "Clear All"
+#~ msgstr "全部清除"
+
+#~ msgid "Operation Failed"
+#~ msgstr "操作失败"
+
+#~ msgid "No layers are currently selected."
+#~ msgstr "当前没有选择任何图层。"
+
+#~ msgid "Downloading..."
+#~ msgstr "下载..."
+
+#~ msgid "Please wait"
+#~ msgstr "请稍候"
+
+#~ msgid "Available %s"
+#~ msgstr "可用的%s"
+
+#~ msgid ""
+#~ "This is the list of available %s. You may choose some by selecting them "
+#~ "in the box below and then clicking the \"Choose\" arrow between the two "
+#~ "boxes."
+#~ msgstr ""
+#~ "这是可用的%s列表。你可以通过在下方的框中选中它们，然后在两个框中点击"
+#~ "\"Choose\"箭头来选择。"
+
+#~ msgid "Type into this box to filter down the list of available %s."
+#~ msgstr "在这个框中填入条件滤出可用的的%s列表。"
+
+#~ msgid "Filter"
+#~ msgstr "过滤器"
+
+#~ msgid "Choose all"
+#~ msgstr "全选"
+
+#~ msgid "Click to choose all %s at once."
+#~ msgstr "立刻选中所有%s。"
+
+#~ msgid "Choose"
+#~ msgstr "选择"
+
+#~ msgid "Chosen %s"
+#~ msgstr "被选中的%s"
+
+#~ msgid ""
+#~ "This is the list of chosen %s. You may remove some by selecting them in "
+#~ "the box below and then clicking the \"Remove\" arrow between the two "
+#~ "boxes."
+#~ msgstr ""
+#~ "这是一列被选中的%s。你可以通过在下方框中选中它们，然后在两个框中点击移除"
+#~ "\"Remove\"箭头来移除一些。"
+
+#~ msgid "Remove all"
+#~ msgstr "移除全部"
+
+#~ msgid "Click to remove all chosen %s at once."
+#~ msgstr "立刻移除所有选中的%s。"
+
+#~ msgid "%(sel)s of %(cnt)s selected"
+#~ msgid_plural "%(sel)s of %(cnt)s selected"
+#~ msgstr[0] "94d7ef36d54e81afde607d8fd121772b_pl_0"
+
+#~ msgid ""
+#~ "You have unsaved changes on individual editable fields. If you run an "
+#~ "action, your unsaved changes will be lost."
+#~ msgstr ""
+#~ "你没有在个人可编辑区域保存改动。如果你运行操作，你未保存的改动将会丢失。"
+
+#~ msgid ""
+#~ "You have selected an action, but you haven't saved your changes to "
+#~ "individual fields yet. Please click OK to save. You'll need to re-run the "
+#~ "action."
+#~ msgstr ""
+#~ "你已经选中一个操作，但是你还没有保存你的改动到个人区域。请点击OK进行保存。"
+#~ "你将需要重新启动操作。"
+
+#~ msgid ""
+#~ "You have selected an action, and you haven't made any changes on "
+#~ "individual fields. You're probably looking for the Go button rather than "
+#~ "the Save button."
+#~ msgstr ""
+#~ "你已经选中了一个操作，但是你还没有在个人区域里做任何改动。你可能正在寻找Go"
+#~ "按钮而不是保存按钮。"
+
+#~ msgid ""
+#~ "January February March April May June July August September October "
+#~ "November December"
+#~ msgstr "一月 二月 三月 四月 五月 六月 七月 八月 九月 十月 十一月 十二月"
+
+#~ msgid "S M T W T F S"
+#~ msgstr "S M T W T F S"
+
+#~ msgid "Show"
+#~ msgstr "显示"
+
+#~ msgid "Hide"
+#~ msgstr "隐藏"
+
+#~ msgid "Clock"
+#~ msgstr "时钟"
+
+#~ msgid "Choose a time"
+#~ msgstr "选择一个时间"
+
+#~ msgid "Midnight"
+#~ msgstr "半夜"
+
+#~ msgid "6 a.m."
+#~ msgstr "6 a.m."
+
+#~ msgid "Noon"
+#~ msgstr "中午"
+
+#~ msgid "Today"
+#~ msgstr "今天"
+
+#~ msgid "Calendar"
+#~ msgstr "日历"
+
+#~ msgid "Yesterday"
+#~ msgstr "昨天"
+
+#~ msgid "Tomorrow"
+#~ msgstr "明天"
+
+#~ msgid "Add user..."
+#~ msgstr "添加用户..."
+
+#~ msgid "Who can view and download this data?"
+#~ msgstr "谁可以查看和下载这个数据？"
+
+#~ msgid "Anyone"
+#~ msgstr "任何人"
+
+#~ msgid "Any registered user"
+#~ msgstr "任何注册用户"
+
+#~ msgid "Only users who can edit"
+#~ msgstr "只允许可编辑用户"
+
+#~ msgid "Who can edit this data?"
+#~ msgstr "谁可以编辑这个数据？"
+
+#~ msgid "Only the following users or groups:"
+#~ msgstr "只有下列用户或组可以："
+
+#~ msgid "Who can manage and edit this data?"
+#~ msgstr "谁可以管理和编辑这个数据？"
+
+#~ msgid "GeoTiff File"
+#~ msgstr "GeoTiff文件"
+
+#~ msgid "Comma Separated File"
+#~ msgstr "逗号分隔文件"
+
+#~ msgid "Zip Archives"
+#~ msgstr "Zip文档"
+
+#~ msgid "You are uploading an incomplete set of files."
+#~ msgstr "你正在上传一个不完整的文件集。"
+
+#~ msgid "No error message supplied"
+#~ msgstr "没有错误信息提供"
+
+#~ msgid "Title:"
+#~ msgstr "标题："
+
+#~ msgid "Author:"
+#~ msgstr "作者："
+
+#~ msgid "Updated Date:"
+#~ msgstr "更新时间："
+
+#~ msgid "Popular Count:"
+#~ msgstr "浏览量："
