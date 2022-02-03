@@ -2,6 +2,8 @@ import requests
 import logging
 import datetime
 import simplejson
+
+from bims.models.location_site import generate_site_code
 from dateutil.parser import parse
 from requests.exceptions import HTTPError
 from preferences import preferences
@@ -13,7 +15,6 @@ from bims.models import (
     LocationSite,
     LocationType,
     BiologicalCollectionRecord,
-    location_site_post_save_handler,
     collection_post_save_handler,
     HarvestSession
 )
@@ -116,11 +117,6 @@ def import_gbif_occurrences(
         first_name='GBIF.org'
     )
 
-    models.signals.post_save.disconnect(
-        collection_post_save_handler,
-        sender=BiologicalCollectionRecord
-    )
-
     for result in json_result['results']:
         if session_id:
             if HarvestSession.objects.get(id=session_id).canceled:
@@ -174,6 +170,14 @@ def import_gbif_occurrences(
                 location_type=location_type,
                 site_description=locality
             )
+            if not location_site.site_code:
+                site_code, catchments_data = generate_site_code(
+                    location_site,
+                    lat=location_site.latitude,
+                    lon=location_site.longitude
+                )
+                location_site.site_code = site_code
+                location_site.save()
 
         try:
             collection_record = BiologicalCollectionRecord.objects.get(
@@ -236,16 +240,6 @@ def import_gbif_occurrences(
 
     if log_file:
         log_file.close()
-
-    # reconnect post save handler
-    models.signals.post_save.connect(
-        location_site_post_save_handler,
-        sender=LocationSite
-    )
-    models.signals.post_save.connect(
-        collection_post_save_handler,
-        sender=BiologicalCollectionRecord
-    )
 
     if data_count > (offset + LIMIT):
         # Import more occurrences
