@@ -12,6 +12,7 @@
     <div id="siteImageCarousel" class="carousel slide" data-ride="carousel"
          style="height: 450px">
         <!-- Indicators -->
+        {% if site_image.length > 0 %}
         <ol class="carousel-indicators">
             {% for image in site_image %}
                 {% if forloop.counter0 == 0 %}
@@ -24,6 +25,7 @@
                 {% endif %}
             {% endfor %}
         </ol>
+        {% endif %}
 
         <div class="carousel-inner">
             {% for image in site_image %}
@@ -58,7 +60,7 @@
                                 <div class="site-image-date">
                                     <span class="date-image">
                                         <i class="fa fa-camera"
-                                           style="margin-right: 5px"></i>{{ image.image_date | date:'Y-m-d' }}</span>
+                                           style="margin-right: 5px"></i>{% if image.form_uploader == 'water_temperature' %}{{ image.image_date | date:'Y' }}{% else %}{{ image.image_date | date:'Y-m-d' }}{% endif %}</span>
                                 </div>
                             </div>
                         </div>
