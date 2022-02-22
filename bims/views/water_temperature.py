@@ -279,9 +279,9 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
             for temperature in data:
 
                 if is_daily:
-                    water_temp_value = temperature['Mean']
+                    water_temp_value = temperature['Mean'] if temperature['Mean'] != "" else None
                 else:
-                    water_temp_value = temperature['Water temperature']
+                    water_temp_value = temperature['Water temperature'] if temperature['Water temperature'] != "" else None
 
                 date_time = make_aware(
                     datetime.strptime(
