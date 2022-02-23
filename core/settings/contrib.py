@@ -446,3 +446,5 @@ CACHES = {
         'LOCATION': 'cache:11211',
     }
 }
+
+FILE_UPLOAD_PERMISSIONS = 0o644
