@@ -92,7 +92,7 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
     def add_error_messages(self, row, message):
         self.is_valid = False
         self.error_messages.append(
-            f'{row} : {message}'
+            f'line {row} : {message}'
         )
 
     def post(self, request, *args, **kwargs):
@@ -132,7 +132,7 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
         else:
             if 'Water temperature' not in headers:
                 self.add_error_messages(
-                    row,
+                    row - 1,
                     'Missing "Water temperature" header'
                 )
                 finished = True
@@ -149,8 +149,8 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                         if len(times) == 0 and time_string != start_time:
                             self.add_error_messages(
                                 row,
-                                'Non daily data should start at {}'.format(
-                                    start_time
+                                'Non daily data should start at {} but get {}'.format(
+                                    start_time, time_string
                                 )
                             )
                         if time_string == start_time and len(times) > 1:
@@ -161,14 +161,17 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                             ):
                                 self.add_error_messages(
                                     row - 1,
-                                    'Non daily data should end at {}'.format(
-                                        end_time
+                                    'Non daily data should end at {} but get {}'.format(
+                                        end_time, time_string
                                     )
                                 )
                             if len(times) < RECORDS_PER_INTERVAL[interval]:
                                 self.add_error_messages(
                                     row - 1,
-                                    'Data for this day is not complete'
+                                    'Data for {} are mission {} rows'.format(
+                                        times[row - 3].date(),
+                                        RECORDS_PER_INTERVAL[interval] - len(times)
+                                    )
                                 )
                             times = []
                         times.append(date)
@@ -316,9 +319,16 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 
             success_response = ''
             if new_data:
-                WaterTemperature.objects.bulk_create(
-                    new_data
-                )
+                try:
+                    WaterTemperature.objects.bulk_create(
+                        new_data
+                    )
+                except ValueError:
+                    return JsonResponse({
+                        'status': 'failed',
+                        'message': ['Please check the data file. Some of data value is not number']
+                    })
+
                 success_response = '{} data has been added. '.format(
                     len(new_data)
                 )
@@ -382,7 +392,7 @@ class WaterTemperatureSiteView(TemplateView):
             location_site=self.location_site
         ).values_list('date_time__year', flat=True).distinct(
             'date_time__year').order_by('date_time__year'))
-        if len(context['years']) > 0 :
+        if len(context['years']) > 0:
             context['year'] = int(
                 self.year if self.year else context['years'][-1]
             )
@@ -418,14 +428,14 @@ class WaterTemperatureSiteView(TemplateView):
                 source_reference__isnull=True
             ).order_by(
                 'source_reference').distinct(
-            'source_reference').source_references()
+                'source_reference').source_references()
         )
         context['source_references'] = json.dumps(source_references)
 
         context['river_catchments'] = json.dumps(
             self.location_context.values_from_group(
                 'river_catchment_areas_group'
-        ))
+            ))
         context['wma'] = (
             json.dumps(self.location_context.values_from_group(
                 'water_management_area'
