@@ -88,7 +88,7 @@ function renderWaterTemperatureChart(){
             xAxis: {
                 type: 'datetime',
                 title: {
-                    text: 'Date'
+                    text: year
                 },
                 labels: {
                     formatter: function () {

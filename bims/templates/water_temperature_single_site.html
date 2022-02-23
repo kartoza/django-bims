@@ -160,7 +160,7 @@
 
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <div class="table-title"> Monthly magnitudes
+                        <div class="table-title"> Monthly magnitudes - {{ year }}
                             <i data-download-title="Monthly magnitudes"
                                data-toggle="tooltip" data-placement="left"
                                class="fa fa-download pull-right download-icon download-table"></i>
@@ -220,13 +220,13 @@
                     <div class="vertical-space"></div>
 
                     <div class="chart-container">
-                        <div class="chart-title">Water Temperature
+                        <div class="chart-title">Water Temperature - {{ year }}
                         </div>
                         <div id="water-temperature"></div>
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
-                        <div class="table-title">Thermal Metrics <a target="_blank" href="{% static 'data/Help.PDF.for.Thermal.Metrics.table.in.dashboard.pdf' %}"><i class="fa fa-question-circle" aria-hidden="true"></i></a>
+                        <div class="table-title">Thermal Metrics - {{ year }}<a target="_blank" href="{% static 'data/Help.PDF.for.Thermal.Metrics.table.in.dashboard.pdf' %}"><i class="fa fa-question-circle" aria-hidden="true"></i></a>
 
                             <i data-download-title="Water Temperature"
                                data-toggle="tooltip" data-placement="left"
