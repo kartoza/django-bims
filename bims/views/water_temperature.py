@@ -216,24 +216,12 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
         upload_session_id = request.POST.get('upload_session_id')
         source_reference_id = request.POST.get('source_reference', '')
         site_image_file = request.FILES.get('site_image')
+        first_date = None
 
         source_reference = None
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
-
-        site_image = None
-        success_response_image = ''
-        if site_image_file:
-            site_image = SiteImage.objects.get_or_create(
-                site=location_site,
-                image=site_image_file,
-                notes='Upload session id = {}'.format(upload_session_id),
-                form_uploader=WATER_TEMPERATURE_KEY,
-            )
-
-        if site_image:
-            success_response_image = 'Site image has been uploaded'
 
         is_daily = False
         new_data = []
@@ -289,6 +277,9 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                         date_format)
                 )
 
+                if not first_date:
+                    first_date = date_time
+
                 water_data = {
                     'date_time': date_time,
                     'location_site': location_site,
@@ -340,6 +331,20 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                     len(existing_data)
                 )
 
+            site_image = None
+            success_response_image = ''
+            if site_image_file and first_date:
+                site_image = SiteImage.objects.get_or_create(
+                    site=location_site,
+                    image=site_image_file,
+                    notes='Upload session id = {}'.format(upload_session_id),
+                    form_uploader=WATER_TEMPERATURE_KEY,
+                    date=first_date
+                )
+
+            if site_image:
+                success_response_image = 'Site image has been uploaded'
+
             if not success_response:
                 success_response = 'No new data added or updated.'
 
@@ -371,7 +376,7 @@ class WaterTemperatureSiteView(TemplateView):
         context['site_id'] = self.location_site.id
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
-        context['site_image'] = SiteImage.objects.filter(
+        site_images = SiteImage.objects.filter(
             site=self.location_site)
         context['years'] = list(WaterTemperature.objects.filter(
             location_site=self.location_site
@@ -381,7 +386,10 @@ class WaterTemperatureSiteView(TemplateView):
             context['year'] = int(
                 self.year if self.year else context['years'][-1]
             )
+            if site_images:
+                site_images = site_images.filter(date__year=self.year)
 
+        context['site_image'] = site_images
         site_description = self.location_site.site_description
         if not site_description:
             site_description = self.location_site.name
