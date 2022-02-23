@@ -94,6 +94,7 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 note = '-'
 
             item = {
+                'ID': col.source_reference.id,
                 'Reference Category': col.source_reference.reference_type,
                 'Author/s': authors,
                 'Year': pub_year,

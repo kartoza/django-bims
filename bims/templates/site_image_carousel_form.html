@@ -1,0 +1,115 @@
+{% load thumbnail %}
+{% if site_image %}
+    <style>
+        .image-buttons-wrapper {
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+    <input type="hidden" id="id_site_image_delete" name="id_site_image_delete" value="">
+    <div id="siteImageCarousel" class="site-image-gallery carousel slide" data-ride="carousel" data-interval="false">
+        <div class="carousel-inner">
+            {% for image in site_image %}
+                {% if forloop.counter0 == 0 %}
+                    <div class="carousel-item active" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
+                {% else %}
+                    <div class="carousel-item" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
+                {% endif %}
+                {% if image.image|is_portrait %}
+                    {% thumbnail image.image "x500" crop="center" as thumb %}
+                        <a href="/uploaded/{{ image.image }}"
+                            target="_blank"><img
+                            src="{{ thumb.url }}"
+                            height="{{ thumb.height }}"
+                            width="{{ thumb.width }}"/>
+                        </a>
+                    {% endthumbnail %}
+                {% else %}
+                    {% thumbnail image.image "500" crop="center" as thumb %}
+                        <a href="/uploaded/{{ image.image }}"
+                            target="_blank"><img
+                            src="{{ thumb.url }}"
+                            height="{{ thumb.height }}"
+                            width="{{ thumb.width }}"/>
+                        </a>
+                    {% endthumbnail %}
+                {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <!-- Left and right controls -->
+        <a class="carousel-control-prev"
+           href="#siteImageCarousel" role="button"
+           data-slide="prev">
+            <span class="carousel-control-prev-icon"
+                  aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next"
+           href="#siteImageCarousel" role="button"
+           data-slide="next">
+            <span class="carousel-control-next-icon"
+                  aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    </div>
+
+
+    <div class="image-buttons-wrapper">
+        <div class="btn btn-danger delete-image-btn">Delete this image</div>
+        <div class="btn btn-success open-image-btn">Open image</div>
+    </div>
+
+     <div class="modal fade" id="confirm-delete-site-image" tabindex="-1"
+          role="dialog"
+          aria-labelledby="myModalLabel" aria-hidden="true">
+         <div class="modal-dialog">
+             <div class="modal-content">
+                 <div class="modal-header">
+                     Confirm Delete
+                 </div>
+                 <div class="modal-body">
+                     Are you sure you want to delete the site image?
+                 </div>
+                 <div class="modal-footer">
+                     <button type="button" class="btn btn-default"
+                             data-dismiss="modal">Cancel
+                     </button>
+                     <button class="btn btn-danger success" id="confirm-delete-site-image">Delete
+                     </button>
+                 </div>
+             </div>
+         </div>
+     </div>
+
+    <script>
+        let imagesToDelete = [];
+        $('.delete-image-btn').click(function () {
+            let imageId = $('#siteImageCarousel .carousel-item.active').data('id');
+            imagesToDelete.push(imageId)
+            $('#id_site_image_delete').val(imagesToDelete.join(','));
+            $('#confirm-delete-site-image').modal('show');
+        });
+        $('#confirm-delete-site-image').click(function (e) {
+          e.preventDefault();
+          let $carousel = $('#siteImageCarousel');
+          let ActiveElement = $carousel.find('.carousel-item.active');
+          ActiveElement.remove();
+          let NextElement = $carousel.find('.carousel-item');
+          if (NextElement.length > 0) {
+            NextElement.first().addClass('active');
+          } else {
+            $('.image-buttons-wrapper').hide();
+            $('.carousel-control-prev').hide();
+            $('.carousel-control-next').hide();
+          }
+          $('#confirm-delete-site-image').modal('hide');
+        })
+        $('.open-image-btn').click(function () {
+            let imageUrl = $('#siteImageCarousel .carousel-item.active').data('image-url');
+            window.open(imageUrl,'Image','width=largeImage.stylewidth,height=largeImage.style.height,resizable=1');
+        });
+    </script>
+
+{% endif %}

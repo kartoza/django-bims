@@ -2,6 +2,7 @@ import codecs
 import csv
 import json
 import time
+import ast
 from datetime import datetime
 
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -98,14 +99,30 @@ class WaterTemperatureEditView(WaterTemperatureBaseView):
     template_name = 'water_temperature_edit_form.html'
     permission = 'bims.update_watertemperature'
 
+    def get(self, request, *args, **kwargs):
+        self.year = request.GET.get('year', None)
+        return super(
+            WaterTemperatureEditView, self
+        ).get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         ctx = super(
             WaterTemperatureEditView, self
         ).get_context_data(**kwargs)
-
-        ctx['site_image'] = SiteImage.objects.filter(
-            owner=self.request.user
+        water_temperature = WaterTemperature.objects.filter(
+            owner=self.request.user,
+            date_time__year=self.year,
+            location_site=self.location_site
         )
+        ctx['site_image'] = SiteImage.objects.filter(
+            owner=self.request.user,
+            date__year=self.year
+        )
+        ctx['source_reference'] = (
+            SourceReference.objects.filter(
+                id__in=water_temperature.values('source_reference'))
+        )
+        ctx['year'] = self.year
 
         return ctx
 
@@ -140,6 +157,16 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
 
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
+
+        edit = ast.literal_eval(
+            request.POST.get('edit', 'false').capitalize()
+        )
+
+        if not water_file and edit:
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Water temperature is validated',
+            })
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
@@ -248,15 +275,16 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
         source_reference_id = request.POST.get('source_reference', '')
         site_image_file = request.FILES.get('site_image')
         first_date = None
-
+        success_response_image = ''
+        success_response = ''
         source_reference = None
+
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
-
-        is_daily = False
-        new_data = []
-        existing_data = []
+        edit = ast.literal_eval(
+            request.POST.get('edit', 'false').capitalize()
+        )
 
         # If collector id exist then get the user object
         owner = None
@@ -277,115 +305,168 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
             except SourceReference.DoesNotExist:
                 pass
 
+        if edit:
+            site_image_to_delete = (
+                request.POST.get('site_image_to_delete', None)
+            )
+            previous_source_reference_id = (
+                request.POST.get('previous_source_reference_id', '')
+            )
+
+            water_temperature = WaterTemperature.objects.filter(
+                source_reference_id=previous_source_reference_id,
+                location_site=location_site,
+                owner=owner
+            )
+            if water_temperature.exists():
+                site_image_date = water_temperature.first().date_time
+            else:
+                raise Http404('Water temperature does not exist')
+            if source_reference_id != previous_source_reference_id:
+                water_temperature.update(
+                    source_reference=source_reference
+                )
+                success_response += 'Source reference is updated\n'
+
+            site_image_updated = False
+            if site_image_to_delete:
+                site_images = SiteImage.objects.filter(
+                    id__in=site_image_to_delete.split(',')
+                )
+                if site_images.exists():
+                    site_image_date = site_images.first().image_date
+                    site_images.delete()
+                site_image_updated = True
+
+            if site_image_file and upload_session_id == 'undefined':
+                SiteImage.objects.get_or_create(
+                    owner=owner,
+                    uploader=self.request.user,
+                    site=location_site,
+                    image=site_image_file,
+                    form_uploader=WATER_TEMPERATURE_KEY,
+                    date=site_image_date
+                )
+                site_image_updated = True
+
+            if site_image_updated:
+                success_response += 'Site image is updated\n'
+
+        is_daily = False
+        new_data = []
+        existing_data = []
+
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
         else:
             is_daily = True
 
-        try:
-            upload_session = UploadSession.objects.get(
-                id=upload_session_id
-            )
-        except UploadSession.DoesNotExist:
-            raise Http404('Upload session not found')
-
-        with open(upload_session.process_file.path) as file:
-            reader = csv.DictReader(file)
-            headers = reader.fieldnames
-            data = list(reader)
-            date_field = 'Date Time' if 'Date Time' in headers else 'Date'
-
-            for temperature in data:
-
-                if is_daily:
-                    water_temp_value = temperature['Mean']
-                else:
-                    water_temp_value = temperature['Water temperature']
-
-                date_time = make_aware(
-                    datetime.strptime(
-                        temperature[date_field],
-                        date_format)
+        if upload_session_id and upload_session_id != 'undefined':
+            try:
+                upload_session = UploadSession.objects.get(
+                    id=upload_session_id
                 )
+            except UploadSession.DoesNotExist:
+                raise Http404('Upload session not found')
 
-                if not first_date:
-                    first_date = date_time
+            with open(upload_session.process_file.path) as file:
+                reader = csv.DictReader(file)
+                headers = reader.fieldnames
+                data = list(reader)
+                date_field = 'Date Time' if 'Date Time' in headers else 'Date'
 
-                water_data = {
-                    'date_time': date_time,
-                    'location_site': location_site,
-                    'is_daily': is_daily
-                }
+                for temperature in data:
 
-                query = WaterTemperature.objects.filter(
-                    **water_data
-                )
-                is_data_exists = query.exists()
-                water_data['value'] = water_temp_value
-                water_data['minimum'] = (
-                    temperature['Minimum'] if is_daily else 0
-                )
-                water_data['maximum'] = (
-                    temperature['Maximum'] if is_daily else 0
-                )
-                water_data['owner'] = owner
-                water_data['uploader'] = self.request.user
-                water_data['source_reference'] = source_reference
+                    if is_daily:
+                        water_temp_value = temperature['Mean']
+                    else:
+                        water_temp_value = temperature['Water temperature']
 
-                if is_data_exists:
-                    new_query = query.filter(**water_data)
-                    if not new_query.exists():
-                        existing_water_data = query.first()
-                        existing_water_data.value = water_temp_value
-                        existing_water_data.minimum = water_data['minimum']
-                        existing_water_data.maximum = water_data['maximum']
-                        existing_data.append(existing_water_data)
-                else:
-                    new_data.append(
-                        WaterTemperature(**water_data)
+                    date_time = make_aware(
+                        datetime.strptime(
+                            temperature[date_field],
+                            date_format)
                     )
 
-            success_response = ''
-            if new_data:
-                WaterTemperature.objects.bulk_create(
-                    new_data
-                )
-                success_response = '{} data has been added. '.format(
-                    len(new_data)
-                )
-            if existing_data:
-                WaterTemperature.objects.bulk_update(
-                    existing_data,
-                    ['value', 'minimum', 'maximum']
-                )
-                success_response += '{} data has been updated.'.format(
-                    len(existing_data)
-                )
+                    if not first_date:
+                        first_date = date_time
 
-            site_image = None
-            success_response_image = ''
-            if site_image_file and first_date:
-                site_image = SiteImage.objects.get_or_create(
-                    site=location_site,
-                    image=site_image_file,
-                    notes='Upload session id = {}'.format(upload_session_id),
-                    form_uploader=WATER_TEMPERATURE_KEY,
-                    date=first_date
-                )
+                    water_data = {
+                        'date_time': date_time,
+                        'location_site': location_site,
+                        'is_daily': is_daily
+                    }
 
-            if site_image:
-                success_response_image = 'Site image has been uploaded'
+                    query = WaterTemperature.objects.filter(
+                        **water_data
+                    )
+                    is_data_exists = query.exists()
+                    water_data['value'] = water_temp_value
+                    water_data['minimum'] = (
+                        temperature['Minimum'] if is_daily else 0
+                    )
+                    water_data['maximum'] = (
+                        temperature['Maximum'] if is_daily else 0
+                    )
+                    water_data['owner'] = owner
+                    water_data['uploader'] = self.request.user
+                    water_data['source_reference'] = source_reference
 
-            if not success_response:
-                success_response = 'No new data added or updated.'
+                    if is_data_exists:
+                        new_query = query.filter(**water_data)
+                        if not new_query.exists():
+                            existing_water_data = query.first()
+                            existing_water_data.value = water_temp_value
+                            existing_water_data.minimum = water_data['minimum']
+                            existing_water_data.maximum = water_data['maximum']
+                            existing_data.append(existing_water_data)
+                    else:
+                        new_data.append(
+                            WaterTemperature(**water_data)
+                        )
 
-            upload_session.processed = True
-            upload_session.save()
+                if new_data:
+                    WaterTemperature.objects.bulk_create(
+                        new_data
+                    )
+                    success_response += '{} data has been added. '.format(
+                        len(new_data)
+                    )
+                if existing_data:
+                    WaterTemperature.objects.bulk_update(
+                        existing_data,
+                        ['value', 'minimum', 'maximum']
+                    )
+                    success_response += '{} data has been updated.'.format(
+                        len(existing_data)
+                    )
 
-            return JsonResponse({
-                'status': 'success',
-                'message': success_response + '\n' + success_response_image
-            })
+                site_image = None
+                if site_image_file and first_date:
+                    site_image = SiteImage.objects.get_or_create(
+                        site=location_site,
+                        owner=owner,
+                        uploader=self.request.user,
+                        image=site_image_file,
+                        notes='Upload session id = {}'.format(
+                            upload_session_id),
+                        form_uploader=WATER_TEMPERATURE_KEY,
+                        date=first_date
+                    )
+
+                if site_image:
+                    success_response_image = 'Site image has been uploaded'
+
+                if not success_response:
+                    success_response += 'No new data added or updated.'
+
+                upload_session.processed = True
+                upload_session.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': success_response + '\n' + success_response_image
+        })
 
 
 class WaterTemperatureSiteView(TemplateView):

@@ -23,9 +23,4 @@ class Migration(migrations.Migration):
             name='uploader',
             field=models.ForeignKey(blank=True, help_text='User who uploaded the data (Optional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='site_image_uploader', to=settings.AUTH_USER_MODEL),
         ),
-        migrations.AlterField(
-            model_name='bimsdocument',
-            name='authors',
-            field=models.ManyToManyField(blank=True, through='bims.BimsDocumentAuthorship', to=settings.AUTH_USER_MODEL),
-        ),
     ]

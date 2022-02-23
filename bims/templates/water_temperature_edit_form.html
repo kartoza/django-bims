@@ -24,6 +24,7 @@
         const taxonGroupName = '{{ taxon_group_name }}';
         const csrfToken = '{{ csrf_token }}';
         const bingKey = '{{ bing_key }}';
+        const edit = true;
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
@@ -50,8 +51,8 @@
         <input type="hidden" id="site-id" name="site-id" value="{{ site_id }}">
         <div class="body-form container">
             <div class="dashboard-title">
-                <h2>Add water temperature data for site {% if location_site_code %}{{ location_site_code }} {% else %}
-                    {{ location_site_name }}{% endif %}</h2>
+                <h2>Edit water temperature data for site {% if location_site_code %}{{ location_site_code }} {% else %}
+                    {{ location_site_name }}{% endif %} ({{ year }})</h2>
                 <div class="dashboard-close" onclick="window.location.href='/location-site-form/update/?id={{ site_id }}'">
                     <i class="fa fa-times" aria-hidden="true"></i>
                 </div>
@@ -131,10 +132,10 @@
             </div>
             <div class="form-group row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label required-text">Date Format</label>
+                       class="col-sm-2 col-form-label col-form-label">Date Format</label>
                 <div class="col-sm-10">
                     <select class="form-control"
-                            name="format" id="format-date" required>
+                            name="format" id="format-date">
                             <option value="%Y-%m-%d">YYYY-MM-DD</option>
                             <option value="%m-%d-%Y">MM-DD-YYYY</option>
                             <option value="%d-%m-%Y">DD-MM-YYYY</option>
@@ -156,7 +157,7 @@
                         <div class="input-group input-file">
                             <input type="file" class="form-control"
                                    accept=".csv" name="water_file" id="water_file"
-                                   placeholder='Choose a file...' required/>
+                                   placeholder='Choose a file...'/>
 {#                            <div class="invalid-feedback">#}
 {#                            Please provide a xlsx file#}
 {#                        </div>#}
@@ -181,6 +182,10 @@
                 </div>
             </div>
 
+            <input type="hidden" id="previous-source-reference-id"
+                   name="previous_source_reference" value="{% if source_reference %}{{ source_reference.0.id }}{% endif %}">
+
+            {% include 'site_image_carousel_form.html' %}
             {% include 'source_references/source_reference_select.html' %}
 
             <div class="disclaimer" style="margin-bottom: 10px;">
@@ -202,7 +207,7 @@
                        data-toggle="modal"
                        data-target="#confirm-submit"
                        class="btn btn-info"
-                       value="Upload" disabled>
+                       value="Update" disabled>
             </div>
             <script>
                 const checkbox = document.getElementById('disclaimerCheck');
