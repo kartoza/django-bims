@@ -4,6 +4,8 @@ import json
 import time
 from datetime import datetime
 
+from django.contrib.auth.mixins import UserPassesTestMixin
+
 from bims.models.location_context import LocationContext
 from braces.views import LoginRequiredMixin
 from django.utils.timezone import make_aware
@@ -43,15 +45,21 @@ RECORDS_PER_INTERVAL = {
 CATEGORY = 'water_temperature'
 
 
-class WaterTemperatureView(TemplateView, SessionFormMixin):
-    """View for water temperature form"""
-    template_name = 'water_temperature_form.html'
-    additional_context = {}
+class WaterTemperatureBaseView(
+    UserPassesTestMixin, TemplateView, SessionFormMixin):
+    template_name = ''
+    permission = ''
+
+    def test_func(self):
+        if self.request.user.is_anonymous:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        return self.request.user.has_perm(self.permission)
 
     def get_context_data(self, **kwargs):
-
         context = super(
-            WaterTemperatureView, self).get_context_data(**kwargs)
+            WaterTemperatureBaseView, self).get_context_data(**kwargs)
         if not self.location_site:
             return context
         context['geoserver_public_location'] = get_key(
@@ -82,7 +90,30 @@ class WaterTemperatureView(TemplateView, SessionFormMixin):
         else:
             raise Http404()
 
-        return super(WaterTemperatureView, self).get(request, *args, **kwargs)
+        return super(
+            WaterTemperatureBaseView, self).get(request, *args, **kwargs)
+
+
+class WaterTemperatureEditView(WaterTemperatureBaseView):
+    template_name = 'water_temperature_edit_form.html'
+    permission = 'bims.update_watertemperature'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(
+            WaterTemperatureEditView, self
+        ).get_context_data(**kwargs)
+
+        ctx['site_image'] = SiteImage.objects.filter(
+            owner=self.request.user
+        )
+
+        return ctx
+
+
+class WaterTemperatureView(WaterTemperatureBaseView):
+    """View for water temperature form"""
+    template_name = 'water_temperature_form.html'
+    permission = 'bims.create_watertemperature'
 
 
 class WaterTemperatureValidateView(View, LoginRequiredMixin):
