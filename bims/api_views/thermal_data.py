@@ -11,6 +11,20 @@ from bims.models.water_temperature import calculate_indicators, \
 logger = logging.getLogger('bims')
 
 
+def get_all_days_of_year(year):
+    from datetime import date, timedelta
+
+    sdate = date(year, 1, 1)  # start date
+    edate = date(year, 12, 31)  # end date
+
+    delta = edate - sdate  # as timedelta
+    days = []
+    for i in range(delta.days + 1):
+        day = sdate + timedelta(days=i)
+        days.append(day)
+    return days
+
+
 class ThermalDataApiView(APIView):
     """Get thermal data"""
 
@@ -37,5 +51,5 @@ class ThermalDataApiView(APIView):
         if 'weekly' in indicator:
             thermograph = thermograph_data(indicator['weekly'])
             thermograph['date_time'] = indicator['date_time']
-
+        thermograph['days_blank'] = get_all_days_of_year(year)
         return JsonResponse(thermograph)

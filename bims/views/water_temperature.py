@@ -260,8 +260,10 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
+            value_key = 'Water temperature'
         else:
             is_daily = True
+            value_key = 'Mean'
 
         try:
             upload_session = UploadSession.objects.get(
@@ -277,11 +279,10 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
             date_field = 'Date Time' if 'Date Time' in headers else 'Date'
 
             for temperature in data:
+                if temperature[value_key] == '':
+                    continue
 
-                if is_daily:
-                    water_temp_value = temperature['Mean'] if temperature['Mean'] != "" else None
-                else:
-                    water_temp_value = temperature['Water temperature'] if temperature['Water temperature'] != "" else None
+                water_temp_value = temperature[value_key]
 
                 date_time = make_aware(
                     datetime.strptime(

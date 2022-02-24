@@ -150,7 +150,6 @@ def calculate_indicators(
     temperature_data_annual = WaterTemperature.objects.filter(
         location_site=location_site,
         date_time__year=year,
-        value__isnull=False
     ).order_by('date_time')
 
     site_zone = get_thermal_zone(location_site)
