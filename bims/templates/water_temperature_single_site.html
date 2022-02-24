@@ -14,6 +14,8 @@
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
           rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
     <script type="text/javascript">
@@ -32,6 +34,7 @@
         const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
         const originalGeomorphologicalZone = '{{ original_geomorphological }}';
         const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
+        const availableYears = {{ years }};
     </script>
     <style>
 
@@ -51,7 +54,8 @@
         }
         .year-container {
             display: flex;
-            max-width: 250px;
+            max-width: 500px;
+            align-items: center;
         }
         .col-form-label {
             width: 50px;
@@ -98,6 +102,13 @@
         .fa-question-circle {
             cursor: pointer;
         }
+        #update-date {
+            margin-left: 10px;
+            font-size: 10pt;
+        }
+        #ui-datepicker-div {
+            margin-top: -80px;
+        }
 
     </style>
 
@@ -130,18 +141,25 @@
 
             <div class="dashboard-title">
                 <h2>Water Temperature for {{ site_code }}</h2>
-                <div class="form-group year-container">
-                    <label class="col-form-label">Year :</label>
-                    <select class="form-control" id="years"
-                            onchange="changeYear(this)">
-                        {% for year_opt in years %}
-                            <option value="{{ year_opt }}"
-                                    {% if year_opt == year %}selected{% endif %}>{{ year_opt }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div class="dashboard-close"><i class="fa fa-times"
                                                 aria-hidden="true"></i></div>
+                <div style="float: right; right: 0">
+                {% if user.is_superuser or is_owner %}
+                    <a href="/water-temperature-form/edit/?siteId={{ site_id }}&year={{ year }}" class="btn btn-warning"><i class="fa fa-pencil" aria-hidden="true"></i> Edit {{ year }} Data</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-warning"><i class="fa fa-plus" aria-hidden="true"></i> Add</a>
+                {% endif %}
+                </div>
+                <div class="form-group year-container">
+                    <input type="text" name="date"
+                           class="form-control form-control-sm date-input"
+                           id="startDate" placeholder="Date start" value="{{ start_date|date:"Y-m-d" }}">
+                    &nbsp;-&nbsp;
+                    <input type="text" name="date" id="endDate"
+                           class="form-control form-control-sm date-input" placeholder="Date end" value="{{ end_date|date:"Y-m-d" }}">
+                    <button class="btn btn-sm btn-primary" id="update-date"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6">
@@ -215,7 +233,7 @@
                 <div class="col-md-6 mp">
 
                     <div class="chart-container">
-                        {% include 'includes/site_image_carousel.html' with site_image=site_image %}
+                        {% include 'includes/site_image_carousel.html' with site_image=site_image only_year=True %}
                     </div>
                     <div class="vertical-space"></div>
 
@@ -362,6 +380,7 @@
 
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/moment.js" %}"></script>

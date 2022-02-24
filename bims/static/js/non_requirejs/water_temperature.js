@@ -60,8 +60,9 @@ function drawMap() {
 }
 
 function renderWaterTemperatureChart(){
-
-    let url = '/api/thermal-data/?site-id='+ siteId  + '&year=' + year
+    let startDate = $('#startDate').val();
+    let endDate = $('#endDate').val();
+    let url = '/api/thermal-data/?site-id='+ siteId  + '&year=' + year + '&startDate=' + startDate + '&endDate=' + endDate
     fetch(url).then(
       response => response.json()
     ).then((data =>{
@@ -195,7 +196,6 @@ function renderWaterTemperatureChart(){
 function changeYear(selectObject) {
   let value = selectObject.value;
   let url = new URL(window.location);
-  console.log(url);
   window.location.href = `/water-temperature/${siteId}/${value}/${url.search}`;
 }
 
@@ -246,4 +246,26 @@ $(function () {
     drawMap();
     renderWaterTemperatureChart()
     renderSourceReferences()
+
+    $(".date-input").datepicker({
+        changeMonth: true,
+        changeYear: true,
+        dateFormat: 'yy-mm-dd',
+        yearRange: `${availableYears[0]}:${availableYears.at(-1)}`
+    });
+
+    $('#update-date').click(() => {
+        let startDate = $('#startDate').val();
+        let endDate = $('#endDate').val();
+        let startDateYear = startDate.split('-')[0];
+        let endDateYear = endDate.split('-')[0];
+        if (startDateYear !== endDateYear) {
+            alert('Start and end date must be within the same year');
+            return;
+        }
+        let url = new URL(window.location);
+        url.searchParams.set('startDate', startDate)
+        url.searchParams.set('endDate', endDate)
+        window.location.href = `/water-temperature/${siteId}/${startDateYear}/${url.search}`;
+    })
 });
