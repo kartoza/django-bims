@@ -146,6 +146,8 @@ $('#upload').click((event) => {
     if (edit) {
         formData.append("previous_source_reference_id", $('#previous-source-reference-id').val())
         formData.append("site_image_to_delete", typeof $('#id_site_image_delete').val() !== 'undefined' ? $('#id_site_image_delete').val() : '')
+        formData.append("year", year);
+        formData.append("source_reference_to_remove", $('#delete-source-reference-id').val());
     }
 
     document.getElementById('upload').disabled = true;
@@ -159,9 +161,6 @@ $('#upload').click((event) => {
         contentType: false,
         processData: false,
         success: function (data) {
-            $('html, body').animate({
-                scrollTop: $(".dashboard-title").offset().top
-            }, 1);
             if (data['status'] == 'failed') {
                 let alertDiv = $('.alert-danger');
                 alertDiv.html('Errors : <br>')

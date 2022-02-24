@@ -13,7 +13,6 @@ from django.utils.timezone import make_aware
 from django.contrib.auth import get_user_model
 from django.views import View
 import logging
-from django.http import HttpResponseForbidden
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
@@ -98,9 +97,26 @@ class WaterTemperatureBaseView(
 class WaterTemperatureEditView(WaterTemperatureBaseView):
     template_name = 'water_temperature_edit_form.html'
     permission = 'bims.update_watertemperature'
+    water_temperature = WaterTemperature.objects.none()
+    year = None
+    location_site = None
 
     def get(self, request, *args, **kwargs):
         self.year = request.GET.get('year', None)
+        site_id = request.GET.get('siteId', None)
+        if site_id:
+            self.location_site = get_object_or_404(
+                LocationSite,
+                pk=site_id
+            )
+        else:
+            raise Http404()
+        self.water_temperature = WaterTemperature.objects.filter(
+            date_time__year=self.year,
+            location_site=self.location_site
+        )
+        if not self.water_temperature.exists():
+            raise Http404('Water temperature does not exist')
         return super(
             WaterTemperatureEditView, self
         ).get(request, *args, **kwargs)
@@ -109,18 +125,17 @@ class WaterTemperatureEditView(WaterTemperatureBaseView):
         ctx = super(
             WaterTemperatureEditView, self
         ).get_context_data(**kwargs)
-        water_temperature = WaterTemperature.objects.filter(
-            owner=self.request.user,
-            date_time__year=self.year,
-            location_site=self.location_site
-        )
+        if not self.request.user.is_superuser:
+            self.water_temperature = self.water_temperature.filter(
+                owner=self.request.user,
+            )
         ctx['site_image'] = SiteImage.objects.filter(
             owner=self.request.user,
             date__year=self.year
         )
         ctx['source_reference'] = (
             SourceReference.objects.filter(
-                id__in=water_temperature.values('source_reference'))
+                id__in=self.water_temperature.values('source_reference'))
         )
         ctx['year'] = self.year
 
@@ -133,7 +148,7 @@ class WaterTemperatureView(WaterTemperatureBaseView):
     permission = 'bims.create_watertemperature'
 
 
-class WaterTemperatureValidateView(View, LoginRequiredMixin):
+class WaterTemperatureValidateView(LoginRequiredMixin, View):
     is_valid = True
     error_messages = []
 
@@ -167,6 +182,9 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
                 'status': 'success',
                 'message': 'Water temperature is validated',
             })
+
+        if not date_format or not interval or not start_time:
+            raise Http404('Missing required fields')
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
@@ -260,14 +278,12 @@ class WaterTemperatureValidateView(View, LoginRequiredMixin):
             })
 
 
-class WaterTemperatureUploadView(View, LoginRequiredMixin):
+class WaterTemperatureUploadView(LoginRequiredMixin, View):
     location_site = None
     upload_task = None
 
     def post(self, request, *args, **kwargs):
 
-        if not request.is_ajax():
-            return HttpResponseForbidden()
         owner_id = request.POST.get('owner_id', '').strip()
         interval = request.POST.get('interval')
         date_format = request.POST.get('format')
@@ -309,15 +325,30 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
             site_image_to_delete = (
                 request.POST.get('site_image_to_delete', None)
             )
+            year = (
+                request.POST.get('year', None)
+            )
             previous_source_reference_id = (
                 request.POST.get('previous_source_reference_id', '')
             )
 
             water_temperature = WaterTemperature.objects.filter(
-                source_reference_id=previous_source_reference_id,
-                location_site=location_site,
-                owner=owner
+                location_site=location_site
             )
+            if year:
+                water_temperature = water_temperature.filter(
+                    date_time__year=year
+                )
+
+            if previous_source_reference_id:
+                water_temperature = water_temperature.filter(
+                    location_site=location_site
+                )
+
+            if not self.request.user.is_superuser:
+                water_temperature = water_temperature.filter(
+                    owner=owner
+                )
             if water_temperature.exists():
                 site_image_date = water_temperature.first().date_time
             else:
@@ -441,6 +472,24 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                         len(existing_data)
                     )
 
+                # Check existing water temperature with
+                # different source reference
+                if source_reference:
+                    water_temperature_sr = WaterTemperature.objects.filter(
+                        date_time__year=first_date.year
+                    ).exclude(
+                        source_reference=source_reference
+                    )
+
+                    if water_temperature_sr.exists():
+                        water_temperature_sr.update(
+                            source_reference=source_reference
+                        )
+                        success_response += (
+                            ' Source reference has been update in the existing'
+                            ' water temperature data.'
+                        )
+
                 site_image = None
                 if site_image_file and first_date:
                     site_image = SiteImage.objects.get_or_create(
@@ -457,11 +506,11 @@ class WaterTemperatureUploadView(View, LoginRequiredMixin):
                 if site_image:
                     success_response_image = 'Site image has been uploaded'
 
-                if not success_response:
-                    success_response += 'No new data added or updated.'
-
                 upload_session.processed = True
                 upload_session.save()
+
+        if not success_response:
+            success_response += 'No new data added or updated.'
 
         return JsonResponse({
             'status': 'success',
@@ -477,9 +526,32 @@ class WaterTemperatureSiteView(TemplateView):
 
     def get_context_data(self, **kwargs):
         start_time = time.time()
-
         context = super(
             WaterTemperatureSiteView, self).get_context_data(**kwargs)
+
+        water_temperature_data = WaterTemperature.objects.filter(
+            location_site=self.location_site
+        )
+        context['years'] = list(
+            water_temperature_data.values_list(
+                'date_time__year', flat=True).distinct(
+            'date_time__year').order_by('date_time__year'))
+
+        if self.year and isinstance(self.year, str):
+            self.year = int(self.year.strip())
+
+        if not self.year and len(context['years']) > 0:
+            self.year = int(context['years'][-1])
+
+        if self.year:
+            water_temperature_data = water_temperature_data.filter(
+                date_time__year=self.year
+            )
+
+        context['is_owner'] = water_temperature_data.filter(
+            owner=self.request.user
+        ).exists() if not self.request.user.is_anonymous else False
+
         context['coord'] = [
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
@@ -490,10 +562,6 @@ class WaterTemperatureSiteView(TemplateView):
         context['original_river_name'] = self.location_site.legacy_river_name
         site_images = SiteImage.objects.filter(
             site=self.location_site)
-        context['years'] = list(WaterTemperature.objects.filter(
-            location_site=self.location_site
-        ).values_list('date_time__year', flat=True).distinct(
-            'date_time__year').order_by('date_time__year'))
         if len(context['years']) > 0 :
             context['year'] = int(
                 self.year if self.year else context['years'][-1]
@@ -511,22 +579,14 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
-        if not self.year and len(context['years']) > 0:
-            year = context['years'][-1]
-        elif self.year:
-            year = int(self.year.strip())
-        else:
-            year = None
+        if self.year:
+            context['indicators'] = calculate_indicators(
+                self.location_site, self.year)
 
         context['location_site'] = self.location_site
-        if year:
-            context['indicators'] = calculate_indicators(
-                self.location_site, year)
         context['execution_time'] = time.time() - start_time
         source_references = (
-            WaterTemperature.objects.filter(
-                location_site=self.location_site
-            ).exclude(
+            water_temperature_data.exclude(
                 source_reference__isnull=True
             ).order_by(
                 'source_reference').distinct(
