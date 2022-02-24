@@ -1285,6 +1285,9 @@ class WaterTemperatureAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'location_site', 'uploader', 'owner', 'source_reference'
     )
+    search_fields = (
+        'location_site__site_code',
+    )
 
 
 class TaxonExtraAttributeAdmin(admin.ModelAdmin):

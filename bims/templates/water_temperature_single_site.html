@@ -130,6 +130,16 @@
 
             <div class="dashboard-title">
                 <h2>Water Temperature for {{ site_code }}</h2>
+                <div class="dashboard-close"><i class="fa fa-times"
+                                                aria-hidden="true"></i></div>
+                <div style="float: right; right: 0">
+                {% if user.is_superuser or is_owner %}
+                    <a href="/water-temperature-form/edit/?siteId={{ site_id }}&year={{ year }}" class="btn btn-warning"><i class="fa fa-pencil" aria-hidden="true"></i> Edit {{ year }} Data</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-warning"><i class="fa fa-plus" aria-hidden="true"></i> Add</a>
+                {% endif %}
+                </div>
                 <div class="form-group year-container">
                     <label class="col-form-label">Year :</label>
                     <select class="form-control" id="years"
@@ -140,8 +150,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="dashboard-close"><i class="fa fa-times"
-                                                aria-hidden="true"></i></div>
             </div>
             <div class="row">
                 <div class="col-md-6">
