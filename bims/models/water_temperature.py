@@ -138,7 +138,8 @@ def get_thermal_zone(location_site: LocationSite):
 def calculate_indicators(
         location_site: LocationSite,
         year: int,
-        return_weekly: bool = False):
+        return_weekly: bool = False,
+        water_temperature = None):
 
     month_name = [
         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
@@ -147,10 +148,15 @@ def calculate_indicators(
 
     indicators = dict()
 
-    temperature_data_annual = WaterTemperature.objects.filter(
-        location_site=location_site,
-        date_time__year=year
-    ).order_by('date_time')
+    if not water_temperature:
+        temperature_data_annual = WaterTemperature.objects.filter(
+            location_site=location_site,
+            date_time__year=year
+        ).order_by('date_time')
+    else:
+        temperature_data_annual = water_temperature.order_by(
+            'date_time'
+        )
 
     site_zone = get_thermal_zone(location_site)
 

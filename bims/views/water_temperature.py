@@ -523,6 +523,8 @@ class WaterTemperatureSiteView(TemplateView):
     location_site = LocationSite.objects.none()
     location_context = None
     year = None
+    start_date = None
+    end_date = None
 
     def get_context_data(self, **kwargs):
         start_time = time.time()
@@ -532,6 +534,9 @@ class WaterTemperatureSiteView(TemplateView):
         water_temperature_data = WaterTemperature.objects.filter(
             location_site=self.location_site
         )
+        if not water_temperature_data.exists():
+            raise Http404('Does not exist')
+
         context['years'] = list(
             water_temperature_data.values_list(
                 'date_time__year', flat=True).distinct(
@@ -543,7 +548,14 @@ class WaterTemperatureSiteView(TemplateView):
         if not self.year and len(context['years']) > 0:
             self.year = int(context['years'][-1])
 
-        if self.year:
+        if self.start_date and self.end_date:
+            self.start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
+            self.end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
+            water_temperature_data = water_temperature_data.filter(
+                date_time__gt=self.start_date,
+                date_time__lt=self.end_date
+            )
+        elif self.year:
             water_temperature_data = water_temperature_data.filter(
                 date_time__year=self.year
             )
@@ -579,12 +591,28 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
+        water_temperature_data =  water_temperature_data.order_by(
+            'date_time'
+        )
+
         if self.year:
-            context['indicators'] = calculate_indicators(
-                self.location_site, self.year)
+            if water_temperature_data:
+                context['indicators'] = calculate_indicators(
+                    self.location_site, self.year, False,
+                    water_temperature_data)
+            else:
+                context['indicators'] = []
 
         context['location_site'] = self.location_site
         context['execution_time'] = time.time() - start_time
+        context['start_date'] = (
+            self.start_date if self.start_date else
+                water_temperature_data.first().date_time
+        )
+        context['end_date'] = (
+            self.end_date if self.end_date else
+                water_temperature_data.last().date_time
+        )
         source_references = (
             water_temperature_data.exclude(
                 source_reference__isnull=True
@@ -635,6 +663,8 @@ class WaterTemperatureSiteView(TemplateView):
     def get(self, request, *args, **kwargs):
         site_id = kwargs.get('site_id', None)
         self.year = kwargs.get('year', None)
+        self.start_date = request.GET.get('startDate', None)
+        self.end_date = request.GET.get('endDate', None)
         if not site_id or not request.GET or not request.GET.get(
                 'siteId', None):
             raise Http404()
