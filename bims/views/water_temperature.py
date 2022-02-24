@@ -389,8 +389,10 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
+            value_key = 'Water temperature'
         else:
             is_daily = True
+            value_key = 'Mean'
 
         if upload_session_id and upload_session_id != 'undefined':
             try:
@@ -408,10 +410,10 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
 
                 for temperature in data:
 
-                    if is_daily:
-                        water_temp_value = temperature['Mean']
-                    else:
-                        water_temp_value = temperature['Water temperature']
+                    if temperature[value_key] == '':
+                        continue
+
+                    water_temp_value = temperature[value_key]
 
                     date_time = make_aware(
                         datetime.strptime(
