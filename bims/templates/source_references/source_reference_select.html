@@ -9,9 +9,12 @@
               class="col-sm-2 col-form-label col-form-label">Selected Source Reference</label>
        <div class="col-sm-10">
            <div class="input-group">
-               <textarea class="form-control" id="selected-source-reference" name="source_reference_title" disabled> </textarea>
-               <input type="hidden" id="selected-source-reference-id" name="source_reference">
+               <textarea class="form-control" id="selected-source-reference" name="source_reference_title" disabled>{% if source_reference %}({{ source_reference.0.reference_type }}) - {{ source_reference.0 }}{% endif %}</textarea>
+               <input type="hidden" id="selected-source-reference-id" name="source_reference" {% if source_reference %}value="{{ source_reference.0.id }}"{% endif %}>
            </div>
+            {% if source_reference %}
+                <button class="btn btn-primary" style="font-size: 13px; margin-top: 10px;" id="clear-source-reference">Clear</button>
+            {% endif %}
        </div>
    </div>
 
@@ -200,6 +203,12 @@
          collectors = authorIds.join(',');
          getSourceReferenceList();
      })
+
+    $('#clear-source-reference').click(function (e) {
+      e.preventDefault();
+      $('#selected-source-reference').val('');
+      $('#selected-source-reference-id').val('');
+    })
 
     getSourceReferenceList(currentType);
 

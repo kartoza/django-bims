@@ -3,6 +3,7 @@
     Site Image model definition.
     To store images for location site.
 """
+from django.conf import settings
 from django.utils import timezone
 
 from django.db import models
@@ -34,6 +35,24 @@ class SiteImage(models.Model):
         default='',
         null=True,
         blank=True
+    )
+
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='User who uploaded the data (Optional)',
+        related_name='site_image_uploader'
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Owner of the data (Optional)',
+        related_name='site_image_owner'
     )
 
     site = models.ForeignKey(
