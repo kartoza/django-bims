@@ -245,7 +245,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                                 self.add_error_messages(
                                     row - 1,
                                     'Data for {} are missing {} rows'.format(
-                                        times[row - 3].date(),
+                                        times[row - 1].date(),
                                         RECORDS_PER_INTERVAL[interval] - len(times)
                                     )
                                 )
