@@ -51,9 +51,12 @@ class LocationSiteOverviewData(object):
 
         for group in groups:
             group_data = dict()
-            group_data[self.GROUP_ICON] = get_thumbnail(
-                group.logo, 'x50', crop='center'
-            ).name
+            try:
+                group_data[self.GROUP_ICON] = get_thumbnail(
+                    group.logo, 'x50', crop='center'
+                ).name
+            except ValueError:
+                pass
             group_data[self.MODULE] = group.id
 
             biodiversity_data[group.name] = group_data

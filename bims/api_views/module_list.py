@@ -15,11 +15,15 @@ class ModuleList(APIView):
                     category=TaxonomicGroupCategory.SPECIES_MODULE.name
                 )
         for _module in taxon_groups:
+            try:
+                logo = get_thumbnail(
+                    _module.logo, 'x40', crop='center'
+                ).name
+            except ValueError:
+                logo = ''
             taxon_group_list.append({
                 'name': _module.name,
                 'id': _module.id,
-                'logo': get_thumbnail(
-                    _module.logo, 'x40', crop='center'
-                ).name
+                'logo': logo
             })
         return Response(taxon_group_list)
