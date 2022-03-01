@@ -10,16 +10,15 @@ logger = logging.getLogger('bims')
 
 class Command(BaseCommand):
     """
-    Read darwin core data then convert and store them as bims data
+    Harvest Frog data from virtual museum
     """
     api_token = ''
+    module_name = 'Frog'
+    base_api_url = 'https://api.birdmap.africa/vmus/v2/dwc/FrogMAP/'
+
     source_name = (
-        'OdonataMap Virtual Museum, '
-        'FitzPatrick Institute of African Ornithology, '
-        'University of Cape Town'
+        'FrogMap Virtual Museum Database'
     )
-    module_name = 'Odonata'
-    base_api_url = 'http://api.adu.org.za/vmus/v2/dwc/OdonataMAP/'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -28,13 +27,6 @@ class Command(BaseCommand):
             dest='token',
             default='',
             help='Api token for the request'
-        )
-        parser.add_argument(
-            '-sn',
-            '--source-name',
-            dest='source_name',
-            default=self.source_name,
-            help='Source name'
         )
         parser.add_argument(
             '-s',
@@ -50,6 +42,13 @@ class Command(BaseCommand):
             default=10,
             help='How many data should be retrieved'
         )
+        parser.add_argument(
+            '-sn',
+            '--source-name',
+            dest='source_name',
+            default=self.source_name,
+            help='Source name'
+        )
 
     def handle(self, *args, **options):
         self.api_token = options.get('token', '')
@@ -57,10 +56,10 @@ class Command(BaseCommand):
             self.source_name = options.get('source_name')
 
         if not self.api_token:
-            print('Missing API TOKEN')
+            logger.info('Missing API TOKEN!')
             return
 
-        logger.info('Harvesting Odonata data from VM...')
+        logger.info('Harvesting FROG data from VM...')
         start_index = options.get('start_index', 0)
         limit = options.get('limit', 10)
 
@@ -69,10 +68,9 @@ class Command(BaseCommand):
             module_name=self.module_name,
             base_api_url=self.base_api_url,
             source_name=self.source_name,
-            taxon_group_module='Odonate Adults')
+            taxon_group_module='Anura')
         harvester.harvest(
             start_index=start_index,
             limit=limit,
-            ingest_occurrences=True,
-            ingest_species=False
+            ingest_occurrences=True
         )
