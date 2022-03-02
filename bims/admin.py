@@ -1143,7 +1143,8 @@ class SurveyAdmin(admin.ModelAdmin):
         'id',
         'site',
         'date',
-        'validated'
+        'validated',
+        'owner'
     )
 
 

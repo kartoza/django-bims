@@ -5,6 +5,10 @@ import ast
 import logging
 from functools import reduce
 
+from preferences import preferences
+
+from bims.models.source_reference import SourceReference
+
 from bims.models.water_temperature import WaterTemperature
 from django.db.models import Q, Count, F, Value, Case, When
 from django.db.models.functions import Concat

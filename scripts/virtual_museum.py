@@ -90,6 +90,7 @@ class OccurrenceDarwinCore(OccurrenceProcessor):
     def finish_processing_row(self, row, record):
         logger.info(f'FINISH - {row}')
         record.additional_data = row['ALL_DATA']
+        record.collection_record = 'virtual_museum'
         if row[COLLECTOR_ONLY]:
             collector = get_user_reverse(row[COLLECTOR_ONLY])
             record.collector_user = collector

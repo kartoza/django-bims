@@ -158,19 +158,21 @@ class LocationSiteFormView(TemplateView):
             )
             for registry in geomorphological_data['service_registry_values']:
                 if 'key' in registry and 'name' in registry:
-                    group, group_created = (
-                        LocationContextGroup.objects.get_or_create(
-                            key=registry['key'],
-                            name=registry['name'],
-                            geocontext_group_key=geomorphological_data['key']
+                    if registry['value']:
+                        group, group_created = (
+                            LocationContextGroup.objects.get_or_create(
+                                key=registry['key'],
+                                name=registry['name'],
+                                geocontext_group_key=
+                                geomorphological_data['key']
+                            )
                         )
-                    )
-                    LocationContext.objects.get_or_create(
-                        site=location_site,
-                        value=registry['value'],
-                        group=group
-                    )
-                    geomorphological_fetched = True
+                        LocationContext.objects.get_or_create(
+                            site=location_site,
+                            value=registry['value'],
+                            group=group
+                        )
+                        geomorphological_fetched = True
                 else:
                     LocationContext.objects.filter(
                         site=location_site,
