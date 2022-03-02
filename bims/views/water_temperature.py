@@ -129,6 +129,7 @@ class WaterTemperatureEditView(WaterTemperatureBaseView):
             self.water_temperature = self.water_temperature.filter(
                 owner=self.request.user,
             )
+        ctx['total_data'] = self.water_temperature.count()
         ctx['site_image'] = SiteImage.objects.filter(
             owner=self.request.user,
             date__year=self.year
@@ -244,11 +245,11 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                                         end_time, time_string
                                     )
                                 )
-                            if len(times) < RECORDS_PER_INTERVAL[interval]:
+                            if RECORDS_PER_INTERVAL[interval] > len(times) > 0:
                                 self.add_error_messages(
                                     row - 1,
                                     'Data for {} are missing {} rows'.format(
-                                        times[row - 1].date(),
+                                        times[-1].date(),
                                         RECORDS_PER_INTERVAL[interval] - len(times)
                                     )
                                 )
@@ -289,7 +290,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
     upload_task = None
 
     def post(self, request, *args, **kwargs):
-
+        start_time = time.time()
         if not request.is_ajax():
             return HttpResponseForbidden()
         owner_id = request.POST.get('owner_id', '').strip()
@@ -339,32 +340,36 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                 request.POST.get('previous_source_reference_id', '')
             )
 
-            water_temperature = WaterTemperature.objects.filter(
-                location_site=location_site
-            )
-            if year:
-                water_temperature = water_temperature.filter(
-                    date_time__year=year
-                )
-
-            if previous_source_reference_id:
-                water_temperature = water_temperature.filter(
+            if not upload_session_id or upload_session_id == 'undefined':
+                water_temperature = WaterTemperature.objects.filter(
                     location_site=location_site
                 )
+                if year:
+                    water_temperature = water_temperature.filter(
+                        date_time__year=year
+                    )
 
-            if not self.request.user.is_superuser:
-                water_temperature = water_temperature.filter(
-                    owner=owner
-                )
-            if water_temperature.exists():
-                site_image_date = water_temperature.first().date_time
-            else:
-                raise Http404('Water temperature does not exist')
-            if source_reference_id != previous_source_reference_id:
-                water_temperature.update(
-                    source_reference=source_reference
-                )
-                success_response += 'Source reference is updated\n'
+                if previous_source_reference_id:
+                    water_temperature = water_temperature.filter(
+                        location_site=location_site
+                    )
+
+                if not self.request.user.is_superuser:
+                    water_temperature = water_temperature.filter(
+                        owner=owner
+                    )
+                if water_temperature.exists():
+                    site_image_date = water_temperature.first().date_time
+                else:
+                    raise Http404('Water temperature does not exist')
+                if source_reference_id != previous_source_reference_id:
+                    water_temperature.update(
+                        source_reference=source_reference
+                    )
+                    success_response += (
+                        ' Source reference has been updated in the existing'
+                        ' water temperature data. '
+                    )
 
             site_image_updated = False
             if site_image_to_delete:
@@ -435,14 +440,19 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                     water_data = {
                         'date_time': date_time,
                         'location_site': location_site,
-                        'is_daily': is_daily
                     }
 
-                    query = WaterTemperature.objects.filter(
-                        **water_data
-                    )
-                    is_data_exists = query.exists()
+                    try:
+                        query = WaterTemperature.objects.get(
+                            **water_data
+                        )
+                        is_data_exists = True
+                    except:  # noqa
+                        query = None
+                        is_data_exists = False
+
                     water_data['value'] = water_temp_value
+                    water_data['is_daily'] = is_daily
                     water_data['minimum'] = (
                         temperature['Minimum'] if is_daily else 0
                     )
@@ -454,18 +464,24 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                     water_data['source_reference'] = source_reference
 
                     if is_data_exists:
-                        new_query = query.filter(**water_data)
-                        if not new_query.exists():
-                            existing_water_data = query.first()
-                            existing_water_data.value = water_temp_value
-                            existing_water_data.minimum = water_data['minimum']
-                            existing_water_data.maximum = water_data['maximum']
-                            existing_data.append(existing_water_data)
+                        if (
+                            query.value != float(water_data['value']) or
+                            query.minimum != int(water_data['minimum']) or
+                            query.maximum != int(water_data['maximum']) or
+                            query.owner != water_data['owner']
+                        ):
+                            query.value = water_data['value']
+                            query.minimum = water_data['minimum']
+                            query.maximum = water_data['maximum']
+                            query.owner = water_data['owner']
+                            existing_data.append(query)
                     else:
                         new_data.append(
                             WaterTemperature(**water_data)
                         )
 
+                print('Done loop {}'.format(
+                    time.time() - start_time))
                 if new_data:
                     WaterTemperature.objects.bulk_create(
                         new_data
@@ -474,14 +490,17 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                         len(new_data)
                     )
                 if existing_data:
+                    print('Checking existing data... {}'.format(time.time() - start_time))
                     WaterTemperature.objects.bulk_update(
                         existing_data,
-                        ['value', 'minimum', 'maximum']
+                        ['value', 'minimum', 'maximum', 'owner'],
+                        batch_size=100
                     )
                     success_response += '{} data has been updated.'.format(
                         len(existing_data)
                     )
-
+                print('Finished {}'.format(
+                    time.time() - start_time))
                 # Check existing water temperature with
                 # different source reference
                 if source_reference:
@@ -496,7 +515,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                             source_reference=source_reference
                         )
                         success_response += (
-                            ' Source reference has been update in the existing'
+                            ' Source reference has been updated in the existing'
                             ' water temperature data.'
                         )
 

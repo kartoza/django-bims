@@ -91,6 +91,10 @@ const processWaterData = (formData) => {
                 alertSuccess.html(data['message']);
                 alertSuccess.show();
             }
+        }, error: function (xhr, ajaxOptions, thrownError) {
+            document.getElementById('upload').disabled = false;
+            document.getElementById('upload').value = 'Upload';
+            alert('Error uploading data. ' + thrownError)
         }
     });
 }
