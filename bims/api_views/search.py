@@ -480,19 +480,6 @@ class CollectionSearch(object):
             for source_collection in self.source_collection:
                 if source_collection not in source_collection_filters:
                     source_collection_filters.append(source_collection)
-                if source_collection == 'virtual_museum':
-                    source_collection_filters.remove('virtual_museum')
-                    vm_reference_ids = (
-                        preferences.SiteSetting.virtual_museum_source_filter.split(',')
-                    )
-                    virtual_museum_references = SourceReference.objects.filter(
-                        id__in=vm_reference_ids
-                    )
-                    if virtual_museum_references.exists():
-                        filters['source_reference__in'] = (
-                            ( self.reference if self.reference else [] ) +
-                            vm_reference_ids
-                        )
         if source_collection_filters:
             filters['source_collection__in'] = source_collection_filters
         if self.endemic:
