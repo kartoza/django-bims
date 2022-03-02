@@ -217,8 +217,11 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
             for temperature_data in data:
                 # Check date format
                 try:
-                    date = datetime.strptime(
-                        temperature_data[date_field], date_format)
+                    date_string = temperature_data[date_field]
+                    if len(date_string.split(':')) > 2 and ':%S' not in date_format:
+                        date_format += ':%S' # Add second
+                    date = datetime.strptime(date_string, date_format)
+
                     # Check interval
                     if not is_daily:
                         time_string = date.strftime('%H:%M')
@@ -417,10 +420,13 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                     else:
                         water_temp_value = temperature['Water temperature']
 
+                    date_string = temperature[date_field]
+                    if len(date_string.split(
+                            ':')) > 2 and ':%S' not in date_format:
+                        date_format += ':%S'  # Add second
+
                     date_time = make_aware(
-                        datetime.strptime(
-                            temperature[date_field],
-                            date_format)
+                        datetime.strptime(date_string, date_format)
                     )
 
                     if not first_date:
