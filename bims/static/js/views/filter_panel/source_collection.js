@@ -69,6 +69,14 @@ define([
                     '<label for="source-collection-list-'+i+'" style="margin-bottom: 0 !important;">'+ label.toUpperCase() + '</label>' +
                     dataSourceCaption +
                     '</div>');
+
+            }
+
+            if (virtualMuseumExists) {
+                this.listWrapper.append('<div style="padding-bottom: 10px;">' +
+                '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="virtual_museum"  ' + checked + ' >&nbsp;' +
+                '<label for="source-collection-list-'+i+'" style="margin-bottom: 0 !important;"> Virtual Museum </label>' +
+                '</div>');
             }
         },
         updateChecked: function () {

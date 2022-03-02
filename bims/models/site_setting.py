@@ -248,7 +248,12 @@ class SiteSetting(Preferences):
         blank=True,
         default='',
         help_text='The key of the boundary data form GeoContext'
+    )
 
+    virtual_museum_source_filter = models.TextField(
+        blank=True,
+        default='',
+        help_text='Sources to filter virtual museum data, separated by comma'
     )
 
     def save(self, *args, **kwargs):
