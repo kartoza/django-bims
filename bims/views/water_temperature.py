@@ -155,7 +155,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
     def add_error_messages(self, row, message):
         self.is_valid = False
         self.error_messages.append(
-            f'{row} : {message}'
+            f'line {row} : {message}'
         )
 
     def post(self, request, *args, **kwargs):
@@ -208,7 +208,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
         else:
             if 'Water temperature' not in headers:
                 self.add_error_messages(
-                    row,
+                    row - 1,
                     'Missing "Water temperature" header'
                 )
                 finished = True
@@ -225,8 +225,8 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                         if len(times) == 0 and time_string != start_time:
                             self.add_error_messages(
                                 row,
-                                'Non daily data should start at {}'.format(
-                                    start_time
+                                'Non daily data should start at {} but get {}'.format(
+                                    start_time, time_string
                                 )
                             )
                         if time_string == start_time and len(times) > 1:
@@ -237,14 +237,17 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                             ):
                                 self.add_error_messages(
                                     row - 1,
-                                    'Non daily data should end at {}'.format(
-                                        end_time
+                                    'Non daily data should end at {} but get {}'.format(
+                                        end_time, time_string
                                     )
                                 )
                             if len(times) < RECORDS_PER_INTERVAL[interval]:
                                 self.add_error_messages(
                                     row - 1,
-                                    'Data for this day is not complete'
+                                    'Data for {} are missing {} rows'.format(
+                                        times[row - 1].date(),
+                                        RECORDS_PER_INTERVAL[interval] - len(times)
+                                    )
                                 )
                             times = []
                         times.append(date)
@@ -284,6 +287,8 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
 
+        if not request.is_ajax():
+            return HttpResponseForbidden()
         owner_id = request.POST.get('owner_id', '').strip()
         interval = request.POST.get('interval')
         date_format = request.POST.get('format')
@@ -294,7 +299,6 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
         success_response_image = ''
         success_response = ''
         source_reference = None
-
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
@@ -618,7 +622,7 @@ class WaterTemperatureSiteView(TemplateView):
                 source_reference__isnull=True
             ).order_by(
                 'source_reference').distinct(
-            'source_reference').source_references()
+                'source_reference').source_references()
         )
         context['source_references'] = json.dumps(source_references)
 
