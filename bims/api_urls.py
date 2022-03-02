@@ -91,6 +91,7 @@ from bims.api_views.location_site_public import (
 from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
 from bims.api_views.merge_sites import MergeSites
 from bims.views.source_reference import SourceReferenceAPIView
+from bims.api_views.decision_support_tool import DecisionSupportToolView
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -264,5 +265,9 @@ urlpatterns = [
         ),
     url(r'^source-reference-list/$',
         SourceReferenceAPIView.as_view(),
+        ),
+    url(r'^decision-support-tool/$',
+        DecisionSupportToolView.as_view(),
+        name='decision-support-tool'
         )
 ]

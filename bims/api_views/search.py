@@ -237,6 +237,10 @@ class CollectionSearch(object):
         return self.parse_request_json('conservationStatus')
 
     @property
+    def decision_support_tools(self):
+        return self.parse_request_json('dst')
+
+    @property
     def boundary(self):
         return self.parse_request_json('boundary')
 
@@ -463,6 +467,11 @@ class CollectionSearch(object):
                     'origin__in': self.categories
                 }
             )
+        if self.decision_support_tools:
+            filters['decisionsupporttool__name__in'] = (
+                self.decision_support_tools
+            )
+
         if self.year_ranges:
             filters['collection_date__range'] = self.year_ranges
         if self.months:
