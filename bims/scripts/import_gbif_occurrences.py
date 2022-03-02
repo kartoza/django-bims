@@ -193,6 +193,7 @@ def import_gbif_occurrences(
                             logger.info(
                                 f'The site is not within a valid border.'
                             )
+                            continue
                 except Exception as e:  # noqa
                     logger.info(
                         f'Unable to check boundary data from geocontext')
