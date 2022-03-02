@@ -185,9 +185,14 @@ def import_gbif_occurrences(
                         continue
                     else:
                         response_json = json.loads(response.content)
-                        logger.info(
-                            f"Site is in {response_json['value']}"
-                        )
+                        if response_json['value']:
+                            logger.info(
+                                f"Site is in {response_json['value']}"
+                            )
+                        else:
+                            logger.info(
+                                f'The site is not within a valid border.'
+                            )
                 except Exception as e:  # noqa
                     logger.info(
                         f'Unable to check boundary data from geocontext')
