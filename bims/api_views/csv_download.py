@@ -61,7 +61,7 @@ class CsvDownload(APIView):
                 csv_file=path_file
             )
         else:
-            download_data_to_csv(
+            download_data_to_csv.delay(
                 path_file,
                 self.request.GET,
                 send_email=True,
