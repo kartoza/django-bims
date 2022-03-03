@@ -4,7 +4,8 @@ from preferences import preferences
 from django.db.models import Count, F, Case, When, Value
 from bims.models import (
     TaxonGroup,
-    BiologicalCollectionRecord
+    BiologicalCollectionRecord,
+    IUCNStatus
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.models.site_visit_taxon import SiteVisitTaxon
@@ -31,6 +32,7 @@ class ModuleSummary(APIView):
     INVERTEBRATE_KEY = 'invert'
     ALGAE_KEY = 'algae'
     ODONATE_KEY = 'odonate'
+    ANURA = 'anura'
 
     def module_summary_data(self, taxon_group):
         """
@@ -43,18 +45,19 @@ class ModuleSummary(APIView):
         )
         summary = dict(
             collections.exclude(taxonomy__origin__exact='').annotate(
-                value=Case(When(taxonomy__origin__isnull=False,
-                                then=F('taxonomy__origin')),
-                           default=Value('Unspecified'))
+                value=Case(When(taxonomy__iucn_status__isnull=False,
+                                then=F('taxonomy__iucn_status__category')),
+                           default=Value('Not evaluated'))
             ).values('value').annotate(
                 count=Count('value')
             ).values_list('value', 'count')
         )
-        unspecified = collections.filter(taxonomy__origin__exact='').count()
-        if 'Unspecified' in summary:
-            summary['Unspecified'] += unspecified
-        else:
-            summary['Unspecified'] = unspecified
+        iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
+        updated_summary = {}
+        for key in summary.keys():
+            if key in iucn_category:
+                updated_summary[iucn_category[key]] = summary[key]
+        summary = updated_summary
         summary[
             'total'] = collections.count()
         summary[
@@ -78,6 +81,16 @@ class ModuleSummary(APIView):
         if not fish_group:
             return {}
         return self.module_summary_data(fish_group)
+
+    def anura_data(self):
+        """
+        Return anura summary
+        :return: dict of anura sumary
+        """
+        anura_group = get_species_group(self.ANURA)
+        if not anura_group:
+            return {}
+        return self.module_summary_data(anura_group)
 
     def invertebrate_data(self):
         """
@@ -168,6 +181,7 @@ class ModuleSummary(APIView):
             response_data[self.INVERTEBRATE_KEY] = self.invertebrate_data()
             response_data[self.ALGAE_KEY] = self.algae_data()
             response_data[self.ODONATE_KEY] = self.odonate_data()
+            response_data[self.ANURA] = self.anura_data()
         else:
             taxon_groups = TaxonGroup.objects.filter(
                 category=TaxonomicGroupCategory.SPECIES_MODULE.name,
