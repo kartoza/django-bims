@@ -1,0 +1,191 @@
+{% extends 'main_base.html' %}
+{% load static from staticfiles %}
+
+{% block subtitle %}
+    Home
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/landing_page_fbis.css" %}" rel="stylesheet">
+
+{% endblock %}
+
+{% block body_content %}
+    <div id="section-wrapper">
+        <header class="masthead text-center text-white d-flex" id="header">
+            <div id="title-header">
+                <div class="title-header-buttons">
+                    <div class="title-header-text">
+                        Tracking change in South Africa’s
+                        Freshwater Biodiversity
+                    </div>
+                    {% if not user.is_authenticated %}
+                        <a class="btn btn-account btn-l js-scroll-trigger"
+                           href="/accounts/login/">Login</a>
+                        <a class="btn btn-account btn-l js-scroll-trigger"
+                           href="/accounts/signup/">Sign Up</a>
+                        <a class="btn btn-account btn-l js-scroll-trigger"
+                           href="/map">Explore</a>
+                    {% else %}
+                        <a class="btn btn-account btn-l js-scroll-trigger"
+                           href="/map">Explore</a>
+                    {% endif %}
+                    {% if not site_ready %}
+                    <div class="coming-soon-buttons">
+                        Coming soon!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <section id="fish-data">
+            <div class="container" style="margin-bottom: 25px">
+                <div class="row" style="margin-bottom: 20px;">
+                    <div class="col-lg-8 mx-auto text-center">
+                        <h2 class="section-heading">Biodiversity Records</h2>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-1"></div>
+                    <div class="col-lg-2 ml-auto text-center" id="total-fish">
+                        <div class="chart-icon-wrapper">
+                            <img src="{% static 'img/JRSicons_fish.png' %}" class="fish-icon fish">
+                            <div class="donut-chart">
+                                <canvas id="chart-fish" width="100" height="100"></canvas>
+                            </div>
+                        </div>
+                        <div class="module-information">
+                            <h4 class="charcoal">Fish</h4>
+                            <span id="fish-total-records" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;records</span><br/>
+                            <span id="fish-total-sites" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;sites</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 text-center" id="total-anura">
+                        <div class="chart-icon-wrapper">
+                            <img src="{% static 'img/Anura.png' %}" class="fish-icon anura">
+                            <div class="donut-chart">
+                                <canvas id="chart-anura" width="100" height="100"></canvas>
+                            </div>
+                        </div>
+                        <div class="module-information">
+                            <h4 class="charcoal">Anura</h4>
+                            <span id="anura-total-records" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;records</span><br/>
+                            <span id="anura-total-sites" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;sites</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 text-center" id="total-invertebra">
+                        <div class="chart-icon-wrapper" data-toggle="tooltip" data-placement="right"  data-html="true" title="A: Natural<br/>B: Good<br/>C: Fair<br/>D: Poor<br/>E/F: Seriously/Critically modified">
+                            <img src="{% static 'img/JRSicons_crab.png' %}" class="fish-icon crab">
+                            <div class="donut-chart">
+                                <canvas id="chart-invert" width="170" height="170"></canvas>
+                            </div>
+                        </div>
+                        <div class="module-information">
+                            <h4 class="charcoal">Invertebrate</h4>
+                            <span id="invert-total-records" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;records</span><br/>
+                            <span id="invert-total-sites" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;sites</span>
+                            <br/><span id="invert-total-sass" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;SASS assessments</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 text-center" id="total-odonate">
+                        <div class="chart-icon-wrapper">
+                            <img src="{% static 'img/odonate_icon.png' %}" class="fish-icon crab">
+                            <div class="donut-chart">
+                                <canvas id="chart-odonate" width="170" height="170"></canvas>
+                            </div>
+                        </div>
+                        <div class="module-information">
+                            <h4 class="charcoal">Odonate Adult</h4>
+                            <span id="odonate-total-records" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;records</span><br/>
+                            <span id="odonate-total-sites" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;sites</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 mr-auto text-center" id="total-algae">
+                        <div class="chart-icon-wrapper">
+                            <img src="{% static 'img/JRSicons_algae.png' %}" class="fish-icon algae">
+                            <div class="module-info-wrapper">
+                                <span class="total-data-desc charcoal"></span>
+                            </div>
+                            <div class="donut-chart">
+                                <canvas id="chart-algae" width="170" height="170"></canvas>
+                            </div>
+                        </div>
+                         <div class="module-information">
+                            <h4 class="charcoal">Algae</h4>
+                            <span id="algae-total-records" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;records</span><br/>
+                            <span id="algae-total-sites" class="total-data">-</span>
+                            <span class="total-data-desc">&nbsp;sites</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-1"></div>
+                </div>
+            </div>
+        </section>
+        <div class="vertical-spacer"></div>
+        <div id="about">
+            <div class="row" style="margin-right: 0 !important;">
+                <div class="col-lg-3 pull-left fbis-icon">
+                    <a href="#" class="pull-left">
+                        <img src="{% static 'img/FBIS v2 Logo.png' %}" width="230">
+                    </a>
+                </div>
+                <div class="col-lg-6 about-links">
+                    {% if site_ready %}
+                    <p>
+                        <a href="#">Home</a> |
+                        <a href="/map">Map</a> |
+                        <a href="/links">External Resources</a> |
+                        <a href="/under-development">Documents & Reports</a> |
+                        <a href="/contact">Contact</a> |
+                        <a href="/pages/citation-guidelines/">Citation</a> |
+                        <a href="/bibliography">Bibliography</a> |
+                        <a href="/layers">GIS Catalogue</a>
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="col-lg-3 pull-right" style="padding-right: 0 !important; margin-left: -15px">
+                    <a class="pull-right" >
+                        <img src="{% static 'img/frc-logo.png' %}" height="70px" style="padding-right: 20px">
+                    </a>
+                    <a href="http://kartoza.com/en/" style="margin-right: 25px; " class="pull-right">
+                        <img src="{% static 'img/kartoza-icon.png' %}" width="70px">
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-easing/jquery.easing.min.js" %}"></script>
+    <script src="{% static "js/libs/scrollreveal/scrollreveal.min.js" %}"></script>
+    <script src="{% static "js/libs/magnific-popup/jquery.magnific-popup.min.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+
+    <!-- Custom scripts for this template -->
+    <script src="{% static "js/landing-page-fbis.js" %}"></script>
+    <script>
+        $(document).ready(function () {
+            showSiteNotice();
+        });
+    </script>
+{% endblock %}
