@@ -1289,6 +1289,9 @@ class WaterTemperatureAdmin(admin.ModelAdmin):
     search_fields = (
         'location_site__site_code',
     )
+    list_filter = (
+        'date_time',
+    )
 
 
 class TaxonExtraAttributeAdmin(admin.ModelAdmin):
