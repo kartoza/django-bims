@@ -1,8 +1,9 @@
 import csv
 import io
+import json
 
 from braces.views import SuperuserRequiredMixin
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.contrib import messages
 
 from rest_framework.views import APIView
@@ -12,6 +13,19 @@ from bims.models import (
     BiologicalCollectionRecord,
     DecisionSupportTool
 )
+
+
+class DecisionSupportToolList(APIView):
+    """API for listing all decision support tools."""
+
+    def get(self, request, *args):
+        dst = DecisionSupportTool.objects.all().values_list(
+            'name', flat=True
+        ).order_by('name').distinct('name')
+        return HttpResponse(
+            json.dumps(list(dst)),
+            content_type='application/json'
+        )
 
 
 class DecisionSupportToolView(SuperuserRequiredMixin, APIView):
@@ -44,10 +58,15 @@ class DecisionSupportToolView(SuperuserRequiredMixin, APIView):
                                   f': {uuid} Collection Record not found.')
                     continue
 
-                dst, dst_created = DecisionSupportTool.objects.get_or_create(
-                    biological_collection_record=bio,
-                    name=name
-                )
+                try:
+                    dst, dst_created = (
+                        DecisionSupportTool.objects.get_or_create(
+                            biological_collection_record=bio,
+                            name=name
+                        )
+                    )
+                except DecisionSupportTool.MultipleObjectsReturned:
+                    continue
 
                 if dst_created:
                     created += 1

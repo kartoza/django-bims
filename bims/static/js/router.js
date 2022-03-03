@@ -39,6 +39,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             this.parameters['siteIdOpen'] = '';
             this.parameters['polygon'] = '';
             this.parameters['thermalModule'] = '';
+            this.parameters['dst'] = '';
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }
