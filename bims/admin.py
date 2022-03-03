@@ -87,7 +87,8 @@ from bims.models import (
     IngestedData,
     TaxonImage,
     WaterTemperature,
-    TaxonExtraAttribute
+    TaxonExtraAttribute,
+    DecisionSupportTool
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -353,6 +354,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
 
     # exclude = ['source_reference',]
     list_display = (
+        'uuid',
         'taxonomy',
         'get_origin',
         'collection_date',
@@ -1300,6 +1302,31 @@ class TaxonExtraAttributeAdmin(admin.ModelAdmin):
     )
 
 
+class DecisionSupportToolAdmin(admin.ModelAdmin):
+    change_list_template = 'admin/dst_changelist.html'
+    list_display = (
+        'name', 'get_bio_uuid'
+    )
+    raw_id_fields = (
+        'biological_collection_record',
+    )
+    list_filter = (
+        'name',
+    )
+    search_fields = (
+        'name',
+        'biological_collection_record__uuid'
+    )
+
+    def get_bio_uuid(self, obj):
+        if obj.biological_collection_record:
+            return obj.biological_collection_record.uuid
+        return '-'
+
+    get_bio_uuid.short_description = 'Biological Collection Record UUID'
+    get_bio_uuid.admin_order_field = 'biological_collection_record__uuid'
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1380,3 +1407,4 @@ admin.site.unregister(Partner)
 
 admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
+admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)

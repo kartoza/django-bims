@@ -124,6 +124,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     identified_by = serializers.SerializerMethodField()
     rights_holder = serializers.SerializerMethodField()
     recorded_by = serializers.SerializerMethodField()
+    decision_support_tool = serializers.SerializerMethodField()
 
     def spatial_data(self, obj, key):
         if 'context_cache' not in self.context:
@@ -441,6 +442,14 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 return '-'
         return '-'
 
+    def get_decision_support_tool(self, obj):
+        dst_set = obj.decisionsupporttool_set.all()
+        if dst_set.exists():
+            dst_set_names = dst_set.values_list(
+                'name', flat=True).order_by('name').distinct('name')
+            return ', '.join(list(dst_set_names))
+        return '-'
+
     def get_gbif_id(self, obj):
         return self.occurrences_fields(obj, 'gbifID')
 
@@ -525,6 +534,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'identified_by',
             'rights_holder',
             'recorded_by',
+            'decision_support_tool'
         ]
 
     def to_representation(self, instance):
