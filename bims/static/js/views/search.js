@@ -28,6 +28,7 @@ define([
         },
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
+        initialSelectedDST: [],
         initialSelectedReferenceCategory: [],
         initialSelectedSourceCollection: [],
         initialSelectedEndemic: [],
@@ -213,6 +214,30 @@ define([
                 }
             });
 
+            // Decision support tools
+            $.ajax({
+                type: 'GET',
+                url: '/api/list-dst/',
+                dataType: 'json',
+                success: function (data) {
+                    var selected;
+                    for (var i = 0; i < data.length; i++) {
+                        if ($.inArray(data[i], self.initialSelectedDST) > -1) {
+                            selected = 'selected';
+                        } else {
+                            selected = '';
+                        }
+
+                        if (data[i]) {
+                            $('#filter-decision-support-tools').append(`
+                                <option value="${data[i]}" ${selected}>${data[i]}</option>`);
+                        }
+                    }
+                    self.filtersReady['dst'] = true;
+                    $('#filter-decision-support-tools').chosen({});
+                }
+            });
+
             $.ajax({
                 type: 'GET',
                 url: listReferenceAPIUrl,
@@ -351,6 +376,18 @@ define([
                 );
             }
             filterParameters['collector'] = collectorValue;
+
+            // DST filter
+            let dstValue = $("#filter-decision-support-tools").val();
+            self.highlightPanel('.filter-decision-support-tools-row', dstValue.length > 0);
+            if (dstValue.length === 0) {
+                dstValue = '';
+            } else {
+                dstValue = encodeURIComponent(JSON.stringify(
+                    dstValue)
+                );
+            }
+            filterParameters['dst'] = dstValue;
 
             // reference filter
             var referenceValue = $("#filter-study-reference").val();
@@ -512,6 +549,7 @@ define([
                 && !filterParameters['abioticData']
                 && !filterParameters['polygon']
                 && !filterParameters['boundary']
+                && !filterParameters['dst']
                 && !filterParameters['thermalModule']) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
@@ -787,6 +825,12 @@ define([
             self.initialSelectedCollectors = [];
             if (allFilters.hasOwnProperty('collector')) {
                 self.initialSelectedCollectors = JSON.parse(allFilters['collector']);
+            }
+
+            // DST
+            self.initialSelectedDST = [];
+            if (allFilters.hasOwnProperty('dst')) {
+                self.initialSelectedDST = JSON.parse(allFilters['dst']);
             }
 
             // Study referebce

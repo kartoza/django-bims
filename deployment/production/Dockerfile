@@ -1,5 +1,5 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM python:3.7-slim-stretch
+FROM python:3.7-slim-stretch as prod
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
 RUN mkdir -p /usr/src/{app,geonode}
@@ -46,7 +46,7 @@ RUN pip install celery==4.4.2
 # Install pygdal (after requirements https://github.com/GeoNode/geonode/pull/4599)
 RUN pip install pygdal==$(gdal-config --version).*
 
-COPY . /usr/src/app
+# COPY . /usr/src/app
 #
 #RUN chmod +x /usr/src/app/tasks.py \
 #    && chmod +x /usr/src/app/entrypoint.sh
@@ -55,9 +55,9 @@ COPY . /usr/src/app
 #RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
 #RUN pip install -e /usr/src/app
 
-ADD REQUIREMENTS.txt /REQUIREMENTS.txt
+ADD deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt; pip install uwsgi
-RUN npm -g install yuglify
+RUN npm --quiet -g install yuglify
 
 RUN pip install MarkupSafe==1.1.1 && pip install pygbif==0.6.0
 
@@ -69,23 +69,61 @@ RUN pip install MarkupSafe==1.1.1 && pip install pygbif==0.6.0
 
 # Install grunt
 RUN npm install -g grunt-cli
-ADD package.json /package.json
-ADD Gruntfile.js /Gruntfile.js
+ADD deployment/docker/package.json /package.json
+ADD deployment/docker/Gruntfile.js /Gruntfile.js
 RUN cd / && npm install
 
-# install shallow clone of django bims geonode branch
-ARG BIMS_TAG=develop
-RUN git clone --depth=1 git://github.com/kartoza/django-bims.git --branch ${BIMS_TAG} /usr/src/bims
-
 #USER www-data
-WORKDIR /usr/src/bims
-RUN mkdir -p /home/web/media
-ADD entry-point.sh /usr/src/bims/entry-point.sh
-RUN chmod +x /usr/src/bims/entry-point.sh
-ADD uwsgi.conf /usr/src/bims/uwsgi.conf
+ADD . /home/web/django_project
+WORKDIR /home/web/django_project
+RUN cd bims && npm install --quiet -g webpack@5.50.0 && npm install --quiet -g webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
+
+ADD deployment/docker/uwsgi.conf /uwsgi.conf
 
 # Open port 8080 as we will be running our uwsgi socket on that
 EXPOSE 8080
 
-ENTRYPOINT ["/usr/src/bims/entry-point.sh"]
-CMD ["uwsgi", "--ini", "/usr/src/bims/uwsgi.conf"]
+# ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+
+CMD ["uwsgi", "--ini", "/uwsgi.conf"]
+
+FROM prod as dev
+
+# This section taken on 2 July 2015 from
+# https://docs.docker.com/examples/running_ssh_service/
+# Sudo is needed by pycharm when it tries to pip install packages
+RUN apt-get update && apt-get install -y openssh-server sudo
+RUN mkdir /var/run/sshd
+RUN echo 'root:docker' | chpasswd
+RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+# End of cut & paste section
+
+ADD REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
+RUN pip install -r /REQUIREMENTS-dev.txt
+ADD bashrc /root/.bashrc
+
+RUN apt-get install -y chromium
+RUN mkdir -p /opt/karma
+RUN npm install -g karma
+RUN cd / && npm install
+
+RUN apt-get install vim -y
+ADD karma.conf.docker.js /karma.conf.js
+
+# --------------------------------------------------------
+# Open ports as needed
+# --------------------------------------------------------
+
+# Open port 8080 as we will be running our django dev server on
+EXPOSE 8080
+# Open port 22 as we will be using a remote interpreter from pycharm
+EXPOSE 22
+
+CMD ["/usr/sbin/sshd", "-D"]

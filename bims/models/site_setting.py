@@ -248,7 +248,6 @@ class SiteSetting(Preferences):
         blank=True,
         default='',
         help_text='The key of the boundary data form GeoContext'
-
     )
 
     def save(self, *args, **kwargs):

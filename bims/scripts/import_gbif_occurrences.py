@@ -1,7 +1,11 @@
+import json
+
 import requests
 import logging
 import datetime
 import simplejson
+
+from bims.models.location_site import generate_site_code
 from dateutil.parser import parse
 from requests.exceptions import HTTPError
 from preferences import preferences
@@ -13,10 +17,10 @@ from bims.models import (
     LocationSite,
     LocationType,
     BiologicalCollectionRecord,
-    location_site_post_save_handler,
     collection_post_save_handler,
     HarvestSession
 )
+from bims.utils.get_key import get_key
 
 logger = logging.getLogger('bims')
 
@@ -116,11 +120,6 @@ def import_gbif_occurrences(
         first_name='GBIF.org'
     )
 
-    models.signals.post_save.disconnect(
-        collection_post_save_handler,
-        sender=BiologicalCollectionRecord
-    )
-
     for result in json_result['results']:
         if session_id:
             if HarvestSession.objects.get(id=session_id).canceled:
@@ -164,6 +163,41 @@ def import_gbif_occurrences(
             locality = result.get(LOCALITY_KEY, result.get(
                 VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY
             ))
+
+            # Check if site is in the correct border
+            boundary_key = preferences.SiteSetting.boundary_key
+            if boundary_key:
+                url = (
+                    '{base_url}/api/v2/query?registry=service&key={key}&'
+                    'x={lon}&y={lat}&outformat=json'
+                ).format(
+                    base_url=get_key('GEOCONTEXT_URL'),
+                    key=boundary_key,
+                    lon=longitude,
+                    lat=latitude
+                )
+                try:
+                    response = requests.get(url)
+                    if response.status_code != 200:
+                        logger.info(
+                            f'The site is not within a valid border.'
+                        )
+                        continue
+                    else:
+                        response_json = json.loads(response.content)
+                        if response_json['value']:
+                            logger.info(
+                                f"Site is in {response_json['value']}"
+                            )
+                        else:
+                            logger.info(
+                                f'The site is not within a valid border.'
+                            )
+                            continue
+                except Exception as e:  # noqa
+                    logger.info(
+                        f'Unable to check boundary data from geocontext')
+
             location_type, status = LocationType.objects.get_or_create(
                 name='PointObservation',
                 allowed_geometry='POINT'
@@ -174,6 +208,14 @@ def import_gbif_occurrences(
                 location_type=location_type,
                 site_description=locality
             )
+            if not location_site.site_code:
+                site_code, catchments_data = generate_site_code(
+                    location_site,
+                    lat=location_site.latitude,
+                    lon=location_site.longitude
+                )
+                location_site.site_code = site_code
+                location_site.save()
 
         try:
             collection_record = BiologicalCollectionRecord.objects.get(
@@ -236,16 +278,6 @@ def import_gbif_occurrences(
 
     if log_file:
         log_file.close()
-
-    # reconnect post save handler
-    models.signals.post_save.connect(
-        location_site_post_save_handler,
-        sender=LocationSite
-    )
-    models.signals.post_save.connect(
-        collection_post_save_handler,
-        sender=BiologicalCollectionRecord
-    )
 
     if data_count > (offset + LIMIT):
         # Import more occurrences

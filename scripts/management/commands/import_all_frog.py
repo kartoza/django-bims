@@ -49,7 +49,7 @@ class Command(BaseCommand):
 
         if not total_records:
             print('Getting total records...')
-            url = f'https://api.birdmap.africa/vmus/v2/dwc/OdonataMAP/{api_token}/all/json/0'
+            url = f'https://api.birdmap.africa/vmus/v2/dwc/FrogMAP/{api_token}/all/json/0'
             response = requests.get(url)
             total_records = (
                 response.json()['data']['result'][0]['Number_of_records']
@@ -61,7 +61,7 @@ class Command(BaseCommand):
         limit = int(options.get('limit', '10'))
         start_index = int(options.get('start_index', '0'))
 
-        with open('import_all_odonata_log.txt', 'w') as the_file:
+        with open('import_all_frog_log.txt', 'w') as the_file:
             the_file.write('')
 
         while start_index < total_records:
@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 f"{datetime.today()}\n"
             )
             print(log_text)
-            call_command('import_odonata_data',
+            call_command('import_frog_vm_data',
                          start_index=start_index,
                          limit=limit,
                          token=api_token)

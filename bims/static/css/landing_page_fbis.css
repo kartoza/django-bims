@@ -1,0 +1,487 @@
+body {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.2;
+    box-sizing: border-box; //to account for the border on top
+    -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    height: 100%;
+    position: relative;
+}
+
+.bg-primary {
+    background-color: #526B43 !important;
+}
+
+.bg-dark {
+    background-color: #212529 !important;
+}
+
+.text-faded {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+section {
+    padding: 1rem 0;
+    border-bottom: none !important;
+}
+
+#section-wrapper {
+    box-sizing: border-box; //to account for the padding
+    -o-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    min-height: 100%;
+    position: relative;
+}
+
+#fish-data {
+    position: relative;
+    padding-top: 20px;
+    background-color: #f8f7f4;
+}
+
+#about {
+    background-color: #ffffff;
+    color: #00697d;
+    width: 100%;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.fbis-icon {
+    padding-left: 30px;
+    padding-top: 15px;
+}
+
+.footer-shrink {
+    background-color: rgba(170, 217, 147, 0.5) !important;
+    transition: 0.3s;
+}
+
+::-moz-selection {
+    color: #fff;
+    background: #212529;
+    text-shadow: none;
+}
+
+::selection {
+    color: #fff;
+    background: #212529;
+    text-shadow: none;
+}
+
+img::selection {
+    color: #fff;
+    background: transparent;
+}
+
+img::-moz-selection {
+    color: #fff;
+    background: transparent;
+}
+
+#header {
+    background-image: url('/static/img/landing_page_banner.jpeg');
+}
+
+header.masthead {
+    padding-top: 10rem;
+    padding-bottom: calc(10rem - 56px);
+    background-position: center center;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    background-color: black;
+    height: 700px !important;
+    min-height: auto !important;
+}
+
+header.masthead hr {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+header.masthead h1 {
+    font-size: 2rem;
+}
+
+header.masthead p {
+    font-weight: 300;
+}
+
+@media (min-width: 768px) {
+    header.masthead p {
+        font-size: 1.15rem;
+    }
+}
+
+@media (min-width: 992px) {
+    header.masthead {
+        min-height: 650px;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    header.masthead h1 {
+        font-size: 3rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    header.masthead h1 {
+        font-size: 4rem;
+    }
+}
+
+#title-header {
+    display: table;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 700px;
+    text-align: left;
+}
+
+.title-header-text {
+    padding-left: 10px;
+    width: 650px;
+    font-size: 47px;
+    font-weight: 700;
+}
+
+.title-header-buttons {
+    padding-left: 40px;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+#carouselIndicators {
+    width: 100%;
+    position: relative;
+    height: 400px;
+    overflow-y: hidden;
+}
+
+.carousel-indicators li {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    border: 2px solid white;
+}
+
+.chart-icon-wrapper {
+    position: relative;
+    width: fit-content;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.bullet {
+    width: 150px;
+    height: 150px;
+    border-radius: 75px;
+    border: 1px solid #436461;
+    position: absolute;
+    margin: 0;
+    display: block;
+    left: 30px;
+    top: 30px;
+}
+
+.carousel-item {
+	transition: -webkit-transform 500ms ease;
+	transition: transform 500ms ease !important;
+	-webkit-backface-visibility: visible;
+	        backface-visibility: visible;
+}
+
+.service-box {
+    max-width: 400px;
+}
+
+.portfolio-box {
+    position: relative;
+    display: block;
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+.portfolio-box .portfolio-box-caption {
+    position: absolute;
+    bottom: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    opacity: 0;
+    color: #fff;
+    background: rgba(240, 95, 64, 0.9);
+    -webkit-transition: all 0.2s;
+    -moz-transition: all 0.2s;
+    transition: all 0.2s;
+}
+
+.portfolio-box .portfolio-box-caption .portfolio-box-caption-content {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    transform: translateY(-50%);
+    text-align: center;
+}
+
+.portfolio-box .portfolio-box-caption .portfolio-box-caption-content .project-category,
+.portfolio-box .portfolio-box-caption .portfolio-box-caption-content .project-name {
+    padding: 0 15px;
+    font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.portfolio-box .portfolio-box-caption .portfolio-box-caption-content .project-category {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.portfolio-box .portfolio-box-caption .portfolio-box-caption-content .project-name {
+    font-size: 18px;
+}
+
+.portfolio-box:hover .portfolio-box-caption {
+    opacity: 1;
+}
+
+.portfolio-box:focus {
+    outline: none;
+}
+
+@media (min-width: 768px) {
+    .portfolio-box .portfolio-box-caption .portfolio-box-caption-content .project-category {
+        font-size: 16px;
+    }
+    .portfolio-box .portfolio-box-caption .portfolio-box-caption-content .project-name {
+        font-size: 22px;
+    }
+}
+
+.text-primary {
+    color: #526B43 !important;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.fish-icon {
+    width: 80px !important;
+    position: absolute;
+    margin-top: 10px;
+    margin-left: -45px;
+}
+
+.fish {
+    padding: 45px 0;
+    padding-left: 10px;
+}
+
+.crab {
+    padding: 43px 0;
+    padding-left: 10px;
+    padding-right: 6px;
+}
+.anura {
+    padding: 35px 0;
+    padding-left: 10px;
+    padding-right: 6px;
+}
+
+.algae {
+    padding: 40px 10px;
+}
+
+.donut-chart {
+    position: absolute !important;
+    left: 55%;
+    transform: translate(-52%, 0);
+}
+
+.btn-account {
+    border-radius: 2px;
+    margin: 10px;
+    color: #d7cd47;
+    padding: 10px 40px;
+    font-size: 14px;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease 0s;
+    text-transform: uppercase;
+    font-weight: 700;
+    border: 2px solid #d7cd47;
+}
+
+.btn-account:hover {
+    color: white;
+    background-color: #d7cd47;
+}
+
+.section-heading {
+    color: #525351;
+    font-weight: normal !important;
+    font-size: 32px;
+}
+
+.total-data {
+    font-weight: bold;
+    font-size: 20px;
+    color: #18A090;
+    margin-bottom: 0;
+}
+
+.total-data-desc {
+    font-weight: 100;
+    font-size: 20px;
+    color: #18A090;
+    margin-bottom: 0;
+}
+
+.kartoza-icon {
+    margin: auto auto;
+}
+
+.about-links {
+    padding-top: 10px;
+    text-align: center;
+}
+
+.about-links>p {
+    font-weight: lighter;
+    margin: 17px 0;
+    font-size: 13pt;
+}
+
+.about-links a {
+    color: #00697d;
+    text-decoration: none;
+}
+
+.carousel-title {
+    margin-top: -30px;
+    height: 100%;
+    padding-left: 100px;
+    padding-right: 100px;
+    font-size: 30px;
+    width: 100%;
+    position: absolute;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5)
+}
+
+.carousel-inner, .carousel-item {
+    height: 100%;
+}
+
+#partners-section {
+    padding-top: 40px;
+    height: 550px;
+}
+
+#partners-section img {
+    max-width:100% !important;
+    max-height:100% !important;
+}
+
+.section-partners-heading {
+    color: #525351;
+    font-weight: normal !important;
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+.partner-icon {
+    width: 100%;
+    height: 100%;
+    padding: 0 5px 10px 10px;
+}
+
+.partner-icon-wrapper {
+    height: 65px !important;
+    text-align: center;
+    width: 100%;
+}
+
+.greyed-icon {
+    opacity: 0.4;
+    filter: alpha(opacity=40);
+}
+
+.module-info-wrapper {
+    position: absolute !important;
+    top: 115px;
+    left: 5px;
+    text-align: center;
+    width: 100%;
+}
+
+#contact-section {
+    padding-top: 50px;
+    height: 400px;
+    background-color: #3d647d;
+    color: white;
+}
+
+#contact-section a {
+    color: white;
+    text-decoration: underline;
+}
+
+.btn-contact-us {
+    text-decoration: none !important;
+    background-color: #d7cd47;
+    color: white;
+    border-radius: 2px;
+    font-size: 14px;
+    text-transform: capitalize;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.module-information {
+    padding-top: 5px;
+    padding-left: 5px;
+    color: #3d647d;
+}
+
+.vertical-spacer {
+    height: 100px;
+}
+
+.charcoal {
+    color: #525351;
+}
+
+.coming-soon-buttons {
+    position: absolute;
+    width: 500px;
+    height: 68px;
+    margin-top: -65px;
+    margin-left: 0;
+    padding: 20px;
+    /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#e2e2e2+0,dbdbdb+50,d1d1d1+51,fefefe+100&0.9+0,0.9+100;Grey+Gloss+%231 */
+    background: -moz-linear-gradient(top,  rgba(226,226,226,0.9) 0%, rgba(219,219,219,0.9) 50%, rgba(209,209,209,0.9) 51%, rgba(254,254,254,0.9) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top,  rgba(226,226,226,0.9) 0%,rgba(219,219,219,0.9) 50%,rgba(209,209,209,0.9) 51%,rgba(254,254,254,0.9) 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom,  rgba(226,226,226,0.9) 0%,rgba(219,219,219,0.9) 50%,rgba(209,209,209,0.9) 51%,rgba(254,254,254,0.9) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e6e2e2e2', endColorstr='#e6fefefe',GradientType=0 ); /* IE6-9 */
+    color: #ad0009;
+    font-size: 20px;
+    font-weight: bolder;
+    border: 1px solid black;
+    border-radius: 5px;
+}

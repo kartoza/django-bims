@@ -236,6 +236,12 @@ else:
 INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
 # ROLEPERMISSIONS_MODULE = 'roles.settings.roles'
 
+# Remove pinax notifications from installed apps
+if 'pinax.notifications' in INSTALLED_APPS:
+    INSTALLED_APPS = list(INSTALLED_APPS)
+    INSTALLED_APPS.remove('pinax.notifications')
+    INSTALLED_APPS = tuple(INSTALLED_APPS)
+
 IUCN_API_URL = 'http://apiv3.iucnredlist.org/api/v3'
 
 # django modelsdoc settings
@@ -440,3 +446,5 @@ CACHES = {
         'LOCATION': 'cache:11211',
     }
 }
+
+FILE_UPLOAD_PERMISSIONS = 0o644

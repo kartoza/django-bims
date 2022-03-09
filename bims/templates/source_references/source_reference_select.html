@@ -1,5 +1,7 @@
 {% load static from staticfiles %}
 <link href="{% static "lib/pagination/bs-pagination.min.css" %}" rel="stylesheet"/>
+<link rel="stylesheet"
+      href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
 <div style="margin-bottom: 20px;">
 
    <div class="form-group row  clockpicker-container">
@@ -7,9 +9,12 @@
               class="col-sm-2 col-form-label col-form-label">Selected Source Reference</label>
        <div class="col-sm-10">
            <div class="input-group">
-               <textarea class="form-control" id="selected-source-reference" name="source_reference_title" disabled> </textarea>
-               <input type="hidden" id="selected-source-reference-id" name="source_reference">
+               <textarea class="form-control" id="selected-source-reference" name="source_reference_title" disabled>{% if source_reference %}({{ source_reference.0.reference_type }}) - {{ source_reference.0 }}{% endif %}</textarea>
+               <input type="hidden" id="selected-source-reference-id" name="source_reference" {% if source_reference %}value="{{ source_reference.0.id }}"{% endif %}>
            </div>
+            {% if source_reference %}
+                <button class="btn btn-primary" style="font-size: 13px; margin-top: 10px;" id="clear-source-reference">Clear</button>
+            {% endif %}
        </div>
    </div>
 
@@ -31,6 +36,25 @@
                 <option value="document" selected>Published report or thesis</option>
                 <option value="bibliography">Peer-reviewed scientific article</option>
             </select>
+             <div class="card" style="margin-top: 1em">
+                 <article class="card-group-item">
+                     <header class="card-header">
+                         <h6 class="title reference-filter-title">
+                             Author(s)</h6>
+                     </header>
+                     <div class="filter-content">
+                         <div class="card-body" data-filter="type">
+                             <select class="form-control owner-auto-complete"
+                                     multiple="multiple">
+                             </select>
+                             <br/><br/>
+                             <button class="btn btn-primary apply-author-filter"
+                                     style="width: 100%">Apply
+                             </button>
+                         </div> <!-- card-body.// -->
+                     </div>
+                 </article> <!-- card-group-item.// -->
+             </div> <!-- card.// -->
         </div>
         <div class="col-9">
             <div id="source-reference-list-container">
@@ -48,6 +72,15 @@
     }
     .select-source-reference {
         cursor: pointer;
+        font-size: 12pt;
+        padding-left: 1em;
+        padding-right: 1em;
+    }
+    .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+        color: var(--main-button-text-color);
+        background-color: var(--main-accent-color) !important;
+        border-color: var(--main-accent-color) !important;
+        box-shadow: inset 0 0 0 99999px rgb(128 128 128 / 40%) !important;
     }
 </style>
 
@@ -79,12 +112,15 @@
     </div>
 </script>
 
+<script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
+<script src="{% static "js/non_requirejs/multi_author_select.js" %}"></script>
 <script>
     let currentType = 'document';
     let currentQuery = '';
     let selectedSourceReference = null;
     let sourceReferences = {};
     let currentPage = 1;
+    let collectors = '';
 
     function updatePagination(totalEntries) {
        	$('#pagination').pagination({
@@ -110,7 +146,7 @@
     function getSourceReferenceList() {
         let $sourceReferenceListContainer = $('#source-reference-list-container');
         $sourceReferenceListContainer.html('Fetching data...');
-        $.get(`/api/source-reference-list?type=${currentType}&q=${currentQuery}&page=${currentPage}`, function (data) {
+        $.get(`/api/source-reference-list?type=${currentType}&q=${currentQuery}&collectors=${collectors}&page=${currentPage}`, function (data) {
           $sourceReferenceListContainer.html('');
           sourceReferences = {};
           updatePagination(data['count']);
@@ -157,6 +193,22 @@
       $('#selected-source-reference').val(`(${selectedSourceReference.reference_type}) - ${selectedSourceReference.title}`);
       $('#selected-source-reference-id').val(selectedSourceReference.id);
     }
+
+     $('.apply-author-filter').click(function(e) {
+         e.preventDefault();
+         const $target = $(e.target).parent();
+         const authorIds = $target.find('.author_result').map(function () {
+             return $(this).data("author-id");
+         }).get();
+         collectors = authorIds.join(',');
+         getSourceReferenceList();
+     })
+
+    $('#clear-source-reference').click(function (e) {
+      e.preventDefault();
+      $('#selected-source-reference').val('');
+      $('#selected-source-reference-id').val('');
+    })
 
     getSourceReferenceList(currentType);
 
