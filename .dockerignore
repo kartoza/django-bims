@@ -102,7 +102,6 @@ deployment/pg
 deployment/static
 deployment/media
 deployment/ansible
-deployment/docker/71-apt-cacher-ng
 django_project/static
 django_project/core/settings/secret.py
 
@@ -115,6 +114,3 @@ django_project/media
 # Backups
 *.dmp
 deployment/backups
-
-docs
-deployment/pg
