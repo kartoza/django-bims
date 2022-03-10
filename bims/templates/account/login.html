@@ -1,6 +1,6 @@
 {% extends 'main_base.html' %}
 {% load i18n %}
-{% load account socialaccount %}
+{% load account %}
 {% load static from staticfiles %}
 
 {% block subtitle %}Login{% endblock %}
@@ -45,8 +45,6 @@
 
                     <h1>{% trans "LOG IN" %}</h1>
 
-                    {% get_providers as socialaccount_providers %}
-
                     <form class="login" method="POST" action="{% url 'account_login' %}">{% csrf_token %}
                         {{ form.as_p }}
                         {% if redirect_field_value %}
@@ -54,39 +52,6 @@
                         {% endif %}
                         <button class="login custom-form-submit btn-login" type="submit">{% trans "LOGIN" %}</button>
                     </form>
-
-                    {% if socialaccount_providers %}
-
-                        <div class="socialaccount_ballot">
-                            {% include "socialaccount/snippets/provider_list.html" with process="login" %}
-                        </div>
-
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="github-button btn-social-login">
-                                    <div class="text-button">LOGIN WITH GITHUB</div>
-                                </div>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="google-button btn-social-login">
-                                    <div class="text-button">LOGIN WITH GOOGLE</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% include "socialaccount/snippets/login_extra.html" %}
-                        <div class="login-help">
-                            <p>This will automatically signs you up if you login with social account for the first time.</p>
-                            If you want to sign up manually you can click here : <a href="{% url 'account_signup' %}">Sign Up</a>
-                        </div>
-
-                    {% else %}
-                        <div class="login-help" style="padding-top: 30px;">
-                            <p>{% blocktrans %}If you have not created an account yet, then please
-                                <a href="{{ signup_url }}">sign up</a> first.{% endblocktrans %}</p>
-                        </div>
-                    {% endif %}
-
 
                 </div>
             </div> <!-- /container -->

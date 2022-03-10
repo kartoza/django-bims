@@ -25,6 +25,7 @@ docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM django_con
 docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM bims_sitesetting a WHERE a.ctid <> (SELECT min(b.ctid) FROM bims_sitesetting b WHERE a.preferences_ptr_id = b.preferences_ptr_id);\""
 docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM preferences_preferences a WHERE a.ctid <> (SELECT min(b.ctid) FROM preferences_preferences b WHERE a.id = b.id);\""
 docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM preferences_preferences_sites a WHERE a.ctid <> (SELECT min(b.ctid) FROM preferences_preferences_sites b WHERE a.preferences_id = b.preferences_id);\""
+docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM base_configuration a WHERE a.ctid <> (SELECT min(b.ctid) FROM base_configuration b WHERE a.id = b.id);\""
 
 echo "migrate and add default location site view"
 DOCKER_UWSGI=$(docker ps --format '{{.Names}}' | grep kbims-healthyrivers-uwsgi | head -1)

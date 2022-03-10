@@ -1,16 +1,10 @@
-import traceback
 import logging
 
-from django.contrib.auth.signals import user_logged_out
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.mail import send_mail
 from django.dispatch import receiver
 from allauth.account.signals import user_signed_up
-
-from geonode.decorators import on_ogc_backend
-from geonode.base.auth import (delete_old_tokens,
-                               remove_session_token)
 
 from preferences import preferences
 

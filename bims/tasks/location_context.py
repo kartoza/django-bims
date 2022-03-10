@@ -1,16 +1,11 @@
 # coding=utf-8
-import os
-import json
 from celery import shared_task
 from collections import OrderedDict
 
 from django.core.cache import cache
 from django.db.models import F
 from django.utils.text import slugify
-from django.conf import settings
-from bims.models import GEO_CLASS_GROUP, LocationContext, LocationContextFilter
 from bims.utils.celery import single_instance_task
-from bims.utils.logger import log
 
 
 
@@ -18,7 +13,7 @@ SPATIAL_FILTER_GROUPS = OrderedDict([
     ('Geomorphological Zone', {
         'key': 'geomorphological_zone',
         'groups': [
-            GEO_CLASS_GROUP
+            'geo_class_recoded'
         ]
     }),
     ('Freshwater Ecoregion', {
@@ -109,7 +104,7 @@ LAYER_NAMES = {
     'surface_swsas': 'surface_strategic_water_source_2017',
     'nfepa_rivers_fepas_2011': 'rivers_nfepa',
     'water_management_area': 'water_management_areas',
-    GEO_CLASS_GROUP: 'geoclass',
+    'geo_class_recoded': 'geoclass',
     'national_cba_layer': 'cba_national_mview',
 }
 
@@ -118,6 +113,7 @@ LAYER_NAMES = {
     name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter():
+    from bims.models import LocationContext, LocationContextFilter
     spatial_tree = []
     location_context_filters = LocationContextFilter.objects.all(
     ).order_by(

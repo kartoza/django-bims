@@ -20,7 +20,7 @@ STOP_WORDS = (
     'this', 'that', 'to',
 )
 
-STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+STATICFILES_STORAGE = 'pipeline.storage.PipelineManifestStorage'
 STATICFILES_FINDERS += (
     'pipeline.finders.PipelineFinder',
 )
@@ -203,12 +203,6 @@ DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = True
 
 # Defines whether to log URL requests made to the project
 DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
-
-SOCIALACCOUNT_PROVIDERS = {
-    'github': {
-        'SCOPE': ['user:email', 'public_repo', 'read:org']
-    }
-}
 
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = True
