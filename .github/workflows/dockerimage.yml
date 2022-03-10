@@ -15,8 +15,8 @@ jobs:
       uses: elgohr/Publish-Docker-Github-Action@master	
       with:	
         name: kartoza/kbims_uwsgi:latest
+        context: .
         workdir: deployment/docker
-        context: ../
         username: ${{ secrets.DOCKER_USERNAME }}	
         password: ${{ secrets.DOCKER_PASSWORD }}	
         buildargs: BIMS_TAG=main
