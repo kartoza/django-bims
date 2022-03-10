@@ -1,9 +1,9 @@
 # coding=utf-8
 from celery import shared_task
-from bims.signals.utils import *
 
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
 def harvest_collections(session_id):
+    from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
     from bims.utils.logger import log
     from bims.models import HarvestSession
     from django.db.models import Q

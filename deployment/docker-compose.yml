@@ -9,7 +9,7 @@
 
 version: '3.7'
 volumes:
-  geodatadir:
+  geoserver-datadir:
   rabbitmq:
   static-data:
   media-data:
@@ -22,30 +22,37 @@ x-common-django:
   command: uwsgi --ini /home/web/django_project/uwsgi.ini
   hostname: uwsgi
   working_dir: /home/web/django_project
-  entrypoint: [ ]
   environment:
-    - DATABASE_NAME=gis
-    - DATABASE_USERNAME=docker
-    - DATABASE_PASSWORD=docker
+    - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
+    - APP_NAME=bims
+    - ASYNC_SIGNALS_GEONODE=True
+    - BROKER_URL=amqp://rabbitmq:5672
+    - C_FORCE_ROOT=1
+    - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
+    - ALLOWED_HOSTS=['django-bims.test']
     - DATABASE_HOST=db
+    - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+    - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+    - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+    - DATABASE_USERNAME=${POSTGRES_USER:-docker}
     - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+    - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+    - GEOSERVER_LOCATION=http://geoserver/geoserver/
+    - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+    - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+    - MEDIA_ROOT=/home/web/media
+    - GEOIP_PATH=/home/web/media/geoip.db
+    - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+    - ROOT_URLCONF=core.urls
+    - SITEURL=http://django-bims.test/
+    - STATIC_ROOT=/home/web/static/static
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
-    - RABBITMQ_HOST=rabbitmq
-    - GEOCONTEXT_URL=https://geocontext.kartoza.com
-    - GEOCONTEXT_COLLECTION_KEY=climate
-    - CONTACT_US_EMAIL=dimas@kartoza.com
-    - DEFAULT_BACKEND_UPLOADER=geonode.importer
-    - BROKER_URL=amqp://rabbitmq:5672
-    - DATABASE_URL=postgis://docker:docker@db:5432/gis
-    - GEOSERVER_LOCATION=http://geoserver/geoserver/
-    - APP_NAME=bims
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
     - ./logs:/var/log/
   links:
-    - smtp:smtp
     - db:db
     - geoserver:geoserver
     - rabbitmq:rabbitmq
@@ -55,57 +62,42 @@ x-common-django:
     - geocontextworker:geocontextworker
   restart: unless-stopped
   user: root
-  extra_hosts:
-    - 'localhost: 192.168.1.197'
 
 services:
-  smtp:
-    image: catatnight/postfix
-    hostname: postfix
-    environment:
-      # You could change this to something more suitable
-      - maildomain=kartoza.com
-      - smtp_user=noreply:docker
-    restart: unless-stopped
 
   db:
     image: dimasciput/postgis:9.6-2.4
     environment:
       - ALLOW_IP_RANGE=0.0.0.0/0
-      - POSTGRES_USER=docker
-      - POSTGRES_PASS=docker
+      - POSTGRES_USER=${POSTGRES_USER:-docker}
+      - POSTGRES_PASS=${POSTGRES_PASS:-docker}
     restart: unless-stopped
 
   geoserver:
-    image: geonode/spcgeonode:geoserver-3.0
+    image: kartoza/geoserver:2.19.0
     restart: unless-stopped
     environment:
-      - HTTP_HOST=192.168.1.197
-      - HTTP_PORT=63305
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=admingeoserver
-      - DATABASE_URL=postgres://docker:docker@db:5432/gis
-      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
+      HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+      HTTP_PORT: ${GEOSERVER_PORT:-63305}
+      GEOSERVER_ADMIN_USER: ${GEOSERVER_USERNAME:-admin}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_PASSWORD:-admingeoserver}
+      DATABASE_URL: postgres://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
     depends_on:
       - db
     volumes:
-      - geodatadir:/spcgeonode-geodatadir/
-
-  bims_uwsgi:
-    build:
-      context: ../
-      dockerfile: deployment/docker/Dockerfile
-    image: bims_uwsgi:latest
+      - geoserver-datadir:/opt/geoserver/data_dir/
+    links:
+      - db
 
   uwsgi:
     <<: *default-common-django
 
   worker:
     <<: *default-common-django
+    entrypoint: [ ]
     hostname: worker
     command: celery worker --app=bims.celery:app -Q update -B -l debug
     links:
-      - smtp:smtp
       - db:db
       - geoserver:geoserver
       - rabbitmq:rabbitmq
@@ -118,10 +110,10 @@ services:
 
   geocontextworker:
     <<: *default-common-django
+    entrypoint: [ ]
     hostname: worker
     command: celery worker --app=bims.celery:app -Q geocontext -B -l debug
     links:
-      - smtp:smtp
       - db:db
       - geoserver:geoserver
       - rabbitmq:rabbitmq
@@ -134,10 +126,10 @@ services:
 
   searchworker:
     <<: *default-common-django
+    entrypoint: [ ]
     hostname: worker
     command: celery worker --app=bims.celery:app -Q search -B -l debug
     links:
-      - smtp:smtp
       - db:db
       - geoserver:geoserver
       - rabbitmq:rabbitmq
@@ -150,6 +142,7 @@ services:
 
   webpack-watcher:
     <<: *default-common-django
+    entrypoint: [ ]
     command: bash -c 'cd /home/web/django_project/bims/; webpack --mode development && webpack --watch --progress'
     volumes:
       - ../../django-bims:/home/web/django_project
@@ -168,11 +161,11 @@ services:
       - DUMPPREFIX=PG_bims
       # These are all defaults anyway, but setting explicitly in
       # case we ever want to ever use different credentials
-      - PGUSER=docker
-      - PGPASSWORD=docker
+      - PGUSER=${POSTGRES_USER:-docker}
+      - PGPASSWORD=${POSTGRES_PSS:-docker}
       - PGPORT=5432
       - PGHOST=db
-      - PGDATABASE=gis
+      - PGDATABASE=${POSTGRES_DBNAME:-gis}
     restart: unless-stopped
 
   # This is normally the main entry point for a production server

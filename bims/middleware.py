@@ -155,15 +155,4 @@ class VisitorTrackingMiddleware(MiddlewareMixin):
         if not request.session.session_key:
             request.session.save()
 
-        # Be conservative with the determining time on site since simply
-        # increasing the session timeout could greatly skew results. This
-        # is the only time we can guarantee.
-        now = timezone.now()
-
-        # update/create the visitor object for this request
-        visitor = self._refresh_visitor(user, request, now)
-
-        if TRACK_PAGEVIEWS:
-            self._add_pageview(visitor, request, now)
-
         return response

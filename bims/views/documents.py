@@ -1,28 +1,16 @@
 import json
 import logging
-from itertools import chain
-
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.template import loader
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.translation import ugettext as _
-from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.urls import reverse
-from django.core.exceptions import PermissionDenied
-from django.forms.utils import ErrorList
-from django.views.generic import UpdateView
+from django.views.generic import UpdateView, CreateView
 
-from geonode.utils import resolve_object
-from geonode.people.forms import ProfileForm
-from geonode.base.forms import CategoryForm
 from geonode.base.models import (
-    TopicCategory, HierarchicalKeyword, TaggedContentItem
+    HierarchicalKeyword, TaggedContentItem
 )
 from geonode.documents.models import Document
-from geonode.documents.forms import DocumentForm
-from geonode.groups.models import GroupProfile
-from geonode.documents.views import DocumentUploadView
+from geonode.documents.forms import DocumentCreateForm
 
 from bims.models.bims_document import BimsDocument
 from bims.utils.user import get_user_from_name
@@ -38,14 +26,103 @@ _PERMISSION_MSG_METADATA = _(
 _PERMISSION_MSG_VIEW = _("You are not permitted to view this document")
 
 
-def _resolve_document(request, docid, permission='base.change_resourcebase',
-                      msg=_PERMISSION_MSG_GENERIC, **kwargs):
-    '''
-    Resolve the document by the provided primary key
-    and check the optional permission.
-    '''
-    return resolve_object(request, Document, {'pk': docid},
-                          permission=permission, permission_msg=msg, **kwargs)
+ALLOWED_DOC_TYPES = settings.ALLOWED_DOCUMENT_TYPES
+
+
+class DocumentUploadView(CreateView):
+    template_name = 'documents/document_upload.html'
+    form_class = DocumentCreateForm
+
+    def get_context_data(self, **kwargs):
+        context = super(DocumentUploadView, self).get_context_data(**kwargs)
+        context['ALLOWED_DOC_TYPES'] = ALLOWED_DOC_TYPES
+        return context
+
+    def form_invalid(self, form):
+        if self.request.GET.get('no__redirect', False):
+            out = {'success': False}
+            out['message'] = ""
+            status_code = 400
+            return HttpResponse(
+                json.dumps(out),
+                content_type='application/json',
+                status=status_code)
+        else:
+            form.name = None
+            form.title = None
+            form.doc_file = None
+            form.doc_url = None
+            return self.render_to_response(self.get_context_data(form=form))
+
+    def form_valid(self, form):
+        """
+        If the form is valid, save the associated model.
+        """
+        self.object = form.save(commit=False)
+        self.object.owner = self.request.user
+
+        if settings.ADMIN_MODERATE_UPLOADS:
+            self.object.is_approved = False
+        if settings.RESOURCE_PUBLISHING:
+            self.object.is_published = False
+        self.object.save()
+        form.save_many2many()
+        self.object.set_permissions(form.cleaned_data['permissions'])
+
+        abstract = None
+        date = None
+        regions = []
+        keywords = []
+        bbox = None
+
+        out = {'success': False}
+
+        if abstract:
+            self.object.abstract = abstract
+
+        if date:
+            self.object.date = date
+            self.object.date_type = "Creation"
+
+        if len(regions) > 0:
+            self.object.regions.add(*regions)
+
+        if len(keywords) > 0:
+            self.object.keywords.add(*keywords)
+
+        if bbox:
+            bbox_x0, bbox_x1, bbox_y0, bbox_y1 = bbox
+            Document.objects.filter(id=self.object.pk).update(
+                bbox_x0=bbox_x0,
+                bbox_x1=bbox_x1,
+                bbox_y0=bbox_y0,
+                bbox_y1=bbox_y1)
+
+        self.object.save(notify=True)
+        # register_event(self.request, EventType.EVENT_UPLOAD, self.object)
+
+        if self.request.GET.get('no__redirect', False):
+            out['success'] = True
+            out['url'] = reverse(
+                'document_detail',
+                args=(
+                    self.object.id,
+                ))
+            if out['success']:
+                status_code = 200
+            else:
+                status_code = 400
+            return HttpResponse(
+                json.dumps(out),
+                content_type='application/json',
+                status=status_code)
+        else:
+            return HttpResponseRedirect(
+                reverse(
+                    'document_metadata',
+                    args=(
+                        self.object.id,
+                    )))
 
 
 class BimsDocumentUpdateView(UpdateView):
@@ -207,208 +284,3 @@ class SourceReferenceBimsDocumentUploadView(DocumentUploadView):
             }),
             content_type='application/json',
             status=200)
-
-
-@login_required
-def document_metadata(
-        request,
-        docid,
-        template='documents/document_metadata.html',
-        ajax=True):
-    document = None
-    try:
-        document = _resolve_document(
-                request,
-                docid,
-                'base.change_resourcebase_metadata',
-                _PERMISSION_MSG_METADATA)
-
-    except Http404:
-        return HttpResponse(
-                loader.render_to_string(
-                        '404.html', context={
-                        }, request=request), status=404)
-
-    except PermissionDenied:
-        return HttpResponse(
-                loader.render_to_string(
-                        '401.html', context={
-                            'error_message': _(
-                                "You are not allowed to edit this document.")
-                        }, request=request), status=403)
-
-    if document is None:
-        return HttpResponse(
-                'An unknown error has occured.',
-                content_type="text/plain",
-                status=401
-        )
-
-    else:
-        poc = document.poc
-        metadata_author = document.metadata_author
-        topic_category = document.category
-
-        if request.method == "POST":
-            document_form = DocumentForm(
-                    request.POST,
-                    instance=document,
-                    prefix="resource")
-            category_form = CategoryForm(request.POST,
-                                         prefix="category_choice_field",
-                                         initial=int(
-                                                 request.POST[
-                                                     "category_choice_field"])
-                                         if "category_choice_field" in
-                                            request.POST else None)
-        else:
-            document_form = DocumentForm(instance=document, prefix="resource")
-            category_form = CategoryForm(
-                    prefix="category_choice_field",
-                    initial=topic_category.id if topic_category else None)
-
-        if request.method == "POST" and document_form.is_valid(
-        ) and category_form.is_valid():
-            new_poc = document_form.cleaned_data['poc']
-            new_author = document_form.cleaned_data['metadata_author']
-            new_keywords = document_form.cleaned_data['keywords']
-            new_regions = document_form.cleaned_data['regions']
-            new_category = TopicCategory.objects.get(
-                    id=category_form.cleaned_data['category_choice_field'])
-
-            if new_poc is None:
-                if poc is None:
-                    poc_form = ProfileForm(
-                            request.POST,
-                            prefix="poc",
-                            instance=poc)
-                else:
-                    poc_form = ProfileForm(request.POST, prefix="poc")
-                if poc_form.is_valid():
-                    if len(poc_form.cleaned_data['profile']) == 0:
-                        # FIXME use form.add_error in django > 1.7
-                        errors = poc_form._errors.setdefault(
-                                'profile', ErrorList())
-                        errors.append(
-                                _(
-                                    'You must set a point of '
-                                    'contact for this resource'))
-                        poc = None
-                if poc_form.has_changed and poc_form.is_valid():
-                    new_poc = poc_form.save()
-
-            if new_author is None:
-                if metadata_author is None:
-                    author_form = ProfileForm(request.POST, prefix="author",
-                                              instance=metadata_author)
-                else:
-                    author_form = ProfileForm(request.POST, prefix="author")
-                if author_form.is_valid():
-                    if len(author_form.cleaned_data['profile']) == 0:
-                        # FIXME use form.add_error in django > 1.7
-                        errors = author_form._errors.setdefault(
-                                'profile', ErrorList())
-                        errors.append(
-                                _('You must set an author for this resource'))
-                        metadata_author = None
-                if author_form.has_changed and author_form.is_valid():
-                    new_author = author_form.save()
-
-            the_document = document_form.instance
-            if new_poc is not None and new_author is not None:
-                the_document.poc = new_poc
-                the_document.metadata_author = new_author
-            if new_keywords:
-                the_document.keywords.clear()
-                the_document.keywords.add(*new_keywords)
-            if new_regions:
-                the_document.regions.clear()
-                the_document.regions.add(*new_regions)
-            the_document.save()
-            document_form.save_many2many()
-            Document.objects.filter(
-                    id=the_document.id).update(
-                    category=new_category)
-
-            if getattr(settings, 'SLACK_ENABLED', False):
-                try:
-                    from geonode.contrib.slack.utils import \
-                        build_slack_message_document, send_slack_messages
-                    send_slack_messages(
-                            build_slack_message_document(
-                                    "document_edit", the_document))
-                except BaseException:
-                    print("Could not send slack "
-                          "message for modified document.")
-
-            if not ajax:
-                return HttpResponseRedirect(
-                        reverse(
-                                'document_detail',
-                                args=(
-                                    document.id,
-                                )))
-
-            message = document.id
-
-            return HttpResponse(json.dumps({'message': message}))
-
-        # - POST Request Ends here -
-
-        # Request.GET
-        if poc is not None:
-            document_form.fields['poc'].initial = poc.id
-            poc_form = ProfileForm(prefix="poc")
-            poc_form.hidden = True
-
-        if metadata_author is not None:
-            document_form.fields[
-                'metadata_author'].initial = metadata_author.id
-            author_form = ProfileForm(prefix="author")
-            author_form.hidden = True
-
-        metadata_author_groups = []
-        if request.user.is_superuser or request.user.is_staff:
-            metadata_author_groups = GroupProfile.objects.all()
-        else:
-            try:
-                all_metadata_author_groups = chain(
-                        request.user.group_list_all(),
-                        GroupProfile.objects.exclude(access="private").exclude(
-                            access="public-invite"))
-            except BaseException:
-                all_metadata_author_groups = GroupProfile.objects.exclude(
-                        access="private").exclude(access="public-invite")
-            [metadata_author_groups.append(item) for item in
-             all_metadata_author_groups
-             if item not in metadata_author_groups]
-
-        if settings.ADMIN_MODERATE_UPLOADS:
-            if not request.user.is_superuser:
-                document_form.fields['is_published'].widget.attrs.update(
-                        {'disabled': 'true'})
-
-                can_change_metadata = request.user.has_perm(
-                        'change_resourcebase_metadata',
-                        document.get_self_resource())
-                try:
-                    is_manager = request.user.groupmember_set.all().filter(
-                        role='manager').exists()
-                except BaseException:
-                    is_manager = False
-                if not is_manager or not can_change_metadata:
-                    document_form.fields['is_approved'].widget.attrs.update(
-                            {'disabled': 'true'})
-
-        return render(request, template, context={
-            "resource": document,
-            "document": document,
-            "document_form": document_form,
-            "poc_form": poc_form,
-            "author_form": author_form,
-            "category_form": category_form,
-            "metadata_author_groups": metadata_author_groups,
-            "GROUP_MANDATORY_RESOURCES": getattr(settings,
-                                                 'GROUP_MANDATORY_RESOURCES',
-                                                 False),
-        })
