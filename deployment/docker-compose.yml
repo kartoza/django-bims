@@ -9,7 +9,7 @@
 
 version: '3.7'
 volumes:
-  geodatadir:
+  geoserver-datadir:
   rabbitmq:
   static-data:
   media-data:
@@ -77,19 +77,35 @@ services:
     restart: unless-stopped
 
   geoserver:
-    image: geonode/spcgeonode:geoserver-3.0
+    image: kartoza/geoserver:2.19.0
     restart: unless-stopped
     environment:
-      - HTTP_HOST=192.168.1.197
-      - HTTP_PORT=63305
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=admingeoserver
-      - DATABASE_URL=postgres://docker:docker@db:5432/gis
-      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
+      HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+      HTTP_PORT: ${GEOSERVER_PORT:-63305}
+      GEOSERVER_ADMIN_USER: ${GEOSERVER_USERNAME:-admin}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_PASSWORD:-admingeoserver}
+      DATABASE_URL: postgres://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
     depends_on:
       - db
     volumes:
-      - geodatadir:/spcgeonode-geodatadir/
+      - geoserver-datadir:/opt/geoserver/data_dir/
+    links:
+      - db
+
+#  geoserver:
+#    image: geonode/spcgeonode:geoserver-3.0
+#    restart: unless-stopped
+#    environment:
+#      - HTTP_HOST=192.168.1.197
+#      - HTTP_PORT=63305
+#      - ADMIN_USERNAME=admin
+#      - ADMIN_PASSWORD=admingeoserver
+#      - DATABASE_URL=postgres://docker:docker@db:5432/gis
+#      - GEODATABASE_URL=postgis://geonode_data:docker@db:5432/geonode_data
+#    depends_on:
+#      - db
+#    volumes:
+#      - geodatadir:/spcgeonode-geodatadir/
 
   bims_uwsgi:
     build:
