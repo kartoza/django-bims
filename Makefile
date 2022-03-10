@@ -300,20 +300,6 @@ sentry:
 	@echo "--------------------------"
 	@docker-compose up -d sentry
 
-maillogs:
-	@echo
-	@echo "------------------------------------------------------------------"
-	@echo "Showing smtp logs in production mode"
-	@echo "------------------------------------------------------------------"
-	@docker-compose exec smtp tail -f /var/log/mail.log
-
-mailerrorlogs:
-	@echo
-	@echo "------------------------------------------------------------------"
-	@echo "Showing smtp error logs in production mode"
-	@echo "------------------------------------------------------------------"
-	@docker-compose exec smtp tail -f /var/log/mail.err
-
 create-machine:
 	@echo
 	@echo "------------------------------------------------------------------"

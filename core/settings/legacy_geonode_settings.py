@@ -281,13 +281,6 @@ STATIC_ROOT = os.getenv('STATIC_ROOT',
 # Example: "http://media.lawrence.com"
 STATIC_URL = os.getenv('STATIC_URL', '%s/%s/' % (FORCE_SCRIPT_NAME, STATICFILES_LOCATION))
 
-# Additional directories which hold static files
-_DEFAULT_STATICFILES_DIRS = [
-    os.path.join(PROJECT_ROOT, STATICFILES_LOCATION),
-]
-
-STATICFILES_DIRS = os.getenv('STATICFILES_DIRS', _DEFAULT_STATICFILES_DIRS)
-
 # List of finder classes that know how to find static files in
 # various locations.
 STATICFILES_FINDERS = (
@@ -771,36 +764,6 @@ USE_GEOSERVER = False
 
 # Uploader Settings
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
-"""
-    DEFAULT_BACKEND_UPLOADER = {'geonode.rest', 'geonode.importer'}
-"""
-UPLOADER = {
-    'BACKEND': os.getenv('DEFAULT_BACKEND_UPLOADER', 'geonode.rest'),
-    'OPTIONS': {
-        'TIME_ENABLED': ast.literal_eval(os.getenv('TIME_ENABLED', 'False')),
-        'MOSAIC_ENABLED': ast.literal_eval(os.getenv('MOSAIC_ENABLED', 'False')),
-    },
-    'SUPPORTED_CRS': [
-        'EPSG:4326',
-        'EPSG:3785',
-        'EPSG:3857',
-        'EPSG:32647',
-        'EPSG:32736'
-    ],
-    'SUPPORTED_EXT': [
-        '.shp',
-        '.csv',
-        '.kml',
-        '.kmz',
-        '.json',
-        '.geojson',
-        '.tif',
-        '.tiff',
-        '.geotiff',
-        '.gml',
-        '.xml'
-    ]
-}
 
 EPSG_CODE_MATCHES = {
     'EPSG:4326': '(4326) WGS 84',
