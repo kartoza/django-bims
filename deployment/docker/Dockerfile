@@ -35,36 +35,11 @@ RUN echo "Updating apt-get" && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf ~/.cache/pip
 
-# Install python dependencies
-RUN echo "Geonode python dependencies"
-RUN pip install celery==4.4.2
-
-# Install pygdal (after requirements https://github.com/GeoNode/geonode/pull/4599)
-# RUN pip install pygdal==$(gdal-config --version).*
-
-# COPY . /usr/src/app
-#
-#RUN chmod +x /usr/src/app/tasks.py \
-#    && chmod +x /usr/src/app/entrypoint.sh
-
-# app-specific requirements
-#RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
-#RUN pip install -e /usr/src/app
-
 ADD deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install -r /REQUIREMENTS.txt; pip install uwsgi
-RUN npm --quiet -g install yuglify
-
-RUN pip install MarkupSafe==1.1.1 && pip install pygbif==0.6.0
-
-# Debian is messed up and aliases node as nodejs
-# So when yuglify is installed it references the wrong node binary...
-# lets fix that here...
-
-# RUN rpl "env node" "env nodejs" /usr/lib/node_modules/yuglify/bin/yuglify
 
 # Install grunt
-RUN npm install -g grunt-cli
+RUN npm --quiet -g install yuglify && npm install -g grunt-cli
 ADD deployment/docker/package.json /package.json
 ADD deployment/docker/Gruntfile.js /Gruntfile.js
 RUN cd / && npm install
@@ -79,8 +54,10 @@ ADD deployment/docker/uwsgi.conf /uwsgi.conf
 # Open port 8080 as we will be running our uwsgi socket on that
 EXPOSE 8080
 
-# ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+ADD deployment/docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["uwsgi", "--ini", "/uwsgi.conf"]
 
 FROM prod as dev

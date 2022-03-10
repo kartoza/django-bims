@@ -22,7 +22,6 @@ x-common-django:
   command: uwsgi --ini /home/web/django_project/uwsgi.ini
   hostname: uwsgi
   working_dir: /home/web/django_project
-  entrypoint: [ ]
   environment:
     - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
     - APP_NAME=bims
@@ -95,6 +94,7 @@ services:
 
   worker:
     <<: *default-common-django
+    entrypoint: [ ]
     hostname: worker
     command: celery worker --app=bims.celery:app -Q update -B -l debug
     links:
@@ -110,6 +110,7 @@ services:
 
   geocontextworker:
     <<: *default-common-django
+    entrypoint: [ ]
     hostname: worker
     command: celery worker --app=bims.celery:app -Q geocontext -B -l debug
     links:
@@ -125,6 +126,7 @@ services:
 
   searchworker:
     <<: *default-common-django
+    entrypoint: [ ]
     hostname: worker
     command: celery worker --app=bims.celery:app -Q search -B -l debug
     links:
@@ -140,6 +142,7 @@ services:
 
   webpack-watcher:
     <<: *default-common-django
+    entrypoint: [ ]
     command: bash -c 'cd /home/web/django_project/bims/; webpack --mode development && webpack --watch --progress'
     volumes:
       - ../../django-bims:/home/web/django_project

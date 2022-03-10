@@ -21,7 +21,6 @@ django-grappelli==2.14.1
 djangorestframework>=3.11.2
 djangorestframework-gis==0.15
 django-colorfield==0.1.15
-pygbif==0.4.0
 
 # bibliography
 bibtexparser==1.1.0
@@ -85,3 +84,8 @@ python-memcached==1.59
 geonode-oauth-toolkit==2.1.0
 mock==4.0.3
 django-imagekit==4.0.2
+pika==1.2.0
+
+MarkupSafe==1.1.1
+pygbif==0.6.0
+celery==4.4.2
