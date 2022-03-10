@@ -1,14 +1,8 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  creationTimestamp: null
-  labels:
-    io.kompose.service: media-data
   name: media-data
 spec:
-  accessModes:
-    - ReadWriteOnce
   resources:
     requests:
       storage: 100Mi
-status: {}

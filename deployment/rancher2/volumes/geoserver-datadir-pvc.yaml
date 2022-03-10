@@ -1,14 +1,8 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  creationTimestamp: null
-  labels:
-    io.kompose.service: geoserver-datadir
   name: geoserver-datadir
 spec:
-  accessModes:
-    - ReadWriteOnce
   resources:
     requests:
       storage: 100Mi
-status: {}

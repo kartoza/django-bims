@@ -1,28 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert -f docker-compose.rancher.yml
-    kompose.version: 1.26.1 (a9d05d509)
-  creationTimestamp: null
-  labels:
-    io.kompose.service: uwsgi
   name: uwsgi
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      io.kompose.service: uwsgi
-  strategy:
-    type: Recreate
   template:
     metadata:
-      annotations:
-        kompose.cmd: kompose convert -f docker-compose.rancher.yml
-        kompose.version: 1.26.1 (a9d05d509)
-      creationTimestamp: null
       labels:
-        io.kompose.service: uwsgi
+        app: uwsgi
     spec:
       containers:
         - args:
@@ -49,11 +33,17 @@ spec:
             - name: DATABASE_NAME
               value: gis
             - name: DATABASE_PASSWORD
-              value: docker
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_PASS
             - name: DATABASE_URL
               value: postgis://docker:docker@db:5432/gis
             - name: DATABASE_USERNAME
-              value: docker
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_USER
             - name: DJANGO_SETTINGS_MODULE
               value: core.settings.prod_docker
             - name: GEOCONTEXT_URL
@@ -82,14 +72,12 @@ spec:
               value: "8080"
           image: kartoza/kbims_uwsgi:latest
           name: uwsgi
-          resources: {}
           volumeMounts:
             - mountPath: /home/web/static
               name: static-data
             - mountPath: /home/web/media
               name: media-data
           workingDir: /home/web/django_project
-      hostname: uwsgi
       restartPolicy: Always
       volumes:
         - name: static-data
@@ -98,4 +86,3 @@ spec:
         - name: media-data
           persistentVolumeClaim:
             claimName: media-data
-status: {}

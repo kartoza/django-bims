@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bims
+
+resources:
+  - namespace.yaml
+  - volumes/mapproxy-data-pvc.yaml
+  - volumes/mapproxy-web-pvc.yaml
+  - volumes/map-web-pvc.yaml
+  - volumes/pg-admin-data-pvc.yaml
+  - volumes/postgis-data-pvc.yaml
+  - volumes/qgis-server-plugins-pvc.yaml
+  - volumes/s3data-pvc.yaml
+  - deployment/map-deployment.yaml
+  - deployment/mapproxy-deployment.yaml
+  - deployment/nginx-deployment.yaml
+  - deployment/pgadmin-deployment.yaml
+  - deployment/postgis-statefulset.yaml
+  - deployment/watcher-deployment.yaml
+  - service/mapproxy-service.yaml
+  - service/map-service.yaml
+  - service/nginx-service.yaml
+  - service/pgadmin-service.yaml
+  - service/postgis-service.yaml
+  # - ingress.yaml
+
+configMapGenerator:
+  - name: user-config
+    files:
+      - configs/setup-db.sql
+      - configs/pg_service.conf
+  - name: nginx-web
+    files:
+      - configs/web/nginx.conf
+      - configs/web/index.html
+
+secretGenerator:
+  - name: postgis
+    envs:
+      - configs/database
+
+patches:
+  - path: patches/volumes.yaml
+    target:
+      kind: PersistentVolumeClaim
+      version: v1
+      name: .*
+  - path: patches/deployments.yaml
+    target:
+      kind: Deployment
+      version: v1
+      name: .*
+  - path: patches/deployments.yaml
+    target:
+      kind: StatefulSet
+      version: v1
+      name: .*
