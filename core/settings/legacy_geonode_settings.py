@@ -397,7 +397,6 @@ INSTALLED_APPS = (
     # 'bootstrap3_datetime',
     'django_filters',
     'mptt',
-    'floppyforms',
 
     # Theme
     # 'django_forms_bootstrap',

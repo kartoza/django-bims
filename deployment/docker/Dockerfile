@@ -14,13 +14,7 @@ RUN echo "Updating apt-get" && \
     echo "Installing Pillow dependencies" && \
     # RUN apt-get install -y NOTHING ?? It was probably added in other packages... ALPINE needed jpeg-dev zlib-dev && \
     echo "Installing GDAL dependencies" && \
-    apt-get install -y libgeos-dev libgdal-dev && \
-    echo "Installing Psycopg2 dependencies" && \
-    # RUN apt-get install -y NOTHING ?? It was probably added in other packages... ALPINE needed postgresql-dev && \
-    echo "Installing other dependencies" && \
-    apt-get install -y libxml2-dev libxslt-dev && \
-    echo "Installing GeoIP dependencies" && \
-    apt-get install -y geoip-bin geoip-database && \
+    apt-get install -y libgdal-dev && \
     echo "Installing healthceck dependencies" && \
     apt-get install -y curl && \
     echo "Python server" && \
@@ -32,6 +26,7 @@ RUN echo "Updating apt-get" && \
     apt-get install -y nodejs && \
     echo "Removing build dependencies and cleaning up" && \
     # TODO : cleanup apt-get with something like apt-get -y --purge autoremove gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++ && \
+    apt-get -y --purge autoremove make libc-dev musl-dev g++ && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf ~/.cache/pip
 

@@ -49,14 +49,6 @@ TRACK_IGNORE_STATUS_CODES = getattr(
         'TRACK_IGNORE_STATUS_CODES',
         [])
 
-TRACK_USING_GEOIP = getattr(
-        django_settings,
-        'TRACK_USING_GEOIP',
-        False)
-if hasattr(django_settings, 'TRACKING_USE_GEOIP'):
-    raise DeprecationWarning(
-            'TRACKING_USE_GEOIP is now TRACK_USING_GEOIP')
-
 TRACK_REFERER = getattr(django_settings, 'TRACK_REFERER', False)
 
 TRACK_QUERY_STRING = getattr(

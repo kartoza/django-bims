@@ -38,7 +38,6 @@ x-common-django:
     - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
     - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
     - MEDIA_ROOT=/home/web/media
-    - GEOIP_PATH=/home/web/media/geoip.db
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - ROOT_URLCONF=core.urls
     - SITEURL=http://django-bims.test/
