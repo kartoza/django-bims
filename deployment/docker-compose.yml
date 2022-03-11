@@ -25,7 +25,7 @@ x-common-django:
   environment:
     - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
     - APP_NAME=bims
-    - ASYNC_SIGNALS_GEONODE=True
+    - ASYNC_SIGNALS=True
     - BROKER_URL=amqp://rabbitmq:5672
     - C_FORCE_ROOT=1
     - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
@@ -40,6 +40,8 @@ x-common-django:
     - GEOSERVER_LOCATION=http://geoserver/geoserver/
     - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
     - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+    - GEOSERVER_ADMIN_USER=${GEOSERVER_USERNAME:-admin}
+    - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_PASSWORD:-admingeoserver}
     - MEDIA_ROOT=/home/web/media
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - ROOT_URLCONF=core.urls

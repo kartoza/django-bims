@@ -14,7 +14,7 @@ RUN echo "Updating apt-get" && \
     echo "Installing Pillow dependencies" && \
     # RUN apt-get install -y NOTHING ?? It was probably added in other packages... ALPINE needed jpeg-dev zlib-dev && \
     echo "Installing GDAL dependencies" && \
-    apt-get install -y libgdal-dev && \
+    apt-get install -y libgdal-dev libcurl4-gnutls-dev librtmp-dev && \
     echo "Installing healthceck dependencies" && \
     apt-get install -y curl && \
     echo "Python server" && \
