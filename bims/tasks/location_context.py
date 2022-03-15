@@ -1,4 +1,5 @@
 # coding=utf-8
+import logging
 from celery import shared_task
 from collections import OrderedDict
 
@@ -7,6 +8,7 @@ from django.db.models import F
 from django.utils.text import slugify
 from bims.utils.celery import single_instance_task
 
+logger = logging.getLogger(__name__)
 
 
 SPATIAL_FILTER_GROUPS = OrderedDict([
@@ -107,6 +109,18 @@ LAYER_NAMES = {
     'geo_class_recoded': 'geoclass',
     'national_cba_layer': 'cba_national_mview',
 }
+
+
+@shared_task(
+    name='bims.tasks.generate_spatial_scale_filter_if_empty',
+    queue='geocontext'
+)
+@single_instance_task(60 * 10)
+def generate_spatial_scale_filter_if_empty():
+    spatial_scale_filter_list = cache.get('spatial_scale_filter_list')
+    if not spatial_scale_filter_list:
+        logger.info('Generating spatial scale filter list...')
+        generate_spatial_scale_filter()
 
 
 @shared_task(
