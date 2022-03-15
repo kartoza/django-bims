@@ -211,7 +211,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 LOGIN_REDIRECT_URL = "/"
 
 AUTH_WITH_EMAIL_ONLY = ast.literal_eval(os.environ.get(
-        'AUTH_WITH_EMAIL_ONLY', 'False'))
+        'AUTH_WITH_EMAIL_ONLY', 'True'))
 
 if AUTH_WITH_EMAIL_ONLY:
     ACCOUNT_USERNAME_REQUIRED = False
