@@ -13,6 +13,7 @@ volumes:
   rabbitmq:
   static-data:
   media-data:
+  geocontext-scheduler-data:
 x-common-django:
   &default-common-django
   image: bims_uwsgi:latest
@@ -113,7 +114,7 @@ services:
     <<: *default-common-django
     entrypoint: [ ]
     hostname: worker
-    command: celery worker --app=bims.celery:app -Q geocontext -B -l debug
+    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -Q geocontext -B -l debug
     links:
       - db:db
       - geoserver:geoserver
@@ -124,6 +125,7 @@ services:
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./logs:/var/log/
+      - geocontext-scheduler-data:/home/geocontext-scheduler
 
   searchworker:
     <<: *default-common-django
