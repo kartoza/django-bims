@@ -1,3 +1,4 @@
+from django.template.response import TemplateResponse
 from django.views.generic import DetailView
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Count
@@ -85,3 +86,13 @@ class ProfileView(DetailView):
         context['source_references_total'] = source_reference.count()
 
         return context
+
+
+def moderator_contacted(request, inactive_user=None):
+    """Used when a user signs up."""
+    user = get_user_model().objects.get(id=inactive_user)
+    return TemplateResponse(
+        request,
+        template="account/admin_approval_sent.html",
+        context={"email": user.email}
+    )
