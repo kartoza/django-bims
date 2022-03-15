@@ -80,7 +80,7 @@ from bims.views.source_reference import (
     AddSourceReferenceView,
     DeleteSourceReferenceView
 )
-from bims.views.profile import ProfileView
+from bims.views.profile import ProfileView, moderator_contacted
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
@@ -246,6 +246,12 @@ urlpatterns = [
     url(r'^water-temperature/(?P<site_id>\d+)/(?P<year>\d{4})/$',
         WaterTemperatureSiteView.as_view(),
         name='water-temperature-site'),
+
+    # Account
+    url(
+        r'^account/moderation_sent/(?P<inactive_user>[^/]*)$',
+        moderator_contacted,
+        name='moderator_contacted'),
 ]
 
 # Api urls
