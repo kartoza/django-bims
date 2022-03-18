@@ -104,6 +104,11 @@ class OccurrenceProcessor(object):
                 location_site_id=','.join(self.site_ids),
                 generate_site_code=True
             )
+
+        generate_spatial_scale_filter()
+        # Update source reference filter
+        generate_source_reference_filter()
+
         signals.post_save.connect(
             collection_post_save_handler,
             sender=BiologicalCollectionRecord
@@ -140,9 +145,6 @@ class OccurrenceProcessor(object):
             location_context_post_save_handler,
             sender=LocationContextFilterGroupOrder
         )
-        generate_spatial_scale_filter()
-        # Update source reference filter
-        generate_source_reference_filter()
 
     def handle_error(self, row, message):
         pass

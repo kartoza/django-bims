@@ -1,3 +1,5 @@
+import json
+
 import requests
 import logging
 import datetime
@@ -18,6 +20,7 @@ from bims.models import (
     collection_post_save_handler,
     HarvestSession
 )
+from bims.utils.get_key import get_key
 
 logger = logging.getLogger('bims')
 
@@ -160,6 +163,41 @@ def import_gbif_occurrences(
             locality = result.get(LOCALITY_KEY, result.get(
                 VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY
             ))
+
+            # Check if site is in the correct border
+            boundary_key = preferences.SiteSetting.boundary_key
+            if boundary_key:
+                url = (
+                    '{base_url}/api/v2/query?registry=service&key={key}&'
+                    'x={lon}&y={lat}&outformat=json'
+                ).format(
+                    base_url=get_key('GEOCONTEXT_URL'),
+                    key=boundary_key,
+                    lon=longitude,
+                    lat=latitude
+                )
+                try:
+                    response = requests.get(url)
+                    if response.status_code != 200:
+                        logger.info(
+                            f'The site is not within a valid border.'
+                        )
+                        continue
+                    else:
+                        response_json = json.loads(response.content)
+                        if response_json['value']:
+                            logger.info(
+                                f"Site is in {response_json['value']}"
+                            )
+                        else:
+                            logger.info(
+                                f'The site is not within a valid border.'
+                            )
+                            continue
+                except Exception as e:  # noqa
+                    logger.info(
+                        f'Unable to check boundary data from geocontext')
+
             location_type, status = LocationType.objects.get_or_create(
                 name='PointObservation',
                 allowed_geometry='POINT'
