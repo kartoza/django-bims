@@ -3,6 +3,8 @@ from django.views.generic import DetailView
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404
+
+from bims.models import Profile
 from bims.models.survey import Survey
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -26,8 +28,12 @@ class ProfileView(DetailView):
 
         profile.first_name = self.request.POST.get('first-name', '')
         profile.last_name = self.request.POST.get('last-name', '')
-        profile.bims_profile.role = self.request.POST.get('role', '')
         profile.organization = self.request.POST.get('organization', '')
+
+        if not Profile.objects.filter(user=profile).exists():
+            Profile.objects.create(user=profile)
+
+        profile.bims_profile.role = self.request.POST.get('role', '')
         profile.bims_profile.save()
         profile.save()
 
