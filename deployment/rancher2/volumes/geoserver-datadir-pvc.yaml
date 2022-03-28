@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: geoserver-datadir
+spec:
+  resources:
+    requests:
+      storage: 100Mi

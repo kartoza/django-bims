@@ -1,6 +1,7 @@
 # coding=utf-8
 from django.template.response import TemplateResponse
 from django.contrib.sites.shortcuts import get_current_site
+from preferences import preferences
 
 from wagtail.core.models import Site
 from wagtail.core.views import serve
@@ -38,8 +39,14 @@ def landing_page_view(request, *args, **kwargs):
                 'overlay': header.background_color_overlay,
                 'overlay_opacity': header.background_overlay_opacity / 100
             })
+
+    if preferences.SiteSetting.default_data_source == 'fbis':
+        landing_page_template = 'landing_page_fbis.html'
+    else:
+        landing_page_template = 'landing_page.html'
+
     return TemplateResponse(
         request,
-        'landing_page.html',
+        landing_page_template,
         context
     )

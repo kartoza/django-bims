@@ -1,3 +1,4 @@
+import requests
 from django.core.management import BaseCommand
 from datetime import datetime
 from django.core.management import call_command
@@ -20,7 +21,7 @@ class Command(BaseCommand):
             '-tr',
             '--total-records',
             dest='total_records',
-            default='100',
+            default='',
             help='Total records of the data'
         )
         parser.add_argument(
@@ -44,7 +45,19 @@ class Command(BaseCommand):
             print('Missing API TOKEN')
             return
 
-        total_records = int(options.get('total_records', '100'))
+        total_records = options.get('total_records', '')
+
+        if not total_records:
+            print('Getting total records...')
+            url = f'https://api.birdmap.africa/vmus/v2/dwc/OdonataMAP/{api_token}/all/json/0'
+            response = requests.get(url)
+            total_records = (
+                response.json()['data']['result'][0]['Number_of_records']
+            )
+
+        if isinstance(total_records, str):
+            total_records = int(total_records)
+
         limit = int(options.get('limit', '10'))
         start_index = int(options.get('start_index', '0'))
 
@@ -62,7 +75,5 @@ class Command(BaseCommand):
             call_command('import_odonata_data',
                          start_index=start_index,
                          limit=limit,
-                         import_occurrences='True',
-                         import_species='False',
                          token=api_token)
             start_index += limit

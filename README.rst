@@ -16,23 +16,7 @@ Project Activity
 
 |Test Badge| 
 
-|Build Badge| 
-
-Quick Project Setup
--------------------
-
-Refer to `project setup guide`_ for in depth information.
-
-Make sure ansible is installed, all.yml file is configured, and project
-already opened using PyCharm. Then run these command:
-
-    make ansible-check
-
-This will check and dry-run ansible tasks
-
-    make setup-ansible
-
-This will generate project file configuration.
+|Build Badge|
 
 
 Quick Installation Guide

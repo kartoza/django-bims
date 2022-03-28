@@ -1,8 +1,8 @@
 # coding=utf-8
-from geonode.base import BaseAppConfig
+from django.apps import AppConfig
 
 
-class AppConfig(BaseAppConfig):
+class AppConfig(AppConfig):
 
     name = "core"
     label = "core"

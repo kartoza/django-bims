@@ -3,7 +3,6 @@ import csv
 import logging
 from django.contrib.auth import get_user_model
 from celery import shared_task
-from bims.api_views.taxon import TaxaList
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +10,7 @@ logger = logging.getLogger(__name__)
 def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
     from bims.api_views.csv_download import send_csv_via_email
+    from bims.api_views.taxon import TaxaList
     class RequestGet:
         def __init__(self, get_data):
             self.GET = get_data

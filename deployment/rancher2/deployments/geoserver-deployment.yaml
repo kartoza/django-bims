@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoserver
+spec:
+  template:
+    metadata:
+      labels:
+        app: geoserver
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_USER
+            - name: POSTGRES_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_PASS
+            - name: DATABASE_URL
+              value: postgres://$(POSTGRES_USER):$(POSTGRES_PASS)@db:5432/gis
+            - name: GEOSERVER_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: GEOSERVER_ADMIN_PASSWORD
+            - name: GEOSERVER_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: GEOSERVER_ADMIN_USER
+            - name: HTTP_HOST
+              value: 0.0.0.0
+            - name: HTTP_PORT
+              value: "63305"
+          image: kartoza/geoserver:2.19.0
+          name: geoserver
+          volumeMounts:
+            - mountPath: /opt/geoserver/data_dir/
+              name: geoserver-datadir
+      restartPolicy: Always
+      volumes:
+        - name: geoserver-datadir
+          persistentVolumeClaim:
+            claimName: geoserver-datadir

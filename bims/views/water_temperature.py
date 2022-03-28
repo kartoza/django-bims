@@ -129,10 +129,12 @@ class WaterTemperatureEditView(WaterTemperatureBaseView):
             self.water_temperature = self.water_temperature.filter(
                 owner=self.request.user,
             )
+        ctx['total_data'] = self.water_temperature.count()
         ctx['site_image'] = SiteImage.objects.filter(
             owner=self.request.user,
             date__year=self.year
         )
+        ctx['owner'] = self.water_temperature.first().owner
         ctx['source_reference'] = (
             SourceReference.objects.filter(
                 id__in=self.water_temperature.values('source_reference'))
@@ -208,7 +210,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
         else:
             if 'Water temperature' not in headers:
                 self.add_error_messages(
-                    row,
+                    row - 1,
                     'Missing "Water temperature" header'
                 )
                 finished = True
@@ -217,16 +219,19 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
             for temperature_data in data:
                 # Check date format
                 try:
-                    date = datetime.strptime(
-                        temperature_data[date_field], date_format)
+                    date_string = temperature_data[date_field]
+                    if len(date_string.split(':')) > 2 and ':%S' not in date_format:
+                        date_format += ':%S' # Add second
+                    date = datetime.strptime(date_string, date_format)
+
                     # Check interval
                     if not is_daily:
                         time_string = date.strftime('%H:%M')
                         if len(times) == 0 and time_string != start_time:
                             self.add_error_messages(
                                 row,
-                                'Non daily data should start at {}'.format(
-                                    start_time
+                                'Non daily data should start at {} but get {}'.format(
+                                    start_time, time_string
                                 )
                             )
                         if time_string == start_time and len(times) > 1:
@@ -237,14 +242,17 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                             ):
                                 self.add_error_messages(
                                     row - 1,
-                                    'Non daily data should end at {}'.format(
-                                        end_time
+                                    'Non daily data should end at {} but get {}'.format(
+                                        end_time, time_string
                                     )
                                 )
-                            if len(times) < RECORDS_PER_INTERVAL[interval]:
+                            if RECORDS_PER_INTERVAL[interval] > len(times) > 0:
                                 self.add_error_messages(
                                     row - 1,
-                                    'Data for this day is not complete'
+                                    'Data for {} are missing {} rows'.format(
+                                        times[-1].date(),
+                                        RECORDS_PER_INTERVAL[interval] - len(times)
+                                    )
                                 )
                             times = []
                         times.append(date)
@@ -283,7 +291,9 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
     upload_task = None
 
     def post(self, request, *args, **kwargs):
-
+        start_time = time.time()
+        if not request.is_ajax():
+            return HttpResponseForbidden()
         owner_id = request.POST.get('owner_id', '').strip()
         interval = request.POST.get('interval')
         date_format = request.POST.get('format')
@@ -294,7 +304,6 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
         success_response_image = ''
         success_response = ''
         source_reference = None
-
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )
@@ -322,6 +331,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                 pass
 
         if edit:
+            site_image_date = None
             site_image_to_delete = (
                 request.POST.get('site_image_to_delete', None)
             )
@@ -340,24 +350,33 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                     date_time__year=year
                 )
 
-            if previous_source_reference_id:
-                water_temperature = water_temperature.filter(
-                    location_site=location_site
+            if not water_temperature.filter(owner__id=owner_id).exists():
+                water_temperature.update(owner=owner_id)
+                success_response += (
+                    ' Owner is updated. '
                 )
 
-            if not self.request.user.is_superuser:
-                water_temperature = water_temperature.filter(
-                    owner=owner
-                )
-            if water_temperature.exists():
-                site_image_date = water_temperature.first().date_time
-            else:
-                raise Http404('Water temperature does not exist')
-            if source_reference_id != previous_source_reference_id:
-                water_temperature.update(
-                    source_reference=source_reference
-                )
-                success_response += 'Source reference is updated\n'
+            if not upload_session_id or upload_session_id == 'undefined':
+                if previous_source_reference_id:
+                    water_temperature = water_temperature.filter(
+                        location_site=location_site
+                    )
+
+                if not self.request.user.is_superuser:
+                    water_temperature = water_temperature.filter(
+                        owner=owner
+                    )
+                if water_temperature.exists():
+                    site_image_date = water_temperature.first().date_time
+                else:
+                    raise Http404('Water temperature does not exist')
+                if source_reference_id != previous_source_reference_id:
+                    water_temperature.update(
+                        source_reference=source_reference
+                    )
+                    success_response += (
+                        ' Source reference is updated. '
+                    )
 
             site_image_updated = False
             if site_image_to_delete:
@@ -389,10 +408,10 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
 
         if float(interval) != 24:
             date_format = date_format + ' %H:%M'
-            value_key = 'Water temperature'
         else:
             is_daily = True
-            value_key = 'Mean'
+
+        per_record_time = 0
 
         if upload_session_id and upload_session_id != 'undefined':
             try:
@@ -408,17 +427,24 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                 data = list(reader)
                 date_field = 'Date Time' if 'Date Time' in headers else 'Date'
 
+                print('Checking existing data... {}'.format(
+                    time.time() - start_time))
+
                 for temperature in data:
 
-                    if temperature[value_key] == '':
-                        continue
+                    per_record_time = time.time()
+                    if is_daily:
+                        water_temp_value = temperature['Mean']
+                    else:
+                        water_temp_value = temperature['Water temperature']
 
-                    water_temp_value = temperature[value_key]
+                    date_string = temperature[date_field]
+                    if len(date_string.split(
+                            ':')) > 2 and ':%S' not in date_format:
+                        date_format += ':%S'  # Add second
 
                     date_time = make_aware(
-                        datetime.strptime(
-                            temperature[date_field],
-                            date_format)
+                        datetime.strptime(date_string, date_format)
                     )
 
                     if not first_date:
@@ -430,11 +456,22 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                         'is_daily': is_daily
                     }
 
-                    query = WaterTemperature.objects.filter(
-                        **water_data
+                    query = WaterTemperature.objects.raw(
+                        'SELECT * FROM "bims_watertemperature" WHERE ("bims_watertemperature"."date_time" = \'{date}\' AND "bims_watertemperature"."location_site_id" = {site_id}) LIMIT 1'.format(
+                            date=date_time,
+                            site_id=location_site.id
+                        )
                     )
-                    is_data_exists = query.exists()
+
+                    try:
+                        query = query[0]
+                        is_data_exists = True
+                    except:  # noqa
+                        query = None
+                        is_data_exists = False
+
                     water_data['value'] = water_temp_value
+                    water_data['is_daily'] = is_daily
                     water_data['minimum'] = (
                         temperature['Minimum'] if is_daily else 0
                     )
@@ -446,18 +483,25 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                     water_data['source_reference'] = source_reference
 
                     if is_data_exists:
-                        new_query = query.filter(**water_data)
-                        if not new_query.exists():
-                            existing_water_data = query.first()
-                            existing_water_data.value = water_temp_value
-                            existing_water_data.minimum = water_data['minimum']
-                            existing_water_data.maximum = water_data['maximum']
-                            existing_data.append(existing_water_data)
+                        if (
+                            query.value != float(water_data['value']) or
+                            query.minimum != int(water_data['minimum']) or
+                            query.maximum != int(water_data['maximum'])
+                        ):
+                            query.value = water_data['value']
+                            query.minimum = water_data['minimum']
+                            query.maximum = water_data['maximum']
+                            existing_data.append(query)
                     else:
                         new_data.append(
                             WaterTemperature(**water_data)
                         )
 
+                    per_record_time = time.time() - per_record_time
+
+                print('Time per record {}'.format(per_record_time))
+                print('Done loop {}'.format(
+                    time.time() - start_time))
                 if new_data:
                     WaterTemperature.objects.bulk_create(
                         new_data
@@ -466,14 +510,18 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                         len(new_data)
                     )
                 if existing_data:
+                    print('Updating existing data... {}'.format(
+                        time.time() - start_time))
                     WaterTemperature.objects.bulk_update(
                         existing_data,
-                        ['value', 'minimum', 'maximum']
+                        ['value', 'minimum', 'maximum', 'owner'],
+                        batch_size=100
                     )
                     success_response += '{} data has been updated.'.format(
                         len(existing_data)
                     )
-
+                print('Finished {}'.format(
+                    time.time() - start_time))
                 # Check existing water temperature with
                 # different source reference
                 if source_reference:
@@ -488,8 +536,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                             source_reference=source_reference
                         )
                         success_response += (
-                            ' Source reference has been update in the existing'
-                            ' water temperature data.'
+                            ' Source reference is updated. '
                         )
 
                 site_image = None
@@ -620,7 +667,7 @@ class WaterTemperatureSiteView(TemplateView):
                 source_reference__isnull=True
             ).order_by(
                 'source_reference').distinct(
-            'source_reference').source_references()
+                'source_reference').source_references()
         )
         context['source_references'] = json.dumps(source_references)
 

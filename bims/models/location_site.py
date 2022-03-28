@@ -320,7 +320,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
     def update_location_context_document(self, group_keys=None):
         """Update location context document."""
         from bims.utils.location_context import get_location_context_data
-        LOGGER.debug('update_location_context_document')
+        LOGGER.debug('location_site - update_location_context_document')
 
         # Update location context in background
         get_location_context_data(

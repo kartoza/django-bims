@@ -41,6 +41,7 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "file-loader": "^0.9.0",
     "file-saver": "^2.0.2",
+    "follow-redirects": "^1.14.8",
     "gl-matrix": "^2.3.2",
     "history": "^4.7.2",
     "immutability-helper": "^2.0.0",
