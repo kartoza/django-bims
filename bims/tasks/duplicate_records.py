@@ -1,7 +1,5 @@
 import csv
 import logging
-from bims.models import BiologicalCollectionRecord
-from bims.serializers.bio_collection_serializer import BioCollectionOneRowSerializer
 from celery import shared_task
 from django.db.models import Q
 
@@ -10,6 +8,8 @@ logger = logging.getLogger('bims')
 
 @shared_task(name='bims.tasks.download_duplicated_records_to_csv', queue='update')
 def download_duplicated_records_to_csv(path_file):
+    from bims.models import BiologicalCollectionRecord
+    from bims.serializers.bio_collection_serializer import BioCollectionOneRowSerializer
     from bims.utils.celery import memcache_lock
     from bims.helpers.get_duplicates import get_duplicate_records
 

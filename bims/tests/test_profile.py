@@ -1,6 +1,6 @@
 # coding=utf-8
 """Tests for models."""
-
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from bims.tests.model_factories import ProfileF, UserF
 
@@ -76,3 +76,36 @@ class TestProfile(TestCase):
 
         # check if deleted
         self.assertTrue(profile.pk is None)
+
+    def test_profile_update_request(self):
+        """
+        Test update profile from the form page
+        """
+        user = get_user_model().objects.create(
+            is_staff=False,
+            is_active=True,
+            is_superuser=False,
+            username='test')
+        user.set_password('psst')
+        user.save()
+        resp = self.client.login(
+            username='test',
+            password='psst'
+        )
+        self.assertTrue(resp)
+
+        post_dict = {
+            'first-name': 'First',
+            'last-name': 'Last',
+            'organization': 'Org',
+            'role': 'Role'
+        }
+
+        response = self.client.post(
+            '/profile/{}/'.format(user.username),
+            post_dict
+        )
+        self.assertEqual(response.status_code, 302)
+        updated_user = get_user_model().objects.get(id=user.id)
+        self.assertEqual(updated_user.first_name, post_dict['first-name'])
+        self.assertEqual(updated_user.bims_profile.role, post_dict['role'])

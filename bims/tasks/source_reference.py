@@ -5,9 +5,6 @@ from celery import shared_task
 from django.conf import settings
 from bims.utils.celery import single_instance_task
 from bims.utils.logger import log
-from bims.models.source_reference import (
-    SourceReference
-)
 
 SOURCE_REFERENCE_FILTER_FILE = 'source_reference_filter.txt'
 
@@ -17,6 +14,9 @@ SOURCE_REFERENCE_FILTER_FILE = 'source_reference_filter.txt'
     queue='update')
 @single_instance_task(60 * 10)
 def generate_source_reference_filter(file_path=None):
+    from bims.models.source_reference import (
+        SourceReference
+    )
     references = SourceReference.objects.filter(
         biologicalcollectionrecord__isnull=False,
     ).distinct('id')

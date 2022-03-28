@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  serviceName: postgis-headless
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - env:
+            - name: ALLOW_IP_RANGE
+              value: 0.0.0.0/0
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_USER
+            - name: POSTGRES_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_PASS
+          image: dimasciput/postgis:9.6-2.4
+          name: db
+          ports:
+          - containerPort: 5432
+            name: db
+            protocol: TCP
+      restartPolicy: IfNotPresent

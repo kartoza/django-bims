@@ -5,7 +5,7 @@ core.settings.contrib
 from core.settings.utils import ensure_unique_app_labels
 from .base import *  # noqa
 # Override base settings from geonode
-from core.settings.geonode_generic import *  # noqa
+from .legacy_geonode_settings import *
 from core.settings.celery_settings import *  # noqa
 import os
 import raven
@@ -20,7 +20,7 @@ STOP_WORDS = (
     'this', 'that', 'to',
 )
 
-STATICFILES_STORAGE = 'pipeline.storage.PipelineCachedStorage'
+STATICFILES_STORAGE = 'pipeline.storage.PipelineManifestStorage'
 STATICFILES_FINDERS += (
     'pipeline.finders.PipelineFinder',
 )
@@ -58,7 +58,7 @@ INSTALLED_APPS += (
     'pipeline',
     'modelsdoc',
     'contactus',
-    'django_prometheus',
+    # 'django_prometheus',
     'crispy_forms',
     'sass',
     'rangefilter',
@@ -173,10 +173,10 @@ STATICFILES_DIRS = [
     absolute_path('sass', 'static'),
     absolute_path('scripts', 'static'),
     absolute_path('td_biblio', 'static'),
-] + STATICFILES_DIRS
+]
 
 MIDDLEWARE += (
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
     'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
@@ -204,12 +204,6 @@ DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = True
 # Defines whether to log URL requests made to the project
 DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
 
-SOCIALACCOUNT_PROVIDERS = {
-    'github': {
-        'SCOPE': ['user:email', 'public_repo', 'read:org']
-    }
-}
-
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = True
@@ -217,7 +211,7 @@ ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 LOGIN_REDIRECT_URL = "/"
 
 AUTH_WITH_EMAIL_ONLY = ast.literal_eval(os.environ.get(
-        'AUTH_WITH_EMAIL_ONLY', 'False'))
+        'AUTH_WITH_EMAIL_ONLY', 'True'))
 
 if AUTH_WITH_EMAIL_ONLY:
     ACCOUNT_USERNAME_REQUIRED = False
@@ -264,7 +258,7 @@ TRACK_REFERER = True
 TRACK_IGNORE_STATUS_CODES = [301, 303, 403, 404, 405, 410]
 
 DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
-    'layers.Layer',
+    # 'layers.Layer',
     'people.Profile',
     'bims.Pageview',
     'bims.Visitor',
@@ -273,12 +267,6 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.SearchProcess',
     'flatpages.FlatPage'
 ]
-
-if MONITORING_ENABLED:
-    DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA += [
-        'monitoring.RequestEvent',
-        'monitoring.MonitoredResource',
-    ]
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 

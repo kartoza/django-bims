@@ -4,8 +4,6 @@ import logging
 from celery import shared_task
 from django.core.management import call_command
 
-from bims.models.boundary_type import BoundaryType
-from bims.models.boundary import Boundary
 
 logger = logging.getLogger(__name__)
 IN_CELERY_WORKER_PROCESS = (
@@ -20,6 +18,8 @@ def update_search_index():
 
 @shared_task(name='bims.tasks.update_cluster', queue='update')
 def update_cluster(ids=None):
+    from bims.models.boundary_type import BoundaryType
+    from bims.models.boundary import Boundary
     if not ids:
         for boundary_type in BoundaryType.objects.all().order_by('-level'):
             for boundary in Boundary.objects.filter(type=boundary_type):

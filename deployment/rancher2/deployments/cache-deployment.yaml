@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache
+spec:
+  template:
+    metadata:
+      labels:
+        app: cache
+    spec:
+      containers:
+        - command:
+            - memcached
+            - -m 64
+          image: memcached
+          name: cache
+      restartPolicy: Always
