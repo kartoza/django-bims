@@ -3,12 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.core.management import call_command
-
-
-def add_default_location_site_view(apps, schema_editor):
-    call_command('add_default_location_site_view')
-
 
 class Migration(migrations.Migration):
 
@@ -16,6 +10,4 @@ class Migration(migrations.Migration):
         ('bims', '0127_auto_20190306_0814'),
     ]
 
-    operations = [
-        migrations.RunPython(add_default_location_site_view)
-    ]
+    operations = []

@@ -657,6 +657,7 @@ class CollectionSearch(object):
                     Q(chemical_collection_record__isnull=False)
                 )
 
+        water_temperature = []
         if self.thermal_module:
             water_temperature = list(WaterTemperature.objects.all().order_by(
                 'location_site').distinct('location_site').values_list(
@@ -676,9 +677,9 @@ class CollectionSearch(object):
                 site__in=filtered_location_sites
             ).select_related()
 
-        if bio.exists():
+        if bio.exists() or water_temperature:
             self.location_sites_raw_query = LocationSite.objects.filter(
-                id__in=bio.values('site_id')
+                Q(id__in=bio.values('site_id')) | Q(id__in=water_temperature)
             ).annotate(site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
@@ -734,10 +735,40 @@ class CollectionSearch(object):
             ).order_by(order_by)
         )
 
+
+        thermal_sites = WaterTemperature.objects.none()
+        if self.thermal_module:
+            thermal_sites = WaterTemperature.objects.exclude(
+                location_site_id__in=list(sites.values_list('site_id'))
+            ).annotate(
+                name=Case(
+                    When(location_site__site_code='',
+                         then=F('location_site__name')),
+                    default=F('location_site__site_code')
+                ),
+                site_id=F('location_site_id')
+            ).values(
+                'site_id', 'name'
+            ).annotate(
+                total_thermal=Count('location_site')
+            ).order_by(order_by).distinct()
+
+        site_list = list(sites)
+        for thermal_site in thermal_sites:
+            site_list.append({
+                'site_id': thermal_site['site_id'],
+                'name': thermal_site['name'],
+                'total': 0,
+                'total_survey': 0,
+                'total_water_temperature_data': thermal_site['total_thermal']
+            })
+
         return {
             'total_records': self.collection_records.count(),
-            'total_sites': sites.count(),
+            'total_sites': (
+                sites.count() + (thermal_sites.count() if thermal_sites else 0)
+            ),
             'total_survey': survey.count(),
             'records': list(collections),
-            'sites': list(sites)
+            'sites': site_list
         }
