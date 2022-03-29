@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import ast
+
 import django.db
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -25,8 +27,20 @@ class Command(BaseCommand):
             ))
         return sql
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-r',
+            '--replace',
+            dest='replace',
+            default='False',
+            help='Remove the old view first')
+
     def handle(self, *args, **options):
         view_name = 'default_location_site_cluster'
+
+        replace_view = ast.literal_eval(
+            options.get('replace', 'False')
+        )
 
         q = (
             'SELECT DISTINCT l.id AS site_id,'
@@ -58,12 +72,13 @@ class Command(BaseCommand):
             ' WHERE 1 = 0;'
         )
         cursor = connection.cursor()
-        try:
-            cursor.execute(
-                '''DROP MATERIALIZED VIEW {};'''.format(
-                    view_name))
-        except django.db.ProgrammingError:
-            pass
+        if replace_view:
+            try:
+                cursor.execute(
+                    '''DROP MATERIALIZED VIEW {};'''.format(
+                        view_name))
+            except: # noqa
+                pass
         cursor.execute('''%s''' % self.create_materialized_view(
             view_name=view_name,
             query=q
