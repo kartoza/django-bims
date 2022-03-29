@@ -88,8 +88,7 @@ class SourceReferenceList(View):
                 Q(sourcereferencebibliography__document__bimsdocument__authors__in=  # noqa
                   self.collectors) |
                 Q(sourcereferencedocument__source__bimsdocument__authors__in=
-                  self.collectors) |
-                Q(sourcereferencedocument__source__owner__in=self.collectors)
+                  self.collectors)
             )
 
         if self.type_filter:
