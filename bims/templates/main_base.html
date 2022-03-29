@@ -13,7 +13,11 @@
     {% if custom_theme.logo %}
         <link rel="icon" type="image/png" href="{{ custom_theme.logo.url }}" />
     {% else %}
-        <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+        {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+            <link rel="icon" type="image/png" href="{% static 'img/fbis-favicon.png' %}" />
+        {% else %}
+            <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+        {% endif %}
     {% endif %}
     <title>{% block title %} {% if custom_theme.site_name %}{{ custom_theme.site_name }}{% else %}{{ APPLICATION_NAME }}{% endif %} | {% block subtitle %}{% endblock %} {% endblock %}</title>
 
@@ -31,7 +35,12 @@
 
     {% block pre-head %} {% endblock %}
     <link href="{% static "css/base.css" %}" rel="stylesheet">
-    <link href="{% static "css/navbar.css" %}" rel="stylesheet">
+
+    {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+        <link href="{% static "css/fbis/navbar.css" %}" rel="stylesheet">
+    {% else %}
+        <link href="{% static "css/navbar.css" %}" rel="stylesheet">
+    {% endif %}
     <link href="{% static "css/main.css" %}" rel="stylesheet">
     <link href="{% static "css/fonts.css" %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400i,500,500i,700,700i|Roboto+Condensed:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
@@ -93,7 +102,11 @@
 
 {% block navigation %}
     <!-- Navigation -->
-    {% include 'navigation_bar.html' %}
+    {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+        {% include 'fbis/navigation_bar.html' %}
+    {% else %}
+        {% include 'navigation_bar.html' %}
+    {% endif %}
 {% endblock %}
 
 {% block body_content %} {% endblock %}
