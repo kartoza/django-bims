@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import django.db
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.conf import settings
@@ -15,9 +16,27 @@ class Command(BaseCommand):
             ))
         return sql
 
+    def create_materialized_view(self, view_name, query):
+        sql = (
+            'CREATE MATERIALIZED VIEW "{view_name}" AS {sql_raw}'.
+                format(
+                view_name=view_name,
+                sql_raw=query
+            ))
+        return sql
+
     def handle(self, *args, **options):
         view_name = 'default_location_site_cluster'
 
+        q = (
+            'SELECT DISTINCT l.id AS site_id,'
+            'l.geometry_point,'
+            'l.name '
+            'FROM bims_locationsite l '
+            'JOIN bims_survey b ON b.site_id = l.id '
+            'FULL JOIN bims_watertemperature w ON w.location_site_id = l.id '
+            'WHERE b.validated = True ;'
+        )
         query = (
             'SELECT bims_locationsite.id AS site_id,'
             'bims_locationsite.geometry_point, bims_locationsite.name '
@@ -39,9 +58,15 @@ class Command(BaseCommand):
             ' WHERE 1 = 0;'
         )
         cursor = connection.cursor()
-        cursor.execute('''%s''' % self.create_sql_query(
+        try:
+            cursor.execute(
+                '''DROP MATERIALIZED VIEW {};'''.format(
+                    view_name))
+        except django.db.ProgrammingError:
+            pass
+        cursor.execute('''%s''' % self.create_materialized_view(
             view_name=view_name,
-            query=query
+            query=q
         ))
         cursor.execute('''%s''' % self.create_sql_query(
             view_name=empty_view_name,
