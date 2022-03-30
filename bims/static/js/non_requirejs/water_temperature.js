@@ -79,7 +79,8 @@ function renderWaterTemperatureChart(){
                 }
             }
         }
-        for (let j in difference) {
+
+        for (let j = 0; j< difference.length -1; j++) {
             const timestamp = new Date(difference[j]).getTime()
             for (let dataKey in data) {
                 if (dataKey !== 'date_time' && dataKey !== 'days') {
@@ -90,7 +91,6 @@ function renderWaterTemperatureChart(){
             }
         }
 
-        console.log(data['mean_7'])
 
         const chart = new Highcharts.Chart({
             chart: {
