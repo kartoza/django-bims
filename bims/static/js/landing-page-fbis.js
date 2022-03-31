@@ -241,11 +241,24 @@ function createAlgaeChart(algaeData) {
     let algaeContainer = document.getElementById("chart-algae");
     $('#algae-total-records').html(algaeData['total'].toLocaleString());
     $('#algae-total-sites').html(algaeData['total_site'].toLocaleString());
+    let labels = [];
+    let chartData = [];
+    $.each(algaeData['division'], function (index, ecologicalData) {
+        labels.push(ecologicalData['taxonomy__additional_data__Division']);
+        chartData.push(ecologicalData['count']);
+    });
     let algaeChartDataset = {
-        labels: ['Algae'],
+        labels: labels,
         datasets: [{
-            data: [algaeData['total']],
-            backgroundColor: ['#18A090'],
+            data: chartData,
+            backgroundColor: [
+                '#8D2641', '#D7CD47',
+                '#18A090', '#A2CE89',
+                '#4E6440', '#525351',
+                '#BCD39C', '#B1F8F2',
+                '#004346', '#508991',
+                '#666A86', '#788AA3'
+            ],
             borderWidth: 1
         }]
     };
