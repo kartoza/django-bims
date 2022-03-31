@@ -163,7 +163,7 @@ function renderSASSSummaryChart() {
                 }
             },
             legend: false,
-            legendCallback: function(chart) {
+            legendCallback: function() {
                 let ul = document.createElement('ul');
                 sassChartBackgroundColor = [...new Set(sassChartBackgroundColor)]
                 sassChartLegendLabels.forEach(function (label, index){
