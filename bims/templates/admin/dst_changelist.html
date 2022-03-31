@@ -5,8 +5,41 @@
 {% block javascripts %}
     {{ block.super }}
     <script type="text/javascript" charset="utf-8">
+
       (function ($) {
+        let interval = null;
+        let dstStatusUrl = '/api/dst-status/';
+
+        function checkDSTStatus(messageStatus) {
+          $.get(dstStatusUrl, (data) => {
+            if (Object.keys(data).length === 0) {
+              clearInterval(interval);
+            }
+            if (data.state === 'PROCESSING' && data.status) {
+              $('#dst-file-upload').attr('disabled', 'disabled');
+              messageStatus.show();
+              messageStatus.html(data.status);
+            }
+            if (data.state === 'FINISHED') {
+              if (interval) {
+                clearInterval(interval);
+              }
+            }
+            if (data.error_file) {
+              messageStatus.show();
+              messageStatus.html(data.status);
+              messageStatus.append(
+                `<a href="${data.error_file.replace('/home/web/media', '/uploaded')}" > Error file</a>`
+              )
+            }
+            console.log(data);
+          })
+        }
+
         $(document).ready(function () {
+          let messageStatus = $('<div id="messageStatus">');
+          $('#grp-content-title').after(messageStatus);
+
           $('#dst-file-upload').on("change", function(){
             let url = '/api/decision-support-tool/';
             let formData = new FormData();
@@ -25,6 +58,12 @@
               }
             })
           });
+
+          interval = setInterval(() => {
+            checkDSTStatus(messageStatus);
+          }, 2000);
+
+          checkDSTStatus(messageStatus);
         });
       })(grp.jQuery);
     </script>
@@ -32,6 +71,21 @@
 {% endblock %}
 
 {% block object-tools %}
+
+    <style>
+        #messageStatus {
+            display: none;
+            background-color: #b2b2b2;
+            width: fit-content;
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        #messageStatus a {
+            color: red;
+        }
+    </style>
     <ul class="grp-object-tools">
         {% block object-tools-items %}
             {% if has_add_permission %}
@@ -45,7 +99,7 @@
             </a>
         </li>
         <li>
-            <a class="custom-file-upload grp-add-link grp-state-focus">
+            <a class="custom-file-upload grp-add-link grp-state-focus" id="a-file-upload">
                 <label for="dst-file-upload" style="cursor: pointer;">
                     <i class="fa fa-cloud-upload"></i> Upload Data
                 </label>

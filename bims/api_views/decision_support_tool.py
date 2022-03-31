@@ -1,18 +1,19 @@
-import csv
-import io
+import os
 import json
 
 from braces.views import SuperuserRequiredMixin
-from django.http import Http404, HttpResponse
-from django.contrib import messages
+from django.http import Http404, HttpResponse, JsonResponse
+from django.core.cache import cache
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from bims.models import (
-    BiologicalCollectionRecord,
     DecisionSupportTool
 )
+from bims.tasks.decision_support_tool import process_decision_support_tool
 
 
 class DecisionSupportToolList(APIView):
@@ -32,66 +33,42 @@ class DecisionSupportToolView(SuperuserRequiredMixin, APIView):
 
     def post(self, request):
         dst_file = request.FILES.get('dst_file', None)
-        errors = []
-        created = 0
 
         if not dst_file:
             raise Http404('Missing csv file!')
 
-        decoded_file = dst_file.read().decode('utf-8')
-        io_string = io.StringIO(decoded_file)
+        dst_file_path = os.path.join(
+            settings.MEDIA_ROOT,
+            'dst_folder'
+        )
+        if not os.path.exists(dst_file_path):
+            os.mkdir(dst_file_path)
 
-        line_count = 0
-        for line in csv.reader(io_string, delimiter=','):
-            if line_count == 0:
-                print(f'Column names are {", ".join(line)}')
-                line_count += 1
-            else:
-                uuid = line[0].replace('\n', '').strip()
-                name = line[1].replace('\n', '').strip()
-                try:
-                    bio = BiologicalCollectionRecord.objects.get(
-                        uuid=uuid
-                    )
-                except BiologicalCollectionRecord.DoesNotExist:
-                    errors.append(f'{line_count} '
-                                  f': {uuid} Collection Record not found.')
-                    continue
+        fs = FileSystemStorage(location=dst_file_path)
+        filename = fs.save(dst_file.name, dst_file)
 
-                try:
-                    dst, dst_created = (
-                        DecisionSupportTool.objects.get_or_create(
-                            biological_collection_record=bio,
-                            name=name
-                        )
-                    )
-                except DecisionSupportTool.MultipleObjectsReturned:
-                    continue
-
-                if dst_created:
-                    created += 1
-
-                print(
-                    f'\t{uuid} DST for {name}')
-                line_count += 1
-
-        if created > 0:
-            messages.add_message(request, messages.INFO,
-                                 f'{created} records added.')
-        else:
-            messages.add_message(request, messages.INFO,
-                                 f'No records added.')
-        if errors:
-            messages.add_message(
-                request,
-                messages.ERROR,
-                f'Total error : {len(errors)}'
+        task = process_decision_support_tool.delay(
+            os.path.join(
+                dst_file_path, filename
             )
-            messages.add_message(
-                request,
-                messages.ERROR,
-                '\n'.join(errors[:10])
-            )
-        return Response({
-            'Done': True
+        )
+
+        cache.set('DST_PROCESS', {
+            'state': 'STARTED',
+            'status': {},
+            'task_id': task.task_id
         })
+
+        return Response({
+            'process_id': task.task_id
+        })
+
+
+def check_dst_status(request):
+    if not request.user.is_superuser or not request.user.is_staff:
+        raise Http404()
+    dst_process = cache.get('DST_PROCESS')
+    if dst_process:
+        return JsonResponse(dst_process)
+    else:
+        return JsonResponse({})
