@@ -317,6 +317,12 @@ class BiologicalCollectionRecord(AbstractValidation):
         on_delete=models.SET_NULL
     )
 
+    record_type = models.CharField(
+        max_length=50,
+        blank=True,
+        default=''
+    )
+
     @property
     def data_name(self):
         return self.original_species_name
