@@ -91,7 +91,6 @@ function renderWaterTemperatureChart(){
             }
         }
 
-
         const chart = new Highcharts.Chart({
             chart: {
                 renderTo: 'water-temperature',
