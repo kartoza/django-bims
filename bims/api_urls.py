@@ -92,7 +92,8 @@ from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
 from bims.api_views.merge_sites import MergeSites
 from bims.views.source_reference import SourceReferenceAPIView
 from bims.api_views.decision_support_tool import DecisionSupportToolView, \
-    DecisionSupportToolList
+    DecisionSupportToolList, check_dst_status
+
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -272,5 +273,9 @@ urlpatterns = [
     url(r'^decision-support-tool/$',
         DecisionSupportToolView.as_view(),
         name='decision-support-tool'
+        ),
+    url(r'^dst-status/$',
+        check_dst_status,
+        name='dst-status'
         )
 ]

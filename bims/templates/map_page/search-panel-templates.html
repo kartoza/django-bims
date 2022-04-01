@@ -1134,7 +1134,10 @@
 <script type="text/template" id="search-result-site-template">
     <div class="result-search" data-search-result-id="<%= id %>">
         <p class="group-title"><%= name %></p>
-        <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> </a>
+        <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %>
+
+            <% if (total_thermal > 0) { %>  &bull; <%= total_thermal %> water temperature data <% } else { %> <% } %>
+        </a>
     </div>
 </script>
 

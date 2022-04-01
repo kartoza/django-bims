@@ -4,6 +4,7 @@ import requests
 import logging
 import datetime
 import simplejson
+from bims.models.source_reference import DatabaseRecord
 
 from bims.models.location_site import generate_site_code
 from dateutil.parser import parse
@@ -18,7 +19,7 @@ from bims.models import (
     LocationType,
     BiologicalCollectionRecord,
     collection_post_save_handler,
-    HarvestSession
+    HarvestSession, SourceReferenceDatabase
 )
 from bims.utils.get_key import get_key
 
@@ -119,6 +120,16 @@ def import_gbif_occurrences(
         username='GBIF',
         first_name='GBIF.org'
     )
+
+    database_record, _ = DatabaseRecord.objects.get_or_create(
+        name='Global Biodiversity Information Facility (GBIF)'
+    )
+
+    source_reference, _ = SourceReferenceDatabase.objects.get_or_create(
+        source_name='Global Biodiversity Information Facility (GBIF)',
+        source=database_record
+    )
+
 
     for result in json_result['results']:
         if session_id:
@@ -246,7 +257,8 @@ def import_gbif_occurrences(
                 upstream_id=upstream_id,
                 site=location_site,
                 taxonomy=taxonomy,
-                source_collection=source_collection
+                source_collection=source_collection,
+                source_reference=source_reference
             )
         if event_date:
             collection_record.collection_date = parse(event_date)

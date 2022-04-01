@@ -223,7 +223,7 @@ define([
             var taxaCount = numberWithCommas(this.totalTaxa);
             var speciesListName = [];
 
-            if (self.status === 'finished' && this.sitesData.length > 0 && this.recordsData.length > 0) {
+            if (self.status === 'finished' && (this.sitesData.length > 0 || this.recordsData.length > 0)) {
                 if (this.searchFinishedCallback) {
                     this.searchFinishedCallback();
                 }
@@ -248,10 +248,15 @@ define([
                     speciesListName.push(searchResultView.model.get('name'));
                 });
                 $.each(this.sitesData, function (key, data) {
+                    let total_water_temperature_data = 0
+                    if (data['total_water_temperature_data']) {
+                        total_water_temperature_data = data['total_water_temperature_data']
+                    }
                     var searchModel = new SearchModel({
                         id: data['site_id'],
                         count: numberWithCommas(data['total']),
                         survey: numberWithCommas(data['total_survey']),
+                        total_thermal: total_water_temperature_data,
                         name: data['name'],
                         record_type: 'site'
                     });

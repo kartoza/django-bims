@@ -41,6 +41,9 @@ class BackupsManagementView(
         path = '/home/web/backups'
         if dir_name:
             path = os.path.join(path, dir_name)
+        if not os.path.exists(path):
+            return []
+
         for file_name in os.listdir(path):
             tree.append({
                 'id': os.path.join(path, file_name),
