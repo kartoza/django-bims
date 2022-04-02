@@ -46,12 +46,14 @@ x-common-django:
 
 services:
   cache:
+    container_name: bims_dev_cache
     image: memcached
     entrypoint:
       - memcached
       - -m 64
 
   db:
+    container_name: bims_dev_db
     image: kartoza/postgis:14-3.2
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
@@ -66,6 +68,7 @@ services:
       - "6543:5432"
 
   geoserver:
+    container_name: bims_dev_geoserver
     image: kartoza/geoserver:2.19.0
     restart: unless-stopped
     environment:
@@ -84,6 +87,7 @@ services:
       - "63305:8080"
 
   rabbitmq:
+    container_name: bims_dev_rabbitmq
     image: rabbitmq:3.7-alpine
     volumes:
       - rabbitmq:/var/lib/rabbitmq
@@ -91,14 +95,21 @@ services:
 
   worker:
     <<: *default-common-django
+    container_name: bims_dev_worker
     hostname: worker
     links:
       - db:db
       - cache:cache
-    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -B -l debug
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./scheduler-data:/home/scheduler-data
+    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -B --schedule /home/scheduler-data/celerybeat-schedule -l debug
 
   dev:
     <<: *default-common-django
+    container_name: bims_dev_django
     links:
       - db:db
       - rabbitmq:rabbitmq

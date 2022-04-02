@@ -157,7 +157,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
     def add_error_messages(self, row, message):
         self.is_valid = False
         self.error_messages.append(
-            f'line {row} : {message}'
+            f'{row} : {message}'
         )
 
     def post(self, request, *args, **kwargs):
@@ -453,6 +453,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
                     water_data = {
                         'date_time': date_time,
                         'location_site': location_site,
+                        'is_daily': is_daily
                     }
 
                     query = WaterTemperature.objects.raw(
