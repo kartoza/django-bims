@@ -67,14 +67,27 @@ function renderWaterTemperatureChart(){
       response => response.json()
     ).then((data =>{
 
+        let difference = data['days_blank'].filter(x => !data['date_time'].includes(x));
+
         for (let i = 0; i < data['date_time'].length; i++) {
             const timestamp = new Date(data['date_time'][i]).getTime()
             for (let dataKey in data) {
-                if (dataKey !== 'date_time') {
+                if (dataKey !== 'date_time' && dataKey !== 'days') {
                     if (data[dataKey][i]) {
                         data[dataKey][i] = [timestamp, data[dataKey][i]]
                     }
                 }
+            }
+        }
+
+        for (let j = 0; j< difference.length -1; j++) {
+            const timestamp = new Date(difference[j]).getTime()
+            for (let dataKey in data) {
+                if (dataKey !== 'date_time' && dataKey !== 'days') {
+                    data[dataKey].push([timestamp, null])
+                }
+                data[dataKey].sort((a, b)=> a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0))
+
             }
         }
 
