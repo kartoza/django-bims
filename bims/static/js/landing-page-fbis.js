@@ -182,13 +182,13 @@ function createFishCharts(fishData) {
         datasets: [{
             data: [dd, ne, lc, nt, vu, en, ce],
             backgroundColor: [
-                '#808080',
-                '#666A86',
-                '#A2CE89',
-                '#b8b75f',
-                '#18A090',
-                '#D7CD47',
-                '#8D2641',
+                '#DED668',
+                '#39B2A3',
+                '#17766B',
+                '#2C495A',
+                '#1E2F38',
+                '#A34B61',
+                '#641f30',
             ],
             borderWidth: 1
         }]
@@ -252,12 +252,12 @@ function createAlgaeChart(algaeData) {
         datasets: [{
             data: chartData,
             backgroundColor: [
-                '#8D2641', '#D7CD47',
-                '#18A090', '#A2CE89',
-                '#4E6440', '#525351',
-                '#BCD39C', '#B1F8F2',
-                '#004346', '#508991',
-                '#666A86', '#788AA3'
+                '#A34B61', '#641f30',
+                '#E6E188', '#DED668',
+                '#9D9739', '#67632D',
+                '#618295', '#2C495A',
+                '#39B2A3', '#17766B',
+                '#859FAC', '#1E2F38'
             ],
             borderWidth: 1
         }]
