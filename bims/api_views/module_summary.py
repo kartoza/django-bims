@@ -141,6 +141,9 @@ class ModuleSummary(APIView):
         collections = BiologicalCollectionRecord.objects.filter(
             module_group=species_group
         )
+        algae_summary['division'] = collections.values(
+            'taxonomy__additional_data__Division').annotate(
+            count=Count('taxonomy__additional_data__Division')).values('taxonomy__additional_data__Division', 'count')
         algae_summary['total'] = collections.count()
         algae_summary['total_site'] = collections.distinct('site').count()
         return algae_summary

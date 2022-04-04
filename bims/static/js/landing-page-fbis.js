@@ -114,12 +114,12 @@ function createAnuraChart(anuraData) {
             data: [dd, ne, lc, nt, vu, en, ce],
             backgroundColor: [
                 '#808080',
-                '#818181',
-                '#65c25e',
+                '#666A86',
+                '#A2CE89',
                 '#b8b75f',
-                '#ff8f36',
-                '#fe5328',
-                '#810a27',
+                '#18A090',
+                '#D7CD47',
+                '#8D2641',
             ],
             borderWidth: 1
         }]
@@ -182,13 +182,13 @@ function createFishCharts(fishData) {
         datasets: [{
             data: [dd, ne, lc, nt, vu, en, ce],
             backgroundColor: [
-                '#808080',
-                '#818181',
-                '#65c25e',
-                '#b8b75f',
-                '#ff8f36',
-                '#fe5328',
-                '#810a27',
+                '#DED668',
+                '#39B2A3',
+                '#17766B',
+                '#2C495A',
+                '#1E2F38',
+                '#A34B61',
+                '#641f30',
             ],
             borderWidth: 1
         }]
@@ -241,11 +241,24 @@ function createAlgaeChart(algaeData) {
     let algaeContainer = document.getElementById("chart-algae");
     $('#algae-total-records').html(algaeData['total'].toLocaleString());
     $('#algae-total-sites').html(algaeData['total_site'].toLocaleString());
+    let labels = [];
+    let chartData = [];
+    $.each(algaeData['division'], function (index, ecologicalData) {
+        labels.push(ecologicalData['taxonomy__additional_data__Division']);
+        chartData.push(ecologicalData['count']);
+    });
     let algaeChartDataset = {
-        labels: ['Algae'],
+        labels: labels,
         datasets: [{
-            data: [algaeData['total']],
-            backgroundColor: ['#18A090'],
+            data: chartData,
+            backgroundColor: [
+                '#A34B61', '#641f30',
+                '#E6E188', '#DED668',
+                '#9D9739', '#67632D',
+                '#618295', '#2C495A',
+                '#39B2A3', '#17766B',
+                '#859FAC', '#1E2F38'
+            ],
             borderWidth: 1
         }]
     };
