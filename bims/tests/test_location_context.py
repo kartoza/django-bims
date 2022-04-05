@@ -1,7 +1,7 @@
 import os
 import mock
 import json
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from bims.utils.location_context import get_location_context_data
 from bims.tests.model_factories import LocationSiteF, LocationContextGroupF
@@ -37,6 +37,7 @@ class TestLocationContext(TestCase):
         self.site = LocationSiteF.create()
         self.location_context_group_keys = 'group1'
 
+    @override_settings(GEOCONTEXT_URL="test.gecontext.com")
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_location_context_data))
     def test_get_location_context_data(self):
@@ -55,6 +56,7 @@ class TestLocationContext(TestCase):
             ).exists()
         )
 
+    @override_settings(GEOCONTEXT_URL="test.gecontext.com")
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_location_context_data))
     def test_get_location_context_data_multiple_groups(self):
