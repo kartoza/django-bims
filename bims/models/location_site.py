@@ -271,8 +271,8 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
                     _groups = LocationContextGroup.objects.filter(
                         key=geocontext_value['key'],
                         geocontext_group_key=group_key
-                    )
-                    _first_group = _groups[0]
+                    ).order_by('id')
+                    _first_group = _groups.first()
                     _remaining_groups = _groups[1:]
                     LocationContext.objects.filter(group__in=_groups).update(
                         group=_first_group

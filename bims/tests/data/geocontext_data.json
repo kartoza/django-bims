@@ -1,0 +1,22 @@
+{
+    "key": "hydrological_regions",
+    "name": "Hydrological Regions",
+    "description": "Hydrological region classification for South Africa, based on a combination of rainfall season (Schulze and Maharaj 2007) and water management area.  [SOURCE: Rivers-Moore, N.A., Schulze, R.E. and Davis, N.S. (2020). A regional flow type classification for South African perennial rivers. Water SA 46(3):383-392.]  Schulze RE and Maharaj M (2007) Rainfall seasonality. In: Schulze RE (ed) (2007) South African Atlas of Climatology and Agrohydrology. WRC Report No. 1489/1/06. Water Research Commission, Pretoria.",
+    "group_type": "text",
+    "services": [
+        {
+            "key": "hydrological_regions",
+            "value": "Karoo (autumn)",
+            "name": "Hydrological Regions",
+            "description": null,
+            "query_type": "WFS"
+        },
+        {
+            "key": "flow_region_type",
+            "value": "4.03",
+            "name": "Flow_region_type",
+            "description": "This uses a two-level hierarchical classification reflecting a broader hydrological region and its associated flow type.  Information on each flow type is available in a linked spreadsheet of flow metrics associated with quinary catchments, which relate to annual metrics, median metrics, coefficients of dispersion metrics, and explanations of each metric.",
+            "query_type": "WFS"
+        }
+    ]
+}
