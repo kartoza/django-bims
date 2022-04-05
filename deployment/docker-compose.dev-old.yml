@@ -1,0 +1,135 @@
+version: '3.3'
+volumes:
+  rabbitmq:
+  geoserver-datadir:
+
+services:
+  cache:
+    image: memcached
+    entrypoint:
+      - memcached
+      - -m 64
+
+  db:
+    image: kartoza/postgis:9.6-2.4
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_USER: ${POSTGRES_USER:-docker}
+      POSTGRES_PASS: ${POSTGRES_PASS:-docker}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
+    volumes:
+      - ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+
+  geoserver:
+    image: kartoza/geoserver:2.19.0
+    restart: unless-stopped
+    environment:
+      HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+      HTTP_PORT: ${GEOSERVER_PORT:-63305}
+      GEOSERVER_ADMIN_USER: ${GEOSERVER_USERNAME:-admin}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_PASSWORD:-admingeoserver}
+      DATABASE_URL: postgres://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+    depends_on:
+      - db
+    volumes:
+      - geoserver-datadir:/opt/geoserver/data_dir/
+    links:
+      - db
+    ports:
+      - "63305:8080"
+
+  rabbitmq:
+    image: rabbitmq:3.7-alpine
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    restart: on-failure
+
+  worker:
+    build:
+      context: ../
+      dockerfile: deployment/docker/Dockerfile-dev
+    entrypoint: [ ]
+    environment:
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - APP_NAME=bims
+      - ASYNC_SIGNALS=True
+      - BROKER_URL=amqp://rabbitmq:5672
+      - C_FORCE_ROOT=1
+      - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - ALLOWED_HOSTS=['*']
+      - DATABASE_HOST=db
+      - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+      - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+      - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+      - DATABASE_USERNAME=${POSTGRES_USER:-docker}
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+      - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+      - MEDIA_ROOT=/home/web/media
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - ROOT_URLCONF=core.urls
+      - SITEURL=http://localhost:63307/
+      - STATIC_ROOT=/home/web/static/static
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+    restart: unless-stopped
+    user: root
+    extra_hosts:
+      - 'localhost: 192.168.1.197'
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+    hostname: worker
+    links:
+      - db:db
+      - cache:cache
+    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -B -l debug
+
+  dev:
+    build:
+      context: ../
+      dockerfile: deployment/docker/Dockerfile-dev
+    hostname: dev
+    command: ''
+    entrypoint: [ ]
+    environment:
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - APP_NAME=bims
+      - ASYNC_SIGNALS=True
+      - BROKER_URL=amqp://rabbitmq:5672
+      - C_FORCE_ROOT=1
+      - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - ALLOWED_HOSTS=['*']
+      - DATABASE_HOST=db
+      - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+      - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+      - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+      - DATABASE_USERNAME=${POSTGRES_USER:-docker}
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+      - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+      - MEDIA_ROOT=/home/web/media
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - ROOT_URLCONF=core.urls
+      - SITEURL=http://localhost:63307/
+      - STATIC_ROOT=/home/web/static/static
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+    restart: unless-stopped
+    user: root
+    extra_hosts:
+      - 'localhost: 192.168.1.197'
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+    links:
+      - db:db
+      - rabbitmq:rabbitmq
+      - worker:worker
