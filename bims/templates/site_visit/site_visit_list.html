@@ -256,6 +256,10 @@
                                     <a href="{% if site_visit_sass %}/sass/update/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/update/{{ site_visit.id }}/{% endif %}"
                                        class="btn btn-primary btn-sm btn-action" title="Update"><i class="fa fa-pencil"></i> </a>
                                     {% endif %}
+
+                                    <a href="#" class="btn btn-danger btn-sm btn-action" title="Delete" data-toggle="modal" data-target="#delete-form" 
+                                        data-delete-url="{% if site_visit_sass %}/sass/delete/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/delete/{{ site_visit.pk }}/{% endif %}">
+                                        <i class="fa fa-minus" aria-hidden="true"></i> </a>
                                 {% endif %}
                                 {% if site_visit.owner == user and not site_visit.ready_for_validation and not site_visit.validated %}
                                     <a href="#" onclick="sendEmailValidation({{ site_visit.pk }}, this)"
@@ -263,8 +267,6 @@
                                         <i class="fa fa-send" aria-hidden="true"></i>
                                     </a>
                                 {% endif %}
-                                <a href="#" class="btn btn-danger btn-sm btn-action" title="Delete" data-toggle="modal" data-target="#delete-form" data-delete-url="{% if site_visit_sass %}/sass/delete/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/delete/{{ site_visit.pk }}/{% endif %}">
-                                    <i class="fa fa-minus" aria-hidden="true"></i> </a>
                                 {% if validator and site_visit.ready_for_validation %}
                                     <span class="validation-action">
                                         <a href="#" onclick="validateObject({{ site_visit.pk }})"
