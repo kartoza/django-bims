@@ -6,7 +6,8 @@ x-common-django:
   &default-common-django
   build:
     context: ../
-    dockerfile: deployment/docker/Dockerfile-dev
+    dockerfile: deployment/docker/Dockerfile
+    target: dev
   hostname: dev
   command: ''
   entrypoint: [ ]
