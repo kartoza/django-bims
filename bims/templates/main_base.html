@@ -113,6 +113,9 @@
 {% block foot %} {% endblock %}
 
 {% if '/map/' not in request.get_full_path %}
+    <script>
+        const csrfmiddlewaretoken = '{{ csrf_token }}';
+    </script>
     <link href="{% static "css/bug_report_panel_style.css" %}" rel="stylesheet">
     <script src="{% static 'js/utils/detect-browser.js' %}"></script>
     <script src="{% static 'js/non_requirejs/bug_report.js' %}"></script>
