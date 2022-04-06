@@ -201,6 +201,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
         headers = reader.fieldnames
         data = list(reader)
         date_field = 'Date Time' if 'Date Time' in headers else 'Date'
+        value_key = ''
 
         if is_daily:
             if not any(header in ['Mean', 'Minimum', 'Maximum'] for header in
@@ -210,6 +211,8 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                     'Missing minimum and maximum data value'
                 )
                 finished = True
+            else:
+                value_key = 'Mean'
         else:
             if 'Water temperature' not in headers:
                 self.add_error_messages(
@@ -217,6 +220,8 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                     'Missing "Water temperature" header'
                 )
                 finished = True
+            else:
+                value_key = 'Water temperature'
 
         if not finished:
             for temperature_data in data:
@@ -226,6 +231,27 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                     if len(date_string.split(':')) > 2 and ':%S' not in date_format:
                         date_format += ':%S' # Add second
                     date = datetime.strptime(date_string, date_format)
+                    value = temperature_data[value_key]
+
+                    if not value:
+                        self.add_error_messages(
+                            row,
+                            'Missing {} data'.format(
+                                value_key
+                            )
+                        )
+                        continue
+                    else:
+                        try:
+                            float(value)
+                        except ValueError:
+                            self.add_error_messages(
+                                row,
+                                '{} data must be a decimal.'.format(
+                                    value_key
+                                )
+                            )
+                            continue
 
                     # Check interval
                     if not is_daily:
