@@ -87,5 +87,5 @@ pika==1.2.0
 
 MarkupSafe==1.1.1
 pygbif==0.6.0
-celery==4.4.2
+celery==5.2.6
 pycurl==7.45.0

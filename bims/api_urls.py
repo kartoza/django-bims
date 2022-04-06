@@ -5,6 +5,7 @@ from bims.api_views.boundary import (
     BoundaryList,
     BoundaryGeojson
 )
+from bims.api_views.celery_status import CeleryStatus
 from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
@@ -277,5 +278,9 @@ urlpatterns = [
     url(r'^dst-status/$',
         check_dst_status,
         name='dst-status'
+        ),
+    url(r'^celery-status/(?P<task_id>[\w-]+)/$',
+        CeleryStatus.as_view(),
+        name='celery-status'
         )
 ]
