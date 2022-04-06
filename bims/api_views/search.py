@@ -87,12 +87,13 @@ class CollectionSearchAPIView(BimsApiView):
 
         if self.is_background_request():
             # call worker task
-            search_task.delay(
+            task = search_task.delay(
                 parameters,
                 search_process.id,
             )
             result_file = search_process.get_file_if_exits(finished=False)
             if result_file:
+                result_file['task_id'] = task.id
                 return Response(result_file)
             return Response({'status': 'result/status not exists'})
         else:

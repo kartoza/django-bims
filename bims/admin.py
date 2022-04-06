@@ -1253,6 +1253,7 @@ class UploadSessionAdmin(admin.ModelAdmin):
     list_display = (
         'uploader',
         'module_group',
+        'token',
         'uploaded_at',
         'category',
         'processed',
