@@ -1,5 +1,4 @@
 from django.conf.urls import url
-from django.views.decorators.csrf import csrf_exempt
 # from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
     BoundaryList,
@@ -212,7 +211,7 @@ urlpatterns = [
         FindTaxon.as_view(),
         name='find-taxon'),
     url(r'^add-new-taxon/$',
-        csrf_exempt(AddNewTaxon.as_view()),
+        AddNewTaxon.as_view(),
         name='add-new-taxon'),
     url(r'^csv-download/$',
         CsvDownload.as_view(),
@@ -260,7 +259,7 @@ urlpatterns = [
     url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
         name='taxon-images'),
     url(r'^merge-sites/$',
-        csrf_exempt(MergeSites.as_view()),
+        MergeSites.as_view(),
         name='merge-sites'),
     url(r'^duplicate-records/download/$',
         DuplicateRecordsApiView.as_view(),

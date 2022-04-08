@@ -551,6 +551,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
     $.ajax({
         url: `/api/add-new-taxon/`,
         type: 'POST',
+        headers: {"X-CSRFToken": csrfToken},
         data: postData,
         success: function (data) {
             $('#addNewTaxonModal').modal('toggle');
