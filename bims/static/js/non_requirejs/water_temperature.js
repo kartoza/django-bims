@@ -77,7 +77,7 @@ function renderWaterTemperatureChart(){
                 }
             }
         }
-
+        Highcharts.Series.prototype.drawPoints = function() { };
         const chart = new Highcharts.stockChart('water-temperature', {
             title: {
                 text: '',
@@ -101,13 +101,8 @@ function renderWaterTemperatureChart(){
             },
             plotOptions: {
                 series: {
-                    dataGrouping: {
-                        enabled: true,
-                        forced: false,
-                        groupAll: true
-                    },
                     marker: {
-                        enabled: true
+                        enabled: true, radius: 6
                     }
                 }
             },
@@ -115,7 +110,7 @@ function renderWaterTemperatureChart(){
                 layout: 'horizontal',
                 enabled: true,
                 verticalAlign: 'top',
-                symbolHeight: 10
+                symbolWidth: 30,
             },
             exporting: {
                 buttons: {

@@ -78,9 +78,6 @@ const checkStatus = (taskId) => {
                     alertError.html(data['error']);
                     alertError.show();
                 }
-                setTimeout(() => {
-                    location.reload()
-                }, 1000)
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -118,9 +115,6 @@ const processWaterData = (formData) => {
                 $('html, body').animate({
                     scrollTop: $(".dashboard-title").offset().top
                 }, 1);
-                setTimeout(() => {
-                    location.reload()
-                }, 300)
             }
         }, error: function (xhr, ajaxOptions, thrownError) {
             document.getElementById('upload').disabled = false;

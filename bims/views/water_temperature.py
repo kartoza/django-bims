@@ -233,15 +233,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                     date = datetime.strptime(date_string, date_format)
                     value = temperature_data[value_key]
 
-                    if not value:
-                        self.add_error_messages(
-                            row,
-                            'Missing {} data'.format(
-                                value_key
-                            )
-                        )
-                        continue
-                    else:
+                    if value:
                         try:
                             float(value)
                         except ValueError:
