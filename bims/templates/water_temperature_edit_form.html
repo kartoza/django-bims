@@ -13,6 +13,7 @@
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
+    <link href="{% static "css/loading.css" %}" rel="stylesheet">
     <link href="{% static "lib/clockpicker/jquery-clockpicker.min.css" %}" rel="stylesheet"/>
 
     <script type="text/javascript">
@@ -47,6 +48,7 @@
 {% endblock %}
 
 {% block body_content %}
+    <div class="loading">Loading&#8230;</div>
     <form action="{{ request.path }}" method="post" id="water-temperature-form"
           class="needs-validation" novalidate enctype="multipart/form-data">
         {% csrf_token %}

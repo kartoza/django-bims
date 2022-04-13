@@ -254,6 +254,8 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         abundance_type = request.POST.get('abundance_type', None)
         reference = request.POST.get('study_reference', '')
         reference_category = request.POST.get('reference_category', '')
+        record_type = request.POST.get('record_type', None)
+
 
         biotope = None
         specific_biotope = None
@@ -370,7 +372,8 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                             reference_category=reference_category,
                             sampling_effort=sampling_effort,
                             abundance_type=abundance_type,
-                            survey=self.survey
+                            survey=self.survey,
+                            record_type=record_type
                         )
                     )
                     collection_record_ids.append(collection_record.id)

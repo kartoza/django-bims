@@ -1,0 +1,137 @@
+{% load static from staticfiles %}
+<link href="https://fonts.googleapis.com/css?family=Alegreya:400,400i,500,500i,700,700i|Roboto+Condensed:100,100i,300,300i,400,400i,500,500i,700,700i" rel="stylesheet">
+<style>
+    body {
+        padding-top: 0 !important;
+        font-family: "Roboto Condensed", sans-serif;
+    }
+    .hr-navbar {
+        font-size: 12pt !important;
+        padding-left: 32px !important;
+        padding-right: 32px !important;
+    }
+    .p-2 {
+        padding-right: 5px !important;
+    }
+
+    .topNav .icon {
+        display: none;
+    }
+
+    @media screen and (max-width: 1300px) {
+        .topNav a {display: none;}
+        .topNav a.icon {
+            float: right;
+            display: block;
+        }
+    }
+
+    @media screen and (max-width: 1300px) {
+        .topNav.responsive {
+            line-height: 1.25 !important;
+                position: absolute;
+    z-index: 9999;
+    right: 0;
+    margin-top: 200px !important;
+    background-color: white;
+    border: 1px solid black;
+    padding: 10px;
+        }
+        .topNav.responsive .icon {
+            position: absolute;
+            right: 0;
+            top: 0;
+            margin-right: 5px;
+        }
+        .topNav.responsive a {
+            float: none;
+            display: block;
+            text-align: left;
+        }
+    }
+</style>
+<div class="hr-navbar d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 border-bottom">
+    <h5 class="my-0 mr-md-auto font-weight-normal">
+        <a href="/">
+        <a href="/">
+            <img id="fbis_logo_home" src="{% static "img/FBIS v2 Logo.png" %}"
+            width="230"/>
+        </a>
+        </a>
+    </h5>
+    <nav class="my-2 my-md-0 mr-md-3 topNav" id="myTopNav">
+        {% if site_ready %}
+            <a class="p-2" href="/pages/about_us/" title="About Us">About</a>
+            <a class="p-2" href="/map">Map</a>
+            {% if preferences.SiteSetting.blog_page_link %}
+                <a class="p-2"
+                       href="{{ preferences.SiteSetting.blog_page_link }}">Blog</a>
+            {% endif %}
+            {% if preferences.SiteSetting.docs_page_link %}
+                <a class="p-2"
+                       href="{{ preferences.SiteSetting.docs_page_link }}">Docs</a>
+            {% endif %}
+            <a class="p-2" href="/contact">Contact</a>
+            <a class="p-2" href="/pages/help">Help</a>
+            <span class="p-2"></span>
+            {% if not user.is_authenticated %}
+                <a class="nav-login-button" href="/accounts/login">LOG IN</a>
+                <a class="nav-login-button" href="/accounts/signup">SIGN UP</a>
+            {% else %}
+                <li class="dropdown dropdown-admin">
+                <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">{{ request.user.first_name }}
+                    </a>
+                    <ul class="dropdown-menu" style="width: 180px">
+                        <li class="dropdown-menu-item"><a href="/profile/">Profile</a></li>
+                        <li class="dropdown-menu-item"><a href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a></li>
+                    </ul>
+                </li>
+                {% if bims_preferences.enable_upload_data %}
+                    <a class="p-2" href="/upload">Upload Data</a>
+                {% endif %}
+                {% if user.is_staff or user.is_superuser %}
+                    <li class="dropdown dropdown-admin">
+                    <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">Administration
+                        </a>
+                        <ul class="dropdown-menu" style="width: 200px; z-index: 9999">
+                            <li class="dropdown-menu-item"><a href="/source-references/">Source References</a></li>
+                            <li class="dropdown-menu-item"><a href="/upload-taxa/" style="font-size: 0.9em">Upload Taxonomic Data</a></li>
+                            <li class="dropdown-menu-item" ><a href="/upload-collections/"  style="font-size: 0.9em">Upload Occurrence Data</a></li>
+                            <li class="dropdown-menu-item" ><a href="/taxa-management/">Taxon Management</a></li>
+                            <li class="dropdown-menu-item" ><a href="/harvest-collections/">Harvest From GBIF</a></li>
+                            <li class="dropdown-menu-item" ><a href="/dashboard-management/">Edit Dashboard</a></li>
+                            <li class="dropdown-menu-item"><a class="p-2" href="/site-visit/list/?&inReview=True">Validate Records</a></li>
+                            <li class="dropdown-menu-item"><a class="p-2" href="/nonvalidated-site/">Validate Sites</a></li>
+                            <li class="dropdown-menu-item" ><a class="dropdown-item" href="/download-request/">Download Requests</a></li>
+                            <div class="dropdown-divider"></div>
+                            <li class="dropdown-menu-item"><a href="/admin/">Admin Page</a></li>
+                            <li class="dropdown-menu-item"><a href="/cms/">Wagtail Admin</a></li>
+                            <div class="dropdown-divider"></div>
+                            <li class="dropdown-menu-item"><a href="/backups-management/">Backups</a></li>
+                            <li class="dropdown-menu-item"><a href="/summary-report">Summary Report</a></li>
+                            <li class="dropdown-menu-item"><a href="https://analytics.google.com/analytics/web/" target="_blank">Analytics</a></li>
+                        </ul>
+                    </li>
+                {% endif %}
+                <a class="p-2" href="/location-site-form/add/">Add Site</a>
+                <span class="p-2"></span>
+                <a class="nav-login-button" href="/accounts/logout">LOGOUT</a>
+            {% endif %}
+        {% else %}
+            <a class="p-2" href="/pages/about_us/" title="About Us">About</a>
+        {% endif %}
+        <a href="javascript:void(0);" class="icon" onclick="navBarClicked()">
+            <i class="fa fa-bars"></i>
+        </a>
+    </nav>
+    <script type="text/javascript">
+        function navBarClicked() {
+            var el = document.getElementById("myTopNav");
+            if (el.className.includes('responsive')) {
+                el.classList.remove('responsive');
+            } else {
+                el.className += ' responsive';
+            }
+        }
+    </script>
+</div>

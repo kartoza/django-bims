@@ -12,15 +12,15 @@ class EndemismList(APIView):
         endemism_list = Endemism.objects.filter(
             name__isnull=False,
         ).order_by('display_order').values_list(
-            'name', flat=True
+            'name', 'description'
         ).exclude(
             name__exact=''
         )
 
         endemism_list = list(endemism_list)
 
-        if 'Unknown' not in endemism_list:
-            endemism_list.append('Unknown')
+        if 'Unknown' not in [end[0] for end in endemism_list]:
+            endemism_list.append(('Unknown', 'Endemism is unknown'))
 
         return HttpResponse(
             json.dumps(list(dict.fromkeys(endemism_list))),

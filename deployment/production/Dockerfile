@@ -105,7 +105,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 
 # End of cut & paste section
 
-ADD REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
+ADD deployment/docker/REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
 RUN pip install -r /REQUIREMENTS-dev.txt
 ADD bashrc /root/.bashrc
 

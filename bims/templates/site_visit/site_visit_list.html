@@ -47,6 +47,7 @@
             width:40px;
             padding-left: 0;
             padding-right: 0;
+            margin-top: 5px;
         }
 
         .message-bar {
@@ -253,12 +254,16 @@
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
                                     {% if not site_visit.ready_for_validation  %}
                                     <a href="{% if site_visit_sass %}/sass/update/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/update/{{ site_visit.id }}/{% endif %}"
-                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;" title="Update"><i class="fa fa-pencil"></i> </a>
+                                       class="btn btn-primary btn-sm btn-action" title="Update"><i class="fa fa-pencil"></i> </a>
                                     {% endif %}
+
+                                    <a href="#" class="btn btn-danger btn-sm btn-action" title="Delete" data-toggle="modal" data-target="#delete-form" 
+                                        data-delete-url="{% if site_visit_sass %}/sass/delete/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/delete/{{ site_visit.pk }}/{% endif %}">
+                                        <i class="fa fa-minus" aria-hidden="true"></i> </a>
                                 {% endif %}
                                 {% if site_visit.owner == user and not site_visit.ready_for_validation and not site_visit.validated %}
                                     <a href="#" onclick="sendEmailValidation({{ site_visit.pk }}, this)"
-                                       class="btn btn-primary btn-sm btn-action" style="margin-left: 5px;" title="Send for validation">
+                                       class="btn btn-primary btn-sm btn-action" title="Send for validation">
                                         <i class="fa fa-send" aria-hidden="true"></i>
                                     </a>
                                 {% endif %}
@@ -266,11 +271,11 @@
                                     <span class="validation-action">
                                         <a href="#" onclick="validateObject({{ site_visit.pk }})"
                                            class="btn btn-success btn-sm btn-action"
-                                           data-toggle="tooltip" style="margin-left: 5px;" title="Validate this data">
+                                           data-toggle="tooltip" title="Validate this data">
                                             <i class="fa fa-check-circle"></i></a>
                                         <a href="#" onclick="rejectObject({{ site_visit.pk }})"
                                            class="btn btn-danger btn-sm btn-action"
-                                           data-toggle="tooltip" style="margin-left: 5px;" title="Reject this data">
+                                           data-toggle="tooltip" title="Reject this data">
                                             <i class="fa fa-times-circle"></i></a>
                                     </span>
                                 {% endif %}
@@ -287,6 +292,32 @@
                     </div>
                 {% endif %}
             </div>
+        </div>
+
+
+        <div class="modal fade" id="delete-form" tabindex="-1"
+                role="dialog"
+                aria-labelledby="myModalLabel" aria-hidden="true">
+            <form action="#" id="delete-form" data-site-visit-id="">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            Confirm Delete
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete this Site Visit?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="cancel-submit"
+                                    class="btn btn-default"
+                                    data-dismiss="modal">Cancel
+                            </button>
+                            <button type="submit" value="Yes"
+                                    class="btn btn-success success" data-message="Deleting..." id="confirm-delete-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
 
     </div>
@@ -372,6 +403,28 @@
                 }
             })
         });
+
+        $('#delete-form').on('show.bs.modal', function(e) {
+            let deleteUrl = $(e.relatedTarget).data('delete-url');
+            $(e.currentTarget).find('#delete-form').data('delete-url', deleteUrl);
+        })
+
+        // On delete form submit
+        $('#delete-form form').submit(function(e) {
+            let form = $(this);
+            e.preventDefault();
+            let deleteUrl = $(e.currentTarget).data('delete-url');
+            if (deleteUrl) {
+                $('#confirm-delete-btn').prop('disabled', true).html('Deleting...');
+                $.ajax({
+                    url: deleteUrl,
+                    type: 'POST',
+                    success: function (response) {
+                        window.location.reload();
+                    }
+                })
+            }
+        })
 
 
         $(function () {

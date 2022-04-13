@@ -1,4 +1,4 @@
-Django==2.2.16
+Django==2.2.27
 
 psycopg2-binary==2.8.5
 django-braces==1.14.0
@@ -87,4 +87,4 @@ pika==1.2.0
 
 MarkupSafe==1.1.1
 pygbif==0.6.0
-celery==4.4.2
+celery==5.2.2

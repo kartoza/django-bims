@@ -162,31 +162,25 @@ define([
                 url: '/api/endemism-list/',
                 dataType: 'json',
                 success: function (data) {
-                    Shared.EndemismList = data;
-                    let endemicPopoverData = {
-                        'micro-endemic level 1': 'Endemic to <5 rivers within one primary catchment',
-                        'micro-endemic level 2': 'Endemic to a single river',
-                        'regional endemic level 1': 'Endemic to a Freshwater Ecoregion (e.g. CFE), more than one primary catchment',
-                        'regional endemic level 2': 'Endemic to one primary catchment',
-                        'widespread': 'Occurs in more than one Freshwater Ecoregion'
-                    };
+
+                    const endemismList = [];
                     for (var i = 0; i < data.length; i++) {
                         var checked = '';
-                        if ($.inArray(data[i], self.initialSelectedEndemic) > -1) {
+                        if ($.inArray(data[i][0], self.initialSelectedEndemic) > -1) {
                             checked = 'checked';
                         }
-                        let endemicLabel = data[i].replace(/ *\([^)]*\) */g, "");
-                        var liElement = $('<li class="endemic-dropdown-item" data-endemic-value="' + data[i] + '">' +
-                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i] + '" ' + checked + '> <span>' + endemicLabel + ' </span></li>');
+                        let endemicLabel = data[i][0].replace(/ *\([^)]*\) */g, "");
+                        var liElement = $('<li class="endemic-dropdown-item" data-endemic-value="' + data[i][0] + '">' +
+                            ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i][0] + '" ' + checked + '> <span>' + endemicLabel + ' </span></li>');
                         nativeOriginDropdown.append(liElement);
-                        if (typeof endemicPopoverData[data[i].toLowerCase()] !== 'undefined') {
-                            liElement.popover({
-                                content: endemicPopoverData[data[i].toLowerCase()],
-                                trigger: 'hover',
-                                placement: 'top'
-                            })
-                        }
+                        liElement.popover({
+                            content: data[i][1],
+                            trigger: 'hover',
+                            placement: 'top'
+                        });
+                        endemismList.push(data[i][0])
                     }
+                    Shared.EndemismList = endemismList;
                     self.filtersReady['endemism'] = true;
                 }
             });

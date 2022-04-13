@@ -433,7 +433,9 @@ CELERY_TASK_QUEUES += (
     Queue('geocontext',
           GEONODE_EXCHANGE, routing_key='geocontext', priority=0),
 )
-
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TRACK_STARTED = True
+TASK_TRACK_STARTED = True
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',

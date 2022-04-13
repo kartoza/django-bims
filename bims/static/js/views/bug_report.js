@@ -139,6 +139,7 @@ define([
 
             $.ajax({
                 url: reportUrl,
+                headers: {"X-CSRFToken": csrfmiddlewaretoken},
                 type: 'POST',
                 data: postData,
                 dataType: 'text',

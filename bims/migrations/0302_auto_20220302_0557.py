@@ -3,7 +3,10 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
+from django.core.management import call_command
 
+def add_default_location_site_view(apps, schema_editor):
+    call_command('add_default_location_site_view')
 
 class Migration(migrations.Migration):
 
@@ -20,4 +23,5 @@ class Migration(migrations.Migration):
                 ('biological_collection_record', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='bims.BiologicalCollectionRecord')),
             ],
         ),
+        migrations.RunPython(add_default_location_site_view)
     ]

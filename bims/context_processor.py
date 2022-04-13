@@ -60,7 +60,7 @@ def site_ready(request):
     try:
         is_site_ready = ast.literal_eval(get_key('SITE_READY'))
     except (ValueError, SyntaxError):
-        is_site_ready = False
+        is_site_ready = True
     return {'site_ready': is_site_ready}
 
 
