@@ -7,6 +7,7 @@ import json
 from collections import OrderedDict
 from django.db import models
 from django.conf import settings
+from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.dispatch import receiver
 from polymorphic.models import PolymorphicModel
 from td_biblio.models.bibliography import Entry
@@ -516,3 +517,44 @@ def source_reference_post_save_handler(sender, instance, **kwargs):
         SOURCE_REFERENCE_FILTER_FILE
     )
     generate_source_reference_filter.delay(file_path)
+
+
+def merge_source_references(primary_source_reference, source_reference_list):
+    """
+    Merge multiple source references into one primary_source_reference
+    """
+    if not primary_source_reference and not source_reference_list:
+        return
+
+    print('Merging %s source reference' % len(source_reference_list))
+
+    source_references = SourceReference.objects.filter(
+        id__in=source_reference_list.values_list('id', flat=True)
+    ).exclude(id=primary_source_reference.id)
+
+    links = [
+        rel.get_accessor_name() for rel in primary_source_reference._meta.get_fields() if
+        issubclass(type(rel), ForeignObjectRel)
+    ]
+
+    if links:
+        for source_reference in source_references:
+            print('----- {} -----'.format(str(source_reference)))
+            for link in links:
+                try:
+                    objects = getattr(source_reference, link).all()
+                    if objects.count() > 0:
+                        print('Updating {obj} for : {taxon}'.format(
+                            obj=str(objects.model._meta.label),
+                            source_reference=str(source_reference)
+                        ))
+                        update_dict = {
+                            getattr(source_reference, link).field.name: primary_source_reference
+                        }
+                        objects.update(**update_dict)
+                except Exception as e:  # noqa
+                    print(e)
+                    continue
+            print(''.join(['-' for i in range(len(str(primary_source_reference)) + 12)]))
+
+    source_reference.delete()
