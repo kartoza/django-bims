@@ -534,20 +534,17 @@ def merge_source_references(primary_source_reference, source_reference_list):
 
     links = [
         rel.get_accessor_name() for rel in primary_source_reference._meta.get_fields() if
-        issubclass(type(rel), ForeignObjectRel)
+        issubclass(type(rel), ForeignObjectRel) and rel.get_accessor_name() not in
+        ['sourcereferencebibliography', 'sourcereferencedatabase', 'sourcereferencedocument']
     ]
 
     if links:
         for source_reference in source_references:
-            print('----- {} -----'.format(str(source_reference)))
+
             for link in links:
                 try:
                     objects = getattr(source_reference, link).all()
                     if objects.count() > 0:
-                        print('Updating {obj} for : {taxon}'.format(
-                            obj=str(objects.model._meta.label),
-                            source_reference=str(source_reference)
-                        ))
                         update_dict = {
                             getattr(source_reference, link).field.name: primary_source_reference
                         }
@@ -555,6 +552,5 @@ def merge_source_references(primary_source_reference, source_reference_list):
                 except Exception as e:  # noqa
                     print(e)
                     continue
-            print(''.join(['-' for i in range(len(str(primary_source_reference)) + 12)]))
 
     source_reference.delete()
