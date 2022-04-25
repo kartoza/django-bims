@@ -262,6 +262,8 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         doc_url = post_dict.get('doc_url', None)
         doc_type = post_dict.get('doc_type', None)
         doc_file = self.request.FILES.get('doc_file', None)
+        notes = post_dict.get('notes', None)
+
         try:
             bims_doc = BimsDocument.objects.get(
                 document__id=self.object.source.id)
@@ -316,6 +318,9 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                 bims_doc_author.ordering = order
                 bims_doc_author.save()
             order += 1
+        # update note
+        self.object.note = notes
+        self.object.save()
         self.object.source.save()
         bims_doc.save()
 
@@ -329,6 +334,7 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         url = post_dict.get('url', None)
         pdf_file = self.request.FILES.get('pdf_file', None)
         pdf_file_id = post_dict.get('pdf_file_id', None)
+        notes = post_dict.get('notes', None)
 
         # - Check required fields
         if not title or not year:
@@ -438,6 +444,9 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                         rank=rank
                     )
                     rank += 1
+        # update note
+        self.object.note = notes
+        self.object.save()
         self.object.source.save()
 
     def update_database_reference(self, post_dict):
