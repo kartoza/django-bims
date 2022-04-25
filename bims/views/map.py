@@ -18,14 +18,7 @@ from bims.serializers.basemap_serializer import BaseMapLayerSerializer
 class MapPageView(TemplateView):
     """Template view for map page"""
     COLLECTOR_FILTER = 'COLLECTOR_FILTER'
-
-    # change template based on map
-    try:
-        app_name = os.environ['APP_NAME']
-    except KeyError:
-        app_name = 'bims'
-
-    template_name = 'map_page/%s.html' % app_name
+    template_name = 'map_page/bims.html'
 
     def get_context_data(self, **kwargs):
         """Get the context data which is passed to a template.
