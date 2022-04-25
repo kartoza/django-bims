@@ -190,6 +190,13 @@ def import_gbif_occurrences(
                 try:
                     response = requests.get(url)
                     if response.status_code != 200:
+                        log_file.write(
+                            '{0},{1} :'
+                            ' The site is not within a valid border,'
+                            ' skip -- \n'.format(
+                                longitude, latitude
+                            )
+                        )
                         logger.info(
                             f'The site is not within a valid border.'
                         )
@@ -203,6 +210,13 @@ def import_gbif_occurrences(
                         else:
                             logger.info(
                                 f'The site is not within a valid border.'
+                            )
+                            log_file.write(
+                                '{0},{1} :'
+                                ' The site is not within a valid border,'
+                                ' skip -- \n'.format(
+                                    longitude, latitude
+                                )
                             )
                             continue
                 except Exception as e:  # noqa
