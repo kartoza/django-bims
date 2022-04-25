@@ -70,24 +70,21 @@ function renderWaterTemperatureChart(){
         for (let i = 0; i < data['date_time'].length; i++) {
             const timestamp = new Date(data['date_time'][i]).getTime()
             for (let dataKey in data) {
-                if (dataKey !== 'date_time') {
+                if (dataKey !== 'date_time' && dataKey !== 'days') {
                     if (data[dataKey][i]) {
                         data[dataKey][i] = [timestamp, data[dataKey][i]]
                     }
                 }
             }
         }
-
-        const chart = new Highcharts.Chart({
-            chart: {
-                renderTo: 'water-temperature',
-                type: 'spline',
-            },
+        Highcharts.Series.prototype.drawPoints = function() { };
+        const chart = new Highcharts.stockChart('water-temperature', {
             title: {
                 text: '',
             },
             xAxis: {
                 type: 'datetime',
+                ordinal: true,
                 title: {
                     text: year
                 },
@@ -102,10 +99,18 @@ function renderWaterTemperatureChart(){
                     text: 'Water Temperature (°C)'
                 }
             },
+            plotOptions: {
+                series: {
+                    marker: {
+                        enabled: true, radius: 6
+                    }
+                }
+            },
             legend: {
                 layout: 'horizontal',
                 enabled: true,
-                verticalAlign: 'top'
+                verticalAlign: 'top',
+                symbolWidth: 30,
             },
             exporting: {
                 buttons: {

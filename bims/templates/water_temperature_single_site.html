@@ -109,6 +109,11 @@
         #ui-datepicker-div {
             margin-top: -80px;
         }
+        #water-temperature {
+            min-height: 600px;
+            display: flex;
+            justify-content: center;
+        }
 
     </style>
 
@@ -240,7 +245,11 @@
                     <div class="chart-container">
                         <div class="chart-title">Water Temperature - {{ year }}
                         </div>
-                        <div id="water-temperature"></div>
+
+                        <div id="water-temperature">
+                            <img src="/static/img/small-loading.svg" width="150"
+                            alt="Loading view">
+                        </div>
                     </div>
                     <div class="vertical-space"></div>
                     <div class="table-container">
@@ -387,7 +396,7 @@
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/libs/canvas2svg.js" %}"></script>
-    <script src="{% static "js/libs/highcharts/highcharts.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/highstock.js" %}"></script>
     <script src="{% static "js/libs/highcharts/modules/data.js" %}"></script>
     <script src="{% static "js/libs/highcharts/modules/exporting.js" %}"></script>
     <script src="{% static "js/libs/highcharts/modules/export-data.js" %}"></script>

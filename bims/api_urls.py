@@ -1,10 +1,10 @@
 from django.conf.urls import url
-from django.views.decorators.csrf import csrf_exempt
 # from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
     BoundaryList,
     BoundaryGeojson
 )
+from bims.api_views.celery_status import CeleryStatus
 from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
@@ -92,7 +92,8 @@ from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
 from bims.api_views.merge_sites import MergeSites
 from bims.views.source_reference import SourceReferenceAPIView
 from bims.api_views.decision_support_tool import DecisionSupportToolView, \
-    DecisionSupportToolList
+    DecisionSupportToolList, check_dst_status
+
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -210,7 +211,7 @@ urlpatterns = [
         FindTaxon.as_view(),
         name='find-taxon'),
     url(r'^add-new-taxon/$',
-        csrf_exempt(AddNewTaxon.as_view()),
+        AddNewTaxon.as_view(),
         name='add-new-taxon'),
     url(r'^csv-download/$',
         CsvDownload.as_view(),
@@ -258,7 +259,7 @@ urlpatterns = [
     url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
         name='taxon-images'),
     url(r'^merge-sites/$',
-        csrf_exempt(MergeSites.as_view()),
+        MergeSites.as_view(),
         name='merge-sites'),
     url(r'^duplicate-records/download/$',
         DuplicateRecordsApiView.as_view(),
@@ -272,5 +273,13 @@ urlpatterns = [
     url(r'^decision-support-tool/$',
         DecisionSupportToolView.as_view(),
         name='decision-support-tool'
+        ),
+    url(r'^dst-status/$',
+        check_dst_status,
+        name='dst-status'
+        ),
+    url(r'^celery-status/(?P<task_id>[\w-]+)/$',
+        CeleryStatus.as_view(),
+        name='celery-status'
         )
 ]

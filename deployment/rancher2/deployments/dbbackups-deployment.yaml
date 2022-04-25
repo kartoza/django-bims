@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbbackups
+spec:
+  template:
+    spec:
+      containers:
+        - env:
+            - name: DUMPPREFIX
+              value: PG_bims
+            - name: PGDATABASE
+              value: gis
+            - name: PGHOST
+              value: db
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_PASS
+          image: kartoza/pg-backup:9.6
+          name: dbbackups
+          resources: {}
+      restartPolicy: Always

@@ -125,6 +125,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     rights_holder = serializers.SerializerMethodField()
     recorded_by = serializers.SerializerMethodField()
     decision_support_tool = serializers.SerializerMethodField()
+    record_type = serializers.SerializerMethodField()
 
     def spatial_data(self, obj, key):
         if 'context_cache' not in self.context:
@@ -480,6 +481,11 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def get_recorded_by(self, obj):
         return self.occurrences_fields(obj, 'recordedBy')
 
+    def get_record_type(self, obj):
+        if obj.record_type:
+            return obj.record_type
+        return '-'
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -534,7 +540,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'identified_by',
             'rights_holder',
             'recorded_by',
-            'decision_support_tool'
+            'decision_support_tool',
+            'record_type'
         ]
 
     def to_representation(self, instance):

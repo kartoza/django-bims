@@ -1,7 +1,7 @@
 import logging
 import functools
 from contextlib import contextmanager
-from kombu.five import monotonic
+from time import monotonic
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)

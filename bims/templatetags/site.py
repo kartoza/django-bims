@@ -44,7 +44,10 @@ def filename(value):
 
 @register.simple_tag
 def current_version():
-    from git import Repo
+    try:
+        from git import Repo
+    except ImportError:
+        return 'latest'
 
     from datetime import datetime
     try:

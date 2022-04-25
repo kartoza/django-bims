@@ -1,0 +1,4 @@
+DB_USER=docker
+DB_PASS=docker
+GEOSERVER_ADMIN_PASSWORD=admingeoserver
+GEOSERVER_ADMIN_USER=admin

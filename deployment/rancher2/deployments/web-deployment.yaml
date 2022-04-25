@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - image: nginx
+          name: web
+          volumeMounts:
+            - mountPath: /home/web/static
+              name: static-data
+            - mountPath: /home/web/media
+              name: media-data
+      restartPolicy: Always
+      volumes:
+        - name: static-data
+          persistentVolumeClaim:
+            claimName: static-data
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+status: {}

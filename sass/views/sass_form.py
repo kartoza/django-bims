@@ -834,6 +834,13 @@ class SassDeleteView(UserPassesTestMixin, View):
             SiteVisit,
             id=kwargs.get('sass_id', None)
         )
+        site_visit_taxon = SiteVisitTaxon.objects.filter(site_visit=site_visit)
+        survey = None
+        if site_visit_taxon.exists():
+            survey = site_visit_taxon.first().survey
+        if survey:
+            survey.delete()
+        site_visit_taxon.delete()
         site_visit.delete()
         messages.success(
             request,

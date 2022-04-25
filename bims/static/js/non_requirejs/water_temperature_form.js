@@ -50,17 +50,52 @@ let iconFeature = new ol.Feature({
 });
 markerSource.addFeature(iconFeature);
 
-const processWaterData = (formData) => {
+let alertError = $('.alert-danger');
+let alertSuccess = $('.alert-success');
+let loading = $('.loading');
 
-    let alertError = $('.alert-danger');
-    let alertSuccess = $('.alert-success');
+const checkStatus = (taskId) => {
+    $.ajax({
+        url: `/api/celery-status/${taskId}/?session=upload`,
+        headers: {"X-CSRFToken": csrfToken},
+        type: 'GET',
+        success: function (data) {
+            if (data.state === 'PENDING' || data.state === 'STARTED') {
+                setTimeout(() => checkStatus(taskId), 1000);
+            } else if (data.state === 'SUCCESS') {
+                loading.hide();
+                $('html, body').animate({
+                    scrollTop: $(".dashboard-title").offset().top
+                }, 1);
+                document.getElementById('upload').disabled = false;
+                document.getElementById('upload').value = 'Upload';
+
+                $('#water_file').val('');
+                if (data['success']) {
+                    alertSuccess.html(data['success']);
+                    alertSuccess.show();
+                } else if (data['error']) {
+                    alertError.html(data['error']);
+                    alertError.show();
+                }
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            document.getElementById('upload').disabled = false;
+            document.getElementById('upload').value = 'Upload';
+            alert('Error uploading data. ' + thrownError);
+            loading.hide();
+        }
+    })
+}
+
+const processWaterData = (formData) => {
 
     alertError.html('');
     alertSuccess.html('');
 
     alertSuccess.hide();
     alertError.hide();
-
     $.ajax({
         url: `/upload-water-temperature/`,
         headers: {"X-CSRFToken": csrfToken},
@@ -69,37 +104,31 @@ const processWaterData = (formData) => {
         contentType: false,
         processData: false,
         success: function (data) {
-            $('html, body').animate({
-                scrollTop: $(".dashboard-title").offset().top
-            }, 1);
-            document.getElementById('upload').disabled = false;
-            document.getElementById('upload').value = 'Upload';
-
-            $('#water_file').val('');
-
-
-            if (data['status'] == 'failed') {
-                alertError.html('Errors : <br>')
-                for (let i = 0; i < data['message'].length; i++) {
-                    alertError.append(`${data['message'][i]}<br>`)
-                }
-                alertError.show();
-                document.getElementById('upload').disabled = false;
-                document.getElementById('upload').value = 'Upload';
-            }
-            if (data['status'] == 'success') {
+            if (data['status'] === 'PENDING') {
+                checkStatus(data['task']);
+            } else {
                 alertSuccess.html(data['message']);
                 alertSuccess.show();
+                document.getElementById('upload').disabled = false;
+                document.getElementById('upload').value = 'Upload';
+                loading.hide();
+                $('html, body').animate({
+                    scrollTop: $(".dashboard-title").offset().top
+                }, 1);
             }
         }, error: function (xhr, ajaxOptions, thrownError) {
             document.getElementById('upload').disabled = false;
             document.getElementById('upload').value = 'Upload';
-            alert('Error uploading data. ' + thrownError)
+            alert('Error uploading data. ' + thrownError);
+            loading.hide();
         }
     });
 }
 
 $('#upload').click((event) => {
+
+    loading.show();
+
     let required_inputs = $('input,textarea,select').filter('[required]:visible');
     let isError = false;
     let alertMessage = '';
@@ -175,6 +204,10 @@ $('#upload').click((event) => {
                 document.getElementById('upload').disabled = false;
                 document.getElementById('upload').value = 'Upload';
                 $('#water_file').val('');
+                $('html, body').animate({
+                    scrollTop: $(".dashboard-title").offset().top
+                }, 1);
+                loading.hide();
             }
             if (data['status'] == 'success') {
                 document.getElementById('upload').value = 'Processing data...';

@@ -18,17 +18,18 @@ from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
 from django.utils.html import format_html
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.postgres import fields
+from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
-from geonode.people.forms import ProfileCreationForm
 from geonode.people.models import Profile
-from geonode.upload.models import Upload, UploadFile
+# from geonode.upload.models import Upload, UploadFile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
@@ -444,6 +445,26 @@ class ProfileInline(admin.StackedInline):
     classes = ('grp-collapse grp-open',)
     inline_classes = ('grp-collapse grp-open',)
     model = BimsProfile
+
+
+class ProfileCreationForm(UserCreationForm):
+
+    class Meta:
+        model = get_user_model()
+        fields = ("username",)
+
+    def clean_username(self):
+        # Since User.username is unique, this check is redundant,
+        # but it sets a nicer error message than the ORM. See #13147.
+        username = self.cleaned_data["username"]
+        try:
+            get_user_model().objects.get(username=username)
+        except get_user_model().DoesNotExist:
+            return username
+        raise forms.ValidationError(
+            self.error_messages['duplicate_username'],
+            code='duplicate_username',
+        )
 
 
 # Inherits from GeoNode ProfileCreationForm
@@ -1232,6 +1253,7 @@ class UploadSessionAdmin(admin.ModelAdmin):
     list_display = (
         'uploader',
         'module_group',
+        'token',
         'uploaded_at',
         'category',
         'processed',
@@ -1387,8 +1409,8 @@ admin.site.register(
 admin.site.register(LocationContextFilter, LocationContextFilterAdmin)
 
 # Hide upload files from geonode in admin
-admin.site.unregister(Upload)
-admin.site.unregister(UploadFile)
+# admin.site.unregister(Upload)
+# admin.site.unregister(UploadFile)
 
 # Rerender geonode document admin
 admin.site.unregister(Document)
@@ -1400,10 +1422,6 @@ if TRACK_PAGEVIEWS:
     admin.site.register(Pageview, PageviewAdmin)
 
 from bims.custom_admin import *  # noqa
-from geonode.themes.models import *  # noqa
-
-admin.site.unregister(GeoNodeThemeCustomization)
-admin.site.unregister(Partner)
 
 admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)

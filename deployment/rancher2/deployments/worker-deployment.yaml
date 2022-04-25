@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+spec:
+  template:
+    spec:
+      containers:
+        - args:
+            - celery
+            - worker
+            - --app=bims.celery:app
+            - -B
+            - -l
+            - debug
+          env:
+            - name: ADMIN_EMAILS
+              value: dimas@kartoza.com
+            - name: ALLOWED_HOSTS
+              value: '[''django-bims.test'']'
+            - name: APP_NAME
+              value: bims
+            - name: ASYNC_SIGNALS_GEONODE
+              value: "True"
+            - name: BROKER_URL
+              value: amqp://rabbitmq:5672
+            - name: CONTACT_US_EMAIL
+              value: dimas@kartoza.com
+            - name: C_FORCE_ROOT
+              value: "1"
+            - name: DATABASE_HOST
+              value: db
+            - name: DATABASE_NAME
+              value: gis
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_PASS
+            - name: DATABASE_URL
+              value: postgres://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@db:5432/gis
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgis
+                  key: DB_USER
+            - name: DJANGO_SETTINGS_MODULE
+              value: core.settings.prod_docker
+            - name: GEOCONTEXT_URL
+              value: https://geocontext.kartoza.com
+            - name: GEOIP_PATH
+              value: /home/web/media/geoip.db
+            - name: GEOSERVER_LOCATION
+              value: http://geoserver/geoserver/
+            - name: GEOSERVER_LOCATION_SITE_LAYER
+              value: bims:location_site_view
+            - name: GEOSERVER_PUBLIC_LOCATION
+              value: http://django-bims.test/geoserver/
+            - name: MEDIA_ROOT
+              value: /home/web/media
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: ROOT_URLCONF
+              value: core.urls
+            - name: SITEURL
+              value: http://django-bims.test/
+            - name: STATIC_ROOT
+              value: /home/web/static/static
+            - name: VIRTUAL_HOST
+              value: bims.kartoza.com
+            - name: VIRTUAL_PORT
+              value: "8080"
+          image: kartoza/kbims_uwsgi:latest
+          name: worker
+          resources: {}
+          volumeMounts:
+            - mountPath: /home/web/static
+              name: static-data
+            - mountPath: /home/web/media
+              name: media-data
+          workingDir: /home/web/django_project
+      hostname: worker
+      restartPolicy: Always
+      volumes:
+        - name: static-data
+          persistentVolumeClaim:
+            claimName: static-data
+        - name: media-data
+          persistentVolumeClaim:
+            claimName: media-data
+status: {}

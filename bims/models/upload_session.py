@@ -69,6 +69,11 @@ class UploadSession(models.Model):
         null=True
     )
 
+    success_notes = models.TextField(
+        blank=True,
+        null=True
+    )
+
     progress = models.CharField(
         max_length=200,
         default='',

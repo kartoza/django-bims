@@ -1,6 +1,8 @@
 # noinspection PyUnresolvedReferences,PyPackageRequirements
 import factory
 import random
+
+from bims.models.upload_session import UploadSession
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.utils import timezone
@@ -198,6 +200,15 @@ class ProfileF(factory.django.DjangoModelFactory):
     user = factory.SubFactory(UserF)
     qualifications = factory.Sequence(lambda n: "qualifications%s" % n)
     other = factory.Sequence(lambda n: "other%s" % n)
+
+
+class UploadSessionF(factory.django.DjangoModelFactory):
+    """
+    Upload session factory
+    """
+    class Meta:
+        model = UploadSession
+    uploader = factory.SubFactory(UserF)
 
 
 class TaxonomyF(factory.django.DjangoModelFactory):
