@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search import CollectionSearch
 from bims.models import LocationSite, LocationContext
+from bims.utils.geomorphological_zone import get_geomorphological_zone_class
 from bims.utils.logger import log
 from sass.models import (
     SiteVisit,
@@ -332,8 +333,7 @@ class SassDashboardMultipleSitesApiView(APIView):
         for site in self.location_sites:
             eco_region = eco_geo_data.filter(
                 site=site).value_from_key('eco_region_1')
-            geo_class = eco_geo_data.filter(
-                site=site).value_from_key('geo_class')
+            geo_class = get_geomorphological_zone_class(site)
             if (eco_region, geo_class) not in unique_eco_geo:
                 unique_eco_geo[(eco_region, geo_class)] = [site.id]
             else:

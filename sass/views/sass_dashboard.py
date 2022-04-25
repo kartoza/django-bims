@@ -16,6 +16,7 @@ from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.api_views.search import CollectionSearch
 from bims.serializers.chemical_records_serializer import \
     ChemicalRecordsSerializer
+from bims.utils.geomorphological_zone import get_geomorphological_zone_class
 from sass.models import (
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon,
@@ -247,8 +248,8 @@ class SassDashboardView(TemplateView):
             eco_region = self.location_context.value_from_key(
                 'eco_region_1'
             )
-            geo_class = self.location_context.value_from_key(
-                'geo_class'
+            geo_class = get_geomorphological_zone_class(
+                self.location_site
             )
             # Fix eco_region name
             eco_region_splits = eco_region.split(' ')
