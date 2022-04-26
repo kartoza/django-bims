@@ -77,4 +77,4 @@ def location_context_post_save(sender, instance, **kwargs):
     Post save location context
     """
     if ',' in instance.value:
-        instance.value = instance.value.replace(',', ' ')
+        instance.value = instance.value.replace(',', '')

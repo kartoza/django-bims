@@ -20,7 +20,7 @@
         },
         {
             "key": "value_with_comma",
-            "value": "test,comma",
+            "value": "test, comma",
             "name": "Value With Comma",
             "description": "",
             "query_type": "WFS"
