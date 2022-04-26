@@ -489,11 +489,7 @@ function createEcologicalScatterDataset(colour, label, data) {
 
 function renderEcologicalCategoryChart() {
     let header = $('.ecological-chart-header');
-    let geoName = '';
-    try {
-        geoName = geomorphologicalGroup['geo_class'];
-    } catch (e) {
-    }
+    let geoName = geoClass;
     if (useCombinedGeo) {
         geoName = 'Combine';
     }

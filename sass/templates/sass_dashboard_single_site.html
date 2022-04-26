@@ -94,6 +94,7 @@
             const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
             const sourceReferences = {{ source_references | safe }};
             const chemicalRecords = {{ chemical_records | safe }};
+            const geoClass = '{{ geo_class }}';
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
