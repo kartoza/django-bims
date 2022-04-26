@@ -46,14 +46,22 @@ class TestLocationContext(TestCase):
         )
         self.assertTrue(
             LocationContextGroup.objects.filter(
-                key='hydrological_regions',
+                geocontext_group_key='hydrological_regions',
             ).exists()
         )
         self.assertTrue(
             LocationContext.objects.filter(
-                group__key='hydrological_regions',
+                group__geocontext_group_key='hydrological_regions',
                 site=self.site
             ).exists()
+        )
+        self.assertEqual(
+            LocationContext.objects.get(
+                group__key='value_with_comma',
+                group__geocontext_group_key='hydrological_regions',
+                site=self.site
+            ).value,
+            'test comma'
         )
 
     @override_settings(GEOCONTEXT_URL="test.gecontext.com")
