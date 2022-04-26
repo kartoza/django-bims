@@ -155,7 +155,7 @@ class TestSourceReferences(TestCase):
         record.save()
 
         merge_source_references(primary_source_reference=source_1,
-                                source_reference_list=[source_1, source_2])
+                                source_reference_list=SourceReference.objects.filter(note='test'))
 
         self.assertTrue(
             BiologicalCollectionRecord.objects.filter(
