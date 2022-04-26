@@ -7,6 +7,7 @@ from datetime import datetime
 
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.cache import cache
+from django.db.models import Case, When
 
 from bims.models.location_context import LocationContext
 from braces.views import LoginRequiredMixin
@@ -135,6 +136,7 @@ class WaterTemperatureEditView(WaterTemperatureBaseView):
         ctx['total_data'] = self.water_temperature.count()
         ctx['site_image'] = SiteImage.objects.filter(
             owner=self.request.user,
+            site=self.location_site,
             date__year=self.year
         )
         ctx['owner'] = self.water_temperature.first().owner
@@ -503,13 +505,13 @@ class WaterTemperatureSiteView(TemplateView):
         context['original_site_code'] = self.location_site.legacy_site_code
         context['original_river_name'] = self.location_site.legacy_river_name
         site_images = SiteImage.objects.filter(
-            site=self.location_site)
+            site=self.location_site
+        ).order_by('date')
+
         if len(context['years']) > 0 :
             context['year'] = int(
                 self.year if self.year else context['years'][-1]
             )
-            if site_images:
-                site_images = site_images.filter(date__year=self.year)
 
         context['site_image'] = site_images
         site_description = self.location_site.site_description

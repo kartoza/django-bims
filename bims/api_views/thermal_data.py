@@ -46,6 +46,7 @@ class ThermalDataApiView(APIView):
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
             water_temperature = WaterTemperature.objects.filter(
+                location_site=location_site,
                 date_time__gte=start_date,
                 date_time__lte=end_date
             )
