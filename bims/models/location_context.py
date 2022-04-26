@@ -1,4 +1,6 @@
+from bims.utils.decorator import prevent_recursion
 from django.contrib.gis.db import models
+from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 from django.db import ProgrammingError
 
@@ -66,3 +68,13 @@ class LocationContext(models.Model):
         default=timezone.now
     )
     objects = LocationContextManager()
+
+
+@receiver(models.signals.post_save, sender=LocationContext)
+@prevent_recursion
+def location_context_post_save(sender, instance, **kwargs):
+    """
+    Post save location context
+    """
+    if ',' in instance.value:
+        instance.value = instance.value.replace(',', ' ')
