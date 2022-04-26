@@ -93,6 +93,9 @@ class SourceReference(PolymorphicModel):
         default='',
         max_length=512
     )
+    verified = models.BooleanField(
+        default=False
+    )
 
     @property
     def reference_source(self):

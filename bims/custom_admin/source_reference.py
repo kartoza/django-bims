@@ -44,13 +44,15 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
         'sourcereferencebibliography__source__title',
         'sourcereferencedocument__source__title',
         'sourcereferencedatabase__source__name',
-        'source_name'
+        'source_name',
+
     )
 
     actions = ['merge_source_references']
 
     def merge_source_references(self, request, queryset):
 
+        verified = queryset.filter(verified=True)
         source_type = queryset.values('polymorphic_ctype').distinct().count()
 
         if queryset.count() <= 1:
@@ -59,13 +61,24 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
             )
             return
 
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified source reference', messages.ERROR)
+            return
+
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified source reference',
+                messages.ERROR)
+            return
+
         elif source_type >= 2:
             self.message_user(
                 request, 'Source references should have same type', messages.ERROR
             )
             return
 
-        merge_source_references(primary_source_reference=queryset[0],
+        merge_source_references(primary_source_reference=verified[0],
                                 source_reference_list=queryset)
 
     merge_source_references.short_description = 'Merge source references'
