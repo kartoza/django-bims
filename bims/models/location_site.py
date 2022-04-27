@@ -468,7 +468,7 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     update_location_context.delay(instance.id)
 
 
-def generate_site_code(location_site=None, lat=None, lon=None):
+def generate_site_code(location_site=None, lat=None, lon=None, river_name=''):
     """Generate site code"""
     from bims.utils.site_code import (
         fbis_catchment_generator,
@@ -484,7 +484,8 @@ def generate_site_code(location_site=None, lat=None, lon=None):
         catchment_site_code, catchments_data = fbis_catchment_generator(
             location_site=location_site,
             lat=lat,
-            lon=lon
+            lon=lon,
+            river_name=river_name
         )
     elif catchment_generator_method == 'rbis':
         catchment_site_code, catchments_data = rbis_catchment_generator(

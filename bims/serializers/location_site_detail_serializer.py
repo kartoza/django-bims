@@ -68,7 +68,11 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
 
         if preferences.SiteSetting.site_code_generator == 'fbis':
             try:
-                site_detail_info['river'] = parse_string(obj.river.name)
+                if obj.legacy_river_name:
+                    site_detail_info['river'] = parse_string(
+                        obj.legacy_river_name)
+                else:
+                    site_detail_info['river'] = parse_string(obj.river.name)
             except AttributeError:
                 site_detail_info['river'] = 'Unknown'
 

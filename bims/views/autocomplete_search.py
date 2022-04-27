@@ -87,6 +87,26 @@ def autocomplete(request):
             site['source'] = 'site code'
         suggestions.extend(sites)
 
+    river_list = []
+    if len(suggestions) < 10:
+        original_rivers = list(
+            LocationSite.objects.filter(
+                legacy_river_name__icontains=q,
+                biological_collection_record__validated=True,
+                **site_additional_filters
+            ).distinct('legacy_river_name').annotate(
+                suggested_name=F('legacy_river_name'),
+                source=Value('river name', output_field=CharField())
+            ).values(
+                'suggested_name',
+                'source'
+            )[:10]
+        )
+        suggestions.extend(original_rivers)
+        river_list = [
+            original['suggested_name'].lower() for original in original_rivers
+        ]
+
     if len(suggestions) < 10:
         rivers = list(
             River.objects.filter(
@@ -99,7 +119,10 @@ def autocomplete(request):
             values('river_id', 'suggested_name')[:10]
         )
         for river in rivers:
-            river['source'] = 'river name'
+            if river['suggested_name'].lower() in river_list:
+                rivers.remove(river)
+            else:
+                river['source'] = 'river name'
         suggestions.extend(rivers)
 
     the_data = json.dumps({
