@@ -67,10 +67,6 @@ function renderWaterTemperatureChart(){
       response => response.json()
     ).then((data =>{
 
-        if(data['date_time'].length > 304){
-            $('.thermal-metrics').show()
-        }
-
         for (let i = 0; i < data['date_time'].length; i++) {
             const timestamp = new Date(data['date_time'][i]).getTime()
             for (let dataKey in data) {
