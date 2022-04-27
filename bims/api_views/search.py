@@ -436,6 +436,10 @@ class CollectionSearch(object):
                 )
             if not bio.exists():
                 bio = collection_record_model.objects.filter(
+                    site__legacy_river_name__icontains=self.search_query
+                )
+            if not bio.exists():
+                bio = collection_record_model.objects.filter(
                     site__river__name__icontains=self.search_query
                 )
             if not bio.exists():

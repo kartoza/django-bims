@@ -1,5 +1,6 @@
 import json
 import requests
+from bims.models.location_site import LocationSite
 from requests.exceptions import HTTPError
 from bims.location_site.river import fetch_river_name
 from bims.utils.get_key import get_key
@@ -63,7 +64,8 @@ def _get_catchments_data(
     return catchments, catchments_data
 
 
-def fbis_catchment_generator(location_site=None, lat=None, lon=None):
+def fbis_catchment_generator(
+        location_site:LocationSite=None, lat=None, lon=None, river_name=''):
     """
     Generate catchment string for FBIS Site Code
     :param location_site: Location site object
@@ -76,7 +78,6 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
     """
     catchment_key = 'river_catchment_areas_group'
     catchment_code = ''
-    river_name = ''
     catchments, catchments_data = _get_catchments_data(
         location_site=location_site,
         lat=lat,
@@ -87,15 +88,18 @@ def fbis_catchment_generator(location_site=None, lat=None, lon=None):
         if 'secondary_catchment_area' in key and not catchment_code:
             catchment_code = value[:2].upper()
             break
-    if location_site:
-        if location_site.river:
+    if location_site and not river_name:
+        if location_site.legacy_river_name:
+            river_name = location_site.legacy_river_name
+        elif location_site.river:
             river_name = location_site.river.name
         else:
             river_name = fetch_river_name(
                 location_site.geometry_point[1],
                 location_site.geometry_point[0]
             )
-    elif lat and lon:
+    # Search river name by coordinates
+    if not river_name and lat and lon:
         river_name = fetch_river_name(lat, lon)
 
     if river_name:
