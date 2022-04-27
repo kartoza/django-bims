@@ -3,7 +3,9 @@ const allowedInput = ['D', 'C', 'B', 'A', '1'];
 $('#submitBtn').click(function () {
 });
 
-$('.sass-form-close').click(closeSassForm);
+$('.sass-form-close').click(function (){
+     window.history.back()
+});
 
 $('#submit').click(function () {
     let submitButton = $('#submit');

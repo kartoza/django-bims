@@ -602,3 +602,7 @@ function deleteRecord(recordId) {
         collectionIdList.splice(index, 1);
     }
 }
+
+$('.from-close').click(function (e){
+    window.history.back()
+});
