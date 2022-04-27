@@ -3,7 +3,9 @@
 import logging
 
 from django.test import TestCase
-from bims.models.source_reference import SourceReference
+
+from bims.models import BiologicalCollectionRecord
+from bims.models.source_reference import SourceReference, merge_source_references
 from bims.tests.model_factories import (
     SourceReferenceF,
     SourceReferenceBibliographyF,
@@ -136,3 +138,28 @@ class TestSourceReferences(TestCase):
 
         self.assertEqual(result.status_code, 200)
         self.assertIsNotNone(SourceReference.objects.filter(note='test', source_name='test'))
+
+    def test_merge_source_reference(self):
+        """
+        Tests merge source reference
+        """
+
+        source_1 = SourceReferenceF(note='test')
+        source_2 = SourceReferenceF(note='test')
+
+        self.record.source_reference = source_1
+        self.record.save()
+
+        record = BiologicalCollectionRecordF()
+        record.source_reference = source_2
+        record.save()
+
+        merge_source_references(primary_source_reference=source_1,
+                                source_reference_list=SourceReference.objects.filter(note='test'))
+
+        self.assertTrue(
+            BiologicalCollectionRecord.objects.filter(
+                source_reference=source_1
+            ).count(),
+            2
+        )
