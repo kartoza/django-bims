@@ -2,6 +2,8 @@
 import factory
 import random
 
+from bims.models.source_reference import SourceReferenceDocument
+
 from bims.models.upload_session import UploadSession
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -371,19 +373,30 @@ class SourceReferenceBibliographyF(factory.django.DjangoModelFactory):
     source = factory.SubFactory(EntryFactory)
 
 
-class SourceReferenceDatabaseF(factory.django.DjangoModelFactory):
-    class Meta:
-        model = SourceReferenceDatabase
-
-
 class DatabaseRecordF(factory.django.DjangoModelFactory):
     class Meta:
         model = DatabaseRecord
 
 
+class SourceReferenceDatabaseF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SourceReferenceDatabase
+
+    source = factory.SubFactory(DatabaseRecordF)
+
+
 class DocumentF(factory.django.DjangoModelFactory):
     class Meta:
         model = Document
+
+    title = factory.Sequence(lambda n: u'Document title %s' % n)
+
+
+class SourceReferenceDocumentF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SourceReferenceDocument
+
+    source = factory.SubFactory(DocumentF)
 
 
 class TaxonImageF(factory.django.DjangoModelFactory):
