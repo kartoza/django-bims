@@ -5,14 +5,17 @@ import logging
 from django.test import TestCase
 
 from bims.models import BiologicalCollectionRecord
-from bims.models.source_reference import SourceReference, merge_source_references
+from bims.models.source_reference import SourceReference, \
+    merge_source_references, SourceReferenceDatabase, SourceReferenceDocument
 from bims.tests.model_factories import (
     SourceReferenceF,
     SourceReferenceBibliographyF,
     SourceReferenceDatabaseF,
+    SourceReferenceDocumentF,
     DatabaseRecordF,
     BiologicalCollectionRecordF, UserF
 )
+from geonode.documents.models import Document
 from td_biblio.tests.model_factories import (
     JournalF,
     EntryF
@@ -137,7 +140,8 @@ class TestSourceReferences(TestCase):
         )
 
         self.assertEqual(result.status_code, 200)
-        self.assertIsNotNone(SourceReference.objects.filter(note='test', source_name='test'))
+        self.assertIsNotNone(
+            SourceReference.objects.filter(note='test', source_name='test'))
 
     def test_merge_source_reference(self):
         """
@@ -154,12 +158,69 @@ class TestSourceReferences(TestCase):
         record.source_reference = source_2
         record.save()
 
-        merge_source_references(primary_source_reference=source_1,
-                                source_reference_list=SourceReference.objects.filter(note='test'))
+        merge_source_references(
+            primary_source_reference=source_1,
+            source_reference_list=SourceReference.objects.filter(note='test'))
 
         self.assertTrue(
             BiologicalCollectionRecord.objects.filter(
                 source_reference=source_1
             ).count(),
             2
+        )
+
+        biblio = SourceReferenceBibliographyF.create(
+            note='test', source=self.entry)
+        database = SourceReferenceDatabaseF.create()
+        document = SourceReferenceDocumentF.create()
+        source_document_id = document.source.id
+
+        BiologicalCollectionRecordF.create(
+            source_reference=biblio
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=database
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=document
+        )
+        self.assertTrue(
+            Document.objects.filter(id=source_document_id).exists()
+        )
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                source_reference=document
+            ).count(),
+            1
+        )
+        source_references = SourceReference.objects.filter(
+            id__in=[database.id, document.id]
+        )
+        merge_source_references(
+            primary_source_reference=biblio,
+            source_reference_list=source_references
+        )
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                source_reference=biblio
+            ).count(),
+            3
+        )
+        self.assertFalse(
+            BiologicalCollectionRecord.objects.filter(
+                source_reference=database
+            ).exists()
+        )
+        self.assertFalse(
+            Document.objects.filter(id=source_document_id).exists()
+        )
+        self.assertFalse(
+            SourceReferenceDatabase.objects.filter(
+                id=database.id
+            ).exists()
+        )
+        self.assertFalse(
+            SourceReferenceDocument.objects.filter(
+                id=document.id
+            ).exists()
         )

@@ -1,3 +1,4 @@
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 from django.contrib import admin
 from django.contrib import messages
 
@@ -35,6 +36,12 @@ class SourceReferenceDocumentAdmin(PolymorphicChildModelAdmin):
 class SourceReferenceAdmin(PolymorphicParentModelAdmin):
     """ The SourceReference """
     base_model = SourceReference
+    list_display = (
+        'source_reference_title',
+        'reference_type',
+        'verified',
+        'total_records'
+    )
     child_models = (
         SourceReferenceBibliography,
         SourceReferenceDatabase,
@@ -45,8 +52,46 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
         'sourcereferencedocument__source__title',
         'sourcereferencedatabase__source__name',
         'source_name',
-
     )
+
+    def source_reference_title(self, obj):
+        try:
+            return obj.sourcereferencebibliography.title
+        except SourceReferenceBibliography.DoesNotExist:
+            pass
+        try:
+            return obj.sourcereferencedatabase.title
+        except SourceReferenceDatabase.DoesNotExist:
+            pass
+        try:
+            return obj.sourcereferencedocument.title
+        except SourceReferenceDocument.DoesNotExist:
+            pass
+        return obj.title
+
+    def reference_type(self, obj):
+        try:
+            return obj.sourcereferencebibliography.reference_type
+        except SourceReferenceBibliography.DoesNotExist:
+            pass
+        try:
+            return obj.sourcereferencedatabase.reference_type
+        except SourceReferenceDatabase.DoesNotExist:
+            pass
+        try:
+            return obj.sourcereferencedocument.reference_type
+        except SourceReferenceDocument.DoesNotExist:
+            pass
+        return obj.reference_type
+
+    def total_records(self, obj):
+        return BiologicalCollectionRecord.objects.filter(
+            source_reference=obj
+        ).count()
+
+    source_reference_title.short_description = 'Title'
+    reference_type.short_description = 'Reference Type'
+    total_records.short_description = 'Total Occurrences'
 
     actions = ['merge_source_references']
 

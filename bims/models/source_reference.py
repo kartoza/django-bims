@@ -543,7 +543,6 @@ def merge_source_references(primary_source_reference, source_reference_list):
 
     if links:
         for source_reference in source_references:
-
             for link in links:
                 try:
                     objects = getattr(source_reference, link).all()
@@ -555,5 +554,10 @@ def merge_source_references(primary_source_reference, source_reference_list):
                 except Exception as e:  # noqa
                     print(e)
                     continue
-
-    source_reference.delete()
+            if (
+                    source_reference.source and
+                    source_reference.source != primary_source_reference.source
+            ):
+                source_reference.source.delete()
+            else:
+                source_reference.delete()
