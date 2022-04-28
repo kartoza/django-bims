@@ -215,18 +215,22 @@ function createInvertCharts(invertData) {
     $('#invert-total-sites').html(totalSite.toLocaleString());
     $('#invert-total-sass').html(totalSass.toLocaleString());
     let labels = [];
-    let backgroundColors = [];
     let chartData = [];
     $.each(invertData['ecological_data'], function (index, ecologicalData) {
         labels.push(ecologicalData['value']);
-        backgroundColors.push(ecologicalData['color']);
         chartData.push(ecologicalData['count']);
     });
     let invertChartDataset = {
         labels: labels,
         datasets: [{
             data: chartData,
-            backgroundColor: backgroundColors,
+            backgroundColor: [
+                '#641f30',
+                '#8D2641',
+                '#D7CD47',
+                '#17766B',
+                '#39B2A3'
+            ],
             borderWidth: 1
         }]
     };
