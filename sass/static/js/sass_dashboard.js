@@ -491,7 +491,7 @@ function renderEcologicalCategoryChart() {
     let header = $('.ecological-chart-header');
     let geoName = geoClass;
     if (useCombinedGeo) {
-        geoName = 'Combine';
+        geoName = 'Combined';
     }
     try {
         let headerLabel = `${riverEcoregionGroup['eco_region_1']} - ${geoName}`;
