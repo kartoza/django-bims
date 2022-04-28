@@ -9,7 +9,7 @@ def init_unit(apps, schema_editor):
     """ Initialize table Unit"""
     Unit = apps.get_model('bims', 'Unit')
     for unit in ChemUnit:
-        obj = Unit(unit=unit.value)
+        obj = Unit(unit=unit.name)
         obj.save()
 
 
@@ -19,8 +19,8 @@ def insert_value_to_unit_foreign_key(apps, schema_editor):
     Chem = apps.get_model('bims', 'Chem')
     Unit = apps.get_model('bims', 'Unit')
     for unit in ChemUnit:
-        chem_unit = Chem.objects.filter(chem_unit=unit.value)
-        chem_unit.update(unit=Unit.objects.get(unit=unit.value).id)
+        chem_unit = Chem.objects.filter(chem_unit=unit.name)
+        chem_unit.update(unit=Unit.objects.get(unit=unit.name).id)
 
 
 class Migration(migrations.Migration):
