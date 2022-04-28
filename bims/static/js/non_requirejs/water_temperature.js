@@ -77,6 +77,7 @@ function renderWaterTemperatureChart(){
                 }
             }
         }
+
         Highcharts.Series.prototype.drawPoints = function() { };
         const chart = new Highcharts.stockChart('water-temperature', {
             title: {

@@ -523,7 +523,7 @@ class WaterTemperatureSiteView(TemplateView):
         except AttributeError:
             context['river'] = '-'
 
-        water_temperature_data =  water_temperature_data.order_by(
+        water_temperature_data = water_temperature_data.order_by(
             'date_time'
         )
 
@@ -534,6 +534,9 @@ class WaterTemperatureSiteView(TemplateView):
                     water_temperature_data)
             else:
                 context['indicators'] = []
+
+        context['full_year_data'] = water_temperature_data.distinct(
+            'date_time__date').order_by('date_time__date').count()
 
         context['location_site'] = self.location_site
         context['execution_time'] = time.time() - start_time
