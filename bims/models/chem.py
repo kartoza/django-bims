@@ -10,6 +10,12 @@ class Unit(models.Model):
         null=True
     )
 
+    unit_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
     def __str__(self):
         return self.unit
 

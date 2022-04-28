@@ -1350,10 +1350,9 @@ class DecisionSupportToolAdmin(admin.ModelAdmin):
 
 
 class UnitAdmin(admin.ModelAdmin):
-    list_display = ('unit', )
-    list_filter = ('unit', )
-    search_fields = ('unit', )
-
+    list_display = ('unit_name', 'unit', )
+    list_filter = ('unit_name', 'unit', )
+    search_fields = ('unit_name', 'unit', )
 
 
 # Re-register GeoNode's Profile page
