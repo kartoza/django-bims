@@ -79,8 +79,7 @@ class ContactRole(models.Model):
             # executed.
             raise ValidationError('')
 
-        if (self.role == self.resource.poc) or (
-                self.role == self.resource.metadata_author):
+        if self.role == self.resource.poc:
             contacts = self.resource.contacts.filter(
                 contactrole__role=self.role)
             if contacts.count() == 1:
