@@ -38,7 +38,6 @@ class DocumentCreateForm(TranslationModelForm):
 
     def __init__(self, *args, **kwargs):
         super(DocumentCreateForm, self).__init__(*args, **kwargs)
-        self.fields['links'].choices = self.generate_link_choices()
 
     def clean_permissions(self):
         """
