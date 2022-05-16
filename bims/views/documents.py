@@ -66,8 +66,6 @@ class DocumentUploadView(CreateView):
         if settings.RESOURCE_PUBLISHING:
             self.object.is_published = False
         self.object.save()
-        form.save_many2many()
-        self.object.set_permissions(form.cleaned_data['permissions'])
 
         abstract = None
         date = None
@@ -119,10 +117,7 @@ class DocumentUploadView(CreateView):
         else:
             return HttpResponseRedirect(
                 reverse(
-                    'document_metadata',
-                    args=(
-                        self.object.id,
-                    )))
+                    'source-reference-form'))
 
 
 class BimsDocumentUpdateView(UpdateView):
