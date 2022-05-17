@@ -16,7 +16,7 @@ class UploadSession(models.Model):
         ('taxa', 'Taxa'),
         ('collections', 'Collections'),
         ('water_temperature', 'Water Temperature'),
-
+        ('physico_chemical', 'Physico Chemical')
     )
 
     def file_storage(self, filename):
