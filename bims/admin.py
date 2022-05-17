@@ -89,7 +89,7 @@ from bims.models import (
     TaxonImage,
     WaterTemperature,
     TaxonExtraAttribute,
-    DecisionSupportTool
+    DecisionSupportTool, Unit
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -1349,6 +1349,12 @@ class DecisionSupportToolAdmin(admin.ModelAdmin):
     get_bio_uuid.admin_order_field = 'biological_collection_record__uuid'
 
 
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ('unit_name', 'unit', )
+    list_filter = ('unit_name', 'unit', )
+    search_fields = ('unit_name', 'unit', )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1426,3 +1432,4 @@ from bims.custom_admin import *  # noqa
 admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
 admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)
+admin.site.register(Unit, UnitAdmin)
