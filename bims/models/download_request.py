@@ -21,9 +21,39 @@ def validate_file_extension(value):
         raise ValidationError('File not supported!')
 
 
+class DownloadRequestPurpose(models.Model):
+    name = models.CharField(
+        max_length=512,
+        blank=False,
+        null=False
+    )
+    description = models.TextField(
+        help_text='Optional',
+        null=True,
+        blank=True
+    )
+    order = models.IntegerField(
+        null=False,
+        blank=False
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('order',)
+
+
 class DownloadRequest(models.Model):
-    """Csv document model
+    """Download request model
     """
+    CSV = 'CSV'
+    CHART = 'CHART'
+    RESOURCE_TYPE_CHOICES = [
+        (CSV, 'Csv'),
+        (CHART, 'Chart'),
+    ]
+
     requester = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.CASCADE,
@@ -33,6 +63,44 @@ class DownloadRequest(models.Model):
     )
     request_date = models.DateTimeField(
         default=datetime.now
+    )
+    resource_type = models.CharField(
+        max_length=10,
+        choices=RESOURCE_TYPE_CHOICES,
+        default=CSV
+    )
+    resource_name = models.CharField(
+        max_length=256,
+        default='',
+        blank=True
+    )
+    taxon = models.ForeignKey(
+        'bims.Taxonomy',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+    location_site = models.ForeignKey(
+        'bims.LocationSite',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+    survey = models.ForeignKey(
+        'bims.Survey',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+    purpose = models.ForeignKey(
+        'bims.DownloadRequestPurpose',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+    dashboard_url = models.TextField(
+        null=True,
+        blank=True
     )
     request_file = models.FileField(
         upload_to='request-files/',

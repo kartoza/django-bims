@@ -122,6 +122,7 @@ try:
         'bims.context_processor.application_name',
         'bims.context_processor.site_ready',
         'bims.context_processor.download_request_message',
+        'bims.context_processor.download_request_purpose',
         'bims_theme.context_processor.bims_custom_theme',
         'preferences.context_processors.preferences_cp',
     ]
