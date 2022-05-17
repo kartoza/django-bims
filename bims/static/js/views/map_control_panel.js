@@ -7,13 +7,12 @@ define(
         'ol',
         'views/search',
         'views/locate',
-        'views/upload_data',
         'views/data_downloader-modal',
         'views/filter_panel/spatial_filter',
         'views/lasso_panel',
         'views/control_panel/third_party_layer_panel'
     ],
-    function (Backbone, _, Shared, $, ol, SearchView, LocateView, UploadDataView, DataDownloader, SpatialFilter, LassoPanelView, ThirdPartyLayerPanelView) {
+    function (Backbone, _, Shared, $, ol, SearchView, LocateView, DataDownloader, SpatialFilter, LassoPanelView, ThirdPartyLayerPanelView) {
         return Backbone.View.extend({
             template: _.template($('#map-control-panel').html()),
             locationControlActive: false,
@@ -209,9 +208,6 @@ define(
                     $('#download-control-modal').hide();
                 }
             },
-            showUploadDataModal: function (lon, lat, siteFeature) {
-                this.uploadDataView.showModal(lon, lat, siteFeature);
-            },
             render: function () {
                 this.$el.html(this.template());
 
@@ -237,11 +233,6 @@ define(
                 this.$el.append(this.locateView.render().$el);
                 this.$el.append(
                     this.dataDownloaderControl.render().$el);
-                this.uploadDataView = new UploadDataView({
-                    parent: this,
-                    map: this.parent.map
-                });
-                this.$el.append(this.uploadDataView.render().$el);
 
                 this.spatialFilter = new SpatialFilter({
                     parent: this,

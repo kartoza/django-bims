@@ -5,7 +5,8 @@ body {
 }
 
 .csv-uploader-wrapper {
-   margin-top: 80px;
+  margin-top: 50px;
+  padding-top: 1.5em;
 }
 
 /* Absolute Center Spinner */

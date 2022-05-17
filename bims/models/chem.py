@@ -1,5 +1,4 @@
 from django.contrib.gis.db import models
-from sass.enums.chem_unit import ChemUnit
 
 
 class Unit(models.Model):
