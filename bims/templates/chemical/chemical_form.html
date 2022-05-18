@@ -1,0 +1,75 @@
+<style>
+    .measured {
+        background-color: rgba(0, 128, 0, 0.2);
+    }
+
+    .warning {
+        font-size: 12px;
+        background-color: #ffffd8;
+        position: absolute;
+        margin-top: -20px;
+        display: none;
+    }
+
+    .measured-container {
+        padding-left: 0;
+    }
+
+    .physico-data-container {
+        padding-top: 10px;
+        padding-left: 10px;
+        padding-right: 10px;
+        justify-content: center;
+    }
+
+    .measured-check {
+        margin-top: 2px;
+    }
+</style>
+<div class="container">
+    <h4>Physico-chemical data</h4>
+    <hr class="hr-normal"/>
+    <input type="hidden" name="physico-chemical-data" id="physico-chemical-data" value="">
+    {% for chemical_record in chemical_records %}
+        <div class="form-group row physico-data-container {% if chemical_record.chem_record_id %}measured{% endif %}">
+            <div class="col-5"
+                 style="padding-left: 0; padding-right: 5px;">
+                <input type="text"
+                       class="form-control form-control-sm chem-input"
+                       value="{{ chemical_record.description }} ({{ chemical_record.unit }})"
+                       placeholder="Abiotic" readonly>
+                {% if chemical_record.chem_record_id %}
+                    <input type="hidden" class="chem-record-id"
+                           value="{{ chemical_record.chem_record_id }}"> {% endif %}
+                {% if chemical_record.chem_unit %}
+                    <input type="hidden" class="chem-input-id"
+                           value="{{ chemical_record.chem_unit }}"> {% endif %}
+            </div>
+            <div class="col-1 measured-container">
+                <div class="form-check" style="padding-top: 5px;">
+                    <input type="checkbox"
+                           class="form-check-input measured-check"
+                            {% if chemical_record.chem_record_id %}
+                           checked {% endif %}
+                           id="measured-{{ chemical_record.chem_unit }}">
+                    <label class="form-check-label"
+                           for="measured-{{ chemical_record.chem_unit }}">Measured</label>
+                </div>
+            </div>
+            <div class="col-5"
+                 style="padding-right: 0; padding-left: 30px;">
+                <span class="warning">Warning: The value you have entered is outside of our range</span>
+                <input type="number"
+                       class="form-control form-control-sm chem-input-value"
+                       placeholder="Value"
+                       onchange="handleValueChange(this)"
+                       value="{% if chemical_record.value %}{{ chemical_record.value }}{% endif %}"
+                       data-max="{{ chemical_record.max }}"
+                       data-min="{{ chemical_record.min }}">
+                <small class="form-text text-muted input-value-help">Min
+                    = {{ chemical_record.min }}, Max
+                    = {{ chemical_record.max }}</small>
+            </div>
+        </div>
+    {% endfor %}
+</div>

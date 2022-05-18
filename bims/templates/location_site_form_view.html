@@ -92,6 +92,13 @@
                         <a href="/sass/{{ site_id }}/" class="btn btn-info">Add SASS data</a>
                         <a href="/algae-form/?siteId={{ site_id }}" class="btn btn-info">Add algal data</a>
                         <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-info">Add water temperature data</a>
+                        <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-info">Add physico-chemical data</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="form-group row">
+                    <div class="col-lg-12">
+                        <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-info">Add physico-chemical data</a>
                     </div>
                 </div>
             {% endif %}
