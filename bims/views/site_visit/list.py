@@ -16,6 +16,13 @@ class SiteVisitListView(ListView):
     template_name = 'site_visit/site_visit_list.html'
     collection_results = BiologicalCollectionRecord.objects.none()
 
+    def check_filters(self, search_filters):
+        survey_filter = ['validated', 'site_code', 'collectors']
+        if 'o' in search_filters:
+            del search_filters['o']
+        if 'validated' in search_filters:
+            return True
+
     def get_queryset(self):
         """
         Add GET requests filters
@@ -32,16 +39,40 @@ class SiteVisitListView(ListView):
 
         if 'o' in search_filters:
             order = search_filters['o']
+            del search_filters['o']
 
         # Base queryset
         qs = super(SiteVisitListView, self).get_queryset()
 
         if search_filters:
             search = CollectionSearch(search_filters)
-            self.collection_results = search.process_search()
-            qs = qs.filter(
-                id__in=self.collection_results.values('survey')
-            )
+
+            if 'site_code' in search_filters:
+                if search_filters['site_code']:
+                    qs = qs.filter(
+                        site__site_code=search_filters['site_code']
+                    )
+                del search_filters['site_code']
+            if 'collectors' in search_filters:
+                if search_filters['collectors']:
+                    qs = qs.filter(
+                        owner__in=search.collectors
+                    )
+                del search_filters['collectors']
+            if 'validated' in search_filters:
+                validation_filters = search.validation_filter()
+                if validation_filters:
+                    qs = qs.filter(
+                        validated=validation_filters['survey__validated']
+                    )
+                del search_filters['validated']
+
+            if search_filters:
+                search = CollectionSearch(search_filters)
+                self.collection_results = search.process_search()
+                qs = qs.filter(
+                    id__in=self.collection_results.values('survey')
+                )
         else:
             self.collection_results = BiologicalCollectionRecord.objects.all()
 

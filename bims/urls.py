@@ -89,6 +89,7 @@ from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
     WaterTemperatureSiteView, WaterTemperatureEditView
 from bims.views.download_taxa_template import download_taxa_template
+from bims.views.physico_chemical import PhysicoChemicalView
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -230,6 +231,9 @@ urlpatterns = [
     url(r'^water-temperature-form/$',
         WaterTemperatureView.as_view(),
         name='water-temperature-form'),
+    url(r'^physico-chemical-form/$',
+        PhysicoChemicalView.as_view(),
+        name='physico-chemical-form'),
     url(r'^water-temperature-form/edit/$',
         WaterTemperatureEditView.as_view(),
         name='water-temperature-edit-form'),
