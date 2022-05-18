@@ -238,10 +238,7 @@ class LocationSitesSummary(APIView):
                     continue
                 value = ChemicalRecordsSerializer(qs, many=True)
                 # Get chemical unit
-                try:
-                    chem_unit = ChemUnit[qs[0].chem.chem_unit].value
-                except KeyError:
-                    chem_unit = qs[0].chem.chem_unit
+                chem_unit = qs[0].chem.chem_unit.unit
                 data = {
                     'unit': chem_unit,
                     'name': qs[0].chem.chem_description,
