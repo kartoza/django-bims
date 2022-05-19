@@ -2,6 +2,8 @@
 import factory
 import random
 
+from bims.models.chem import Chem, Unit
+
 from bims.models.source_reference import SourceReferenceDocument
 
 from bims.models.upload_session import UploadSession
@@ -294,9 +296,21 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     validated = True
 
 
-class ChemicalRecordF(factory.django.DjangoModelFactory):
+class UnitF(factory.django.DjangoModelFactory):
     class Meta:
-        model = ChemicalRecord
+        model = Unit
+
+    unit = factory.Sequence(lambda n: u'unit %s' % n)
+    unit_name = factory.Sequence(lambda n: u'unit name %s' % n)
+
+
+class ChemF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Chem
+
+    chem_code = factory.Sequence(
+        lambda n: u'code %s' % n)
+    chem_unit = factory.SubFactory(UnitF)
 
 
 class BoundaryTypeF(factory.django.DjangoModelFactory):
@@ -413,3 +427,11 @@ class SiteImageF(factory.django.DjangoModelFactory):
 class WaterTemperatureF(factory.django.DjangoModelFactory):
     class Meta:
         model = WaterTemperature
+
+
+class ChemicalRecordF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ChemicalRecord
+
+    survey = factory.SubFactory(SurveyF)
+    chem = factory.SubFactory(ChemF)

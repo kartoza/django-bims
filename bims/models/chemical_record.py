@@ -1,11 +1,25 @@
 import json
 from django.utils import timezone
 from django.contrib.gis.db import models
+from django.db.models import Q
 from django.contrib.postgres.fields import JSONField
 from bims.models import LocationSite, SourceReference, Survey
+from bims.models.biological_collection_record import (
+    BiologicalCollectionQuerySet
+)
+
+
+class ChemicalRecordManager(models.Manager):
+    def get_queryset(self):
+        return BiologicalCollectionQuerySet(self.model, using=self._db)
+
+    def source_references(self):
+        return self.get_queryset().source_references()
 
 
 class ChemicalRecord(models.Model):
+
+    objects = ChemicalRecordManager()
 
     date = models.DateField(
         null=False,
@@ -92,3 +106,51 @@ class ChemicalRecord(models.Model):
                 attempt += 1
 
         super(ChemicalRecord, self).save(*args, **kwargs)
+
+
+def physico_chemical_chart_data(
+        location_site: LocationSite,
+        chem_codes = None
+    ) -> dict:
+    """
+    Returns serialized physico-chemical data for chart purpose
+    :param location_site: Location Site object
+    :param chem_codes: list of chemical codes to be displayed in the chart
+    """
+    from bims.serializers.chemical_records_serializer import (
+        ChemicalRecordsSerializer
+    )
+    list_chems = {}
+    if location_site:
+        chems = ChemicalRecord.objects.filter(
+            Q(location_site_id=location_site.id) |
+            Q(survey__site_id=location_site.id)
+        )
+        if chem_codes is None:
+            chem_codes = list(chems.values_list(
+                'chem__chem_code', flat=True
+            ).distinct())
+        x_label = []
+        for chem in chem_codes:
+            chem_name = chem.lower().replace('-n', '').upper()
+            qs = chems.filter(chem__chem_code=chem).order_by('date')
+            if not qs.exists():
+                continue
+            value = ChemicalRecordsSerializer(qs, many=True)
+
+            # Get chemical unit
+            chem_unit = qs.first().chem.chem_unit.unit
+
+            data = {
+                'unit': chem_unit,
+                'name': qs.first().chem.chem_description,
+                'values': value.data
+            }
+            for val in value.data:
+                if val['str_date'] not in x_label:
+                    x_label.append(val['str_date'])
+            try:
+                list_chems[chem_name].append({chem: data})
+            except KeyError:
+                list_chems[chem_name] = [{chem: data}]
+    return list_chems

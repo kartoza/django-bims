@@ -2,13 +2,15 @@ import json
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.db.models import Q, F
 from django.db.models.functions import Lower
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 
 from bims.models import Chem, LocationSite, BaseMapLayer, ChemicalRecord, \
-    Survey, SourceReference
+    Survey, SourceReference, physico_chemical_chart_data, SiteImage, \
+    LocationContext
 from bims.templatetags import get_unvalidated_site_visits_url
 from bims.utils.get_key import get_key
 from sass.enums.chem_unit import ChemUnit
@@ -179,3 +181,105 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
         ).exclude(id__in=updated_record_ids).delete()
 
         return HttpResponseRedirect(redirect_path)
+
+
+class PhysicoChemicalSiteView(TemplateView):
+    template_name = 'physico_chemical_single_site.html'
+    location_site = LocationSite.objects.none()
+
+    def get(self, request, site_id, *args, **kwargs):
+        self.location_site = get_object_or_404(
+            LocationSite,
+            pk=site_id
+        )
+        self.location_context = LocationContext.objects.filter(
+            site=self.location_site
+        )
+        return super(
+            PhysicoChemicalSiteView, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super(PhysicoChemicalSiteView, self).get_context_data()
+
+        chem_data = physico_chemical_chart_data(
+            location_site=self.location_site
+        )
+        ctx['chemical_records'] = json.dumps(chem_data)
+
+        chems = ChemicalRecord.objects.filter(
+            Q(location_site_id=self.location_site.id) |
+            Q(survey__site_id=self.location_site.id)
+        )
+        source_references = (
+            chems.exclude(
+                source_reference__isnull=True
+            ).order_by(
+                'source_reference').distinct(
+                'source_reference').source_references()
+        )
+
+        ctx['chem_units'] = chems.annotate(
+            code=F('chem__chem_code'),
+            desc=F('chem__chem_description'),
+            unit=F('chem__chem_unit__unit')
+        ).values(
+            'code',
+            'desc',
+            'unit'
+        ).distinct('code')
+
+        ctx['source_references'] = json.dumps(source_references)
+        ctx['coord'] = [
+            self.location_site.get_centroid().x,
+            self.location_site.get_centroid().y
+        ]
+        ctx['site_code'] = self.location_site.site_code
+        ctx['site_id'] = self.location_site.id
+        ctx['original_site_code'] = self.location_site.legacy_site_code
+        ctx['original_river_name'] = self.location_site.legacy_river_name
+        ctx['site_image'] = SiteImage.objects.filter(
+            site=self.location_site
+        ).order_by('date')
+        ctx['river_catchments'] = json.dumps(
+            self.location_context.values_from_group(
+                'river_catchment_areas_group'
+            ))
+        ctx['wma'] = (
+            json.dumps(self.location_context.values_from_group(
+                'water_management_area'
+            ))
+        )
+        ctx['geomorphological_group'] = (
+            json.dumps(self.location_context.values_from_group(
+                'geomorphological_group'
+            ))
+        )
+        ctx['river_ecoregion_group'] = (
+            json.dumps(self.location_context.values_from_group(
+                'river_ecoregion_group'
+            ))
+        )
+        ctx['freshwater_ecoregion_of_the_world'] = (
+            json.dumps(self.location_context.values_from_group(
+                'freshwater_ecoregion_of_the_world'
+            ))
+        )
+        ctx['political_boundary'] = (
+            json.dumps(self.location_context.values_from_group(
+                'province'
+            ))
+        )
+        refined_geomorphological = '-'
+        if self.location_site.refined_geomorphological:
+            refined_geomorphological = (
+                self.location_site.refined_geomorphological
+            )
+        ctx['refined_geomorphological'] = refined_geomorphological
+
+        try:
+            ctx['bing_key'] = BaseMapLayer.objects.get(
+                source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            ctx['bing_key'] = ''
+
+        return ctx
