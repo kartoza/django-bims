@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlencode
 from django.views.generic import ListView, UpdateView, View, CreateView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -520,7 +521,29 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
     template_name = 'source_references/add_source_reference.html'
     model = SourceReference
     fields = '__all__'
-    success_url = '/source-references/'
+    object = None
+
+    def get_success_url(self):
+        if self.request.GET.get('next'):
+            source_reference_type = 'unpublished'
+            if self.object.is_database():
+                source_reference_type = 'database'
+            elif self.object.is_bibliography():
+                source_reference_type = 'bibliography'
+            elif self.object.is_published_report():
+                source_reference_type = 'document'
+            url_params = ({
+                'sr': self.object.title,
+                'srt': source_reference_type
+            })
+            next_url = self.request.GET.get('next')
+            if '?' not in next_url:
+                next_url += '?'
+            else:
+                next_url += '&'
+            next_url += urlencode(url_params)
+            return next_url
+        return '/source-references/'
 
     def test_func(self):
         if self.request.user.is_anonymous:
@@ -545,12 +568,17 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
         if post_data.get('doi'):
             try:
                 entry = Entry.objects.get(doi=post_data.get('doi'))
-                SourceReferenceBibliography.objects.create(
-                    source=entry,
-                    note=post_data.get('notes', '')
+                source_reference, created = (
+                    SourceReferenceBibliography.objects.get_or_create(
+                        source=entry,
+                        note=post_data.get('notes', '')
+                    )
                 )
+                self.object = source_reference
             except Entry.DoesNotExist:
-                pass
+                return False
+            except SourceReferenceBibliography.MultipleObjectsReturned:
+                return False
         return True
 
 
@@ -572,9 +600,12 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
                 description=post_data.get('description', ''),
                 url=post_data.get('url', '')
             )
-            SourceReferenceDatabase.objects.create(
-                source=database_record
+            source_reference, created = (
+                SourceReferenceDatabase.objects.get_or_create(
+                    source=database_record
+                )
             )
+            self.object = source_reference
         return True
 
     def handle_published_report(self, post_data, file_data):
@@ -645,9 +676,12 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
         except KeyError:
             pass
 
-        SourceReferenceDocument.objects.create(
-            source=document
+        source_reference, created = (
+            SourceReferenceDocument.objects.get_or_create(
+                source=document
+            )
         )
+        self.object = source_reference
 
         return True
 
@@ -663,6 +697,7 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
         context['params'] = {
             'reference_type': json.dumps(reference_type)
         }.items()
+        context['past_url'] = self.request.GET.get('next')
         return context
 
     def form_valid(self, form):
@@ -682,14 +717,14 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
                 post_data=post_dict
             )
         else: # Unpublished
-            SourceReference.objects.get_or_create(
+            source_reference, created = SourceReference.objects.get_or_create(
                 note=post_dict.get('notes', ''),
                 source_name=post_dict.get('source', '')
             )
+            self.object = source_reference
+            processed = True
 
         if not processed:
             return self.form_invalid(form)
 
-        return super(AddSourceReferenceView, self).form_valid(
-            form
-        )
+        return HttpResponseRedirect(self.get_success_url())

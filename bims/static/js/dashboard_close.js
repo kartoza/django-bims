@@ -11,6 +11,7 @@ function dashboardClose(e) {
     let url = new URL(window.location.href);
     let params = url.searchParams.toString();
     let search = url.searchParams.get('search');
+    let siteId = url.get('siteId');
     if (params && url.searchParams.has('taxon')) {
         previousUrl += '#search/';
         if (search) {
@@ -19,7 +20,16 @@ function dashboardClose(e) {
         previousUrl += '/';
         previousUrl += params;
     }
-    if (!previousUrl) previousUrl = '/map';
+    if (!previousUrl || previousUrl.indexOf('add-source-reference') > -1) {
+        try {
+            previousUrl = 'map/#site/siteIdOpen=' + siteId;
+        } catch (e) {
+            previousUrl = '/map/';
+        }
+        finally {
+            previousUrl = '/';
+        }
+    }
     window.location.href = previousUrl;
     return false;
 }

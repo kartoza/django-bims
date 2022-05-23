@@ -55,6 +55,11 @@
                      </div>
                  </article> <!-- card-group-item.// -->
              </div> <!-- card.// -->
+
+            <a class="btn btn-info add-source-reference" style="margin-top: 10px; width: 100%; color: white">
+                <i class="fa fa-plus"></i>&nbsp; Add Source Reference
+            </a>
+
         </div>
         <div class="col-9">
             <div id="source-reference-list-container">
@@ -143,27 +148,34 @@
         });
     }
 
+    $('.add-source-reference').click(function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      window.location.href = '/add-source-reference/?next=' + window.location.pathname + '?siteId=' + urlParams.get('siteId');
+    })
+
     function getSourceReferenceList() {
         let $sourceReferenceListContainer = $('#source-reference-list-container');
         $sourceReferenceListContainer.html('Fetching data...');
-        $.get(`/api/source-reference-list?type=${currentType}&q=${currentQuery}&collectors=${collectors}&page=${currentPage}`, function (data) {
-          $sourceReferenceListContainer.html('');
-          sourceReferences = {};
-          updatePagination(data['count']);
-          console.log(data);
-          if (data['results'].length > 0) {
-            for (let i = 0; i < data['results'].length; i++) {
-              let result = data['results'][i];
-              sourceReferences[result.id] = result;
-              let sourceReferenceCard = _.template($('#source-reference-card').html());
-              $sourceReferenceListContainer.append(sourceReferenceCard({
-                data: result,
-              }));
-            }
-          } else {
-            $sourceReferenceListContainer.html('No data');
-          }
-        })
+        return new Promise(function (resolve, reject) {
+              $.get(`/api/source-reference-list?type=${currentType}&q=${currentQuery}&collectors=${collectors}&page=${currentPage}`, function (data) {
+                $sourceReferenceListContainer.html('');
+                sourceReferences = {};
+                updatePagination(data['count']);
+                if (data['results'].length > 0) {
+                  for (let i = 0; i < data['results'].length; i++) {
+                    let result = data['results'][i];
+                    sourceReferences[result.id] = result;
+                    let sourceReferenceCard = _.template($('#source-reference-card').html());
+                    $sourceReferenceListContainer.append(sourceReferenceCard({
+                      data: result,
+                    }));
+                  }
+                } else {
+                  $sourceReferenceListContainer.html('No data');
+                }
+                resolve('ok')
+              })
+            })
     }
 
     $('#source-reference-type-select').change((e) => {
@@ -210,6 +222,31 @@
       $('#selected-source-reference-id').val('');
     })
 
-    getSourceReferenceList(currentType);
+    $(document).ready(function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sourceReferenceType = urlParams.get('srt');
+      const sourceReferenceSearch = urlParams.get('sr');
+      if (sourceReferenceType) {
+        currentType = sourceReferenceType;
+      }
+      let srtSelect = document.getElementById("source-reference-type-select");
+      let items = srtSelect.options;
+
+      for (let i = 0; i < items.length; i++) {
+        if(items[i].value === currentType) {
+          items[i].selected = true;
+        }
+      }
+
+      if (sourceReferenceSearch) {
+        document.getElementById('search-input').value = sourceReferenceSearch;
+        currentQuery = sourceReferenceSearch;
+      }
+      getSourceReferenceList(currentType).then(function () {
+        if (sourceReferenceSearch) {
+            $('#source-reference-list-container').children().first().find('.select-source-reference').click();
+        }
+      });
+    })
 
 </script>
