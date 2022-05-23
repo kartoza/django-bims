@@ -79,6 +79,7 @@ function renderWaterTemperatureChart(){
         }
 
         Highcharts.Series.prototype.drawPoints = function() { };
+        const chartTitle = `Water Temperature - ${year}`
         const chart = new Highcharts.stockChart('water-temperature', {
             title: {
                 text: '',
@@ -114,17 +115,59 @@ function renderWaterTemperatureChart(){
                 symbolWidth: 30,
             },
             exporting: {
+                filename: chartTitle,
+                menuItemDefinitions: {
+                    downloadPNG: {
+                        onclick: function () {
+                            let that = this;
+                            showDownloadPopup('CHART', chartTitle, function () {
+                                that.exportChart({
+                                    type: 'image/png'
+                                });
+                            })
+                        },
+                        text: 'Download PNG image'
+                    },
+                    downloadPDF: {
+                        onclick: function () {
+                            let that = this;
+                            showDownloadPopup('CHART', chartTitle, function () {
+                                that.exportChart({
+                                    type: 'application/pdf'
+                                });
+                            })
+                        },
+                        text: 'Download PDF image'
+                    },
+                    downloadSVG: {
+                        onclick: function () {
+                            let that = this;
+                            showDownloadPopup('CHART', chartTitle, function () {
+                                that.exportChart({
+                                    type: 'image/svg+xml'
+                                });
+                            })
+                        },
+                        text: 'Download SVG vector image'
+                    },
+                    downloadCSV2: {
+                        onclick: function () {
+                            let that = this;
+                            showDownloadPopup('TABLE', chartTitle, function () {
+                                that.downloadCSV()
+                            })
+                        },
+                        text: 'Download CSV'
+                    },
+                },
                 buttons: {
                     contextButton: {
-                        menuItems: ["printChart",
-                            "separator",
+                        menuItems: [
                             "downloadPNG",
-                            "downloadJPEG",
                             "downloadPDF",
                             "downloadSVG",
                             "separator",
-                            "downloadCSV",
-                            "downloadXLS"]
+                            "downloadCSV2"]
                     }
                 }
             },
@@ -238,6 +281,29 @@ $(function () {
     drawMap();
     renderWaterTemperatureChart()
     renderSourceReferences()
+
+    $('.download-map').click(function () {
+        map.once('postrender', function (event) {
+            showDownloadPopup('IMAGE', 'Map', function () {
+                var canvas = $('#map');
+                html2canvas(canvas, {
+                    useCORS: true,
+                    background: '#FFFFFF',
+                    allowTaint: false,
+                    onrendered: function (canvas) {
+                        let link = document.createElement('a');
+                        link.setAttribute("type", "hidden");
+                        link.href = canvas.toDataURL("image/png");
+                        link.download = 'map.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                    }
+                });
+            })
+        });
+        map.renderSync();
+    })
 
     $(".date-input").datepicker({
         changeMonth: true,

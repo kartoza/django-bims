@@ -45,7 +45,7 @@ class DownloadRequestApi(APIView):
             id=purpose
         )
 
-        DownloadRequest.objects.get_or_create(
+        download_request, created = DownloadRequest.objects.get_or_create(
             resource_name=resource_name,
             resource_type=resource_type,
             purpose=download_request_purpose,
@@ -56,5 +56,6 @@ class DownloadRequestApi(APIView):
         )
 
         return Response({
-            'success': success
+            'success': success,
+            'download_request_id': download_request.id
         })

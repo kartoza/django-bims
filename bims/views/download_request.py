@@ -119,7 +119,7 @@ class DownloadRequestListView(
         """
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
-
+        qs = qs.exclude(request_file='')
         if (
                 self.approved_or_rejected is not None and
                 self.approved_or_rejected != ''

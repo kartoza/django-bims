@@ -68,7 +68,10 @@ def download_sass_data_site_task(
                 send_csv_via_email(
                     user=user,
                     csv_file=path_file,
-                    file_name=filters.get('csvName', 'SASS-Data')
+                    file_name=filters.get('csvName', 'SASS-Data'),
+                    download_request_id=filters.get(
+                        'downloadRequestId', ''
+                    )
                 )
 
             return
@@ -191,7 +194,10 @@ def download_sass_summary_data_task(
                 send_csv_via_email(
                     user=user,
                     csv_file=path_file,
-                    file_name=filters.get('csvName', 'SASS-Summary')
+                    file_name=filters.get('csvName', 'SASS-Summary'),
+                    download_request_id=filters.get(
+                        'downloadRequestId', ''
+                    )
                 )
 
             return

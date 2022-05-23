@@ -4,6 +4,8 @@ function downloadCSV(url, downloadButton, csv_name=null, email = false) {
         dataType: 'json',
         success: function (data) {
             if (email) {
+                downloadButton.html('Download as CSV');
+                downloadButton.prop("disabled", false);
                 return
             }
             if (data['status'] !== "success") {
@@ -85,6 +87,8 @@ function exportTableToCSV(filename, id) {
     }
 
     // Download CSV file
-    downloadCSV2(csv.join("\n"), filename);
+    showDownloadPopup('CSV', filename, function () {
+        downloadCSV2(csv.join("\n"), filename);
+    })
 }
 

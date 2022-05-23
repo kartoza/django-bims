@@ -93,7 +93,8 @@ def download_sass_data_site(request, **kwargs):
         send_csv_via_email(
             user=request.user,
             csv_file=path_file,
-            file_name=csv_name
+            file_name=csv_name,
+            download_request_id=filters.get('downloadRequestId', '')
         )
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
@@ -136,7 +137,8 @@ def download_sass_summary_data(request):
         send_csv_via_email(
             user=request.user,
             csv_file=path_file,
-            file_name=csv_name
+            file_name=csv_name,
+            download_request_id=filters.get('downloadRequestId', '')
         )
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 

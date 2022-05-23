@@ -36,6 +36,7 @@ class CsvDownload(APIView):
         # Check if the file exists in the processed directory
         filename = self.get_hashed_name(request)
         folder = settings.PROCESSED_CSV_PATH
+        download_request_id = self.request.GET.get('downloadRequestId', '')
 
         if not os.path.exists(os.path.join(settings.MEDIA_ROOT, folder)):
             os.mkdir(os.path.join(settings.MEDIA_ROOT, folder))
@@ -58,7 +59,8 @@ class CsvDownload(APIView):
         if os.path.exists(path_file):
             send_csv_via_email(
                 user=request.user,
-                csv_file=path_file
+                csv_file=path_file,
+                download_request_id=download_request_id
             )
         else:
             download_data_to_csv.delay(
@@ -136,28 +138,27 @@ def send_rejection_csv(user, rejection_message = ''):
 
 
 def send_csv_via_email(
-        user, csv_file, file_name = 'OccurrenceData', approved=False):
+        user, csv_file, file_name = 'OccurrenceData',
+        approved=False,
+        download_request_id=None):
     """
     Send an email to requesting user with csv file attached
     :param user: User object
     :param csv_file: Path of csv file
     :param file_name: Name of the file
     :param approved: Whether the request has been approved or not
+    :param download_request_id: Id of the download request
     :return:
     """
     from bims.models.download_request import DownloadRequest
     if not approved:
         if preferences.SiteSetting.enable_download_request_approval:
-            today_date = date.today()
-            DownloadRequest.objects.get_or_create(
-                request_date=today_date,
-                requester=user,
-                approved=False,
-                rejected=False,
-                processing=False,
-                request_category=file_name,
-                request_file=csv_file
+            download_request = DownloadRequest.objects.get(
+                id=download_request_id
             )
+            download_request.request_category = file_name
+            download_request.request_file = csv_file
+            download_request.save()
             return
         else:
             pass

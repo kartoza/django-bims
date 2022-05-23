@@ -697,27 +697,40 @@ define([
             let alertModalBody = $('#alertModalBody');
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
-            } else {
-                alertModalBody.html(downloadRequestMessage);
-                $.get({
-                    url: self.csvDownloadEmailUrl,
-                    dataType: 'json',
-                    success: function (data) {}
+                $('#alertModal').modal({
+                    'keyboard': false,
+                    'backdrop': 'static'
                 });
-
+            } else {
+                showDownloadPopup('CSV', 'Occurrence Data', function (downloadRequestId) {
+                    alertModalBody.html(downloadRequestMessage);
+                    $('#alertModal').modal({
+                        'keyboard': false,
+                        'backdrop': 'static'
+                    });
+                    let url = self.csvDownloadEmailUrl;
+                    if (!url.includes('?')) {
+                        url += '?';
+                    }
+                    url += '&downloadRequestId=' + downloadRequestId
+                    $.get({
+                        url: url,
+                        dataType: 'json',
+                        success: function (data) {}
+                    });
+                })
             }
-            $('#alertModal').modal({
-                'keyboard': false,
-                'backdrop': 'static'
-            });
             button.html(name);
             button.prop('disabled', false);
         },
         downloadChemRecordsAsCSV: function (e) {
-            var button = $(e.target);
-            button.html('Processing...');
-            button.prop("disabled", true);
-            this.downloadingCSV(this.chemCsvDownloadUrl, button);
+            let button = $(e.target);
+            let that = this;
+            showDownloadPopup('CSV', 'Chemical Records', function (downloadRequestId) {
+                button.html('Processing...');
+                button.prop("disabled", true);
+                that.downloadingCSV(that.chemCsvDownloadUrl, button);
+            });
         },
         renderStackedBarChart: function (dataIn, chartName, chartCanvas, randomColor = false) {
             if (!(dataIn.hasOwnProperty('data'))) {

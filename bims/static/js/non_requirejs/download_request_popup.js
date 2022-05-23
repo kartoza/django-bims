@@ -1,5 +1,6 @@
 function showDownloadPopup(resource_type, resource_name, callback) {
   const $downloadPopup = $('#download-popup');
+  $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
 
   const $submitDownloadPopup = $downloadPopup.find('.submit-download');
@@ -27,8 +28,8 @@ function showDownloadPopup(resource_type, resource_name, callback) {
       headers: {"X-CSRFToken": csrfmiddlewaretoken},
       type: 'POST',
       data: postData,
-      success: function (response) {
-        callback();
+      success: function (data) {
+        callback(data['download_request_id']);
         $downloadPopup.modal('hide');
       }, error: function () {
         alert('Error submitting download request');
