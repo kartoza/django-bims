@@ -1,10 +1,15 @@
-function showDownloadPopup(resource_type, resource_name, callback, site_id = null, survey_id = null, taxon_id  = null) {
+function showDownloadPopup(resource_type, resource_name, callback) {
   const $downloadPopup = $('#download-popup');
   $downloadPopup.modal('show');
 
   const $submitDownloadPopup = $downloadPopup.find('.submit-download');
   const $downloadPurpose = $('#download-purpose');
   const url = '/api/download-request/';
+
+  let urlParams = new URLSearchParams(window.location.href.replace('/taxon', '/&taxon'))
+  let taxon_id = urlParams.get('taxon');
+  let site_id = urlParams.get('siteId');
+  let survey_id = urlParams.get('survey');
 
   $submitDownloadPopup.on('click', function () {
     let postData = {

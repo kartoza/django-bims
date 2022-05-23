@@ -383,33 +383,30 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 chartNames = button.data('chart').split(',');
             } catch (e) {}
 
-            let resourceType = chartNames.length > 0 ? 'CHART' : 'TABLE';
-            let urlParams = new URLSearchParams(window.location.hash.replace('/taxon', '/&taxon'))
-            let taxonId = urlParams.get('taxon');
+            for (let i = 0; i < chartNames.length; i++) {
+                if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
+                    svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
+                    chartDownloaded += 1;
+                }
+            }
+            if (chartNames.length > 0 && chartDownloaded === chartNames.length) {
+                return;
+            }
+            if (element.length > 0)
+                that.downloadElement(title, element);
 
-            showDownloadPopup(resourceType, title, function () {
-                for (let i = 0; i < chartNames.length; i++) {
-                    if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
-                        svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
-                        chartDownloaded += 1;
-                    }
-                }
-                if (chartNames.length > 0 && chartDownloaded === chartNames.length) {
-                    return;
-                }
-                if (element.length > 0)
-                    that.downloadElement(title, element);
-            }, null, null, taxonId)
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
-            html2canvas(element, {
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
+            showDownloadPopup('TABLE', title, function () {
+                html2canvas(element, {
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
             })
         },
         clearDashboard: function () {
@@ -485,8 +482,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         exportTaxasiteMap: function () {
             this.mapTaxaSite.once('postcompose', function (event) {
-                let urlParams = new URLSearchParams(window.location.hash.replace('/taxon', '/&taxon'))
-                let taxonId = urlParams.get('taxon');
                 showDownloadPopup('IMAGE', 'Taxa Map', function () {
                     let canvas = $('#taxasite-map');
                     html2canvas(canvas, {
@@ -504,7 +499,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                             link.remove();
                         }
                     });
-                }, null, null, taxonId)
+                })
             });
             this.mapTaxaSite.renderSync();
         },

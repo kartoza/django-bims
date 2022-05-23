@@ -528,22 +528,24 @@ define([
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
             this.mapLocationSite.once('postrender', function (event) {
-                let canvas = $('#locationsite-map');
-                html2canvas(canvas, {
-                    useCORS: false,
-                    background: '#FFFFFF',
-                    allowTaint: true,
-                    onrendered: function (canvas) {
-                        $('.ol-control').show();
-                        let link = document.createElement('a');
-                        link.setAttribute("type", "hidden");
-                        link.href = canvas.toDataURL("image/png");
-                        link.download = 'map.png';
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                    }
-                });
+                showDownloadPopup('IMAGE', 'Distribution Map', function () {
+                    let canvas = $('#locationsite-map');
+                    html2canvas(canvas, {
+                        useCORS: false,
+                        background: '#FFFFFF',
+                        allowTaint: true,
+                        onrendered: function (canvas) {
+                            $('.ol-control').show();
+                            let link = document.createElement('a');
+                            link.setAttribute("type", "hidden");
+                            link.href = canvas.toDataURL("image/png");
+                            link.download = 'map.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
+                })
             });
             this.mapLocationSite.renderSync();
         },
@@ -601,31 +603,25 @@ define([
             } catch (e) {
             }
 
-            let resourceType = chartNames.length > 0 ? 'CHART' : 'TABLE';
+            let target = button.data('datac');
+            let element = that.$el.find('#' + target);
+            let chartDownloaded = 0;
 
-            let urlParams = new URLSearchParams(window.location.hash)
-            let siteId = urlParams.get('siteId');
-
-            showDownloadPopup(resourceType, title, function () {
-                let target = button.data('datac');
-                let element = that.$el.find('#' + target);
-                let chartDownloaded = 0;
-
-                if (chartNames.length > 0) {
-                    for (let i = 0; i < chartNames.length; i++) {
-                        if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
-                            svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
-                            chartDownloaded += 1;
-                        }
+            if (chartNames.length > 0) {
+                for (let i = 0; i < chartNames.length; i++) {
+                    if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
+                        svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
+                        chartDownloaded += 1;
                     }
-                    if (chartDownloaded === chartNames.length) {
-                        return;
-                    }
+                }
+                if (chartDownloaded === chartNames.length) {
                     return;
                 }
-                if (element.length > 0)
-                    that.downloadElement(title, element);
-            }, siteId);
+                return;
+            }
+            if (element.length > 0)
+                that.downloadElement(title, element);
+
         },
         downloadChartImage: function (e) {
             let button = $(e.target);
@@ -648,15 +644,17 @@ define([
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
-            html2canvas(element, {
-                height: 1000,
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
-            })
+            showDownloadPopup('TABLE', title, function () {
+                html2canvas(element, {
+                    height: 1000,
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
+            });
         },
         downloadingCSV: function (url, downloadButton) {
             var self = this;
