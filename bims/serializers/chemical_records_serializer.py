@@ -39,7 +39,7 @@ class ChemicalRecordsOneRowSerializer(serializers.ModelSerializer):
         return str(obj.date)
 
     def get_unit(self, obj):
-        return obj.chem.chem_unit
+        return obj.chem.chem_unit.unit
 
     def get_name(self, obj):
         return obj.chem.chem_description

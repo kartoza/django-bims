@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from bims.models.water_temperature import WaterTemperature
-from django.db.models import F, Value, Case, When, Count
+from django.db.models import F, Value, Case, When, Count, Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from sorl.thumbnail import get_thumbnail
@@ -10,7 +10,7 @@ from bims.api_views.search import CollectionSearch
 from bims.models import (
     TaxonGroup,
     Taxonomy,
-    IUCNStatus,
+    IUCNStatus, ChemicalRecord,
 )
 from bims.enums import TaxonomicGroupCategory
 from sass.models import SiteVisitTaxon
@@ -33,6 +33,7 @@ class LocationSiteOverviewData(object):
     GROUP_CONS_STATUS = 'cons_status'
     WATER_TEMPERATURE_EXIST = 'water_temperature_exist'
     WATER_TEMPERATURE_DATA = 'water_temperature_data'
+    PHYSICO_CHEMICAL_EXIST = 'physico_chemical_exist'
 
     search_filters = None
     is_sass_exist = False
@@ -143,7 +144,6 @@ class MultiLocationSitesOverview(APIView, LocationSiteOverviewData):
 
 
 class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
-    is_water_temperature_exist = False
 
     def get_object(self, pk):
         try:
@@ -159,12 +159,17 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
 
         site_id = request.GET.get('siteId')
         location_site = self.get_object(site_id)
-        water_temperature_data = WaterTemperature.objects.filter(
-            location_site=location_site
+        response_data[self.WATER_TEMPERATURE_EXIST] = (
+            WaterTemperature.objects.filter(
+                location_site=location_site
+            ).exists()
         )
-        if water_temperature_data.count() > 0:
-            self.is_water_temperature_exist = True
-        response_data[self.WATER_TEMPERATURE_EXIST] = self.is_water_temperature_exist
+        response_data[self.PHYSICO_CHEMICAL_EXIST] = (
+            ChemicalRecord.objects.filter(
+                Q(location_site=location_site) |
+                Q(survey__site=location_site)
+            ).exists()
+        )
         serializer = LocationSiteDetailSerializer(
             location_site)
         response_data.update(serializer.data)

@@ -1,6 +1,9 @@
 import uuid
 import json
 import logging
+
+from preferences import preferences
+
 from bims.scripts.collection_csv_keys import *  # noqa
 from datetime import datetime
 
@@ -181,6 +184,9 @@ class OccurrenceProcessor(object):
                 owner=collector,
                 validated=True
             )
+            if not self.survey.uuid:
+                self.survey.save()
+
         except Survey.MultipleObjectsReturned:
             self.survey = Survey.objects.filter(
                 site=location_site,
@@ -260,11 +266,18 @@ class OccurrenceProcessor(object):
         elif DataCSVUpload.row_value(record, WETLAND_NAME):
             location_site_name = DataCSVUpload.row_value(record, WETLAND_NAME)
 
-        # Find existing location site by FBIS site code
-        fbis_site_code = DataCSVUpload.row_value(record, FBIS_SITE_CODE)
-        if fbis_site_code:
+        # Find existing location site by data source site code
+        data_source = preferences.SiteSetting.default_data_source.upper()
+        existing_site_code = DataCSVUpload.row_value(
+            record, '{} Site Code'.format(
+                data_source
+            ))
+        if not existing_site_code:
+            existing_site_code = DataCSVUpload.row_value(
+                record, 'Site Code')
+        if existing_site_code:
             location_site = LocationSite.objects.filter(
-                site_code__iexact=fbis_site_code.strip()
+                site_code__iexact=existing_site_code.strip()
             ).first()
 
         # Find existing location site by lat and lon

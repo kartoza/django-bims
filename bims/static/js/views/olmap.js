@@ -357,10 +357,7 @@ define([
                     }
                 });
             }
-            if (self.uploadDataState && !poiFound) {
-                // Show modal upload if in upload mode
-                self.mapControlPanel.showUploadDataModal(lon, lat, featuresData);
-            } else if (!self.uploadDataState && !poiFound) {
+            if (!poiFound) {
                 // Show feature info
                 Shared.Dispatcher.trigger('third_party_layers:showFeatureInfo', lon, lat, siteExist, featuresData);
                 Shared.Dispatcher.trigger('layers:showFeatureInfo', lon, lat, siteExist);

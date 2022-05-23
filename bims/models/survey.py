@@ -2,6 +2,7 @@
 """Survey model definition.
 
 """
+import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -30,6 +31,23 @@ class Survey(AbstractValidation):
                   'collector values from GBIF and other third party sources',
         verbose_name='collector or observer',
     )
+
+    uuid = models.CharField(
+        help_text='Survey uuid',
+        max_length=200,
+        null=True,
+        blank=True
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.uuid:
+            survey_uuid = str(uuid.uuid4())
+            while Survey.objects.filter(
+                uuid=survey_uuid
+            ).exists():
+                survey_uuid = str(uuid.uuid4())
+            self.uuid = survey_uuid
+        super(Survey, self).save(*args, **kwargs)
 
     @property
     def sass_site_visit(self):

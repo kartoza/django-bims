@@ -4,10 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.conf.urls import url, include
 from django.urls import reverse_lazy
 from django.views.generic import RedirectView
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
 from bims.api_views.unpublished_data import UnpublishedData
+from bims.views.physico_chemical_upload import PhysicoChemicalUploadView
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
@@ -34,7 +34,6 @@ from bims.views.shapefile_upload import (
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.bio_records_edit import BioRecordsUpdateView
-from bims.views.collection_upload import CollectionUploadView
 from bims.views.download_csv_taxa_list import (
     download_csv_taxa_list
 )
@@ -90,6 +89,8 @@ from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
     WaterTemperatureSiteView, WaterTemperatureEditView
 from bims.views.download_taxa_template import download_taxa_template
+from bims.views.physico_chemical import PhysicoChemicalView, \
+    PhysicoChemicalSiteView
 
 urlpatterns = [
     url(r'^$', landing_page_view, name='landing-page'),
@@ -113,8 +114,6 @@ urlpatterns = [
     url(r'^tracking/$', dashboard, name='tracking-dashboard'),
     url(r'^update/(?P<pk>\d+)/$',
         BioRecordsUpdateView.as_view(), name='update-records'),
-    url(r'^upload_collection/$', CollectionUploadView.as_view(),
-        name='upload-collection'),
     url(r'^get_feature/$',
         GetFeatureInfo.as_view(),
         name='get-feature'),
@@ -190,6 +189,8 @@ urlpatterns = [
         DashboardManagementView.as_view()),
     url(r'^upload-collections/$', CollectionsUploadView.as_view(),
         name='upload-collections'),
+    url(r'^upload-physico-chemical/$', PhysicoChemicalUploadView.as_view(),
+        name='upload-physico-chemical'),
     url(r'^harvest-collections/$', HarvestCollectionView.as_view(),
         name='harvest-collections'),
     url(r'^source-references/$', SourceReferenceListView.as_view(),
@@ -231,6 +232,9 @@ urlpatterns = [
     url(r'^water-temperature-form/$',
         WaterTemperatureView.as_view(),
         name='water-temperature-form'),
+    url(r'^physico-chemical-form/$',
+        PhysicoChemicalView.as_view(),
+        name='physico-chemical-form'),
     url(r'^water-temperature-form/edit/$',
         WaterTemperatureEditView.as_view(),
         name='water-temperature-edit-form'),
@@ -246,7 +250,9 @@ urlpatterns = [
     url(r'^water-temperature/(?P<site_id>\d+)/(?P<year>\d{4})/$',
         WaterTemperatureSiteView.as_view(),
         name='water-temperature-site'),
-
+    url(r'^physico-chemical/(?P<site_id>\d+)/$',
+        PhysicoChemicalSiteView.as_view(),
+        name='physico-chemical-site'),
     # Account
     url(
         r'^account/moderation_sent/(?P<inactive_user>[^/]*)$',

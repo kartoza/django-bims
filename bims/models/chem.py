@@ -1,5 +1,29 @@
 from django.contrib.gis.db import models
-from sass.enums.chem_unit import ChemUnit
+
+
+class Unit(models.Model):
+
+    unit = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    unit_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return self.unit
+
+    def __unicode__(self):
+        return self.unit
+
+    class Meta:
+        verbose_name_plural = "Units"
+        verbose_name = "Unit"
 
 
 class Chem(models.Model):
@@ -14,15 +38,6 @@ class Chem(models.Model):
         max_length=200,
         null=True,
         blank=True
-    )
-
-    chem_unit = models.CharField(
-        max_length=200,
-        choices=[
-            (status.name, status.value)
-            for status in ChemUnit],
-        blank=True,
-        null=True
     )
 
     decimal_place = models.IntegerField(
@@ -44,6 +59,8 @@ class Chem(models.Model):
         default=False
     )
 
+    chem_unit = models.ForeignKey(Unit, null=True, on_delete=models.CASCADE)
+
     def __str__(self):
         return self.chem_code
 
@@ -53,3 +70,4 @@ class Chem(models.Model):
     class Meta:
         verbose_name_plural = "Chemistry units"
         verbose_name = "Chemistry unit"
+
