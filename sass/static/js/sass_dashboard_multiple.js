@@ -1,4 +1,5 @@
 let map = null;
+let chartConfigs = {};
 
 function drawMap(data) {
     let scaleLineControl = new ol.control.ScaleLine();
@@ -446,63 +447,71 @@ function onDownloadCSVClicked(e) {
     let csvName = 'Multiple SASS Sites'
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = `/sass/download-sass-data-site/?csvName=${csvName}&${queryString}`;
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
 
-    const alertModalBody = $('#alertModalBody');
-    if (!is_logged_in) {
-        alertModalBody.html('Please log in first.')
-    } else {
-        alertModalBody.html(downloadRequestMessage);
-    }
-    $('#alertModal').modal({
-        'keyboard': false,
-        'backdrop': 'static'
-    });
-    downloadCSV(url, downloadButton, csvName, true);
+    showDownloadPopup('CSV', csvName, function (downloadRequestId) {
+        url += '&downloadRequestId=' + downloadRequestId
+        downloadButton.html("Processing...");
+        downloadButton.prop("disabled", true);
+
+        const alertModalBody = $('#alertModalBody');
+        if (!is_logged_in) {
+            alertModalBody.html('Please log in first.')
+        } else {
+            alertModalBody.html(downloadRequestMessage);
+        }
+        $('#alertModal').modal({
+            'keyboard': false,
+            'backdrop': 'static'
+        });
+        downloadCSV(url, downloadButton, csvName, true);
+    })
 }
 
 function onDownloadChartClicked(e) {
     let wrapper = $(this).parent().parent();
     let button = $(this);
     let title = $(this).data('download-title');
-    let $logo = $('.logo').clone();
     button.hide();
-    $(wrapper).css({"padding-bottom": "55px"});
-    $(wrapper).append($logo.removeClass('hide-logo'));
     let container = $(wrapper);
-    html2canvas(wrapper, {
-        scale: 1,
-        dpi: 144,
-        onrendered: function (canvas) {
-            $logo.remove();
-            container.css({"padding-bottom": "5px"});
-            button.show();
-            let link = document.createElement('a');
-            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-            link.download = title + '.png';
-            link.click();
-        }
+    showDownloadPopup('CHART', title, function () {
+        let $logo = $('.logo').clone();
+        $(wrapper).css({"padding-bottom": "55px"});
+        $(wrapper).append($logo.removeClass('hide-logo'));
+        html2canvas(wrapper, {
+            scale: 1,
+            dpi: 144,
+            onrendered: function (canvas) {
+                $logo.remove();
+                container.css({"padding-bottom": "5px"});
+                button.show();
+                let link = document.createElement('a');
+                link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                link.download = title + '.png';
+                link.click();
+            }
+        })
     })
 }
 
 function onDownloadMapClicked(e) {
     map.once('postrender', function (event) {
-        var canvas = $('#map');
-        html2canvas(canvas, {
-            useCORS: true,
-            background: '#FFFFFF',
-            allowTaint: false,
-            onrendered: function (canvas) {
-                let link = document.createElement('a');
-                link.setAttribute("type", "hidden");
-                link.href = canvas.toDataURL("image/png");
-                link.download = 'map.png';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            }
-        });
+        showDownloadPopup('IMAGE', 'Map', function () {
+            var canvas = $('#map');
+            html2canvas(canvas, {
+                useCORS: true,
+                background: '#FFFFFF',
+                allowTaint: false,
+                onrendered: function (canvas) {
+                    let link = document.createElement('a');
+                    link.setAttribute("type", "hidden");
+                    link.href = canvas.toDataURL("image/png");
+                    link.download = 'map.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                }
+            });
+        })
     });
     map.renderSync();
 }
@@ -513,20 +522,24 @@ function onDownloadSummaryCSVClicked(e) {
     let csvName = 'Multiple SASS Summary'
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = `/sass/download-sass-summary-data/?csvName=${csvName}&${queryString}`;
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
 
-    const alertModalBody = $('#alertModalBody');
-    if (!is_logged_in) {
-        alertModalBody.html('Please log in first.')
-    } else {
-        alertModalBody.html(downloadRequestMessage);
-        downloadCSV(url, downloadButton, csvName, true);
-    }
-    $('#alertModal').modal({
-        'keyboard': false,
-        'backdrop': 'static'
-    });
+    showDownloadPopup('CSV', csvName, function (downloadRequestId) {
+        url += '&downloadRequestId=' + downloadRequestId;
+        downloadButton.html("Processing...");
+        downloadButton.prop("disabled", true);
+
+        const alertModalBody = $('#alertModalBody');
+        if (!is_logged_in) {
+            alertModalBody.html('Please log in first.')
+        } else {
+            alertModalBody.html(downloadRequestMessage);
+            downloadCSV(url, downloadButton, csvName, true);
+        }
+        $('#alertModal').modal({
+            'keyboard': false,
+            'backdrop': 'static'
+        });
+    })
 }
 
 function renderDataSources(data) {
