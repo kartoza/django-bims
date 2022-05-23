@@ -4,6 +4,7 @@ function showDownloadPopup(resource_type, resource_name, callback, site_id = nul
 
   const $submitDownloadPopup = $downloadPopup.find('.submit-download');
   const $downloadPurpose = $('#download-purpose');
+  const url = '/api/download-request/'
 
   $submitDownloadPopup.on('click', function () {
     let postData = {
@@ -15,10 +16,20 @@ function showDownloadPopup(resource_type, resource_name, callback, site_id = nul
       survey_id: survey_id,
       taxon_id: taxon_id
     };
-    console.log(postData);
 
-    callback();
-    $downloadPopup.modal('hide');
+    $.ajax({
+      url: url,
+      headers: {"X-CSRFToken": csrfmiddlewaretoken},
+      type: 'POST',
+      data: postData,
+      success: function (response) {
+        callback();
+        $downloadPopup.modal('hide');
+      }, error: function () {
+        alert('Error submitting download request');
+        $downloadPopup.modal('hide');
+      }
+    });
   });
 
   // Remove events

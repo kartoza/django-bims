@@ -591,18 +591,23 @@ define([
             }
             let title = button.data('title');
             let titles = title.split(',');
-            console.log(filterParameters);
 
-            showDownloadPopup('CHART', title,function () {
+            let chartNames = [];
+            try {
+                chartNames = button.data('chart').split(',');
+            } catch (e) {
+            }
+
+            let resourceType = chartNames.length > 0 ? 'CHART' : 'TABLE';
+
+            let urlParams = new URLSearchParams(window.location.hash)
+            let siteId = urlParams.get('siteId');
+
+            showDownloadPopup(resourceType, title, function () {
                 let target = button.data('datac');
                 let element = that.$el.find('#' + target);
                 let chartDownloaded = 0;
 
-                let chartNames = [];
-                try {
-                    chartNames = button.data('chart').split(',');
-                } catch (e) {
-                }
                 if (chartNames.length > 0) {
                     for (let i = 0; i < chartNames.length; i++) {
                         if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
@@ -620,7 +625,7 @@ define([
                 }
                 if (element.length > 0)
                     that.downloadElement(title, element);
-            }, filterParameters['siteId']);
+            }, siteId);
         },
         downloadChartImage: function (e) {
             let button = $(e.target);
