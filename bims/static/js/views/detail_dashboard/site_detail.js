@@ -591,6 +591,9 @@ define([
             }
             let title = button.data('title');
             let titles = title.split(',');
+            if (!title) {
+                title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
+            }
 
             let chartNames = [];
             try {
@@ -619,9 +622,6 @@ define([
                         return;
                     }
                     return;
-                }
-                if (!title) {
-                    title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
                 }
                 if (element.length > 0)
                     that.downloadElement(title, element);

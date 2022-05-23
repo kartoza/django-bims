@@ -50,10 +50,12 @@ class DownloadRequest(models.Model):
     CSV = 'CSV'
     CHART = 'CHART'
     TABLE = 'TABLE'
+    IMAGE = 'IMAGE'
     RESOURCE_TYPE_CHOICES = [
         (CSV, 'Csv'),
         (CHART, 'Chart'),
         (TABLE, 'Table'),
+        (IMAGE, 'Image')
     ]
 
     requester = models.ForeignKey(

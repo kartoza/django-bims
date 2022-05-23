@@ -1,3 +1,5 @@
+from bims.models.taxonomy import Taxonomy
+
 from bims.models.location_site import LocationSite
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -18,7 +20,9 @@ class DownloadRequestApi(APIView):
         purpose = request.POST.get('purpose')
         dashboard_url = request.POST.get('dashboard_url', '')
         site_id = request.POST.get('site_id', '')
+        taxon_id = request.POST.get('taxon_id', '')
         location_site = None
+        taxon = None
         success = False
 
         if not resource_name or not resource_type or not purpose:
@@ -28,6 +32,12 @@ class DownloadRequestApi(APIView):
             location_site = get_object_or_404(
                 LocationSite,
                 id=site_id
+            )
+
+        if taxon_id:
+            taxon = get_object_or_404(
+                Taxonomy,
+                id=taxon_id
             )
 
         download_request_purpose = get_object_or_404(
@@ -41,7 +51,8 @@ class DownloadRequestApi(APIView):
             purpose=download_request_purpose,
             requester=self.request.user,
             dashboard_url=dashboard_url,
-            location_site=location_site
+            location_site=location_site,
+            taxon=taxon
         )
 
         return Response({

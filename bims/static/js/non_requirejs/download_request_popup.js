@@ -4,7 +4,7 @@ function showDownloadPopup(resource_type, resource_name, callback, site_id = nul
 
   const $submitDownloadPopup = $downloadPopup.find('.submit-download');
   const $downloadPurpose = $('#download-purpose');
-  const url = '/api/download-request/'
+  const url = '/api/download-request/';
 
   $submitDownloadPopup.on('click', function () {
     let postData = {

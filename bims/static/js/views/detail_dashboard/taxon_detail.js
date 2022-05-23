@@ -365,30 +365,41 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         downloadElementEvent: function (button_el) {
             let button = $(button_el.target);
+            let that = this;
             if (!button.hasClass('btn')) {
                 button = button.parent();
             }
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let title = button.data('title');
-            let chartDownloaded = 0;
-            let titles = button.data('title').split(',');
-            let chartNames = button.data('chart').split(',');
-            for (let i=0; i<chartNames.length; i++) {
-                if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
-                    svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
-                    chartDownloaded += 1;
-                }
-            }
-            if (chartDownloaded === chartNames.length) {
-                return;
-            }
-
             if (!title) {
                 title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
             }
-            if (element.length > 0)
-                this.downloadElement(title, element);
+            let chartDownloaded = 0;
+            let titles = button.data('title').split(',');
+            let chartNames = [];
+
+            try {
+                chartNames = button.data('chart').split(',');
+            } catch (e) {}
+
+            let resourceType = chartNames.length > 0 ? 'CHART' : 'TABLE';
+            let urlParams = new URLSearchParams(window.location.hash.replace('/taxon', '/&taxon'))
+            let taxonId = urlParams.get('taxon');
+
+            showDownloadPopup(resourceType, title, function () {
+                for (let i = 0; i < chartNames.length; i++) {
+                    if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
+                        svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
+                        chartDownloaded += 1;
+                    }
+                }
+                if (chartNames.length > 0 && chartDownloaded === chartNames.length) {
+                    return;
+                }
+                if (element.length > 0)
+                    that.downloadElement(title, element);
+            }, null, null, taxonId)
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
@@ -474,22 +485,26 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         exportTaxasiteMap: function () {
             this.mapTaxaSite.once('postcompose', function (event) {
-                let canvas = $('#taxasite-map');
-                html2canvas(canvas, {
-                    useCORS: false,
-                    background: '#FFFFFF',
-                    allowTaint: true,
-                    onrendered: function (canvas) {
-                        $('.ol-control').show();
-                        let link = document.createElement('a');
-                        link.setAttribute("type", "hidden");
-                        link.href = canvas.toDataURL("image/png");
-                        link.download = 'map.png';
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                    }
-                });
+                let urlParams = new URLSearchParams(window.location.hash.replace('/taxon', '/&taxon'))
+                let taxonId = urlParams.get('taxon');
+                showDownloadPopup('IMAGE', 'Taxa Map', function () {
+                    let canvas = $('#taxasite-map');
+                    html2canvas(canvas, {
+                        useCORS: false,
+                        background: '#FFFFFF',
+                        allowTaint: true,
+                        onrendered: function (canvas) {
+                            $('.ol-control').show();
+                            let link = document.createElement('a');
+                            link.setAttribute("type", "hidden");
+                            link.href = canvas.toDataURL("image/png");
+                            link.download = 'map.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
+                }, null, null, taxonId)
             });
             this.mapTaxaSite.renderSync();
         },
