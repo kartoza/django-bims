@@ -2,6 +2,7 @@ function showDownloadPopup(resource_type, resource_name, callback) {
   const $downloadPopup = $('#download-popup');
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
+  $('#download-notes').val('');
 
   const $submitDownloadPopup = $downloadPopup.find('.submit-download');
   const $downloadPurpose = $('#download-purpose');
@@ -20,7 +21,8 @@ function showDownloadPopup(resource_type, resource_name, callback) {
       resource_name: resource_name,
       site_id: site_id,
       survey_id: survey_id,
-      taxon_id: taxon_id
+      taxon_id: taxon_id,
+      notes: $('#download-notes').val()
     };
 
     $.ajax({

@@ -113,6 +113,10 @@ class DownloadRequest(models.Model):
         max_length=300,
         validators=[validate_file_extension]
     )
+    notes = models.TextField(
+        null=True,
+        blank=True
+    )
     processing = models.BooleanField(
         default=True
     )

@@ -1213,10 +1213,9 @@ class DownloadRequestAdmin(admin.ModelAdmin):
     list_display = (
         'requester',
         'request_date',
-        'request_file',
-        'request_category',
-        'approved',
-        'rejected'
+        'resource_type',
+        'resource_name',
+        'purpose',
     )
 
 

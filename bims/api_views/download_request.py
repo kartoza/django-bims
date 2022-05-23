@@ -21,6 +21,7 @@ class DownloadRequestApi(APIView):
         dashboard_url = request.POST.get('dashboard_url', '')
         site_id = request.POST.get('site_id', '')
         taxon_id = request.POST.get('taxon_id', '')
+        notes = request.POST.get('notes', '')
         location_site = None
         taxon = None
         success = False
@@ -52,7 +53,8 @@ class DownloadRequestApi(APIView):
             requester=self.request.user,
             dashboard_url=dashboard_url,
             location_site=location_site,
-            taxon=taxon
+            taxon=taxon,
+            notes=notes
         )
 
         return Response({
