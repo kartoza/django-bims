@@ -64,6 +64,19 @@ def site_ready(request):
     return {'site_ready': is_site_ready}
 
 
+def download_request_purpose(request):
+    from bims.models import DownloadRequestPurpose
+    purpose_list = []
+    for download_purpose in DownloadRequestPurpose.objects.all():
+        purpose_list.append({
+            'id': download_purpose.id,
+            'name': download_purpose.name
+        })
+    return {
+        'download_request_purpose': purpose_list
+    }
+
+
 def download_request_message(request):
     is_approval_enabled = (
         preferences.SiteSetting.enable_download_request_approval

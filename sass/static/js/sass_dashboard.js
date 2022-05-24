@@ -640,24 +640,27 @@ function getCsvName(title, identifier) {
 
 function onDownloadCSVClicked(e) {
     let downloadButton = $(e.target);
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
     let csvName = getCsvName('SASS data', downloadButton.data('identifier'));
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = `/sass/download-sass-data-site/?csvName=${csvName}&${queryString}`;
 
-    const alertModalBody = $('#alertModalBody');
-    if (!is_logged_in) {
-        alertModalBody.html('Please log in first.')
-    } else {
-        alertModalBody.html(downloadRequestMessage);
-    }
-    $('#alertModal').modal({
-        'keyboard': false,
-        'backdrop': 'static'
-    });
-    downloadCSV(url, downloadButton, csvName, true);
+    showDownloadPopup('CSV', csvName, function (downloadRequestId) {
+        downloadButton.html("Processing...");
+        downloadButton.prop("disabled", true);
+        const alertModalBody = $('#alertModalBody');
+        if (!is_logged_in) {
+            alertModalBody.html('Please log in first.')
+        } else {
+            alertModalBody.html(downloadRequestMessage);
+        }
+        $('#alertModal').modal({
+            'keyboard': false,
+            'backdrop': 'static'
+        });
+        url += `&downloadRequestId=${downloadRequestId}`;
+        downloadCSV(url, downloadButton, csvName, true);
+    })
 }
 
 function onDownloadChemCSVClicked(e) {
@@ -666,9 +669,11 @@ function onDownloadChemCSVClicked(e) {
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = '/api/chemical-record/download/?' + queryString;
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton, csv_name);
+    showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
+        downloadButton.html("Processing...");
+        downloadButton.prop("disabled", true);
+        downloadCSV(url, downloadButton, csv_name);
+    });
 }
 
 function onDownloadSummaryCSVClicked(e) {
@@ -677,20 +682,24 @@ function onDownloadSummaryCSVClicked(e) {
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = `/sass/download-sass-summary-data/?csvName=${csvName}&${queryString}`;
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
+    showDownloadPopup('CSV', csvName, function (downloadRequestId) {
+        downloadButton.html("Processing...");
+        downloadButton.prop("disabled", true);
 
-    const alertModalBody = $('#alertModalBody');
-    if (!is_logged_in) {
-        alertModalBody.html('Please log in first.');
-    } else {
-        alertModalBody.html(downloadRequestMessage)
-        downloadCSV(url, downloadButton, csvName, true)
-    }
-    $('#alertModal').modal({
-        'keyboard': false,
-        'backdrop': 'static'
+        const alertModalBody = $('#alertModalBody');
+        if (!is_logged_in) {
+            alertModalBody.html('Please log in first.');
+        } else {
+            alertModalBody.html(downloadRequestMessage)
+            url += `&downloadRequestId=${downloadRequestId}`;
+            downloadCSV(url, downloadButton, csvName, true)
+        }
+        $('#alertModal').modal({
+            'keyboard': false,
+            'backdrop': 'static'
+        });
     });
+
 }
 
 function onDownloadChartNewClicked(e) {
@@ -729,21 +738,23 @@ function onDownloadChartNewClicked(e) {
 
 function onDownloadMapClicked(e) {
     map.once('postrender', function (event) {
-        var canvas = $('#map');
-        html2canvas(canvas, {
-            useCORS: true,
-            background: '#FFFFFF',
-            allowTaint: false,
-            onrendered: function (canvas) {
-                let link = document.createElement('a');
-                link.setAttribute("type", "hidden");
-                link.href = canvas.toDataURL("image/png");
-                link.download = 'map.png';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            }
-        });
+        showDownloadPopup('IMAGE', 'SASS Map', function () {
+            var canvas = $('#map');
+            html2canvas(canvas, {
+                useCORS: true,
+                background: '#FFFFFF',
+                allowTaint: false,
+                onrendered: function (canvas) {
+                    let link = document.createElement('a');
+                    link.setAttribute("type", "hidden");
+                    link.href = canvas.toDataURL("image/png");
+                    link.download = 'map.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                }
+            });
+        })
     });
     map.renderSync();
 }

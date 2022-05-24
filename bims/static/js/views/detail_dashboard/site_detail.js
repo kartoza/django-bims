@@ -163,6 +163,7 @@ define([
             self.siteLayerSource.updateParams(newParams);
         },
         show: function (data) {
+            console.log(data);
             if (this.isOpen) {
                 return false;
             }
@@ -527,22 +528,24 @@ define([
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
             this.mapLocationSite.once('postrender', function (event) {
-                let canvas = $('#locationsite-map');
-                html2canvas(canvas, {
-                    useCORS: false,
-                    background: '#FFFFFF',
-                    allowTaint: true,
-                    onrendered: function (canvas) {
-                        $('.ol-control').show();
-                        let link = document.createElement('a');
-                        link.setAttribute("type", "hidden");
-                        link.href = canvas.toDataURL("image/png");
-                        link.download = 'map.png';
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                    }
-                });
+                showDownloadPopup('IMAGE', 'Distribution Map', function () {
+                    let canvas = $('#locationsite-map');
+                    html2canvas(canvas, {
+                        useCORS: false,
+                        background: '#FFFFFF',
+                        allowTaint: true,
+                        onrendered: function (canvas) {
+                            $('.ol-control').show();
+                            let link = document.createElement('a');
+                            link.setAttribute("type", "hidden");
+                            link.href = canvas.toDataURL("image/png");
+                            link.download = 'map.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
+                })
             });
             this.mapLocationSite.renderSync();
         },
@@ -583,25 +586,31 @@ define([
             }
         },
         downloadElementEvent: function (button_el) {
+            let that = this;
             let button = $(button_el.target);
-            let title;
             if (!button.hasClass('btn')) {
                 button = button.parent();
             }
-            let target = button.data('datac');
-            let element = this.$el.find('#' + target);
-            let chartDownloaded = 0;
+            let title = button.data('title');
+            let titles = title.split(',');
+            if (!title) {
+                title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
+            }
 
-            let titles = button.data('title').split(',');
             let chartNames = [];
             try {
                 chartNames = button.data('chart').split(',');
             } catch (e) {
             }
+
+            let target = button.data('datac');
+            let element = that.$el.find('#' + target);
+            let chartDownloaded = 0;
+
             if (chartNames.length > 0) {
                 for (let i = 0; i < chartNames.length; i++) {
-                    if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
-                        svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
+                    if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
+                        svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
                         chartDownloaded += 1;
                     }
                 }
@@ -610,11 +619,9 @@ define([
                 }
                 return;
             }
-            if (!title) {
-                title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
-            }
             if (element.length > 0)
-                this.downloadElement(title, element);
+                that.downloadElement(title, element);
+
         },
         downloadChartImage: function (e) {
             let button = $(e.target);
@@ -637,15 +644,17 @@ define([
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
-            html2canvas(element, {
-                height: 1000,
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
-            })
+            showDownloadPopup('TABLE', title, function () {
+                html2canvas(element, {
+                    height: 1000,
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
+            });
         },
         downloadingCSV: function (url, downloadButton) {
             var self = this;
@@ -688,27 +697,40 @@ define([
             let alertModalBody = $('#alertModalBody');
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
-            } else {
-                alertModalBody.html(downloadRequestMessage);
-                $.get({
-                    url: self.csvDownloadEmailUrl,
-                    dataType: 'json',
-                    success: function (data) {}
+                $('#alertModal').modal({
+                    'keyboard': false,
+                    'backdrop': 'static'
                 });
-
+            } else {
+                showDownloadPopup('CSV', 'Occurrence Data', function (downloadRequestId) {
+                    alertModalBody.html(downloadRequestMessage);
+                    $('#alertModal').modal({
+                        'keyboard': false,
+                        'backdrop': 'static'
+                    });
+                    let url = self.csvDownloadEmailUrl;
+                    if (!url.includes('?')) {
+                        url += '?';
+                    }
+                    url += '&downloadRequestId=' + downloadRequestId
+                    $.get({
+                        url: url,
+                        dataType: 'json',
+                        success: function (data) {}
+                    });
+                })
             }
-            $('#alertModal').modal({
-                'keyboard': false,
-                'backdrop': 'static'
-            });
             button.html(name);
             button.prop('disabled', false);
         },
         downloadChemRecordsAsCSV: function (e) {
-            var button = $(e.target);
-            button.html('Processing...');
-            button.prop("disabled", true);
-            this.downloadingCSV(this.chemCsvDownloadUrl, button);
+            let button = $(e.target);
+            let that = this;
+            showDownloadPopup('CSV', 'Chemical Records', function (downloadRequestId) {
+                button.html('Processing...');
+                button.prop("disabled", true);
+                that.downloadingCSV(that.chemCsvDownloadUrl, button);
+            });
         },
         renderStackedBarChart: function (dataIn, chartName, chartCanvas, randomColor = false) {
             if (!(dataIn.hasOwnProperty('data'))) {

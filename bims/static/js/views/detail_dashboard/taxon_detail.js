@@ -365,40 +365,48 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         downloadElementEvent: function (button_el) {
             let button = $(button_el.target);
+            let that = this;
             if (!button.hasClass('btn')) {
                 button = button.parent();
             }
             let target = button.data('datac');
             let element = this.$el.find('#' + target);
             let title = button.data('title');
-            let chartDownloaded = 0;
-            let titles = button.data('title').split(',');
-            let chartNames = button.data('chart').split(',');
-            for (let i=0; i<chartNames.length; i++) {
-                if (this.chartConfigs.hasOwnProperty(chartNames[i])) {
-                    svgChartDownload(this.chartConfigs[chartNames[i]], titles[i]);
-                    chartDownloaded += 1;
-                }
-            }
-            if (chartDownloaded === chartNames.length) {
-                return;
-            }
-
             if (!title) {
                 title = $(button).parent().find('.card-header-title').html().replaceAll(' ', '').replace(/(\r\n|\n|\r)/gm, '');
             }
+            let chartDownloaded = 0;
+            let titles = button.data('title').split(',');
+            let chartNames = [];
+
+            try {
+                chartNames = button.data('chart').split(',');
+            } catch (e) {}
+
+            for (let i = 0; i < chartNames.length; i++) {
+                if (that.chartConfigs.hasOwnProperty(chartNames[i])) {
+                    svgChartDownload(that.chartConfigs[chartNames[i]], titles[i]);
+                    chartDownloaded += 1;
+                }
+            }
+            if (chartNames.length > 0 && chartDownloaded === chartNames.length) {
+                return;
+            }
             if (element.length > 0)
-                this.downloadElement(title, element);
+                that.downloadElement(title, element);
+
         },
         downloadElement: function (title, element) {
             element[0].scrollIntoView();
-            html2canvas(element, {
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = title + '.png';
-                    link.click();
-                }
+            showDownloadPopup('TABLE', title, function () {
+                html2canvas(element, {
+                    onrendered: function (canvas) {
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                        link.download = title + '.png';
+                        link.click();
+                    }
+                })
             })
         },
         clearDashboard: function () {
@@ -474,22 +482,24 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
         },
         exportTaxasiteMap: function () {
             this.mapTaxaSite.once('postcompose', function (event) {
-                let canvas = $('#taxasite-map');
-                html2canvas(canvas, {
-                    useCORS: false,
-                    background: '#FFFFFF',
-                    allowTaint: true,
-                    onrendered: function (canvas) {
-                        $('.ol-control').show();
-                        let link = document.createElement('a');
-                        link.setAttribute("type", "hidden");
-                        link.href = canvas.toDataURL("image/png");
-                        link.download = 'map.png';
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                    }
-                });
+                showDownloadPopup('IMAGE', 'Taxa Map', function () {
+                    let canvas = $('#taxasite-map');
+                    html2canvas(canvas, {
+                        useCORS: false,
+                        background: '#FFFFFF',
+                        allowTaint: true,
+                        onrendered: function (canvas) {
+                            $('.ol-control').show();
+                            let link = document.createElement('a');
+                            link.setAttribute("type", "hidden");
+                            link.href = canvas.toDataURL("image/png");
+                            link.download = 'map.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                        }
+                    });
+                })
             });
             this.mapTaxaSite.renderSync();
         },

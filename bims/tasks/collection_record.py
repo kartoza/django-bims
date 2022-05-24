@@ -91,9 +91,11 @@ def process_download_data_to_csv(
         UserModel = get_user_model()
         try:
             user = UserModel.objects.get(id=user_id)
+            download_request_id = filters.get('downloadRequestId', '')
             send_csv_via_email(
                 user=user,
-                csv_file=path_file
+                csv_file=path_file,
+                download_request_id=download_request_id
             )
         except UserModel.DoesNotExist:
             pass

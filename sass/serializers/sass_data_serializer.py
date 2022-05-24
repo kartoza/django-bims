@@ -118,15 +118,12 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
         if site.original_geomorphological:
             return site.original_geomorphological
         else:
-            try:
-                context = json.loads(site.location_context)
-                geo = context[
-                    'context_group_values'][
-                    'geomorphological_group']['service_registry_values'][
-                    'geo_class_recoded']['value']
-                return geo
-            except (KeyError, ValueError):
-                return '-'
+            location_context = LocationContext.objects.filter(
+                site=site
+            )
+            return location_context.value_from_key(
+                'geo_class_recoded'
+            )
 
     def get_geomorphological_zone_ground_truthed(self, obj):
         site = obj.site_visit.location_site
@@ -192,9 +189,12 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
                 sass_taxon=obj.sass_taxon,
             )
         )
-        if len(site_visit_biotope) > 0:
-            return site_visit_biotope[0].taxon_abundance.abc
-        return ''
+        if not site_visit_biotope.exists():
+            return ''
+        try:
+            return site_visit_biotope.first().taxon_abundance.abc
+        except AttributeError:
+            return ''
 
     def get_v(self, obj):
         site_visit_biotope = (
@@ -205,9 +205,12 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
                 sass_taxon=obj.sass_taxon,
             )
         )
-        if len(site_visit_biotope) > 0:
-            return site_visit_biotope[0].taxon_abundance.abc
-        return ''
+        if not site_visit_biotope.exists():
+            return ''
+        try:
+            return site_visit_biotope.first().taxon_abundance.abc
+        except AttributeError:
+            return ''
 
     def get_g(self, obj):
         site_visit_biotope = (
@@ -220,9 +223,12 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
                 sass_taxon=obj.sass_taxon,
             )
         )
-        if len(site_visit_biotope) > 0:
-            return site_visit_biotope[0].taxon_abundance.abc
-        return ''
+        if not site_visit_biotope.exists():
+            return ''
+        try:
+            return site_visit_biotope.first().taxon_abundance.abc
+        except AttributeError:
+            return ''
 
     def get_site(self, obj):
         if obj.taxon_abundance:

@@ -83,6 +83,7 @@ from bims.models import (
     generate_site_code,
     location_site_post_save_handler,
     DownloadRequest,
+    DownloadRequestPurpose,
     BaseMapLayer,
     RequestLog,
     IngestedData,
@@ -1205,16 +1206,24 @@ class AlgaeDataAdmin(admin.ModelAdmin):
 class DownloadRequestAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'requester',
+        'taxon',
+        'survey',
+        'location_site'
     )
     list_display = (
         'requester',
         'request_date',
-        'request_file',
-        'request_category',
-        'approved',
-        'rejected'
+        'resource_type',
+        'resource_name',
+        'purpose',
     )
 
+
+class DownloadRequestPurposeAdmin(admin.ModelAdmin):
+    list_display = (
+        'order',
+        'name',
+    )
 
 class RequestLogAdmin(admin.ModelAdmin):
     list_display = (
@@ -1405,6 +1414,7 @@ admin.site.register(UploadSession, UploadSessionAdmin)
 admin.site.register(HarvestSession)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
+admin.site.register(DownloadRequestPurpose, DownloadRequestPurposeAdmin)
 admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
 admin.site.register(RequestLog, RequestLogAdmin)
 admin.site.register(IngestedData, IngestedDataAdmin)

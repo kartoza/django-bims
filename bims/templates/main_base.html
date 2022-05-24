@@ -100,6 +100,36 @@
   </div>
 </div>
 
+<!-- Download popup modal -->
+<div class="modal" tabindex="-1" role="dialog" id="download-popup" style="z-index: 99999">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"> Download <span id="download-popup-title"></span></h5>
+      </div>
+      <div class="modal-body">
+       <div class="form-group">
+           <label for="download-purpose">Purpose</label>
+           <select class="form-control" id="download-purpose">
+               {% for purpose in download_request_purpose %}
+                   <option value="{{ purpose.id }}">{{ purpose.name }}</option>
+               {% endfor %}
+           </select>
+       </div>
+       <div class="form-group">
+           <label for="download-details">Notes (optional)</label>
+           <textarea class="form-control" name="download_notes" id="download-notes"></textarea>
+       </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary submit-download">Download</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End download popup modal -->
+
 {% block navigation %}
     <!-- Navigation -->
     {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
@@ -119,8 +149,10 @@
     <link href="{% static "css/bug_report_panel_style.css" %}" rel="stylesheet">
     <script src="{% static 'js/utils/detect-browser.js' %}"></script>
     <script src="{% static 'js/non_requirejs/bug_report.js' %}"></script>
+    <script src="{% static 'js/libs/chosen/chosen.jquery.min.js' %}"></script>
     {% include 'bug_report_template.html' %}
 {% endif %}
+<script src="{% static 'js/non_requirejs/download_request_popup.js' %}"></script>
 
 </body>
 

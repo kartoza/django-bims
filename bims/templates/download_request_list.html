@@ -69,9 +69,11 @@
                                     {{ obj.request_category }}
                                 </td>
                                 <td>
+                                    {% if obj.request_file %}
                                     <a download="{{ obj.request_file.name|filename }}.csv" href="{{ obj.request_file.url|remove_media_path }}"
                                        class="btn btn-sm btn-primary"
                                        style="font-size: 10pt; margin-top: -10px">Download</a>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     {% if not obj.approved and not obj.rejected %}

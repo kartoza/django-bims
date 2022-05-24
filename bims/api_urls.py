@@ -93,6 +93,9 @@ from bims.api_views.merge_sites import MergeSites
 from bims.views.source_reference import SourceReferenceAPIView
 from bims.api_views.decision_support_tool import DecisionSupportToolView, \
     DecisionSupportToolList, check_dst_status
+from bims.api_views.download_request import (
+    DownloadRequestApi
+)
 
 
 urlpatterns = [
@@ -281,5 +284,9 @@ urlpatterns = [
     url(r'^celery-status/(?P<task_id>[\w-]+)/$',
         CeleryStatus.as_view(),
         name='celery-status'
-        )
+        ),
+    url(r'^download-request/$',
+        DownloadRequestApi.as_view(),
+        name='download-request'
+    ),
 ]
