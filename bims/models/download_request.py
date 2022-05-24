@@ -62,8 +62,8 @@ class DownloadRequest(models.Model):
         settings.AUTH_USER_MODEL,
         models.CASCADE,
         related_name='download_request_requester',
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
     )
     request_date = models.DateTimeField(
         default=datetime.now
@@ -159,6 +159,13 @@ class DownloadRequest(models.Model):
 
     def save(self, *args, **kwargs):
         old_obj = None
+
+        if (
+            not self.requester or
+            self.resource_type != DownloadRequest.CSV
+        ):
+            super(DownloadRequest, self).save(*args, **kwargs)
+            return
 
         if self._state.adding:
             send_new_csv_notification(

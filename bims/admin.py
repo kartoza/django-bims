@@ -1211,8 +1211,8 @@ class DownloadRequestAdmin(admin.ModelAdmin):
         'location_site'
     )
     list_display = (
-        'requester',
         'request_date',
+        'requester',
         'resource_type',
         'resource_name',
         'purpose',

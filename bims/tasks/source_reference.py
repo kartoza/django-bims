@@ -17,9 +17,7 @@ def generate_source_reference_filter(file_path=None):
     from bims.models.source_reference import (
         SourceReference
     )
-    references = SourceReference.objects.filter(
-        biologicalcollectionrecord__isnull=False,
-    ).distinct('id')
+    references = SourceReference.objects.all().distinct('id')
     results = []
     reference_source_list = []
     for reference in references:
