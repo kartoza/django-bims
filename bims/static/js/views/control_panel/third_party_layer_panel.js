@@ -9,7 +9,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         miniSASSSelected: false,
         inWARDSelected: false,
         fetchingInWARDSData: false,
-        inWARDSStationsUrl: "/proxy/?url=http://inwards.award.org.za/app_json/wq_stations.php",
+        inWARDSStationsUrl: "/bims_proxy/https://inwards.award.org.za/app_json/wq_stations.php",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
