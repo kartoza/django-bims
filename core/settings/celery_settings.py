@@ -11,6 +11,10 @@ CELERY_BEAT_SCHEDULE = {
         	'expires': 14,
         	'retry': False
         }
+    },
+    'clean_data': {
+        'task': 'bims.tasks.clean_data',
+        'schedule': 30
     }
 }
 
