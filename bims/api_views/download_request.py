@@ -46,11 +46,15 @@ class DownloadRequestApi(APIView):
             id=purpose
         )
 
+        requester = (
+            self.request.user if not self.request.user.is_anonymous else None
+        )
+
         download_request, created = DownloadRequest.objects.get_or_create(
             resource_name=resource_name,
             resource_type=resource_type,
             purpose=download_request_purpose,
-            requester=self.request.user,
+            requester=requester,
             dashboard_url=dashboard_url,
             location_site=location_site,
             taxon=taxon,
