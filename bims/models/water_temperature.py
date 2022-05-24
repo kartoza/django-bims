@@ -53,9 +53,9 @@ class WaterTemperature(models.Model):
 
     location_site = models.ForeignKey(
         LocationSite,
-        null=False,
+        null=True,
         blank=False,
-        on_delete=models.CASCADE
+        on_delete=models.SET_NULL
     )
 
     is_daily = models.BooleanField(
