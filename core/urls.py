@@ -33,6 +33,7 @@ urlpatterns = [
     url(r'^accounts/', include('allauth.urls')),
     url(r'^pages/', include('django.contrib.flatpages.urls')),
     url(r'^', include('bims.urls')),
+    url(r'^mobile/', include('mobile.urls')),
     url(r'^', include('bims_theme.urls')),
     url(r'^sass/', include('sass.urls')),
     url(r'^bibliography/',
