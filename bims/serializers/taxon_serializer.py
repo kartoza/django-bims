@@ -151,7 +151,9 @@ class TaxonSimpleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Taxonomy
-        fields = ['id', 'canonical_name', 'scientific_name', 'cons_status']
+        fields = [
+            'id', 'canonical_name',
+            'scientific_name', 'cons_status']
 
 
 class TaxonGroupSerializer(serializers.ModelSerializer):

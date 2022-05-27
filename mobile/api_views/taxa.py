@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from bims.enums import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
 from bims.serializers.taxon_serializer import TaxonSimpleSerializer
 
@@ -14,7 +15,12 @@ class AllTaxa(APIView):
         module = request.GET.get('module', None)
         if not module:
             raise Http404()
-        taxa = Taxonomy.objects.filter(taxongroup__id=module).order_by(
+        taxa = Taxonomy.objects.filter(
+            rank__in=[
+                TaxonomicRank.SPECIES.name,
+                TaxonomicRank.SUBSPECIES.name],
+            taxongroup__id=module
+        ).order_by(
             'canonical_name'
         )
 

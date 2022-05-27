@@ -17,7 +17,10 @@ class SamplingMethodQuerySet(models.QuerySet):
             ).strip()
             if sampling_method_name.lower() not in sampling_method_lower_list:
                 sampling_method_lower_list.append(sampling_method_name.lower())
-                sampling_method_list.append(sampling_method)
+                sampling_method_list.append({
+                    'id': sampling_method.id,
+                    'sampling_method': sampling_method.sampling_method
+                })
         return sampling_method_list
 
 

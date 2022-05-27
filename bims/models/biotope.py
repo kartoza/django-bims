@@ -14,10 +14,10 @@ class BiotopeQuerySet(models.QuerySet):
     def biotope_list(self, taxon_group, biotope_type):
         if not isinstance(taxon_group, TaxonGroup):
             return []
-        return self.filter(
+        return list(self.filter(
             taxon_group=taxon_group,
             biotope_type=biotope_type
-        ).order_by('display_order')
+        ).values('id', 'name').order_by('display_order'))
 
 
 class BiotopeManager(models.Manager):
