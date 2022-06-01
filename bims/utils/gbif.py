@@ -137,23 +137,31 @@ def find_species(
                 key_found = (
                     'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
+                    taxon_name = ''
+                    if 'canonicalName' in result:
+                        taxon_name = result['canonicalName']
+                    if not taxon_name and rank.lower() in result:
+                        taxon_name = result[rank.lower()]
+                    if not taxon_name and 'scientificName' in result:
+                        taxon_name = result['scientificName']
+
                     if result['taxonomicStatus'] == 'ACCEPTED':
                         if accepted_data:
-                            if result['canonicalName'] == original_species_name:
+                            if taxon_name == original_species_name:
                                 if result['key'] < accepted_data['key']:
                                     accepted_data = result
                         else:
                             accepted_data = result
                     if result['taxonomicStatus'] == 'SYNONYM':
                         if synonym_data:
-                            if result['canonicalName'] == original_species_name:
+                            if taxon_name == original_species_name:
                                 if result['key'] < synonym_data['key']:
                                     synonym_data = result
                         else:
                             synonym_data = result
                     else:
                         if other_data:
-                            if result['canonicalName'] == original_species_name:
+                            if taxon_name == original_species_name:
                                 if result['key'] < other_data['key']:
                                     other_data = result
                         else:
@@ -165,6 +173,8 @@ def find_species(
         return other_data
     except HTTPError:
         print('Species not found')
+    except AttributeError:
+        print('error')
 
     return None
 
