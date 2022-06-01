@@ -149,7 +149,8 @@ class CollectionSearch(object):
 
     @property
     def search_query(self):
-        return self.get_request_data('search')
+        search_query_value = self.get_request_data('search')
+        return search_query_value if search_query_value else ''
 
     def is_sass_records_only(self):
         """Check if the search only for SASS records"""
