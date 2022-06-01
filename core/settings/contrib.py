@@ -65,7 +65,8 @@ INSTALLED_APPS += (
     'preferences',
     'sorl.thumbnail',
     'ckeditor',
-    'django_json_widget'
+    'django_json_widget',
+    'django_forms_bootstrap'
 )
 
 # Wagtail configurations
