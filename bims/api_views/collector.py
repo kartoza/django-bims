@@ -29,7 +29,7 @@ class CollectorList(APIView):
         all_users.sort()
         user_index = 0
         if len(all_users) > 0:
-            while all_users[user_index] == ' ':
+            while user_index in all_users and all_users[user_index] == ' ':
                 user_index += 1
         return HttpResponse(
             json.dumps(all_users[user_index:]),
