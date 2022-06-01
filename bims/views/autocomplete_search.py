@@ -208,7 +208,7 @@ def species_autocomplete(request):
         taxon_group, created = TaxonGroup.objects.get_or_create(
             name=taxon_group_request
         )
-        optional_query['biologicalcollectionrecord__module_group'] = (
+        optional_query['taxongroup'] = (
             taxon_group
         )
         taxon_group_species = taxon_group.taxonomies.values_list(

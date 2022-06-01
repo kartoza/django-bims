@@ -10,7 +10,7 @@ from preferences import preferences
 from bims.models.source_reference import SourceReference
 
 from bims.models.water_temperature import WaterTemperature
-from django.db.models import Q, Count, F, Value, Case, When
+from django.db.models import Q, Count, F, Value, Case, When, IntegerField
 from django.db.models.functions import Concat
 from django.contrib.gis.db.models import Union, Extent
 from django.contrib.gis.geos import Polygon
@@ -753,20 +753,25 @@ class CollectionSearch(object):
         )
 
         # Search for sites without any occurrences
-        sites_without_occurrences = LocationSite.objects.filter(
-            site_code__icontains=self.search_query
-        ).extra(
-            select={
-                'name': 'site_code'
-            }
-        ).annotate(
-            site_id=F('id')
-        ).values(
-            'site_id', 'name'
-        ).annotate(
-            total=Count('id'),
-            total_survey=Count('survey', distinct=True)
-        ).order_by(order_by)
+        if LocationSite.objects.filter(site_code__icontains=self.search_query).exists():
+            sites_without_occurrences = LocationSite.objects.exclude(
+                id__in=sites.values('site_id')
+            ).filter(
+                site_code__icontains=self.search_query
+            ).extra(
+                select={
+                    'name': 'site_code'
+                }
+            ).annotate(
+                site_id=F('id')
+            ).values(
+                'site_id', 'name'
+            ).annotate(
+                total=Value(0, output_field=IntegerField()),
+                total_survey=Count('survey', distinct=True)
+            ).order_by(order_by)
+        else:
+            sites_without_occurrences = []
 
         thermal_sites = WaterTemperature.objects.none()
         if self.thermal_module:

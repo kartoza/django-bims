@@ -173,6 +173,9 @@ define([
                         let endemicLabel = data[i][0].replace(/ *\([^)]*\) */g, "");
                         var liElement = $('<li class="endemic-dropdown-item" data-endemic-value="' + data[i][0] + '">' +
                             ' <input class="endemic-checkbox" name="endemic-value" type="checkbox" value="' + data[i][0] + '" ' + checked + '> <span>' + endemicLabel + ' </span></li>');
+                        if (!data[i][1]) {
+                            continue;
+                        }
                         nativeOriginDropdown.append(liElement);
                         liElement.popover({
                             content: data[i][1],
@@ -652,6 +655,9 @@ define([
             // render slider
             this.startYear = parseInt(min_year_filter);
             this.endYear = parseInt(max_year_filter);
+            if (this.startYear === this.endYear) {
+                this.startYear -= 1;
+            }
             this.yearSlider = NoUiSlider.create($('#year-slider')[0], {
                 start: [this.startYear, this.endYear],
                 connect: true,
