@@ -77,7 +77,6 @@ def autocomplete(request):
             LocationSite.objects.filter(
                 site_code__icontains=q,
                 site_code__isnull=False,
-                biological_collection_record__validated=True,
                 **site_additional_filters
             ).distinct('id').
             annotate(site_id=F('id'), suggested_name=F('site_code')).

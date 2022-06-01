@@ -684,7 +684,18 @@ class CollectionSearch(object):
 
         if bio.exists() or water_temperature:
             self.location_sites_raw_query = LocationSite.objects.filter(
-                Q(id__in=bio.values('site_id')) | Q(id__in=water_temperature)
+                Q(id__in=bio.values('site_id')) |
+                Q(id__in=water_temperature) |
+                Q(site_code__icontains=self.search_query)
+            ).annotate(site_id=F('id')).values(
+                'site_id',
+                'geometry_point',
+                'name'
+            ).query.sql_with_params()
+
+        if not self.location_sites_raw_query:
+            self.location_sites_raw_query = LocationSite.objects.filter(
+                site_code__icontains=self.search_query
             ).annotate(site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
@@ -740,6 +751,21 @@ class CollectionSearch(object):
             ).order_by(order_by)
         )
 
+        # Search for sites without any occurrences
+        sites_without_occurrences = LocationSite.objects.filter(
+            site_code__icontains=self.search_query
+        ).extra(
+            select={
+                'name': 'site_code'
+            }
+        ).annotate(
+            site_id=F('id')
+        ).values(
+            'site_id', 'name'
+        ).annotate(
+            total=Count('id'),
+            total_survey=Count('survey', distinct=True)
+        ).order_by(order_by)
 
         thermal_sites = WaterTemperature.objects.none()
         if self.thermal_module:
@@ -758,7 +784,7 @@ class CollectionSearch(object):
                 total_thermal=Count('location_site')
             ).order_by(order_by).distinct()
 
-        site_list = list(sites)
+        site_list = list(sites) + list(sites_without_occurrences)
         for thermal_site in thermal_sites:
             site_list.append({
                 'site_id': thermal_site['site_id'],
@@ -771,7 +797,8 @@ class CollectionSearch(object):
         return {
             'total_records': self.collection_records.count(),
             'total_sites': (
-                sites.count() + (thermal_sites.count() if thermal_sites else 0)
+                sites.count() + (thermal_sites.count() if thermal_sites else 0) +
+                sites_without_occurrences.count()
             ),
             'total_survey': survey.count(),
             'records': list(collections),
