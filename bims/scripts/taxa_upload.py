@@ -249,6 +249,8 @@ class TaxaProcessor(object):
                 # Fetch from gbif
                 if DataCSVUpload.row_value(row, ON_GBIF) == 'Yes':
                     gbif_link = DataCSVUpload.row_value(row, GBIF_LINK)
+                    if not gbif_link:
+                        gbif_link = DataCSVUpload.row_value(row, GBIF_URL)
                     gbif_key = (
                         gbif_link.split('/')[len(gbif_link.split('/')) - 1]
                     )

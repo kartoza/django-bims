@@ -1,5 +1,6 @@
 ON_GBIF = 'On GBIF'
 GBIF_LINK = 'GBIF Link'
+GBIF_URL = 'GBIF URL'
 TAXON = 'Taxon'
 SPECIES = 'Species'
 GENUS = 'Genus'

@@ -16,6 +16,7 @@ x-common-django:
     - APP_NAME=bims
     - ASYNC_SIGNALS=True
     - BROKER_URL=amqp://rabbitmq:5672
+    - CELERY_BROKER_URL=amqp://rabbitmq:5672
     - C_FORCE_ROOT=1
     - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
     - ALLOWED_HOSTS=['*']
@@ -101,12 +102,13 @@ services:
     links:
       - db:db
       - cache:cache
+      - rabbitmq:rabbitmq
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./scheduler-data:/home/scheduler-data
-    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -B --schedule /home/scheduler-data/celerybeat-schedule -l debug
+    command: celery --app=bims.celery:app worker --schedule /home/geocontext-scheduler/celerybeat-schedule -B --schedule /home/scheduler-data/celerybeat-schedule -l debug
 
   dev:
     <<: *default-common-django
