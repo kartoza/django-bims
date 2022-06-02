@@ -753,7 +753,10 @@ class CollectionSearch(object):
         )
 
         # Search for sites without any occurrences
-        if LocationSite.objects.filter(site_code__icontains=self.search_query).exists():
+        if (
+                self.search_query and
+                LocationSite.objects.filter(site_code__icontains=self.search_query).exists()
+        ):
             sites_without_occurrences = LocationSite.objects.exclude(
                 id__in=sites.values('site_id')
             ).filter(
@@ -771,7 +774,7 @@ class CollectionSearch(object):
                 total_survey=Count('survey', distinct=True)
             ).order_by(order_by)
         else:
-            sites_without_occurrences = []
+            sites_without_occurrences = LocationSite.objects.none()
 
         thermal_sites = WaterTemperature.objects.none()
         if self.thermal_module:
