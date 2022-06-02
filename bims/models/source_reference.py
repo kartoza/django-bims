@@ -535,6 +535,10 @@ def merge_source_references(primary_source_reference, source_reference_list):
         id__in=source_reference_list.values_list('id', flat=True)
     ).exclude(id=primary_source_reference.id)
 
+    primary_source_reference = SourceReference.objects.get(
+        id=primary_source_reference.id
+    )
+
     links = [
         rel.get_accessor_name() for rel in primary_source_reference._meta.get_fields() if
         issubclass(type(rel), ForeignObjectRel) and rel.get_accessor_name() not in
