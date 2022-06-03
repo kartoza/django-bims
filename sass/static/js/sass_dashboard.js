@@ -925,8 +925,8 @@ $(function () {
         renderChemGraph();
         renderSourceReferences();
         if (dateLabels) {
-            $('#earliest-record').html(moment(dateLabels[0], 'DD-MM-YYYY').format('YYYY-MM-DD'));
-            $('#latest-record').html(moment(dateLabels[dateLabels.length - 1], 'DD-MM-YYYY').format('YYYY-MM-DD'));
+            $('#earliest-record').html(dateLabels[0]);
+            $('#latest-record').html(dateLabels[dateLabels.length - 1]);
             $('#number-of-sass-record').html(dateLabels.length);
         }
     }
