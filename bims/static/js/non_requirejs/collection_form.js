@@ -357,6 +357,8 @@ $(function () {
 
     let form = $('#fish-form');
     $('#submit').click((event) => {
+        event.preventDefault();
+        $('#submit').attr('disabled','disabled').addClass('disabled');
         let required_inputs = $('input,textarea,select').filter('[required]:visible');
         let isError = false;
         let alertMessage = '';
