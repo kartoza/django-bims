@@ -170,7 +170,7 @@ def download_csv_taxa_list(request):
     filename = (
         f'{taxon_group}-{current_time.year}-'
         f'{current_time.month}-{current_time.day}-'
-        f'{current_time.hour}-{current_time.minute}'
+        f'{current_time.hour}'
     ).replace(' ', '_')
     folder = settings.PROCESSED_CSV_PATH
     path_folder = os.path.join(
@@ -186,7 +186,8 @@ def download_csv_taxa_list(request):
         send_csv_via_email(
             user=request.user,
             csv_file=path_file,
-            file_name=filename
+            file_name=filename,
+            approved=True
         )
     else:
         download_csv_taxa_list_task.delay(
