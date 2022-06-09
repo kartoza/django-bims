@@ -435,12 +435,13 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return '-'
 
     def occurrences_fields(self, obj, field):
-        if obj.upstream_id:
-            data = get_fields_from_occurrences(obj)
-            try:
-                return data[field]
-            except:  # noqa
-                return '-'
+        # Disable for now
+        # if obj.upstream_id:
+        #     data = get_fields_from_occurrences(obj)
+        #     try:
+        #         return data[field]
+        #     except:  # noqa
+        #         return '-'
         return '-'
 
     def get_decision_support_tool(self, obj):

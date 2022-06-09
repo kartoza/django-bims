@@ -438,8 +438,12 @@ class NonValidatedSiteView(
         filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
             gbif_site = BiologicalCollectionRecord.objects.filter(
-                Q(source_collection='gbif') | Q(owner__last_name='VM') | Q(owner_id__isnull=True)).values('site_id')
-            queryset = LocationSite.objects.filter(validated=False).exclude(pk__in=gbif_site).order_by('site_code')
+                Q(source_collection='gbif') |
+                Q(owner__last_name='VM') |
+                Q(owner_id__isnull=True)).values('site_id')
+            queryset = LocationSite.objects.filter(
+                validated=False
+            ).exclude(pk__in=gbif_site).order_by('site_code')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
             if filter_site_code is not None:
@@ -447,7 +451,9 @@ class NonValidatedSiteView(
                     site_code=filter_site_code)
             if filter_owner is not None:
                 queryset = queryset.filter(
-                    owner__last_name__icontains=filter_owner.split(' ')[-1])
+                    Q(owner__first_name__icontains=filter_owner.split(' ')[0]) |
+                    Q(owner__last_name__icontains=filter_owner.split(' ')[-1])
+                )
             if filter_river_name is not None:
                 queryset = queryset.filter(
                     river__name__icontains=filter_river_name)

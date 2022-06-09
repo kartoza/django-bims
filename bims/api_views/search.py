@@ -684,17 +684,26 @@ class CollectionSearch(object):
             ).select_related()
 
         if bio.exists() or water_temperature:
-            self.location_sites_raw_query = LocationSite.objects.filter(
+            location_sites_filter = LocationSite.objects.filter(
                 Q(id__in=bio.values('site_id')) |
-                Q(id__in=water_temperature) |
-                Q(site_code__icontains=self.search_query)
-            ).annotate(site_id=F('id')).values(
+                Q(id__in=water_temperature)
+            )
+            if self.search_query and LocationSite.objects.filter(
+                site_code__icontains=self.search_query
+            ).exists():
+                location_sites_filter = LocationSite.objects.filter(
+                    Q(id__in=bio.values('site_id')) |
+                    Q(id__in=water_temperature) |
+                    Q(site_code__icontains=self.search_query)
+                )
+            self.location_sites_raw_query = location_sites_filter.annotate(
+                site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
                 'name'
             ).query.sql_with_params()
 
-        if not self.location_sites_raw_query:
+        if not self.location_sites_raw_query and self.search_query:
             self.location_sites_raw_query = LocationSite.objects.filter(
                 site_code__icontains=self.search_query
             ).annotate(site_id=F('id')).values(
@@ -755,7 +764,8 @@ class CollectionSearch(object):
         # Search for sites without any occurrences
         if (
                 self.search_query and
-                LocationSite.objects.filter(site_code__icontains=self.search_query).exists()
+                LocationSite.objects.filter(
+                    site_code__icontains=self.search_query).exists()
         ):
             sites_without_occurrences = LocationSite.objects.exclude(
                 id__in=sites.values('site_id')
