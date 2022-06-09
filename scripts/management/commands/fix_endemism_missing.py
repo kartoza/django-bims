@@ -1,5 +1,4 @@
 from django.core.management import BaseCommand
-from django.db.models import signals
 from bims.models import *
 
 
@@ -8,7 +7,11 @@ class Command(BaseCommand):
         taxa_without_endemism = Taxonomy.objects.filter(
             endemism__isnull=True,
             additional_data__Endemism__isnull=False
+        ).exclude(
+            additional_data__Endemism=''
         )
+        if not taxa_without_endemism.exists():
+            return
         for taxon in taxa_without_endemism:
             endemism_data = taxon.additional_data['Endemism']
             print('Updating {taxon} with {endemism}'.format(
