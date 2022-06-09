@@ -145,11 +145,14 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
                     key_title = taxon_attribute_name.lower().replace(' ', '_')
                     if key_title not in self.context['headers']:
                         self.context['headers'].append(key_title)
-                    if taxon_attribute_name in instance.additional_data:
-                        result[key_title] = (
-                            instance.additional_data[taxon_attribute_name]
-                        )
-                    else:
+                    try:
+                        if taxon_attribute_name in instance.additional_data:
+                            result[key_title] = (
+                                instance.additional_data[taxon_attribute_name]
+                            )
+                        else:
+                            result[key_title] = ''
+                    except TypeError:
                         result[key_title] = ''
 
         return result
