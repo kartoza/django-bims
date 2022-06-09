@@ -14,6 +14,7 @@ function showDownloadPopup(resource_type, resource_name, callback) {
   let survey_id = urlParams.get('survey');
 
   $submitDownloadPopup.on('click', function () {
+    $submitDownloadPopup.prop('disabled', true);
     let postData = {
       purpose: $downloadPurpose.val(),
       dashboard_url: window.location.href,
@@ -33,9 +34,11 @@ function showDownloadPopup(resource_type, resource_name, callback) {
       success: function (data) {
         callback(data['download_request_id']);
         $downloadPopup.modal('hide');
+        $submitDownloadPopup.prop('disabled', false);
       }, error: function () {
         alert('Error submitting download request');
         $downloadPopup.modal('hide');
+        $submitDownloadPopup.prop('disabled', false);
       }
     });
   });

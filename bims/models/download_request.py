@@ -167,14 +167,14 @@ class DownloadRequest(models.Model):
             super(DownloadRequest, self).save(*args, **kwargs)
             return
 
-        if self._state.adding:
+        if self.id:
+            old_obj = DownloadRequest.objects.get(id=self.id)
+
+        if old_obj and not old_obj.request_file and self.request_file:
             send_new_csv_notification(
                 self.requester,
                 self.request_date
             )
-
-        if self.id:
-            old_obj = DownloadRequest.objects.get(id=self.id)
 
         if old_obj and not self.processing and not self.rejected:
             if self.approved and self.approved != old_obj.approved:

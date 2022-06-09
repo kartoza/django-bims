@@ -84,7 +84,7 @@ def process_download_data_to_csv(
         for row in rows:
             try:
                 writer.writerow(row)
-            except UnicodeEncodeError:
+            except: # noqa
                 continue
 
     if send_email and user_id:
