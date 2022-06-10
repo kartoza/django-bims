@@ -265,7 +265,7 @@
                                         <i class="fa fa-send" aria-hidden="true"></i>
                                     </a>
                                 {% endif %}
-                                {% if validator and site_visit.ready_for_validation %}
+                                {% if validator and site_visit.ready_for_validation or user.is_superuser %}
                                     <span class="validation-action">
                                         <a href="#" onclick="validateObject({{ site_visit.pk }})"
                                            class="btn btn-success btn-sm btn-action"
