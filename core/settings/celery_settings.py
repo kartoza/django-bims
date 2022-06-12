@@ -5,9 +5,9 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 604800.0,  # send email to admins every 7 days
         'options': {'queue' : 'geocontext'},
     },
-    'generate_spatial_scale_filter': {
-        'task': 'bims.tasks.generate_spatial_scale_filter_if_empty',
-        'schedule': 30,
+    'generate_filters': {
+        'task': 'bims.tasks.generate_filters',
+        'schedule': 300,
         'options': {
         	'expires': 14,
         	'retry': False,

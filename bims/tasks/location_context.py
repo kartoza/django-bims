@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db.models import F
 from django.utils.text import slugify
+
 from bims.utils.celery import single_instance_task
 
 logger = logging.getLogger(__name__)
@@ -117,12 +118,14 @@ LAYER_NAMES = {
 
 
 @shared_task(
-    name='bims.tasks.generate_spatial_scale_filter_if_empty',
+    name='bims.tasks.generate_filters',
     queue='geocontext'
 )
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter_if_empty():
+    from bims.tasks.source_reference import generate_source_reference_filter
     get_spatial_scale_filter()
+    generate_source_reference_filter()
 
 
 @shared_task(

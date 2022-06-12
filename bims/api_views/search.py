@@ -400,6 +400,7 @@ class CollectionSearch(object):
         """
         collection_record_model = BiologicalCollectionRecord
         filtered_location_sites = LocationSite.objects.none()
+        bio_filtered = False
 
         if self.is_sass_records_only():
             collection_record_model = SiteVisitTaxon
@@ -451,6 +452,8 @@ class CollectionSearch(object):
                 )
         if bio is None:
             bio = collection_record_model.objects.all()
+        else:
+            bio_filtered = True
 
         filters = dict()
         validation_filter = self.validation_filter()
@@ -464,7 +467,6 @@ class CollectionSearch(object):
 
         source_collection_filters = []
 
-        filters['taxonomy__isnull'] = False
         if self.site_ids:
             filters['site__in'] = self.site_ids
         if self.categories:
@@ -541,6 +543,10 @@ class CollectionSearch(object):
         if self.filtered_taxa_records is not None:
             filters['taxonomy__in'] = self.filtered_taxa_records
 
+        if filters:
+            filters['taxonomy__isnull'] = False
+            bio_filtered = True
+
         bio = bio.filter(**filters)
 
         # Filter collection record with SASS Accreditation status
@@ -562,6 +568,7 @@ class CollectionSearch(object):
                     collection_date__lte=F(
                         'owner__bims_profile__sass_accredited_date_to')
                 )
+                bio_filtered = True
             elif 'non sass accredited' in validated_values:
                 bio = bio.filter(
                     Q(
@@ -575,6 +582,7 @@ class CollectionSearch(object):
                     Q(collection_date__gte=F(
                         'owner__bims_profile__sass_accredited_date_to'))
                 )
+                bio_filtered = True
 
         if self.collector:
             collectors = Profile.objects.annotate(
@@ -584,11 +592,13 @@ class CollectionSearch(object):
             bio = bio.filter(
                 Q(survey__owner__in=collector_list)
             )
+            bio_filtered = True
 
         if self.collectors:
             bio = bio.filter(
                 Q(survey__owner__in=self.collectors)
             )
+            bio_filtered = True
 
         if self.reference_category:
             clauses = (
@@ -599,6 +609,7 @@ class CollectionSearch(object):
             )
             reference_category_filter = reduce(operator.or_, clauses)
             bio = bio.filter(reference_category_filter)
+            bio_filtered = True
 
         spatial_filters = self.spatial_filter
         if spatial_filters:
@@ -619,6 +630,7 @@ class CollectionSearch(object):
                 bio = bio.filter(site__geometry_point__intersects=(
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
+                bio_filtered = True
 
         if self.modules:
             # For Intersection methods :
@@ -637,6 +649,7 @@ class CollectionSearch(object):
                 bio = bio.filter(
                     module_group__id__in=self.modules
                 )
+            bio_filtered = True
 
         if self.get_request_data('polygon'):
             if not filtered_location_sites:
@@ -646,6 +659,7 @@ class CollectionSearch(object):
                 bio = bio.filter(
                     site__in=filtered_location_sites
                 )
+                bio_filtered = True
             else:
                 filtered_location_sites = filtered_location_sites.filter(
                     geometry_point__within=self.polygon
@@ -663,7 +677,17 @@ class CollectionSearch(object):
                     Q(chemical_collection_record__isnull=False)
                 )
 
+        if filtered_location_sites.exists():
+            bio = bio.filter(
+                site__in=filtered_location_sites
+            ).select_related()
+            bio_filtered = True
+
         water_temperature = []
+
+        if not bio_filtered:
+            bio = collection_record_model.objects.none()
+
         if self.thermal_module:
             water_temperature = list(WaterTemperature.objects.all().order_by(
                 'location_site').distinct('location_site').values_list(
@@ -672,16 +696,14 @@ class CollectionSearch(object):
                 filtered_location_sites = LocationSite.objects.filter(
                     id__in=water_temperature
                 )
-
             else:
                 filtered_location_sites = filtered_location_sites.filter(
                     id__in=water_temperature
                 )
-
-        if filtered_location_sites.exists():
-            bio = bio.filter(
-                site__in=filtered_location_sites
-            ).select_related()
+            if bio_filtered:
+                bio = bio.filter(
+                    site__in=filtered_location_sites
+                ).select_related()
 
         if bio.exists() or water_temperature:
             location_sites_filter = LocationSite.objects.filter(
