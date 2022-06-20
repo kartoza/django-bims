@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from preferences import preferences
-from bims.tasks.collection_record import download_data_to_csv
+from bims.tasks.collection_record import download_collection_record_task
 
 
 class CsvDownload(APIView):
@@ -63,7 +63,7 @@ class CsvDownload(APIView):
                 download_request_id=download_request_id
             )
         else:
-            download_data_to_csv.delay(
+            download_collection_record_task.delay(
                 path_file,
                 self.request.GET,
                 send_email=True,

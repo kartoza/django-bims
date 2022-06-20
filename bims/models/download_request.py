@@ -134,6 +134,11 @@ class DownloadRequest(models.Model):
         null=True,
         blank=True
     )
+    progress = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
