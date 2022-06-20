@@ -116,7 +116,10 @@ class CollectionSearch(object):
         super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):
-        return self.parameters.get(field, default_value)
+        request_data = self.parameters.get(field, default_value)
+        if isinstance(request_data, list):
+            request_data = request_data[0]
+        return request_data
 
     def parse_request_json(self, field):
         """
