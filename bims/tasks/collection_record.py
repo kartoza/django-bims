@@ -7,7 +7,7 @@ from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
 IN_CELERY_WORKER_PROCESS = (
-       False
+        sys.argv and sys.argv[0].endswith('celery') and 'worker' in sys.argv
 )
 
 
