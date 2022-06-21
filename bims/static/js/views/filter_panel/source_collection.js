@@ -6,6 +6,9 @@ define([
     'collections/source_collection'], function (Backbone, ol, Shared, _, SourceCollection) {
     return Backbone.View.extend({
         template: _.template($('#source-collection-template').html()),
+        events: {
+            'click .data-source': 'toggleDataSourceDescription'
+        },
         listWrapper: '',
         dataSourceCaptions: {
             "fbis": "Data not available via GBIF that have been sourced and collated from reputable " +
@@ -66,15 +69,20 @@ define([
 
                 let dataSourceCaption = '';
                 if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase()) && isFBIS) {
-                    dataSourceCaption = '<br/><small class="text-muted">'+ this.dataSourceCaptions[label.toLowerCase()] +'</small>';
+                    dataSourceCaption = '<div class="data-source-desc" style="display: none"><small class="text-muted">'+ this.dataSourceCaptions[label.toLowerCase()] +'</small></div>';
                 }
                 this.listWrapper.append('<div style="padding-bottom: 10px;">' +
                     '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="' + data[i].get('source_collection') + '"  ' + checked + ' >&nbsp;' +
                     '<label for="source-collection-list-'+i+'" style="margin-bottom: 0 !important;">'+ label.replace('_', ' ').toUpperCase() + '</label>' +
+                    '<span>&nbsp;<i class="fa fa-info-circle layer-source data-source" aria-hidden="true"></i></span>' +
                     dataSourceCaption +
                     '</div>');
 
             }
+        },
+        toggleDataSourceDescription: function (e) {
+            const $dataSourceDesc = $(e.target).parent().parent().find('.data-source-desc');
+            $dataSourceDesc.toggle();
         },
         updateChecked: function () {
             let self = this;

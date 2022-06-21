@@ -2382,6 +2382,10 @@ div:hover::-webkit-scrollbar {
     color: #4f82b8;
 }
 
+.layer-source:hover {
+    cursor: pointer;
+}
+
 .layer-abstract {
     margin: 0.5rem;
     word-wrap: break-word;
