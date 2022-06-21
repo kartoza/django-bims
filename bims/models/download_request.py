@@ -6,8 +6,8 @@ from datetime import datetime
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from bims.tasks.email_csv import send_csv_via_email
 from bims.api_views.csv_download import (
-    send_csv_via_email,
     send_rejection_csv,
     send_new_csv_notification
 )
@@ -184,8 +184,8 @@ class DownloadRequest(models.Model):
         if old_obj and not self.processing and not self.rejected:
             if self.approved and self.approved != old_obj.approved:
                 # send email
-                send_csv_via_email(
-                    self.requester,
+                send_csv_via_email.delay(
+                    self.requester.id,
                     self.request_file.path,
                     self.request_category,
                     approved=True
