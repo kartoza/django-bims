@@ -251,61 +251,53 @@ class Taxonomy(models.Model):
             return self
         return None
 
+    def get_taxon_rank_name(self, rank):
+        limit = 20
+        current_try = 0
+        _taxon = self
+        _parent = _taxon.parent
+        _rank = _taxon.rank
+        while (
+                _parent and _rank
+                and _rank != rank
+                and current_try < limit
+        ):
+            current_try += 1
+            _taxon = _parent
+            _rank = _taxon.rank
+            _parent = _taxon.parent
+
+        if _rank == rank:
+            return _taxon.canonical_name
+        return ''
+
     @property
     def class_name(self):
-        if self.rank != TaxonomicRank.CLASS.name and self.parent:
-            return self.parent.class_name
-        elif self.rank == TaxonomicRank.CLASS.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.CLASS.name)
 
     @property
     def kingdom_name(self):
-        if self.rank != TaxonomicRank.KINGDOM.name and self.parent:
-            return self.parent.kingdom_name
-        elif self.rank == TaxonomicRank.KINGDOM.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.KINGDOM.name)
 
     @property
     def phylum_name(self):
-        if self.rank != TaxonomicRank.PHYLUM.name and self.parent:
-            return self.parent.phylum_name
-        elif self.rank == TaxonomicRank.PHYLUM.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.PHYLUM.name)
 
     @property
     def order_name(self):
-        if self.rank != TaxonomicRank.ORDER.name and self.parent:
-            return self.parent.order_name
-        elif self.rank == TaxonomicRank.ORDER.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.ORDER.name)
 
     @property
     def family_name(self):
-        if self.rank != TaxonomicRank.FAMILY.name and self.parent:
-            return self.parent.family_name
-        elif self.rank == TaxonomicRank.FAMILY.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
 
     @property
     def genus_name(self):
-        if self.rank != TaxonomicRank.GENUS.name and self.parent:
-            return self.parent.genus_name
-        elif self.rank == TaxonomicRank.GENUS.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
 
     @property
     def species_name(self):
-        if self.rank != TaxonomicRank.SPECIES.name and self.parent:
-            return self.parent.species_name
-        elif self.rank == TaxonomicRank.SPECIES.name:
-            return self.canonical_name
-        return ''
+        return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
 
     @property
     def is_species(self):

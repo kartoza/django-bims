@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from preferences import preferences
 from bims.tasks.collection_record import download_collection_record_task
+from bims.tasks.email_csv import send_csv_via_email as send_csv_via_email_task
 
 
 class CsvDownload(APIView):
@@ -57,8 +58,8 @@ class CsvDownload(APIView):
         path_file = os.path.join(path_folder, filename)
 
         if os.path.exists(path_file):
-            send_csv_via_email(
-                user=request.user,
+            send_csv_via_email_task.delay(
+                user=request.user.id,
                 csv_file=path_file,
                 download_request_id=download_request_id
             )
