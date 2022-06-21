@@ -133,7 +133,7 @@ class BioCollectionOneRowSerializer(
     authors = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
-    gbif_id = serializers.SerializerMethodField()
+    upstream_id = serializers.SerializerMethodField()
     dataset_key = serializers.SerializerMethodField()
     occurrence_id = serializers.SerializerMethodField()
     basis_of_record = serializers.SerializerMethodField()
@@ -536,8 +536,13 @@ class BioCollectionOneRowSerializer(
             return ', '.join(list(dst_set_names))
         return '-'
 
-    def get_gbif_id(self, obj):
-        return self.occurrences_fields(obj, 'gbifID')
+    def get_upstream_id(self, obj: BiologicalCollectionRecord):
+        if obj.upstream_id:
+            return obj.upstream_id
+        if obj.additional_data and isinstance(obj.additional_data, dict):
+            if 'eventID' in obj.additional_data:
+                return obj.additional_data['eventID']
+        return ''
 
     def get_dataset_key(self, obj):
         return self.occurrences_fields(obj, 'datasetKey')
@@ -615,7 +620,7 @@ class BioCollectionOneRowSerializer(
             'title',
             'doi_or_url',
             'notes',
-            'gbif_id',
+            'upstream_id',
             'dataset_key',
             'occurrence_id',
             'basis_of_record',

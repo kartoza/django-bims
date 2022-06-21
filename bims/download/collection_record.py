@@ -7,6 +7,38 @@ from bims.models.download_request import DownloadRequest
 logger = logging.getLogger(__name__)
 
 
+def write_to_csv(headers: list,
+                 rows: list,
+                 path_file: str,
+                 current_csv_row: int = 0):
+    formatted_headers = []
+    if headers:
+        for header in headers:
+            if header == 'class_name':
+                header = 'class'
+            header = header.replace('_or_', '/')
+            if not header.isupper():
+                header = header.replace('_', ' ').capitalize()
+            if header.lower() == 'uuid':
+                header = header.upper()
+            formatted_headers.append(header)
+
+    with open(path_file, 'a') as csv_file:
+        if headers:
+            writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
+            if current_csv_row == 0:
+                writer.writeheader()
+            writer.fieldnames = headers
+        for row in rows:
+            try:
+                current_csv_row += 1
+                writer.writerow(row)
+            except:  # noqa
+                continue
+
+    return current_csv_row
+
+
 def download_collection_records(
         path_file,
         request,
@@ -51,8 +83,8 @@ def download_collection_records(
             site__id__in=site_ids
         ).distinct()
 
-    rows = []
     start_index = 0
+    current_csv_row = 0
     record_number = 100 if total_records >= 100 else total_records
     last_index = record_number
     headers = []
@@ -66,7 +98,7 @@ def download_collection_records(
                 'header': headers
             }
         )
-        rows.extend(serializer.data)
+        rows = serializer.data
         if 'header' in serializer.context:
             headers = serializer.context['header']
         logger.debug('Serialize time {0}:{1}: {2}'.format(
@@ -78,6 +110,15 @@ def download_collection_records(
         if download_request:
             download_request.progress = f'{start_index}/{total_records}'
             download_request.save()
+        current_csv_row = write_to_csv(
+            headers,
+            rows,
+            path_file,
+            current_csv_row
+        )
+        rows = None
+        del rows
+        del serializer
 
     if total_records > last_index:
         serializer = BioCollectionOneRowSerializer(
@@ -87,40 +128,22 @@ def download_collection_records(
                 'header': headers
             }
         )
-        rows.extend(serializer.data)
+        rows = serializer.data
         if 'header' in serializer.context:
             headers = serializer.context['header']
+        current_csv_row = write_to_csv(
+            headers,
+            rows,
+            path_file,
+            current_csv_row
+        )
 
     logger.debug('Serialize time : {}'.format(
         round(time.time() - start, 2))
     )
 
-    formatted_headers = []
-    # Rename headers
-    for header in headers:
-        if header == 'class_name':
-            header = 'class'
-        header = header.replace('_or_', '/')
-        if not header.isupper():
-            header = header.replace('_', ' ').capitalize()
-        if header.lower() == 'uuid':
-            header = header.upper()
-        formatted_headers.append(header)
-
-    with open(path_file, 'w') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
-        writer.writeheader()
-        writer.fieldnames = headers
-        current_row = 0
-        for row in rows:
-            try:
-                current_row += 1
-                writer.writerow(row)
-            except: # noqa
-                continue
-
     if download_request:
-        download_request.progress = f'{current_row}/{total_records}'
+        download_request.progress = f'{current_csv_row}/{total_records}'
         download_request.save()
 
     logger.debug(
