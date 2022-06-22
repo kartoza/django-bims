@@ -20,6 +20,8 @@ FORMER_SPECIES_NAME = 'Former scientific name'
 COMMON_NAME = 'Common Name'
 ENDEMISM = 'Endemism'
 CONSERVATION_STATUS = 'Conservation status'
+CONSERVATION_STATUS_GLOBAL = 'Conservation status global'
+CONSERVATION_STATUS_NATIONAL = 'Conservation status national'
 ORIGIN = 'Origin'
 TAXON_RANK = 'Taxon Rank'
 
