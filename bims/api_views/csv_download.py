@@ -59,7 +59,7 @@ class CsvDownload(APIView):
 
         if os.path.exists(path_file):
             send_csv_via_email_task.delay(
-                user=request.user.id,
+                user_id=request.user.id,
                 csv_file=path_file,
                 download_request_id=download_request_id
             )
