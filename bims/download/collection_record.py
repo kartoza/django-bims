@@ -1,10 +1,31 @@
 import logging
 import csv
 import time
+import gc
 
 from bims.models.download_request import DownloadRequest
 
 logger = logging.getLogger(__name__)
+
+
+def queryset_iterator(qs, batch_size = 500, gc_collect = True):
+    iterator = (
+        qs.values_list('pk', flat=True).order_by('pk').distinct().iterator()
+    )
+    eof = False
+    while not eof:
+        primary_key_buffer = []
+        try:
+            while len(primary_key_buffer) < batch_size:
+                primary_key_buffer.append(next(iterator))
+        except StopIteration:
+            eof = True
+        for obj in qs.filter(
+                pk__in=primary_key_buffer
+        ).order_by('pk').iterator():
+            yield obj
+        if gc_collect:
+            gc.collect()
 
 
 def write_to_csv(headers: list,
@@ -83,59 +104,65 @@ def download_collection_records(
             site__id__in=site_ids
         ).distinct()
 
-    start_index = 0
     current_csv_row = 0
     record_number = 100 if total_records >= 100 else total_records
-    last_index = record_number
     headers = []
+    collection_data = []
 
-    for i in range(1, int(total_records / record_number) + 1):
-        last_index = i * record_number
+    for obj in queryset_iterator(collection_results):
+        collection_data.append(obj)
+        if len(collection_data) >= record_number:
+            serializer = BioCollectionOneRowSerializer(
+                collection_data,
+                many=True,
+                context={
+                    'header': headers
+                }
+            )
+            rows = serializer.data
+            headers = serializer.context['header']
+            start_index = current_csv_row
+            current_csv_row = write_to_csv(
+                headers,
+                rows,
+                path_file,
+                current_csv_row
+            )
+            logger.debug('Serialize time {0}:{1}: {2}'.format(
+                start_index,
+                current_csv_row,
+                round(time.time() - start, 2))
+            )
+            if download_request:
+                download_request.progress = f'{start_index}/{total_records}'
+                download_request.save()
+            del rows
+            del collection_data
+            del serializer
+            collection_data = []
+            gc.collect()
+
+    if collection_data:
         serializer = BioCollectionOneRowSerializer(
-            collection_results[start_index:last_index],
+            collection_data,
             many=True,
             context={
                 'header': headers
             }
         )
         rows = serializer.data
-        if 'header' in serializer.context:
-            headers = serializer.context['header']
+        headers = serializer.context['header']
+        start_index = current_csv_row
+        current_csv_row = write_to_csv(
+            headers,
+            rows,
+            path_file,
+            current_csv_row
+        )
         logger.debug('Serialize time {0}:{1}: {2}'.format(
             start_index,
-            last_index,
+            current_csv_row,
             round(time.time() - start, 2))
-        )
-        start_index += record_number
-        if download_request:
-            download_request.progress = f'{start_index}/{total_records}'
-            download_request.save()
-        current_csv_row = write_to_csv(
-            headers,
-            rows,
-            path_file,
-            current_csv_row
-        )
-        rows = None
-        del rows
-        del serializer
-
-    if total_records > last_index:
-        serializer = BioCollectionOneRowSerializer(
-            collection_results[last_index:total_records],
-            many=True,
-            context={
-                'header': headers
-            }
-        )
-        rows = serializer.data
-        if 'header' in serializer.context:
-            headers = serializer.context['header']
-        current_csv_row = write_to_csv(
-            headers,
-            rows,
-            path_file,
-            current_csv_row
         )
 
     logger.debug('Serialize time : {}'.format(
