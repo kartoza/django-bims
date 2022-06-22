@@ -234,7 +234,7 @@ def create_or_update_taxonomy(
                     vernacular_name = VernacularName.objects.filter(
                         name=result['vernacularName'],
                         **fields
-                    )[0]
+                    ).first()
                 taxonomy.vernacular_names.add(vernacular_name)
     taxonomy.save()
     return taxonomy
@@ -321,12 +321,6 @@ def fetch_all_species_from_gbif(
                         species_data = new_species_data
                         species_data['oldKey'] = old_key
 
-    # Check if there is accepted key
-    if 'acceptedKey' in species_data and taxonomic_rank:
-        new_species_data = get_species(species_data['acceptedKey'])
-        if new_species_data['rank'].upper() == taxonomic_rank.upper():
-            species_data = new_species_data
-
     logger.debug(species_data)
     if not species_data:
         return None
@@ -356,6 +350,20 @@ def fetch_all_species_from_gbif(
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
+    # Check if there is accepted key
+    if (
+        'acceptedKey' in species_data and
+        species_data['taxonomicStatus'] == 'SYNONYM'
+    ):
+        accepted_taxonomy = fetch_all_species_from_gbif(
+            gbif_key=species_data['acceptedKey'],
+            parent=taxonomy.parent,
+            should_get_children=False
+        )
+        if accepted_taxonomy:
+            taxonomy.accepted_taxonomy = accepted_taxonomy
+            taxonomy.save()
+
     if not should_get_children:
         if taxonomy.legacy_canonical_name:
             legacy_canonical_name = taxonomy.legacy_canonical_name
@@ -383,47 +391,6 @@ def fetch_all_species_from_gbif(
                 parent=taxonomy
             )
         return taxonomy
-
-
-def update_taxa_synonym(taxa_id):
-    """
-    Get the accepted data from synonym.
-    :param taxa_id: id of the taxa
-    :return: accepted taxa
-    """
-    logger.debug('Update taxon synonym')
-    try:
-        taxon = Taxonomy.objects.get(id=taxa_id)
-    except Taxonomy.DoesNotExist:
-        logger.info('Taxonomy not found')
-        return None
-
-    if taxon.taxonomic_status != 'SYNONYM':
-        logger.debug('Taxon is not synonym')
-        return None
-
-    gbif_data = {}
-    if taxon.gbif_data:
-        gbif_data = json.loads(taxon.gbif_data)
-
-    if 'acceptedKey' not in gbif_data:
-        gbif_data = get_species(taxon.gbif_key)
-
-    if 'acceptedKey' in gbif_data:
-        key = gbif_data['acceptedKey']
-        accepted_gbif_data = get_species(key)
-        accepted_gbif_data['oldKey'] = taxon.gbif_key
-        legacy_name = (
-            taxon.legacy_canonical_name if
-            taxon.legacy_canonical_name else
-            taxon.canonical_name
-        )
-        accepted_taxonomy = create_or_update_taxonomy(accepted_gbif_data)
-        check_taxa_duplicates(legacy_name, accepted_taxonomy.rank)
-        return accepted_taxonomy
-    else:
-        logger.info('Could not found accepted taxon')
-        return None
 
 
 def check_taxon_parent(taxonomy):

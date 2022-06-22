@@ -172,6 +172,14 @@ class Taxonomy(models.Model):
         null=True,
     )
 
+    accepted_taxonomy = models.ForeignKey(
+        related_name='synonym',
+        to='self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
     def save_json_data(self, json_field):
         max_allowed = 10
         attempt = 0
@@ -191,11 +199,22 @@ class Taxonomy(models.Model):
         return json_data
 
     def save(self, *args, **kwargs):
+        update_taxon_with_gbif = False
         if self.gbif_data:
             self.gbif_data = self.save_json_data(self.gbif_data)
         if self.additional_data:
             self.additional_data = self.save_json_data(self.additional_data)
+        if self.additional_data and 'fetch_gbif' in self.additional_data:
+            update_taxon_with_gbif = True
+            del self.additional_data['fetch_gbif']
         super(Taxonomy, self).save(*args, **kwargs)
+
+        if update_taxon_with_gbif:
+            from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+            fetch_all_species_from_gbif(
+                species=self.scientific_name,
+                gbif_key=self.gbif_key,
+                fetch_vernacular_names=True)
 
     # noinspection PyClassicStyleClass
     class Meta:

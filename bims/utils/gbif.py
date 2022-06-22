@@ -18,7 +18,7 @@ RANK_KEYS = [
 
 
 def update_taxa():
-    """Get all taxon, then update the data bimsd on the gbif id."""
+    """Get all taxon, then update the data based on the gbif id."""
     taxa = Taxonomy.objects.all()
     if not taxa:
         print('No taxon found')
@@ -262,31 +262,31 @@ def update_taxonomy_fields(taxon, response):
 
 def process_taxon_identifier(key, fetch_parent=True, get_vernacular=True):
     """
-    Get taxon detail
+    Update taxonomy data with data from gbif
     :param key: gbif key
     :param fetch_parent: whether need to fetch parent, default to True
     :param get_vernacular: get vernacular names
     :return:
     """
     # Get taxon
-    print('Get taxon identifier for key : %s' % key)
+    print('Get taxon for key : %s' % key)
 
     try:
-        taxon_identifier = Taxonomy.objects.get(
+        taxon = Taxonomy.objects.get(
             gbif_key=key,
             scientific_name__isnull=False
         )
-        if taxon_identifier.parent or taxon_identifier.rank == 'KINGDOM':
-            return taxon_identifier
+        if taxon.parent or taxon.rank == 'KINGDOM':
+            return taxon
     except Taxonomy.DoesNotExist:
         pass
 
     detail = get_species(key)
-    taxon_identifier = None
+    taxon = None
 
     try:
         print('Found detail for %s' % detail['scientificName'])
-        taxon_identifier, status = Taxonomy.objects.get_or_create(
+        taxon, status = Taxonomy.objects.get_or_create(
             gbif_key=detail['key'],
             scientific_name=detail['scientificName'],
             canonical_name=detail['canonicalName'],
@@ -315,21 +315,21 @@ def process_taxon_identifier(key, fetch_parent=True, get_vernacular=True):
                             **fields
                         )
                     )
-                    taxon_identifier.vernacular_names.add(vernacular_name)
-                taxon_identifier.save()
+                    taxon.vernacular_names.add(vernacular_name)
+                taxon.save()
 
         if 'parentKey' in detail and fetch_parent:
             print('Found parent')
-            taxon_identifier.parent = process_taxon_identifier(
+            taxon.parent = process_taxon_identifier(
                 detail['parentKey'],
                 get_vernacular=get_vernacular
             )
-            taxon_identifier.save()
+            taxon.save()
     except (KeyError, TypeError) as e:
         print(e)
         pass
 
-    return taxon_identifier
+    return taxon
 
 
 def search_taxon_identifier(search_query, fetch_parent=True):

@@ -1,7 +1,7 @@
 # coding=utf8
 import ast
 from django.http import Http404
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView

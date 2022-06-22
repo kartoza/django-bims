@@ -864,10 +864,17 @@ class TaxonImagesInline(admin.TabularInline):
     model = TaxonImage
 
 
+class TaxonomyAdminForm(forms.ModelForm):
+    class Meta:
+        model = Taxonomy
+        widgets = {
+            'gbif_data': JSONEditorWidget
+        }
+        fields = '__all__'
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
-    formfield_overrides = {
-        fields.JSONField: {'widget': JSONEditorWidget},
-    }
+    form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
 
     autocomplete_fields = (
@@ -901,6 +908,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     raw_id_fields = (
         'parent',
+        'accepted_taxonomy'
     )
 
     actions = ['merge_taxa']
@@ -944,7 +952,6 @@ class TaxonomyAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         scientific_name = Taxonomy.objects.get(pk=object_id).scientific_name
 
-        # gbif_key = search_exact_match(Taxonomy.objects.get(pk=object_id).scientific_name)
         if scientific_name is None:
             extra_context['results'] = None
             return super().change_view(
