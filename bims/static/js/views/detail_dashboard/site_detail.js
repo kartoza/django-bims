@@ -1373,7 +1373,7 @@ define([
                 "        <th>Occurrences</th>\n" +
                 "        <th>Origin</th>\n" +
                 "        <th>Endemism</th>\n" +
-                "        <th>Cons. Status</th>\n" +
+                "        <th>Cons. Status (Global)</th>\n" +
                 "      </tr>\n" +
                 "    </thead>");
             let tableBody = $('<tbody>');

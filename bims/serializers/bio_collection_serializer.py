@@ -112,7 +112,8 @@ class BioCollectionOneRowSerializer(
     title = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
-    conservation_status = serializers.SerializerMethodField()
+    conservation_status_global = serializers.SerializerMethodField()
+    conservation_status_national = serializers.SerializerMethodField()
     phylum = serializers.SerializerMethodField()
     class_name = serializers.SerializerMethodField()
     order = serializers.SerializerMethodField()
@@ -248,7 +249,7 @@ class BioCollectionOneRowSerializer(
             return obj.sampling_effort.split(' ')[0]
         return '-'
 
-    def get_conservation_status(self, obj):
+    def get_conservation_status_global(self, obj):
         if obj.taxonomy.iucn_status:
             category = dict(IUCNStatus.CATEGORY_CHOICES)
             try:
@@ -256,6 +257,16 @@ class BioCollectionOneRowSerializer(
             except KeyError:
                 pass
         return 'Not evaluated'
+
+    def get_conservation_status_national(self, obj):
+        if obj.taxonomy.national_conservation_status:
+            category = dict(IUCNStatus.CATEGORY_CHOICES)
+            try:
+                return category[
+                    obj.taxonomy.national_conservation_status.category]
+            except KeyError:
+                pass
+        return '-'
 
     def get_site_code(self, obj):
         return obj.site.site_code
@@ -608,7 +619,8 @@ class BioCollectionOneRowSerializer(
             'substratum',
             'origin',
             'endemism',
-            'conservation_status',
+            'conservation_status_global',
+            'conservation_status_national',
             'collector_or_owner',
             'collector_or_owner_institute',
             'analyst',
