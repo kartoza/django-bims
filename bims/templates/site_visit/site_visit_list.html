@@ -239,7 +239,8 @@
                                 {% endif %}
                             </td>
                             <td>{{ site_visit.date|date:'Y-m-d' }}</td>
-                            <td>{{ site_visit.source_collection|upper }}</td>
+                            <td>
+                                {% if site_visit.source_collection %}{{ site_visit.source_collection|upper }}{% endif %}</td>
                             <td>
                                 {% if site_visit.source_collection.upper != 'GBIF' %}
                                     <a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a>
@@ -277,6 +278,7 @@
                                             <i class="fa fa-times-circle"></i></a>
                                     </span>
                                 {% endif %}
+
                             </td>
                         </tr>
                         {% endwith %}
