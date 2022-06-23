@@ -1,3 +1,4 @@
+from bims.models.taxon_group import TaxonGroup
 from django.db.models import Q
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -77,6 +78,9 @@ class LocationSiteFormView(TemplateView):
             context['fullname'] = self.request.user.get_full_name()
         else:
             context['fullname'] = self.request.user.username
+        context['taxon_group'] = TaxonGroup.objects.filter(
+            category='SPECIES_MODULE'
+        ).distinct()
         context['user_id'] = self.request.user.id
         context.update(self.additional_context_data())
         return context
