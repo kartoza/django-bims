@@ -250,6 +250,12 @@ class SiteSetting(Preferences):
         help_text='The key of the boundary data form GeoContext'
     )
 
+    copyright_text = models.CharField(
+        max_length=200,
+        blank=True,
+        default='Copyright © Kartoza'
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0
