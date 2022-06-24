@@ -38,6 +38,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                 authors = '-'
                 pub_year = '-'
 
+            if not col.source_reference:
+                continue
+
             if col.source_reference.is_published_report():
                 if col.source_reference.source.doc_file:
                     url = col.source_reference.source.doc_file.url

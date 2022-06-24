@@ -23,7 +23,7 @@
       const siteCode = "{{ site_code }}";
       const siteId = "{{ site_id }}";
       const year = "{{ year }}";
-      const sourceReferences = {% if source_reference %}{{ source_references | safe }}{% else %}[]{% endif %};
+      const sourceReferences = {% if source_references %}{{ source_references | safe }}{% else %}[]{% endif %};
       const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
       const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
       const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
@@ -255,6 +255,7 @@
     <script src="{% static "js/utils/svg_download.js" %}"></script>
     <script src="{% static "js/sass_dashboard_close.js" %}"></script>
     <script src="{% static "js/non_requirejs/chem_graph.js" %}"></script>
+    <script src="{% static "js/metadata_table.js" %}"></script>
 
     <script>
 
@@ -340,6 +341,7 @@
         map.renderSync();
     }
       renderChemGraph($('#chem-bar-chart-wrapper'), chemicalRecords);
+      renderSourceReferences();
       drawMap();
       $('.download-map').click(onDownloadMapClicked);
       $('.download-chem-as-csv').click(onDownloadChemCSVClicked);
