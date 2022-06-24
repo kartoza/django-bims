@@ -17,7 +17,6 @@ from bims.serializers.basemap_serializer import BaseMapLayerSerializer
 
 class MapPageView(TemplateView):
     """Template view for map page"""
-    COLLECTOR_FILTER = 'COLLECTOR_FILTER'
     template_name = 'map_page/bims.html'
 
     def get_context_data(self, **kwargs):
@@ -79,14 +78,6 @@ class MapPageView(TemplateView):
             context['date_filter']['min'] = date_min.year
         if date_max:
             context['date_filter']['max'] = date_max.year
-
-        # Is it necessary to use collector filter, default true
-        collector_filter = get_key(self.COLLECTOR_FILTER)
-        if not collector_filter:
-            context[self.COLLECTOR_FILTER] = True
-        else:
-            context[self.COLLECTOR_FILTER] = distutil.strtobool(
-                    collector_filter)
 
         if self.request.user:
             try:
