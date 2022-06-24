@@ -264,6 +264,7 @@
         }
 
          $('#submitBtn').click((event) => {
+            event.preventDefault();
             let required_inputs = $('input,textarea,select').filter('[required]:visible');
             const allChemicalData = getAllChemicalData();
             let isError = false;
@@ -313,9 +314,7 @@
                 }, 500);
                 return;
             }
-
             $('#physico-chemical-data').val(JSON.stringify(allChemicalData.data));
-            form.submit();
         });
 
         function handleValueChange(input) {
@@ -330,6 +329,10 @@
                 warning.hide();
             }
         }
+
+        $('#submit').click(function () {
+            form.submit();
+        })
 
     </script>
 

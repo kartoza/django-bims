@@ -71,20 +71,21 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
                     chem_data = chem_data[0]
                     value = chem_data.value
                     record_id = chem_data.id
-            chem_unit = chem.chem_unit.unit
-            context['chemical_records'].append({
-                'chem_unit': chem.id,
-                'chem_record_id': record_id,
-                'description': (
-                    chem.chem_description
-                    if chem.chem_description else
-                    chem.chem_code
-                ),
-                'unit': chem_unit,
-                'max': chem.maximum,
-                'min': chem.minimum,
-                'value': value
-            })
+            if chem.chem_unit:
+                chem_unit = chem.chem_unit.unit
+                context['chemical_records'].append({
+                    'chem_unit': chem.id,
+                    'chem_record_id': record_id,
+                    'description': (
+                        chem.chem_description
+                        if chem.chem_description else
+                        chem.chem_code
+                    ),
+                    'unit': chem_unit,
+                    'max': chem.maximum,
+                    'min': chem.minimum,
+                    'value': value
+                })
 
         context['CHEM_UNITS'] = ChemUnit.__members__
         return context
@@ -98,8 +99,6 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
         source_reference_id = request.POST.get('source_reference', '')
         source_reference = None
 
-        if not redirect_path:
-            redirect_path = get_unvalidated_site_visits_url(request.user)
         chemical_record_json = post_data.get('physico-chemical-data', None)
         if not chemical_record_json:
             raise Http404('No chemical data')
@@ -109,6 +108,9 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
             raise Http404('Invalid format of abiotic data')
 
         location_site = LocationSite.objects.get(id=site_id)
+        if not redirect_path:
+            redirect_path = get_unvalidated_site_visits_url(request.user)
+            redirect_path += f'&site_code={location_site.site_code}'
 
         updated_record_ids = []
         collection_date = parse(date_string)
@@ -200,9 +202,10 @@ class PhysicoChemicalSiteView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super(PhysicoChemicalSiteView, self).get_context_data()
-
+        date = self.request.GET.get('date', None)
         chem_data = physico_chemical_chart_data(
-            location_site=self.location_site
+            location_site=self.location_site,
+            date=date
         )
         ctx['chemical_records'] = json.dumps(chem_data)
 
