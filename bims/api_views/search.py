@@ -484,9 +484,9 @@ class CollectionSearch(object):
             )
 
         if self.year_ranges:
-            filters['collection_date__range'] = self.year_ranges
+            filters['survey__date__range'] = self.year_ranges
         if self.months:
-            filters['collection_date__month__in'] = self.months
+            filters['survey__date__month__in'] = self.months
         if self.reference:
             filters['source_reference__in'] = self.reference
         if self.conservation_status:
@@ -670,15 +670,11 @@ class CollectionSearch(object):
 
         if self.abiotic_data:
             if not filtered_location_sites:
-                filtered_location_sites = LocationSite.objects.filter(
-                    Q(survey__chemical_collection_record__isnull=False) |
-                    Q(chemical_collection_record__isnull=False)
-                )
-            else:
-                filtered_location_sites = filtered_location_sites.filter(
-                    Q(survey__chemical_collection_record__isnull=False) |
-                    Q(chemical_collection_record__isnull=False)
-                )
+                filtered_location_sites = LocationSite.objects.all()
+
+            filtered_location_sites = filtered_location_sites.filter(
+                survey__chemical_collection_record__isnull=False
+            )
 
         if filtered_location_sites.exists():
             bio = bio.filter(

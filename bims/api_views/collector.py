@@ -1,7 +1,7 @@
 # coding=utf-8
 import json
 from django.http.response import HttpResponse
-from django.db.models import CharField, Value as V
+from django.db.models import CharField, Value as V, Q
 from django.db.models.functions import Concat
 from rest_framework.views import APIView
 from bims.models.survey import Survey
