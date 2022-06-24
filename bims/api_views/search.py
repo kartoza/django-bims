@@ -5,9 +5,7 @@ import ast
 import logging
 from functools import reduce
 
-from preferences import preferences
-
-from bims.models.source_reference import SourceReference
+from bims.models.chemical_record import ChemicalRecord
 
 from bims.models.water_temperature import WaterTemperature
 from django.db.models import Q, Count, F, Value, Case, When, IntegerField
@@ -736,6 +734,40 @@ class CollectionSearch(object):
         self.collection_records = bio
         return self.collection_records
 
+    def search_sites_with_abiotic(self, site_ids: list):
+        if not site_ids:
+            site_ids = []
+        else:
+            site_ids = [ site['site_id'] for site in site_ids ]
+        collector_list = []
+        if self.collector:
+            collectors = Profile.objects.annotate(
+                full_name=Concat('first_name', Value(' '), 'last_name')
+            ).filter(full_name__in=self.collector)
+            collector_list = list(collectors.values_list('id', flat=True))
+        source_reference = self.reference
+        if not source_reference:
+            source_reference = []
+        chemical_record_sites = ChemicalRecord.objects.filter(
+            Q(survey__owner__in=collector_list) |
+            Q(source_reference__in=source_reference)
+        ).exclude(
+            survey__site__in=site_ids
+        ).annotate(
+            name=Case(
+                When(survey__site__site_code='',
+                     then=F('survey__site__name')),
+                default=F('survey__site__site_code')
+            ),
+            site_id=F('survey__site__id')
+        ).values(
+            'site_id', 'name'
+        ).annotate(
+            total_abiotic_data=Count('survey__site'),
+            total_survey=Count('survey', distinct=True)
+        ).distinct()
+        return chemical_record_sites
+
     def get_summary_data(self):
         if not self.collection_records:
             self.process_search()
@@ -825,6 +857,11 @@ class CollectionSearch(object):
             ).order_by(order_by).distinct()
 
         site_list = list(sites) + list(sites_without_occurrences)
+
+        abiotic_sites = []
+        if self.abiotic_data:
+            abiotic_sites = self.search_sites_with_abiotic(site_list)
+
         for thermal_site in thermal_sites:
             site_list.append({
                 'site_id': thermal_site['site_id'],
@@ -834,11 +871,22 @@ class CollectionSearch(object):
                 'total_water_temperature_data': thermal_site['total_thermal']
             })
 
+        for abiotic_site in abiotic_sites:
+            if not abiotic_site['site_id']:
+                continue
+            site_list.append({
+                'site_id': abiotic_site['site_id'],
+                'name': abiotic_site['name'],
+                'total': 0,
+                'total_survey': abiotic_site['total_survey'],
+                'total_abiotic_data': abiotic_site['total_abiotic_data']
+            })
+
         return {
             'total_records': self.collection_records.count(),
             'total_sites': (
                 sites.count() + (thermal_sites.count() if thermal_sites else 0) +
-                sites_without_occurrences.count()
+                sites_without_occurrences.count() + len(abiotic_sites)
             ),
             'total_survey': survey.count(),
             'records': list(collections),

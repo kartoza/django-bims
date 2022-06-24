@@ -109,35 +109,24 @@ class ChemicalRecord(models.Model):
 
 
 def physico_chemical_chart_data(
-        location_site: LocationSite,
-        chem_codes = None,
-        date = None
+        chemical_records
     ) -> dict:
     """
     Returns serialized physico-chemical data for chart purpose
-    :param location_site: Location Site object
-    :param chem_codes: list of chemical codes to be displayed in the chart
-    :param date: date of the record
+    :param chemical_records: Queryset of chemical records
     """
     from bims.serializers.chemical_records_serializer import (
         ChemicalRecordsSerializer
     )
     list_chems = {}
-    if location_site:
-        chems = ChemicalRecord.objects.filter(
-            Q(location_site_id=location_site.id) |
-            Q(survey__site_id=location_site.id)
-        )
-        if date:
-            chems = chems.filter(date=date)
-        if chem_codes is None:
-            chem_codes = list(chems.values_list(
-                'chem__chem_code', flat=True
-            ).distinct())
+    if chemical_records:
+        chem_codes = list(chemical_records.values_list(
+            'chem__chem_code', flat=True
+        ).distinct())
         x_label = []
         for chem in chem_codes:
             chem_name = chem.lower().replace('-n', '').upper()
-            qs = chems.filter(chem__chem_code=chem).order_by('date')
+            qs = chemical_records.filter(chem__chem_code=chem).order_by('date')
             if not qs.exists():
                 continue
             value = ChemicalRecordsSerializer(qs, many=True)

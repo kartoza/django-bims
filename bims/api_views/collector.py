@@ -13,7 +13,8 @@ class CollectorList(APIView):
     def get(self, request, *args):
         survey_owners = (
             Survey.objects.filter(
-                biological_collection_record__isnull=False
+                Q(biological_collection_record__isnull=False) |
+                Q(chemical_collection_record__isnull=False)
             ).exclude(
                 owner__isnull=True
             ).annotate(
