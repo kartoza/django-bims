@@ -228,6 +228,17 @@ class LocationSitesSummary(APIView):
                 Q(location_site_id=site_id) |
                 Q(survey__site_id=site_id)
             )
+            chems_source_references = chems.source_references()
+            if chems_source_references:
+                existing_ids = [
+                    ref['ID'] for ref in source_references
+                ]
+                for chem_source_reference in chems_source_references:
+                    if (
+                        'ID' in chem_source_reference and
+                        chem_source_reference['ID'] not in existing_ids
+                    ):
+                        source_references.append(chem_source_reference)
             x_label = []
             if chems.count() > 0:
                 chem_exist = True
