@@ -2,12 +2,13 @@ import json
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Q, F
-from django.db.models.functions import Lower
+from django.db.models import Q, F, Value
+from django.db.models.functions import Lower, Concat
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 
+from geonode.people.models import Profile
 from bims.models import Chem, LocationSite, BaseMapLayer, ChemicalRecord, \
     Survey, SourceReference, physico_chemical_chart_data, SiteImage, \
     LocationContext
@@ -203,16 +204,28 @@ class PhysicoChemicalSiteView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super(PhysicoChemicalSiteView, self).get_context_data()
         date = self.request.GET.get('date', None)
-        chem_data = physico_chemical_chart_data(
-            location_site=self.location_site,
-            date=date
-        )
-        ctx['chemical_records'] = json.dumps(chem_data)
+        collectors = self.request.GET.get('collector', None)
+        collector_list = []
+        if collectors:
+            collectors = Profile.objects.annotate(
+                full_name=Concat('first_name', Value(' '), 'last_name')
+            ).filter(full_name__in=json.loads(collectors))
+            collector_list = list(collectors.values_list('id', flat=True))
 
         chems = ChemicalRecord.objects.filter(
             Q(location_site_id=self.location_site.id) |
             Q(survey__site_id=self.location_site.id)
         )
+        if collector_list:
+            chems = chems.filter(survey__owner__in=collector_list)
+        if date:
+            chems = chems.filter(date=date)
+
+        chem_data = physico_chemical_chart_data(
+            chems
+        )
+        ctx['chemical_records'] = json.dumps(chem_data)
+
         source_references = (
             chems.exclude(
                 source_reference__isnull=True

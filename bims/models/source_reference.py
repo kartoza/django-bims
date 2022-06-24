@@ -114,6 +114,15 @@ class SourceReference(PolymorphicModel):
         ).count()
 
     @property
+    def chemical_records(self):
+        from bims.models.chemical_record import (
+            ChemicalRecord
+        )
+        return ChemicalRecord.objects.filter(
+            source_reference=self.id
+        ).count()
+
+    @property
     def year(self):
         if re.search(r'[12]\d{3}', self.source_name):
             year = re.findall(r'[12]\d{3}', self.source_name)[0]
