@@ -92,3 +92,12 @@ li.dropdown-menu-item {
 .dropdown-menu {
     z-index: 9999 !important;
 }
+
+.text-sm {
+    margin-bottom: 5px;
+    color: #6c6c6c;
+    font-size: 0.8em;
+    margin-top: -5px;
+    padding-left: 1.9rem;
+    font-weight: 700;
+}
