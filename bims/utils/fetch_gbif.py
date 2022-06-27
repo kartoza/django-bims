@@ -118,6 +118,10 @@ def create_or_update_taxonomy(
         )
     if not taxa:
         taxa = Taxonomy.objects.filter(
+            gbif_key=gbif_data['key']
+        )
+    if not taxa:
+        taxa = Taxonomy.objects.filter(
             scientific_name=scientific_name,
             canonical_name=canonical_name,
             taxonomic_status=taxonomic_status,
@@ -199,7 +203,19 @@ def fetch_all_species_from_gbif(
         logger.info('Get species {gbif_key}'.format(
             gbif_key=gbif_key
         ))
-        species_data = get_species(gbif_key)
+        try:
+            taxon = Taxonomy.objects.get(gbif_key=gbif_key)
+        except Taxonomy.MultipleObjectsReturned:
+            taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
+            taxon = taxa.first()
+            merge_taxa_data(
+                excluded_taxon=taxon,
+                taxa_list=taxa.exclude(id=taxon.id)
+            )
+        species_data = taxon.gbif_data
+
+        if not species_data:
+            species_data = get_species(gbif_key)
     else:
         logger.info('Fetching {species} - {rank}'.format(
             species=species,

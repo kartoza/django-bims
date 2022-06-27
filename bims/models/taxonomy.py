@@ -222,6 +222,7 @@ class Taxonomy(models.Model):
             from bims.utils.fetch_gbif import fetch_all_species_from_gbif
             fetch_all_species_from_gbif(
                 species=self.scientific_name,
+                parent=self.parent,
                 gbif_key=self.gbif_key,
                 fetch_vernacular_names=True)
 
