@@ -40,7 +40,6 @@ from bims.models.iucn_status import IUCNStatus
 from bims.models.site_image import SiteImage
 from bims.models.taxon_group import TaxonGroup
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from sass.enums.chem_unit import ChemUnit
 from bims.models.survey import Survey
 from bims.models.dashboard_configuration import DashboardConfiguration
 from bims.models.taxonomy import Taxonomy
@@ -235,8 +234,8 @@ class LocationSitesSummary(APIView):
                 ]
                 for chem_source_reference in chems_source_references:
                     if (
-                        'ID' in chem_source_reference and
-                        chem_source_reference['ID'] not in existing_ids
+                            'ID' in chem_source_reference and
+                            chem_source_reference['ID'] not in existing_ids
                     ):
                         source_references.append(chem_source_reference)
             x_label = []
@@ -271,9 +270,9 @@ class LocationSitesSummary(APIView):
                 ).additional_data
             )
         except (
-            DashboardConfiguration.DoesNotExist,
-            KeyError,
-            ValueError
+                DashboardConfiguration.DoesNotExist,
+                KeyError,
+                ValueError
         ):
             dashboard_configuration = {}
 
@@ -519,6 +518,17 @@ class LocationSitesSummary(APIView):
             overview['Site description'] = self.parse_string(
                 location_site.name
             )
+        overview['GBIF link'] = "Not GBIF"
+        record = BiologicalCollectionRecord.objects.filter(
+            site=location_site.id,
+            source_collection='gbif').distinct('taxonomy_id')
+        if record:
+            links = ""
+            for i in record:
+                links = links + "<p><a href='https://gbif.org/species/{0}'>https://gbif.org/species/{0}</a></p>".format(
+                    i.taxonomy.gbif_key)
+
+            overview['GBIF link'] = links
 
         result = dict()
         result['Overview'] = overview
