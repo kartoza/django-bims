@@ -17,6 +17,7 @@
     <script type="text/javascript">
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultExtentMap = '{{ preferences.SiteSetting.default_extent_map }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const locationSiteLat = '{{ location_site_lat }}';
         const locationSiteLong = '{{ location_site_long }}';
@@ -24,6 +25,7 @@
         const siteId = '{{ site_id }}';
         const siteCodeGeneratorMethod = '{{ preferences.SiteSetting.site_code_generator }}';
         const bingKey = '{{ bing_key }}';
+        const isFbis = {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}true{% else %}false{% endif %};
 
     </script>
     <style>
@@ -45,6 +47,11 @@
             left: 0;
             right: 0;
             margin: auto;
+        }
+
+        .btn-info {
+            margin-bottom: 10px;
+            width: 272px;
         }
     </style>
 
@@ -84,21 +91,25 @@
                  style="display: none;">
             </div>
             <div id="site-map"></div>
-            {% if update and preferences.SiteSetting.default_data_source.lower == 'fbis'%}
+            {% if update %}
                 <div class="form-group row">
                     <div class="col-lg-12">
-                        <a href="/fish-form/?siteId={{ site_id }}" class="btn btn-info">Add fish data</a>
-                        <a href="/invert-form/?siteId={{ site_id }}" class="btn btn-info">Add invertebrate data</a>
-                        <a href="/sass/{{ site_id }}/" class="btn btn-info">Add SASS data</a>
-                        <a href="/algae-form/?siteId={{ site_id }}" class="btn btn-info">Add algal data</a>
-                        <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-info">Add water temperature data</a>
-                        <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-info">Add physico-chemical data</a>
-                    </div>
-                </div>
-            {% else %}
-                <div class="form-group row">
-                    <div class="col-lg-12">
-                        <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-info">Add physico-chemical data</a>
+                        {% for module in taxon_group %}
+                            <a href="/module-form/?siteId={{ site_id }}&module={{ module.id }}"
+                               class="btn btn-info">Add {{ module.name }} data</a>
+                        {% endfor %}
+
+                        {% if preferences.SiteSetting.enable_sass %}
+                            <a href="/sass/{{ site_id }}/"
+                               class="btn btn-info">Add SASS data</a>
+                        {% endif %}
+
+                        <a href="/water-temperature-form/?siteId={{ site_id }}"
+                           class="btn btn-info">Add water temperature
+                            data</a>
+                        <a href="/physico-chemical-form/?siteId={{ site_id }}"
+                           class="btn btn-info">Add physico-chemical
+                            data</a>
                     </div>
                 </div>
             {% endif %}

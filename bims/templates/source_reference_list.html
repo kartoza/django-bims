@@ -138,6 +138,13 @@
                                 {% else %}
                                     <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
                                 {% endif %}
+                                {% if source_reference.chemical_records > 0 %}
+                                    <a href='/map/#search//taxon=&abioticData=True&search=&reference=["{{ source_reference.id }}"]'><span
+                                            class="badge badge-info badge-occurrences">{{ source_reference.chemical_records }} Physico-chemical data</span>
+                                    </a>
+                                {% else %}
+                                    <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.chemical_records }} Physico-chemical data</span>
+                                {% endif %}
                                 {% if perms.bims.change_sourcereference %}
                                     <div class="float-right">
                                         <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>

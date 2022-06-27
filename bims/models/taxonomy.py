@@ -111,10 +111,19 @@ class Taxonomy(models.Model):
         blank=True
     )
 
+    national_conservation_status = models.ForeignKey(
+        IUCNStatus,
+        models.SET_NULL,
+        related_name='national_conservation_status',
+        verbose_name='National Conservation Status',
+        null=True,
+        blank=True,
+    )
+
     iucn_status = models.ForeignKey(
         IUCNStatus,
         models.SET_NULL,
-        verbose_name='IUCN status',
+        verbose_name='Global Red List Status (IUCN)',
         null=True,
         blank=True,
     )

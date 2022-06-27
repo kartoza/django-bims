@@ -381,8 +381,10 @@ $(function () {
             }
         });
         if ($('.observed:checkbox:checked').length === 0) {
-            isError = true;
-            alertMessage = 'You must at least add one collection data';
+            if (!chemicalCollectionRecordCount) {
+                isError = true;
+                alertMessage = 'You must at least add one collection data';
+            }
         } else {
             let alertDiv = $('.alert-danger');
             alertDiv.html('');

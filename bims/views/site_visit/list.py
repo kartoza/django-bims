@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Subquery, OuterRef
 from bims.models.survey import Survey
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.chemical_record import ChemicalRecord
 from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
 from bims.api_views.search import CollectionSearch
 
@@ -33,9 +34,6 @@ class SiteVisitListView(ListView):
         # Remove page in filters
         if 'page' in search_filters:
             del search_filters['page']
-
-        if 'site_code' in search_filters:
-            search_filters['search'] = search_filters['site_code']
 
         if 'o' in search_filters:
             order = search_filters['o']

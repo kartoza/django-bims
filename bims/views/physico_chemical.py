@@ -2,12 +2,13 @@ import json
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.db.models import Q, F
-from django.db.models.functions import Lower
+from django.db.models import Q, F, Value
+from django.db.models.functions import Lower, Concat
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 
+from geonode.people.models import Profile
 from bims.models import Chem, LocationSite, BaseMapLayer, ChemicalRecord, \
     Survey, SourceReference, physico_chemical_chart_data, SiteImage, \
     LocationContext
@@ -71,20 +72,21 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
                     chem_data = chem_data[0]
                     value = chem_data.value
                     record_id = chem_data.id
-            chem_unit = chem.chem_unit.unit
-            context['chemical_records'].append({
-                'chem_unit': chem.id,
-                'chem_record_id': record_id,
-                'description': (
-                    chem.chem_description
-                    if chem.chem_description else
-                    chem.chem_code
-                ),
-                'unit': chem_unit,
-                'max': chem.maximum,
-                'min': chem.minimum,
-                'value': value
-            })
+            if chem.chem_unit:
+                chem_unit = chem.chem_unit.unit
+                context['chemical_records'].append({
+                    'chem_unit': chem.id,
+                    'chem_record_id': record_id,
+                    'description': (
+                        chem.chem_description
+                        if chem.chem_description else
+                        chem.chem_code
+                    ),
+                    'unit': chem_unit,
+                    'max': chem.maximum,
+                    'min': chem.minimum,
+                    'value': value
+                })
 
         context['CHEM_UNITS'] = ChemUnit.__members__
         return context
@@ -98,8 +100,6 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
         source_reference_id = request.POST.get('source_reference', '')
         source_reference = None
 
-        if not redirect_path:
-            redirect_path = get_unvalidated_site_visits_url(request.user)
         chemical_record_json = post_data.get('physico-chemical-data', None)
         if not chemical_record_json:
             raise Http404('No chemical data')
@@ -109,6 +109,9 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
             raise Http404('Invalid format of abiotic data')
 
         location_site = LocationSite.objects.get(id=site_id)
+        if not redirect_path:
+            redirect_path = get_unvalidated_site_visits_url(request.user)
+            redirect_path += f'&site_code={location_site.site_code}'
 
         updated_record_ids = []
         collection_date = parse(date_string)
@@ -200,16 +203,29 @@ class PhysicoChemicalSiteView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super(PhysicoChemicalSiteView, self).get_context_data()
-
-        chem_data = physico_chemical_chart_data(
-            location_site=self.location_site
-        )
-        ctx['chemical_records'] = json.dumps(chem_data)
+        date = self.request.GET.get('date', None)
+        collectors = self.request.GET.get('collector', None)
+        collector_list = []
+        if collectors:
+            collectors = Profile.objects.annotate(
+                full_name=Concat('first_name', Value(' '), 'last_name')
+            ).filter(full_name__in=json.loads(collectors))
+            collector_list = list(collectors.values_list('id', flat=True))
 
         chems = ChemicalRecord.objects.filter(
             Q(location_site_id=self.location_site.id) |
             Q(survey__site_id=self.location_site.id)
         )
+        if collector_list:
+            chems = chems.filter(survey__owner__in=collector_list)
+        if date:
+            chems = chems.filter(date=date)
+
+        chem_data = physico_chemical_chart_data(
+            chems
+        )
+        ctx['chemical_records'] = json.dumps(chem_data)
+
         source_references = (
             chems.exclude(
                 source_reference__isnull=True

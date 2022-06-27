@@ -1,3 +1,4 @@
+from bims.models.chemical_record import ChemicalRecord
 from django.test import TestCase
 
 from bims.models import physico_chemical_chart_data
@@ -36,7 +37,9 @@ class TestPhysicoChemical(TestCase):
             chem=chem_2,
             value=10
         )
-        data = physico_chemical_chart_data(self.location_site)
+        data = physico_chemical_chart_data(ChemicalRecord.objects.filter(
+            id__in=[chem_record.id, chem_record_2.id]
+        ))
         self.assertIn(
             chem_record.chem.chem_code.upper(),
             data.keys()

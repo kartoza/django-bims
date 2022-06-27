@@ -23,7 +23,10 @@
         (function($) {
             $(document).ready(function() {
                 $('#grp-content').find('.iucn_status ').find('.c-2').append(
-                    `<button class="grp-button" style="width: 150px;" id="find-iucn">Find IUCN</button>`
+                    `<button class="grp-button" style="width: 250px;" id="find-iucn">Find Global Red List Status (IUCN)</button>`
+                );
+                $('#grp-content').find('.national_conservation_status ').find('.c-2').append(
+                    `<button class="grp-button" style="width: 250px;" id="find-national_conservation_status">Find National Conservation Status</button>`
                 );
                 $('#find-iucn').click(function(e) {
                     e.preventDefault();
