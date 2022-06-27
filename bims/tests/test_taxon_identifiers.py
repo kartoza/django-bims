@@ -4,7 +4,7 @@ import os
 import mock
 import json
 from django.test import TestCase
-from bims.utils.gbif import process_taxon_identifier, search_taxon_identifier
+from bims.utils.gbif import update_taxonomy_from_gbif, search_taxon_identifier
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -59,14 +59,14 @@ class TestTaxonIdentifier(TestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_request))
     def test_process_taxon(self):
-        taxon_identifier = process_taxon_identifier(self.gbif_key, False)
+        taxon_identifier = update_taxonomy_from_gbif(self.gbif_key, False)
         scientific_name = 'Elasmobranchii'
         self.assertEqual(scientific_name, taxon_identifier.scientific_name)
 
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_request))
     def test_get_all_parent(self):
-        taxon_identifier = process_taxon_identifier(self.gbif_key)
+        taxon_identifier = update_taxonomy_from_gbif(self.gbif_key)
         parent = 0
         while taxon_identifier.parent:
             self.assertIsNotNone(taxon_identifier.parent)
@@ -84,6 +84,6 @@ class TestTaxonIdentifier(TestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_request))
     def test_get_children(self):
-        taxon_identifier = process_taxon_identifier(self.gbif_key)
+        taxon_identifier = update_taxonomy_from_gbif(self.gbif_key)
         parent = taxon_identifier.parent
         self.assertTrue(len(parent.get_direct_children()) > 0)

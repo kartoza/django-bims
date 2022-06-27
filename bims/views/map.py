@@ -140,11 +140,18 @@ class MapPageView(TemplateView):
                 desc = ''
                 if status in conservation_status_desc:
                     desc = conservation_status_desc[status]
-                conservation_status_data.append({
-                    'status': str(iucn_status.category),
-                    'name': categories[iucn_status.category].title(),
-                    'desc': desc
-                })
+                if iucn_status.category in categories:
+                    conservation_status_data.append({
+                        'status': str(iucn_status.category),
+                        'name': categories[iucn_status.category].title(),
+                        'desc': desc
+                    })
+                else:
+                    conservation_status_data.append({
+                        'status': str(iucn_status.category),
+                        'name': iucn_status.category,
+                        'desc': desc
+                    })
             context['conservation_status_data'] = conservation_status_data
 
         try:

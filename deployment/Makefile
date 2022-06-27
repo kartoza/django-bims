@@ -21,3 +21,12 @@ build:
 	@echo "Build dev mode"
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} build dev
+
+reset-search-results:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Reset search results"
+	@echo "------------------------------------------------------------------"
+	@docker-compose exec dev python /home/web/django_project/manage.py clear_search_results
+	@docker-compose ${ARGS} restart worker
+	@docker-compose ${ARGS} restart cache

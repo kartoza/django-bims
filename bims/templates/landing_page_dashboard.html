@@ -3,7 +3,11 @@
 
 <script>
     function getNumberWithCommas(number) {
-        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        try {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        } catch (e) {
+            return ''
+        }
     }
 
     function createDonutGraph(container, data) {
@@ -59,6 +63,46 @@
         let alienNonInvasive = 0;
         let unspecified = 0;
 
+        let ce = 'Critically endangered'
+        let dd = 'Data deficient'
+        let en = 'Endangered'
+        let lc = 'Least concern'
+        let nt = 'Near threatened'
+        let ne = 'Not evaluated'
+        let vu = 'Vulnerable'
+        let cons_labels = [
+            dd, ne, lc, nt, vu, en ,ce
+        ]
+        let ce_data = 0
+        let dd_data = 0
+        let en_data = 0
+        let lc_data = 0
+        let nt_data = 0
+        let ne_data = 0
+        let vu_data = 0
+
+        if (moduleData.hasOwnProperty(ce)) {
+            ce_data += moduleData[ce];
+        }
+        if (moduleData.hasOwnProperty(dd)) {
+            dd_data += moduleData[dd];
+        }
+        if (moduleData.hasOwnProperty(en)) {
+            en_data += moduleData[en];
+        }
+        if (moduleData.hasOwnProperty(lc)) {
+            lc_data += moduleData[lc];
+        }
+        if (moduleData.hasOwnProperty(nt)) {
+            nt_data += moduleData[nt];
+        }
+        if (moduleData.hasOwnProperty(ne)) {
+            ne_data += moduleData[ne];
+        }
+        if (moduleData.hasOwnProperty(vu)) {
+            vu_data += moduleData[vu];
+        }
+
         if (moduleData.hasOwnProperty('total')) {
             totalRecords += moduleData['total'];
         }
@@ -99,18 +143,20 @@
             `<p style="margin-top: 0;font-size: 1.5em">${getNumberWithCommas(totalSiteVisit)} Site Visits</p>`
         )
 
+
         let moduleContainer = document.getElementById("chart-" + moduleName);
         let moduleChartDataset = {
-            labels: ["Native Occurrences", "Non-Native Occurrences", "Translocated Occurrences", "Non-Native: Invasive Occurrences", "Non-Native: Non-Invasive Occurrences", "Unspecified"],
+            labels: cons_labels,
             datasets: [{
-                data: [native, non_native, translocated, alienInvasive, alienNonInvasive, unspecified],
+                data: [dd_data, ne_data, lc_data, nt_data, vu_data, en_data, ce_data],
                 backgroundColor: [
-                    mainAccentColor,
-                    '#142341',
-                    '#e0d43f',
-                    secondaryAccentColor,
-                    '#d70e73',
-                    '#bbbbbb'
+                    '#D7CD47',
+                    '#39B2A3',
+                    '#17766B',
+                    '#2C495A',
+                    '#525351',
+                    '#8D2641',
+                    '#641f30',
                 ],
                 borderWidth: 1
             }]

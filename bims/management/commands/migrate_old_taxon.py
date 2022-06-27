@@ -11,7 +11,7 @@ from bims.models.taxonomy import taxonomy_pre_save_handler
 from bims.models.biological_collection_record import (
     collection_post_save_handler,
 )
-from bims.utils.gbif import process_taxon_identifier, update_collection_record
+from bims.utils.gbif import update_taxonomy_from_gbif, update_collection_record
 
 
 class Command(BaseCommand):
@@ -34,7 +34,7 @@ class Command(BaseCommand):
         )
         for taxon in taxa:
             print('Migrate %s' % taxon.scientific_name)
-            taxon_identifier = process_taxon_identifier(taxon.gbif_id)
+            taxon_identifier = update_taxonomy_from_gbif(taxon.gbif_id)
             if taxon_identifier:
                 taxon_identifier.iucn_data = taxon.iucn_data
                 taxon_identifier.iucn_redlist_id = taxon.iucn_redlist_id

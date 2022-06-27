@@ -2,9 +2,9 @@
 import logging
 from django.core.management.base import BaseCommand
 from django.db.models import Q, signals
-from bims.models import Taxonomy, TaxonGroup
+from bims.models import Taxonomy, TaxonGroup, check_taxa_duplicates
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif, merge_taxa_data, check_taxa_duplicates
+    fetch_all_species_from_gbif, merge_taxa_data
 )
 from bims.models import BiologicalCollectionRecord, taxonomy_pre_save_handler
 
@@ -126,7 +126,7 @@ class Command(BaseCommand):
                                 taxonomic_rank=current_taxon.rank,
                                 gbif_key=current_taxon.gbif_key,
                                 parent=None,
-                                should_get_children=False
+                                fetch_children=False
                             )
                             try:
                                 current_taxon = Taxonomy.objects.get(

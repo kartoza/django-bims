@@ -166,7 +166,7 @@ class TaxaProcessor(object):
             parent = fetch_all_species_from_gbif(
                 species=taxon_name,
                 taxonomic_rank=rank,
-                should_get_children=False,
+                fetch_children=False,
                 fetch_vernacular_names=False
             )
             if parent:
@@ -269,7 +269,7 @@ class TaxaProcessor(object):
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
-                        should_get_children=False,
+                        fetch_children=False,
                         fetch_vernacular_names=False,
                         use_name_lookup=True
                     )
@@ -279,7 +279,7 @@ class TaxaProcessor(object):
                 taxonomy = fetch_all_species_from_gbif(
                     species=taxon_name,
                     taxonomic_rank=rank,
-                    should_get_children=False,
+                    fetch_children=False,
                     fetch_vernacular_names=False,
                     use_name_lookup=False
                 )
