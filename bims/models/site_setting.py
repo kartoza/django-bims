@@ -203,6 +203,11 @@ class SiteSetting(Preferences):
         help_text='Enable or disable SASS'
     )
 
+    enable_water_temperature = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Water Temperature data'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(

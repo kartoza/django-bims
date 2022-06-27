@@ -70,6 +70,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
               {
                   data: data.biodiversity_data,
                   is_sass_enabled: is_sass_enabled,
+                  is_water_temperature_enabled: is_water_temperature_enabled,
                   sass_exist: data.sass_exist,
                   physico_chemical_exist: false,
                   add_data: false,

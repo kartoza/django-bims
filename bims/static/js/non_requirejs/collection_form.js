@@ -398,6 +398,7 @@ $(function () {
         if (isError) {
             event.preventDefault();
             event.stopPropagation();
+            $('#submit').attr('disabled','').removeClass('disabled');
             $('#confirm-submit').modal('hide');
             setTimeout(function () {
                 window.scrollTo(0, 0);
