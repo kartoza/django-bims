@@ -426,7 +426,10 @@ class ModuleFormView(CollectionFormView):
             )
         except TaxonGroup.DoesNotExist:
             raise Http404('Missing module')
-        self.taxon_group_name = taxon_group.name
+        self.taxon_group_name = (
+            taxon_group.singular_name if taxon_group.singular_name else
+            taxon_group.name
+        )
         self.session_identifier = '{}-form'.format(
             taxon_group.name.lower()
         )

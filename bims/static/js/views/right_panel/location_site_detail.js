@@ -333,6 +333,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
             container.append(biodiversitySectionTemplate({ data: data.biodiversity_data,
                 is_sass_enabled: is_sass_enabled,
+                is_water_temperature_enabled: is_water_temperature_enabled,
                 sass_exist: data.sass_exist,
                 add_data: true,
                 water_temperature_exist: data.water_temperature_exist,

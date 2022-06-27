@@ -203,8 +203,11 @@ def fetch_all_species_from_gbif(
         logger.info('Get species {gbif_key}'.format(
             gbif_key=gbif_key
         ))
+        species_data = None
+
         try:
             taxon = Taxonomy.objects.get(gbif_key=gbif_key)
+            species_data = taxon.gbif_data
         except Taxonomy.MultipleObjectsReturned:
             taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
             taxon = taxa.first()
@@ -212,7 +215,9 @@ def fetch_all_species_from_gbif(
                 excluded_taxon=taxon,
                 taxa_list=taxa.exclude(id=taxon.id)
             )
-        species_data = taxon.gbif_data
+            species_data = taxon.gbif_data
+        except Taxonomy.DoesNotExist:
+            pass
 
         if not species_data:
             species_data = get_species(gbif_key)
