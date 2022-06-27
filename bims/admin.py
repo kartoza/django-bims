@@ -911,9 +911,19 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'accepted_taxonomy'
     )
 
-    actions = ['merge_taxa']
+    actions = ['merge_taxa', 'update_taxa']
 
     inlines = [TaxonImagesInline]
+
+    def update_taxa(self, request, queryset):
+        for taxa in queryset:
+            if taxa.additional_data:
+                taxa.additional_data['fetch_gbif'] = True
+            else:
+                taxa.additional_data = {
+                    'fetch_gbif': True
+                }
+            taxa.save()
 
     def merge_taxa(self, request, queryset):
         verified = queryset.filter(verified=True)

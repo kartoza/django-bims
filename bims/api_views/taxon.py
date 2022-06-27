@@ -13,7 +13,7 @@ from bims.models.biological_collection_record import (
 )
 from bims.models import TaxonGroup
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.utils.gbif import suggest_search, process_taxon_identifier
+from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif
 
 
 class TaxonDetail(APIView):
@@ -187,7 +187,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if family_id:
             family = Taxonomy.objects.get(id=int(family_id))
         if gbif_key:
-            taxonomy = process_taxon_identifier(
+            taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
                 fetch_parent=True,
                 get_vernacular=False

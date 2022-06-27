@@ -9,11 +9,14 @@ from django.utils.dateparse import parse_date
 from django.conf import settings
 from scripts.management.csv_command import CsvCommand
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif, check_taxa_duplicates
+    fetch_all_species_from_gbif
 )
 from bims.utils.logger import log
 from bims.utils.gbif import *
-from bims.models.taxonomy import taxonomy_pre_save_handler
+from bims.models.taxonomy import (
+    taxonomy_pre_save_handler,
+    check_taxa_duplicates
+)
 
 logger = logging.getLogger('bims')
 
@@ -164,7 +167,7 @@ class Command(CsvCommand):
             parent = fetch_all_species_from_gbif(
                 species=taxon_name,
                 taxonomic_rank=rank,
-                should_get_children=False,
+                fetch_children=False,
                 fetch_vernacular_names=False
             )
             if parent:
@@ -374,7 +377,7 @@ class Command(CsvCommand):
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
-                        should_get_children=False,
+                        fetch_children=False,
                         fetch_vernacular_names=False,
                         use_name_lookup=True,
                         **self.rank_classifier()
@@ -387,7 +390,7 @@ class Command(CsvCommand):
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
-                        should_get_children=False,
+                        fetch_children=False,
                         fetch_vernacular_names=False,
                         use_name_lookup=False,
                         **self.rank_classifier()

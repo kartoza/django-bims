@@ -225,7 +225,7 @@ def update_collection_record(collection):
     else:
         return
 
-    taxonomy = process_taxon_identifier(taxon_key)
+    taxonomy = update_taxonomy_from_gbif(taxon_key)
     collection.taxonomy = taxonomy
     collection.save()
 
@@ -260,7 +260,7 @@ def update_taxonomy_fields(taxon, response):
     taxon.save()
 
 
-def process_taxon_identifier(key, fetch_parent=True, get_vernacular=True):
+def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
     """
     Update taxonomy data with data from gbif
     :param key: gbif key
@@ -319,8 +319,7 @@ def process_taxon_identifier(key, fetch_parent=True, get_vernacular=True):
                 taxon.save()
 
         if 'parentKey' in detail and fetch_parent:
-            print('Found parent')
-            taxon.parent = process_taxon_identifier(
+            taxon.parent = update_taxonomy_from_gbif(
                 detail['parentKey'],
                 get_vernacular=get_vernacular
             )
@@ -356,7 +355,7 @@ def search_taxon_identifier(search_query, fetch_parent=True):
             key = species_detail['nubKey']
 
     if key:
-        species_detail = process_taxon_identifier(key, fetch_parent)
+        species_detail = update_taxonomy_from_gbif(key, fetch_parent)
 
     return species_detail
 
