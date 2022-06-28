@@ -79,11 +79,8 @@ def handle_location_site_post_data(
             )
         except (get_user_model().DoesNotExist, ValueError):
             raise Http404('User does not exist')
-
-    river, river_created = River.objects.get_or_create(
-        name=river_name,
-        owner=owner
-    )
+    else:
+        owner = requester
 
     geometry_point = Point(longitude, latitude)
     location_type, status = LocationType.objects.get_or_create(
@@ -95,7 +92,6 @@ def handle_location_site_post_data(
         'owner': owner,
         'latitude': latitude,
         'longitude': longitude,
-        'river': river,
         'site_description': site_description,
         'geometry_point': geometry_point,
         'location_type': location_type,
@@ -104,14 +100,18 @@ def handle_location_site_post_data(
         'legacy_site_code': legacy_site_code
     }
 
+    if river_name:
+        river, river_created = River.objects.get_or_create(
+            name=river_name,
+            owner=owner
+        )
+        post_dict['river_id'] = river.id
+
     if not location_site:
         location_site = LocationSite.objects.create(**post_dict)
     else:
-        LocationSite.objects.filter(
-            id=location_site.id
-        ).update(
-            **post_dict
-        )
+        for key in post_dict:
+            setattr(location_site, key, post_dict[key])
 
     # Flag to indicate new geomorphological data has been
     # fetched from geocontext

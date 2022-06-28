@@ -146,8 +146,7 @@ class TestLocationSiteFormView(TestCase):
 
         self.client.post(
             '/location-site-form/update/?id={}'.format(location_site.id),
-            post_data,
-            follow=True
+            post_data
         )
         updated_location_site = LocationSite.objects.get(
             id=location_site.id
@@ -155,6 +154,7 @@ class TestLocationSiteFormView(TestCase):
         updated_location_context = LocationContext.objects.filter(
             site=location_site
         )
+        updated_location_site.refresh_from_db()
         self.assertEqual(
             updated_location_site.river.name,
             'NXAMAGELE'

@@ -1,4 +1,7 @@
 import logging
+
+import factory
+from django.db.models import signals
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -29,6 +32,7 @@ class TestApiMergeSites(TestCase):
     def setUp(self):
         self.location_site = LocationSiteF.create()
 
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def test_merge_sites(self):
         client = APIClient()
         api_url = '/api/merge-sites/'
@@ -36,7 +40,7 @@ class TestApiMergeSites(TestCase):
         # Cannot merge sites without log in as superuser
         res = client.put(api_url, {})
         self.assertTrue(
-            res.status_code == status.HTTP_403_FORBIDDEN
+            res.status_code == status.HTTP_401_UNAUTHORIZED
         )
 
         user = UserF.create(is_superuser=True)
