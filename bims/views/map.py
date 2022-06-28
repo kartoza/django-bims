@@ -17,7 +17,6 @@ from bims.serializers.basemap_serializer import BaseMapLayerSerializer
 
 class MapPageView(TemplateView):
     """Template view for map page"""
-    COLLECTOR_FILTER = 'COLLECTOR_FILTER'
     template_name = 'map_page/bims.html'
 
     def get_context_data(self, **kwargs):
@@ -80,14 +79,6 @@ class MapPageView(TemplateView):
         if date_max:
             context['date_filter']['max'] = date_max.year
 
-        # Is it necessary to use collector filter, default true
-        collector_filter = get_key(self.COLLECTOR_FILTER)
-        if not collector_filter:
-            context[self.COLLECTOR_FILTER] = True
-        else:
-            context[self.COLLECTOR_FILTER] = distutil.strtobool(
-                    collector_filter)
-
         if self.request.user:
             try:
                 user_profile = BimsProfile.objects.get(user=self.request.user)
@@ -149,11 +140,18 @@ class MapPageView(TemplateView):
                 desc = ''
                 if status in conservation_status_desc:
                     desc = conservation_status_desc[status]
-                conservation_status_data.append({
-                    'status': str(iucn_status.category),
-                    'name': categories[iucn_status.category].title(),
-                    'desc': desc
-                })
+                if iucn_status.category in categories:
+                    conservation_status_data.append({
+                        'status': str(iucn_status.category),
+                        'name': categories[iucn_status.category].title(),
+                        'desc': desc
+                    })
+                else:
+                    conservation_status_data.append({
+                        'status': str(iucn_status.category),
+                        'name': iucn_status.category,
+                        'desc': desc
+                    })
             context['conservation_status_data'] = conservation_status_data
 
         try:

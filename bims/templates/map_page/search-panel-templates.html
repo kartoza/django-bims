@@ -223,33 +223,30 @@
             </div>
         </div>
 
-        {% if use_conservation_status %}
-            <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
-                    CONSERVATION STATUS <i
-                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-                </div>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                CONSERVATION STATUS GLOBAL <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
-            <div class="row conservation-status-row" style="display: none">
-                <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
-                    {% for status_data in conservation_status_data %}
-                        <div>
-                            <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
-                            <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
-                                data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="button-filter-wrapper">
-                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
-                    <button class="clear-filter clear-conservation-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear
-                    </button>
-                </div>
-                <div class="small-space"></div>
+        </div>
+        <div class="row conservation-status-row" style="display: none">
+            <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
+                {% for status_data in conservation_status_data %}
+                    <div>
+                        <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
+                        <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
+                            data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
+                    </div>
+                {% endfor %}
             </div>
-        {% endif %}
-
+            <div class="button-filter-wrapper">
+                <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                <button class="clear-filter clear-conservation-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear
+                </button>
+            </div>
+            <div class="small-space"></div>
+        </div>
         <div class="reference-category-wrapper"></div>
 
         <div class="study-reference-wrapper">
@@ -274,27 +271,25 @@
             </div>
         </div>
 
-         {% if COLLECTOR_FILTER %}
-            <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
-                    OWNER <i
-                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-                </div>
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                OWNER <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
             </div>
-            <div class="row filter-collectors-row" style="display: none">
-                <div class="chosen-wrapper">
-                    <select data-placeholder="Choose a collector/assessor..."
-                        id="filter-collectors"
-                        multiple>
-                    </select>
-                </div>
-                <div class="button-filter-wrapper">
-                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
-                    <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
-                </div>
+        </div>
+        <div class="row filter-collectors-row" style="display: none">
+            <div class="chosen-wrapper">
+                <select data-placeholder="Choose a collector/assessor..."
+                    id="filter-collectors"
+                    multiple>
+                </select>
             </div>
-        {% endif %}
+            <div class="button-filter-wrapper">
+                <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
+            </div>
+        </div>
 
         <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">

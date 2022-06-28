@@ -11,6 +11,7 @@ from bims.tasks.duplicate_records import *  # noqa
 from bims.tasks.download_taxa_list import *  # noqa
 from bims.tasks.taxon_extra_attribute import *  # noqa
 from bims.tasks.clean_data import *  # noqa
+from bims.tasks.email_csv import *  # noqa
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')

@@ -61,7 +61,7 @@ def import_fish_occurrences_from_gbif(
         if import_occurrences:
             taxonomy = fetch_all_species_from_gbif(
                 species=canonical_name,
-                should_get_children=True
+                fetch_children=True
             )
 
             if not taxonomy:

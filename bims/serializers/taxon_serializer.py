@@ -18,6 +18,12 @@ class TaxonSerializer(serializers.ModelSerializer):
     endemism_name = serializers.SerializerMethodField()
     common_name = serializers.SerializerMethodField()
     total_records = serializers.SerializerMethodField()
+    accepted_taxonomy_name = serializers.SerializerMethodField()
+
+    def get_accepted_taxonomy_name(self, obj):
+        if obj.accepted_taxonomy:
+            return obj.accepted_taxonomy.canonical_name
+        return ''
 
     def get_total_records(self, obj):
         return BiologicalCollectionRecord.objects.filter(

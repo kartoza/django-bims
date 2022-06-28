@@ -1,14 +1,20 @@
 # coding=utf-8
+import json
 import logging
+import os
+
 from celery import shared_task
 from collections import OrderedDict
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db.models import F
 from django.utils.text import slugify
+
 from bims.utils.celery import single_instance_task
 
 logger = logging.getLogger(__name__)
+SPATIAL_SCALE_FILTER_FILE = 'spatial_scale_filter.txt'
 
 
 SPATIAL_FILTER_GROUPS = OrderedDict([
@@ -112,15 +118,14 @@ LAYER_NAMES = {
 
 
 @shared_task(
-    name='bims.tasks.generate_spatial_scale_filter_if_empty',
+    name='bims.tasks.generate_filters',
     queue='geocontext'
 )
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter_if_empty():
-    spatial_scale_filter_list = cache.get('spatial_scale_filter_list')
-    if not spatial_scale_filter_list:
-        logger.info('Generating spatial scale filter list...')
-        generate_spatial_scale_filter()
+    from bims.tasks.source_reference import generate_source_reference_filter
+    get_spatial_scale_filter()
+    generate_source_reference_filter()
 
 
 @shared_task(
@@ -182,4 +187,24 @@ def generate_spatial_scale_filter():
         )
 
     if spatial_tree:
-        cache.set('spatial_scale_filter_list', spatial_tree)
+        file_path = os.path.join(
+            settings.MEDIA_ROOT,
+            SPATIAL_SCALE_FILTER_FILE
+        )
+        with open(file_path, 'w') as file_handle:
+            json.dump(spatial_tree, file_handle)
+
+
+def get_spatial_scale_filter():
+    file_path = os.path.join(
+        settings.MEDIA_ROOT,
+        SPATIAL_SCALE_FILTER_FILE
+    )
+    if not os.path.exists(file_path):
+        generate_spatial_scale_filter()
+    with open(file_path, 'r') as file_handler:
+        filter_data = file_handler.read()
+    if filter_data:
+        return json.loads(filter_data)
+    else:
+        return []

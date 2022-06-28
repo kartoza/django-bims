@@ -1,7 +1,7 @@
 # coding=utf-8
 import json
 from django.http.response import HttpResponse
-from django.db.models import CharField, Value as V
+from django.db.models import CharField, Value as V, Q
 from django.db.models.functions import Concat
 from rest_framework.views import APIView
 from bims.models.survey import Survey
@@ -13,7 +13,8 @@ class CollectorList(APIView):
     def get(self, request, *args):
         survey_owners = (
             Survey.objects.filter(
-                biological_collection_record__isnull=False
+                Q(biological_collection_record__isnull=False) |
+                Q(chemical_collection_record__isnull=False)
             ).exclude(
                 owner__isnull=True
             ).annotate(
@@ -29,7 +30,7 @@ class CollectorList(APIView):
         all_users.sort()
         user_index = 0
         if len(all_users) > 0:
-            while all_users[user_index] == ' ':
+            while user_index in all_users and all_users[user_index] == ' ':
                 user_index += 1
         return HttpResponse(
             json.dumps(all_users[user_index:]),

@@ -48,8 +48,7 @@ class Command(BaseCommand):
             'l.name '
             'FROM bims_locationsite l '
             'JOIN bims_survey b ON b.site_id = l.id '
-            'FULL JOIN bims_watertemperature w ON w.location_site_id = l.id '
-            'WHERE b.validated = True ;'
+            'FULL JOIN bims_watertemperature w ON w.location_site_id = l.id ;'
         )
         query = (
             'SELECT bims_locationsite.id AS site_id,'
@@ -64,12 +63,9 @@ class Command(BaseCommand):
             'empty_location_site_cluster'
         )
         empty_query = (
-            'SELECT DISTINCT ON (bims_biologicalcollectionrecord.site_id) '
-            'bims_biologicalcollectionrecord.site_id, '
-            'bims_locationsite.geometry_point, bims_locationsite.name FROM '
-            'bims_biologicalcollectionrecord JOIN bims_locationsite '
-            'ON bims_biologicalcollectionrecord.site_id = bims_locationsite.id'
-            ' WHERE 1 = 0;'
+            'SELECT bims_locationsite.id AS site_id,'
+            'bims_locationsite.geometry_point, bims_locationsite.name '
+            'FROM bims_locationsite;'
         )
         cursor = connection.cursor()
         if replace_view:

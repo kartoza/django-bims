@@ -31,7 +31,8 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     common_name = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
-    conservation_status = serializers.SerializerMethodField()
+    conservation_status_global = serializers.SerializerMethodField()
+    conservation_status_national = serializers.SerializerMethodField()
     on_gbif = serializers.SerializerMethodField()
     gbif_link = serializers.SerializerMethodField()
 
@@ -79,7 +80,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     def get_endemism(self, obj):
         return obj.endemism.name if obj.endemism else 'Unknown'
 
-    def get_conservation_status(self, obj):
+    def get_conservation_status_global(self, obj):
         if obj.iucn_status:
             for value in IUCNStatus.CATEGORY_CHOICES:
                 if value[0] == obj.iucn_status.category:
@@ -87,6 +88,15 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             return 'Not evaluated'
         else:
             return 'Not evaluated'
+
+    def get_conservation_status_national(self, obj: Taxonomy):
+        if obj.national_conservation_status:
+            for value in IUCNStatus.CATEGORY_CHOICES:
+                if value[0] == obj.national_conservation_status.category:
+                    return value[1]
+            return 'Not evaluated'
+        else:
+            return ''
 
     def get_on_gbif(self, obj):
         return 'Yes' if obj.gbif_key else 'No'
@@ -114,7 +124,8 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'common_name',
             'origin',
             'endemism',
-            'conservation_status',
+            'conservation_status_global',
+            'conservation_status_national',
             'on_gbif',
             'gbif_link'
         )
@@ -145,11 +156,14 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
                     key_title = taxon_attribute_name.lower().replace(' ', '_')
                     if key_title not in self.context['headers']:
                         self.context['headers'].append(key_title)
-                    if taxon_attribute_name in instance.additional_data:
-                        result[key_title] = (
-                            instance.additional_data[taxon_attribute_name]
-                        )
-                    else:
+                    try:
+                        if taxon_attribute_name in instance.additional_data:
+                            result[key_title] = (
+                                instance.additional_data[taxon_attribute_name]
+                            )
+                        else:
+                            result[key_title] = ''
+                    except TypeError:
                         result[key_title] = ''
 
         return result
@@ -170,7 +184,7 @@ def download_csv_taxa_list(request):
     filename = (
         f'{taxon_group}-{current_time.year}-'
         f'{current_time.month}-{current_time.day}-'
-        f'{current_time.hour}-{current_time.minute}'
+        f'{current_time.hour}'
     ).replace(' ', '_')
     folder = settings.PROCESSED_CSV_PATH
     path_folder = os.path.join(
@@ -186,7 +200,8 @@ def download_csv_taxa_list(request):
         send_csv_via_email(
             user=request.user,
             csv_file=path_file,
-            file_name=filename
+            file_name=filename,
+            approved=True
         )
     else:
         download_csv_taxa_list_task.delay(

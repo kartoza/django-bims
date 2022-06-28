@@ -42,11 +42,18 @@ class TaxaProcessor(object):
             )[0]
         return endemism_obj
 
-    def conservation_status(self, row):
+    def conservation_status(self, row, global_cons = False):
         """Processing conservation status"""
-        cons_status = DataCSVUpload.row_value(row, CONSERVATION_STATUS)
-        if not cons_status:
-            return None
+        if global_cons:
+            cons_status = DataCSVUpload.row_value(row, CONSERVATION_STATUS)
+            if not cons_status:
+                cons_status = DataCSVUpload.row_value(
+                    row, CONSERVATION_STATUS_GLOBAL)
+                if not cons_status:
+                    return None
+        else:
+            cons_status = DataCSVUpload.row_value(
+                row, CONSERVATION_STATUS_NATIONAL)
         if cons_status.lower() not in IUCN_CATEGORIES:
             return None
         iucn_status, _ = IUCNStatus.objects.get_or_create(
@@ -159,7 +166,7 @@ class TaxaProcessor(object):
             parent = fetch_all_species_from_gbif(
                 species=taxon_name,
                 taxonomic_rank=rank,
-                should_get_children=False,
+                fetch_children=False,
                 fetch_vernacular_names=False
             )
             if parent:
@@ -249,6 +256,8 @@ class TaxaProcessor(object):
                 # Fetch from gbif
                 if DataCSVUpload.row_value(row, ON_GBIF) == 'Yes':
                     gbif_link = DataCSVUpload.row_value(row, GBIF_LINK)
+                    if not gbif_link:
+                        gbif_link = DataCSVUpload.row_value(row, GBIF_URL)
                     gbif_key = (
                         gbif_link.split('/')[len(gbif_link.split('/')) - 1]
                     )
@@ -260,7 +269,7 @@ class TaxaProcessor(object):
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
-                        should_get_children=False,
+                        fetch_children=False,
                         fetch_vernacular_names=False,
                         use_name_lookup=True
                     )
@@ -270,7 +279,7 @@ class TaxaProcessor(object):
                 taxonomy = fetch_all_species_from_gbif(
                     species=taxon_name,
                     taxonomic_rank=rank,
-                    should_get_children=False,
+                    fetch_children=False,
                     fetch_vernacular_names=False,
                     use_name_lookup=False
                 )
@@ -329,10 +338,17 @@ class TaxaProcessor(object):
                 if endemism:
                     taxonomy.endemism = endemism
 
-                # -- Conservation status
+                # -- Conservation status global
                 iucn_status = self.conservation_status(row)
                 if iucn_status:
                     taxonomy.iucn_status = iucn_status
+
+                # -- Conservation status national
+                national_cons_status = self.conservation_status(row, False)
+                if national_cons_status:
+                    taxonomy.national_conservation_status = (
+                        national_cons_status
+                    )
 
                 # -- Common name
                 common_name = self.common_name(row)

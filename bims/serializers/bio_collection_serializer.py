@@ -5,10 +5,9 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
+from django.core.cache import cache
 from django.urls import reverse
 
-from bims.enums import TaxonomicGroupCategory
-from bims.models.taxon_group import TaxonGroup
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.taxon_serializer import (
@@ -26,7 +25,7 @@ from bims.models.chemical_record import (
 from bims.models.iucn_status import IUCNStatus
 from bims.models.location_context import LocationContext
 from bims.models.algae_data import AlgaeData
-from bims.models.survey import SurveyData, SurveyDataValue
+from bims.models.survey import SurveyData, SurveyDataValue, Survey
 from bims.scripts.collection_csv_keys import *  # noqa
 from bims.models.location_context_group import LocationContextGroup
 from bims.models.taxonomy import Taxonomy
@@ -69,7 +68,27 @@ class BioCollectionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class BioCollectionOneRowSerializer(serializers.ModelSerializer):
+class SerializerContextCache(serializers.ModelSerializer):
+
+    def get_context_cache(self, key, identifier):
+        context_data = self.context.get(key)
+        if not context_data:
+            return None
+        if identifier in context_data:
+            return context_data[identifier]
+        return None
+
+    def set_context_cache(self, key, identifier, value):
+        context_data = self.context.get(key)
+        if not context_data:
+            context_data = {}
+        context_data[identifier] = value
+        self.context[key] = context_data
+
+
+class BioCollectionOneRowSerializer(
+    SerializerContextCache
+):
     """
     Serializer for biological collection record.
     """
@@ -93,7 +112,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     title = serializers.SerializerMethodField()
     reference_category = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
-    conservation_status = serializers.SerializerMethodField()
+    conservation_status_global = serializers.SerializerMethodField()
+    conservation_status_national = serializers.SerializerMethodField()
     phylum = serializers.SerializerMethodField()
     class_name = serializers.SerializerMethodField()
     order = serializers.SerializerMethodField()
@@ -114,7 +134,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     authors = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
-    gbif_id = serializers.SerializerMethodField()
+    upstream_id = serializers.SerializerMethodField()
     dataset_key = serializers.SerializerMethodField()
     occurrence_id = serializers.SerializerMethodField()
     basis_of_record = serializers.SerializerMethodField()
@@ -127,28 +147,60 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     decision_support_tool = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
 
+    def taxon_name_by_rank(self, obj, rank_identifier):
+        taxon_name = self.get_context_cache(
+            rank_identifier,
+            obj.taxonomy.id
+        )
+        if taxon_name:
+            return taxon_name
+        taxon_name = obj.taxonomy.__getattribute__(rank_identifier)
+        if taxon_name:
+            self.set_context_cache(
+                rank_identifier,
+                obj.taxonomy.id,
+                taxon_name
+            )
+            return taxon_name
+        return '-'
+
     def spatial_data(self, obj, key):
+        spatial_data_cache = self.get_context_cache(
+            obj.site.id,
+            key
+        )
+        if spatial_data_cache:
+            return spatial_data_cache
         if 'context_cache' not in self.context:
             self.context['context_cache'] = {}
-        context_identifier = '{key}-{site}'.format(
-            site=obj.site.id,
-            key=key)
-        if context_identifier in self.context['context_cache']:
-            return self.context['context_cache'][context_identifier]
-        data = (
-            LocationContext.objects.filter(
-                site_id=obj.site.id,
-                group__key__icontains=key).exclude(
-                value=''
-            )
-        )
-        if data.exists():
-            if data[0].value:
-                self.context['context_cache'][context_identifier] = (
-                    data[0].value
+        data = None
+        try:
+            data = (
+                LocationContext.objects.get(
+                    site_id=obj.site.id,
+                    group__key__icontains=key
                 )
-                return data[0].value
-        self.context['context_cache'][context_identifier] = (
+            )
+        except LocationContext.DoesNotExist:
+            pass
+        except LocationContext.MultipleObjectsReturned:
+            data = LocationContext.objects.filter(
+                site_id=obj.site.id,
+                group__key__icontains=key
+            ).first()
+
+        if data:
+            first_data_value = data.value
+            if first_data_value:
+                self.set_context_cache(
+                    obj.site.id,
+                    key,
+                    first_data_value
+                )
+                return first_data_value
+        self.set_context_cache(
+            obj.site.id,
+            key,
             '-'
         )
         return '-'
@@ -156,7 +208,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(BioCollectionOneRowSerializer, self).__init__(*args, **kwargs)
         self.context['chem_records_cached'] = {}
-        self.context['header'] = []
+        if 'header' not in self.context:
+            self.context['header'] = []
 
     def chem_data(self, obj, chem):
         return chem
@@ -196,7 +249,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return obj.sampling_effort.split(' ')[0]
         return '-'
 
-    def get_conservation_status(self, obj):
+    def get_conservation_status_global(self, obj):
         if obj.taxonomy.iucn_status:
             category = dict(IUCNStatus.CATEGORY_CHOICES)
             try:
@@ -204,6 +257,16 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             except KeyError:
                 pass
         return 'Not evaluated'
+
+    def get_conservation_status_national(self, obj):
+        if obj.taxonomy.national_conservation_status:
+            category = dict(IUCNStatus.CATEGORY_CHOICES)
+            try:
+                return category[
+                    obj.taxonomy.national_conservation_status.category]
+            except KeyError:
+                pass
+        return '-'
 
     def get_site_code(self, obj):
         return obj.site.site_code
@@ -254,57 +317,79 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_taxon(self, obj):
+        taxon = self.get_context_cache(
+            'taxon',
+            obj.taxonomy.id
+        )
+        if taxon:
+            return taxon
         if obj.taxonomy:
             if obj.taxonomy.canonical_name:
+                self.set_context_cache(
+                    'taxon',
+                    obj.taxonomy.id,
+                    obj.taxonomy.canonical_name
+                )
                 return obj.taxonomy.canonical_name
         if obj.original_species_name:
+            self.set_context_cache(
+                'taxon',
+                obj.taxonomy.id,
+                obj.original_species_name
+            )
             return obj.original_species_name
         return '-'
 
     def get_class_name(self, obj):
-        class_name = obj.taxonomy.class_name
-        if class_name:
-            return class_name
-        return '-'
+        return self.taxon_name_by_rank(
+            obj,
+            'class_name'
+        )
 
     def get_phylum(self, obj):
-        phylum_name = obj.taxonomy.phylum_name
-        if phylum_name:
-            return phylum_name
-        return '-'
+        return self.taxon_name_by_rank(
+            obj,
+            'phylum_name'
+        )
 
     def get_order(self, obj):
-        order_name = obj.taxonomy.order_name
-        if order_name:
-            return order_name
-        return '-'
+        return self.taxon_name_by_rank(
+            obj,
+            'order_name'
+        )
 
     def get_family(self, obj):
-        family_name = obj.taxonomy.family_name
-        if family_name:
-            return family_name
-        return '-'
+        return self.taxon_name_by_rank(
+            obj,
+            'family_name'
+        )
 
     def get_genus(self, obj):
-        genus_name = obj.taxonomy.genus_name
-        if genus_name:
-            return genus_name
-        return '-'
+        return self.taxon_name_by_rank(
+            obj,
+            'genus_name'
+        )
 
     def get_species(self, obj):
-        species_name = obj.taxonomy.species_name
+        species_name = self.taxon_name_by_rank(
+            obj,
+            'species_name'
+        )
         if species_name:
-            genus_name = obj.taxonomy.genus_name
+            genus_name = self.taxon_name_by_rank(
+                obj,
+                'genus_name'
+            )
             if genus_name:
                 species_name = species_name.replace(genus_name, '')
             return species_name.strip()
         return '-'
 
     def get_kingdom(self, obj):
-        kingdom_name = obj.taxonomy.kingdom_name
-        if kingdom_name:
-            return kingdom_name
-        return '-'
+        return self.taxon_name_by_rank(
+            obj,
+            'kingdom_name'
+        )
 
     def get_taxon_rank(self, obj):
         taxon_rank = obj.taxonomy.get_rank_display()
@@ -390,6 +475,12 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
 
     def get_doi_or_url(self, obj):
         if obj.source_reference:
+            if 'source_reference' not in self.context:
+                self.context['source_reference'] = {}
+            if obj.source_reference.id in self.context['source_reference']:
+                return (
+                    self.context['source_reference'][obj.source_reference.id]
+                )
             url = ''
             document = None
             if isinstance(obj.source_reference,
@@ -411,6 +502,9 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                          document.doc_file.url])
                 else:
                     url = document.doc_url
+            self.context['source_reference'][obj.source_reference.id] = (
+                url
+            )
             return url
         return '-'
 
@@ -435,24 +529,31 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
         return '-'
 
     def occurrences_fields(self, obj, field):
-        if obj.upstream_id:
-            data = get_fields_from_occurrences(obj)
-            try:
-                return data[field]
-            except:  # noqa
-                return '-'
+        # Disable for now
+        # if obj.upstream_id:
+        #     data = get_fields_from_occurrences(obj)
+        #     try:
+        #         return data[field]
+        #     except:  # noqa
+        #         return '-'
         return '-'
 
     def get_decision_support_tool(self, obj):
         dst_set = obj.decisionsupporttool_set.all()
         if dst_set.exists():
             dst_set_names = dst_set.values_list(
-                'name', flat=True).order_by('name').distinct('name')
+                'name', flat=True
+            ).order_by('name').distinct('name')
             return ', '.join(list(dst_set_names))
         return '-'
 
-    def get_gbif_id(self, obj):
-        return self.occurrences_fields(obj, 'gbifID')
+    def get_upstream_id(self, obj: BiologicalCollectionRecord):
+        if obj.upstream_id:
+            return obj.upstream_id
+        if obj.additional_data and isinstance(obj.additional_data, dict):
+            if 'eventID' in obj.additional_data:
+                return obj.additional_data['eventID']
+        return ''
 
     def get_dataset_key(self, obj):
         return self.occurrences_fields(obj, 'datasetKey')
@@ -518,7 +619,8 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'substratum',
             'origin',
             'endemism',
-            'conservation_status',
+            'conservation_status_global',
+            'conservation_status_national',
             'collector_or_owner',
             'collector_or_owner_institute',
             'analyst',
@@ -530,7 +632,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             'title',
             'doi_or_url',
             'notes',
-            'gbif_id',
+            'upstream_id',
             'dataset_key',
             'occurrence_id',
             'basis_of_record',
@@ -555,9 +657,21 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             )
         )
 
+        if not instance.survey:
+            try:
+                survey, _ = Survey.objects.get_or_create(
+                    site=instance.site,
+                    date=instance.collection_date,
+                    collector_user=instance.collector_user,
+                    owner=instance.owner
+                )
+                instance.survey = survey
+            except Survey.MultipleObjectsReturned:
+                pass
+
         if 'chem_records_cached' not in self.context:
             self.context['chem_records_cached'] = {}
-        if 'header' not in self.context:
+        if 'header' not in self.context or not self.context['header']:
             self.context['header'] = list(result.keys())
         if 'show_link' in self.context and self.context['show_link']:
             self.context['header'] = ['Link'] + self.context['header']
@@ -574,11 +688,18 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 'Autotrophic Index (AI)',
             ]
 
-            algae_data = AlgaeData.objects.filter(survey=instance.survey)
-            if algae_data.exists():
-                algae_data = algae_data[0]
-            else:
-                algae_data = None
+            algae_data = self.get_context_cache('algae', instance.survey)
+            if not algae_data and instance.survey:
+                algae_data = AlgaeData.objects.filter(survey=instance.survey)
+                if algae_data.exists():
+                    algae_data = algae_data.first()
+                    self.set_context_cache(
+                        'algae',
+                        instance.survey,
+                        algae_data
+                    )
+                else:
+                    algae_data = None
 
             for algae_key in algae_keys:
                 if algae_key not in self.context['header']:
@@ -606,15 +727,25 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                 survey_data = SurveyData.objects.filter(
                     name__iexact=survey_data_key
                 )
-                if survey_data.exists():
-                    sdv = SurveyDataValue.objects.filter(
-                        survey=instance.survey,
-                        survey_data=survey_data[0]
+                if survey_data.exists() and instance.survey:
+                    sdv_data = self.get_context_cache(
+                        instance.survey.id,
+                        'survey_data'
                     )
-                    if sdv.exists():
-                        result[survey_data_key] = (
-                            sdv[0].survey_data_option.option
+                    if not sdv_data:
+                        sdv = SurveyDataValue.objects.filter(
+                            survey=instance.survey,
+                            survey_data=survey_data.first()
                         )
+                        if sdv.exists():
+                            sdv_data = sdv.first().survey_data_option.option
+                            self.set_context_cache(
+                                instance.survey.id,
+                                'survey_data',
+                                sdv_data
+                            )
+                    result[survey_data_key] = sdv_data
+
             chemical_units = {
                 TEMP: TEMP,
                 CONDUCTIVITY: CONDUCTIVITY,
@@ -639,13 +770,31 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
             for chem_key in chemical_units:
                 if chem_key not in self.context['header']:
                     self.context['header'].append(chem_key)
-                chem_record = ChemicalRecord.objects.filter(
-                    chem__chem_code__iexact=chemical_units[chem_key],
-                    survey__site=instance.site,
-                    survey__date=instance.collection_date
+                identifier = '{site_id}{collection_date}'.format(
+                    site_id=instance.site.id,
+                    collection_date=instance.collection_date
                 )
-                if chem_record.exists():
-                    result[chem_key] = chem_record[0].value
+                chem_data = self.get_context_cache(
+                    identifier,
+                    'chem_data'
+                )
+                if not chem_data:
+                    chem_record = ChemicalRecord.objects.filter(
+                        chem__chem_code__iexact=chemical_units[chem_key],
+                        survey__site=instance.site,
+                        survey__date=instance.collection_date
+                    )
+                    if chem_record.exists():
+                        chem_data = chem_record.first().value
+                    else:
+                        chem_data = '-'
+                    self.set_context_cache(
+                        identifier,
+                        'chem_data',
+                        chem_data
+                    )
+                if chem_data:
+                    result[chem_key] = chem_data
 
         else:
             if chem_records_identifier in self.context['chem_records_cached']:
@@ -705,9 +854,7 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                  )])
 
         # Taxon attribute
-        taxon_group = TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies__in=[instance.taxonomy]).first()
+        taxon_group = instance.module_group
 
         if taxon_group:
             taxon_extra_attributes = TaxonExtraAttribute.objects.filter(
@@ -719,13 +866,27 @@ class BioCollectionOneRowSerializer(serializers.ModelSerializer):
                     key_title = taxon_attribute_name.lower().replace(' ', '_')
                     if key_title not in self.context['header']:
                         self.context['header'].append(key_title)
-                    if taxon_attribute_name in instance.taxonomy.additional_data:
-                        result[key_title] = (
-                            instance.taxonomy.additional_data
-                            [taxon_attribute_name]
+                    taxon_attribute_data = self.get_context_cache(
+                        instance.taxonomy.id,
+                        taxon_attribute_name
+                    )
+                    if not taxon_attribute_data:
+                        if (
+                                taxon_attribute_name in
+                                instance.taxonomy.additional_data
+                        ):
+                            taxon_attribute_data = (
+                                instance.taxonomy.additional_data
+                                [taxon_attribute_name]
+                            )
+                        else:
+                            result[key_title] = '-'
+                        self.set_context_cache(
+                            instance.taxonomy.id,
+                            taxon_attribute_name,
+                            taxon_attribute_data
                         )
-                    else:
-                        result[key_title] = ''
+                        result[key_title] = taxon_attribute_data
 
         return result
 

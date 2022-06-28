@@ -77,7 +77,6 @@ def autocomplete(request):
             LocationSite.objects.filter(
                 site_code__icontains=q,
                 site_code__isnull=False,
-                biological_collection_record__validated=True,
                 **site_additional_filters
             ).distinct('id').
             annotate(site_id=F('id'), suggested_name=F('site_code')).
@@ -209,7 +208,7 @@ def species_autocomplete(request):
         taxon_group, created = TaxonGroup.objects.get_or_create(
             name=taxon_group_request
         )
-        optional_query['biologicalcollectionrecord__module_group'] = (
+        optional_query['taxongroup'] = (
             taxon_group
         )
         taxon_group_species = taxon_group.taxonomies.values_list(

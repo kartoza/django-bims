@@ -2,6 +2,8 @@ import re
 import time
 import uuid
 from datetime import datetime as libdatetime
+
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 from dateutil.parser import parse
 from django.db.models import Case, When, F, Q, signals
 from django.views.generic import TemplateView, View
@@ -289,21 +291,26 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
     def create_or_get_survey(self, site_visit):
         """Get or create a site survey"""
         survey = None
+
         # Check duplicate data
         existing_surveys = Survey.objects.filter(
             owner=site_visit.owner,
             date=site_visit.site_visit_date,
             site=site_visit.location_site)
         if existing_surveys.count() > 1:
-            survey = existing_surveys[0]
+            survey = existing_surveys.first()
             ChemicalRecord.objects.filter(
+                survey__in=existing_surveys
+            ).update(survey=survey)
+            BiologicalCollectionRecord.objects.filter(
                 survey__in=existing_surveys
             ).update(survey=survey)
             Survey.objects.filter(
                 id__in=existing_surveys
             ).exclude(id=survey.id).delete()
         elif existing_surveys.count() == 1:
-            survey = existing_surveys[0]
+            survey = existing_surveys.first()
+
         if not survey:
             surveys = list(
                 SiteVisitTaxon.objects.filter(
@@ -314,9 +321,13 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
             if len(surveys) > 0:
                 return Survey.objects.get(id=surveys[0])
-        if survey:
-            return Survey.objects.get(
-                id=survey.id
+
+        # Create one
+        if not survey:
+            survey = Survey.objects.create(
+                owner=site_visit.owner,
+                date=site_visit.site_visit_date,
+                site=site_visit.location_site
             )
         return survey
 

@@ -109,7 +109,7 @@ class CollectionDownloader(GetCollectionAbstract):
         :param queryset: queryset that need to be converted
         :type queryset: QuerySet
         """
-        from bims.tasks.collection_record import download_data_to_csv
+        from bims.tasks.collection_record import download_collection_record_task
 
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="download.csv"'
@@ -172,7 +172,7 @@ class CollectionDownloader(GetCollectionAbstract):
                 'filename': filename
             })
 
-        download_data_to_csv.delay(
+        download_collection_record_task.delay(
             path_file,
             self.request.GET,
         )

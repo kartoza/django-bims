@@ -125,7 +125,7 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
             )
             return
 
-        merge_source_references(primary_source_reference=verified[0],
+        merge_source_references(primary_source_reference=verified.first(),
                                 source_reference_list=queryset)
 
     merge_source_references.short_description = 'Merge source references'

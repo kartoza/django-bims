@@ -65,7 +65,8 @@ INSTALLED_APPS += (
     'preferences',
     'sorl.thumbnail',
     'ckeditor',
-    'django_json_widget'
+    'django_json_widget',
+    'django_forms_bootstrap'
 )
 
 # Wagtail configurations
@@ -450,3 +451,5 @@ CACHES = {
 }
 
 FILE_UPLOAD_PERMISSIONS = 0o644
+LOGIN_URL = '/accounts/login/'
+LOGOUT_URL = '/accounts/logout/'

@@ -5,7 +5,8 @@ from django.test import TestCase
 from bims.models import LocationSite
 from bims.tests.model_factories import (
     SurveyF, UserF, Survey,
-    BiologicalCollectionRecordF, BiologicalCollectionRecord, LocationSiteF
+    BiologicalCollectionRecordF, BiologicalCollectionRecord, LocationSiteF,
+    TaxonomyF
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -94,6 +95,35 @@ class TestSiteVisitView(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_SiteVisitView_update_add_new_collection(self):
+        self.client.login(
+            username=self.owner.username,
+            password='password'
+        )
+        bio_1 = BiologicalCollectionRecordF.create(
+            survey=self.survey
+        )
+        bio_1_id = bio_1.id
+        taxon = TaxonomyF.create()
+        post_data = {
+            'collection-id-list': '{}'.format(bio_1_id),
+            'taxa-id-list': '{}'.format(taxon.id),
+            '{}-observed'.format(taxon.id): 'True',
+            '{}-abundance'.format(taxon.id): 12,
+            'owner_id': self.owner.id,
+            'collector_id': self.collector.id,
+            'site': self.survey.site.id,
+            'date': '2021-07-09'
+        }
+        self.client.post(
+            '/site-visit/update/1/',
+            post_data
+        )
+        bio = BiologicalCollectionRecord.objects.filter(
+            survey=self.survey
+        )
+        self.assertEqual(bio.count(), 2)
+
     def test_SiteVisitView_update_anonymous_access(self):
         self.client.login(
             username=self.anonymous.username,
@@ -154,7 +184,9 @@ class TestSiteVisitView(TestCase):
         post_data = {
             'collection-id-list': [bio_1.id],
             'site': self.survey.site.id,
-            'date': '2021-07-09'
+            'date': '2021-07-09',
+            'owner_id': 9999,
+            'collector_id': 9999
         }
         response = self.client.post(
             '/site-visit/update/1/',

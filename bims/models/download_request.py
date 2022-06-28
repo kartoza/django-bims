@@ -6,8 +6,8 @@ from datetime import datetime
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from bims.tasks.email_csv import send_csv_via_email
 from bims.api_views.csv_download import (
-    send_csv_via_email,
     send_rejection_csv,
     send_new_csv_notification
 )
@@ -134,6 +134,11 @@ class DownloadRequest(models.Model):
         null=True,
         blank=True
     )
+    progress = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
@@ -167,20 +172,20 @@ class DownloadRequest(models.Model):
             super(DownloadRequest, self).save(*args, **kwargs)
             return
 
-        if self._state.adding:
+        if self.id:
+            old_obj = DownloadRequest.objects.get(id=self.id)
+
+        if old_obj and not old_obj.request_file and self.request_file:
             send_new_csv_notification(
                 self.requester,
                 self.request_date
             )
 
-        if self.id:
-            old_obj = DownloadRequest.objects.get(id=self.id)
-
         if old_obj and not self.processing and not self.rejected:
             if self.approved and self.approved != old_obj.approved:
                 # send email
-                send_csv_via_email(
-                    self.requester,
+                send_csv_via_email.delay(
+                    self.requester.id,
                     self.request_file.path,
                     self.request_category,
                     approved=True

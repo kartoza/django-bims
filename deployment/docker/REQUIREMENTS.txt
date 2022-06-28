@@ -89,3 +89,4 @@ MarkupSafe==1.1.1
 pygbif==0.6.0
 celery==5.2.6
 pycurl==7.45.0
+django-forms-bootstrap==3.1.0

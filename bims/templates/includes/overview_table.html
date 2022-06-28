@@ -27,6 +27,7 @@
             <th>Site description</th>
             <td>{{ site_description }}</td>
         </tr>
+        {% if preferences.SiteSetting.default_data_source == 'fbis' %}
         <tr>
             <th class="title-row" colspan="2">River and
                 Geomorphological Zone
@@ -40,6 +41,7 @@
             <th>River</th>
             <td>{{ river }}</td>
         </tr>
+        {% endif %}
         </tbody>
     </table>
 </div>
@@ -123,5 +125,7 @@
         });
     }
 
+    {% if preferences.SiteSetting.default_data_source == 'fbis' %}
     renderLocationContextTable();
+    {% endif %}
 </script>

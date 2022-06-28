@@ -104,25 +104,32 @@ $(function () {
         )
     }
 
+    let extent = defaultExtentMap.split(',');
+    let newExtent = [];
+    for (let e = 0; e < extent.length; e++) {
+        newExtent.push(parseFloat(extent[e]));
+    }
+    extent = ol.proj.transformExtent(newExtent, 'EPSG:4326', 'EPSG:3857');
+
     map = new ol.Map({
         target: 'site-map',
         layers: baseLayer,
         view: mapView
     });
 
-    let options = {
-        url: 'https://maps.kartoza.com/geoserver/wms',
-        params: {
-            layers: 'kartoza:sa_rivers',
-            format: 'image/png'
-        }
-    };
-
-    let riverLayer = new ol.layer.Tile({
-        source: new ol.source.TileWMS(options)
-    });
-
-    map.addLayer(riverLayer);
+    if (isFbis) {
+        let options = {
+            url: 'https://maps.kartoza.com/geoserver/wms',
+            params: {
+                layers: 'kartoza:sa_rivers',
+                format: 'image/png'
+            }
+        };
+        let riverLayer = new ol.layer.Tile({
+            source: new ol.source.TileWMS(options)
+        });
+        map.addLayer(riverLayer);
+    }
 
     map.on('click', function (e) {
         let coords = ol.proj.toLonLat(e.coordinate);
@@ -132,6 +139,8 @@ $(function () {
         $('#longitude').val(lon);
         updateCoordinate(false);
     });
+
+    map.getView().fit(extent);
 
     $('[data-toggle="popover"]').popover();
 

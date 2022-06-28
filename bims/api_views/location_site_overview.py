@@ -13,7 +13,7 @@ from bims.models import (
     IUCNStatus, ChemicalRecord,
 )
 from bims.enums import TaxonomicGroupCategory
-from sass.models import SiteVisitTaxon
+from sass.models.site_visit_taxon import SiteVisitTaxon
 from bims.models.location_site import LocationSite
 from bims.serializers.location_site_detail_serializer import (
     LocationSiteDetailSerializer,
@@ -67,9 +67,16 @@ class LocationSiteOverviewData(object):
 
             if group_records.exists() and not self.is_sass_exist:
                 try:
-                    self.is_sass_exist = group_records.filter(
-                        sitevisittaxon__isnull=False
-                    ).exists()
+                    if isinstance(
+                            collection_results.first(),
+                            SiteVisitTaxon):
+                        self.is_sass_exist = group_records.filter(
+                            site_visit__isnull=False
+                        ).exists()
+                    else:
+                        self.is_sass_exist = group_records.filter(
+                            sitevisittaxon__isnull=False
+                        ).exists()
                 except:  # noqa
                     self.is_sass_exist = False
 

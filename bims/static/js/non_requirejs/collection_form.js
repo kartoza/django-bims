@@ -357,6 +357,8 @@ $(function () {
 
     let form = $('#fish-form');
     $('#submit').click((event) => {
+        event.preventDefault();
+        $('#submit').attr('disabled','disabled').addClass('disabled');
         let required_inputs = $('input,textarea,select').filter('[required]:visible');
         let isError = false;
         let alertMessage = '';
@@ -379,8 +381,10 @@ $(function () {
             }
         });
         if ($('.observed:checkbox:checked').length === 0) {
-            isError = true;
-            alertMessage = 'You must at least add one collection data';
+            if (!chemicalCollectionRecordCount) {
+                isError = true;
+                alertMessage = 'You must at least add one collection data';
+            }
         } else {
             let alertDiv = $('.alert-danger');
             alertDiv.html('');
@@ -394,6 +398,7 @@ $(function () {
         if (isError) {
             event.preventDefault();
             event.stopPropagation();
+            $('#submit').attr('disabled','').removeClass('disabled');
             $('#confirm-submit').modal('hide');
             setTimeout(function () {
                 window.scrollTo(0, 0);

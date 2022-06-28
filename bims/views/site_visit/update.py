@@ -1,6 +1,10 @@
 import time
 import uuid
 from datetime import datetime as libdatetime
+
+from django.contrib.auth import get_user_model
+
+from bims.models.taxonomy import Taxonomy
 from django.views.generic.edit import UpdateView
 from django.urls import reverse
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -25,7 +29,7 @@ class SiteVisitUpdateView(
     pk_url_kwarg = 'sitevisitid'
     model = Survey
     fields = ['site', 'date']
-    collection_records = None
+    collection_records = BiologicalCollectionRecord.objects.none()
     session_identifier = 'site-visit-form'
 
     def test_func(self):
@@ -67,41 +71,122 @@ class SiteVisitUpdateView(
         # It should return an HttpResponse.
         collection_id_list = form.data.get('collection-id-list', '')
         collection_id_list = collection_id_list.split(',')
-        self.collection_records = BiologicalCollectionRecord.objects.filter(
-            id__in=collection_id_list
-        )
-        for collection_record in self.collection_records:
-            collection_record.present = (
-                    form.data.get('{}-observed'.format(
-                        collection_record.id
-                    ), '') == 'on'
-            )
-            collection_record.abundance_number = (
-                float(form.data.get('{}-abundance'.format(
-                    collection_record.id
-                ), 0))
-            )
-            sampling_effort = form.data.get('sampling_effort', '')
-            if sampling_effort:
-                sampling_effort += (
-                        ' ' + form.data.get('sampling_effort_type', '')
-                )
-                collection_record.sampling_effort = sampling_effort
-            collection_record.save()
-        self.collection_records.update(
-            biotope=form.data.get('biotope', None),
-            specific_biotope=form.data.get('specific_biotope', None),
-            substratum=form.data.get('substratum', None),
-            sampling_method=form.data.get('sampling_method', None),
-            abundance_type=form.data.get('abundance_type', ''),
-            owner=form.data.get('owner_id', None),
-            collector_user=form.data.get('collector_id', None)
-        )
+        collection_id_list = [x for x in collection_id_list if x != '']
+        taxa_id_list = form.data.get('taxa-id-list', '')
+        owner_id = form.data.get('owner_id', None)
+        collector_id = form.data.get('collector_id', None)
+        owner = None
+        collector_user = None
+        if owner_id:
+            try:
+                owner = get_user_model().objects.get(
+                    id=int(owner_id))
+            except get_user_model().DoesNotExist:
+                owner = None
 
-        # Remove deleted collection records
-        self.remove_collection_records(
-            excluded_collection_list=collection_id_list
-        )
+        if collector_id:
+            try:
+                collector_user = get_user_model().objects.get(
+                    id=int(collector_id))
+            except get_user_model().DoesNotExist:
+                collector_user = None
+
+        if collection_id_list:
+            self.collection_records = BiologicalCollectionRecord.objects.filter(
+                id__in=collection_id_list
+            )
+            for collection_record in self.collection_records:
+                collection_record.present = (
+                        form.data.get('{}-observed'.format(
+                            collection_record.id
+                        ), '') == 'on'
+                )
+                collection_record.abundance_number = (
+                    float(form.data.get('{}-abundance'.format(
+                        collection_record.id
+                    ), 0))
+                )
+                sampling_effort = form.data.get('sampling_effort', '')
+                if sampling_effort:
+                    sampling_effort += (
+                            ' ' + form.data.get('sampling_effort_type', '')
+                    )
+                    collection_record.sampling_effort = sampling_effort
+                collection_record.save()
+            self.collection_records.update(
+                biotope_id=form.data.get('biotope', None),
+                specific_biotope_id=form.data.get('specific_biotope', None),
+                substratum_id=form.data.get('substratum', None),
+                sampling_method_id=form.data.get('sampling_method', None),
+                abundance_type=form.data.get('abundance_type', ''),
+                owner=owner,
+                collector_user=collector_user
+            )
+
+            # Remove deleted collection records
+            self.remove_collection_records(
+                excluded_collection_list=collection_id_list
+            )
+
+        # Check if there is a new collection record
+        if taxa_id_list:
+            taxa_id_list = taxa_id_list.split(',')
+            taxa_id_list = filter(None, taxa_id_list)
+            for taxon in taxa_id_list:
+                observed_key = '{}-observed'.format(taxon)
+                abundance_key = '{}-abundance'.format(taxon)
+                taxonomy = Taxonomy.objects.get(
+                    id=taxon
+                )
+                try:
+                    if form.data[observed_key] == 'True':
+                        abundance = form.data[abundance_key]
+                        if abundance:
+                            abundance = float(abundance)
+                        else:
+                            abundance = 0.0
+                        collection_record, status = (
+                            BiologicalCollectionRecord.objects.get_or_create(
+                                collection_date=self.object.date,
+                                taxonomy=taxonomy,
+                                original_species_name=taxonomy.canonical_name,
+                                site=self.object.site,
+                                collector_user=collector_user,
+                                sampling_method_id=form.data.get(
+                                    'sampling_method', None),
+                                abundance_number=abundance,
+                                owner=owner,
+                                biotope_id=form.data.get('biotope', None),
+                                specific_biotope_id=(
+                                    form.data.get('specific_biotope', None)
+                                ),
+                                substratum_id=(
+                                    form.data.get('substratum', None)
+                                ),
+                                reference=form.data.get(
+                                    'study_reference', ''
+                                ),
+                                reference_category=form.data.get(
+                                    'reference_category', ''
+                                ),
+                                sampling_effort=form.data.get(
+                                    'sampling_effort', ''),
+                                abundance_type=form.data.get(
+                                    'abundance_type', ''),
+                                survey=self.object,
+                                record_type=form.data.get(
+                                    'record_type', ''
+                                )
+                            )
+                        )
+                        if status:
+                            print(
+                                'Collection record added with id {}'.format(
+                                    collection_record.id
+                                )
+                            )
+                except KeyError:
+                    continue
 
         # Add site image
         site_image_file = self.request.FILES.get('site-image', None)
@@ -119,8 +204,12 @@ class SiteVisitUpdateView(
             self.object.validated
         ):
             self.object.validated = False
-        self.object.owner = self.collection_records[0].owner
-        self.object.collector_user = self.collection_records[0].collector_user
+
+        if self.collection_records:
+            self.object.owner = self.collection_records.first().owner
+            self.object.collector_user = (
+                self.collection_records.first().collector_user
+            )
 
         # -- Algae data
         curation_process = form.data.get('curation_process', None)

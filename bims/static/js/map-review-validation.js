@@ -229,13 +229,11 @@ function updateSelectedFilter(customUrl) {
 }
 
 if(window.location.href.split('?')[1]){
-    if(!window.location.href.split('?')[1].includes("page")){
+    if (window.location.href.includes('owner') || window.location.href.includes('river_name') || window.location.href.includes('site_code')) {
         const $btnReset = $('#btn-reset');
         $btnReset.show();
-        $btnReset.click( function (){
-        window.location.href = window.location.href.split('?')[0];
-    });
+        $btnReset.click( function () {
+            window.location.href = window.location.href.split('?')[0];
+        })
     }
-
 }
-

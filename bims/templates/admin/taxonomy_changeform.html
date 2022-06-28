@@ -3,25 +3,30 @@
 {% block submit_buttons_bottom %}
     {{ block.super }}
     <script>
-        function comfirmGBIF(key, scientificName, canonicalName, taxonomicStatus) {
-            const $gbifKey = document.getElementById('id_gbif_key');
-            const $scientificName = document.getElementById('id_scientific_name');
-            const $canonicalName = document.getElementById('id_canonical_name');
-            const $taxonomicStatus = document.getElementById('id_taxonomic_status')
-            const $table = document.getElementById('list-gbif');
-            const $button = document.getElementById('find-gbif');
-            $gbifKey.value = key;
-            $scientificName.value = scientificName;
-            $canonicalName.value = canonicalName;
-            $taxonomicStatus.value = taxonomicStatus;
-            $table.innerText = "";
-
+        function comfirmGBIF(event, key, scientificName, canonicalName, taxonomicStatus) {
+            // Get data from gbif
+            event.preventDefault();
+            document.getElementById('id_scientific_name').value = scientificName;
+            document.getElementById('id_canonical_name').value = canonicalName;
+            document.getElementById('id_taxonomic_status').value = taxonomicStatus;
+            document.getElementById('id_gbif_key').value = key;
+            let container = document.getElementById("id_additional_data");
+            let containerValue = {}
+            if (container.value !== 'null' && container.value !== '') {
+                containerValue = JSON.parse(container.value);
+            }
+            containerValue['fetch_gbif'] = true;
+            container.value = JSON.stringify(containerValue);
+            document.getElementById("taxonomy_form").submit();
         }
 
         (function($) {
             $(document).ready(function() {
                 $('#grp-content').find('.iucn_status ').find('.c-2').append(
-                    `<button class="grp-button" style="width: 150px;" id="find-iucn">Find IUCN</button>`
+                    `<button class="grp-button" style="width: 250px;" id="find-iucn">Find Global Red List Status (IUCN)</button>`
+                );
+                $('#grp-content').find('.national_conservation_status ').find('.c-2').append(
+                    `<button class="grp-button" style="width: 250px;" id="find-national_conservation_status">Find National Conservation Status</button>`
                 );
                 $('#find-iucn').click(function(e) {
                     e.preventDefault();
@@ -66,21 +71,25 @@
                     let results = '{{ results|safe }}';
                     if(results === "None") results = "";
                     if(results !== "") {
-                        let row = `<table class="grp-table grp-sortable" id="list-gbif" style="border: none; display: block"><tbody style="border: none">`
+                        let row = `<table class="grp-table grp-sortable" id="list-gbif" style="border: none; display: block"><tbody style="border: none">` +
+                                   `<th>Key</th><th>Kingdom</th><th>Scientific Name</th><th>Canonical Name</th><th>Rank</th><th>Status</th><th>Parent</th><th>Action</th>`
                         let suggest = JSON.parse(results);
                         suggest.forEach(function (value){
-                            row += `<tr style="border: none"><td style="border: none">`+value.key+`</td>
-                                    <td style="border: none">`+value.kingdom+`</td>
-                                    <td style="border: none">`+value.scientificName+`</td>
-                                    <td style="border: none">`+value.canonicalName+`</td>
-                                    <td style="border: none">`+value.rank+`</td>
-                                    <td style="border: none"><button class="grp-button" style="width: 150px; margin-left: 10px"
+                            console.log(value);
+                            row += `<tr><td>`+value.key+`</td>
+                                    <td>`+value.kingdom+`</td>
+                                    <td>`+value.scientificName+`</td>
+                                    <td>`+value.canonicalName+`</td>
+                                    <td>`+value.rank+`</td>
+                                    <td>`+value.status+`</td>
+                                    <td>`+value.parent+`</td>
+                                    <td><button class="grp-button" style="width: 150px; margin-left: 10px"
                                     id="confirm-gbif" data-taxonomic-status="`+value.status+`" data-key="`+value.key+`"
                                     data-scientific-name="`+value.scientificName+`"data-canonical-name="`+value.canonicalName+`"
-                                    onclick="comfirmGBIF('`+value.key+`', '`+value.scientificName+`',
+                                    onclick="comfirmGBIF(event, '`+value.key+`', '`+value.scientificName+`',
                                     '`+value.canonicalName+`', '`+value.status+`'
-                                    ); return false;">
-                                    Add</button></td></tr>`
+                                    );">
+                                    Update</button></td></tr>`
 
                         });
                         row += '</tbody></table>'

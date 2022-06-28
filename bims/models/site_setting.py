@@ -203,6 +203,11 @@ class SiteSetting(Preferences):
         help_text='Enable or disable SASS'
     )
 
+    enable_water_temperature = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Water Temperature data'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(
@@ -248,6 +253,12 @@ class SiteSetting(Preferences):
         blank=True,
         default='',
         help_text='The key of the boundary data form GeoContext'
+    )
+
+    copyright_text = models.CharField(
+        max_length=200,
+        blank=True,
+        default='Copyright © Kartoza'
     )
 
     def save(self, *args, **kwargs):

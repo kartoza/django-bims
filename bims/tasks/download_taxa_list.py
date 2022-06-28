@@ -54,7 +54,8 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
         send_csv_via_email(
             user=user,
             csv_file=csv_file_path,
-            file_name=filename
+            file_name=filename,
+            approved=True
         )
     except UserModel.DoesNotExist:
         pass

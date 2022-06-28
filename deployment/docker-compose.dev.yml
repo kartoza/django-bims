@@ -16,6 +16,7 @@ x-common-django:
     - APP_NAME=bims
     - ASYNC_SIGNALS=True
     - BROKER_URL=amqp://rabbitmq:5672
+    - CELERY_BROKER_URL=amqp://rabbitmq:5672
     - C_FORCE_ROOT=1
     - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
     - ALLOWED_HOSTS=['*']
@@ -24,7 +25,7 @@ x-common-django:
     - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
     - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
     - DATABASE_USERNAME=${POSTGRES_USER:-docker}
-    - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+    - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
     - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
     - GEOSERVER_LOCATION=http://geoserver/geoserver/
     - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
@@ -55,7 +56,7 @@ services:
 
   db:
     container_name: bims_dev_db
-    image: kartoza/postgis:14-3.2
+    image: kartoza/postgis:11.5-2.5
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
       POSTGRES_USER: ${POSTGRES_USER:-docker}
@@ -101,12 +102,13 @@ services:
     links:
       - db:db
       - cache:cache
+      - rabbitmq:rabbitmq
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
       - ./scheduler-data:/home/scheduler-data
-    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -B --schedule /home/scheduler-data/celerybeat-schedule -l debug
+    command: celery --app=bims.celery:app worker --schedule /home/geocontext-scheduler/celerybeat-schedule -B --schedule /home/scheduler-data/celerybeat-schedule -l debug
 
   dev:
     <<: *default-common-django
