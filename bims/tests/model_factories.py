@@ -2,6 +2,8 @@
 import factory
 import random
 
+from bims.models.sampling_method import SamplingMethod
+
 from bims.models.chem import Chem, Unit
 
 from bims.models.source_reference import SourceReferenceDocument
@@ -446,3 +448,10 @@ class ChemicalRecordF(factory.django.DjangoModelFactory):
 
     survey = factory.SubFactory(SurveyF)
     chem = factory.SubFactory(ChemF)
+
+
+class SamplingMethodF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SamplingMethod
+
+    sampling_method = factory.Sequence(lambda n: u'method %s' % n)

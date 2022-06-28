@@ -5,6 +5,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from mobile.api_views.choices import AllChoicesApi
 from mobile.api_views.location_site import NearestLocationSites
 from mobile.api_views.taxa import AllTaxa
+from mobile.api_views.add_site_visit import AddSiteVisit
 
 
 urlpatterns = [
@@ -18,4 +19,7 @@ urlpatterns = [
         AllTaxa.as_view(),
         name='all-taxa'
         ),
+    url(r'^add-site-visit/$',
+        AddSiteVisit.as_view(),
+        name='mobile-add-site-visit')
 ]

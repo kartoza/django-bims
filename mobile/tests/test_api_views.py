@@ -6,8 +6,10 @@ from rest_framework.test import APIClient
 
 from bims.tests.model_factories import (
     LocationSiteF, TaxonomyF,
-    TaxonGroupF, UserF, BiotopeF
+    TaxonGroupF, UserF, BiotopeF, SamplingMethodF
 )
+from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.survey import Survey
 
 
 class TestLocationSiteMobile(TestCase):
@@ -118,3 +120,107 @@ class TestChoicesApi(TestCase):
             res.data.get('broad_biotope')[0]['id'],
             biotope.id
         )
+
+
+class TestAddSiteVisit(TestCase):
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = UserF.create(is_superuser=True)
+        self.client.login(
+            username=self.user.username,
+            password='password'
+        )
+        self.api_url = reverse('mobile-add-site-visit')
+
+    def test_add_survey_without_data(self):
+        res = self.client.post(
+            self.api_url,
+            {}
+        )
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_add_survey(self):
+        location_site = LocationSiteF.create()
+        data = {
+            'date': '2022-12-30',
+            'owner_id': self.user.id,
+            'site-id': location_site.id
+        }
+        res = self.client.post(
+            self.api_url,
+            data
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(
+            Survey.objects.filter(
+                date=data['date'],
+                owner=self.user,
+                collector_user=self.user,
+                site=location_site
+            ).count() == 1
+        )
+
+    def test_add_survey_occurrences(self):
+        location_site = LocationSiteF.create()
+        taxa = TaxonomyF.create()
+        biotope = BiotopeF.create(
+            biotope_type='broad'
+        )
+        specific_biotope = BiotopeF.create(
+            biotope_type='specific'
+        )
+        substratum = BiotopeF.create(
+            biotope_type='substratum'
+        )
+        sampling_method = SamplingMethodF.create()
+
+        data = {
+            'date': '2022-12-30',
+            'owner_id': self.user.id,
+            'site-id': location_site.id,
+            'taxa-id-list': ','.join(f'{taxa.id}'),
+            f'{taxa.id}-observed': 'True',
+            f'{taxa.id}-abundance': '10',
+            'abundance_type': 'number',
+            'record_type': 'mobile',
+            'biotope': biotope.id,
+            'specific_biotope': specific_biotope.id,
+            'substratum': substratum.id,
+            'sampling_method': sampling_method.id
+        }
+        res = self.client.post(
+            self.api_url,
+            data
+        )
+        self.assertEqual(len(res.data), 1)
+        bio = BiologicalCollectionRecord.objects.get(
+            id=res.data[0]
+        )
+        self.assertEqual(
+            bio.sampling_method, sampling_method
+        )
+        self.assertEqual(
+            bio.biotope, biotope
+        )
+
+    def test_add_survey_occurrences_missing_abundance(self):
+        location_site = LocationSiteF.create()
+        taxa = TaxonomyF.create()
+        taxa_2 = TaxonomyF.create()
+
+        data = {
+            'date': '2022-12-30',
+            'owner_id': self.user.id,
+            'site-id': location_site.id,
+            'taxa-id-list': ','.join(f'{taxa.id},{taxa_2.id}'),
+            f'{taxa.id}-observed': 'True',
+            f'{taxa.id}-abundance': '10',
+            'abundance_type': 'number',
+            'record_type': 'mobile',
+        }
+        res = self.client.post(
+            self.api_url,
+            data
+        )
+        self.assertEqual(len(res.data), 1)

@@ -323,7 +323,8 @@ class BiologicalCollectionRecord(AbstractValidation):
     record_type = models.CharField(
         max_length=50,
         blank=True,
-        default=''
+        default='',
+        null=True
     )
 
     @property
