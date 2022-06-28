@@ -6,6 +6,7 @@ from mobile.api_views.choices import AllChoicesApi
 from mobile.api_views.location_site import NearestLocationSites
 from mobile.api_views.taxa import AllTaxa
 from mobile.api_views.add_site_visit import AddSiteVisit
+from mobile.api_views.add_location_site import AddLocationSiteView
 
 
 urlpatterns = [
@@ -21,5 +22,8 @@ urlpatterns = [
         ),
     url(r'^add-site-visit/$',
         AddSiteVisit.as_view(),
-        name='mobile-add-site-visit')
+        name='mobile-add-site-visit'),
+    url(r'^add-location-site/$',
+        AddLocationSiteView.as_view(),
+        name='mobile-add-location-site')
 ]

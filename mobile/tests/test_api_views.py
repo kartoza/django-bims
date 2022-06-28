@@ -1,3 +1,9 @@
+import json
+
+import factory
+from django.db.models import signals
+
+from bims.models.location_site import LocationSite
 from django.contrib.gis.geos import Point
 from django.test import TestCase
 from django.urls import reverse
@@ -224,3 +230,65 @@ class TestAddSiteVisit(TestCase):
             data
         )
         self.assertEqual(len(res.data), 1)
+
+
+class TestAddLocationSite(TestCase):
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = UserF.create(is_superuser=True)
+        self.client.login(
+            username=self.user.username,
+            password='password'
+        )
+        self.api_url = reverse('mobile-add-location-site')
+        self.post_data = {
+            'owner': self.user.id,
+            'latitude': 1,
+            'longitude': 1,
+            'river_name': 'RIVER',
+            'site_code': 'SITE_CODE',
+            'site_description': 'desc',
+            'additional_data': json.dumps({
+                'source_collection': 'mobile'
+            })
+        }
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_update_location_site(self):
+        location_site = LocationSiteF.create(
+            additional_data={
+                'data': 'test'
+            },
+            owner=self.user
+        )
+        update_url = reverse('location-site-update-form')
+        post_data = self.post_data
+        post_data['id'] = location_site.id
+        res = self.client.post(
+            update_url,
+            post_data
+        )
+        self.assertEqual(res.status_code, status.HTTP_302_FOUND)
+        location_site = LocationSite.objects.get(
+            id=location_site.id
+        )
+        self.assertEqual(
+            location_site.additional_data.get('source_collection'),
+            'mobile'
+        )
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_add_location_site(self):
+        res = self.client.post(
+            self.api_url,
+            self.post_data
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        location_site = LocationSite.objects.get(
+            id=res.data
+        )
+        self.assertEqual(
+            location_site.additional_data.get('source_collection'),
+            'mobile'
+        )
