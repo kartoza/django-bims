@@ -374,6 +374,17 @@ class BiotopeF(factory.django.DjangoModelFactory):
     class Meta:
         model = Biotope
 
+    @factory.post_generation
+    def taxon_group(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for taxon_group in extracted:
+                self.taxon_group.add(taxon_group)
+
 
 class SourceReferenceF(factory.django.DjangoModelFactory):
     class Meta:
