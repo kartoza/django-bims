@@ -890,9 +890,23 @@ $(function () {
     }
     $('.download-as-csv').click(onDownloadCSVClicked);
     $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
-    $('.download-latest-as-csv').on('click', function () {
-        var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
-        exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
+    $('.download-latest-as-csv').on('click', function (e) {
+        let downloadButton = $(e.target);
+        let includeAllTaxon = $('#include-all-taxon').prop('checked');
+        if (includeAllTaxon) {
+            let csv_name = getCsvName('Sass taxon data', 'all');
+            let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}`;
+            showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
+                downloadButton.html("Processing...");
+                downloadButton.prop("disabled", true);
+                downloadCSV(url, downloadButton, csv_name);
+            });
+        }
+        else{
+            var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
+            exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
+        }
+
     });
 
     $('[data-toggle="tooltip"]').tooltip();
