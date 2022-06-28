@@ -174,12 +174,13 @@ def download_sass_taxon_data(request, **kwargs):
             user=request.user,
             csv_file=path_file,
             file_name=csv_name,
-            download_request_id=request.get('downloadRequestId', '')
+            download_request_id=request.GET.get('downloadRequestId', '')
         )
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_taxon_data_task.delay(
         filename,
+        request.GET,
         path_file,
         user_id=request.user.id,
         send_email=True

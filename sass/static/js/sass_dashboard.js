@@ -894,9 +894,10 @@ $(function () {
         let downloadButton = $(e.target);
         let includeAllTaxon = $('#include-all-taxon').prop('checked');
         if (includeAllTaxon) {
-            let csv_name = getCsvName('Sass taxon data', 'all');
+            let csv_name = getCsvName('All data', 'Sass taxon data');
             let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}`;
             showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
+                url += `&downloadRequestId=${downloadRequestId}`;
                 downloadButton.html("Processing...");
                 downloadButton.prop("disabled", true);
                 downloadCSV(url, downloadButton, csv_name);

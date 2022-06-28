@@ -208,7 +208,7 @@ def download_sass_summary_data_task(
 
 @shared_task(name='sass.tasks.download_sass_taxon_data', queue='update')
 def download_sass_taxon_data_task(
-        filename, path_file, user_id, send_email = False):
+        filename, filters, path_file, user_id, send_email = False):
     from bims.utils.celery import memcache_lock
 
     user = Profile.objects.get(id=user_id)
