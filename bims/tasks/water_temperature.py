@@ -95,9 +95,6 @@ def process_water_temperature_data(
                 else:
                     water_temp_value = temperature['Water temperature']
 
-                if not water_temp_value:
-                    continue
-
                 date_string = temperature[date_field]
                 if len(date_string.split(
                         ':')) > 2 and ':%S' not in date_format:
@@ -132,6 +129,12 @@ def process_water_temperature_data(
                 except:  # noqa
                     query = None
                     is_data_exists = False
+
+                if not water_temp_value:
+                    if is_data_exists:
+                        if query.value < 0:
+                            query.delete()
+                    continue
 
                 water_data['value'] = water_temp_value
                 water_data['is_daily'] = is_daily
