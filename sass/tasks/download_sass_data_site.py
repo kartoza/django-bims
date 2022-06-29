@@ -208,7 +208,7 @@ def download_sass_summary_data_task(
 
 @shared_task(name='sass.tasks.download_sass_taxon_data', queue='update')
 def download_sass_taxon_data_task(
-        filename, filters, path_file, user_id, send_email = False):
+        taxon_filters, sass_version, filename, filters, path_file, user_id, send_email=False):
     from bims.utils.celery import memcache_lock
 
     user = Profile.objects.get(id=user_id)
@@ -220,7 +220,9 @@ def download_sass_taxon_data_task(
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            sass_taxon = SassTaxon.objects.all()
+            sass_taxon = SassTaxon.objects.filter(**taxon_filters).order_by(
+            'display_order_sass_%s' % sass_version
+        )
             serializer = SassTaxonDataSerializer(
                 sass_taxon,
                 many=True

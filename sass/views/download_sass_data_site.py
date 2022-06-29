@@ -6,7 +6,7 @@ import datetime
 from django.http.response import JsonResponse
 from django.conf import settings
 from bims.api_views.search import CollectionSearch
-from sass.models import SassTaxon
+from sass.models import SassTaxon, SiteVisit
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.tasks.download_sass_data_site import (
     download_sass_data_site_task,
@@ -157,10 +157,21 @@ def download_sass_taxon_data(request, **kwargs):
     """
     Download all sass data taxon
     """
-    csv_name = request.GET.get('csvName', 'SASS-Data')
+    csv_name = request.GET.get('csvName')
+    location_site = request.GET.get('siteId')
+    site_visit = SiteVisit.objects.filter(location_site=location_site)
+    sass_version = site_visit[0].sass_version
+    taxon_filters = dict()
+
+    if sass_version == 4:
+        taxon_filters['score__isnull'] = False
+    else:
+        taxon_filters['sass_5_score__isnull'] = False
 
     # Get SASS taxon
-    sass_taxa = SassTaxon.objects.all()
+    sass_taxa = SassTaxon.objects.filter(**taxon_filters).order_by(
+            'display_order_sass_%s' % sass_version
+        )
     if not sass_taxa:
         response_message = 'No SASS taxon data'
         return JsonResponse(get_response(FAILED_STATUS, response_message))
@@ -179,6 +190,8 @@ def download_sass_taxon_data(request, **kwargs):
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_taxon_data_task.delay(
+        taxon_filters,
+        sass_version,
         filename,
         request.GET,
         path_file,

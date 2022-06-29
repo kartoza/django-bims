@@ -895,11 +895,17 @@ $(function () {
         let includeAllTaxon = $('#include-all-taxon').prop('checked');
         if (includeAllTaxon) {
             let csv_name = getCsvName('All data', 'Sass taxon data');
-            let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}`;
+            let currentUrl = window.location.href;
+            let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1)
+            let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}&${queryString}`;
             showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
                 url += `&downloadRequestId=${downloadRequestId}`;
                 downloadButton.html("Processing...");
                 downloadButton.prop("disabled", true);
+                const alertModalBody = $('#alertModalBody');
+                if (!is_logged_in) {
+                    alertModalBody.html('Please log in first.')
+                }
                 downloadCSV(url, downloadButton, csv_name);
             });
         }

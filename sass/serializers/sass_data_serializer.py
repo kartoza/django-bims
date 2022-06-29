@@ -678,8 +678,8 @@ class SassTaxonDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = SassTaxon
         fields = [
-            'TAXA',
             'group',
+            'TAXA',
             'Weight',
             's',
             'v',
