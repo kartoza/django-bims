@@ -895,20 +895,24 @@ $(function () {
         let includeAllTaxon = $('#include-all-taxon').prop('checked');
         if (includeAllTaxon) {
             let csv_name = getCsvName('All data', 'Sass taxon data');
-            let currentUrl = window.location.href;
-            let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1)
-            let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}&${queryString}`;
+            let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}&siteVisitId=${siteVisitId}`;
             showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
-                url += `&downloadRequestId=${downloadRequestId}`;
                 downloadButton.html("Processing...");
                 downloadButton.prop("disabled", true);
                 const alertModalBody = $('#alertModalBody');
                 if (!is_logged_in) {
                     alertModalBody.html('Please log in first.')
+                }else {
+                    alertModalBody.html(downloadRequestMessage);
                 }
-                downloadCSV(url, downloadButton, csv_name);
+                $('#alertModal').modal({
+                    'keyboard': false,
+                    'backdrop': 'static'
+                });
+                url += `&downloadRequestId=${downloadRequestId}`;
+                downloadCSV(url, downloadButton, csv_name, true);
             });
-        }
+                }
         else{
             var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
             exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")

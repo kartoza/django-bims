@@ -158,9 +158,9 @@ def download_sass_taxon_data(request, **kwargs):
     Download all sass data taxon
     """
     csv_name = request.GET.get('csvName')
-    location_site = request.GET.get('siteId')
-    site_visit = SiteVisit.objects.filter(location_site=location_site)
-    sass_version = site_visit[0].sass_version
+    site_visit_id = request.GET.get('siteVisitId')
+    site_visit = SiteVisit.objects.get(id=site_visit_id)
+    sass_version = site_visit.sass_version
     taxon_filters = dict()
 
     if sass_version == 4:
