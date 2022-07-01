@@ -14,6 +14,12 @@ class TaxonGroup(models.Model):
         blank=False
     )
 
+    singular_name = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True
+    )
+
     category = models.CharField(
         verbose_name='Taxonomic Group Category',
         max_length=50,

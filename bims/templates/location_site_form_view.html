@@ -96,7 +96,7 @@
                     <div class="col-lg-12">
                         {% for module in taxon_group %}
                             <a href="/module-form/?siteId={{ site_id }}&module={{ module.id }}"
-                               class="btn btn-info">Add {{ module.name }} data</a>
+                               class="btn btn-info">Add {% if module.singular_name %}{{ module.singular_name }}{% else %}{{ module.name }}{% endif %} data</a>
                         {% endfor %}
 
                         {% if preferences.SiteSetting.enable_sass %}
@@ -104,9 +104,11 @@
                                class="btn btn-info">Add SASS data</a>
                         {% endif %}
 
-                        <a href="/water-temperature-form/?siteId={{ site_id }}"
-                           class="btn btn-info">Add water temperature
-                            data</a>
+                        {% if preferences.SiteSetting.enable_water_temperature %}
+                            <a href="/water-temperature-form/?siteId={{ site_id }}"
+                               class="btn btn-info">Add water temperature
+                                data</a>
+                        {% endif %}
                         <a href="/physico-chemical-form/?siteId={{ site_id }}"
                            class="btn btn-info">Add physico-chemical
                             data</a>

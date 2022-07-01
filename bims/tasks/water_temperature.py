@@ -61,6 +61,7 @@ def process_water_temperature_data(
     is_daily = False
     new_data = []
     existing_data = []
+    blank_value = 0
 
     if float(interval) != 24:
         date_format = date_format + ' %H:%M'
@@ -132,8 +133,8 @@ def process_water_temperature_data(
 
                 if not water_temp_value:
                     if is_data_exists:
-                        if query.value < 0:
-                            query.delete()
+                        query.delete()
+                        blank_value += 1
                     continue
 
                 water_data['value'] = water_temp_value
@@ -185,6 +186,10 @@ def process_water_temperature_data(
                 )
                 success_response += '{} data has been updated.'.format(
                     len(existing_data)
+                )
+            if blank_value > 0:
+                success_response += '\n' + '{} data has been updated.'.format(
+                    blank_value
                 )
             print('Finished {}'.format(
                 time.time() - start_time))

@@ -181,6 +181,14 @@ class Taxonomy(models.Model):
         null=True,
     )
 
+    accepted_taxonomy = models.ForeignKey(
+        related_name='synonym',
+        to='self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
     def save_json_data(self, json_field):
         max_allowed = 10
         attempt = 0
@@ -200,11 +208,23 @@ class Taxonomy(models.Model):
         return json_data
 
     def save(self, *args, **kwargs):
+        update_taxon_with_gbif = False
         if self.gbif_data:
             self.gbif_data = self.save_json_data(self.gbif_data)
         if self.additional_data:
             self.additional_data = self.save_json_data(self.additional_data)
+        if self.additional_data and 'fetch_gbif' in self.additional_data:
+            update_taxon_with_gbif = True
+            del self.additional_data['fetch_gbif']
         super(Taxonomy, self).save(*args, **kwargs)
+
+        if update_taxon_with_gbif:
+            from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+            fetch_all_species_from_gbif(
+                species=self.scientific_name,
+                parent=self.parent,
+                gbif_key=self.gbif_key,
+                fetch_vernacular_names=True)
 
     # noinspection PyClassicStyleClass
     class Meta:
@@ -370,3 +390,73 @@ class TaxonImage(models.Model):
     taxonomy = models.ForeignKey(
         Taxonomy, on_delete=models.CASCADE
     )
+
+
+def check_taxa_duplicates(taxon_name, taxon_rank):
+    """
+    Check for taxa duplicates, then merge if found
+    :param taxon_name: Name of the taxon to check
+    :param taxon_rank: Rank of the taxon to check
+    :return: Merged taxonomy
+    """
+    from django.db.models import Q, Min
+    from bims.utils.gbif import get_species
+    from bims.utils.fetch_gbif import merge_taxa_data
+
+    taxon_rank = taxon_rank.strip().upper()
+    taxon_name = taxon_name.strip()
+    taxa = Taxonomy.objects.filter(
+        Q(canonical_name__iexact=taxon_name) |
+        Q(legacy_canonical_name__icontains=taxon_name),
+        rank=taxon_rank
+    )
+    if not taxa.count() > 1:
+        return
+    preferred_taxa = taxa
+    accepted_taxa = taxa.filter(taxonomic_status='ACCEPTED')
+    if accepted_taxa.exists():
+        preferred_taxa = accepted_taxa
+    preferred_taxon = preferred_taxa.values('gbif_key', 'id').annotate(
+        Min('gbif_key')).order_by('gbif_key')[0]
+    preferred_taxon_gbif_data = get_species(preferred_taxon['gbif_key'])
+    preferred_taxon = Taxonomy.objects.get(
+        id=preferred_taxon['id']
+    )
+    for taxon in taxa[1:]:
+        gbif_data = get_species(taxon.gbif_key)
+        if not preferred_taxon_gbif_data:
+            preferred_taxon = taxon
+            preferred_taxon_gbif_data = gbif_data
+            continue
+        if not gbif_data:
+            continue
+        if gbif_data['taxonomicStatus'] == 'ACCEPTED':
+            preferred_taxon_gbif_data = gbif_data
+            preferred_taxon = taxon
+            continue
+        if 'issues' in gbif_data and len(gbif_data['issues']) > 0:
+            continue
+        if 'nubKey' not in gbif_data:
+            continue
+        if (
+            'taxonomicStatus' in gbif_data and
+            gbif_data['taxonomicStatus'] != 'ACCEPTED'
+        ):
+            continue
+        if 'key' not in preferred_taxon_gbif_data:
+            preferred_taxon = taxon
+            preferred_taxon_gbif_data = gbif_data
+            continue
+        if (
+            'key' in gbif_data and
+            gbif_data['key'] > preferred_taxon_gbif_data['key']
+        ):
+            continue
+        preferred_taxon = taxon
+        preferred_taxon_gbif_data = gbif_data
+
+    merge_taxa_data(
+        taxa_list=taxa.exclude(id=preferred_taxon.id),
+        excluded_taxon=preferred_taxon
+    )
+    return preferred_taxon

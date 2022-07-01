@@ -203,6 +203,11 @@ class SiteSetting(Preferences):
         help_text='Enable or disable SASS'
     )
 
+    enable_water_temperature = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Water Temperature data'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(
@@ -215,14 +220,6 @@ class SiteSetting(Preferences):
         default=False,
         help_text=(
             'Show summative figure for data by taxon group'
-        )
-    )
-
-    show_summary_data_on_dashboard = models.BooleanField(
-        default=True,
-        help_text=(
-            'Show summary data on the dashboard ('
-            'Total Location Sites, Collection Records, Site Visits)'
         )
     )
 
