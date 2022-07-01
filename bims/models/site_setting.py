@@ -223,14 +223,6 @@ class SiteSetting(Preferences):
         )
     )
 
-    show_summary_data_on_dashboard = models.BooleanField(
-        default=True,
-        help_text=(
-            'Show summary data on the dashboard ('
-            'Total Location Sites, Collection Records, Site Visits)'
-        )
-    )
-
     enable_remove_all_occurrences_tool = models.BooleanField(
         default=False,
         help_text=(
