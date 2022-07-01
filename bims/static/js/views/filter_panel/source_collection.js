@@ -74,7 +74,7 @@ define([
                 this.listWrapper.append('<div style="padding-bottom: 10px;">' +
                     '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="' + data[i].get('source_collection') + '"  ' + checked + ' >&nbsp;' +
                     '<label for="source-collection-list-'+i+'" style="margin-bottom: 0 !important;">'+ label.replace('_', ' ').toUpperCase() + '</label>' +
-                    '<span>&nbsp;<i class="fa fa-info-circle layer-source data-source" aria-hidden="true"></i></span>' +
+                    (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase()) && isFBIS ? '<span>&nbsp;<i class="fa fa-info-circle layer-source data-source" aria-hidden="true"></i></span>' : '') +
                     dataSourceCaption +
                     '</div>');
 
