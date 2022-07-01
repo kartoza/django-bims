@@ -163,24 +163,7 @@
         };
         createDonutGraph(moduleContainer, moduleChartDataset)
     }
-
-
-    if (showDataSummaries) {
-        $.get('/api/landing-page-summary/').then(
-            function (data) {
-                const $container = $('.summary-data');
-
-                $.each(data, function (index, summaryData) {
-                    $container.append(
-                        `<div class="col-md-4">
-                        <i class="fa ${summaryData['icon']}"></i>
-                        <p>${getNumberWithCommas(summaryData['value'])} ${summaryData['title']}</p>
-                   </div>`
-                    )
-                });
-            }
-        )
-    }
+    
     if (showModuleSummaries) {
         $.get('/api/module-summary').then(
             function (data) {

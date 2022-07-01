@@ -13,7 +13,6 @@
     <script type="text/javascript">
         const summaries = '{{ summaries|jsonify|safe }}';
         const showModuleSummaries = {% if preferences.SiteSetting.show_module_summary_on_dashboard %}true{% else %}false{% endif %};
-        const showDataSummaries = {% if preferences.SiteSetting.show_summary_data_on_dashboard %}true{% else %}false{% endif %};
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
