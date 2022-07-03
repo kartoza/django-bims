@@ -46,7 +46,7 @@ from bims.models import (
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif, check_taxa_duplicates
+    fetch_all_species_from_gbif
 )
 from bims.utils.user import create_users_from_string
 from geonode.documents.models import Document
@@ -529,7 +529,7 @@ class Command(BaseCommand):
                 taxonomy = fetch_all_species_from_gbif(
                     species=species_name,
                     taxonomic_rank=taxon_rank,
-                    should_get_children=False,
+                    fetch_children=False,
                     fetch_vernacular_names=False,
                     use_name_lookup=True
                 )
@@ -538,7 +538,7 @@ class Command(BaseCommand):
                     taxonomy = fetch_all_species_from_gbif(
                         species=species_name,
                         taxonomic_rank=taxon_rank,
-                        should_get_children=False,
+                        fetch_children=False,
                         fetch_vernacular_names=False,
                         use_name_lookup=False
                     )

@@ -55,6 +55,16 @@
                             <%= scientific_name %>
                         </td>
                     </tr>
+                    <% if (accepted_taxonomy_name) { %>
+                     <tr class="species-detail-row">
+                        <td class="species-detail-cell cell-header">
+                            Accepted Taxonomy
+                        </td>
+                        <td class="species-detail-cell cell-content">
+                            <%= accepted_taxonomy_name %>
+                        </td>
+                    </tr>
+                    <% } %>
                     <tr class="species-detail-row">
                         <td class="species-detail-cell cell-header">
                             Common Name
