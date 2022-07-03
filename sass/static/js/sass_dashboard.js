@@ -646,20 +646,21 @@ function onDownloadCSVClicked(e) {
     let url = `/sass/download-sass-data-site/?csvName=${csvName}&${queryString}`;
 
     showDownloadPopup('CSV', csvName, function (downloadRequestId) {
-        downloadButton.html("Processing...");
-        downloadButton.prop("disabled", true);
         const alertModalBody = $('#alertModalBody');
         if (!is_logged_in) {
             alertModalBody.html('Please log in first.')
         } else {
+            downloadButton.html("Processing...");
+            downloadButton.prop("disabled", true);
             alertModalBody.html(downloadRequestMessage);
+            url += `&downloadRequestId=${downloadRequestId}`;
+            downloadCSV(url, downloadButton, csvName, true);
         }
         $('#alertModal').modal({
             'keyboard': false,
             'backdrop': 'static'
         });
-        url += `&downloadRequestId=${downloadRequestId}`;
-        downloadCSV(url, downloadButton, csvName, true);
+
     })
 }
 
@@ -683,13 +684,12 @@ function onDownloadSummaryCSVClicked(e) {
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
     let url = `/sass/download-sass-summary-data/?csvName=${csvName}&${queryString}`;
     showDownloadPopup('CSV', csvName, function (downloadRequestId) {
-        downloadButton.html("Processing...");
-        downloadButton.prop("disabled", true);
-
         const alertModalBody = $('#alertModalBody');
         if (!is_logged_in) {
             alertModalBody.html('Please log in first.');
         } else {
+            downloadButton.html("Processing...");
+            downloadButton.prop("disabled", true);
             alertModalBody.html(downloadRequestMessage)
             url += `&downloadRequestId=${downloadRequestId}`;
             downloadCSV(url, downloadButton, csvName, true)
@@ -897,20 +897,21 @@ $(function () {
             let csv_name = getCsvName('All data', 'Sass taxon data');
             let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}&siteVisitId=${siteVisitId}`;
             showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
-                downloadButton.html("Processing...");
-                downloadButton.prop("disabled", true);
                 const alertModalBody = $('#alertModalBody');
                 if (!is_logged_in) {
-                    alertModalBody.html('Please log in first.')
+                    alertModalBody.html('Please log in first.');
                 }else {
+                    downloadButton.html("Processing...");
+                    downloadButton.prop("disabled", true);
                     alertModalBody.html(downloadRequestMessage);
+                    url += `&downloadRequestId=${downloadRequestId}`;
+                    downloadCSV(url, downloadButton, csv_name, true);
                 }
                 $('#alertModal').modal({
-                    'keyboard': false,
-                    'backdrop': 'static'
+                        'keyboard': false,
+                        'backdrop': 'static'
                 });
-                url += `&downloadRequestId=${downloadRequestId}`;
-                downloadCSV(url, downloadButton, csv_name, true);
+
             });
                 }
         else{
