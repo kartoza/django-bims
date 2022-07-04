@@ -663,9 +663,6 @@ class GbifIdsDownloader(APIView):
 
     def convert_to_csv(self, data):
 
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="download.csv"'
-
         headers = ['GBIF KEY', 'GBIF LINK']
         today_date = datetime.date.today()
         filename = sha256(
@@ -700,7 +697,10 @@ class GbifIdsDownloader(APIView):
                 writer.fieldnames = headers
                 for row in data:
                     writer.writerow(row)
-            return
+            return JsonResponse({
+                'status': 'success',
+                'filename': path_file
+            })
 
     def get(self, request):
         site_id = request.GET.get('siteId', None)
@@ -724,9 +724,9 @@ class GbifIdsDownloader(APIView):
                     'GBIF LINK': 'https://gbif.org/species/{0}'.format(
                         record.taxonomy.gbif_key)
                 })
-            return self.convert_to_csv(records)
+            return self.convert_to_csv(data)
 
         return JsonResponse({
-            'status': 'success',
-            'filename': 'Not GBIF'
+            'status': 'failed',
+            'message': 'Not GBIF'
         })

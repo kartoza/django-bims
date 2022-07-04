@@ -671,6 +671,13 @@ define([
                             if (self.downloadCSVXhr) {
                                 self.downloadCSVXhr.abort();
                             }
+                            let alertModalBody = $('#alertModalBody');
+
+                            alertModalBody.html(data['message']);
+                            $('#alertModal').modal({
+                                'keyboard': false,
+                                'backdrop': 'static'
+                            });
                             downloadButton.html('Download as CSV');
                             downloadButton.prop("disabled", false);
                         } else {
@@ -681,12 +688,14 @@ define([
                         }
                     } else {
                         let a = window.document.createElement('a');
-                        if(csv_name){
-                            a.download = csv_name + '.csv';
-                        }else {
-                            a.download = data['filename'];
+                        let filename;
+                        if(data['filename']){
+                            filename = data['filename']
                         }
-                        a.href = '/uploaded/processed_csv/' + data['filename'];
+                        else {
+                            filename = data['message']
+                        }
+                        a.href = '/uploaded/processed_csv/' + filename;
 
                         a.click();
                         downloadButton.html('Download as CSV');
