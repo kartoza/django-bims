@@ -1,17 +1,23 @@
 # coding=utf8
 import ast
+import csv
 import json
 import os
 from collections import OrderedDict
+import errno
+import datetime
+from hashlib import sha256
+from django.conf import settings
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count, Value, Case, When
 from django.db.models.functions import ExtractYear
-from django.http import Http404
+from django.http import Http404, JsonResponse, HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from sorl.thumbnail import get_thumbnail
 from preferences import preferences
+
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
@@ -297,7 +303,7 @@ class LocationSitesSummary(APIView):
             'is_sass_exists': is_sass_exists,
             'is_chem_exists': chem_exist,
             'total_survey': surveys.count(),
-            'dashboard_configuration': dashboard_configuration
+            'dashboard_configuration': dashboard_configuration,
         }
         create_search_process_file(
             response_data, search_process, file_path=None, finished=True)
@@ -518,17 +524,6 @@ class LocationSitesSummary(APIView):
             overview['Site description'] = self.parse_string(
                 location_site.name
             )
-        overview['GBIF link'] = "Not GBIF"
-        record = BiologicalCollectionRecord.objects.filter(
-            site=location_site.id,
-            source_collection='gbif').distinct('taxonomy_id')
-        if record:
-            links = ""
-            for i in record:
-                links = links + "<p><a href='https://gbif.org/species/{0}'>https://gbif.org/species/{0}</a></p>".format(
-                    i.taxonomy.gbif_key)
-
-            overview['GBIF link'] = links
 
         result = dict()
         result['Overview'] = overview
@@ -662,3 +657,76 @@ class LocationSitesCoordinate(ListAPIView):
             ignore_bbox=True,
             only_site=True)
         return collection_results
+
+
+class GbifIdsDownloader(APIView):
+
+    def convert_to_csv(self, data):
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="download.csv"'
+
+        headers = ['GBIF KEY', 'GBIF LINK']
+        today_date = datetime.date.today()
+        filename = sha256(
+            'gbif_ids_{}'.format(
+                today_date).encode('utf-8')
+        ).hexdigest()
+        filename += '.csv'
+
+        # Check if filename exists
+        folder = settings.PROCESSED_CSV_PATH
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        path_file = os.path.join(path_folder, filename)
+
+        try:
+            os.mkdir(path_folder)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
+
+        if os.path.exists(path_file):
+            return JsonResponse({
+                'status': 'success',
+                'filename': filename
+            })
+
+        site_id = self.request.GET.get('siteId', None)
+        if site_id:
+            with open(path_file, 'w') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=headers)
+                writer.writeheader()
+                writer.fieldnames = headers
+                for row in data:
+                    writer.writerow(row)
+            return
+
+    def get(self, request):
+        site_id = request.GET.get('siteId', None)
+        gbif_ids = []
+        try:
+            location_site = LocationSite.objects.get(id=site_id)
+        except LocationSite.DoesNotExist:
+            return JsonResponse({
+                'status': 'failed',
+                'message': "Location site doesn't exist"
+            })
+
+        records = BiologicalCollectionRecord.objects.filter(
+            site=location_site.id,
+            source_collection='gbif').distinct('taxonomy_id')
+        data = []
+        if records:
+            for record in records:
+                data.append({
+                    'GBIF KEY': record.taxonomy.gbif_key,
+                    'GBIF LINK': 'https://gbif.org/species/{0}'.format(
+                        record.taxonomy.gbif_key)
+                })
+            return self.convert_to_csv(records)
+
+        return JsonResponse({
+            'status': 'success',
+            'filename': 'Not GBIF'
+        })
