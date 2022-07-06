@@ -8,9 +8,9 @@ from sass.views.sass_dashboard_multiple import (
 )
 from sass.views.download_sass_data_site import (
     download_sass_data_site,
-    download_sass_summary_data
+    download_sass_summary_data,
+    download_sass_taxon_data
 )
-
 
 urlpatterns = [
     url(r'^(?P<site_id>\d+)/$', SassFormView.as_view(), name='sass-form-page'),
@@ -39,4 +39,7 @@ urlpatterns = [
     url(r'^download-sass-summary-data/$',
         download_sass_summary_data,
         name='download-sass-summary-data'),
+    url(r'^download-sass-taxon-data/$',
+        download_sass_taxon_data,
+        name='download-sass-taxon-data'),
 ]
