@@ -95,6 +95,7 @@
             const sourceReferences = {{ source_references | safe }};
             const chemicalRecords = {{ chemical_records | safe }};
             const geoClass = '{{ geo_class }}';
+            const siteVisitId = {{ sass_taxon_table_data.site_visit_id }}
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -227,10 +228,18 @@
                             </tbody>
                         </table>
                         <div class="download-container">
-                            Download latest SASS data for this site :
-                            <button class="btn btn-info download-latest-as-csv" data-identifier="{{ site_code }}">
-                                Download as CSV
-                            </button>
+
+                                Download latest SASS data for this site :
+                                <button class="btn btn-info download-latest-as-csv" data-identifier="{{ site_code }}">
+                                    Download as CSV
+                                </button>
+                                <div class="form-check pull-right justify-content-center">
+                                    <input class="form-check-input" type="checkbox" value="" id="include-all-taxon">
+                                  <label class="form-check-label" for="flexCheckDefault">
+                                    Include all taxon
+                                  </label>
+                                </div>
+
                         </div>
                     </div>
                     <div class="vertical-space"></div>

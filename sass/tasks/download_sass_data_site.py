@@ -7,11 +7,11 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Concat
 from bims.api_views.search import CollectionSearch
-from sass.models import SiteVisitTaxon
+from sass.models import SiteVisitTaxon, SassTaxon
 from geonode.people.models import Profile
 from bims.models.location_context import LocationContext
 from bims.api_views.csv_download import send_csv_via_email
-from sass.serializers.sass_data_serializer import SassDataSerializer
+from sass.serializers.sass_data_serializer import SassDataSerializer, SassTaxonDataSerializer
 from sass.serializers.sass_data_serializer import SassSummaryDataSerializer
 
 logger = logging.getLogger('bims')
@@ -195,6 +195,62 @@ def download_sass_summary_data_task(
                     user=user,
                     csv_file=path_file,
                     file_name=filters.get('csvName', 'SASS-Summary'),
+                    download_request_id=filters.get(
+                        'downloadRequestId', ''
+                    )
+                )
+
+            return
+    logger.info(
+        'Csv %s is already being processed by another worker',
+        filename)
+
+
+@shared_task(name='sass.tasks.download_sass_taxon_data', queue='update')
+def download_sass_taxon_data_task(
+        taxon_filters, sass_version, filename, filters, path_file, user_id, send_email=False):
+    from bims.utils.celery import memcache_lock
+
+    user = Profile.objects.get(id=user_id)
+
+    lock_id = '{0}-lock'.format(
+        filename
+    )
+    oid = '{0}'.format(filename)
+
+    with memcache_lock(lock_id, oid) as acquired:
+        if acquired:
+            sass_taxon = SassTaxon.objects.filter(**taxon_filters).order_by(
+            'display_order_sass_%s' % sass_version
+        )
+            serializer = SassTaxonDataSerializer(
+                sass_taxon,
+                many=True
+            )
+            headers = serializer.data[0].keys()
+            rows = serializer.data
+
+            formatted_headers = []
+            # Rename headers
+            for header in headers:
+                formatted_headers.append(header.replace('_', ' ').capitalize())
+
+            with open(path_file, 'w') as csv_file:
+                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
+                writer.writeheader()
+                writer.fieldnames = headers
+                for row in rows:
+                    try:
+                        writer.writerow(row)
+                    except ValueError:
+                        writer.fieldnames = row.keys()
+                        writer.writerow(row)
+
+            if send_email:
+                send_csv_via_email(
+                    user=user,
+                    csv_file=path_file,
+                    file_name=filters.get('csvName', 'SASS-Data'),
                     download_request_id=filters.get(
                         'downloadRequestId', ''
                     )
