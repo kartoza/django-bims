@@ -23,6 +23,16 @@ class AllChoicesApi(APIView):
             TaxonGroup,
             id=module
         )
+        sampling_methods = SamplingMethod.objects.sampling_method_list(
+            taxon_group
+        )
+        sampling_method_list = []
+        for sampling_method in sampling_methods:
+            sampling_method_list.append({
+                'id': sampling_method['id'],
+                'name': sampling_method['sampling_method']
+            })
+
 
         return Response({
             'broad_biotope': Biotope.objects.broad_biotope_list(
@@ -32,7 +42,5 @@ class AllChoicesApi(APIView):
             'substratum_biotope': Biotope.objects.substratum_list(
                 taxon_group
             ),
-            'sampling_method': SamplingMethod.objects.sampling_method_list(
-                taxon_group
-            )
+            'sampling_method': sampling_method_list
         })
