@@ -908,12 +908,11 @@ $(function () {
                     downloadCSV(url, downloadButton, csv_name, true);
                 }
                 $('#alertModal').modal({
-                        'keyboard': false,
-                        'backdrop': 'static'
+                    'keyboard': false,
+                    'backdrop': 'static'
                 });
-
             });
-                }
+        }
         else{
             var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
             exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
