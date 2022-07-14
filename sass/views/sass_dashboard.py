@@ -132,6 +132,7 @@ class SassDashboardView(TemplateView):
         data['sass_taxon_data'] = json.dumps(list(sass_taxon_data))
         data['biotope_data'] = json.dumps(list(biotope_data))
         data['site_visit_date'] = latest_site_visit.site_visit_date
+        data['site_visit_id'] = latest_site_visit.id
         return data
 
     def get_sensitivity_chart_data(self):

@@ -6,14 +6,14 @@ import datetime
 from django.http.response import JsonResponse
 from django.conf import settings
 from bims.api_views.search import CollectionSearch
+from sass.models import SassTaxon, SiteVisit
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.tasks.download_sass_data_site import (
     download_sass_data_site_task,
-    download_sass_summary_data_task
+    download_sass_summary_data_task, download_sass_taxon_data_task
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.api_views.csv_download import send_csv_via_email
-
 
 FAILED_STATUS = 'failed'
 SUCCESS_STATUS = 'success'
@@ -145,6 +145,55 @@ def download_sass_summary_data(request):
     download_sass_summary_data_task.delay(
         filename,
         filters,
+        path_file,
+        user_id=request.user.id,
+        send_email=True
+    )
+
+    return JsonResponse(get_response(PROCESSING_STATUS, filename))
+
+
+def download_sass_taxon_data(request, **kwargs):
+    """
+    Download all sass data taxon
+    """
+    csv_name = request.GET.get('csvName')
+    site_visit_id = request.GET.get('siteVisitId')
+    site_visit = SiteVisit.objects.get(id=site_visit_id)
+    sass_version = site_visit.sass_version
+    taxon_filters = dict()
+
+    if sass_version == 4:
+        taxon_filters['score__isnull'] = False
+    else:
+        taxon_filters['sass_5_score__isnull'] = False
+
+    # Get SASS taxon
+    sass_taxa = SassTaxon.objects.filter(**taxon_filters).order_by(
+            'display_order_sass_%s' % sass_version
+        )
+    if not sass_taxa:
+        response_message = 'No SASS taxon data'
+        return JsonResponse(get_response(FAILED_STATUS, response_message))
+
+    # Filename
+    search_uri = request.build_absolute_uri()
+    path_file, filename = get_filename(search_uri, sass_taxa.count())
+
+    if os.path.exists(path_file):
+        send_csv_via_email(
+            user=request.user,
+            csv_file=path_file,
+            file_name=csv_name,
+            download_request_id=request.GET.get('downloadRequestId', '')
+        )
+        return JsonResponse(get_response(SUCCESS_STATUS, filename))
+
+    download_sass_taxon_data_task.delay(
+        taxon_filters,
+        sass_version,
+        filename,
+        request.GET,
         path_file,
         user_id=request.user.id,
         send_email=True

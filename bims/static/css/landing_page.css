@@ -566,6 +566,6 @@ html, body {
 
 .module-container > .chartjs-render-monitor {
     margin-top: -60px;
-    z-index: 9999;
+    z-index: 999;
     position: absolute;
 }
