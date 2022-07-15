@@ -40,17 +40,18 @@ RIVER_CATCHMENT_ORDER = [
 ]
 
 
-def add_survey_occurrences(self, request):
-    date_string = request.POST.get('date', None)
-    owner_id = request.POST.get('owner_id', '').strip()
-    biotope_id = request.POST.get('biotope', None)
-    specific_biotope_id = request.POST.get('specific_biotope', None)
-    substratum_id = request.POST.get('substratum', None)
-    sampling_method_id = request.POST.get('sampling_method', None)
-    abundance_type = request.POST.get('abundance_type', None)
-    reference = request.POST.get('study_reference', '')
-    reference_category = request.POST.get('reference_category', '')
-    record_type = request.POST.get('record_type', None)
+def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
+    date_string = post_data.get('date', None)
+    owner_id = post_data.get('owner_id', '').strip()
+    biotope_id = post_data.get('biotope', None)
+    specific_biotope_id = post_data.get('specific_biotope', None)
+    substratum_id = post_data.get('substratum', None)
+    sampling_method_id = post_data.get('sampling_method', None)
+    abundance_type = post_data.get('abundance_type', None)
+    reference = post_data.get('study_reference', '')
+    reference_category = post_data.get('reference_category', '')
+    record_type = post_data.get('record_type', None)
+    site_id = post_data.get('site-id', None)
 
     biotope = None
     specific_biotope = None
@@ -74,12 +75,11 @@ def add_survey_occurrences(self, request):
             id=sampling_method_id
         )
     sampling_effort = '{effort} {type}'.format(
-        effort=self.request.POST.get('sampling_effort', ''),
-        type=self.request.POST.get('sampling_effort_type', '')
+        effort=post_data.get('sampling_effort', ''),
+        type=post_data.get('sampling_effort_type', '')
     ).strip()
 
     collection_date = parse(date_string)
-    post_data = request.POST.dict()
 
     # Create or get location site
     site_name = post_data.get('site_name', '')
@@ -116,7 +116,7 @@ def add_survey_occurrences(self, request):
         )
     else:
         self.location_site = LocationSite.objects.get(
-            id=post_data.get('site-id', None)
+            id=site_id
         )
 
     taxa_id_list = post_data.get('taxa-id-list', '').split(',')
@@ -131,11 +131,10 @@ def add_survey_occurrences(self, request):
         validated=False
     )
 
-    site_image_file = request.FILES.get('site-image', None)
-    if site_image_file:
+    if site_image:
         SiteImage.objects.get_or_create(
             site=self.location_site,
-            image=site_image_file,
+            image=site_image,
             date=collection_date,
             form_uploader=COLLECTION_RECORD_KEY,
             survey=self.survey
@@ -186,7 +185,7 @@ def add_survey_occurrences(self, request):
         except KeyError:
             continue
 
-    return collection_record_ids
+    return self.survey
 
 
 class CollectionFormView(TemplateView, SessionFormMixin):
@@ -384,12 +383,14 @@ class CollectionFormView(TemplateView, SessionFormMixin):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        collection_record_ids = add_survey_occurrences(self, request)
+        post_data = request.POST.dict()
+        survey = add_survey_occurrences(
+            self, post_data, request.FILES.get('site-image', None))
 
         session_uuid = '%s' % uuid.uuid4()
         self.add_last_session(request, session_uuid, {
             'edited_at': int(time.mktime(datetime.now().timetuple())),
-            'records': collection_record_ids,
+            'survey': survey.id,
             'location_site': self.location_site.name,
             'form': self.session_identifier
         })

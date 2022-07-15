@@ -27,9 +27,12 @@ class AddSiteVisit(APIView):
         }
         """
         try:
-            collection_record_ids = add_survey_occurrences(self, request)
+            post_data = request.data
+            survey = add_survey_occurrences(self, post_data)
         except TypeError:
             raise Http404()
         return Response(
-            collection_record_ids
+            {
+                'survey_id': survey.id
+            }
         )
