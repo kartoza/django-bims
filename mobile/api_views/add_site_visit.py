@@ -1,3 +1,6 @@
+import base64
+
+from django.core.files.base import ContentFile
 from django.http import Http404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -28,7 +31,16 @@ class AddSiteVisit(APIView):
         """
         try:
             post_data = request.data
-            survey = add_survey_occurrences(self, post_data)
+            site_image_str = post_data.get('site_image', '')
+            site_image = None
+            if site_image_str:
+                site_image_name = (
+                    f'{post_data["date"]}_{request.user.id}_'
+                    f'site_image_mobile.jpeg'
+                )
+                site_image = ContentFile(
+                    base64.b64decode(site_image_str), name=site_image_name)
+            survey = add_survey_occurrences(self, post_data, site_image)
         except TypeError:
             raise Http404()
         return Response(
