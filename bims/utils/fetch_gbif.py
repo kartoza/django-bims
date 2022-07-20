@@ -313,6 +313,7 @@ def fetch_all_species_from_gbif(
     ):
         accepted_taxonomy = fetch_all_species_from_gbif(
             gbif_key=species_data['acceptedKey'],
+            taxonomic_rank=taxonomy.rank,
             parent=taxonomy.parent,
             fetch_children=False
         )
