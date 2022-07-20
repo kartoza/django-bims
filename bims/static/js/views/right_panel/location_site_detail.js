@@ -137,16 +137,19 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             }
             return $detailWrapper;
         },
-        renderClimateData: function (data) {
-            let $detailWrapper = $('<div></div>');
+        renderClimateData: function (data, containerElement) {
             if (data.hasOwnProperty('climate_data')) {
-                let climateDataTemplate = _.template($('#climate-data-template').html());
-                $detailWrapper.append(climateDataTemplate({
-                    'mean_annual_temperature': data['climate_data']['mean_annual_temperature'],
-                    'mean_annual_rainfall': data['climate_data']['mean_annual_rainfall']
-                }));
+                let singleClimateDataTemplate = _.template($('#climate-data-template').html());
+                for (let climateKey of Object.keys(data['climate_data'])) {
+                    containerElement.append(singleClimateDataTemplate({
+                        'title': data['climate_data'][climateKey]['title'],
+                        'key': climateKey,
+                        'data': data['climate_data'][climateKey],
+                        'wrapper': climateKey + '-wrapper'
+                    }))
+                    this.renderMonthlyLineChart(data['climate_data'][climateKey], climateKey);
+                }
             }
-            return $detailWrapper;
         },
         createDataSummary: function (data) {
             var bio_data = data['biodiversity_data'];
@@ -168,20 +171,17 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             chartParent.append(newCanvas);
             return document.getElementById(chartId);
         },
-        renderMonthlyLineChart: function (data_in, chartName) {
-            if (!(data_in.hasOwnProperty(chartName + '_chart'))) {
-                return false;
-            }
+        renderMonthlyLineChart: function (climateData, canvasId) {
             let chartConfig = {
                 type: 'line',
                 data: {
                     datasets: [{
-                        data: data_in[chartName + '_chart']['values'],
+                        data: climateData['values'],
                         backgroundColor: '#D7CD47',
                         borderColor: '#D7CD47',
                         fill: false
                     }],
-                    labels: data_in[chartName + '_chart']['keys']
+                    labels: climateData['keys']
                 },
                 options: {
                     responsive: true,
@@ -210,7 +210,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     }
                 }
             };
-            let chartCanvas = document.getElementById(chartName + '_chart');
+            let chartCanvas = document.getElementById(canvasId);
             chartCanvas = this.resetCanvas(chartCanvas);
             let ctx = chartCanvas.getContext('2d');
             new ChartJs(ctx, chartConfig);
@@ -310,10 +310,8 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                     self.renderLegends(self.endemismLegends, $('.endemism-legends'));
                     self.renderLegends(self.consStatusLegends, $('.cons-status-legends'));
 
-                    let climateDataHTML = self.renderClimateData(data);
-                    $('#climate-data').append(climateDataHTML);
-                    self.renderMonthlyLineChart(data['climate_data'], 'temperature');
-                    self.renderMonthlyLineChart(data['climate_data'], 'rainfall');
+                    self.renderClimateData(data, $('#climate-data'));
+                    // $('#climate-data').append(climateDataHTML);
 
                     Shared.LocationSiteDetailXHRRequest = null;
 
