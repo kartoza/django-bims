@@ -281,22 +281,13 @@
 </script>
 
 <script type='text/html' id='climate-data-template'>
-    <div id="temperature-chart-wrapper" class="search-results-wrapper">
+    <div id="<%= wrapper %>" class="search-results-wrapper">
         <div class="search-result-sub-title search-results-total"
              data-search-result-id="">
-            Mean Annual Temperature
+            <%= title %>
         </div>
         <div class="col-12 right-panel-chart">
-            <canvas id="temperature_chart"></canvas>
-        </div>
-    </div>
-    <div id="rainfall-chart-wrapper" class="search-results-wrapper">
-        <div class="search-result-sub-title search-results-total"
-         data-search-result-id="">
-            Mean Annual Rainfall
-        </div>
-        <div class="col-12 right-panel-chart">
-            <canvas id="rainfall_chart"></canvas>
+            <canvas id="<%= key %>"></canvas>
         </div>
     </div>
 </script>

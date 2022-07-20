@@ -1,3 +1,5 @@
+from django.db.models import Q
+from django.utils.text import slugify
 from rest_framework import serializers
 from preferences import preferences
 from bims.models.location_site import LocationSite
@@ -7,6 +9,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.location_context_filter_group_order import (
     LocationContextFilterGroupOrder
 )
+from bims.models.climate_data import ClimateData
 
 
 class LocationSiteDetailSerializer(LocationSiteSerializer):
@@ -89,53 +92,43 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
     def get_site_climate_data(self, instance):
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
                   'Sep', 'Oct', 'Nov', 'Dec']
+        months_number = [
+            '01', '02', '03', '04', '05', '06',
+            '07', '08', '09', '10', '11', '12'
+        ]
         site_climate_data = dict()
-        site_climate_data['temperature_chart'] = {}
-        site_climate_data['temperature_chart']['values'] = []
-        site_climate_data['temperature_chart']['keys'] = []
-        site_climate_data['rainfall_chart'] = {}
-        site_climate_data['rainfall_chart']['values'] = []
-        site_climate_data['rainfall_chart']['keys'] = []
+        all_climate_data = ClimateData.objects.all()
 
-        location_contexts = LocationContext.objects.filter(site=instance)
+        for climate_data in all_climate_data:
+            key = slugify(climate_data.title)
+            site_climate_data[key] = {}
+            site_climate_data[key]['title'] = climate_data.title
+            site_climate_data[key]['values'] = []
+            site_climate_data[key]['keys'] = []
 
-        monthly_annual_temperature_values = location_contexts.filter(
-            group__geocontext_group_key=
-            'monthly_mean_daily_average_temperature_group'
-        )
-
-        monthly_annual_rainfall_values = location_contexts.filter(
-            group__geocontext_group_key=
-            'rainfall_group'
-        )
-
-        for month in months:
-            temp_data = (
-                monthly_annual_temperature_values.filter(
-                    group__key__icontains=month)
+            geocontext_data = LocationContext.objects.filter(
+                site=instance,
+                group__geocontext_group_key=
+                climate_data.climate_geocontext_group_key
             )
-            if temp_data.exists():
-                site_climate_data['temperature_chart']['values'].append(
-                    round(float(temp_data[0].value))
-                )
-            else:
-                site_climate_data['temperature_chart']['values'].append(0)
-            site_climate_data['temperature_chart']['keys'].append(month)
 
-            rain_data = (
-                monthly_annual_rainfall_values.filter(
-                    group__key__icontains=month)
-            )
-            if rain_data.exists():
-                site_climate_data['rainfall_chart']['values'].append(
-                    round(float(rain_data[0].value))
+            month_index = 0
+            for month in months:
+                temp_data = (
+                    geocontext_data.filter(
+                        Q(group__key__icontains=month) |
+                        Q(group__key__iendswith=months_number[month_index])
+                    )
                 )
-            else:
-                site_climate_data['rainfall_chart']['values'].append(0)
-            site_climate_data['rainfall_chart']['keys'].append(month)
+                if temp_data.exists():
+                    site_climate_data[key]['values'].append(
+                        round(float(temp_data.first().value))
+                    )
+                else:
+                    site_climate_data[key]['values'].append(0)
+                site_climate_data[key]['keys'].append(month)
+                month_index += 1
 
-        site_climate_data['temperature_chart']['title'] = 'Annual Temperature'
-        site_climate_data['rainfall_chart']['title'] = 'Annual Rainfall'
         return site_climate_data
 
     def to_representation(self, instance):
