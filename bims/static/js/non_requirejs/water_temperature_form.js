@@ -217,7 +217,3 @@ $('#upload').click((event) => {
         }
     });
 });
-
-$('.from-close').click(function (){
-    window.history.back()
-});

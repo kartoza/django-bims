@@ -40,8 +40,13 @@ def clean_data():
             taxon=taxon.canonical_name,
             endemism=endemism_data
         ))
-        endemism_obj, _ = Endemism.objects.get_or_create(
-            name=endemism_data
-        )
+        try:
+            endemism_obj, _ = Endemism.objects.get_or_create(
+                name=endemism_data
+            )
+        except Endemism.MultipleObjectsReturned:
+            endemism_obj = Endemism.objects.filter(
+                name=endemism_data
+            ).first()
         taxon.endemism = endemism_obj
         taxon.save()

@@ -8,11 +8,11 @@ function dashboardClose(e) {
         }
         previousUrl = closeDestination;
     }
-    let url = new URL(window.location.href);
-    let params = url.searchParams.toString();
-    let search = url.searchParams.get('search');
+    let url = new URLSearchParams(window.location.search);
+    let params = url.toString();
+    let search = url.get('search');
     let siteId = url.get('siteId');
-    if (params && url.searchParams.has('taxon')) {
+    if (params && url.has('taxon')) {
         previousUrl += '#search/';
         if (search) {
             previousUrl += search;
@@ -22,12 +22,9 @@ function dashboardClose(e) {
     }
     if (!previousUrl || previousUrl.indexOf('add-source-reference') > -1) {
         try {
-            previousUrl = 'map/#site/siteIdOpen=' + siteId;
+            previousUrl = '/map/#site/siteIdOpen=' + siteId;
         } catch (e) {
             previousUrl = '/map/';
-        }
-        finally {
-            previousUrl = '/';
         }
     }
     window.location.href = previousUrl;
