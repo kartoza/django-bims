@@ -51,7 +51,8 @@ define([
             'click .clear-origin-filter': 'handleClearOriginClicked',
             'click .clear-conservation-filter': 'handleClearConservationClicked',
             'click .ecological-condition': 'handleEcologicalConditionClicked',
-            'change #sortby-select': 'handleSortByChanged'
+            'change #sortby-select': 'handleSortByChanged',
+            'change .radio-module': 'handleModuleChanged',
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -70,6 +71,27 @@ define([
             Shared.Dispatcher.on('filters:updateFilters', this.filtersUpdated, this);
             Shared.Dispatcher.on('search:showMoreSites', this.showMoreSites, this);
             Shared.Dispatcher.on('search:showMoreTaxa', this.showMoreTaxa, this);
+        },
+        handleModuleChanged: function (e) {
+            let value = e.target.value;
+            let occurrencesFilter = [
+                'biodiversity-module-container',
+                'data-source-container',
+                'validation-status-container',
+                'ecological-category-container',
+                'origin-and-endemism-container',
+                'conservation-status-container',
+                'decision-support-tool-container'
+            ]
+            if (value === 'occurrence') {
+                for (let container of occurrencesFilter) {
+                    document.getElementById(container).style.display = 'block';
+                }
+            } else {
+                for (let container of occurrencesFilter) {
+                    document.getElementById(container).style.display = 'none';
+                }
+            }
         },
         render: function () {
             var self = this;

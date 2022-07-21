@@ -1928,6 +1928,11 @@ div:hover::-webkit-scrollbar {
     text-align: left;
 }
 
+.module-radio-wrapper {
+    text-align: left;
+    padding-left: 0;
+}
+
 .button-filter-module {
     padding: 8px 0px;
 }
