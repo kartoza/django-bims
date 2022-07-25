@@ -210,37 +210,47 @@ class TestApiView(TestCase):
         view = ModuleSummary.as_view()
         taxon_class_1 = TaxonomyF.create(
             scientific_name='Aves',
-            rank=TaxonomicRank.CLASS.name
+            rank=TaxonomicRank.CLASS.name,
         )
+
         taxon_species_1 = TaxonomyF.create(
             scientific_name='Bird1',
             rank=TaxonomicRank.SPECIES.name,
-            parent=taxon_class_1
+            parent=taxon_class_1,
+            additional_data={"Division": "Chlorophyta"}
         )
-        BiologicalCollectionRecordF.create(
-            taxonomy=taxon_species_1,
-            validated=True,
-            site=self.location_site
-        )
-        TaxonGroupF.create(
-            name='fish',
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies=(taxon_class_1,),
-            chart_data='endemism'
-        )
-        request = self.factory.get(reverse('module-summary'))
-        response = view(request)
-        self.assertTrue(len(response.data['fish']) > 0)
-
-        TaxonGroupF.create(
+        taxon_group_1 = TaxonGroupF.create(
             name='algae',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             taxonomies=(taxon_class_1,),
             chart_data='division'
         )
+
+        taxon_group_2 = TaxonGroupF.create(
+            name='fish',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(taxon_class_1,),
+            chart_data='conservation status'
+        )
+
+        BiologicalCollectionRecordF.create(
+            taxonomy=taxon_species_1,
+            validated=True,
+            site=self.location_site,
+            module_group=taxon_group_2
+        )
+
+        BiologicalCollectionRecordF.create(
+            taxonomy=taxon_species_1,
+            validated=True,
+            site=self.location_site,
+            module_group=taxon_group_1
+        )
+
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
-        self.assertTrue(len(response.data['algae']['division']) > 0)
+        self.assertTrue(len(response.data['fish']) > 0)
+        self.assertEqual(len(response.data['algae']['division']), 1)
 
     def test_get_autocomplete(self):
         view = autocomplete
