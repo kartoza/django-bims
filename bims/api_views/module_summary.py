@@ -40,24 +40,71 @@ class ModuleSummary(APIView):
         :param taxon_group: taxon group object
         :return: dict of summary data
         """
+        summary = {}
         collections = BiologicalCollectionRecord.objects.filter(
             module_group=taxon_group
         )
-        summary = dict(
-            collections.exclude(taxonomy__origin__exact='').annotate(
-                value=Case(When(taxonomy__iucn_status__isnull=False,
-                                then=F('taxonomy__iucn_status__category')),
-                           default=Value('Not evaluated'))
+        if taxon_group.chart_data == 'conservation status':
+            summary = dict(
+                collections.exclude(taxonomy__origin__exact='').annotate(
+                    value=Case(When(taxonomy__iucn_status__isnull=False,
+                                    then=F('taxonomy__iucn_status__category')),
+                               default=Value('Not evaluated'))
+                ).values('value').annotate(
+                    count=Count('value')
+                ).values_list('value', 'count')
+            )
+            iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
+            updated_summary = {}
+            for key in summary.keys():
+                if key in iucn_category:
+                    updated_summary[iucn_category[key]] = summary[key]
+            summary = updated_summary
+            if taxon_group.logo:
+                summary['icon'] = taxon_group.logo.url
+
+        elif taxon_group.chart_data == 'division':
+            summary['division'] = collections.values(
+                'taxonomy__additional_data__Division').annotate(
+                count=Count('taxonomy__additional_data__Division')
+            ).values('taxonomy__additional_data__Division', 'count')
+        elif taxon_group.chart_data == 'origin':
+            summary = dict(collections.exclude(taxonomy__origin__exact='').values(
+                'taxonomy__origin').annotate(
+                count=Count('taxonomy__origin')).values_list('taxonomy__origin', 'count'))
+
+        elif taxon_group.chart_data == 'endemism':
+            summary['endemism'] = dict(collections.annotate(
+                value=Case(When(taxonomy__endemism__isnull=False,
+                                then=F('taxonomy__endemism__name')),
+                           default=Value('Unknown'))
             ).values('value').annotate(
-                count=Count('value')
-            ).values_list('value', 'count')
-        )
-        iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
-        updated_summary = {}
-        for key in summary.keys():
-            if key in iucn_category:
-                updated_summary[iucn_category[key]] = summary[key]
-        summary = updated_summary
+                count=Count('value')).values_list('value', 'count'))
+
+        else:
+            site_visit_ecological = SiteVisitTaxon.objects.filter(
+                **{
+                    'site_visit__sitevisitecologicalcondition__'
+                    'ecological_condition__isnull': False,
+                }
+            ).annotate(
+                value=F('site_visit__'
+                        'sitevisitecologicalcondition__'
+                        'ecological_condition__category')
+            ).values('value').annotate(
+                count=Count('value'),
+                color=F('site_visit__'
+                        'sitevisitecologicalcondition__'
+                        'ecological_condition__colour')
+            ).values('value', 'count', 'color').order_by(
+                'value'
+            )
+            summary['ecological_data'] = list(
+                site_visit_ecological
+            )
+            summary['total_sass'] = SiteVisit.objects.all().count()
+
+
         summary[
             'total'] = collections.count()
         summary[
@@ -68,8 +115,6 @@ class ModuleSummary(APIView):
             'total_site_visit'] = (
             collections.distinct('survey').count()
         )
-        if taxon_group.logo:
-            summary['icon'] = taxon_group.logo.url
         return summary
 
     def fish_data(self):
@@ -100,82 +145,19 @@ class ModuleSummary(APIView):
         invert_group = get_species_group(self.INVERTEBRATE_KEY)
         if not invert_group:
             return {}
-        collections = BiologicalCollectionRecord.objects.filter(
-            module_group=invert_group
-        )
-        invert_summary = dict()
-        invert_summary[
-            'total'] = collections.count()
-        invert_summary[
-            'total_site'] = (
-            collections.distinct('site').count()
-        )
-        site_visit_ecological = SiteVisitTaxon.objects.filter(
-            **{
-                'site_visit__sitevisitecologicalcondition__'
-                'ecological_condition__isnull': False,
-            }
-        ).annotate(
-            value=F('site_visit__'
-                    'sitevisitecologicalcondition__'
-                    'ecological_condition__category')
-        ).values('value').annotate(
-            count=Count('value'),
-            color=F('site_visit__'
-                    'sitevisitecologicalcondition__'
-                    'ecological_condition__colour')
-        ).values('value', 'count', 'color').order_by(
-            'value'
-        )
-        invert_summary['ecological_data'] = list(
-            site_visit_ecological
-        )
-        invert_summary['total_sass'] = SiteVisit.objects.all().count()
-        return invert_summary
+        return self.module_summary_data(invert_group)
 
     def algae_data(self):
         species_group = get_species_group(self.ALGAE_KEY)
-        algae_summary = {}
         if not species_group:
             return {}
-        collections = BiologicalCollectionRecord.objects.filter(
-            module_group=species_group
-        )
-        algae_summary['division'] = collections.values(
-            'taxonomy__additional_data__Division').annotate(
-            count=Count('taxonomy__additional_data__Division')).values('taxonomy__additional_data__Division', 'count')
-        algae_summary['total'] = collections.count()
-        algae_summary['total_site'] = collections.distinct('site').count()
-        return algae_summary
+        return self.module_summary_data(species_group)
 
     def odonate_data(self):
         taxon_group = get_species_group(self.ODONATE_KEY)
         if not taxon_group:
             return {}
-        collections = BiologicalCollectionRecord.objects.filter(
-            module_group=taxon_group
-        )
-        summary = dict()
-        summary['endemism'] = dict(
-            collections.annotate(
-                value=Case(When(taxonomy__endemism__isnull=False,
-                                then=F('taxonomy__endemism__name')),
-                           default=Value('Unknown'))
-            ).values('value').annotate(
-                count=Count('value')
-            ).values_list('value', 'count')
-        )
-        summary[
-            'total'] = collections.count()
-        summary[
-            'total_site'] = (
-            collections.distinct('site').count()
-        )
-        summary[
-            'total_site_visit'] = (
-            collections.distinct('survey').count()
-        )
-        return summary
+        return self.module_summary_data(taxon_group)
 
     def get(self, request, *args):
         response_data = dict()

@@ -225,11 +225,22 @@ class TestApiView(TestCase):
         TaxonGroupF.create(
             name='fish',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies=(taxon_class_1,)
+            taxonomies=(taxon_class_1,),
+            chart_data='endemism'
         )
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
         self.assertTrue(len(response.data['fish']) > 0)
+
+        TaxonGroupF.create(
+            name='algae',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(taxon_class_1,),
+            chart_data='division'
+        )
+        request = self.factory.get(reverse('module-summary'))
+        response = view(request)
+        self.assertTrue(len(response.data['algae']['division']) > 0)
 
     def test_get_autocomplete(self):
         view = autocomplete

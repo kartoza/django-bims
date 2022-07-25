@@ -8,6 +8,14 @@ from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 class TaxonGroup(models.Model):
 
+    CHART_CHOICES = (
+        ('conservation status', 'Conservation Status'),
+        ('division', 'DIVISION'),
+        ('sass', 'SASS'),
+        ('origin', 'ORIGIN'),
+        ('endemism', 'ENDEMISM'),
+    )
+
     name = models.CharField(
         max_length=200,
         null=False,
@@ -48,6 +56,15 @@ class TaxonGroup(models.Model):
     display_order = models.IntegerField(
         null=True,
         blank=True
+    )
+
+    chart_data = models.CharField(
+        help_text='Data to display on chart',
+        max_length=100,
+        choices=CHART_CHOICES,
+        null=True,
+        blank=True,
+        default=''
     )
 
     class Meta:
