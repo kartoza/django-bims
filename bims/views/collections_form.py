@@ -2,6 +2,8 @@ import uuid
 import logging
 import time
 from datetime import datetime
+
+from bims.models.source_reference import SourceReference
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from django.views.generic import TemplateView
@@ -52,11 +54,13 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     reference_category = post_data.get('reference_category', '')
     record_type = post_data.get('record_type', None)
     site_id = post_data.get('site-id', None)
+    source_reference_id = post_data.get('source_reference_id', None)
 
     biotope = None
     specific_biotope = None
     substratum = None
     sampling_method = None
+    source_reference = None
 
     if biotope_id:
         biotope = Biotope.objects.get(
@@ -74,6 +78,11 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         sampling_method = SamplingMethod.objects.get(
             id=sampling_method_id
         )
+    if source_reference_id:
+        source_reference = SourceReference.objects.get(
+            id=source_reference_id
+        )
+
     sampling_effort = '{effort} {type}'.format(
         effort=post_data.get('sampling_effort', ''),
         type=post_data.get('sampling_effort_type', '')
@@ -172,7 +181,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
                         sampling_effort=sampling_effort,
                         abundance_type=abundance_type,
                         survey=self.survey,
-                        record_type=record_type
+                        record_type=record_type,
+                        source_reference=source_reference
                     )
                 )
                 collection_record_ids.append(collection_record.id)

@@ -26,7 +26,8 @@ class AddSiteVisit(APIView):
             'biotope': biotope.id,
             'specific_biotope': specific_biotope.id,
             'substratum': substratum.id,
-            'sampling_method': sampling_method.id
+            'sampling_method': sampling_method.id,
+            'source_reference_id': source_reference.id
         }
         """
         try:
