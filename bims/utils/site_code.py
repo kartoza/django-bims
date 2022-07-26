@@ -17,8 +17,8 @@ def _fetch_catchments_data(catchment_key, lon, lat):
     catchments = {}
     catchment_data = {}
     catchment_url = (
-        '{base_url}/api/v1/geocontext/value/group/'
-        '{lon}/{lat}/{catchment_key}/'
+        '{base_url}/api/v2/query?registry=group&key='
+        '{catchment_key}&x={lon}&y={lat}'
     ).format(
         base_url=get_key('GEOCONTEXT_URL'),
         lon=lon,
@@ -29,7 +29,7 @@ def _fetch_catchments_data(catchment_key, lon, lat):
         response = requests.get(catchment_url)
         if response.status_code == 200:
             catchment_data = json.loads(response.content)
-            for _catchment in catchment_data['service_registry_values']:
+            for _catchment in catchment_data['properties']['services']:
                 catchments[_catchment['key']] = _catchment['value']
     except (HTTPError, ValueError, KeyError):
         pass

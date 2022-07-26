@@ -8,6 +8,7 @@ from mobile.api_views.taxa import AllTaxa
 from mobile.api_views.add_site_visit import AddSiteVisit
 from mobile.api_views.add_location_site import AddLocationSiteView
 from mobile.api_views.taxon_group import TaxonGroupList
+from mobile.api_views.source_reference import SourceReferenceMobileList
 
 
 urlpatterns = [
@@ -31,5 +32,8 @@ urlpatterns = [
         name='mobile-nearest-sites'),
     url(r'^taxon-group/$',
         TaxonGroupList.as_view(),
-        name='taxon-group-list')
+        name='taxon-group-list'),
+    url(r'^source-references/$',
+        SourceReferenceMobileList.as_view(),
+        name='source-reference-mobile-list')
 ]

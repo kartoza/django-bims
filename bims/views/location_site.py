@@ -33,12 +33,12 @@ from bims.serializers.survey_serializer import SurveySerializer
 
 def handle_location_site_post_data(
         post_data: dict,
-        requester: get_user_model(),
+        collector: get_user_model(),
         location_site: LocationSite = None) -> LocationSite:
     """
     Handle post request to create or update a location site
     :param post_data: data from POST request
-    :param requester: user object
+    :param collector: user object
     :param location_site: If none then create a new one
     :return: new or updated location site
     """
@@ -49,6 +49,7 @@ def handle_location_site_post_data(
     longitude = post_data.get('longitude', None)
     legacy_site_code = post_data.get('legacy_site_code', '')
     additional_data = post_data.get('additional_data', None)
+    date = post_data.get('date', None)
     refined_geomorphological_zone = post_data.get(
         'refined_geomorphological_zone',
         None
@@ -59,7 +60,7 @@ def handle_location_site_post_data(
         river_name = original_river_name
 
     site_code = post_data.get('site_code', None)
-    site_description = post_data.get('site_description', None)
+    site_description = post_data.get('site_description', '')
     catchment_geocontext = post_data.get('catchment_geocontext', None)
     geomorphological_group_geocontext = post_data.get(
         'geomorphological_group_geocontext',
@@ -80,7 +81,7 @@ def handle_location_site_post_data(
         except (get_user_model().DoesNotExist, ValueError):
             raise Http404('User does not exist')
     else:
-        owner = requester
+        owner = collector
 
     geometry_point = Point(longitude, latitude)
     location_type, status = LocationType.objects.get_or_create(
@@ -97,7 +98,8 @@ def handle_location_site_post_data(
         'location_type': location_type,
         'site_code': site_code,
         'legacy_river_name': original_river_name,
-        'legacy_site_code': legacy_site_code
+        'legacy_site_code': legacy_site_code,
+        'date_created': date
     }
 
     if river_name:
@@ -120,7 +122,9 @@ def handle_location_site_post_data(
         geomorphological_data = json_loads_byteified(
             geomorphological_group_geocontext
         )
-        for registry in geomorphological_data['service_registry_values']:
+        if 'properties' in geomorphological_data:
+            geomorphological_data = geomorphological_data['properties']
+        for registry in geomorphological_data['services']:
             if 'key' in registry and 'name' in registry:
                 if registry['value']:
                     group, group_created = (
@@ -146,11 +150,15 @@ def handle_location_site_post_data(
 
     try:
         if catchment_geocontext:
+            if isinstance(catchment_geocontext, dict):
+                catchment_geocontext = json.dumps(catchment_geocontext)
             catchment_data = json_loads_byteified(
                 catchment_geocontext
             )
-            if 'service_registry_values' in catchment_data:
-                for registry in catchment_data['service_registry_values']:
+            if 'properties' in catchment_data:
+                catchment_data = catchment_data['properties']
+            if 'services' in catchment_data:
+                for registry in catchment_data['services']:
                     if not registry['value']:
                         continue
                     group, group_created = (
@@ -181,7 +189,7 @@ def handle_location_site_post_data(
         group__key='geo_class_recoded'
     )
     if not location_site.creator:
-        location_site.creator = requester
+        location_site.creator = collector
     # Set original_geomorphological
     if geo_class.exists():
         if geomorphological_fetched:
