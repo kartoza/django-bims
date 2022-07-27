@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+import pytz
 
 from bims.models.taxon_group import TaxonGroup
 from django.db.models import Q
@@ -49,7 +51,17 @@ def handle_location_site_post_data(
     longitude = post_data.get('longitude', None)
     legacy_site_code = post_data.get('legacy_site_code', '')
     additional_data = post_data.get('additional_data', None)
-    date = post_data.get('date', None)
+    date = post_data.get('date', datetime.now())
+    if date and not isinstance(date, datetime):
+        if isinstance(date, str):
+            timestamp = int(date)
+        else:
+            timestamp = date
+        date = datetime.fromtimestamp(
+            timestamp,
+            pytz.UTC
+        )
+
     refined_geomorphological_zone = post_data.get(
         'refined_geomorphological_zone',
         None

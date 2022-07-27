@@ -3,7 +3,7 @@
       "key": "eco_geo_group",
       "name": "Ecological group",
       "graphable": false,
-      "service_registry_values": [
+      "services": [
         {
         },
         {

@@ -1,5 +1,5 @@
 import json
-
+from datetime import datetime
 import factory
 from django.db.models import signals
 
@@ -150,12 +150,13 @@ class TestAddSiteVisit(TestCase):
         location_site = LocationSiteF.create()
         data = {
             'date': '2022-12-30',
-            'owner_id': self.user.id,
+            'owner_id': f'{self.user.id}',
             'site-id': location_site.id
         }
         res = self.client.post(
             self.api_url,
-            data
+            json.dumps(data),
+            content_type='application/json'
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(
@@ -183,7 +184,7 @@ class TestAddSiteVisit(TestCase):
 
         data = {
             'date': '2022-12-30',
-            'owner_id': self.user.id,
+            'owner_id': f'{self.user.id}',
             'site-id': location_site.id,
             'taxa-id-list': f'{taxa.id}',
             f'{taxa.id}-observed': 'True',
@@ -197,12 +198,13 @@ class TestAddSiteVisit(TestCase):
         }
         res = self.client.post(
             self.api_url,
-            data
+            json.dumps(data),
+            content_type='application/json'
         )
         self.assertEqual(len(res.data), 1)
-        bio = BiologicalCollectionRecord.objects.get(
-            id=res.data[0]
-        )
+        bio = BiologicalCollectionRecord.objects.filter(
+            survey=res.data['survey_id']
+        ).first()
         self.assertEqual(
             bio.sampling_method, sampling_method
         )
@@ -244,6 +246,7 @@ class TestAddLocationSite(TestCase):
         self.api_url = reverse('mobile-add-location-site')
         self.post_data = {
             'owner': self.user.id,
+            'date': int(datetime.now().timestamp()),
             'latitude': 1,
             'longitude': 1,
             'river_name': 'RIVER',
@@ -286,7 +289,7 @@ class TestAddLocationSite(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         location_site = LocationSite.objects.get(
-            id=res.data
+            id=res.data['id']
         )
         self.assertEqual(
             location_site.additional_data.get('source_collection'),

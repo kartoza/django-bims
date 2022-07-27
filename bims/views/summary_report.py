@@ -163,7 +163,7 @@ class SummaryReportLocationContextApiView(APIView):
         )
 
         # - Total group keys
-        registered_groups = preferences.SiteSetting.geocontext_keys.split(',')
+        registered_groups = preferences.GeocontextSetting.geocontext_keys.split(',')
         location_context_groups = (
             LocationContextGroup.objects.filter(
                 geocontext_group_key__in=registered_groups)

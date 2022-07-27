@@ -2,13 +2,13 @@ name: Test Django App
 
 on:
   workflow_dispatch:
-  push: 
+  push:
     branches:
       - 'main'
-  pull_request: 
+  pull_request:
     branches:
       - 'main'
-      
+
 jobs:
   tests:
     runs-on: ubuntu-latest

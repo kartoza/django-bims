@@ -820,7 +820,7 @@ class BioCollectionOneRowSerializer(
                 result.update(chem_record_data)
 
         geocontext_keys = (
-            preferences.SiteSetting.geocontext_keys.split(',')
+            preferences.GeocontextSetting.geocontext_keys.split(',')
         )
         if 'geocontext_groups' not in self.context:
             self.context['geocontext_groups'] = []
