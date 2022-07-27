@@ -14,7 +14,7 @@ class AddLocationSiteView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        post_data = request.data
+        post_data = request.data.dict()
 
         # Generate site code
         site_code, catchments_data = generate_site_code(
@@ -25,10 +25,11 @@ class AddLocationSiteView(APIView):
         post_data['legacy_site_code'] = post_data['site_code']
         post_data['site_code'] = site_code
         post_data['catchment_geocontext'] = catchments_data
-        post_data['date'] = datetime.fromtimestamp(
-            post_data.get('date'),
-            pytz.UTC
-        )
+        if 'date' in post_data:
+            post_data['date'] = datetime.fromtimestamp(
+                int(post_data['date']),
+                pytz.UTC
+            )
 
         location_site = handle_location_site_post_data(
             post_data,
