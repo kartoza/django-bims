@@ -45,7 +45,7 @@ class ModuleSummary(APIView):
             module_group=taxon_group
         )
         if taxon_group.chart_data == 'conservation status':
-            summary = dict(
+            summary_temp = dict(
                 collections.exclude(taxonomy__origin__exact='').annotate(
                     value=Case(When(taxonomy__iucn_status__isnull=False,
                                     then=F('taxonomy__iucn_status__category')),
@@ -56,12 +56,10 @@ class ModuleSummary(APIView):
             )
             iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
             updated_summary = {}
-            for key in summary.keys():
+            for key in summary_temp.keys():
                 if key in iucn_category:
-                    updated_summary[iucn_category[key]] = summary[key]
-            summary = updated_summary
-            if taxon_group.logo:
-                summary['icon'] = taxon_group.logo.url
+                    updated_summary[iucn_category[key]] = summary_temp[key]
+            summary['conservation-status'] = updated_summary
 
         elif taxon_group.chart_data == 'division':
             summary['division'] = collections.values(
@@ -69,7 +67,7 @@ class ModuleSummary(APIView):
                 count=Count('taxonomy__additional_data__Division')
             ).values('taxonomy__additional_data__Division', 'count')
         elif taxon_group.chart_data == 'origin':
-            summary = dict(collections.exclude(taxonomy__origin__exact='').values(
+            summary['origin'] = dict(collections.exclude(taxonomy__origin__exact='').values(
                 'taxonomy__origin').annotate(
                 count=Count('taxonomy__origin')).values_list('taxonomy__origin', 'count'))
 
@@ -104,7 +102,8 @@ class ModuleSummary(APIView):
             )
             summary['total_sass'] = SiteVisit.objects.all().count()
 
-
+        if taxon_group.logo:
+            summary['icon'] = taxon_group.logo.url
         summary[
             'total'] = collections.count()
         summary[
