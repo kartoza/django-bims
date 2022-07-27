@@ -2,6 +2,8 @@ import uuid
 import logging
 import time
 from datetime import datetime
+
+from bims.models.source_reference import SourceReference
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from django.views.generic import TemplateView
@@ -38,6 +40,162 @@ logger = logging.getLogger('bims')
 RIVER_CATCHMENT_ORDER = [
     'primary_catchment_area',
 ]
+
+
+def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
+    date_string = post_data.get('date', None)
+    owner_id = post_data.get('owner_id', '').strip()
+    biotope_id = post_data.get('biotope', None)
+    specific_biotope_id = post_data.get('specific_biotope', None)
+    substratum_id = post_data.get('substratum', None)
+    sampling_method_id = post_data.get('sampling_method', None)
+    abundance_type = post_data.get('abundance_type', None)
+    reference = post_data.get('study_reference', '')
+    reference_category = post_data.get('reference_category', '')
+    record_type = post_data.get('record_type', None)
+    site_id = post_data.get('site-id', None)
+    source_reference_id = post_data.get('source_reference_id', None)
+
+    biotope = None
+    specific_biotope = None
+    substratum = None
+    sampling_method = None
+    source_reference = None
+
+    if biotope_id:
+        biotope = Biotope.objects.get(
+            id=biotope_id
+        )
+    if specific_biotope_id:
+        specific_biotope = Biotope.objects.get(
+            id=specific_biotope_id
+        )
+    if substratum_id:
+        substratum = Biotope.objects.get(
+            id=substratum_id
+        )
+    if sampling_method_id:
+        sampling_method = SamplingMethod.objects.get(
+            id=sampling_method_id
+        )
+    if source_reference_id:
+        source_reference = SourceReference.objects.get(
+            id=source_reference_id
+        )
+
+    sampling_effort = '{effort} {type}'.format(
+        effort=post_data.get('sampling_effort', ''),
+        type=post_data.get('sampling_effort_type', '')
+    ).strip()
+
+    collection_date = parse(date_string)
+
+    # Create or get location site
+    site_name = post_data.get('site_name', '')
+    site_code = post_data.get('site_code', '')
+    site_description = post_data.get('site_description', '')
+    latitude = post_data.get('latitude', 0.0)
+    longitude = post_data.get('longitude', 0.0)
+    site_point = Point(
+        float(longitude),
+        float(latitude))
+
+    # If collector id exist then get the user object
+    owner = None
+    if owner_id:
+        try:
+            owner = get_user_model().objects.get(
+                id=int(owner_id))
+        except get_user_model().DoesNotExist:
+            pass
+    else:
+        owner = self.request.user
+
+    if site_name or site_code:
+        location_type, created = LocationType.objects.get_or_create(
+            name='PointObservation',
+            allowed_geometry='POINT'
+        )
+        self.location_site, status = LocationSite.objects.get_or_create(
+            name=site_name,
+            site_code=site_code,
+            site_description=site_description,
+            location_type=location_type,
+            geometry_point=site_point
+        )
+    else:
+        self.location_site = LocationSite.objects.get(
+            id=site_id
+        )
+
+    taxa_id_list = post_data.get('taxa-id-list', '').split(',')
+    taxa_id_list = filter(None, taxa_id_list)
+
+    # Create a survey
+    self.survey = Survey.objects.create(
+        owner=owner,
+        date=collection_date,
+        site=self.location_site,
+        collector_user=self.request.user,
+        validated=False
+    )
+
+    if site_image:
+        SiteImage.objects.get_or_create(
+            site=self.location_site,
+            image=site_image,
+            date=collection_date,
+            form_uploader=COLLECTION_RECORD_KEY,
+            survey=self.survey
+        )
+
+    collection_record_ids = []
+    for taxon in taxa_id_list:
+        observed_key = '{}-observed'.format(taxon)
+        abundance_key = '{}-abundance'.format(taxon)
+        taxonomy = Taxonomy.objects.get(
+            id=taxon
+        )
+        try:
+            if post_data[observed_key] == 'True':
+                abundance = post_data[abundance_key]
+                if abundance:
+                    abundance = float(abundance)
+                else:
+                    abundance = 0.0
+                collection_record, status = (
+                    BiologicalCollectionRecord.objects.get_or_create(
+                        collection_date=collection_date,
+                        taxonomy=taxonomy,
+                        original_species_name=taxonomy.canonical_name,
+                        site=self.location_site,
+                        collector_user=self.request.user,
+                        sampling_method=sampling_method,
+                        abundance_number=abundance,
+                        owner=owner,
+                        biotope=biotope,
+                        specific_biotope=specific_biotope,
+                        substratum=substratum,
+                        reference=reference,
+                        reference_category=reference_category,
+                        sampling_effort=sampling_effort,
+                        abundance_type=abundance_type,
+                        survey=self.survey,
+                        record_type=record_type,
+                        source_reference=source_reference
+                    )
+                )
+                collection_record_ids.append(collection_record.id)
+                if status:
+                    logger.info(
+                        'Collection record added with id {}'.format(
+                            collection_record.id
+                        )
+                    )
+        except KeyError:
+            continue
+
+    return self.survey
 
 
 class CollectionFormView(TemplateView, SessionFormMixin):
@@ -121,16 +279,6 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             )
         return taxa_list
 
-    def create_or_get_survey(self, collection_date, owner):
-        """Create or get a site survey"""
-        survey = Survey.objects.create(
-            owner=owner,
-            date=collection_date,
-            site=self.location_site,
-            collector_user=self.request.user,
-            validated=False
-        )
-        return survey
 
     def get_context_data(self, **kwargs):
         context = super(CollectionFormView, self).get_context_data(**kwargs)
@@ -245,151 +393,14 @@ class CollectionFormView(TemplateView, SessionFormMixin):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        date_string = request.POST.get('date', None)
-        owner_id = request.POST.get('owner_id', '').strip()
-        biotope_id = request.POST.get('biotope', None)
-        specific_biotope_id = request.POST.get('specific_biotope', None)
-        substratum_id = request.POST.get('substratum', None)
-        sampling_method_id = request.POST.get('sampling_method', None)
-        abundance_type = request.POST.get('abundance_type', None)
-        reference = request.POST.get('study_reference', '')
-        reference_category = request.POST.get('reference_category', '')
-        record_type = request.POST.get('record_type', None)
-
-
-        biotope = None
-        specific_biotope = None
-        substratum = None
-        sampling_method = None
-
-        if biotope_id:
-            biotope = Biotope.objects.get(
-                id=biotope_id
-            )
-        if specific_biotope_id:
-            specific_biotope = Biotope.objects.get(
-                id=specific_biotope_id
-            )
-        if substratum_id:
-            substratum = Biotope.objects.get(
-                id=substratum_id
-            )
-        if sampling_method_id:
-            sampling_method = SamplingMethod.objects.get(
-                id=sampling_method_id
-            )
-        sampling_effort = '{effort} {type}'.format(
-            effort=self.request.POST.get('sampling_effort', ''),
-            type=self.request.POST.get('sampling_effort_type', '')
-        ).strip()
-
-        collection_date = parse(date_string)
         post_data = request.POST.dict()
-
-
-        # Create or get location site
-        site_name = post_data.get('site_name', '')
-        site_code = post_data.get('site_code', '')
-        site_description = post_data.get('site_description', '')
-        latitude = post_data.get('latitude', 0.0)
-        longitude = post_data.get('longitude', 0.0)
-        site_point = Point(
-            float(longitude),
-            float(latitude))
-
-        # If collector id exist then get the user object
-        owner = None
-        if owner_id:
-            try:
-                owner = get_user_model().objects.get(
-                    id=int(owner_id))
-            except get_user_model().DoesNotExist:
-                pass
-        else:
-            owner = self.request.user
-
-        if site_name or site_code:
-            location_type, created = LocationType.objects.get_or_create(
-                name='PointObservation',
-                allowed_geometry='POINT'
-            )
-            self.location_site, status = LocationSite.objects.get_or_create(
-                name=site_name,
-                site_code=site_code,
-                site_description=site_description,
-                location_type=location_type,
-                geometry_point=site_point
-            )
-        else:
-            self.location_site = LocationSite.objects.get(
-                id=post_data.get('site-id', None)
-            )
-
-        taxa_id_list = post_data.get('taxa-id-list', '').split(',')
-        taxa_id_list = filter(None, taxa_id_list)
-
-        # Create a survey
-        self.survey = self.create_or_get_survey(collection_date, owner)
-
-        site_image_file = request.FILES.get('site-image', None)
-        if site_image_file:
-            SiteImage.objects.get_or_create(
-                site=self.location_site,
-                image=site_image_file,
-                date=collection_date,
-                form_uploader=COLLECTION_RECORD_KEY,
-                survey=self.survey
-            )
-
-        collection_record_ids = []
-        for taxon in taxa_id_list:
-            observed_key = '{}-observed'.format(taxon)
-            abundance_key = '{}-abundance'.format(taxon)
-            taxonomy = Taxonomy.objects.get(
-                id=taxon
-            )
-            try:
-                if post_data[observed_key] == 'True':
-                    abundance = post_data[abundance_key]
-                    if abundance:
-                        abundance = float(abundance)
-                    else:
-                        abundance = 0.0
-                    collection_record, status = (
-                        BiologicalCollectionRecord.objects.get_or_create(
-                            collection_date=collection_date,
-                            taxonomy=taxonomy,
-                            original_species_name=taxonomy.canonical_name,
-                            site=self.location_site,
-                            collector_user=self.request.user,
-                            sampling_method=sampling_method,
-                            abundance_number=abundance,
-                            owner=owner,
-                            biotope=biotope,
-                            specific_biotope=specific_biotope,
-                            substratum=substratum,
-                            reference=reference,
-                            reference_category=reference_category,
-                            sampling_effort=sampling_effort,
-                            abundance_type=abundance_type,
-                            survey=self.survey,
-                            record_type=record_type
-                        )
-                    )
-                    collection_record_ids.append(collection_record.id)
-                    if status:
-                        logger.info(
-                            'Collection record added with id {}'.format(
-                                collection_record.id
-                            )
-                        )
-            except KeyError:
-                continue
+        survey = add_survey_occurrences(
+            self, post_data, request.FILES.get('site-image', None))
 
         session_uuid = '%s' % uuid.uuid4()
         self.add_last_session(request, session_uuid, {
             'edited_at': int(time.mktime(datetime.now().timetuple())),
-            'records': collection_record_ids,
+            'survey': survey.id,
             'location_site': self.location_site.name,
             'form': self.session_identifier
         })

@@ -2,6 +2,8 @@
 import factory
 import random
 
+from bims.models.sampling_method import SamplingMethod
+
 from bims.models.chem import Chem, Unit
 
 from bims.models.source_reference import SourceReferenceDocument
@@ -374,6 +376,17 @@ class BiotopeF(factory.django.DjangoModelFactory):
     class Meta:
         model = Biotope
 
+    @factory.post_generation
+    def taxon_group(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for taxon_group in extracted:
+                self.taxon_group.add(taxon_group)
+
 
 class SourceReferenceF(factory.django.DjangoModelFactory):
     class Meta:
@@ -435,3 +448,10 @@ class ChemicalRecordF(factory.django.DjangoModelFactory):
 
     survey = factory.SubFactory(SurveyF)
     chem = factory.SubFactory(ChemF)
+
+
+class SamplingMethodF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SamplingMethod
+
+    sampling_method = factory.Sequence(lambda n: u'method %s' % n)

@@ -1,5 +1,9 @@
 import json
 import logging
+
+import factory
+from django.db.models import signals
+
 from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
 from rest_framework import status
@@ -32,9 +36,6 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
 from django.test import TestCase
-
-logger = logging.getLogger('bims')
-
 
 logger = logging.getLogger('bims')
 
@@ -130,7 +131,7 @@ class TestApiView(TestCase):
         view = GetNonValidatedRecords.as_view()
         request = self.factory.get(reverse('get-unvalidated-records'))
         response = view(request)
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
     def test_get_unvalidated_records_as_admin(self):
         view = GetNonValidatedRecords.as_view()
@@ -241,6 +242,7 @@ class TestApiView(TestCase):
         content = json.loads(response.content)
         self.assertTrue(len(content['results']) > 0)
 
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def test_send_notification_to_validator(self):
         client = APIClient()
         user = UserF.create(is_superuser=True)

@@ -148,10 +148,18 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
         ]
 
 
-class TaxonSimpleSerialializer(serializers.ModelSerializer):
+class TaxonSimpleSerializer(serializers.ModelSerializer):
+
+    cons_status = serializers.SerializerMethodField()
+
+    def get_cons_status(self, obj:Taxonomy):
+        return obj.iucn_status.category if obj.iucn_status else '-'
+
     class Meta:
         model = Taxonomy
-        fields = ['id', 'common_name', 'scientific_name']
+        fields = [
+            'id', 'canonical_name',
+            'scientific_name', 'cons_status']
 
 
 class TaxonGroupSerializer(serializers.ModelSerializer):
