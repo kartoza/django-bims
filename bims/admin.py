@@ -20,8 +20,6 @@ from django.db import models
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.contrib import messages
-from django.contrib.postgres import fields
 from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
@@ -29,7 +27,6 @@ from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
 from geonode.people.models import Profile
-# from geonode.upload.models import Upload, UploadFile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
@@ -69,6 +66,7 @@ from bims.models import (
     SamplingMethod,
     SiteImage,
     SiteSetting,
+    GeocontextSetting,
     BimsDocument,
     ChemicalRecord,
     LocationContext,
@@ -185,7 +183,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def geocontext_data_percentage(self, obj):
         site_setting_group_keys = (
-            preferences.SiteSetting.geocontext_keys.split(',')
+            preferences.GeocontextSetting.geocontext_keys.split(',')
         )
         groups = LocationContext.objects.filter(
             site=obj,
@@ -1150,23 +1148,41 @@ class ChemAdmin(admin.ModelAdmin):
 class LocationContextFilterGroupOrderAdmin(admin.ModelAdmin):
     list_display = (
         'id',
-        'link_to_group',
         'link_to_filter',
-        'group_display_order',
+        'link_to_group',
         'filter_display_order',
+        'group_display_order',
         'show_in_dashboard',
         'show_in_side_panel'
+    )
+
+    sortable_by = (
+        'filter_display_order',
+        'group_display_order',
     )
 
     def link_to_group(self, obj):
         link = reverse('admin:bims_locationcontextgroup_change',
                        args=[obj.group.id])
-        return format_html('<a href="{}">{}</a>', link, obj.group.name)
+        return format_html(
+            "<a href='#' onclick='showPopup(event, \"{}\" )'>{}</a>",
+            link,
+            obj.group.name,
+        )
 
     def link_to_filter(self, obj):
         link = reverse('admin:bims_locationcontextfilter_change',
                        args=[obj.filter.id])
-        return format_html('<a href="{}">{}</a>', link, obj.filter.title)
+        return format_html(
+            "<a href='#' onclick='showPopup(event, \"{}\" )'>{}</a>",
+            link,
+            obj.filter.title,
+        )
+
+    class Media:
+        js = (
+            'js/show_popup.js',
+        )
 
 
 class LocationContextFilterAdmin(admin.ModelAdmin):
@@ -1430,6 +1446,7 @@ admin.site.register(SpatialScaleGroup, SpatialScaleGroupAdmin)
 admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SiteImage, SiteImageAdmin)
 admin.site.register(SiteSetting, PreferencesAdmin)
+admin.site.register(GeocontextSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(UploadSession, UploadSessionAdmin)

@@ -109,7 +109,7 @@ def get_location_context_data(
     # Get location context data from GeoContext
 
     if not group_keys:
-        group_keys = preferences.SiteSetting.geocontext_keys.split(',')
+        group_keys = preferences.GeocontextSetting.geocontext_keys.split(',')
     else:
         if not isinstance(group_keys, list):
             group_keys = group_keys.split(',')

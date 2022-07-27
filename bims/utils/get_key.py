@@ -7,6 +7,9 @@ def get_key(key_name):
     Get key from secret.py or environment variable.
     Return empty string if key can't be found.
     """
+    if key_name == 'GEOCONTEXT_URL':
+        from preferences import preferences
+        return preferences.GeocontextSetting.geocontext_url
     try:
         from core.settings import secret
     except ImportError:
