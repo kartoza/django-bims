@@ -10,6 +10,7 @@ python scripts/wait_for_broker.py
 popd
 
 pushd /home/web/django_project
+python manage.py migrate sites --noinput
 python manage.py migrate --noinput
 python manage.py gruntserver
 python manage.py collectstatic --noinput
