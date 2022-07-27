@@ -92,6 +92,7 @@ from bims.models import (
     TaxonExtraAttribute,
     DecisionSupportTool, Unit
 )
+from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile
@@ -622,9 +623,9 @@ class CustomUserAdmin(ProfileAdmin):
         f = StringIO()
         writer = csv.writer(f)
         writer.writerow([
-            'Username', 
-            'Email', 
-            'First Name', 
+            'Username',
+            'Email',
+            'First Name',
             'Last Name',
             'Organization Name',
             'Role',
@@ -632,7 +633,7 @@ class CustomUserAdmin(ProfileAdmin):
             'Active',
             'Signed up',
             'SASS Accredited Status',
-            'Date joined', 
+            'Date joined',
             'Last login'])
 
         for s in queryset:
@@ -640,8 +641,8 @@ class CustomUserAdmin(ProfileAdmin):
                 self.sass_accredited_status(s, text_only='True')
             )
             writer.writerow([
-                s.username, s.email, 
-                s.first_name, s.last_name, 
+                s.username, s.email,
+                s.first_name, s.last_name,
                 s.organization,
                 self.role(s),
                 s.is_staff,
@@ -655,7 +656,7 @@ class CustomUserAdmin(ProfileAdmin):
         response = HttpResponse(f, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=users.csv'
         return response
-    
+
     download_csv.short_description =(
         "Download CSV file for selected users"
     )
@@ -1381,6 +1382,10 @@ class UnitAdmin(admin.ModelAdmin):
     search_fields = ('unit_name', 'unit', )
 
 
+class ClimateDataAdmin(admin.ModelAdmin):
+    list_display = ('title', 'climate_geocontext_group_key')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1460,3 +1465,4 @@ admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
 admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)
 admin.site.register(Unit, UnitAdmin)
+admin.site.register(ClimateData, ClimateDataAdmin)

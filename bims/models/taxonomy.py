@@ -357,9 +357,14 @@ def taxonomy_pre_save_handler(sender, instance, **kwargs):
         )
         if iucn_status and 'result' in iucn_status:
             if len(iucn_status['result']) > 0:
-                iucn, _ = IUCNStatus.objects.get_or_create(
-                    category=iucn_status['result'][0]['category']
-                )
+                try:
+                    iucn, _ = IUCNStatus.objects.get_or_create(
+                        category=iucn_status['result'][0]['category']
+                    )
+                except IUCNStatus.MultipleObjectsReturned:
+                    iucn = IUCNStatus.objects.filter(
+                        category=iucn_status['result'][0]['category']
+                    ).first()
                 instance.iucn_status = iucn
                 instance.iucn_redlist_id = iucn_status['result'][0]['taxonid']
                 instance.iucn_data = json.dumps(
