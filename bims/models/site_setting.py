@@ -105,13 +105,6 @@ class SiteSetting(Preferences):
         blank=True
     )
 
-    geocontext_keys = models.TextField(
-        help_text='Default location context group keys that will be fetched '
-                  'from Geocontext, separated by commas.',
-        default='political_boundary_group,rainfall_group',
-        blank=True
-    )
-
     recaptcha_site_key = models.CharField(
         default='',
         max_length=150

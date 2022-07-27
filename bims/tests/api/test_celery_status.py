@@ -16,7 +16,7 @@ class TestCeleryStatus(TestCase):
         client = APIClient()
         res = client.get(api_url)
         self.assertEqual(
-            res.status_code, status.HTTP_403_FORBIDDEN
+            res.status_code, status.HTTP_401_UNAUTHORIZED
         )
 
     @override_settings(CELERY_EAGER_PROPAGATES_EXCEPTIONS=True,

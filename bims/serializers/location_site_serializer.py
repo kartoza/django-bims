@@ -23,7 +23,10 @@ class LocationSiteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LocationSite
-        fields = ['id', 'name', 'geometry', 'location_type', 'record_type']
+        fields = [
+            'id', 'site_code',
+            'name', 'geometry', 'location_type', 'record_type'
+        ]
 
 
 class LocationSiteClusterSerializer(serializers.ModelSerializer):
