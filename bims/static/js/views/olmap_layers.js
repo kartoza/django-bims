@@ -610,6 +610,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
             if (isFirstTime) {
                 self.initializeLayerSelector();
+                self.refreshLayerOrders();
             }
         },
         showFeatureInfo: function (lon, lat, siteExist = false) {
