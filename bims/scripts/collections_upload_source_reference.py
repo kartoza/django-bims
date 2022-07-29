@@ -93,7 +93,8 @@ def process_source_reference(
     # if there is document url, get or create document based on url
     if document_url:
         document_fields = {
-            'doc_url': document_url
+            'doc_url': document_url,
+            'title': document_title
         }
         if source_year:
             document_fields['date'] = date(
