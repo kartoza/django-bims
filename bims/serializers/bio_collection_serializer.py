@@ -284,8 +284,8 @@ class BioCollectionOneRowSerializer(
 
     def get_site_description(self, obj):
         if obj.site.site_description:
-            return obj.site.site_description
-        return obj.site.name
+            return obj.site.site_description.replace(';', ',')
+        return obj.site.name.replace(';', ',')
 
     def get_latitude(self, obj):
         lat = obj.site.get_centroid().y
