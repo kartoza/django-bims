@@ -381,7 +381,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'taxonomy__scientific_name',
         'taxonomy__canonical_name',
         'original_species_name',
-        'uuid'
+        'uuid',
+        'upstream_id'
     )
 
     def get_origin(self, obj):

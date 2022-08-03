@@ -294,12 +294,12 @@ def import_gbif_occurrences(
                     break
             collection_record.category = origin
         collection_record.validated = True
-        collection_record.additional_data = {
-            'fetch_from_gbif': True,
-            'date_fetched': datetime.datetime.now().strftime(
-                '%Y-%m-%d %H:%M:%S'
-            )
-        }
+        additional_data = result
+        additional_data['fetch_from_gbif'] = True
+        additional_data['date_fetched'] = datetime.datetime.now().strftime(
+            '%Y-%m-%d %H:%M:%S'
+        )
+        collection_record.additional_data = additional_data
         collection_record.save()
 
     if log_file:
