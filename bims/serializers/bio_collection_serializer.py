@@ -6,7 +6,6 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
-from django.core.cache import cache
 from django.urls import reverse
 
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
@@ -138,8 +137,8 @@ class BioCollectionOneRowSerializer(
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
     upstream_id = serializers.SerializerMethodField()
-    dataset_key = serializers.SerializerMethodField()
-    occurrence_id = serializers.SerializerMethodField()
+    taxon_key = serializers.SerializerMethodField()
+    species_key = serializers.SerializerMethodField()
     basis_of_record = serializers.SerializerMethodField()
     institution_code = serializers.SerializerMethodField()
     collection_code = serializers.SerializerMethodField()
@@ -534,13 +533,9 @@ class BioCollectionOneRowSerializer(
         return '-'
 
     def occurrences_fields(self, obj, field):
-        # Disable for now
-        # if obj.upstream_id:
-        #     data = get_fields_from_occurrences(obj)
-        #     try:
-        #         return data[field]
-        #     except:  # noqa
-        #         return '-'
+        if obj.additional_data and isinstance(obj.additional_data, dict):
+            if field in obj.additional_data:
+                return obj.additional_data[field]
         return '-'
 
     def get_decision_support_tool(self, obj):
@@ -560,11 +555,11 @@ class BioCollectionOneRowSerializer(
                 return obj.additional_data['eventID']
         return ''
 
-    def get_dataset_key(self, obj):
-        return self.occurrences_fields(obj, 'datasetKey')
+    def get_taxon_key(self, obj):
+        return self.occurrences_fields(obj, 'taxonKey')
 
-    def get_occurrence_id(self, obj):
-        return self.occurrences_fields(obj, 'occurrenceID')
+    def get_species_key(self, obj):
+        return self.occurrences_fields(obj, 'speciesKey')
 
     def get_basis_of_record(self, obj):
         return self.occurrences_fields(obj, 'basisOfRecord')
@@ -638,8 +633,8 @@ class BioCollectionOneRowSerializer(
             'doi_or_url',
             'notes',
             'upstream_id',
-            'dataset_key',
-            'occurrence_id',
+            'taxon_key',
+            'species_key',
             'basis_of_record',
             'institution_code',
             'collection_code',
