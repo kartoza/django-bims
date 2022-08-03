@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from preferences import preferences
 from rest_framework import serializers
@@ -36,6 +37,8 @@ ORIGIN = {
     'alien': 'Non-Native',
     'indigenous': 'Native',
 }
+
+logger = logging.getLogger(__name__)
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -281,8 +284,8 @@ class BioCollectionOneRowSerializer(
 
     def get_site_description(self, obj):
         if obj.site.site_description:
-            return obj.site.site_description
-        return obj.site.name
+            return obj.site.site_description.replace(';', ',')
+        return obj.site.name.replace(';', ',')
 
     def get_latitude(self, obj):
         lat = obj.site.get_centroid().y
@@ -455,6 +458,8 @@ class BioCollectionOneRowSerializer(
         if obj.collector_user:
             if obj.collector_user.organization:
                 return obj.collector_user.organization
+        if obj.source_collection in ['gbif', 'virtual_museum']:
+            return obj.institution_id
         return '-'
 
     def get_analyst(self, obj):
@@ -830,7 +835,8 @@ class BioCollectionOneRowSerializer(
                 )
             )
             for context_group in context_groups:
-                self.context['header'].append(context_group.name)
+                if context_group.name not in self.context['header']:
+                    self.context['header'].append(context_group.name)
                 self.context['geocontext_groups'].append({
                     'name': context_group.name,
                     'key': context_group.key
@@ -887,6 +893,20 @@ class BioCollectionOneRowSerializer(
                             taxon_attribute_data
                         )
                         result[key_title] = taxon_attribute_data
+
+        # For gbif
+        if instance.source_collection == 'gbif':
+            key = 'GBIF key'
+            if key not in self.context['header']:
+                self.context['header'].append(key)
+            result[key] = instance.taxonomy.gbif_key
+
+        # For VM
+        if instance.source_collection == 'virtual_museum':
+            key = 'VM-Number'
+            if key not in self.context['header']:
+                self.context['header'].append(key)
+            result[key] = self.get_upstream_id(instance)
 
         return result
 
