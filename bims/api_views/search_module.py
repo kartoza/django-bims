@@ -1,6 +1,7 @@
 import operator
 from functools import reduce
 
+from django.contrib.gis.db.models.aggregates import Extent
 from django.db.models.functions import Concat
 
 from geonode.people.models import Profile
@@ -55,7 +56,18 @@ class SearchModule(CollectionSearch):
     water_temperature = WaterTemperature.objects.all()
     survey = Survey.objects.none()
 
+    def extent(self):
+        # Get extent from collection results
+        if self.water_temperature.count() < 1:
+            return []
+        extent = self.sites.aggregate(extent=Extent('geometry_point'))
+        return list(extent['extent'])
+
     def run_search(self):
+        if self.search_query:
+            self.water_temperature = self.water_temperature.filter(
+                location_site__site_code__icontains=self.search_query
+            )
         if self.reference:
             self.water_temperature = self.water_temperature.filter(
                 source_reference__in=self.reference
@@ -105,6 +117,8 @@ class SearchModule(CollectionSearch):
     def get_summary_data(self):
         self.run_search()
         return {
+            'total': 0,
+            'total_survey': 0,
             'total_sites': self.sites.count(),
             'sites': SiteModuleSerializer(
                 self.sites,

@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 def search_task(parameters, search_process_id, background=True):
     from bims.utils.celery import memcache_lock
     from bims.api_views.search import CollectionSearch
+    from bims.api_views.search_module import SearchModule
     from bims.models.search_process import (
         SearchProcess,
         SEARCH_PROCESSING,
@@ -29,8 +30,10 @@ def search_task(parameters, search_process_id, background=True):
         with memcache_lock(lock_id, oid) as acquired:
             if acquired:
                 search_process.set_status(SEARCH_PROCESSING)
-
-                search = CollectionSearch(parameters)
+                if parameters['module'] == 'water_temperature':
+                    search = SearchModule(parameters)
+                else:
+                    search = CollectionSearch(parameters)
                 search_results = search.get_summary_data()
                 if search_results:
                     search_process.set_search_raw_query(
@@ -48,7 +51,10 @@ def search_task(parameters, search_process_id, background=True):
             'Search %s is already being processed by another worker',
             search_process.process_id)
     else:
-        search = CollectionSearch(parameters)
+        if parameters['module'] == 'water_temperature':
+            search = SearchModule(parameters)
+        else:
+            search = CollectionSearch(parameters)
         search_results = search.get_summary_data()
         if search_results:
             search_process.set_search_raw_query(

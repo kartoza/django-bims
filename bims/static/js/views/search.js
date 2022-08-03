@@ -85,11 +85,15 @@ define([
             ]
             if (value === 'occurrence') {
                 for (let container of occurrencesFilter) {
-                    document.getElementById(container).style.display = 'block';
+                    if (document.getElementById(container)) {
+                        document.getElementById(container).style.display = 'block';
+                    }
                 }
             } else {
                 for (let container of occurrencesFilter) {
-                    document.getElementById(container).style.display = 'none';
+                    if (document.getElementById(container)) {
+                        document.getElementById(container).style.display = 'none';
+                    }
                 }
             }
         },
@@ -502,27 +506,9 @@ define([
             }
             filterParameters['ecologicalCategory'] = ecologicalConditions;
 
-            // Abiotic data
-            var abioticData = false;
-            if ($('#abiotic-data-filter').is(':checked')) {
-                abioticData = true;
-                filterParameters['abioticData'] = 'True';
-            } else {
-                filterParameters['abioticData'] = '';
-            }
-
-             // Thermal Module
-            let thermalModule = false;
-            if ($('#thermal-module-filter').is(':checked')) {
-                thermalModule = true;
-                filterParameters['thermalModule'] = 'True';
-            } else {
-                filterParameters['thermalModule'] = '';
-            }
-            self.highlightPanel('.module-filters-wrapper', filterParameters['modules'] !== '' || false);
-
-            self.highlightPanel('.thermal-module-filters-wrapper', thermalModule !== false || abioticData);
-
+            // Selected module
+            filterParameters['module'] = document.querySelector('input[name="module"]:checked').value;
+            self.highlightPanel('.thermal-module-filters-wrapper', filterParameters['module'] !== 'occurrence');
 
             // Search value
             filterParameters['search'] = searchValue;
@@ -842,6 +828,12 @@ define([
                 if (nonNativeSelected) {
                     $('#non-native-origin-btn').addClass('selected');
                 }
+            }
+
+            // Search module
+            if (allFilters.hasOwnProperty('module')) {
+                document.getElementById(allFilters['module'] + '-module').checked = true;
+                $('[name="module"]').trigger('change');
             }
 
             // Collectors

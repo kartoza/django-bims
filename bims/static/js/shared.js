@@ -11,8 +11,8 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url'], 
             "&spatialFilter=<%= spatialFilter %>" +
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>&sourceCollection=<%= sourceCollection %>" +
-            "&abioticData=<%= abioticData %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
-            "&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>&polygon=<%= polygon %>&thermalModule=<%= thermalModule %>&dst=<%= dst %>",
+            "&module=<%= module %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
+            "&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>&polygon=<%= polygon %>&dst=<%= dst %>",
         LocationSiteDetailXHRRequest: null,
         MultiSitesOverviewXHRRequest: null,
         TaxonDetailXHRRequest: null,

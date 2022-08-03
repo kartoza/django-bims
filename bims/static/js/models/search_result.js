@@ -6,7 +6,8 @@ define(['backbone'], function (Backbone) {
             count: 0,
             survey: 0,
             record_type: '',
-            total_thermal: 0
+            total_thermal: 0,
+            module: 'occurrence'
         },
         destroy: function () {
             this.unbind();

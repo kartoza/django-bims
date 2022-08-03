@@ -195,6 +195,8 @@ define([
                 }
             }
 
+            let selectedModule = document.querySelector('input[name="module"]:checked').value;
+
             var $searchResultsWrapper = $('<div></div>');
             $searchResultsWrapper.append(
                 '<div class="search-results-wrapper">' +
@@ -203,13 +205,15 @@ define([
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="site-detail-dashboard-button-wrapper"></span></div>' +
                 '<div id="site-list" class="search-results-section"></div>' +
                 '</div>');
-            $searchResultsWrapper.append(
-                '<div class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> TAXA ' +
-                '(<span id="taxa-list-number"></span>) ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="taxa-detail-dashboard-button-wrapper"></span></div>' +
-                '<div id="taxa-list" class="search-results-section"></div>' +
-                '</div>');
+            if (selectedModule === 'occurrence') {
+                $searchResultsWrapper.append(
+                    '<div class="search-results-wrapper">' +
+                    '<div class="search-results-total" data-visibility="true"> TAXA ' +
+                    '(<span id="taxa-list-number"></span>) ' +
+                    '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="taxa-detail-dashboard-button-wrapper"></span></div>' +
+                    '<div id="taxa-list" class="search-results-section"></div>' +
+                    '</div>');
+            }
 
             self.searchPanel.fillPanelHtml($searchResultsWrapper);
 
@@ -218,10 +222,10 @@ define([
             });
             this.viewCollection = [];
 
-            var recordsCount = numberWithCommas(this.totalRecords);
-            var siteCount = numberWithCommas(this.totalSites);
-            var taxaCount = numberWithCommas(this.totalTaxa);
-            var speciesListName = [];
+            let recordsCount = numberWithCommas(this.totalRecords);
+            let siteCount = numberWithCommas(this.totalSites);
+            let taxaCount = numberWithCommas(this.totalTaxa);
+            let speciesListName = [];
 
             if (self.status === 'finished' && (this.sitesData.length > 0 || this.recordsData.length > 0)) {
                 if (this.searchFinishedCallback) {
@@ -248,19 +252,28 @@ define([
                     speciesListName.push(searchResultView.model.get('name'));
                 });
                 $.each(this.sitesData, function (key, data) {
-                    let total_water_temperature_data = 0
+                    let total_water_temperature_data = 0;
+                    let _total = 0;
+                    let _total_survey = 0;
                     if (data['total_water_temperature_data']) {
                         total_water_temperature_data = data['total_water_temperature_data']
                     }
-                    var searchModel = new SearchModel({
+                    if (typeof data['total'] !== 'undefined') {
+                        _total = data['total'];
+                    }
+                    if (typeof data['total_survey'] !== 'undefined') {
+                        _total_survey = data['total_survey']
+                    }
+                    let searchModel = new SearchModel({
                         id: data['site_id'],
-                        count: numberWithCommas(data['total']),
-                        survey: numberWithCommas(data['total_survey']),
-                        total_thermal: total_water_temperature_data,
+                        count: numberWithCommas(_total),
+                        survey: numberWithCommas(_total_survey),
+                        total_thermal: numberWithCommas(total_water_temperature_data),
                         name: data['name'],
-                        record_type: 'site'
+                        record_type: 'site',
+                        module: selectedModule
                     });
-                    var searchResultView = new SearchResultView({
+                    let searchResultView = new SearchResultView({
                         model: searchModel
                     });
                     self.viewCollection.push(searchResultView);

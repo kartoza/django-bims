@@ -76,12 +76,12 @@
                 </div>
 
                 <div class="form-check module-radio-wrapper">
-                    <input class="radio-module" type="radio" id="thermal-module" name="module" value="water_temperature">
+                    <input class="radio-module" type="radio" id="water_temperature-module" name="module" value="water_temperature">
                     <label class="form-check-label" for="thermal-module">Water Temperature (time series)</label>
                 </div>
 
                 <div class="form-check module-radio-wrapper">
-                    <input class="radio-module" type="radio" id="abiotic-module" name="module" value="physico_chemistry">
+                    <input class="radio-module" type="radio" id="physico_chemistry-module" name="module" value="physico_chemistry">
                     <label class="form-check-label" for="abiotic-module">Physico-chemistry</label>
                 </div>
 {#                <div class="form-check module-checkbox-wrapper">#}
@@ -1150,9 +1150,10 @@
 <script type="text/template" id="search-result-site-template">
     <div class="result-search" data-search-result-id="<%= id %>">
         <p class="group-title"><%= name %></p>
-        <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %>
+        <a class="group-description">
+            <% if (module === "occurrence") { %> <%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> <% } %>
 
-            <% if (total_thermal > 0) { %>  &bull; <%= total_thermal %> water temperature data <% } else { %> <% } %>
+            <% if (module === "water_temperature") { %>  <%= total_thermal %> water temperature data <% } %>
         </a>
     </div>
 </script>
