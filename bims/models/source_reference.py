@@ -96,6 +96,10 @@ class SourceReference(PolymorphicModel):
     verified = models.BooleanField(
         default=False
     )
+    mobile = models.BooleanField(
+        help_text='Also available for mobile app',
+        default=False,
+    )
 
     @property
     def reference_source(self):

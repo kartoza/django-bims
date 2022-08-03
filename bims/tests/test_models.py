@@ -17,7 +17,7 @@ from bims.models.iucn_status import iucn_status_pre_save_handler
 from bims.utils.get_key import get_key
 from bims.models.location_site import LocationSite
 
-geocontext_url = get_key('GEOCONTEXT_URL')
+geocontext_url = 'GEOCONTEXT_URL'
 geocontext_collection_key = get_key('GEOCONTEXT_COLLECTION_KEY')
 
 skip_geocontext = (not geocontext_url or not geocontext_collection_key)

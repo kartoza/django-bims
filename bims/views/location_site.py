@@ -1,3 +1,7 @@
+import json
+from datetime import datetime
+import pytz
+
 from bims.models.taxon_group import TaxonGroup
 from django.db.models import Q
 
@@ -29,13 +33,207 @@ from bims.utils.jsonify import json_loads_byteified
 from bims.serializers.survey_serializer import SurveySerializer
 
 
+def handle_location_site_post_data(
+        post_data: dict,
+        collector: get_user_model(),
+        location_site: LocationSite = None) -> LocationSite:
+    """
+    Handle post request to create or update a location site
+    :param post_data: data from POST request
+    :param collector: user object
+    :param location_site: If none then create a new one
+    :return: new or updated location site
+    """
+    owner = post_data.get('owner', '').strip()
+    if not owner:
+        owner = None
+    latitude = post_data.get('latitude', None)
+    longitude = post_data.get('longitude', None)
+    legacy_site_code = post_data.get('legacy_site_code', '')
+    additional_data = post_data.get('additional_data', None)
+    date = post_data.get('date', datetime.now())
+    if date and not isinstance(date, datetime):
+        if isinstance(date, str):
+            timestamp = int(date)
+        else:
+            timestamp = date
+        date = datetime.fromtimestamp(
+            timestamp,
+            pytz.UTC
+        )
+
+    refined_geomorphological_zone = post_data.get(
+        'refined_geomorphological_zone',
+        None
+    )
+    river_name = post_data.get('river_name', None)
+    original_river_name = post_data.get('original_river_name', '')
+    if not river_name:
+        river_name = original_river_name
+
+    site_code = post_data.get('site_code', None)
+    site_description = post_data.get('site_description', '')
+    catchment_geocontext = post_data.get('catchment_geocontext', None)
+    geomorphological_group_geocontext = post_data.get(
+        'geomorphological_group_geocontext',
+        None
+    )
+
+    if not latitude or not longitude or not site_code:
+        raise Http404()
+
+    latitude = float(latitude)
+    longitude = float(longitude)
+
+    if owner:
+        try:
+            owner = get_user_model().objects.get(
+                id=owner
+            )
+        except (get_user_model().DoesNotExist, ValueError):
+            raise Http404('User does not exist')
+    else:
+        owner = collector
+
+    geometry_point = Point(longitude, latitude)
+    location_type, status = LocationType.objects.get_or_create(
+        name='PointObservation',
+        allowed_geometry='POINT'
+    )
+    post_dict = {
+        'name': site_code,
+        'owner': owner,
+        'latitude': latitude,
+        'longitude': longitude,
+        'site_description': site_description,
+        'geometry_point': geometry_point,
+        'location_type': location_type,
+        'site_code': site_code,
+        'legacy_river_name': original_river_name,
+        'legacy_site_code': legacy_site_code,
+        'date_created': date
+    }
+
+    if river_name:
+        river, river_created = River.objects.get_or_create(
+            name=river_name,
+            owner=owner
+        )
+        post_dict['river_id'] = river.id
+
+    if not location_site:
+        location_site = LocationSite.objects.create(**post_dict)
+    else:
+        for key in post_dict:
+            setattr(location_site, key, post_dict[key])
+
+    # Flag to indicate new geomorphological data has been
+    # fetched from geocontext
+    geomorphological_fetched = False
+    if geomorphological_group_geocontext:
+        geomorphological_data = json_loads_byteified(
+            geomorphological_group_geocontext
+        )
+        if 'properties' in geomorphological_data:
+            geomorphological_data = geomorphological_data['properties']
+        for registry in geomorphological_data['services']:
+            if 'key' in registry and 'name' in registry:
+                if registry['value']:
+                    group, group_created = (
+                        LocationContextGroup.objects.get_or_create(
+                            key=registry['key'],
+                            name=registry['name'],
+                            geocontext_group_key=
+                            geomorphological_data['key']
+                        )
+                    )
+                    LocationContext.objects.get_or_create(
+                        site=location_site,
+                        value=registry['value'],
+                        group=group
+                    )
+                    geomorphological_fetched = True
+            else:
+                LocationContext.objects.filter(
+                    site=location_site,
+                    group__geocontext_group_key=geomorphological_data[
+                        'key']
+                ).delete()
+
+    try:
+        if catchment_geocontext:
+            if isinstance(catchment_geocontext, dict):
+                catchment_geocontext = json.dumps(catchment_geocontext)
+            catchment_data = json_loads_byteified(
+                catchment_geocontext
+            )
+            if 'properties' in catchment_data:
+                catchment_data = catchment_data['properties']
+            if 'services' in catchment_data:
+                for registry in catchment_data['services']:
+                    if not registry['value']:
+                        continue
+                    group, group_created = (
+                        LocationContextGroup.objects.get_or_create(
+                            key=registry['key'],
+                            name=registry['name'],
+                            geocontext_group_key=catchment_data['key']
+                        )
+                    )
+                    LocationContext.objects.get_or_create(
+                        site=location_site,
+                        value=registry['value'],
+                        group=group
+                    )
+    except TypeError:
+        pass
+
+    if refined_geomorphological_zone:
+        location_site.refined_geomorphological = (
+            refined_geomorphological_zone
+        )
+    else:
+        if location_site.refined_geomorphological:
+            location_site.refined_geomorphological = ''
+
+    geo_class = LocationContext.objects.filter(
+        site=location_site,
+        group__key='geo_class_recoded'
+    )
+    if not location_site.creator:
+        location_site.creator = collector
+    # Set original_geomorphological
+    if geo_class.exists():
+        if geomorphological_fetched:
+            location_site.original_geomorphological = (
+                geo_class[0].value
+            )
+    else:
+        if not location_site.original_geomorphological:
+            location_site.original_geomorphological = (
+                refined_geomorphological_zone
+            )
+
+    if additional_data:
+        try:
+            additional_data = json.loads(additional_data)
+            if not location_site.additional_data:
+                location_site.additional_data = additional_data
+            else:
+                for key in additional_data:
+                    location_site.additional_data[key] = additional_data[key]
+        except json.decoder.JSONDecodeError:
+            pass
+
+    location_site.save()
+
+    return location_site
+
+
 class LocationSiteFormView(TemplateView):
     template_name = 'location_site_form_view.html'
     success_message = 'New site has been successfully added'
-
-    def update_or_create_location_site(self, post_dict):
-        location_site = LocationSite.objects.create(**post_dict)
-        return location_site
+    location_site = None
 
     def additional_context_data(self):
         return {
@@ -91,151 +289,11 @@ class LocationSiteFormView(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        owner = request.POST.get('owner', '').strip()
-        if not owner:
-            owner = None
-        latitude = request.POST.get('latitude', None)
-        longitude = request.POST.get('longitude', None)
-        legacy_site_code = request.POST.get('legacy_site_code', '')
-        refined_geomorphological_zone = request.POST.get(
-            'refined_geomorphological_zone',
-            None
+        location_site = handle_location_site_post_data(
+            request.POST.dict(),
+            self.request.user,
+            self.location_site
         )
-        river_name = request.POST.get('river_name', None)
-        original_river_name = request.POST.get('original_river_name', '')
-        if not river_name:
-            river_name = original_river_name
-
-        site_code = request.POST.get('site_code', None)
-        site_description = request.POST.get('site_description', None)
-        catchment_geocontext = request.POST.get('catchment_geocontext', None)
-        geomorphological_group_geocontext = request.POST.get(
-            'geomorphological_group_geocontext',
-            None
-        )
-
-        if not latitude or not longitude or not site_code:
-            raise Http404()
-
-        latitude = float(latitude)
-        longitude = float(longitude)
-
-        if owner:
-            try:
-                owner = get_user_model().objects.get(
-                    id=owner
-                )
-            except (get_user_model().DoesNotExist, ValueError):
-                raise Http404('User does not exist')
-
-        river, river_created = River.objects.get_or_create(
-            name=river_name,
-            owner=owner
-        )
-
-        geometry_point = Point(longitude, latitude)
-        location_type, status = LocationType.objects.get_or_create(
-            name='PointObservation',
-            allowed_geometry='POINT'
-        )
-        post_dict = {
-            'name': site_code,
-            'owner': owner,
-            'latitude': latitude,
-            'longitude': longitude,
-            'river': river,
-            'site_description': site_description,
-            'geometry_point': geometry_point,
-            'location_type': location_type,
-            'site_code': site_code,
-            'legacy_river_name': original_river_name,
-            'legacy_site_code': legacy_site_code
-        }
-        location_site = self.update_or_create_location_site(
-            post_dict
-        )
-
-        # Flag to indicate new geomorphological data has been
-        # fetched from geocontext
-        geomorphological_fetched = False
-        if geomorphological_group_geocontext:
-            geomorphological_data = json_loads_byteified(
-                geomorphological_group_geocontext
-            )
-            for registry in geomorphological_data['service_registry_values']:
-                if 'key' in registry and 'name' in registry:
-                    if registry['value']:
-                        group, group_created = (
-                            LocationContextGroup.objects.get_or_create(
-                                key=registry['key'],
-                                name=registry['name'],
-                                geocontext_group_key=
-                                geomorphological_data['key']
-                            )
-                        )
-                        LocationContext.objects.get_or_create(
-                            site=location_site,
-                            value=registry['value'],
-                            group=group
-                        )
-                        geomorphological_fetched = True
-                else:
-                    LocationContext.objects.filter(
-                        site=location_site,
-                        group__geocontext_group_key=geomorphological_data[
-                            'key']
-                    ).delete()
-
-        try:
-            if catchment_geocontext:
-                catchment_data = json_loads_byteified(
-                    catchment_geocontext
-                )
-                if 'service_registry_values' in catchment_data:
-                    for registry in catchment_data['service_registry_values']:
-                        if not registry['value']:
-                            continue
-                        group, group_created = (
-                            LocationContextGroup.objects.get_or_create(
-                                key=registry['key'],
-                                name=registry['name'],
-                                geocontext_group_key=catchment_data['key']
-                            )
-                        )
-                        LocationContext.objects.get_or_create(
-                            site=location_site,
-                            value=registry['value'],
-                            group=group
-                        )
-        except TypeError:
-            pass
-
-        if refined_geomorphological_zone:
-            location_site.refined_geomorphological = (
-                refined_geomorphological_zone
-            )
-        else:
-            if location_site.refined_geomorphological:
-                location_site.refined_geomorphological = ''
-
-        geo_class = LocationContext.objects.filter(
-            site=location_site,
-            group__key='geo_class_recoded'
-        )
-        if not location_site.creator:
-            location_site.creator = self.request.user
-        # Set original_geomorphological
-        if geo_class.exists():
-            if geomorphological_fetched:
-                location_site.original_geomorphological = (
-                    geo_class[0].value
-                )
-        else:
-            if not location_site.original_geomorphological:
-                location_site.original_geomorphological = (
-                    refined_geomorphological_zone
-                )
-        location_site.save()
 
         self.check_site_images(location_site)
 
@@ -260,15 +318,6 @@ class LocationSiteFormView(TemplateView):
 class LocationSiteFormUpdateView(LocationSiteFormView):
     location_site = None
     success_message = 'Site has been successfully updated'
-
-    def update_or_create_location_site(self, post_dict):
-        # Update current location context document
-        LocationSite.objects.filter(
-            id=self.location_site.id
-        ).update(
-            **post_dict
-        )
-        return LocationSite.objects.get(id=self.location_site.id)
 
     def additional_context_data(self):
         context_data = dict()

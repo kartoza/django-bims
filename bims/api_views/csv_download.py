@@ -56,20 +56,29 @@ class CsvDownload(APIView):
             pass
 
         path_file = os.path.join(path_folder, filename)
-
         if os.path.exists(path_file):
-            send_csv_via_email_task.delay(
-                user_id=request.user.id,
-                csv_file=path_file,
-                download_request_id=download_request_id
-            )
-        else:
-            download_collection_record_task.delay(
-                path_file,
-                self.request.GET,
-                send_email=True,
-                user_id=self.request.user.id
-            )
+            os.remove(path_file)
+
+        download_collection_record_task(
+            path_file,
+            self.request.GET,
+            send_email=True,
+            user_id=self.request.user.id
+        )
+
+        # if os.path.exists(path_file):
+        #     send_csv_via_email_task.delay(
+        #         user_id=request.user.id,
+        #         csv_file=path_file,
+        #         download_request_id=download_request_id
+        #     )
+        # else:
+        #     download_collection_record_task.delay(
+        #         path_file,
+        #         self.request.GET,
+        #         send_email=True,
+        #         user_id=self.request.user.id
+        #     )
 
         return Response({
             'status': 'processing',

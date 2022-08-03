@@ -161,6 +161,12 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         null=True,
     )
 
+    date_created = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=timezone.now
+    )
+
     @property
     def location_site_identifier(self):
         """

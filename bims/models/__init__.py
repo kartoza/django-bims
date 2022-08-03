@@ -54,3 +54,4 @@ from bims.models.water_temperature import *  # noqa
 from bims.models.taxon_extra_attribute import *  # noqa
 
 from bims.models.decision_support_tool import *  # noqa
+from bims.models.geocontext_setting import GeocontextSetting

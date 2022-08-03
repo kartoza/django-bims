@@ -1,11 +1,11 @@
 import json
+import logging
 import uuid
 from preferences import preferences
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
-from django.core.cache import cache
 from django.urls import reverse
 
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
@@ -36,6 +36,8 @@ ORIGIN = {
     'alien': 'Non-Native',
     'indigenous': 'Native',
 }
+
+logger = logging.getLogger(__name__)
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -135,8 +137,8 @@ class BioCollectionOneRowSerializer(
     source = serializers.SerializerMethodField()
     year = serializers.SerializerMethodField()
     upstream_id = serializers.SerializerMethodField()
-    dataset_key = serializers.SerializerMethodField()
-    occurrence_id = serializers.SerializerMethodField()
+    taxon_key = serializers.SerializerMethodField()
+    species_key = serializers.SerializerMethodField()
     basis_of_record = serializers.SerializerMethodField()
     institution_code = serializers.SerializerMethodField()
     collection_code = serializers.SerializerMethodField()
@@ -281,8 +283,8 @@ class BioCollectionOneRowSerializer(
 
     def get_site_description(self, obj):
         if obj.site.site_description:
-            return obj.site.site_description
-        return obj.site.name
+            return obj.site.site_description.replace(';', ',')
+        return obj.site.name.replace(';', ',')
 
     def get_latitude(self, obj):
         lat = obj.site.get_centroid().y
@@ -455,6 +457,8 @@ class BioCollectionOneRowSerializer(
         if obj.collector_user:
             if obj.collector_user.organization:
                 return obj.collector_user.organization
+        if obj.source_collection in ['gbif', 'virtual_museum']:
+            return obj.institution_id
         return '-'
 
     def get_analyst(self, obj):
@@ -529,13 +533,9 @@ class BioCollectionOneRowSerializer(
         return '-'
 
     def occurrences_fields(self, obj, field):
-        # Disable for now
-        # if obj.upstream_id:
-        #     data = get_fields_from_occurrences(obj)
-        #     try:
-        #         return data[field]
-        #     except:  # noqa
-        #         return '-'
+        if obj.additional_data and isinstance(obj.additional_data, dict):
+            if field in obj.additional_data:
+                return obj.additional_data[field]
         return '-'
 
     def get_decision_support_tool(self, obj):
@@ -555,11 +555,11 @@ class BioCollectionOneRowSerializer(
                 return obj.additional_data['eventID']
         return ''
 
-    def get_dataset_key(self, obj):
-        return self.occurrences_fields(obj, 'datasetKey')
+    def get_taxon_key(self, obj):
+        return self.occurrences_fields(obj, 'taxonKey')
 
-    def get_occurrence_id(self, obj):
-        return self.occurrences_fields(obj, 'occurrenceID')
+    def get_species_key(self, obj):
+        return self.occurrences_fields(obj, 'speciesKey')
 
     def get_basis_of_record(self, obj):
         return self.occurrences_fields(obj, 'basisOfRecord')
@@ -633,8 +633,8 @@ class BioCollectionOneRowSerializer(
             'doi_or_url',
             'notes',
             'upstream_id',
-            'dataset_key',
-            'occurrence_id',
+            'taxon_key',
+            'species_key',
             'basis_of_record',
             'institution_code',
             'collection_code',
@@ -820,7 +820,7 @@ class BioCollectionOneRowSerializer(
                 result.update(chem_record_data)
 
         geocontext_keys = (
-            preferences.SiteSetting.geocontext_keys.split(',')
+            preferences.GeocontextSetting.geocontext_keys.split(',')
         )
         if 'geocontext_groups' not in self.context:
             self.context['geocontext_groups'] = []
@@ -830,7 +830,8 @@ class BioCollectionOneRowSerializer(
                 )
             )
             for context_group in context_groups:
-                self.context['header'].append(context_group.name)
+                if context_group.name not in self.context['header']:
+                    self.context['header'].append(context_group.name)
                 self.context['geocontext_groups'].append({
                     'name': context_group.name,
                     'key': context_group.key
@@ -864,10 +865,14 @@ class BioCollectionOneRowSerializer(
                 for taxon_extra_attribute in taxon_extra_attributes:
                     taxon_attribute_name = taxon_extra_attribute.name
                     key_title = taxon_attribute_name.lower().replace(' ', '_')
+                    cache_key = '{id}-{extra_id}'.format(
+                        id=instance.taxonomy.id,
+                        extra_id=taxon_extra_attribute.id
+                    )
                     if key_title not in self.context['header']:
                         self.context['header'].append(key_title)
                     taxon_attribute_data = self.get_context_cache(
-                        instance.taxonomy.id,
+                        cache_key,
                         taxon_attribute_name
                     )
                     if not taxon_attribute_data:
@@ -882,11 +887,25 @@ class BioCollectionOneRowSerializer(
                         else:
                             result[key_title] = '-'
                         self.set_context_cache(
-                            instance.taxonomy.id,
+                            cache_key,
                             taxon_attribute_name,
                             taxon_attribute_data
                         )
-                        result[key_title] = taxon_attribute_data
+                    result[key_title] = taxon_attribute_data
+
+        # For gbif
+        if instance.source_collection == 'gbif':
+            key = 'GBIF key'
+            if key not in self.context['header']:
+                self.context['header'].append(key)
+            result[key] = instance.taxonomy.gbif_key
+
+        # For VM
+        if instance.source_collection == 'virtual_museum':
+            key = 'VM-Number'
+            if key not in self.context['header']:
+                self.context['header'].append(key)
+            result[key] = self.get_upstream_id(instance)
 
         return result
 

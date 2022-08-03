@@ -29,7 +29,9 @@ x-common-django:
     - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
     - GEOSERVER_LOCATION=http://geoserver/geoserver/
     - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
-    - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+    - GEOSERVER_PUBLIC_LOCATION=http://192.168.50.135:63305/geoserver/
+    - GEOSERVER_ADMIN_USER=${GEOSERVER_USERNAME:-admin}
+    - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_PASSWORD:-admingeoserver}
     - MEDIA_ROOT=/home/web/media
     - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
     - ROOT_URLCONF=core.urls
