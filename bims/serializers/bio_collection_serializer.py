@@ -865,10 +865,14 @@ class BioCollectionOneRowSerializer(
                 for taxon_extra_attribute in taxon_extra_attributes:
                     taxon_attribute_name = taxon_extra_attribute.name
                     key_title = taxon_attribute_name.lower().replace(' ', '_')
+                    cache_key = '{id}-{extra_id}'.format(
+                        id=instance.taxonomy.id,
+                        extra_id=taxon_extra_attribute.id
+                    )
                     if key_title not in self.context['header']:
                         self.context['header'].append(key_title)
                     taxon_attribute_data = self.get_context_cache(
-                        instance.taxonomy.id,
+                        cache_key,
                         taxon_attribute_name
                     )
                     if not taxon_attribute_data:
@@ -883,11 +887,11 @@ class BioCollectionOneRowSerializer(
                         else:
                             result[key_title] = '-'
                         self.set_context_cache(
-                            instance.taxonomy.id,
+                            cache_key,
                             taxon_attribute_name,
                             taxon_attribute_data
                         )
-                        result[key_title] = taxon_attribute_data
+                    result[key_title] = taxon_attribute_data
 
         # For gbif
         if instance.source_collection == 'gbif':
