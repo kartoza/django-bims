@@ -12,9 +12,10 @@ from bims.models import (
     ORIGIN_CATEGORIES
 )
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif
+    fetch_all_species_from_gbif, fetch_gbif_vernacular_names
 )
 from bims.scripts.data_upload import DataCSVUpload
+from bims.utils.gbif import get_vernacular_names
 
 logger = logging.getLogger('bims')
 
@@ -247,6 +248,13 @@ class TaxaProcessor(object):
         )
         try:
             taxonomy = None
+
+            common_name = self.common_name(row)
+            if not common_name:
+                should_fetch_vernacular_names = True
+            else:
+                should_fetch_vernacular_names = False
+
             if taxa.exists():
                 taxonomy = taxa[0]
                 logger.debug('{} already in the system'.format(
@@ -263,16 +271,18 @@ class TaxaProcessor(object):
                     )
                     if gbif_key:
                         taxonomy = fetch_all_species_from_gbif(
-                            gbif_key=gbif_key
+                            gbif_key=gbif_key,
+                            fetch_vernacular_names=should_fetch_vernacular_names
                         )
                 if not taxonomy:
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
                         fetch_children=False,
-                        fetch_vernacular_names=False,
+                        fetch_vernacular_names=should_fetch_vernacular_names,
                         use_name_lookup=True
                     )
+
             if not taxonomy:
                 # Try again with lookup
                 logger.debug('Use different method')
@@ -280,7 +290,7 @@ class TaxaProcessor(object):
                     species=taxon_name,
                     taxonomic_rank=rank,
                     fetch_children=False,
-                    fetch_vernacular_names=False,
+                    fetch_vernacular_names=should_fetch_vernacular_names,
                     use_name_lookup=False
                 )
 
@@ -351,10 +361,15 @@ class TaxaProcessor(object):
                     )
 
                 # -- Common name
-                common_name = self.common_name(row)
                 if common_name:
                     taxonomy.vernacular_names.clear()
                     taxonomy.vernacular_names.add(common_name)
+                else:
+                    if (
+                        not taxonomy.vernacular_names.exists() and
+                        taxonomy.gbif_key
+                    ):
+                        fetch_gbif_vernacular_names(taxonomy)
 
                 # -- Origin
                 origin_data = self.origin(row)
