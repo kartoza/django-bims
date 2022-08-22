@@ -329,7 +329,8 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 name=F('reference_category'))
         )
         context['taxon_group_name'] = self.taxon_group_name
-        context['taxon_group_id'] = self.taxon_group_id
+        context['taxon_group_id'] = taxon_group.id
+
         taxon_group = TaxonGroup.objects.filter(
             name=self.taxon_group_name
         )
