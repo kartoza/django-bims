@@ -89,7 +89,7 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         ).values('source_reference__note', 'source_reference__id',
                  'total_reference').order_by(
             'total_reference'
-        ).order_by('-total_reference'))[:10]
+        ).order_by('-total_reference'))
 
         context.update({
             'documents': source_reference_document,
