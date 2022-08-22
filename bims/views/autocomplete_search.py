@@ -221,7 +221,10 @@ def species_autocomplete(request):
     if taxon_group_id:
         try:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-            taxa_list = taxon_group.taxonomies.all()
+            taxa_list = taxon_group.taxonomies.filter(
+                Q(canonical_name__icontains=q) |
+                Q(scientific_name__icontains=q)
+            )
         except TaxonGroup.DoesNotExist:
             pass
 
