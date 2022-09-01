@@ -109,11 +109,24 @@ class FindTaxon(APIView):
 
         # Find classes to narrow down the results
         taxon_group = query_dict.get('taxonGroup', None)
+        taxon_group_id = query_dict.get('taxonGroupId', None)
         taxon_name = query_dict.get('q', None)
         if taxon_group:
             del query_dict['taxonGroup']
             try:
                 taxon_group = TaxonGroup.objects.get(name=taxon_group)
+                phylum_keys = list(taxon_group.taxonomies.filter(
+                    parent__rank=TaxonomicRank.PHYLUM
+                ).values_list('parent__gbif_key', flat=True))
+            except (
+                    TaxonGroup.DoesNotExist,
+                    TaxonGroup.MultipleObjectsReturned):
+                pass
+
+        if taxon_group_id:
+            del query_dict['taxonGroupId']
+            try:
+                taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
                 phylum_keys = list(taxon_group.taxonomies.filter(
                     parent__rank=TaxonomicRank.PHYLUM
                 ).values_list('parent__gbif_key', flat=True))
@@ -181,6 +194,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         gbif_key = self.request.POST.get('gbifKey', None)
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
+        taxon_group_id = self.request.POST.get('taxonGroupId', None)
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         family = None
@@ -190,7 +204,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
                 fetch_parent=True,
-                get_vernacular=False
+                get_vernacular=True
             )
         elif taxon_name and rank:
             taxonomy, created = Taxonomy.objects.get_or_create(
@@ -198,6 +212,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 canonical_name=taxon_name,
                 rank=rank
             )
+        if taxon_group_id:
+            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            taxon_group.taxonomies.add(taxonomy)
+        else:
             if taxon_group:
                 try:
                     taxon_group = TaxonGroup.objects.get(name=taxon_group)

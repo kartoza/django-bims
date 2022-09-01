@@ -75,6 +75,38 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
     if vernacular_names:
         excluded_taxon.vernacular_names.add(*vernacular_names)
 
+def fetch_gbif_vernacular_names(taxonomy: Taxonomy):
+    if not taxonomy.gbif_key:
+        return False
+    vernacular_names = get_vernacular_names(taxonomy.gbif_key)
+    if vernacular_names:
+        print('Found %s vernacular names' % len(
+            vernacular_names['results']))
+        for result in vernacular_names['results']:
+            fields = {}
+            if 'source' in result:
+                fields['source'] = result['source']
+            if 'language' in result:
+                fields['language'] = result['language']
+            if 'taxonKey' in result:
+                fields['taxon_key'] = int(result['taxonKey'])
+            try:
+                vernacular_name, status = (
+                    VernacularName.objects.get_or_create(
+                        name=result['vernacularName']
+                    ))
+            except VernacularName.MultipleObjectsReturned:
+                vernacular_name = VernacularName.objects.filter(
+                    name=result['vernacularName']
+                ).first()
+
+            VernacularName.objects.filter(
+                name__iexact=vernacular_name.name
+            ).update(**fields)
+
+            taxonomy.vernacular_names.add(vernacular_name)
+        taxonomy.save()
+
 
 def create_or_update_taxonomy(
         gbif_data,
@@ -148,33 +180,7 @@ def create_or_update_taxonomy(
     taxonomy.gbif_data = gbif_data
 
     if fetch_vernacular_names:
-        vernacular_names = get_vernacular_names(species_key)
-        if vernacular_names:
-            print('Found %s vernacular names' % len(
-                vernacular_names['results']))
-            for result in vernacular_names['results']:
-                fields = {}
-                if 'source' in result:
-                    fields['source'] = result['source']
-                if 'language' in result:
-                    fields['language'] = result['language']
-                if 'taxonKey' in result:
-                    fields['taxon_key'] = int(result['taxonKey'])
-                try:
-                    vernacular_name, status = (
-                        VernacularName.objects.get_or_create(
-                            name=result['vernacularName']
-                        ))
-                except VernacularName.MultipleObjectsReturned:
-                    vernacular_name = VernacularName.objects.filter(
-                        name=result['vernacularName']
-                    ).first()
-
-                VernacularName.objects.filter(
-                    name__iexact=vernacular_name.name
-                ).update(**fields)
-
-                taxonomy.vernacular_names.add(vernacular_name)
+        fetch_gbif_vernacular_names(taxonomy)
     taxonomy.save()
     return taxonomy
 

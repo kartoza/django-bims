@@ -89,7 +89,7 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         ).values('source_reference__note', 'source_reference__id',
                  'total_reference').order_by(
             'total_reference'
-        ).order_by('-total_reference'))[:10]
+        ).order_by('-total_reference'))
 
         context.update({
             'documents': source_reference_document,
@@ -153,12 +153,17 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
                 if note == '':
                     return HttpResponseBadRequest('Note is empty')
             session_data = self.get_session_data(self.request)
-            try:
-                records = session_data['records']
-                biological_records = BiologicalCollectionRecord.objects. \
-                    filter(id__in=records)
-            except KeyError:
-                return HttpResponseBadRequest('Session is broken')
+            if 'survey' in session_data:
+                biological_records = BiologicalCollectionRecord.objects.filter(
+                    survey_id=session_data['survey']
+                )
+            else:
+                try:
+                    records = session_data['records']
+                    biological_records = BiologicalCollectionRecord.objects. \
+                        filter(id__in=records)
+                except KeyError:
+                    return HttpResponseBadRequest('Session is broken')
             # delete the session
             session_uuid = self.request.GET.get('session', None)
             self.remove_session(request, session_uuid)

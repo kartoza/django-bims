@@ -173,8 +173,14 @@
                            class="form-control form-control-sm"
                            placeholder="" value="{{ site_code }}" required {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
                     <small id="siteCodeHelp" class="form-text text-muted">
-                        The following standard has been adopted for naming site code:
+                        The following standard has been adopted for naming site code: <br/>
+                        {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
                         Secondary catchment code, 1st four letters of river name, 1st five letters of location. E.g. X2CROC-VELOR (Crocodile River @ Veloren Vallei Nature Reserve)
+                        {% elif preferences.SiteSetting.default_data_source.lower == 'rbis' %}
+                        Catchment + Province ID + District ID + site count. E.g. NNYU1205-00001
+                        {% else %}
+                        1st two site name + 1st two site description + site count
+                        {% endif %}
                     </small>
                     <input type="hidden" name="catchment_geocontext" id="catchment_geocontext">
                 </div>
