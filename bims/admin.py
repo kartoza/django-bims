@@ -23,6 +23,8 @@ from django.urls import reverse
 from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
+
+from bims.utils.sampling_method import merge_sampling_method
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -1056,8 +1058,43 @@ class SpatialScaleGroupAdmin(admin.ModelAdmin):
 class SamplingMethodAdmin(admin.ModelAdmin):
     list_display = (
         'sampling_method',
-        'effort_measure'
+        'effort_measure',
+        'verified'
     )
+
+    list_filter = (
+        'sampling_method',
+        'effort_measure',
+        'verified'
+    )
+
+    actions = ['merge_sampling_methods']
+
+    def merge_sampling_methods(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 sampling method', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified sampling method', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified sampling method',
+                messages.ERROR)
+            return
+        excluded_sampling_method = verified[0]
+        sampling_methods = queryset.exclude(id=verified[0].id)
+        merge_sampling_method(
+            excluded_sampling_method=excluded_sampling_method,
+            sampling_methods=sampling_methods
+        )
+        self.message_user(request, 'Sampling method has been merged')
+
+    merge_sampling_methods.short_description = 'Merge sampling methods'
 
 
 class SiteImageAdmin(admin.ModelAdmin):
