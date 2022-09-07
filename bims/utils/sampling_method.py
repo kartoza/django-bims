@@ -30,12 +30,14 @@ def merge_sampling_method(excluded_sampling_method=None, sampling_methods=None):
                 try:
                     objects = getattr(sampling_method, link).all()
                     if objects.count() > 0:
-                        print('Updating {obj} for : {taxon}'.format(
+                        print('Updating {obj} for : {sampling_method}'.format(
                             obj=str(objects.model._meta.label),
-                            taxon=str(sampling_method)
+                            sampling_method=str(sampling_method)
                         ))
                         update_dict = {
-                            getattr(sampling_method, link).field.name: excluded_sampling_method
+                            getattr(
+                                sampling_method, link
+                            ).field.name: excluded_sampling_method
                         }
                         objects.update(**update_dict)
                 except Exception as e:  # noqa

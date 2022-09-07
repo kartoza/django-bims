@@ -1029,7 +1029,8 @@ class SassBiotopeAdmin(admin.ModelAdmin):
         'biotope_form',
         'biotope_type',
         'taxon_group_list',
-        'used_in_SASS'
+        'used_in_SASS',
+        'verified'
     )
     list_filter = (
         'name',
@@ -1039,6 +1040,30 @@ class SassBiotopeAdmin(admin.ModelAdmin):
         'display_order',
         'biotope_form'
     )
+
+    actions = ['merge_biotopes']
+
+    def merge_biotopes(self, request, queryset):
+        from bims.models import merge_biotope
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 biotope', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified biotope', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified biotope',
+                messages.ERROR)
+            return
+        excluded = verified[0]
+        biotopes = queryset.exclude(id=verified[0].id)
+        merge_biotope(excluded, biotopes)
+        self.message_user(request, 'Biotope has been merged')
 
 
 class DataSourceAdmin(admin.ModelAdmin):
