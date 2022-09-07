@@ -1008,11 +1008,26 @@ class FbisUUIDAdmin(admin.ModelAdmin):
 
 
 class SassBiotopeAdmin(admin.ModelAdmin):
+
+    def taxon_group_list(self, obj: Biotope):
+        return [taxon_group.name for taxon_group in obj.taxon_group.all()]
+
+    taxon_group_list.short_description = 'Taxon groups'
+
+    def used_in_SASS(self, obj: Biotope):
+        if obj.sassbiotopefraction_set.all().exists():
+            return format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        return format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+
     list_display = (
         'name',
         'display_order',
         'biotope_form',
         'biotope_type',
+        'taxon_group_list',
+        'used_in_SASS'
     )
     list_filter = (
         'name',
