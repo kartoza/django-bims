@@ -1096,10 +1096,17 @@ class SpatialScaleGroupAdmin(admin.ModelAdmin):
 
 
 class SamplingMethodAdmin(admin.ModelAdmin):
+
+    def taxon_group_list(self, obj: SamplingMethod):
+        return [taxon_group.name for taxon_group in obj.taxon_group.all()]
+
+    taxon_group_list.short_description = 'Taxon groups'
+
     list_display = (
         'sampling_method',
         'effort_measure',
-        'verified'
+        'verified',
+        'taxon_group_list',
     )
 
     list_filter = (
