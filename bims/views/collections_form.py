@@ -328,15 +328,16 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 'reference_category').values(
                 name=F('reference_category'))
         )
-        context['taxon_group_name'] = self.taxon_group_name
+        context['taxon_group_name'] = (
+            taxon_group.singular_name
+            if taxon_group.singular_name
+            else taxon_group.name
+        )
         context['taxon_group_id'] = taxon_group.id
 
-        taxon_group = TaxonGroup.objects.filter(
-            name=self.taxon_group_name
-        )
         context['broad_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_BROAD
             ).values(
                 'id', 'name', 'description', 'display_order'
@@ -344,7 +345,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         )
         context['specific_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_SPECIFIC
             ).values(
                 'id', 'name', 'description', 'display_order'
@@ -353,7 +354,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
 
         context['substratum_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_SUBSTRATUM
             ).values(
                 'id', 'name', 'description', 'display_order'
@@ -364,7 +365,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['sampling_method_list'] = []
         sampling_method_list = list(
             SamplingMethod.objects.filter(
-                taxon_group__in=taxon_group
+                taxon_group=taxon_group
             ).values(
                 'id', 'sampling_method'
             ).order_by('order')
