@@ -117,5 +117,55 @@ class Biotope(AbstractAdditionalData):
 
     objects = BiotopeManager()
 
-    def __unicode__(self):
+    verified = models.BooleanField(
+        default=False
+    )
+
+    def __str__(self):
         return self.name
+
+
+def merge_biotope(excluded: Biotope = None, biotopes: BiotopeQuerySet = None):
+    from django.db.models.fields.reverse_related import ForeignObjectRel
+    from bims.utils.logger import log
+    """
+    Merge multiple biotopes
+    """
+    if not excluded:
+        return
+    if not biotopes:
+        return
+    biotopes = biotopes.exclude(id=excluded.id)
+
+    if biotopes.count() < 1:
+        return
+
+    log('Merging %s data' % biotopes.count())
+
+    links = [
+        rel.get_accessor_name() for rel in excluded._meta.get_fields() if
+        issubclass(type(rel), ForeignObjectRel)
+    ]
+
+    if links:
+        for biotope in biotopes:
+            log('----- {} -----'.format(str(biotope)))
+            for link in links:
+                try:
+                    objects = getattr(biotope, link).all()
+                    if objects.count() > 0:
+                        print('Updating {obj} for : {sampling_method}'.format(
+                            obj=str(objects.model._meta.label),
+                            sampling_method=str(biotope)
+                        ))
+                        update_dict = {
+                            getattr(
+                                biotope, link
+                            ).field.name: excluded
+                        }
+                        objects.update(**update_dict)
+                except Exception as e:  # noqa
+                    continue
+            log(''.join(['-' for i in range(len(str(biotope)) + 12)]))
+
+    biotopes.delete()
