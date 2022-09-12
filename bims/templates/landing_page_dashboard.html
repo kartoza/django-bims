@@ -19,13 +19,6 @@
                 legend: {
                     display: false
                 },
-                layout: {
-                    padding: {
-                        left: 60,
-                        right: 60,
-                        bottom: 0
-                    }
-                },
             }
         });
     }
@@ -35,28 +28,19 @@
             return;
         }
         const img = new Image();
-        img.onload = function () {
-            const height = img.height;
-            let marginTop = 0;
-            if (height < 80) {
-                marginTop = 75
-            } else if (height <= 110) {
-                marginTop = 60
-            } else {
-                marginTop = 50
-            }
-            img.style.marginTop = marginTop + 'px';
-        }
+        let chartWrapper = $('<div class="chart-icon-wrapper" />');
         img.classList = 'module-icon';
         img.src = moduleData['icon'];
-        container.append(img);
-        let canvas = $(`<canvas id="chart-${moduleName}" width="150px" height="150px"></canvas>`);
-        container.append(canvas);
+        chartWrapper.append(img);
+        let canvas = $(`<div class="donut-chart"><canvas id="chart-${moduleName}" width="150px" height="150px"></canvas></div>`);
+        chartWrapper.append(canvas);
+        container.append(chartWrapper);
 
         let native = 0;
         let non_native = 0;
         let translocated = 0;
         let totalRecords = 0;
+        let totalSass = 0;
         let totalSite = 0;
         let totalSiteVisit = 0;
         let alienInvasive = 0;
@@ -130,19 +114,31 @@
         if (moduleData.hasOwnProperty('total_site_visit')) {
             totalSiteVisit += moduleData['total_site_visit'];
         }
+        if (moduleData.hasOwnProperty('total_sass')) {
+            totalSass += moduleData['total_sass'];
+        }
         container.append(
-            `<h4 class="module-name" style="margin-top: 250px;">${moduleName}</h4>`
-        )
-        container.append(
-            `<p style="margin-bottom: 0; font-size: 1.5em">${getNumberWithCommas(totalRecords)} Records</p>`
-        )
-        container.append(
-            `<p style="margin-top: 0; margin-bottom: 0;font-size: 1.5em">${getNumberWithCommas(totalSite)} Sites</p>`
-        )
-        container.append(
-            `<p style="margin-top: 0;font-size: 1.5em">${getNumberWithCommas(totalSiteVisit)} Site Visits</p>`
+            `<h4 class="module-name">${moduleName}</h4>`
         )
 
+        let $moduleInfoContainer = $(`<div class="module-info-container"/>`);
+
+        $moduleInfoContainer.append(
+            `<p class="module-info" style="margin-bottom: 0; font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalRecords)}</span> Records</p>`
+        )
+        $moduleInfoContainer.append(
+            `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> Sites</p>`
+        )
+        $moduleInfoContainer.append(
+            `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
+        )
+        if (totalSass > 0) {
+            $moduleInfoContainer.append(
+                `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`
+            )
+        }
+
+        container.append($moduleInfoContainer);
 
         let moduleContainer = document.getElementById("chart-" + moduleName);
         let moduleChartDataset = {
@@ -161,15 +157,16 @@
                 borderWidth: 1
             }]
         };
-        createDonutGraph(moduleContainer, moduleChartDataset)
+        createDonutGraph(moduleContainer, createSummaryChart(moduleData))
     }
-    
+
     if (showModuleSummaries) {
         $.get('/api/module-summary').then(
             function (data) {
+                $('.module-loading').hide();
                 const $container = $('.summary-data');
                  $.each(data, function(key, summaryData) {
-                     let _container = $(`<div class="col-md-4 module-container"></div>`);
+                     let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
                      $container.append(_container);
                      createModuleCharts(
                          summaryData,
