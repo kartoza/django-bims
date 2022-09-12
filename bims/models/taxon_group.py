@@ -10,10 +10,10 @@ class TaxonGroup(models.Model):
 
     CHART_CHOICES = (
         ('conservation status', 'Conservation Status'),
-        ('division', 'DIVISION'),
+        ('division', 'Division'),
         ('sass', 'SASS'),
-        ('origin', 'ORIGIN'),
-        ('endemism', 'ENDEMISM'),
+        ('origin', 'Origin'),
+        ('endemism', 'Endemism'),
     )
 
     name = models.CharField(
