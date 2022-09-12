@@ -204,6 +204,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     location_site = None
     session_identifier = 'collection-form'
     taxon_group_name = ''
+    taxon_group_id = None
     survey = None
     all_taxa = None
 
@@ -298,9 +299,14 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             context['bing_key'] = ''
 
         # -- Taxa list
-        taxon_group, created = TaxonGroup.objects.get_or_create(
-            name=self.taxon_group_name
-        )
+        if self.taxon_group_id:
+            taxon_group = TaxonGroup.objects.get(
+                id=self.taxon_group_id
+            )
+        else:
+            taxon_group, created = TaxonGroup.objects.get_or_create(
+                name=self.taxon_group_name
+            )
         self.all_taxa = self.get_all_taxa(taxon_group)
 
         # Get from same river catchment
@@ -322,13 +328,16 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 'reference_category').values(
                 name=F('reference_category'))
         )
-        context['taxon_group_name'] = self.taxon_group_name
-        taxon_group = TaxonGroup.objects.filter(
-            name=self.taxon_group_name
+        context['taxon_group_name'] = (
+            taxon_group.singular_name
+            if taxon_group.singular_name
+            else taxon_group.name
         )
+        context['taxon_group_id'] = taxon_group.id
+
         context['broad_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_BROAD
             ).values(
                 'id', 'name', 'description', 'display_order'
@@ -336,7 +345,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         )
         context['specific_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_SPECIFIC
             ).values(
                 'id', 'name', 'description', 'display_order'
@@ -345,7 +354,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
 
         context['substratum_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_SUBSTRATUM
             ).values(
                 'id', 'name', 'description', 'display_order'
@@ -356,7 +365,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['sampling_method_list'] = []
         sampling_method_list = list(
             SamplingMethod.objects.filter(
-                taxon_group__in=taxon_group
+                taxon_group=taxon_group
             ).values(
                 'id', 'sampling_method'
             ).order_by('order')
@@ -441,6 +450,7 @@ class ModuleFormView(CollectionFormView):
             taxon_group.singular_name if taxon_group.singular_name else
             taxon_group.name
         )
+        self.taxon_group_id = taxon_group.id
         self.session_identifier = '{}-form'.format(
             taxon_group.name.lower()
         )

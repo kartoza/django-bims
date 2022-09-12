@@ -78,6 +78,10 @@ class SamplingMethod(models.Model):
         blank=True
     )
 
+    verified = models.BooleanField(
+        default=False
+    )
+
     def __unicode__(self):
         return self.sampling_method
 

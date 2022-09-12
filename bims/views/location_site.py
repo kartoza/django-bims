@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 import pytz
+from preferences import preferences
 
 from bims.models.taxon_group import TaxonGroup
 from django.db.models import Q
@@ -475,6 +476,7 @@ class NonValidatedSiteView(
         filter_river_name = self.request.GET.get('river_name', None)
         context = super(
             NonValidatedSiteView, self).get_context_data(**kwargs)
+        context['total'] = self.get_queryset().count()
         context['custom_url'] = ''
         if filter_site_code:
             context['custom_url'] = '&site_code={}'.format(filter_site_code)
@@ -490,13 +492,18 @@ class NonValidatedSiteView(
         filter_river_name = self.request.GET.get('river_name', None)
         filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
-            gbif_site = BiologicalCollectionRecord.objects.filter(
-                Q(source_collection='gbif') |
-                Q(owner__last_name='VM') |
-                Q(owner_id__isnull=True)).values('site_id')
+            gbif_site = BiologicalCollectionRecord.objects.exclude(
+                source_collection=preferences.SiteSetting.default_data_source
+            ).filter(
+                owner_id__isnull=True
+            ).values('site_id')
             queryset = LocationSite.objects.filter(
-                validated=False
-            ).exclude(pk__in=gbif_site).order_by('site_code')
+                validated=False,
+                owner_id__isnull=False,
+            ).exclude(
+                Q(pk__in=gbif_site) |
+                Q(owner__username__icontains='_vm')
+            ).order_by('site_code')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
             if filter_site_code is not None:

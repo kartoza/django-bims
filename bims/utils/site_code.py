@@ -130,9 +130,10 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
         catchment_key=catchment_key
     )
     for key, value in catchments.items():
-        if 'level_2' in key and not level_2:
-            level_2 = value[:6].upper()
-            level_2 = level_2.replace('_', '')
+        if value:
+            if 'level_2' in key and not level_2:
+                level_2 = value[:6].upper()
+                level_2 = level_2.replace('_', '')
 
     # Get district id
     geocontext_key = 'rwanda_district_id'

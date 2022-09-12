@@ -56,6 +56,8 @@ class CsvDownload(APIView):
             pass
 
         path_file = os.path.join(path_folder, filename)
+        if os.path.exists(path_file):
+            os.remove(path_file)
 
         if os.path.exists(path_file):
             send_csv_via_email_task.delay(

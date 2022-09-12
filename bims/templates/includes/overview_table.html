@@ -95,8 +95,8 @@
 
         if (politicalBoundary) {
             try {
-                if (politicalBoundary['sa_provinces'])
-                    tableData['Province'] = politicalBoundary['sa_provinces'];
+                if (politicalBoundary['combination_saprovince_sadc_boundary'])
+                    tableData['Province'] = politicalBoundary['combination_saprovince_sadc_boundary'];
             } catch (e) {
             }
         }

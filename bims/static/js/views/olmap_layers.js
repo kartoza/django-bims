@@ -596,8 +596,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
 
             // RENDER LAYERS
-            $.each(self.layers, function (key, value) {
-                let _layer = value['layer'];
+            $.each(reversedOrders, function (key, value) {
+                let _layer = self.layers[value]['layer'];
                 if (!_layer.get('added')) {
                     _layer.set('added', true);
                     self.map.addLayer(_layer);
@@ -610,6 +610,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
             if (isFirstTime) {
                 self.initializeLayerSelector();
+                self.refreshLayerOrders();
             }
         },
         showFeatureInfo: function (lon, lat, siteExist = false) {
