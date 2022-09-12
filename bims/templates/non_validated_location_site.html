@@ -13,6 +13,9 @@
     <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
     <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <style>
+        td:nth-child(2) { width: 40% ;}
+    </style>
 {% endblock %}
 
 {% block body_content %}
@@ -41,7 +44,7 @@
                         </option>
                     </select>
                 </div>
-                <div class="col-5" style="display: none">
+                <div class="col-5">
                     <input type="text"
                            class="input-options site_code form-control"
                            name="site_code" style="display: none">
@@ -62,6 +65,9 @@
 
             </div>
         </div></div>
+    </div>
+    <div class="container" style="margin-bottom: 10px;">
+        Total unvalidated = {{ total }}
     </div>
     <div class="container">
     <div class="row">
@@ -103,7 +109,7 @@
     </div>
     </div>
     {% if is_paginated %}
-        <div class="container pagination">
+        <div class="container pagination" style="padding-bottom: 2em;">
             <span class="page-links">
                     <a href="/nonvalidated-site/?page=1{{ custom_url }}">&laquo; first</a>
                 {% if page_obj.has_previous %}

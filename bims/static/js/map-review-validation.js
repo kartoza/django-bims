@@ -205,10 +205,10 @@ $('input[name=filter_result]').click(function () {
 });
 
 function updateSelectedFilter(customUrl) {
-    var filter_options = ['original_species_name', 'date_to', 'date_from', 'owner'];
-    var value;
-    for (var key in filter_options) {
-        var selected_filter = filter_options[key];
+    let filter_options = ['original_species_name', 'date_to', 'date_from', 'owner', 'site_code', 'river_name'];
+    let value;
+    for (let key in filter_options) {
+        let selected_filter = filter_options[key];
         if(selected_filter !== 'date_to' && selected_filter !=='date_from') {
             if (customUrl.indexOf(selected_filter) > -1) {
                 $('#filter-select').val(selected_filter);
@@ -216,7 +216,7 @@ function updateSelectedFilter(customUrl) {
                 value = customUrl.split(selected_filter + '=')[1];
                 $('input[name=' + selected_filter + ']').val(value);
             }
-        }else {
+        } else {
             if (customUrl.indexOf(selected_filter) > -1) {
                 $('#filter-select').val('collection_date');
                 $('.collection_date').show();
