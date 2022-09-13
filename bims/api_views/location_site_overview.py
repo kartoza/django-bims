@@ -65,27 +65,27 @@ class LocationSiteOverviewData(object):
                 module_group=group
             )
 
-            if group_records.exists() and not self.is_sass_exist:
+            if group_records.count() > 0 and not self.is_sass_exist:
                 try:
                     if isinstance(
                             collection_results.first(),
                             SiteVisitTaxon):
                         self.is_sass_exist = group_records.filter(
                             site_visit__isnull=False
-                        ).exists()
+                        ).count() > 0
                     else:
                         self.is_sass_exist = group_records.filter(
                             sitevisittaxon__isnull=False
-                        ).exists()
+                        ).count() > 0
                 except:  # noqa
                     self.is_sass_exist = False
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
-            group_data[self.GROUP_SITES] = group_records.distinct(
-                'site'
+            group_data[self.GROUP_SITES] = LocationSite.objects.filter(
+                id__in=group_records.values('site')
             ).count()
-            group_data[self.GROUP_NUM_OF_TAXA] = group_records.distinct(
-                'taxonomy'
+            group_data[self.GROUP_NUM_OF_TAXA] = Taxonomy.objects.filter(
+                id__in=group_records.values('taxonomy')
             ).count()
             group_data[self.GROUP_ENDEMISM] = group_records.annotate(
                 name=Case(When(taxonomy__endemism__isnull=False,
@@ -98,6 +98,7 @@ class LocationSiteOverviewData(object):
             ).values(
                 'name', 'count'
             ).order_by('name')
+
             group_origins = group_records.annotate(
                 name=Case(When(taxonomy__origin='',
                                then=Value('Unknown')),
