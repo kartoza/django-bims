@@ -152,17 +152,24 @@ function createSummaryChart(data){
             '#a13447',
             '#e0d43f'
         ];
-    }else {
+    } else {
+        let ecologicalCategory = {
+            'A': 'Natural (N)',
+            'B': 'Good (G)',
+            'C': 'Fair (F)',
+            'D': 'Poor (P)',
+            'E': ['(S/CM)', 'Seriously/Critically', 'Modified']
+        }
         $.each(data['ecological_data'], function (index, ecologicalData) {
-            labels.push(ecologicalData['value']);
+            labels.push(ecologicalCategory[ecologicalData['value']]);
             dataChart.push(ecologicalData['count']);
         });
         bColor = [
-            '#641f30',
-            '#8D2641',
-            '#D7CD47',
-            '#17766B',
-            '#39B2A3'
+            '#0000ff',
+            '#008000',
+            '#ffa500',
+            '#ff0000',
+            '#800080'
         ];
     }
 
