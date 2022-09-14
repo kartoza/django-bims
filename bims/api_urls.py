@@ -64,7 +64,7 @@ from bims.api_views.location_site_dashboard import (
 )
 from bims.api_views.location_site_overview import (
     MultiLocationSitesOverview,
-    SingleLocationSiteOverview
+    SingleLocationSiteOverview, MultiLocationSitesBackgroundOverview
 )
 from bims.api_views.source_collection import SourceCollectionList
 from bims.api_views.site_code import GetSiteCode
@@ -108,6 +108,9 @@ urlpatterns = [
     url(r'^multi-location-sites-overview/$',
         MultiLocationSitesOverview.as_view(),
         name='multi-location-sites-overview'),
+    url(r'^multi-location-sites-background-overview/$',
+        MultiLocationSitesBackgroundOverview.as_view(),
+        name='multi-location-sites-background-overview'),
     url(r'^location-sites-summary/$',
         LocationSitesSummary.as_view(),
         name='location-sites-summary'),
