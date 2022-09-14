@@ -25,6 +25,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             Shared.Dispatcher.on('sidePanel:addContentWithTab', this.addContentWithTab, this);
             Shared.Dispatcher.on('sidePanel:updateSidePanelTitle', this.updateSidePanelTitle, this);
             Shared.Dispatcher.on('sidePanel:appendSidePanelContent', this.appendSidePanelContent, this);
+            Shared.Dispatcher.on('sidePanel:toggleLoading', this.toggleLoading, this);
 
             Shared.Dispatcher.on('sidePanel:addEventToReturnButton', this.addEventToReturnButton, this);
             Shared.Dispatcher.on('sidePanel:showReturnButton', this.showReturnButton, this);
@@ -48,6 +49,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
 
             this.hideReturnButton();
 
+            $('.right-panel-loading').css('display', 'none');
             this.rightPanel.css('display', 'none');
 
             return this;
@@ -104,6 +106,14 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi', 'jquery', 'views/right_p
             $('.title-side-panel').hide();
             $('.search-result-info').hide();
             $('.side-panel-info').removeClass('full-height');
+        },
+        toggleLoading: function (enable, title = '<i class="fa fa-map-marker"></i> Loading...') {
+            this.updateSidePanelTitle(title);
+            if (enable) {
+                $('.right-panel-loading').css('display', 'flex');
+            } else {
+                $('.right-panel-loading').css('display', 'none');
+            }
         },
         updateSidePanelTitle: function (title) {
             var $rightPanelTitle = this.$el.find('.right-panel-title');
