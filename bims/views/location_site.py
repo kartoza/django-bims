@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 import pytz
+from django.db import IntegrityError
 from preferences import preferences
 
 from bims.models.taxon_group import TaxonGroup
@@ -37,7 +38,7 @@ from bims.serializers.survey_serializer import SurveySerializer
 def handle_location_site_post_data(
         post_data: dict,
         collector: get_user_model(),
-        location_site: LocationSite = None) -> LocationSite:
+        location_site: LocationSite = None) -> LocationSite or None:
     """
     Handle post request to create or update a location site
     :param post_data: data from POST request
@@ -123,7 +124,14 @@ def handle_location_site_post_data(
         post_dict['river_id'] = river.id
 
     if not location_site:
-        location_site = LocationSite.objects.create(**post_dict)
+        try:
+            location_site = LocationSite.objects.create(**post_dict)
+        except IntegrityError:
+            sites = LocationSite.objects.filter(**post_dict)
+            if sites.exists():
+                location_site = sites.first()
+            else:
+                return None
     else:
         for key in post_dict:
             setattr(location_site, key, post_dict[key])
@@ -295,6 +303,9 @@ class LocationSiteFormView(TemplateView):
             self.request.user,
             self.location_site
         )
+
+        if not location_site:
+            raise Http404('Error creating location site')
 
         self.check_site_images(location_site)
 

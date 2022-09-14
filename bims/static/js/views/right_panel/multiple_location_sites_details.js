@@ -17,7 +17,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
         },
         show: function () {
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i> Loading...');
+            Shared.Dispatcher.trigger('sidePanel:toggleLoading', true);
             this.originLegends = {};
             this.endemismLegends = {};
             this.consStatusLegends = {};
@@ -175,7 +175,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             this.renderFilterHistorySection($siteDetailWrapper);
             this.renderBiodiversityDataSection($siteDetailWrapper, data);
 
-            Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', '<i class="fa fa-map-marker"></i> Multi-Site Overview');
+            Shared.Dispatcher.trigger('sidePanel:toggleLoading', false, '<i class="fa fa-map-marker"></i> Multi-Site Overview');
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
             $siteDetailWrapper.find('.search-results-total').click(this.hideAll);
             $siteDetailWrapper.find('.search-results-total').click();
@@ -193,9 +193,17 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 Shared.MultiSitesOverviewXHRRequest = null;
             }
             Shared.MultiSitesOverviewXHRRequest = $.get({
-                url: multiSitesOverviewDataUrl + self.apiParameters(filterParameters),
+                url: multiSitesOverviewBackgroundUrl + self.apiParameters(filterParameters),
                 dataType: 'json',
                 success: function (data) {
+                    if (data.hasOwnProperty('status')) {
+                        if (data['status'] === 'processing') {
+                            setTimeout(function () {
+                                self.fetchData();
+                            }, 500);
+                            return
+                        }
+                    }
                     self.renderPanel(data);
                 }
             });
