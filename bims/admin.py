@@ -17,6 +17,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
+from django.db.models import Q
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -387,6 +388,18 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'upstream_id',
         'source_collection'
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        uuid_queryset = queryset.filter(
+            Q(uuid__icontains=search_term) |
+            Q(uuid__icontains=search_term.replace('-', '')),
+        )
+        if uuid_queryset.count() > 0:
+            return uuid_queryset, False
+        queryset, use_distinct = super(
+            BiologicalCollectionAdmin, self
+        ).get_search_results(request, queryset, search_term)
+        return queryset, use_distinct
 
     def get_origin(self, obj):
         try:
