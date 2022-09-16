@@ -329,6 +329,10 @@ class Taxonomy(models.Model):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
 
     @property
+    def sub_species_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBSPECIES.name)
+
+    @property
     def is_species(self):
         return (
             self.rank == TaxonomicRank.SPECIES.name or

@@ -14,7 +14,7 @@ CLASS = 'Class'
 PHYLUM = 'Phylum'
 KINGDOM = 'Kingdom'
 DIVISION = 'Division'
-GROWTH_FORM = 'Growth Form'
+GROWTH_FORM = 'Growth form'
 SCIENTIFIC_NAME = 'Scientific name and authority'
 FORMER_SPECIES_NAME = 'Former scientific name'
 COMMON_NAME = 'Common Name'
@@ -24,6 +24,7 @@ CONSERVATION_STATUS_GLOBAL = 'Conservation status global'
 CONSERVATION_STATUS_NATIONAL = 'Conservation status national'
 ORIGIN = 'Origin'
 TAXON_RANK = 'Taxon Rank'
+TAXONOMIC_STATUS = 'Taxonomic status'
 
 TAXON_RANKS = [
     KINGDOM,

@@ -218,6 +218,7 @@ class TaxaProcessor(object):
 
     def process_data(self, row):
         """Processing row of the csv files"""
+        taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
         if not taxon_name:
             self.handle_error(
@@ -319,6 +320,8 @@ class TaxaProcessor(object):
                         rank=TaxonomicRank[rank.upper()].name,
                         parent=parent
                     )
+                    if taxonomic_status:
+                        taxonomy.taxonomic_status = taxonomic_status
 
             # -- Finish
             if taxonomy:
@@ -381,6 +384,10 @@ class TaxaProcessor(object):
 
                 if taxonomy.canonical_name != taxon_name:
                     taxonomy.canonical_name = taxon_name
+
+                if not taxonomy.taxonomic_status and taxonomic_status:
+                    taxonomy.taxonomic_status = taxonomic_status
+
                 taxonomy.save()
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa

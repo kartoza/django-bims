@@ -57,6 +57,7 @@ def autocomplete(request):
 
     # Taxonomy with rank
     taxonomic_ranks = [
+        TaxonomicRank.SUBSPECIES.name,
         TaxonomicRank.ORDER.name,
         TaxonomicRank.GENUS.name,
         TaxonomicRank.FAMILY.name,

@@ -889,6 +889,21 @@ class TaxonomyAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
+class TaxonGroupAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'singular_name',
+        'category'
+    )
+    search_fields = (
+        'name',
+        'singular_name',
+    )
+    list_filter = (
+        'category',
+    )
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
@@ -1515,7 +1530,7 @@ admin.site.register(SurveyDataOption)
 admin.site.register(SurveyDataValue, SurveyDataValueAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(Taxonomy, TaxonomyAdmin)
-admin.site.register(TaxonGroup)
+admin.site.register(TaxonGroup, TaxonGroupAdmin)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
