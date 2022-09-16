@@ -7,7 +7,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from bims.tasks.email_csv import send_csv_via_email
-from bims.api_views.csv_download import (
+from bims.download.csv_download import (
     send_rejection_csv,
     send_new_csv_notification
 )

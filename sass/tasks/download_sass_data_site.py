@@ -10,7 +10,7 @@ from bims.api_views.search import CollectionSearch
 from sass.models import SiteVisitTaxon, SassTaxon
 from geonode.people.models import Profile
 from bims.models.location_context import LocationContext
-from bims.api_views.csv_download import send_csv_via_email
+from bims.download.csv_download import send_csv_via_email
 from sass.serializers.sass_data_serializer import SassDataSerializer, SassTaxonDataSerializer
 from sass.serializers.sass_data_serializer import SassSummaryDataSerializer
 
