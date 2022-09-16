@@ -655,7 +655,7 @@ class BioCollectionOneRowSerializer(
             'record_type'
         ]
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: BiologicalCollectionRecord):
         result = super(
             BioCollectionOneRowSerializer, self).to_representation(
             instance)
@@ -865,6 +865,18 @@ class BioCollectionOneRowSerializer(
 
         # Taxon attribute
         taxon_group = instance.module_group
+
+        # Check DIVISION
+        divisions = (
+            instance.taxonomy.taxongroup_set.filter(
+                category__icontains='division')
+        )
+        if divisions.count() > 0:
+            division = divisions.first()
+            division_key = 'Division'
+            if division_key not in self.context['header']:
+                self.context['header'].append(division_key)
+            result[division_key] = division.name
 
         if taxon_group:
             taxon_extra_attributes = TaxonExtraAttribute.objects.filter(
