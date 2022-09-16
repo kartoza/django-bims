@@ -24,6 +24,7 @@ CONSERVATION_STATUS_GLOBAL = 'Conservation status global'
 CONSERVATION_STATUS_NATIONAL = 'Conservation status national'
 ORIGIN = 'Origin'
 TAXON_RANK = 'Taxon Rank'
+TAXONOMIC_STATUS = 'Taxonomic status'
 
 TAXON_RANKS = [
     KINGDOM,
