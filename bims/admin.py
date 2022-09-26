@@ -98,7 +98,8 @@ from bims.utils.gbif import search_exact_match, get_species, suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
-    update_location_context as update_location_context_task
+    update_location_context as update_location_context_task,
+    update_site_code as update_site_code_task
 )
 
 
@@ -210,6 +211,19 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             location_site_post_save_handler,
             sender=LocationSite
         )
+
+        if queryset.count() > 10:
+            """ Update site code in background"""
+            for location_s in queryset:
+                update_site_code_task.delay(
+                    location_s.id
+                )
+            full_message = (
+                'Updating site code for {} sites in background'.format(
+                    queryset.count()
+                )
+            )
+            self.message_user(request, full_message)
 
         for location_site in queryset:
             location_site.site_code, catchments_data = generate_site_code(
