@@ -33,8 +33,8 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
 from bims.api_views.thermal_data import ThermalDataApiView
-from bims.api_views.validate_object import ValidateObject, ValidateSite
-from bims.api_views.reject_object import RejectCollectionData, RejectSite
+from bims.api_views.validate_object import ValidateSite
+from bims.api_views.reject_object import RejectSite
 from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_data import RejectData
@@ -64,7 +64,7 @@ from bims.api_views.location_site_dashboard import (
 )
 from bims.api_views.location_site_overview import (
     MultiLocationSitesOverview,
-    SingleLocationSiteOverview
+    SingleLocationSiteOverview, MultiLocationSitesBackgroundOverview
 )
 from bims.api_views.source_collection import SourceCollectionList
 from bims.api_views.site_code import GetSiteCode
@@ -72,7 +72,7 @@ from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
 from bims.api_views.chemical_record import ChemicalRecordDownloader
 from bims.api_views.taxa_search_result import TaxaSearchResult
 from bims.api_views.river_name import GetRiverName
-from bims.api_views.csv_download import CsvDownload
+from bims.download.csv_download import CsvDownload
 from bims.views.data_upload import DataUploadStatusView
 from bims.views.harvest_collection_data import HarvestSessionStatusView
 from bims.api_views.taxon_group import (
@@ -108,6 +108,9 @@ urlpatterns = [
     url(r'^multi-location-sites-overview/$',
         MultiLocationSitesOverview.as_view(),
         name='multi-location-sites-overview'),
+    url(r'^multi-location-sites-background-overview/$',
+        MultiLocationSitesBackgroundOverview.as_view(),
+        name='multi-location-sites-background-overview'),
     url(r'^location-sites-summary/$',
         LocationSitesSummary.as_view(),
         name='location-sites-summary'),

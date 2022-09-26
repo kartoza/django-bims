@@ -8,6 +8,17 @@ dev:
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} up -d dev
 
+down:
+	# Synonymous with kill rm
+	@docker-compose  ${ARGS} down
+
+rm-only: kill
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Removing production instance!!! "
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} rm
+
 geoserver:
 	@echo
 	@echo "------------------------------------------------------------------"

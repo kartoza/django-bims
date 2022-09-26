@@ -29,8 +29,6 @@ from bims.models.survey import SurveyData, SurveyDataValue, Survey
 from bims.scripts.collection_csv_keys import *  # noqa
 from bims.models.location_context_group import LocationContextGroup
 from bims.models.taxonomy import Taxonomy
-from bims.utils.gbif import get_species
-from bims.utils.occurences import get_fields_from_occurrences
 
 ORIGIN = {
     'alien': 'Non-Native',
@@ -124,6 +122,7 @@ class BioCollectionOneRowSerializer(
     kingdom = serializers.SerializerMethodField()
     taxon_rank = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
+    sub_species = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
     doi_or_url = serializers.SerializerMethodField()
     sampling_effort_measure = serializers.SerializerMethodField()
@@ -149,7 +148,10 @@ class BioCollectionOneRowSerializer(
     decision_support_tool = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
 
-    def taxon_name_by_rank(self, obj, rank_identifier):
+    def taxon_name_by_rank(
+            self,
+            obj: BiologicalCollectionRecord,
+            rank_identifier: str):
         taxon_name = self.get_context_cache(
             rank_identifier,
             obj.taxonomy.id
@@ -370,6 +372,12 @@ class BioCollectionOneRowSerializer(
         return self.taxon_name_by_rank(
             obj,
             'genus_name'
+        )
+
+    def get_sub_species(self, obj: BiologicalCollectionRecord):
+        return self.taxon_name_by_rank(
+            obj,
+            'sub_species_name'
         )
 
     def get_species(self, obj):
@@ -607,6 +615,7 @@ class BioCollectionOneRowSerializer(
             'family',
             'genus',
             'species',
+            'sub_species',
             'taxon',
             'taxon_rank',
             'sampling_method',
@@ -646,7 +655,7 @@ class BioCollectionOneRowSerializer(
             'record_type'
         ]
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: BiologicalCollectionRecord):
         result = super(
             BioCollectionOneRowSerializer, self).to_representation(
             instance)
@@ -856,6 +865,18 @@ class BioCollectionOneRowSerializer(
 
         # Taxon attribute
         taxon_group = instance.module_group
+
+        # Check DIVISION
+        divisions = (
+            instance.taxonomy.taxongroup_set.filter(
+                category__icontains='division')
+        )
+        if divisions.count() > 0:
+            division = divisions.first()
+            division_key = 'Division'
+            if division_key not in self.context['header']:
+                self.context['header'].append(division_key)
+            result[division_key] = division.name
 
         if taxon_group:
             taxon_extra_attributes = TaxonExtraAttribute.objects.filter(

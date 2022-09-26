@@ -151,6 +151,15 @@ html, body, .map, .map-wrapper, #map-container {
     top: 0;
     left: 0;
     padding-top: 60px;
+    height: 100%;
+}
+
+.right-panel-loading {
+    width: 100%;
+    display: none;
+    align-items: center;
+    height: 100%;
+    justify-content: center;
 }
 
 .map-control-panel, .download-control-panel {

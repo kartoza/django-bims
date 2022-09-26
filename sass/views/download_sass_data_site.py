@@ -13,7 +13,7 @@ from sass.tasks.download_sass_data_site import (
     download_sass_summary_data_task, download_sass_taxon_data_task
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.api_views.csv_download import send_csv_via_email
+from bims.download.csv_download import send_csv_via_email
 
 FAILED_STATUS = 'failed'
 SUCCESS_STATUS = 'success'

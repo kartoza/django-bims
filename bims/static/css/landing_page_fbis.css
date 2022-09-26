@@ -150,7 +150,7 @@ header.masthead p {
 
 .title-header-text {
     padding-left: 10px;
-    width: 650px;
+    width: 100%;
     font-size: 47px;
     font-weight: 700;
 }
@@ -177,8 +177,11 @@ header.masthead p {
 
 .chart-icon-wrapper {
     position: relative;
-    width: fit-content;
+    display: flex;
+    width: 100%;
     height: 150px;
+    justify-content: center;
+    align-items: center;
     margin: 0 auto;
 }
 
@@ -307,8 +310,6 @@ html, body {
 
 .donut-chart {
     position: absolute !important;
-    left: 55%;
-    transform: translate(-52%, 0);
 }
 
 .btn-account {
@@ -484,4 +485,57 @@ html, body {
     font-weight: bolder;
     border: 1px solid black;
     border-radius: 5px;
+}
+
+.module-icon {
+    width: 70px !important;
+    position: absolute;
+}
+
+.module-name {
+    margin-top: 15px;
+    color: #525351;
+}
+
+.module-container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.module-container > .chartjs-render-monitor {
+    margin-top: -60px;
+    z-index: 999;
+    position: absolute;
+}
+
+.summary-data {
+    margin-top: 30px;
+    text-align: center;
+    color: #263c4c;
+    display: flex;
+    justify-content: center;
+}
+
+.summary-data .fa {
+    font-size: 50pt;
+}
+
+.summary-data p {
+    margin-top: 20px;
+    font-size: 20pt;
+}
+
+.module-info {
+    font-weight: 100;
+    font-size: 20px !important;
+    color: #18A090;
+    margin-bottom: 0;
+}
+
+.module-numbers {
+    font-weight: bold;
+}
+
+.module-loading {
+    width: 100%; display: flex; justify-content: center;
 }

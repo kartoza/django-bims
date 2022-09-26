@@ -9,6 +9,12 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page_fbis.css" %}" rel="stylesheet">
+    <script>
+        const showModuleSummaries = true;
+    </script>
+
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
 
 {% endblock %}
 
@@ -42,97 +48,17 @@
         </header>
 
         <section id="fish-data">
-            <div class="container" style="margin-bottom: 25px">
+            <div class="container modules-container" style="margin-bottom: 50px">
                 <div class="row" style="margin-bottom: 20px;">
                     <div class="col-lg-8 mx-auto text-center">
                         <h2 class="section-heading">Biodiversity Records</h2>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-lg-1"></div>
-                    <div class="col-lg-2 ml-auto text-center" id="total-fish">
-                        <div class="chart-icon-wrapper">
-                            <img src="{% static 'img/JRSicons_fish.png' %}" class="fish-icon fish">
-                            <div class="donut-chart">
-                                <canvas id="chart-fish" width="100" height="100"></canvas>
-                            </div>
-                        </div>
-                        <div class="module-information">
-                            <h4 class="charcoal">Fish</h4>
-                            <span id="fish-total-records" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;records</span><br/>
-                            <span id="fish-total-sites" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;sites</span>
-                        </div>
+                    <div class="module-loading">
+                        <img src="{% static "loading-fbis.gif" %}"/>
                     </div>
-                    <div class="col-lg-2 text-center" id="total-anura">
-                        <div class="chart-icon-wrapper">
-                            <img src="{% static 'img/Anura.png' %}" class="fish-icon anura">
-                            <div class="donut-chart">
-                                <canvas id="chart-anura" width="100" height="100"></canvas>
-                            </div>
-                        </div>
-                        <div class="module-information">
-                            <h4 class="charcoal">Anura</h4>
-                            <span id="anura-total-records" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;records</span><br/>
-                            <span id="anura-total-sites" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;sites</span>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 text-center" id="total-invertebra">
-                        <div class="chart-icon-wrapper" data-toggle="tooltip" data-placement="right"  data-html="true">
-                            <img src="{% static 'img/JRSicons_crab.png' %}" class="fish-icon crab">
-                            <div class="donut-chart">
-                                <canvas id="chart-invert" width="170" height="170"></canvas>
-                            </div>
-                        </div>
-                        <div class="module-information">
-                            <h4 class="charcoal">Invertebrate</h4>
-                            <span id="invert-total-records" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;records</span><br/>
-                            <span id="invert-total-sites" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;sites</span>
-                            <br/><span id="invert-total-sass" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;SASS assessments</span>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 text-center" id="total-odonate">
-                        <div class="chart-icon-wrapper">
-                            <img src="{% static 'img/odonate_icon.png' %}" class="fish-icon crab">
-                            <div class="donut-chart">
-                                <canvas id="chart-odonate" width="170" height="170"></canvas>
-                            </div>
-                        </div>
-                        <div class="module-information">
-                            <h4 class="charcoal">Odonate Adult</h4>
-                            <span id="odonate-total-records" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;records</span><br/>
-                            <span id="odonate-total-sites" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;sites</span>
-                        </div>
-                    </div>
-                    <div class="col-lg-2 mr-auto text-center" id="total-algae">
-                        <div class="chart-icon-wrapper">
-                            <img src="{% static 'img/JRSicons_algae.png' %}" class="fish-icon algae">
-                            <div class="module-info-wrapper">
-                                <span class="total-data-desc charcoal"></span>
-                            </div>
-                            <div class="donut-chart">
-                                <canvas id="chart-algae" width="170" height="170"></canvas>
-                            </div>
-                        </div>
-                         <div class="module-information">
-                            <h4 class="charcoal">Algae</h4>
-                            <span id="algae-total-records" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;records</span><br/>
-                            <span id="algae-total-sites" class="total-data">-</span>
-                            <span class="total-data-desc">&nbsp;sites</span>
-                        </div>
-                    </div>
-                    <div class="col-lg-1"></div>
+                    {% include 'landing_page_dashboard.html' %}
                 </div>
-            </div>
         </section>
         <div class="vertical-spacer"></div>
         <div id="about">
@@ -170,16 +96,14 @@
 {% block foot %}
 
     <!-- Plugin JavaScript -->
-    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-easing/jquery.easing.min.js" %}"></script>
     <script src="{% static "js/libs/scrollreveal/scrollreveal.min.js" %}"></script>
     <script src="{% static "js/libs/magnific-popup/jquery.magnific-popup.min.js" %}"></script>
-    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
 
     <!-- Custom scripts for this template -->
-    <script src="{% static "js/landing-page-fbis.js" %}"></script>
+    <script src="{% static "js/landing-page.js" %}"></script>
     <script>
         $(document).ready(function () {
             showSiteNotice();
