@@ -4,6 +4,8 @@ import requests
 import logging
 import datetime
 import simplejson
+from urllib3.exceptions import ProtocolError
+
 from bims.models.source_reference import DatabaseRecord
 
 from bims.models.location_site import generate_site_code
@@ -48,7 +50,7 @@ def import_gbif_occurrences(
     habitat=None,
     origin='',
     log_file_path=None,
-    session_id=None):
+    session_id=None) -> str:
     """
     Import gbif occurrences based on taxonomy gbif key,
     data stored to biological_collection_record table
@@ -72,7 +74,7 @@ def import_gbif_occurrences(
             log_file.write('Missing taxon gbif key\n')
         else:
             logger.error('Missing taxon gbif key')
-        return
+        return 'Missing taxon gbif key'
     api_url = 'http://api.gbif.org/v1/occurrence/search?'
     api_url += 'taxonKey={}'.format(taxonomy.gbif_key)
     api_url += '&offset={}'.format(offset)
@@ -91,16 +93,18 @@ def import_gbif_occurrences(
         response = requests.get(api_url)
         json_result = response.json()
         data_count = json_result['count']
-    except (HTTPError, simplejson.errors.JSONDecodeError) as e:
-        if isinstance(e, simplejson.errors.JSONDecodeError):
-            error_message = str(e)
-        else:
+    except (
+            HTTPError, simplejson.errors.JSONDecodeError,
+            ProtocolError) as e:
+        if hasattr(e, 'message'):
             error_message = e.message
+        else:
+            error_message = str(e)
         if log_file:
             log_file.write(error_message)
         else:
             logger.error(error_message)
-        return
+        return error_message
 
     if log_file:
         log_file.write(
@@ -146,7 +150,7 @@ def import_gbif_occurrences(
                     collection_post_save_handler,
                     sender=BiologicalCollectionRecord
                 )
-                return
+                return 'Harvest session canceled'
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
         longitude = result.get(LON_KEY)
         latitude = result.get(LAT_KEY)
@@ -315,3 +319,5 @@ def import_gbif_occurrences(
             log_file_path=log_file_path,
             session_id=session_id
         )
+
+    return 'Finish'

@@ -157,7 +157,8 @@ class BioCollectionSummary(APIView):
             response_data['common_name'] = taxonomy.canonical_name
         else:
             response_data['common_name'] = str(
-                common_names[0]['name']).capitalize()
+                common_names[0]['name']
+            )
 
         # Source references
         collection_with_references = collection_results.exclude(

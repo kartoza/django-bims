@@ -1,7 +1,9 @@
 import json
 import os
 import mock
+import requests
 from django.test import TestCase
+from urllib3.exceptions import ProtocolError
 
 from bims.models import Survey
 from bims.tests.model_factories import TaxonomyF, BiologicalCollectionRecord
@@ -30,6 +32,19 @@ def mocked_gbif_data(url):
     return ''
 
 
+def mocked_request_protocol_error(url):
+    raise ProtocolError('Connection broken')
+
+
+def mocked_request_http_error(url):
+    e = requests.HTTPError('error')
+    e.response = mock.MagicMock()
+    e.response.status_code = 404
+    e.response.content = 'Error Code'
+    e.message = 'error message'
+    raise e
+
+
 class TestHarvestGbif(TestCase):
     def setUp(self) -> None:
         self.taxonomy = TaxonomyF.create(
@@ -45,7 +60,8 @@ class TestHarvestGbif(TestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
     def test_harvest_gbif(self):
-        import_gbif_occurrences(self.taxonomy)
+        status = import_gbif_occurrences(self.taxonomy)
+        self.assertEqual(status, 'Finish')
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username='GBIF',
@@ -61,3 +77,16 @@ class TestHarvestGbif(TestCase):
                 validated=True
             ).exists()
         )
+
+    @mock.patch('requests.get', mock.Mock(
+        side_effect=mocked_request_http_error
+    ))
+    def test_harvest_gbif_http_error(self):
+        status = import_gbif_occurrences(self.taxonomy)
+        self.assertEqual(status, 'error message')
+
+    @mock.patch('requests.get', mock.Mock(
+        side_effect=mocked_request_protocol_error))
+    def test_harvest_gbif_protocol_error(self):
+        status = import_gbif_occurrences(self.taxonomy)
+        self.assertEqual(status, 'Connection broken')

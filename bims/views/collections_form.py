@@ -341,7 +341,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 biotope_type=BIOTOPE_TYPE_BROAD
             ).values(
                 'id', 'name', 'description', 'display_order'
-            ).order_by('display_order')
+            ).order_by('name')
         )
         context['specific_biotope_list'] = list(
             Biotope.objects.filter(
@@ -349,7 +349,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 biotope_type=BIOTOPE_TYPE_SPECIFIC
             ).values(
                 'id', 'name', 'description', 'display_order'
-            ).order_by('display_order')
+            ).order_by('name')
         )
 
         context['substratum_list'] = list(
@@ -358,7 +358,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 biotope_type=BIOTOPE_TYPE_SUBSTRATUM
             ).values(
                 'id', 'name', 'description', 'display_order'
-            ).order_by('display_order')
+            ).order_by('name')
         )
 
         sampling_method_lower_list = []
@@ -368,7 +368,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 taxon_group=taxon_group
             ).values(
                 'id', 'sampling_method'
-            ).order_by('order')
+            ).order_by('sampling_method')
         )
         for sampling_method in sampling_method_list:
             sampling_method_name = (
