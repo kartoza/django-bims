@@ -135,8 +135,10 @@ class LocationSitesTaxaChartData(ChartDataApiView):
         ).annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__scientific_name'),
+        ).values(
+            'year', 'name'
         ).annotate(
-            count=Count('year')
+            count=Count('year'),
         ).values(
             'year', 'name', 'count'
         ).order_by('year')
