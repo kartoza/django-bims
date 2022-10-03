@@ -20,6 +20,7 @@ function generateDoughnutChart(container, data) {
 }
 
 document.addEventListener('DOMContentLoaded', function (event) {
+
     var summaryData = JSON.parse(summaries);
 
     $.each(summaryData, function (className, classData) {
@@ -117,9 +118,14 @@ function createSummaryChart(data){
         }
         bColor = [
             '#a13447',
+            '#641f30',
+            '#E6E188',
+            '#e0d43f',
             '#00a99d',
-            '#e0d43f'
+            '#17766B',
+            '#2C495A'
         ];
+        console.log(bColor)
     }
 
     else if (data.hasOwnProperty('division')) {
