@@ -64,8 +64,10 @@ class OccurrencesChartData(ChartDataApiView):
     """
     def categories(self, collection_results):
         return list(collection_results.annotate(
-            name=Case(When(taxonomy__origin='',
-                           then=Value('Unknown')),
+            name=Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    When(taxonomy__origin__icontains='unknown',
+                         then=Value('Unknown')),
                       default=F('taxonomy__origin'))
         ).values_list(
             'name', flat=True
@@ -74,8 +76,10 @@ class OccurrencesChartData(ChartDataApiView):
     def chart_data(self, collection_results):
         return collection_results.annotate(
             year=ExtractYear('collection_date'),
-            name=Case(When(taxonomy__origin='',
-                           then=Value('Unknown')),
+            name=Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    When(taxonomy__origin__icontains='unknown',
+                         then=Value('Unknown')),
                       default=F('taxonomy__origin'))
         ).values(
             'year', 'name'
@@ -95,7 +99,7 @@ class LocationSitesConservationChartData(ChartDataApiView):
         return list(collection_results.annotate(
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Not evaluated'))
+                      default=Value('NE'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -105,7 +109,7 @@ class LocationSitesConservationChartData(ChartDataApiView):
             year=ExtractYear('collection_date'),
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Not evaluated')),
+                      default=Value('NE')),
         ).values(
             'year', 'name'
         ).annotate(
