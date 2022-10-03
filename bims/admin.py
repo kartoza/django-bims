@@ -216,11 +216,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         )
 
         if queryset.count() > 10:
-            """ Update site code in background"""
-            for location_s in queryset:
-                update_site_code_task.delay(
-                    location_s.id
-                )
+            """ Update site code in background """
+            update_site_code_task.delay(
+                [site.id for site in queryset]
+            )
             full_message = (
                 'Updating site code for {} sites in background'.format(
                     queryset.count()

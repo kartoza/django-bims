@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def location_sites_overview(
         search_parameters=None,
         search_process_id=None
-    ):
+):
     from bims.utils.celery import memcache_lock
     from bims.api_views.location_site_overview import (
         LocationSiteOverviewData
@@ -82,18 +82,19 @@ def update_location_context(location_site_id, generate_site_code=False):
 
 
 @shared_task(name='bims.tasks.update_site_code', queue='geocontext')
-def update_site_code(location_site_id):
+def update_site_code(location_site_ids):
     from bims.models import LocationSite
     from bims.models import generate_site_code
 
-    try:
-        location_site = LocationSite.objects.get(id=location_site_id)
-    except LocationSite.DoesNotExist:
-        log('Location site does not exist')
-        return
-    generate_site_code(
-        location_site=location_site,
-        lat=location_site.latitude,
-        lon=location_site.longitude
-    )
-    location_site.save()
+    for location_site_id in location_site_ids:
+        try:
+            location_site = LocationSite.objects.get(id=location_site_id)
+        except LocationSite.DoesNotExist:
+            continue
+        location_site.site_code, catchments_data = generate_site_code(
+            location_site=location_site,
+            lat=location_site.latitude,
+            lon=location_site.longitude
+        )
+        log(location_site.site_code)
+        location_site.save()
