@@ -261,6 +261,12 @@ def import_gbif_occurrences(
                     '--- Update existing collection record with'
                     ' upstream ID : {}'.
                     format(upstream_id))
+        except BiologicalCollectionRecord.MultipleObjectsReturned:
+            collection_records = BiologicalCollectionRecord.objects.filter(
+                upstream_id=upstream_id
+            )
+            collection_record = collection_records.last()
+            collection_records.exclude(id=collection_record.id).delete()
         except BiologicalCollectionRecord.DoesNotExist:
             if log_file:
                 log_file.write(
@@ -284,6 +290,7 @@ def import_gbif_occurrences(
             pass
         collection_record.taxonomy = taxonomy
         collection_record.owner = gbif_owner
+        collection_record.source_reference = source_reference
         collection_record.original_species_name = species
         collection_record.collector = collector
         collection_record.source_collection = source_collection

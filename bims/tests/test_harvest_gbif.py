@@ -6,7 +6,10 @@ from django.test import TestCase
 from urllib3.exceptions import ProtocolError
 
 from bims.models import Survey
-from bims.tests.model_factories import TaxonomyF, BiologicalCollectionRecord
+from bims.tests.model_factories import (
+    BiologicalCollectionRecordF,
+    TaxonomyF, BiologicalCollectionRecord
+)
 from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
 
 test_data_directory = os.path.join(
@@ -76,6 +79,28 @@ class TestHarvestGbif(TestCase):
                 biological_collection_record__taxonomy=self.taxonomy,
                 validated=True
             ).exists()
+        )
+
+    @mock.patch('requests.get', mock.Mock(
+        side_effect=mocked_gbif_data))
+    def test_harvest_gbif_multiple_objects_returned(self):
+        BiologicalCollectionRecordF.create(
+            upstream_id="2563631087",
+            taxonomy=self.taxonomy,
+        )
+        BiologicalCollectionRecordF.create(
+            upstream_id="2563631087",
+            taxonomy=self.taxonomy
+        )
+        status = import_gbif_occurrences(self.taxonomy)
+        self.assertEqual(status, 'Finish')
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                owner__username='GBIF',
+                taxonomy=self.taxonomy,
+                source_reference__source_name='Global Biodiversity '
+                                              'Information Facility (GBIF)'
+            ).count(), 5
         )
 
     @mock.patch('requests.get', mock.Mock(
