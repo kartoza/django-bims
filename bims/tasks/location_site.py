@@ -1,6 +1,7 @@
 # coding=utf-8
 import logging
 from celery import shared_task
+from bims.utils.logger import log
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,6 @@ def location_sites_overview(
 
 @shared_task(name='bims.tasks.update_location_context', queue='geocontext')
 def update_location_context(location_site_id, generate_site_code=False):
-    from bims.utils.logger import log
     from bims.models import LocationSite
     from bims.utils.location_context import get_location_context_data
     if isinstance(location_site_id, str):
@@ -79,3 +79,21 @@ def update_location_context(location_site_id, generate_site_code=False):
         only_empty=False,
         should_generate_site_code=generate_site_code
     )
+
+
+@shared_task(name='bims.tasks.update_site_code', queue='geocontext')
+def update_site_code(location_site_ids):
+    from bims.models import LocationSite
+    from bims.models import generate_site_code
+
+    for location_site_id in location_site_ids:
+        try:
+            location_site = LocationSite.objects.get(id=location_site_id)
+        except LocationSite.DoesNotExist:
+            continue
+        location_site.site_code, catchments_data = generate_site_code(
+            location_site=location_site,
+            lat=location_site.latitude,
+            lon=location_site.longitude
+        )
+        location_site.save()
