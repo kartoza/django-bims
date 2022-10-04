@@ -40,21 +40,31 @@ def download_taxa_template(request):
         taxa_template = taxa_template.path
 
     if os.path.exists(taxa_template):
-        with open(taxa_template, 'r') as fh:
-            reader = csv.reader(fh)
-            header = next(reader)
+        if taxa_template.endswith('.csv'):
+            open_mode = 'r'
+        else:
+            open_mode = 'rb'
 
-            if taxon_extra_attributes:
-                for taxon_extra_attribute in taxon_extra_attributes:
-                    if taxon_extra_attribute not in header:
-                        header.append(taxon_extra_attribute)
+        with open(taxa_template, open_mode) as fh:
 
-            s = io.StringIO()
-            csv.writer(s).writerow(header)
-            s.seek(0)
+            if taxa_template.endswith('.csv'):
+                reader = csv.reader(fh)
+                header = next(reader)
+
+                if taxon_extra_attributes:
+                    for taxon_extra_attribute in taxon_extra_attributes:
+                        if taxon_extra_attribute not in header:
+                            header.append(taxon_extra_attribute)
+
+                s = io.StringIO()
+                csv.writer(s).writerow(header)
+                s.seek(0)
+                data = s.read()
+            else:
+                data = fh.read()
 
             response = HttpResponse(
-                s.read(),
+                data,
                 content_type="application/vnd.ms-excel")
             response[
                 'Content-Disposition'] = (
