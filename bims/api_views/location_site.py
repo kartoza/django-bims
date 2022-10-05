@@ -18,6 +18,7 @@ from bims.models.location_context import LocationContext
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
+from bims.models.biotope import Biotope
 from bims.serializers.chemical_records_serializer import \
     ChemicalRecordsSerializer
 from bims.serializers.location_site_serializer import (
@@ -159,7 +160,7 @@ class LocationSitesSummary(APIView):
             site_details = self.multiple_site_details(collection_results)
             is_sass_exists = collection_results.filter(
                 notes__icontains='sass'
-            ).exists()
+            ).count() > 0
         search_process.set_search_raw_query(
             search.location_sites_raw_query
         )
@@ -442,16 +443,14 @@ class LocationSitesSummary(APIView):
         }
 
         # Biotope
-        biotopes = collection_results.filter(
-            biotope__isnull=False
-        ).annotate(
-            name=F('biotope__name')
+        biotopes = Biotope.objects.filter(
+            biologicalcollectionrecord__id__in=list(
+                collection_results.values_list('id', flat=True)
+            )
         ).values(
             'name'
         ).annotate(
             count=Count('name')
-        ).order_by(
-            'name'
         )
         biotope_keys = list(biotopes.values_list('name', flat=True))
         biotope_data = list(biotopes.values_list('count', flat=True))
