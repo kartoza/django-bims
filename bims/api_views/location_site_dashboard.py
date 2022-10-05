@@ -1,3 +1,4 @@
+from bims.models.taxonomy import Taxonomy
 from rest_framework.views import APIView, Response
 from django.db.models import Case, F, Count, Value, When
 from django.db.models.functions import ExtractYear
@@ -122,10 +123,15 @@ class LocationSitesConservationChartData(ChartDataApiView):
 class LocationSitesTaxaChartData(ChartDataApiView):
     """
     """
+    taxa = None
     def categories(self, collection_results):
-        taxa = collection_results.values('taxonomy').distinct('taxonomy')[0:25]
+        if not self.taxa:
+            self.taxa = Taxonomy.objects.filter(
+                biologicalcollectionrecord__id__in=
+                collection_results.values_list('id', flat=True)
+            ).distinct()[:25]
         return list(collection_results.filter(
-            taxonomy__in=taxa
+            taxonomy__in=self.taxa
         ).annotate(
             name=F('taxonomy__scientific_name'),
         ).values_list(
@@ -133,9 +139,13 @@ class LocationSitesTaxaChartData(ChartDataApiView):
         ).distinct('name'))
 
     def chart_data(self, collection_results):
-        taxa = collection_results.values('taxonomy').distinct('taxonomy')[0:25]
+        if not self.taxa:
+            self.taxa = Taxonomy.objects.filter(
+                biologicalcollectionrecord__id__in=
+                collection_results.values_list('id', flat=True)
+            ).distinct()[:25]
         return collection_results.filter(
-            taxonomy__in=taxa
+            taxonomy__in=self.taxa
         ).annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__scientific_name'),
