@@ -99,6 +99,8 @@ class FindTaxon(APIView):
     taxa_id = 'taxaId'
     source = 'source'
     stored_local = 'storedLocal'
+    validated = 'validated'
+    taxon_group_ids = 'taxonGroupIds'
 
     def get(self, request, *args):
         taxon_list = []
@@ -150,8 +152,15 @@ class FindTaxon(APIView):
                 continue
             taxa = Taxonomy.objects.filter(gbif_key=key)
             taxa_id = ''
+            validated = False
+            taxon_group_ids = []
             if taxa.exists():
-                taxa_id = taxa[0].id
+                taxon = taxa.first()
+                taxa_id = taxon.id
+                validated = taxon.validated
+                taxon_group_ids = taxon.taxongroup_set.all().values_list(
+                    'id', flat=True
+                )
             taxon_list.append({
                 self.scientific_name: gbif['scientificName'],
                 self.canonical_name: gbif['canonicalName'],
@@ -159,7 +168,9 @@ class FindTaxon(APIView):
                 self.key: key,
                 self.taxa_id: taxa_id,
                 self.source: 'gbif',
-                self.stored_local: taxa.exists()
+                self.stored_local: taxa.exists(),
+                self.validated: validated,
+                self.taxon_group_ids: taxon_group_ids
             })
 
         if not taxon_list:
@@ -177,6 +188,8 @@ class FindTaxon(APIView):
                         self.source: 'local' if not taxon.gbif_key else 'gbif',
                         self.stored_local: True,
                         self.taxa_id: taxon.id,
+                        self.validated: taxon.validated,
+                        self.taxon_group_ids: []
                     })
 
         return Response(taxon_list)
@@ -308,7 +321,7 @@ class TaxaList(LoginRequiredMixin, APIView):
             )
         if validated:
             try:
-                validated = ast.literal_eval(validated)
+                validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
                     taxon_list = taxon_list.exclude(
                         validated=True

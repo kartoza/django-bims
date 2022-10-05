@@ -377,6 +377,9 @@ const getTaxaList = (url) => {
                 if (data['iucn_redlist_id']) {
                     name += ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data['iucn_redlist_id']}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
                 }
+                if (!data['validated']) {
+                    name += '<br/><span class="badge badge-secondary">Unvalidated</span></a>';
+                }
                 let $rowAction = $('.row-action').clone(true, true);
                 $rowAction.removeClass('row-action');
                 $rowAction.show();
@@ -461,6 +464,8 @@ function populateFindTaxonTable(table, data) {
         let key = value['key'];
         let taxaId = value['taxaId'];
         let stored = value['storedLocal'];
+        let validated = value['validated'];
+        let taxonGroupIds = value['taxonGroupIds'];
 
         if (source === 'gbif') {
             source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
@@ -470,14 +475,20 @@ function populateFindTaxonTable(table, data) {
         }
         if (stored) {
             stored = fontAwesomeIcon('check', 'green');
+            if (!validated) {
+                stored = '<span class="badge badge-secondary">Unvalidated</span>'
+            }
         } else {
             stored = fontAwesomeIcon('times', 'red');
         }
-        let action = (`<button
-                        type="button"
-                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})"
-                        class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
-                       </button>`);
+        let action = '';
+        if (!taxonGroupIds.includes(parseInt(selectedTaxonGroup))) {
+            action = (`<button
+                type="button"
+                onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})"
+                class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
+               </button>`);
+        }
         tableBody.append(`<tr>
                     <td>${scientificName}</td>
                     <td>${canonicalName}</td>
