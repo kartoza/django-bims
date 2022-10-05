@@ -494,7 +494,8 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId 
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,
-        'rank': rank
+        'rank': rank,
+        'taxonGroupId': selectedTaxonGroup
     };
     if (familyId) {
         postData['familyId'] = familyId
@@ -514,12 +515,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId 
                 $('#addNewTaxonModal').modal('toggle');
                 loading.hide();
                 $('#add-taxon-input').val('');
-                addNewTaxonToObservedList(
-                    name,
-                    gbifKey,
-                    rank,
-                    response['id']
-                )
+                getTaxaList(taxaListCurrentUrl);
             }
         });
         return
@@ -738,6 +734,9 @@ $(document).ready(function () {
         filterSelected['cons_status'] = consStatusArray;
         totalAllFilters += consStatusArray.length;
         url += `&cons_status=${urlParams.get('cons_status')}`;
+    }
+    if (urlParams.get('validated')) {
+        url += `&validated=${urlParams.get('validated')}`;
     }
     if (urlParams.get('parent')) {
         const parentArray = urlParams.get('parent').split(',');

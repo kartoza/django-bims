@@ -225,6 +225,13 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
+
+            # Check if it's a new taxonomy
+            if not taxonomy.validated:
+                taxonomy.owner = self.request.user
+                taxonomy.ready_to_be_validate()
+                taxonomy.send_new_taxon_email(taxon_group_id)
+
             if family:
                 taxonomy.parent = family
                 taxonomy.save()
@@ -256,6 +263,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_name = request.GET.get('taxon', '')
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
+        validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
         # Filter by parent
         parent_ids = request.GET.get('parent', '').split(',')
@@ -298,6 +306,19 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if validated:
+            try:
+                validated = ast.literal_eval(validated)
+                if not validated:
+                    taxon_list = taxon_list.exclude(
+                        validated=True
+                    )
+                else:
+                    taxon_list = taxon_list.filter(
+                        validated=True
+                    )
+            except ValueError:
+                pass
         if is_gbif:
             try:
                 is_gbif = ast.literal_eval(is_gbif)
