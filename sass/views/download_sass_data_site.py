@@ -3,7 +3,7 @@ import os
 import errno
 from hashlib import sha256
 import datetime
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, HttpResponse
 from django.conf import settings
 from bims.api_views.search import CollectionSearch
 from sass.models import SassTaxon, SiteVisit
@@ -160,6 +160,7 @@ def download_sass_taxon_data(request, **kwargs):
     csv_name = request.GET.get('csvName')
     site_visit_id = request.GET.get('siteVisitId')
     site_visit = SiteVisit.objects.get(id=site_visit_id)
+    site = site_visit.location_site
     sass_version = site_visit.sass_version
     taxon_filters = dict()
 
@@ -190,13 +191,12 @@ def download_sass_taxon_data(request, **kwargs):
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_taxon_data_task.delay(
-        taxon_filters,
-        sass_version,
+        site.id,
         filename,
         request.GET,
         path_file,
         user_id=request.user.id,
-        send_email=True
+        send_email=False
     )
 
     return JsonResponse(get_response(PROCESSING_STATUS, filename))
