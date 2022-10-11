@@ -232,7 +232,7 @@ def download_sass_taxon_data_task(
             ).order_by('-site_visit_date')
             location_site = sass_site_visits.first().location_site
             sass_taxa = SassTaxon.objects.filter(
-                display_order_sass_5__isnull=False
+                sass_5_score__isnull=False
             ).order_by(
                 'display_order_sass_5'
             )
@@ -282,7 +282,11 @@ def download_sass_taxon_data_task(
 
                 number_of_taxa.append(_number_of_taxa)
                 sass_score.append(_sass_score)
-                aspt.append(round(_sass_score/_number_of_taxa, 2))
+                try:
+                    aspt_score = round(_sass_score/_number_of_taxa, 2)
+                except:  # noqa
+                    aspt_score = 0
+                aspt.append(aspt_score)
 
             site_codes = [
                 'Site Code',
