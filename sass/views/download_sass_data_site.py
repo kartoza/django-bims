@@ -5,6 +5,8 @@ from hashlib import sha256
 import datetime
 from django.http.response import JsonResponse, HttpResponse
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+
 from bims.api_views.search import CollectionSearch
 from sass.models import SassTaxon, SiteVisit
 from sass.models.site_visit_taxon import SiteVisitTaxon
@@ -159,7 +161,7 @@ def download_sass_taxon_data(request, **kwargs):
     """
     csv_name = request.GET.get('csvName')
     site_visit_id = request.GET.get('siteVisitId')
-    site_visit = SiteVisit.objects.get(id=site_visit_id)
+    site_visit = get_object_or_404(SiteVisit, id=site_visit_id)
     site = site_visit.location_site
     sass_version = site_visit.sass_version
     taxon_filters = dict()
