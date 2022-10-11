@@ -164,6 +164,10 @@ class TaxonSimpleSerializer(serializers.ModelSerializer):
 
 class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
+    taxa_count = serializers.SerializerMethodField()
+
+    def get_taxa_count(self, obj: TaxonGroup):
+        return obj.taxonomies.all().count()
 
     def get_extra_attributes(self, obj):
         return list(
@@ -172,4 +176,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaxonGroup
-        fields = ['id', 'name', 'category', 'logo', 'extra_attributes']
+        fields = ['id', 'name', 'category', 'logo', 'extra_attributes',
+                  'taxa_count']

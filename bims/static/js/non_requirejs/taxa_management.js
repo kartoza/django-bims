@@ -658,13 +658,23 @@ function formatTaxaSelection (taxa) {
 }
 
 $(document).ready(function () {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
+    const fullUrl = new URL(window.location.href);
+    const urlParams = fullUrl.searchParams;
     let totalAllFilters = 0;
     let url = ''
     let taxonName = ''
-    if (urlParams.get('selected')) {
+
+    if (!urlParams.get('selected')) {
+        selectedTaxonGroup = $($('#sortable').children()[0]).data('id');
+        if (selectedTaxonGroup) {
+            urlParams.set('selected', selectedTaxonGroup);
+            history.pushState({}, null, fullUrl.href);
+        }
+    } else {
         selectedTaxonGroup = urlParams.get('selected');
+    }
+
+    if (selectedTaxonGroup) {
         $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
         url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
     }
@@ -784,3 +794,4 @@ $(document).ready(function () {
 
 
 hideLoading();
+
