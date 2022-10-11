@@ -586,7 +586,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
 
         last_taxon_group = ''
-        bold_bottom_border = False
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
                 sass_taxon_score = sass_taxon.sass_5_score

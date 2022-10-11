@@ -563,11 +563,6 @@ class SassSummaryDataSerializer(
 
 class SassTaxonDataSerializer(serializers.ModelSerializer):
     TAXA = serializers.SerializerMethodField()
-    group = serializers.SerializerMethodField()
-    Weight = serializers.SerializerMethodField()
-    s = serializers.SerializerMethodField()
-    v = serializers.SerializerMethodField()
-    g = serializers.SerializerMethodField()
     site = serializers.SerializerMethodField()
 
     def get_site_visit_taxon(self, obj):
@@ -575,13 +570,10 @@ class SassTaxonDataSerializer(serializers.ModelSerializer):
             sass_taxon=obj.id
         )
         if site_visit_taxa:
-            latest_site_visit = (
-                site_visit_taxa.
-                order_by('-site_visit__site_visit_date')[0].site_visit
+            sass_taxon = (
+                site_visit_taxa.order_by(
+                    '-site_visit__site_visit_date').first()
             )
-            sass_taxon = site_visit_taxa.filter(
-                site_visit=latest_site_visit
-            )[0]
             return sass_taxon
 
         return None
@@ -590,82 +582,6 @@ class SassTaxonDataSerializer(serializers.ModelSerializer):
         if obj.taxon_sass_4:
             return obj.taxon_sass_4
         return obj.taxon_sass_5
-
-    def get_group(self, obj):
-        taxon_group = TaxonGroup.objects.filter(
-            taxonomies__in=[obj.taxon.id],
-            category=TaxonomicGroupCategory.SASS_TAXON_GROUP.name
-        )
-        if taxon_group:
-            return taxon_group[0].name
-        return ''
-
-    def get_Weight(self, obj):
-        site_visit_taxon = self.get_site_visit_taxon(obj)
-        if site_visit_taxon:
-            if site_visit_taxon.site_visit.sass_version == 5 or obj.taxon_sass_5 is not None:
-                return obj.sass_5_score
-            return obj.score
-        return obj.score
-
-    def get_s(self, obj):
-        site_visit_taxon = self.get_site_visit_taxon(obj)
-        if site_visit_taxon:
-            site_visit_biotope = (
-                SiteVisitBiotopeTaxon.objects.filter(
-                    Q(biotope__name__icontains='sic') |
-                    Q(biotope__name__icontains='sooc'),
-                    site_visit=site_visit_taxon.site_visit,
-                    sass_taxon=obj,
-                )
-            )
-            if not site_visit_biotope.exists():
-                return ''
-            try:
-                return site_visit_biotope.first().taxon_abundance.abc
-            except AttributeError:
-                return ''
-        return ''
-
-    def get_v(self, obj):
-        site_visit_taxon = self.get_site_visit_taxon(obj)
-        if site_visit_taxon:
-            site_visit_biotope = (
-                SiteVisitBiotopeTaxon.objects.filter(
-                    Q(biotope__name__icontains='vegetation') |
-                    Q(biotope__name__icontains='mv/aqv'),
-                    site_visit=site_visit_taxon.site_visit,
-                    sass_taxon=obj,
-                )
-            )
-            if not site_visit_biotope.exists():
-                return ''
-            try:
-                return site_visit_biotope.first().taxon_abundance.abc
-            except AttributeError:
-                return ''
-        return ''
-
-    def get_g(self, obj):
-        site_visit_taxon = self.get_site_visit_taxon(obj)
-        if site_visit_taxon:
-            site_visit_biotope = (
-                SiteVisitBiotopeTaxon.objects.filter(
-                    Q(biotope__name__icontains='gravel') |
-                    Q(biotope__name__icontains='sand') |
-                    Q(biotope__name__icontains='mud') |
-                    Q(biotope__name__icontains='g/s/m'),
-                    site_visit=site_visit_taxon.site_visit,
-                    sass_taxon=obj,
-                )
-            )
-            if not site_visit_biotope.exists():
-                return ''
-            try:
-                return site_visit_biotope.first().taxon_abundance.abc
-            except AttributeError:
-                return ''
-        return ''
 
     def get_site(self, obj):
         site_visit_taxon = self.get_site_visit_taxon(obj)
@@ -678,11 +594,6 @@ class SassTaxonDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = SassTaxon
         fields = [
-            'group',
             'TAXA',
-            'Weight',
-            's',
-            'v',
-            'g',
             'site'
         ]

@@ -66,12 +66,12 @@ services:
   worker:
     environment:
       - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - PYTHONPATH=/usr/src/app:/home/web/django_project
+      - PYTHONPATH=/home/web/django_project
       - DEFAULT_BACKEND_DATASTORE=
 
 
   searchworker:
     environment:
       - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - PYTHONPATH=/usr/src/app:/home/web/django_project
+      - PYTHONPATH=/home/web/django_project
       - DEFAULT_BACKEND_DATASTORE=

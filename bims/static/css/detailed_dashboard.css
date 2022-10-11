@@ -131,6 +131,11 @@
     height: 30px;
 }
 
+.card-header-subtitle {
+    font-size: 10pt;
+    font-weight: bold;
+}
+
 .chart-label {
     color: #787878 !important;
 }
