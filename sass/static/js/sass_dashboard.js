@@ -891,34 +891,30 @@ $(function () {
     $('.download-as-csv').click(onDownloadCSVClicked);
     $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
     $('.download-latest-as-csv').on('click', function (e) {
-        let downloadButton = $(e.target);
-        let includeAllTaxon = $('#include-all-taxon').prop('checked');
-        if (includeAllTaxon) {
-            let csv_name = getCsvName('All data', 'Sass taxon data');
-            let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}&siteVisitId=${siteVisitId}`;
-            showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
-                const alertModalBody = $('#alertModalBody');
-                if (!is_logged_in) {
-                    alertModalBody.html('Please log in first.');
-                }else {
-                    downloadButton.html("Processing...");
-                    downloadButton.prop("disabled", true);
-                    alertModalBody.html(downloadRequestMessage);
-                    url += `&downloadRequestId=${downloadRequestId}`;
-                    downloadCSV(url, downloadButton, csv_name, true);
-                }
-                $('#alertModal').modal({
-                    'keyboard': false,
-                    'backdrop': 'static'
-                });
-            });
-        }
-        else{
-            var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
-            exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
-        }
-
+         var filename = 'SASS_Taxa_per_biotope_' + sassLatestData;
+        exportTableToCSV(filename + '.csv', "sass-taxon-per-biotope-table")
     });
+    $('.download-site-level-sass-data').on('click', function (e) {
+        let downloadButton = $(e.target);
+        let csv_name = 'Site level SASS data for populating the River Ecostatus Monitoring MIRAI model';
+        let url = `/sass/download-sass-taxon-data/?csvName=${csv_name}&siteVisitId=${siteVisitId}`;
+        showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
+            const alertModalBody = $('#alertModalBody');
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.');
+            } else {
+                downloadButton.html("Processing...");
+                downloadButton.prop("disabled", true);
+                alertModalBody.html(downloadRequestMessage);
+                url += `&downloadRequestId=${downloadRequestId}`;
+                downloadCSV(url, downloadButton, csv_name, true);
+            }
+            $('#alertModal').modal({
+                'keyboard': false,
+                'backdrop': 'static'
+            });
+        });
+    })
 
     $('[data-toggle="tooltip"]').tooltip();
     $('.download-chart-new').click(onDownloadChartNewClicked);

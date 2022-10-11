@@ -1,3 +1,5 @@
+import random
+
 import factory
 
 from django.utils import timezone
@@ -18,11 +20,18 @@ from bims.tests.model_factories import (
 
 
 class TaxonAbundanceF(factory.django.DjangoModelFactory):
+    abc = random.choice(['A', 'B', 'C', '1'])
     class Meta:
         model = TaxonAbundance
 
 
 class SassTaxonF(factory.django.DjangoModelFactory):
+    taxon = factory.SubFactory(TaxonomyF)
+    sass_5_score = random.randint(1, 10)
+    taxon_sass_5 = factory.Sequence(lambda n: 'Taxon SASS 5 Name {}'.format(
+        n
+    ))
+
     class Meta:
         model = SassTaxon
 
@@ -52,5 +61,11 @@ class SiteVisitBiotopeTaxonF(factory.django.DjangoModelFactory):
 
 
 class SiteVisitTaxonF(factory.django.DjangoModelFactory):
+    taxon_abundance = factory.SubFactory(TaxonAbundanceF)
+    sass_taxon = factory.SubFactory(SassTaxonF)
+    taxonomy = factory.SubFactory(TaxonomyF)
+    site_visit = factory.SubFactory(SiteVisitF)
+    site = factory.SubFactory(LocationSiteF)
+
     class Meta:
         model = SiteVisitTaxon

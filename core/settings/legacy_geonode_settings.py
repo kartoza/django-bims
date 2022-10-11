@@ -531,7 +531,6 @@ integration_bdd_tests = ast.literal_eval(os.environ.get('TEST_RUN_INTEGRATION_BD
 selenium_tests = ast.literal_eval(os.environ.get('TEST_RUN_SELENIUM', 'False'))
 
 # Django 1.11 ParallelTestSuite
-TEST_RUNNER = 'geonode.tests.suite.runner.GeoNodeBaseSuiteDiscoverRunner'
 TEST_RUNNER_KEEPDB = os.environ.get('TEST_RUNNER_KEEPDB', 0)
 TEST_RUNNER_PARALLEL = os.environ.get('TEST_RUNNER_PARALLEL', 1)
 
@@ -544,7 +543,6 @@ TEST_RUNNER_PARALLEL = os.environ.get('TEST_RUNNER_PARALLEL', 1)
 # TEST_RUNNER_WORKER_TIMEOUT = 10
 
 TEST = 'test' in sys.argv
-INTEGRATION = 'geonode.tests.integration' in sys.argv
 
 #
 # Customizations to built in Django settings required by GeoNode
@@ -756,8 +754,6 @@ OGC_SERVER_DEFAULT_USER = os.getenv(
 OGC_SERVER_DEFAULT_PASSWORD = os.getenv(
     'GEOSERVER_ADMIN_PASSWORD', 'geoserver'
 )
-
-GEOFENCE_SECURITY_ENABLED = False if TEST and not INTEGRATION else ast.literal_eval(os.getenv('GEOFENCE_SECURITY_ENABLED', 'True'))
 
 USE_GEOSERVER = False
 
