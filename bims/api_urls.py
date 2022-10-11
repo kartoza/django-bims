@@ -34,7 +34,7 @@ from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
 from bims.api_views.thermal_data import ThermalDataApiView
 from bims.api_views.validate_object import ValidateSite
-from bims.api_views.reject_object import RejectSite
+from bims.api_views.reject_object import RejectSite, RejectTaxon
 from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.reject_data import RejectData
@@ -262,6 +262,8 @@ urlpatterns = [
         ValidateSite.as_view(), name='validate-location-site'),
     url(r'^reject-location-site/$',
         RejectSite.as_view(), name='reject-location-site'),
+    url(r'^reject-taxon/$',
+        RejectTaxon.as_view(), name='reject-taxon'),
     url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
         name='taxon-images'),
     url(r'^merge-sites/$',

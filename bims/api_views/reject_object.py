@@ -1,4 +1,8 @@
 # coding=utf-8
+from django.http.response import Http404
+
+from bims.models.taxonomy import Taxonomy
+
 from bims.models.location_site import LocationSite
 from rest_framework.views import APIView
 from rest_framework import status
@@ -61,6 +65,31 @@ class RejectSite(UserPassesTestMixin, LoginRequiredMixin, APIView):
         try:
             site = LocationSite.objects.get(pk=object_pk)
             site.reject(
+                rejection_message=rejection_message
+            )
+            return JsonResponse({'status': 'success'})
+        except LocationSite.DoesNotExist:
+            return HttpResponse(
+                'Object Does Not Exist',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class RejectTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
+
+    def test_func(self):
+        taxon_pk = self.request.GET.get('pk', None)
+        if not taxon_pk:
+            return False
+        taxon = Taxonomy.objects.get(pk=taxon_pk)
+        return taxon
+
+    def get(self, request):
+        object_pk = request.GET.get('pk', None)
+        rejection_message = request.GET.get('rejection_message', None)
+        try:
+            taxon = Taxonomy.objects.get(pk=object_pk)
+            taxon.reject(
                 rejection_message=rejection_message
             )
             return JsonResponse({'status': 'success'})

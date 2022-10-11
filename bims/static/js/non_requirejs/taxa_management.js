@@ -14,6 +14,8 @@ let $searchButton = $('#search-button');
 let $downloadCsvButton = $('#download-csv');
 let $loadingOverlay = $('.loading');
 let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
+let $validateTaxonBtn = $('.validate-taxon');
+let $rejectTaxonBtn = $('.reject-taxon');
 let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
@@ -132,6 +134,52 @@ $removeTaxonFromGroupBtn.click(function (e) {
         removeTaxonFromTaxonGroup(id);
     }
 });
+
+$validateTaxonBtn.click(function (e) {
+    e.preventDefault();
+    let r = confirm("Are you sure you want to validate this taxon?");
+    if (r === true) {
+        alert('test')
+    }
+});
+
+$rejectTaxonBtn.click(function (e) {
+    e.preventDefault();
+    const modal = $('#confirmRejectModal');
+    let $target = $(e.target);
+    let currentTry = 0;
+    while (!$target.hasClass('taxa-row') && currentTry < 10) {
+        currentTry += 1;
+        $target = $target.parent();
+    }
+    let id = $target.data('id');
+    modal.find('.rejection-message').val('');
+    modal.modal('show');
+    modal.data('id', id);
+});
+
+$('#rejectBtn').click(function () {
+    const modal = $('#confirmRejectModal');
+    const id = modal.data('id');
+    const rejectionMessage = modal.find('.rejection-message').val();
+    console.log(id, rejectionMessage);
+    $.ajax({
+        url: rejectUrl,
+        data: {
+            'pk': id,
+            'rejection_message': rejectionMessage
+        },
+        success: function () {
+            alert('Taxon is successfully rejected.');
+            location.reload()
+        },
+        error: function () {
+            alert('Something is wrong, please try again.');
+            location.reload()
+        }
+    })
+});
+
 
 $taxonGroupCard.click(function (e) {
     let $elm = $(e.target);
@@ -382,6 +430,13 @@ const getTaxaList = (url) => {
                 }
                 let $rowAction = $('.row-action').clone(true, true);
                 $rowAction.removeClass('row-action');
+                if (!data['validated']) {
+                    $rowAction.find('.btn-validated-container').hide();
+                    $rowAction.find('.btn-unvalidated-container').show();
+                } else {
+                    $rowAction.find('.btn-validated-container').show();
+                    $rowAction.find('.btn-unvalidated-container').hide();
+                }
                 $rowAction.show();
                 let $row = $(`<tr class="taxa-row" data-id="${data['id']}"></tr>`);
                 $taxaList.append($row);
@@ -398,7 +453,6 @@ const getTaxaList = (url) => {
                 $rowAction.find('.edit-taxon').click((event) => {
                     event.preventDefault();
                     popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
-
                     return false;
                 });
             });
