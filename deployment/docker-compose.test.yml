@@ -40,5 +40,5 @@ services:
       - ASYNC_SIGNALS_GEONODE=False
       - ASYNC_SIGNALS=False
     volumes:
-      - ./static:/home/web/static:rw
-      - ./media:/home/web/media:rw
+      - static-data:/home/web/static:rw
+      - media-data:/home/web/media:rw
