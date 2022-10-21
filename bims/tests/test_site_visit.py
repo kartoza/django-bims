@@ -68,7 +68,7 @@ class TestSiteVisitView(TestCase):
         )
         self.survey.ready_for_validation = True
         response = self.client.get(
-            '/api/reject-data/?pk={}'.format(self.survey.id)
+            '/api/reject-site-visit/?pk={}'.format(self.survey.id)
         )
         self.assertEqual(response.status_code, 200)
         _survey = Survey.objects.get(id=self.survey.id)

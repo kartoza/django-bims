@@ -256,7 +256,7 @@
                                        class="btn btn-primary btn-sm btn-action" title="Update"><i class="fa fa-pencil"></i> </a>
                                     {% endif %}
 
-                                    <a href="#" class="btn btn-danger btn-sm btn-action" title="Delete" data-toggle="modal" data-target="#delete-form" 
+                                    <a href="#" class="btn btn-danger btn-sm btn-action" title="Delete" data-toggle="modal" data-target="#delete-form"
                                         data-delete-url="{% if site_visit_sass %}/sass/delete/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/delete/{{ site_visit.pk }}/{% endif %}">
                                         <i class="fa fa-minus" aria-hidden="true"></i> </a>
                                 {% endif %}
@@ -393,7 +393,7 @@
             const id = modal.data('id');
             const rejectionMessage = modal.find('.rejection-message');
             $.ajax({
-                url: '{% url "reject-data" %}',
+                url: '{% url "reject-site-visit" %}',
                 data: {
                     'pk': id,
                     'rejection_message': rejectionMessage.val()
