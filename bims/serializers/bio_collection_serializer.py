@@ -779,9 +779,10 @@ class BioCollectionOneRowSerializer(
             for chem_key in chemical_units:
                 if chem_key not in self.context['header']:
                     self.context['header'].append(chem_key)
-                identifier = '{site_id}{collection_date}'.format(
+                identifier = '{site_id}{collection_date}{chem_key}'.format(
                     site_id=instance.site.id,
-                    collection_date=instance.collection_date
+                    collection_date=instance.collection_date,
+                    chem_key=chem_key
                 )
                 chem_data = self.get_context_cache(
                     identifier,
