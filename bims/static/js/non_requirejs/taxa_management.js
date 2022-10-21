@@ -676,6 +676,9 @@ $applyFiltersBtn.click(function () {
     })
     urlParams = insertParam('parent', parent.join(), true, false, urlParams);
 
+    const validated = $('#validated').find(":selected").val();
+    urlParams = insertParam('validated', validated, true, false, urlParams);
+
     document.location.search = urlParams;
 })
 
@@ -757,6 +760,14 @@ $(document).ready(function () {
         templateSelection: formatTaxaSelection,
         theme: "classic"
     });
+
+    if (urlParams.get('validated')) {
+        const validated = urlParams.get('validated');
+        if (url) {
+            url += `&validated=${validated}`;
+            $('#validated').val(validated);
+        }
+    }
 
     if (urlParams.get('taxon')) {
         taxonName = urlParams.get('taxon');
