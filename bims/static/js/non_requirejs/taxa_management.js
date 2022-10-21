@@ -162,7 +162,6 @@ $('#rejectBtn').click(function () {
     const modal = $('#confirmRejectModal');
     const id = modal.data('id');
     const rejectionMessage = modal.find('.rejection-message').val();
-    console.log(id, rejectionMessage);
     $.ajax({
         url: rejectUrl,
         data: {

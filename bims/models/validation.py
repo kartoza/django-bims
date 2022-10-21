@@ -94,7 +94,7 @@ class AbstractValidation(models.Model):
         self.ready_for_validation = False
         self.save()
 
-    def reject(self, rejection_message, **kwargs):
+    def reject(self, rejection_message, show_redirect_url=True, **kwargs):
         self.validated = False
         self.rejected = True
         self.ready_for_validation = False
@@ -104,23 +104,18 @@ class AbstractValidation(models.Model):
         elif rejection_message:
             self.validation_message = rejection_message
         self.save()
-        self._send_rejection_email(**kwargs)
 
-    def ready_to_be_validate(self):
-        self.validated = False
-        self.rejected = False
-        self.ready_for_validation = True
-        self.save()
-
-    def _send_rejection_email(self, **kwargs):
         site_domain_name = Site.objects.get_current().domain
         subject_email = '[%s]%s' % (
             site_domain_name,
             self.EMAIL_REJECTION_SUBJECT)
-        data_update_url = '%s%s' % (
-            site_domain_name,
-            reverse('site-visit-update', args=(self.pk, ))
-        )
+        if show_redirect_url:
+            data_update_url = '%s%s' % (
+                site_domain_name,
+                reverse('site-visit-update', args=(self.pk, ))
+            )
+        else:
+            data_update_url = ''
 
         msg_data = {
             self.EMAIL_DATA_SITE_NAME: site_domain_name,
@@ -145,3 +140,9 @@ class AbstractValidation(models.Model):
             recipient_list=[self.owner.email],
             html_message=msg_html
         )
+
+    def ready_to_be_validate(self):
+        self.validated = False
+        self.rejected = False
+        self.ready_for_validation = True
+        self.save()

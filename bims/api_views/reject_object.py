@@ -1,4 +1,5 @@
 # coding=utf-8
+from bims.models.survey import Survey
 from django.http.response import Http404
 
 from bims.models.taxonomy import Taxonomy
@@ -90,8 +91,27 @@ class RejectTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
         try:
             taxon = Taxonomy.objects.get(pk=object_pk)
             taxon.reject(
-                rejection_message=rejection_message
+                rejection_message=rejection_message,
+                show_redirect_url=False
             )
+            # Check if taxon is associated with new site visit
+            site_visits = Survey.objects.filter(
+                id__in=taxon.biologicalcollectionrecord_set.values('survey')
+            )
+            unvalidated_site_visits = site_visits.filter(
+                validated=False
+            )
+
+            if unvalidated_site_visits.exists():
+                for unvalidated_site_visit in unvalidated_site_visits:
+                    unvalidated_site_visit.reject('Taxon is rejected')
+
+            # Check if taxon is not referenced to validated collection records
+            if not site_visits.filter(
+                validated=True
+            ).exists():
+                taxon.biologicalcollectionrecord_set.all().delete()
+                taxon.delete()
             return JsonResponse({'status': 'success'})
         except LocationSite.DoesNotExist:
             return HttpResponse(
