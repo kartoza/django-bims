@@ -2,6 +2,10 @@
 BIMS
 =====
 
+.. image:: https://badges.gitter.im/django-bims/community.svg
+   :alt: Join the chat at https://gitter.im/django-bims/community
+   :target: https://gitter.im/django-bims/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 BIMS is a Django app.
 
 Note that BIMS is under development and not yet feature complete.
