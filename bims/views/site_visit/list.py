@@ -18,7 +18,6 @@ class SiteVisitListView(ListView):
     collection_results = BiologicalCollectionRecord.objects.none()
 
     def check_filters(self, search_filters):
-        survey_filter = ['validated', 'site_code', 'collectors']
         if 'o' in search_filters:
             del search_filters['o']
         if 'validated' in search_filters:
@@ -60,8 +59,13 @@ class SiteVisitListView(ListView):
             if 'validated' in search_filters:
                 validation_filters = search.validation_filter()
                 if validation_filters:
+                    validation_filter = {}
+                    for validation_key in validation_filters:
+                        validation_filter[
+                            validation_key.replace('survey__', '')
+                        ] = validation_filters[validation_key]
                     qs = qs.filter(
-                        validated=validation_filters['survey__validated']
+                        **validation_filter
                     )
                 del search_filters['validated']
 

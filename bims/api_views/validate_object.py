@@ -29,9 +29,7 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
                     'Site visit cannot be validated',
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            site_visit.validated = True
-            site_visit.ready_for_validation = False
-            site_visit.save()
+            site_visit.validate()
 
             messages.add_message(
                 request,

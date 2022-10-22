@@ -187,6 +187,8 @@ class CollectionSearch(object):
             additional_filter['survey__validated'] = True
         elif 'unvalidated' in validated_values:
             additional_filter['survey__validated'] = False
+        elif 'in review' in validated_values:
+            additional_filter['survey__ready_for_validation'] = True
 
         return additional_filter
 

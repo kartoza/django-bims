@@ -137,7 +137,7 @@ class AbstractValidation(models.Model):
         if show_redirect_url:
             data_update_url = '%s%s' % (
                 site_domain_name,
-                reverse('site-visit-update', args=(self.pk, ))
+                reverse('site-visit-detail', args=(self.pk, ))
             )
         else:
             data_update_url = ''

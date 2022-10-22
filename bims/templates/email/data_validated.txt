@@ -7,5 +7,5 @@ The following data has been approved:
 
 
 {% if data_url %}
-    You can check your data here: {{ data_url }}
+You can check your data here: {{ data_url }}
 {% endif %}
