@@ -179,6 +179,7 @@
     <script>
         const sourceCollection = {{ source_collections | safe }};
         const rejectUrl = '{% url "reject-taxon" %}';
+        const approveUrl = '{% url "validate-taxon" %}';
     </script>
 {% endblock %}
 

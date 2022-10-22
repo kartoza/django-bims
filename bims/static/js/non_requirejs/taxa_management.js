@@ -137,9 +137,29 @@ $removeTaxonFromGroupBtn.click(function (e) {
 
 $validateTaxonBtn.click(function (e) {
     e.preventDefault();
+    let $target = $(e.target);
+    let currentTry = 0;
+    while (!$target.hasClass('taxa-row') && currentTry < 10) {
+        currentTry += 1;
+        $target = $target.parent();
+    }
+    let id = $target.data('id');
     let r = confirm("Are you sure you want to validate this taxon?");
     if (r === true) {
-        alert('test')
+        $.ajax({
+            url: approveUrl,
+            data: {
+                'pk': id
+            },
+            success: function () {
+                alert('Taxon is successfully validated.');
+                location.reload()
+            },
+            error: function () {
+                alert('Something is wrong, please try again.');
+                location.reload()
+            }
+        })
     }
 });
 

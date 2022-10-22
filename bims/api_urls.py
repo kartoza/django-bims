@@ -33,7 +33,10 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
 from bims.api_views.thermal_data import ThermalDataApiView
-from bims.api_views.validate_object import ValidateSite
+from bims.api_views.validate_object import (
+    ValidateSite,
+    ValidateTaxon
+)
 from bims.api_views.reject_object import (
     RejectSite, RejectTaxon, RejectSiteVisit
 )
@@ -261,6 +264,8 @@ urlpatterns = [
         name='remove-occurrences'),
     url(r'^validate-location-site/$',
         ValidateSite.as_view(), name='validate-location-site'),
+    url(r'^validate-taxon/$',
+        ValidateTaxon.as_view(), name='validate-taxon'),
     url(r'^reject-location-site/$',
         RejectSite.as_view(), name='reject-location-site'),
     url(r'^reject-taxon/$',
