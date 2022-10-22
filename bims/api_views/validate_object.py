@@ -24,6 +24,11 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
         object_pk = request.GET.get('pk', None)
         try:
             site_visit = Survey.objects.get(pk=object_pk)
+            if not site_visit.can_be_validated:
+                return HttpResponse(
+                    'Site visit cannot be validated',
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             site_visit.validated = True
             site_visit.ready_for_validation = False
             site_visit.save()

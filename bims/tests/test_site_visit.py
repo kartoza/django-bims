@@ -49,11 +49,32 @@ class TestSiteVisitView(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    def test_SiteVisit_validate_with_unvalidated_species(self):
+        taxon = TaxonomyF.create(
+            validated=False
+        )
+        BiologicalCollectionRecordF.create(
+            taxonomy=taxon,
+            survey=self.survey
+        )
+        self.client.login(
+            username=self.superuser.username,
+            password='password'
+        )
+        self.survey.ready_for_validation = True
+        self.survey.save()
+        response = self.client.get(
+            '/api/validate-object/?pk={}'.format(self.survey.id)
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_SiteVisit_validate(self):
         self.client.login(
             username=self.superuser.username,
             password='password'
         )
+        self.survey.ready_for_validation = True
+        self.survey.save()
         response = self.client.get(
             '/api/validate-object/?pk={}'.format(self.survey.id)
         )

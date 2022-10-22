@@ -166,7 +166,7 @@ urlpatterns = [
         name='list-non-biodiversity-layer'),
     url(r'^validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
-    url(r'^reject-site-vist/$',
+    url(r'^reject-site-visit/$',
         RejectSiteVisit.as_view(), name='reject-site-visit'),
     url(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),

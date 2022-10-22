@@ -229,6 +229,9 @@
                             <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}<br>
                                 {% if site_visit_sass %}<span class="badge badge-danger">SASS</span>{% endif %}
                                 {{ site_visit.validation_status | safe }}
+                                {% if site_visit.unvalidated_species_exists %}
+                                    <a class="btn btn-warning btn-xs" href="/taxa-management/?selected={{ site_visit.taxon_group.id }}&validated=False">Validate Taxon</a>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if site_visit.site.site_description %}{{ site_visit.site.site_description }}{% elif site_visit.site.name %}{{ site_visit.site.name }}{% else %}-{% endif %}
@@ -266,17 +269,17 @@
                                         <i class="fa fa-send" aria-hidden="true"></i>
                                     </a>
                                 {% endif %}
-                                {% if validator and site_visit.ready_for_validation or user.is_superuser and not site_visit.validated %}
-                                    <span class="validation-action">
+                                {% if site_visit.can_be_validated and validator %}
+                                    <div class="validation-action">
                                         <a href="#" onclick="validateObject({{ site_visit.pk }})"
                                            class="btn btn-success btn-sm btn-action"
                                            data-toggle="tooltip" title="Validate this data">
-                                            <i class="fa fa-check-circle"></i></a>
+                                            <i class="fa fa-check-circle"></i> </a>
                                         <a href="#" onclick="rejectObject({{ site_visit.pk }})"
                                            class="btn btn-danger btn-sm btn-action"
                                            data-toggle="tooltip" title="Reject this data">
                                             <i class="fa fa-times-circle"></i></a>
-                                    </span>
+                                    </div>
                                 {% endif %}
 
                             </td>
