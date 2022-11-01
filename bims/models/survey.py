@@ -39,6 +39,30 @@ class Survey(AbstractValidation):
         blank=True
     )
 
+    @property
+    def taxon_group(self):
+        return self.biological_collection_record.first().module_group
+
+    @property
+    def unvalidated_species_exists(self):
+        return self.biological_collection_record.all().filter(
+            taxonomy__validated=False
+        ).exists()
+
+    @property
+    def validation_status(self):
+        validation_status = super(Survey, self).validation_status
+
+        if self.unvalidated_species_exists:
+            return '<span class="badge badge-danger">Unvalidated taxon</span>'
+        return validation_status
+
+    @property
+    def can_be_validated(self):
+        if self.validated or not self.ready_for_validation:
+            return False
+        return not self.unvalidated_species_exists
+
     def save(self, *args, **kwargs):
         if not self.uuid:
             survey_uuid = str(uuid.uuid4())

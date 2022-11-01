@@ -523,7 +523,6 @@ function populateFindTaxonTable(table, data) {
 }
 
 function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
-    debugger;
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,

@@ -8,4 +8,6 @@ And the reasons for rejection:
 {{ reason | safe }}
 
 
+{% if data_url %}
 You can update your data here: {{ data_url }}
+{% endif %}

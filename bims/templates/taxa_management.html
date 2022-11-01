@@ -25,7 +25,6 @@
         .btn-sm {
             font-size: 10pt !important;
         }
-
         .pagination-centered {
             text-align: center;
         }
@@ -179,6 +178,8 @@
     </style>
     <script>
         const sourceCollection = {{ source_collections | safe }};
+        const rejectUrl = '{% url "reject-taxon" %}';
+        const approveUrl = '{% url "validate-taxon" %}';
     </script>
 {% endblock %}
 
@@ -208,7 +209,7 @@
                                 </div>
                                 <div>
                                     Total taxonomy
-                                    : <span id="taxon_group_{{ taxa_group.id }}">{{ taxa_group.taxonomies.count }}</span>
+                                    : <span id="taxon_group_{{ taxa_group.id }}">{{ taxa_group.taxa_count }}</span>
                                 </div>
                                 <div style="margin-top: 3px">
                                     <span class="btn btn-warning update-logo-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</span>
@@ -307,6 +308,15 @@
                                             <select id="taxa-auto-complete" class="taxa-auto-complete" style="width: 100%"></select>
                                         </div>
                                     </div>
+                                    <div class="form-group row">
+                                        <label for="validated" class="col-sm-2 col-form-label">Validated</label>
+                                        <div class="col-sm-10">
+                                            <select id="validated" class="form-control" style="width: 100%">
+                                                <option value="True">True</option>
+                                                <option value="False">False</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div>
@@ -391,10 +401,18 @@
 
     <div class="row-action" style="display: none">
         <td>
-            <button class="btn btn-action btn-danger remove-taxon-from-group" style="width: 100%">Remove from group
-            </button>
-            <a href="" class="btn btn-action btn-warning edit-taxon" style="width: 100%; margin-top: 5px">Edit
-            </a>
+            <div class="btn-validated-container">
+                <button class="btn btn-action btn-danger remove-taxon-from-group" style="width: 100%">Remove from group
+                </button>
+                <a href="" class="btn btn-action btn-warning edit-taxon" style="width: 100%; margin-top: 5px">Edit
+                </a>
+            </div>
+            <div class="btn-unvalidated-container">
+                <a href="" class="btn btn-action btn-warning validate-taxon" style="width: 100%; margin-top: 5px">Validate
+                </a>
+                <a href="" class="btn btn-action btn-warning reject-taxon" style="width: 100%; margin-top: 5px">Reject
+                </a>
+            </div>
         </td>
     </div>
 
@@ -586,6 +604,34 @@
                 </div>
             </div>
             </form>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="confirmRejectModal" data-id="">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Taxon</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>What is the reason for rejecting this taxon?</p>
+                    <div class="form-group">
+                        <input class="form-control rejection-message">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="rejectBtn">
+                         Reject
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

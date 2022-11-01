@@ -9,6 +9,8 @@
     <p>And the reasons for rejection:</p>
     <p>{{ reason | safe }}</p>
     <br/><br/>
-    <p><a href="{{ data_url }}">You can update your data here: {{ data_url }}</a></p>
+    {% if data_url %}
+        <p><a href="{{ data_url }}">You can update your data here: {{ data_url }}</a></p>
+    {% endif %}
 </body>
 </html>

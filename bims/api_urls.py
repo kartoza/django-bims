@@ -33,11 +33,15 @@ from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
 from bims.api_views.thermal_data import ThermalDataApiView
-from bims.api_views.validate_object import ValidateSite
-from bims.api_views.reject_object import RejectSite
+from bims.api_views.validate_object import (
+    ValidateSite,
+    ValidateTaxon
+)
+from bims.api_views.reject_object import (
+    RejectSite, RejectTaxon, RejectSiteVisit
+)
 from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
-from bims.api_views.reject_data import RejectData
 from bims.api_views.get_biorecord import (
     GetBioRecordDetail,
     GetBioRecords,
@@ -162,8 +166,8 @@ urlpatterns = [
         name='list-non-biodiversity-layer'),
     url(r'^validate-object/$',
         ValidateObject.as_view(), name='validate-object'),
-    url(r'^reject-data/$',
-        RejectData.as_view(), name='reject-data'),
+    url(r'^reject-site-visit/$',
+        RejectSiteVisit.as_view(), name='reject-site-visit'),
     url(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     url(r'^get-site-code/$',
@@ -260,8 +264,12 @@ urlpatterns = [
         name='remove-occurrences'),
     url(r'^validate-location-site/$',
         ValidateSite.as_view(), name='validate-location-site'),
+    url(r'^validate-taxon/$',
+        ValidateTaxon.as_view(), name='validate-taxon'),
     url(r'^reject-location-site/$',
         RejectSite.as_view(), name='reject-location-site'),
+    url(r'^reject-taxon/$',
+        RejectTaxon.as_view(), name='reject-taxon'),
     url(r'^taxon-images/(?P<taxon>[0-9]+)/$', TaxonImageList.as_view(),
         name='taxon-images'),
     url(r'^merge-sites/$',

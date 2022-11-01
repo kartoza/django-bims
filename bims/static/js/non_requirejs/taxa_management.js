@@ -14,6 +14,8 @@ let $searchButton = $('#search-button');
 let $downloadCsvButton = $('#download-csv');
 let $loadingOverlay = $('.loading');
 let $removeTaxonFromGroupBtn = $('.remove-taxon-from-group');
+let $validateTaxonBtn = $('.validate-taxon');
+let $rejectTaxonBtn = $('.reject-taxon');
 let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
@@ -132,6 +134,71 @@ $removeTaxonFromGroupBtn.click(function (e) {
         removeTaxonFromTaxonGroup(id);
     }
 });
+
+$validateTaxonBtn.click(function (e) {
+    e.preventDefault();
+    let $target = $(e.target);
+    let currentTry = 0;
+    while (!$target.hasClass('taxa-row') && currentTry < 10) {
+        currentTry += 1;
+        $target = $target.parent();
+    }
+    let id = $target.data('id');
+    let r = confirm("Are you sure you want to validate this taxon?");
+    if (r === true) {
+        $.ajax({
+            url: approveUrl,
+            data: {
+                'pk': id
+            },
+            success: function () {
+                alert('Taxon is successfully validated.');
+                location.reload()
+            },
+            error: function () {
+                alert('Something is wrong, please try again.');
+                location.reload()
+            }
+        })
+    }
+});
+
+$rejectTaxonBtn.click(function (e) {
+    e.preventDefault();
+    const modal = $('#confirmRejectModal');
+    let $target = $(e.target);
+    let currentTry = 0;
+    while (!$target.hasClass('taxa-row') && currentTry < 10) {
+        currentTry += 1;
+        $target = $target.parent();
+    }
+    let id = $target.data('id');
+    modal.find('.rejection-message').val('');
+    modal.modal('show');
+    modal.data('id', id);
+});
+
+$('#rejectBtn').click(function () {
+    const modal = $('#confirmRejectModal');
+    const id = modal.data('id');
+    const rejectionMessage = modal.find('.rejection-message').val();
+    $.ajax({
+        url: rejectUrl,
+        data: {
+            'pk': id,
+            'rejection_message': rejectionMessage
+        },
+        success: function () {
+            alert('Taxon is successfully rejected.');
+            location.reload()
+        },
+        error: function () {
+            alert('Something is wrong, please try again.');
+            location.reload()
+        }
+    })
+});
+
 
 $taxonGroupCard.click(function (e) {
     let $elm = $(e.target);
@@ -377,8 +444,18 @@ const getTaxaList = (url) => {
                 if (data['iucn_redlist_id']) {
                     name += ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data['iucn_redlist_id']}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
                 }
+                if (!data['validated']) {
+                    name += '<br/><span class="badge badge-secondary">Unvalidated</span></a>';
+                }
                 let $rowAction = $('.row-action').clone(true, true);
                 $rowAction.removeClass('row-action');
+                if (!data['validated']) {
+                    $rowAction.find('.btn-validated-container').hide();
+                    $rowAction.find('.btn-unvalidated-container').show();
+                } else {
+                    $rowAction.find('.btn-validated-container').show();
+                    $rowAction.find('.btn-unvalidated-container').hide();
+                }
                 $rowAction.show();
                 let $row = $(`<tr class="taxa-row" data-id="${data['id']}"></tr>`);
                 $taxaList.append($row);
@@ -395,7 +472,6 @@ const getTaxaList = (url) => {
                 $rowAction.find('.edit-taxon').click((event) => {
                     event.preventDefault();
                     popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
-
                     return false;
                 });
             });
@@ -461,6 +537,8 @@ function populateFindTaxonTable(table, data) {
         let key = value['key'];
         let taxaId = value['taxaId'];
         let stored = value['storedLocal'];
+        let validated = value['validated'];
+        let taxonGroupIds = value['taxonGroupIds'];
 
         if (source === 'gbif') {
             source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
@@ -470,14 +548,20 @@ function populateFindTaxonTable(table, data) {
         }
         if (stored) {
             stored = fontAwesomeIcon('check', 'green');
+            if (!validated) {
+                stored = '<span class="badge badge-secondary">Unvalidated</span>'
+            }
         } else {
             stored = fontAwesomeIcon('times', 'red');
         }
-        let action = (`<button
-                        type="button"
-                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})"
-                        class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
-                       </button>`);
+        let action = '';
+        if (!taxonGroupIds.includes(parseInt(selectedTaxonGroup))) {
+            action = (`<button
+                type="button"
+                onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})"
+                class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
+               </button>`);
+        }
         tableBody.append(`<tr>
                     <td>${scientificName}</td>
                     <td>${canonicalName}</td>
@@ -494,7 +578,8 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId 
     let postData = {
         'gbifKey': gbifKey,
         'taxonName': name,
-        'rank': rank
+        'rank': rank,
+        'taxonGroupId': selectedTaxonGroup
     };
     if (familyId) {
         postData['familyId'] = familyId
@@ -514,12 +599,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId 
                 $('#addNewTaxonModal').modal('toggle');
                 loading.hide();
                 $('#add-taxon-input').val('');
-                addNewTaxonToObservedList(
-                    name,
-                    gbifKey,
-                    rank,
-                    response['id']
-                )
+                getTaxaList(taxaListCurrentUrl);
             }
         });
         return
@@ -615,6 +695,9 @@ $applyFiltersBtn.click(function () {
     })
     urlParams = insertParam('parent', parent.join(), true, false, urlParams);
 
+    const validated = $('#validated').find(":selected").val();
+    urlParams = insertParam('validated', validated, true, false, urlParams);
+
     document.location.search = urlParams;
 })
 
@@ -651,13 +734,23 @@ function formatTaxaSelection (taxa) {
 }
 
 $(document).ready(function () {
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
+    const fullUrl = new URL(window.location.href);
+    const urlParams = fullUrl.searchParams;
     let totalAllFilters = 0;
     let url = ''
     let taxonName = ''
-    if (urlParams.get('selected')) {
+
+    if (!urlParams.get('selected')) {
+        selectedTaxonGroup = $($('#sortable').children()[0]).data('id');
+        if (selectedTaxonGroup) {
+            urlParams.set('selected', selectedTaxonGroup);
+            history.pushState({}, null, fullUrl.href);
+        }
+    } else {
         selectedTaxonGroup = urlParams.get('selected');
+    }
+
+    if (selectedTaxonGroup) {
         $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
         url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
     }
@@ -686,6 +779,14 @@ $(document).ready(function () {
         templateSelection: formatTaxaSelection,
         theme: "classic"
     });
+
+    if (urlParams.get('validated')) {
+        const validated = urlParams.get('validated');
+        if (url) {
+            url += `&validated=${validated}`;
+            $('#validated').val(validated);
+        }
+    }
 
     if (urlParams.get('taxon')) {
         taxonName = urlParams.get('taxon');
@@ -739,6 +840,9 @@ $(document).ready(function () {
         totalAllFilters += consStatusArray.length;
         url += `&cons_status=${urlParams.get('cons_status')}`;
     }
+    if (urlParams.get('validated')) {
+        url += `&validated=${urlParams.get('validated')}`;
+    }
     if (urlParams.get('parent')) {
         const parentArray = urlParams.get('parent').split(',');
         const taxaAutoComplete = $('#taxa-auto-complete');
@@ -774,3 +878,4 @@ $(document).ready(function () {
 
 
 hideLoading();
+

@@ -1,0 +1,9 @@
+{% load i18n %}
+You have received the following notice from {{ current_site }}:
+
+{% trans "A new Taxonomy has been added by " %}{{ taxonomy.owner.username }}:
+
+Taxonomy : {{ taxonomy.canonical_name }}
+Rank : {{ taxonomy.rank }}
+
+{% trans "You can see the data by following this link" %}: http://{{ current_site }}/taxa-management/?&selected={{ taxon_group_id }}&validated=False/
