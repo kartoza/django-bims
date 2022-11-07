@@ -40,13 +40,13 @@ class IUCNStatus(models.Model):
         (IUCN_CATEGORIES['data deficient'], 'Data deficient'),
         (IUCN_CATEGORIES['not evaluated'], 'Not evaluated'),
         (IUCN_CATEGORIES['regionally extinct'], 'Regionally Extinct'),
-        (IUCN_CATEGORIES['critically endangered possibly extinct'],
+        (IUCN_CATEGORIES['critically endangered, possibly extinct'],
          'Critically Endangered, Possibly Extinct'),
         (IUCN_CATEGORIES['critically rare'], 'Critically Rare'),
         (IUCN_CATEGORIES['rare'], 'Rare'),
-        (IUCN_CATEGORIES['data deficient insufficient information'],
+        (IUCN_CATEGORIES['data deficient - insufficient information'],
          'Data Deficient - Insufficient Information'),
-        (IUCN_CATEGORIES['data deficient taxonomically problematic'],
+        (IUCN_CATEGORIES['data deficient - taxonomically problematic'],
          'Data Deficient - Taxonomically Problematic'),
     )
 
