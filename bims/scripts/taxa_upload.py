@@ -55,8 +55,6 @@ class TaxaProcessor(object):
         else:
             cons_status = DataCSVUpload.row_value(
                 row, CONSERVATION_STATUS_NATIONAL)
-        if cons_status.lower() not in IUCN_CATEGORIES:
-            return None
         iucn_status, _ = IUCNStatus.objects.get_or_create(
             category=IUCN_CATEGORIES[cons_status.lower()]
         )
