@@ -7,8 +7,7 @@ TAXA_FILE_HEADERS = [
     TAXON,
     SCIENTIFIC_NAME,
     ORIGIN,
-    ENDEMISM,
-    VARIETY
+    ENDEMISM
 ]
 
 
