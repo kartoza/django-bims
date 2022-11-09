@@ -345,6 +345,10 @@ class Taxonomy(AbstractValidation):
         return self.get_taxon_rank_name(TaxonomicRank.SUBSPECIES.name)
 
     @property
+    def variety_name(self):
+        self.get_taxon_rank_name(TaxonomicRank.VARIETY.name)
+
+    @property
     def is_species(self):
         return (
             self.rank == TaxonomicRank.SPECIES.name or

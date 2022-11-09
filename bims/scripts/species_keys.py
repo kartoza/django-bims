@@ -25,6 +25,7 @@ CONSERVATION_STATUS_NATIONAL = 'Conservation status national'
 ORIGIN = 'Origin'
 TAXON_RANK = 'Taxon Rank'
 TAXONOMIC_STATUS = 'Taxonomic status'
+VARIETY = 'Variety'
 
 TAXON_RANKS = [
     KINGDOM,
@@ -37,7 +38,9 @@ TAXON_RANKS = [
     SUBFAMILY,
     GENUS,
     SPECIES,
-    SUBSPECIES
+    SUBSPECIES,
+    VARIETY
+
 ]
 ALL_TAXON_RANKS = [
     'KINGDOM',
@@ -50,5 +53,6 @@ ALL_TAXON_RANKS = [
     'SUBFAMILY',
     'GENUS',
     'SPECIES',
-    'SUBSPECIES'
+    'SUBSPECIES',
+    'VARIETY'
 ]
