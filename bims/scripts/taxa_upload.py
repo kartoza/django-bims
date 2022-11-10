@@ -385,7 +385,8 @@ class TaxaProcessor(object):
 
                 if not taxonomy.taxonomic_status and taxonomic_status:
                     taxonomy.taxonomic_status = taxonomic_status
-
+                    
+                taxonomy.validated = True
                 taxonomy.save()
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa
