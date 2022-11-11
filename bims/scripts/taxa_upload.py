@@ -193,6 +193,12 @@ class TaxaProcessor(object):
             return None
         if current_rank == SPECIES:
             taxon_name = DataCSVUpload.row_value(row, GENUS) + ' ' + taxon_name
+        if current_rank == VARIETY:
+            taxon_name = (
+                    DataCSVUpload.row_value(row, GENUS) + ' ' +
+                    DataCSVUpload.row_value(row, SPECIES) + ' ' +
+                    DataCSVUpload.row_value(row, VARIETY)
+            )
         taxon = self.get_taxonomy(
             taxon_name,
             taxon_name,
@@ -201,14 +207,9 @@ class TaxaProcessor(object):
         if (
                 not taxon.gbif_key or
                 not taxon.parent or taxon.parent.rank != 'KINGDOM'):
-            ranks = copy.copy(TAXON_RANKS)
-            try:
-                ranks = ranks[:ranks.index(current_rank)]
-            except ValueError:
-                print(current_rank)
-                return
-            if len(ranks) > 0:
-                parent = self.get_parent(row, ranks[len(ranks) - 1])
+            parent_rank_name = parent_rank(current_rank)
+            if parent_rank_name:
+                parent = self.get_parent(row, parent_rank_name)
                 if parent:
                     taxon.parent = parent
                     taxon.save()
@@ -218,6 +219,10 @@ class TaxaProcessor(object):
         """Processing row of the csv files"""
         taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
+        try:
+            on_gbif = DataCSVUpload.row_value(row, ON_GBIF) == 'Yes'
+        except Exception:  # noqa
+            on_gbif = True
         if not taxon_name:
             self.handle_error(
                 row=row,
@@ -261,7 +266,7 @@ class TaxaProcessor(object):
                 ))
             if not taxonomy:
                 # Fetch from gbif
-                if DataCSVUpload.row_value(row, ON_GBIF) == 'Yes':
+                if on_gbif:
                     gbif_link = DataCSVUpload.row_value(row, GBIF_LINK)
                     if not gbif_link:
                         gbif_link = DataCSVUpload.row_value(row, GBIF_URL)
@@ -273,7 +278,7 @@ class TaxaProcessor(object):
                             gbif_key=gbif_key,
                             fetch_vernacular_names=should_fetch_vernacular_names
                         )
-                if not taxonomy:
+                if not taxonomy and on_gbif:
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
@@ -282,7 +287,7 @@ class TaxaProcessor(object):
                         use_name_lookup=True
                     )
 
-            if not taxonomy:
+            if not taxonomy and on_gbif:
                 # Try again with lookup
                 logger.debug('Use different method')
                 taxonomy = fetch_all_species_from_gbif(
@@ -296,11 +301,11 @@ class TaxaProcessor(object):
             # Taxonomy found or created then validate it
             if taxonomy:
                 if not taxonomy.parent:
-                    taxonomy.parent = self.get_parent(row, rank)
+                    taxonomy.parent = self.get_parent(row, parent_rank(rank))
 
             # Data from GBIF couldn't be found, so add it manually
             if not taxonomy:
-                parent = self.get_parent(row, rank)
+                parent = self.get_parent(row, parent_rank(rank))
                 if not parent:
                     self.handle_error(
                         row=row,

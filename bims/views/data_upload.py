@@ -90,7 +90,7 @@ class DataUploadView(
             category=self.category
         )
         if self.upload_task:
-            self.upload_task.delay(upload_session.id)
+            self.upload_task(upload_session.id)
         return HttpResponseRedirect(request.path_info)
 
 
