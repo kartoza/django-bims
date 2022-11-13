@@ -1,6 +1,9 @@
 import copy
 import json
 import logging
+
+from bims.models.taxon_group import TaxonGroup
+
 from bims.scripts.species_keys import *  # noqa
 from bims.enums import TaxonomicRank
 from bims.models import (
@@ -27,6 +30,11 @@ class TaxaProcessor(object):
 
     def finish_processing_row(self, row, taxonomy):
         pass
+
+    def rank_name(self, taxon: Taxonomy):
+        if taxon.rank:
+            return taxon.rank.upper()
+        return ''
 
     def endemism(self, row):
         """Processing endemism data"""
@@ -94,7 +102,7 @@ class TaxaProcessor(object):
         """
         try:
             return ALL_TAXON_RANKS[ALL_TAXON_RANKS.index(rank.upper()) - 1]
-        except KeyError:
+        except Exception:  # noqa
             return 'KINGDOM'
 
     def validate_parents(self, taxon, row):
@@ -129,7 +137,7 @@ class TaxaProcessor(object):
             if (
                     csv_data not in parent.canonical_name and
                     csv_data not in parent.legacy_canonical_name or
-                    str(parent.rank).upper() != parent_rank
+                    self.rank_name(parent) != parent_rank
             ):
                 print('Different parent for {}'.format(str(taxon)))
                 parent_taxon = self.get_parent(
@@ -139,7 +147,7 @@ class TaxaProcessor(object):
                 taxon.save()
             taxon = parent
             parent = parent.parent
-            if taxon.rank.upper() != 'KINGDOM' and not parent:
+            if self.rank_name(taxon) != 'KINGDOM' and not parent:
                 parent = self.get_parent(
                     row, current_rank=taxon.rank.capitalize()
                 )
@@ -215,7 +223,7 @@ class TaxaProcessor(object):
                     taxon.save()
         return taxon
 
-    def process_data(self, row):
+    def process_data(self, row, taxon_group: TaxonGroup):
         """Processing row of the csv files"""
         taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
@@ -239,7 +247,7 @@ class TaxaProcessor(object):
         # Get rank
         rank = DataCSVUpload.row_value(row, TAXON_RANK)
         if not rank:
-            rank = DataCSVUpload.row_value(row, TAXON_RANK)
+            rank = DataCSVUpload.row_value(row, 'Taxon rank')
         if not rank:
             self.handle_error(
                 row=row,
@@ -260,7 +268,7 @@ class TaxaProcessor(object):
                 should_fetch_vernacular_names = False
 
             if taxa.exists():
-                taxonomy = taxa[0]
+                taxonomy = taxa.first()
                 logger.debug('{} already in the system'.format(
                     taxon_name
                 ))
@@ -349,6 +357,9 @@ class TaxaProcessor(object):
                     row=row
                 )
 
+                # -- Add to taxon group
+                taxon_group.taxonomies.add(taxonomy)
+
                 # -- Endemism
                 endemism = self.endemism(row)
                 if endemism:
@@ -405,7 +416,7 @@ class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
         # -- Add to taxon group
         taxon_group = self.upload_session.module_group
         if not taxon_group.taxonomies.filter(
-                id=taxonomy.id
+            id=taxonomy.id
         ).exists():
             taxon_group.taxonomies.add(taxonomy)
 
@@ -427,4 +438,5 @@ class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
         )
 
     def process_row(self, row):
-        self.process_data(row)
+        taxon_group = self.upload_session.module_group
+        self.process_data(row, taxon_group)
