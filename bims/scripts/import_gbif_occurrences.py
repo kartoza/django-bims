@@ -233,9 +233,9 @@ def import_gbif_occurrences(
             )
             location_site = LocationSite.objects.create(
                 geometry_point=site_point,
-                name=locality,
+                name=locality[:200],
                 location_type=location_type,
-                site_description=locality
+                site_description=locality[:300]
             )
             if not location_site.site_code:
                 site_code, catchments_data = generate_site_code(
