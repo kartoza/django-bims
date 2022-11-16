@@ -198,7 +198,7 @@ def download_sass_taxon_data(request, **kwargs):
         request.GET,
         path_file,
         user_id=request.user.id,
-        send_email=False
+        send_email=True
     )
 
     return JsonResponse(get_response(PROCESSING_STATUS, filename))
