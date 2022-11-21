@@ -102,6 +102,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
         },
         downloadAsCSV: function (e) {
+
             let button = $(e.target);
             let name = button.html();
             let self = this;
@@ -110,19 +111,33 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             let alertModalBody = $('#alertModalBody');
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
-            } else {
-                alertModalBody.html(downloadRequestMessage);
-                $.get({
-                    url: self.csvDownloadsUrl,
-                    dataType: 'json',
-                    success: function (data) {}
-                });
-
-            }
-            $('#alertModal').modal({
+                $('#alertModal').modal({
                 'keyboard': false,
                 'backdrop': 'static'
             });
+
+            } else {
+                showDownloadPopup('CSV', 'Occurrence Data', function (downloadRequestId) {
+                    console.log(downloadRequestId);
+                    alertModalBody.html(downloadRequestMessage);
+                    $('#alertModal').modal({
+                        'keyboard': false,
+                        'backdrop': 'static'
+                    });
+                    let url = self.csvDownloadsUrl;
+                    if (!url.includes('?')) {
+                        url += '?';
+                    }
+                    url += '&downloadRequestId=' + downloadRequestId
+                    $.get({
+                        url: url,
+                        dataType: 'json',
+                        success: function (data) {}
+                    });
+                })
+
+
+            }
             button.html(name);
             button.prop('disabled', false);
         },
