@@ -61,6 +61,10 @@ class IUCNStatus(models.Model):
     )
     colour = ColorField(default='#009106')
 
+    national = models.BooleanField(
+        default=False
+    )
+
     def get_status(self):
         """"Return status name."""
         choices_dict = {}

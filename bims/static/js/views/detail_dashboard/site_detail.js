@@ -1161,6 +1161,7 @@ define([
             let conservationStatusPieCanvas = document.getElementById('species-ssdd-conservation-status-pie');
             let samplingMethodPieCanvas = document.getElementById('species-ssdd-sampling-method-pie');
             let biotopeCanvas = document.getElementById('species-ssdd-biotope-pie');
+            let conservationStatusNationalPieCanvas = document.getElementById('species-ssdd-conservation-status-national-pie');
 
             if (container) {
 
@@ -1176,6 +1177,7 @@ define([
                 conservationStatusPieCanvas = container.find('.occurrence-conservation-status-chart').find('canvas')[0];
                 samplingMethodPieCanvas = container.find('.occurrence-sampling-method-chart').find('canvas')[0];
                 biotopeCanvas = container.find('.occurrence-biotope-chart').find('canvas')[0];
+                conservationStatusNationalPieCanvas = container.find('.occurrence-conservation-status-national-chart').find('canvas')[0];
             }
 
             this.renderPieChart(bio_data, 'species', 'origin', originPieCanvas);
@@ -1183,6 +1185,7 @@ define([
             this.renderPieChart(bio_data, 'species', 'cons_status', conservationStatusPieCanvas);
             this.renderPieChart(bio_data, 'species', 'sampling_method', samplingMethodPieCanvas);
             this.renderPieChart(bio_data, 'species', 'biotope', biotopeCanvas);
+            this.renderPieChart(bio_data, 'species', 'cons_status_national', conservationStatusNationalPieCanvas);
         },
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
