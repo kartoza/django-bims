@@ -544,7 +544,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                          data.forEach(function (image){
                              var $firstColumnDiv = $('<div class="col-6"></div>');
                              $firstColumnDiv.append('<a target="_blank" href="'+image['url']+'">' +
-                                '<img src="' + image['url'] + '" width="100%"/></a>');
+                                '<img src="' + image['url'] + '"/></a>');
                             $rowWrapper.append($firstColumnDiv);
                             $fetchingInfoDiv.hide();
                      });
@@ -575,7 +575,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                             $fetchingInfoDiv.hide();
                                         }
                                         $firstColumnDiv.append('<a target="_blank" href="' + media['references'] + '">' +
-                                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '" width="100%"/></a>');
+                                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '"/></a>');
                                         $rowWrapper.append($firstColumnDiv);
                                     }
                                     $wrapper.append($rowWrapper);

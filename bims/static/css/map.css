@@ -2557,14 +2557,16 @@ div:hover::-webkit-scrollbar {
 #gbif-images-row .col-6 {
     padding: 0;
     margin: 0;
+    height: 300px;
+    width: 300px;
 }
 
 #gbif-images-row .col-6 img {
-    height: 100%;
     border-radius: 5px;
     border: solid;
-    width: 100%;
+    width: auto;
     color: white;
+    height: 100%;
 }
 
 .gbif-images-row {
@@ -2573,19 +2575,22 @@ div:hover::-webkit-scrollbar {
     margin-left: auto !important;
     margin-right: auto !important;
     z-index: 0 !important;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .gbif-images-row .col-6 {
-    padding: 0;
-    margin: 0;
+    margin: 3px;
+    max-height: 300px;
+    text-align: center;
 }
 
 .gbif-images-row .col-6 img {
-    height: 100%;
     border-radius: 5px;
     border: solid;
-    width: 100%;
+    width: auto;
     color: white;
+    height: 100%;
 }
 
 .gbif-images-row-fsdd .col-6 {
