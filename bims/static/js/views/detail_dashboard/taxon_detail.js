@@ -535,17 +535,15 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var mediaFound = false;
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
             var this_GBIF_ID = data['gbif_id'];
-            var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row row gbif-images-row-fsdd"></div>');
+            var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row gbif-images-row-fsdd"></div>');
              $.get({
                  url: '/api/taxon-images/'+ self.taxonId,
                  dataType: 'json',
                  success: function (data) {
                      if (data.length > 0) {
                          data.forEach(function (image){
-                             var $firstColumnDiv = $('<div class="col-6"></div>');
-                             $firstColumnDiv.append('<a target="_blank" href="'+image['url']+'">' +
+                             $rowWrapper.append('<a target="_blank" href="'+image['url']+'">' +
                                 '<img src="' + image['url'] + '"/></a>');
-                            $rowWrapper.append($firstColumnDiv);
                             $fetchingInfoDiv.hide();
                      });
                           $wrapper.append($rowWrapper);
@@ -558,7 +556,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                     var results = data['results'];
                                     var result = {};
                                     for (let result_id in results) {
-                                        var $firstColumnDiv = $('<div class="col-6" "></div>');
                                         result = results[result_id];
                                         if (!result.hasOwnProperty('media')) {
                                             continue;
@@ -574,9 +571,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                         if (mediaFound) {
                                             $fetchingInfoDiv.hide();
                                         }
-                                        $firstColumnDiv.append('<a target="_blank" href="' + media['references'] + '">' +
+                                        $rowWrapper.append('<a target="_blank" href="' + media['references'] + '">' +
                                             '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '"/></a>');
-                                        $rowWrapper.append($firstColumnDiv);
                                     }
                                     $wrapper.append($rowWrapper);
                                     if (!mediaFound) {
