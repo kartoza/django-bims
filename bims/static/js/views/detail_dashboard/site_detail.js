@@ -1136,6 +1136,18 @@ define([
             }
             return $detailWrapper;
         },
+        getIUCN_name: function(data, chartName){
+            let iucnCategory = data['iucn_name_list'];
+            let biodiversityData = data['biodiversity_data']['species'];
+            for (let i = 0; i < biodiversityData[chartName]['keys'].length; i++) {
+                let next_name = biodiversityData[chartName]['keys'][i];
+                if (iucnCategory.hasOwnProperty(next_name)) {
+                    biodiversityData[chartName]['keys'][i] = iucnCategory[next_name];
+                }
+            }
+            return biodiversityData[chartName]['keys'];
+        },
+
         createDataSummary: function (data, container = null, height = null) {
             let bio_data = data['biodiversity_data'];
             let biodiversityData = data['biodiversity_data']['species'];
@@ -1147,14 +1159,16 @@ define([
                     biodiversityData['origin_chart']['keys'][i] = originNameList[next_name];
                 }
             }
-            let iucnCategory = data['iucn_name_list'];
-            let cons_status_length = biodiversityData['cons_status_chart']['keys'].length;
-            for (let i = 0; i < cons_status_length; i++) {
-                let next_name = biodiversityData['cons_status_chart']['keys'][i];
-                if (iucnCategory.hasOwnProperty(next_name)) {
-                    biodiversityData['cons_status_chart']['keys'][i] = iucnCategory[next_name];
-                }
-            }
+
+            this.getIUCN_name(
+                data,
+                'cons_status_chart',
+            )
+
+            this.getIUCN_name(
+                data,
+                'cons_status_national_chart',
+            )
 
             let originPieCanvas = document.getElementById('species-ssdd-origin-pie');
             let endemismPieCanvas = document.getElementById('species-ssdd-endemism-pie');
