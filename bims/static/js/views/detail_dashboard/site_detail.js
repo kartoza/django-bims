@@ -52,6 +52,7 @@ define([
             cutoutPercentage: 0,
             maintainAspectRatio: true,
         },
+        csvDownloadGbifIdsUrl: '/api/gbif-ids/download/',
         events: {
             'click .close-dashboard': 'closeDashboard',
             'click #export-locationsite-map': 'exportLocationsiteMap',
@@ -63,7 +64,8 @@ define([
             'click .ssdd-export': 'downloadElementEvent',
             'click .download-chart-image': 'downloadChartImage',
             'click #chem-graph-export': 'downloadChemGraphs',
-            'click .btn-html-img': 'convertToPNG'
+            'click .btn-html-img': 'convertToPNG',
+            'click .download-gbif-ids' : 'downloadGBIfIds'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -179,11 +181,13 @@ define([
                     self.csvDownloadEmailUrl += '?' + data;
                     self.fetchData(data, true);
                     self.currentFiltersUrl = '?' + data;
+                    self.csvDownloadGbifIdsUrl += '?' + data;
                 } else {
                     self.csvDownloadUrl += self.apiParameters(filterParameters);
                     self.chemCsvDownloadUrl += self.apiParameters(filterParameters);
                     self.csvDownloadEmailUrl += self.apiParameters(filterParameters);
                     self.currentFiltersUrl = self.apiParameters(filterParameters);
+                    self.csvDownloadGbifIdsUrl += self.apiParameters(filterParameters);
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
                 }
@@ -656,7 +660,7 @@ define([
                 })
             });
         },
-        downloadingCSV: function (url, downloadButton) {
+        downloadingCSV: function (url, downloadButton, csv_name) {
             var self = this;
             self.downloadCSVXhr = $.get({
                 url: url,
@@ -667,18 +671,32 @@ define([
                             if (self.downloadCSVXhr) {
                                 self.downloadCSVXhr.abort();
                             }
+                            let alertModalBody = $('#alertModalBody');
+
+                            alertModalBody.html(data['message']);
+                            $('#alertModal').modal({
+                                'keyboard': false,
+                                'backdrop': 'static'
+                            });
                             downloadButton.html('Download as CSV');
                             downloadButton.prop("disabled", false);
                         } else {
                             setTimeout(
                                 function () {
-                                    self.downloadingCSV(url, downloadButton);
+                                    self.downloadingCSV(url, downloadButton, csv_name);
                                 }, 5000);
                         }
                     } else {
                         let a = window.document.createElement('a');
-                        a.href = '/uploaded/processed_csv/' + data['filename'];
-                        a.download = 'OccurrenceData.csv';
+                        let filename;
+                        if(data['filename']){
+                            filename = data['filename']
+                        }
+                        else {
+                            filename = data['message']
+                        }
+                        a.href = '/uploaded/processed_csv/' + filename;
+
                         a.click();
                         downloadButton.html('Download as CSV');
                         downloadButton.prop("disabled", false);
@@ -729,7 +747,7 @@ define([
             showDownloadPopup('CSV', 'Chemical Records', function (downloadRequestId) {
                 button.html('Processing...');
                 button.prop("disabled", true);
-                that.downloadingCSV(that.chemCsvDownloadUrl, button);
+                that.downloadingCSV(that.chemCsvDownloadUrl, button, 'ChemicalRecords');
             });
         },
         renderStackedBarChart: function (dataIn, chartName, chartCanvas, randomColor = false) {
@@ -1578,6 +1596,17 @@ define([
                     self.$el.find('.btn').show();
                 }
             })
+        },
+
+        downloadGBIfIds: function (e){
+            let csv_name = 'GBIF_ids'
+            let button = $(e.target);
+            let that = this;
+            showDownloadPopup('CSV', 'GBIF ids', function () {
+                button.html('Processing...');
+                button.prop("disabled", true);
+                that.downloadingCSV(that.csvDownloadGbifIdsUrl, button, csv_name);
+            });
         }
     })
 });
