@@ -1,6 +1,5 @@
 from django.conf.urls import url
 
-from sass.api_views.sass_taxa import SassTaxaListApi
 from sass.views.sass_form import SassFormView, SassReadFormView, SassDeleteView
 from sass.views.sass_list import SassListView
 from sass.views.sass_dashboard import SassDashboardView
@@ -44,7 +43,4 @@ urlpatterns = [
     url(r'^download-sass-taxon-data/$',
         download_sass_taxon_data,
         name='download-sass-taxon-data'),
-    url(r'^sass-taxa-list/$',
-        SassTaxaListApi.as_view(),
-        name='sass-taxa-list'),
 ]
