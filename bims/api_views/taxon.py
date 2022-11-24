@@ -1,5 +1,7 @@
 # coding=utf8
 import ast
+import logging
+
 from django.http import Http404
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -11,9 +13,11 @@ from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from bims.models import TaxonGroup
+from bims.models import TaxonGroup, VernacularName
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif
+from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
+
+logger = logging.getLogger('bims')
 
 
 class TaxonDetail(APIView):
@@ -78,11 +82,30 @@ class TaxonDetail(APIView):
         # Common name
         if taxon.vernacular_names.exists():
             common_names = list(
-                taxon.vernacular_names.all().values_list('name', flat=True))
+                taxon.vernacular_names.filter(language='eng').values_list('name', flat=True))
         if len(common_names) == 0:
-            data['common_name'] = 'Unknown'
+            vernacular_names = get_vernacular_names(taxon.gbif_key)
+            if len(vernacular_names['results']) == 0:
+                data['common_name'] = 'Unknown'
+            else:
+                for result in vernacular_names['results']:
+                    if 'language' in result and result['language'] == 'eng':
+                        fields = {'language': result['language']}
+                        data['common_name'] = result['vernacularName']
+                        if 'source' in result:
+                            fields['source'] = result['source']
+                        if 'taxonKey' in result:
+                            fields['taxon_key'] = int(result['taxonKey'])
+                        vernacular_name, status = (
+                            VernacularName.objects.get_or_create(
+                                name=result['vernacularName'],
+                                **fields
+                            )
+                        )
+                        taxon.vernacular_names.add(vernacular_name)
+                        break
         else:
-            data['common_name'] = ', '.join(common_names)
+            data['common_name'] = common_names[0]
 
         return Response(data)
 
