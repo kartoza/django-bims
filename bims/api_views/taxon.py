@@ -48,6 +48,7 @@ class TaxonDetail(APIView):
         return taxonomic_rank_values
 
     def get(self, request, pk, format=None):
+
         taxon = self.get_object(pk)
 
         serializer = TaxonSerializer(taxon)
@@ -78,6 +79,7 @@ class TaxonDetail(APIView):
         for rank in taxonomic_rank:
             data.update(rank)
         common_names = []
+        results = []
 
         # Common name
         if taxon.vernacular_names.exists():
@@ -85,10 +87,12 @@ class TaxonDetail(APIView):
                 taxon.vernacular_names.filter(language='eng').values_list('name', flat=True))
         if len(common_names) == 0:
             vernacular_names = get_vernacular_names(taxon.gbif_key)
-            if len(vernacular_names['results']) == 0:
+            if vernacular_names:
+                results = vernacular_names['results']
+            if len(results) == 0:
                 data['common_name'] = 'Unknown'
             else:
-                for result in vernacular_names['results']:
+                for result in results:
                     if 'language' in result and result['language'] == 'eng':
                         fields = {'language': result['language']}
                         data['common_name'] = result['vernacularName']
