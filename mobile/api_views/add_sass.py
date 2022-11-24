@@ -89,6 +89,9 @@ class AddSASS(APIView):
         )
 
         survey = SassFormView.create_or_get_survey(site_visit)
+        if not survey.mobile:
+            survey.mobile = True
+            survey.save()
 
         site_image_str = post_data.get('siteImage', '')
         site_image = None

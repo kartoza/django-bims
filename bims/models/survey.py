@@ -39,6 +39,11 @@ class Survey(AbstractValidation):
         blank=True
     )
 
+    mobile = models.BooleanField(
+        help_text='Whether this data is created form mobile app or not',
+        default=False
+    )
+
     @property
     def taxon_group(self):
         return self.biological_collection_record.first().module_group

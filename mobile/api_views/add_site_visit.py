@@ -42,6 +42,8 @@ class AddSiteVisit(APIView):
                 site_image = ContentFile(
                     base64.b64decode(site_image_str), name=site_image_name)
             survey = add_survey_occurrences(self, post_data, site_image)
+            survey.mobile = True
+            survey.save()
         except TypeError:
             raise Http404()
         return Response(
