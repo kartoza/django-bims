@@ -14,7 +14,7 @@ class AddLocationSiteView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        post_data = request.data.dict()
+        post_data = request.data
 
         # Generate site code
         site_code, catchments_data = generate_site_code(
