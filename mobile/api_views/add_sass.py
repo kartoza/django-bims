@@ -89,7 +89,9 @@ class AddSASS(APIView):
             time=date,
             sass_version=5,
             owner=self.request.user,
-            collector=self.request.user
+            collector=self.request.user,
+            comments_or_observations=post_data.get('comments', ''),
+            other_biota=post_data.get('otherBiota', '')
         )
 
         survey = SassFormView.create_or_get_survey(site_visit)
