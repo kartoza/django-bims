@@ -2,6 +2,7 @@ from django.conf.urls import url
 
 from rest_framework.authtoken.views import obtain_auth_token
 
+from mobile.api_views.abiotic_list import AbioticList
 from mobile.api_views.add_sass import AddSASS
 from mobile.api_views.choices import AllChoicesApi
 from mobile.api_views.location_site import NearestLocationSites
@@ -44,4 +45,7 @@ urlpatterns = [
     url(r'^add-sass/$',
         AddSASS.as_view(),
         name='mobile-add-sass'),
+    url(r'^abiotic-list/$',
+        AbioticList.as_view(),
+        name='abiotic-list'),
 ]

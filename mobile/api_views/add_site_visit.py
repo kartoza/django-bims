@@ -1,5 +1,8 @@
 import base64
 
+from bims.models.chemical_record import ChemicalRecord
+
+from bims.models.survey import Survey
 from django.core.files.base import ContentFile
 from django.http import Http404
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +10,28 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bims.views.collections_form import add_survey_occurrences
+
+
+def process_abiotic_data(survey: Survey, abiotic: dict):
+    """
+    Record abiotic data
+    :param survey: Survey object for this abiotic data
+    :param abiotic: [
+        {
+            'id': '{chem_id}',
+            'value': '{abiotic_value}'
+        }
+        ...
+    ]
+    """
+    for abiotic_data in abiotic:
+        chem_record, _ = ChemicalRecord.objects.get_or_create(
+            date=survey.date,
+            chem_id=abiotic_data['id'],
+            location_site=survey.site,
+            survey=survey,
+            value=float(abiotic_data['value'])
+        )
 
 
 class AddSiteVisit(APIView):
@@ -27,7 +52,14 @@ class AddSiteVisit(APIView):
             'specific_biotope': specific_biotope.id,
             'substratum': substratum.id,
             'sampling_method': sampling_method.id,
-            'source_reference_id': source_reference.id
+            'source_reference_id': source_reference.id,
+            'abiotic': [
+                {
+                    'id': '{chem_id}',
+                    'value': '{abiotic_value}'
+                }
+                ...
+            ]
         }
         """
         try:
@@ -44,6 +76,12 @@ class AddSiteVisit(APIView):
             survey = add_survey_occurrences(self, post_data, site_image)
             survey.mobile = True
             survey.save()
+
+            process_abiotic_data(
+                survey,
+                post_data.get('abiotic', [])
+            )
+
         except TypeError:
             raise Http404()
         return Response(

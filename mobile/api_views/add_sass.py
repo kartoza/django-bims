@@ -1,6 +1,9 @@
 import base64
 import datetime
 
+from rest_framework.permissions import IsAuthenticated
+
+from mobile.api_views.add_site_visit import process_abiotic_data
 from sass.models.rate import Rate
 
 from sass.models.sass_biotope_fraction import SassBiotopeFraction
@@ -40,6 +43,7 @@ BIOTOPE_TYPES = {
 
 
 class AddSASS(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         """
@@ -92,6 +96,9 @@ class AddSASS(APIView):
         if not survey.mobile:
             survey.mobile = True
             survey.save()
+
+        if post_data.get('abiotic'):
+            process_abiotic_data(survey, post_data.get('abiotic'))
 
         site_image_str = post_data.get('siteImage', '')
         site_image = None
