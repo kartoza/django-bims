@@ -42,6 +42,8 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
             header = header.replace('_or_', '/')
             if not header.istitle():
                 header = header.replace('_', ' ').capitalize()
+            if header == 'Sub species':
+                header = 'SubSpecies'
             updated_headers.append(header)
         writer.writerow(updated_headers)
 
