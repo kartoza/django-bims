@@ -129,6 +129,34 @@ class LocationSitesSummary(APIView):
     iucn_category = {}
     origin_name_list = {}
 
+    def conservation_status_data(self, national, collection_results):
+
+        cons_status_data = collection_results.filter(
+            taxonomy__iucn_status__isnull=False, taxonomy__iucn_status__national=national
+        ).annotate(
+            name=F('taxonomy__iucn_status__category')
+        ).values(
+            'name'
+        ).annotate(
+            count=Count('name')
+        ).order_by(
+            'name'
+        )
+
+        keys = list(cons_status_data.values_list('name', flat=True))
+        values = list(cons_status_data.values_list('count', flat=True))
+        dd_values = collection_results.filter(
+            taxonomy__iucn_status__isnull=True
+        ).count()
+        if dd_values > 0:
+            if 'NE' in keys:
+                key_index = keys.index('NE')
+                values[key_index] += dd_values
+            else:
+                keys.append('NE')
+                values.append(dd_values)
+        return [keys, values]
+
     def generate(self, filters, search_process):
         search = CollectionSearch(filters)
         collection_results = search.process_search()
@@ -364,6 +392,7 @@ class LocationSitesSummary(APIView):
         biodiversity_data['species']['endemism_chart'] = {}
         biodiversity_data['species']['sampling_method_chart'] = {}
         biodiversity_data['species']['biotope_chart'] = {}
+        biodiversity_data['species']['cons_status_national_chart'] = {}
         origin_by_name_data = collection_results.annotate(
             name=Case(When(taxonomy__origin='',
                            then=Value('Unknown')),
@@ -379,33 +408,16 @@ class LocationSitesSummary(APIView):
         values = origin_by_name_data.values_list('count', flat=True)
         biodiversity_data['species']['origin_chart']['data'] = list(values)
         biodiversity_data['species']['origin_chart']['keys'] = list(keys)
-        cons_status_data = collection_results.filter(
-            taxonomy__iucn_status__isnull=False
-        ).annotate(
-            name=F('taxonomy__iucn_status__category')
-        ).values(
-            'name'
-        ).annotate(
-            count=Count('name')
-        ).order_by(
-            'name'
-        )
 
-        keys = list(cons_status_data.values_list('name', flat=True))
-        values = list(cons_status_data.values_list('count', flat=True))
-        dd_values = collection_results.filter(
-            taxonomy__iucn_status__isnull=True
-        ).count()
-        if dd_values > 0:
-            if 'NE' in keys:
-                key_index = keys.index('NE')
-                values[key_index] += dd_values
-            else:
-                keys.append('NE')
-                values.append(dd_values)
-        biodiversity_data['species']['cons_status_chart']['data'] = values
-        biodiversity_data['species']['cons_status_chart']['keys'] = keys
+        biodiversity_data['species']['cons_status_chart']['data'] = self.conservation_status_data(
+            False, collection_results)[1]
+        biodiversity_data['species']['cons_status_chart']['keys'] = self.conservation_status_data(
+            False, collection_results)[0]
 
+        biodiversity_data['species']['cons_status_national_chart']['data'] = self.conservation_status_data(
+            True, collection_results)[1]
+        biodiversity_data['species']['cons_status_national_chart']['keys'] = self.conservation_status_data(
+            True, collection_results)[0]
         endemism_status_data = collection_results.annotate(
             name=Case(When(taxonomy__endemism__name__isnull=False,
                            then=F('taxonomy__endemism__name')),
