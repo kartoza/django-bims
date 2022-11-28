@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 
 import pytz
@@ -14,7 +15,7 @@ class AddLocationSiteView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
-        post_data = request.data
+        post_data = copy.deepcopy(request.data)
 
         # Generate site code
         site_code, catchments_data = generate_site_code(
@@ -22,12 +23,12 @@ class AddLocationSiteView(APIView):
             lat=post_data.get('latitude'),
             lon=post_data.get('longitude')
         )
-        post_data['legacy_site_code'] = post_data['site_code']
+        post_data['legacy_site_code'] = post_data.get('site_code')
         post_data['site_code'] = site_code
         post_data['catchment_geocontext'] = catchments_data
         if 'date' in post_data:
             post_data['date'] = datetime.fromtimestamp(
-                int(post_data['date']),
+                int(post_data.get('date')),
                 pytz.UTC
             )
 
