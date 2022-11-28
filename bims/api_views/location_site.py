@@ -710,7 +710,10 @@ class GbifIdsDownloader(APIView):
                     writer.writerow(row)
             return JsonResponse({
                 'status': 'success',
-                'filename': path_file
+                'filename': path_file.replace(
+                    settings.MEDIA_ROOT,
+                    ''
+                )
             })
 
     def get(self, request):
