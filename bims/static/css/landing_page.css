@@ -132,7 +132,7 @@ header.masthead p {
 
 @media (min-width: 992px) {
     header.masthead {
-        min-height: 500px !important;
+        min-height: 800px !important;
         padding-top: 0;
         padding-bottom: 0;
     }
@@ -563,7 +563,15 @@ html, body {
     margin-top: 15px;
     color: #525351;
 }
+.module-name-link {
+    text-decoration-line: none;
+    color: #525351;
+}
 
+.module-name-link:hover{
+    text-decoration: none;
+    color: #DBAF00 !important;
+}
 .module-container {
     padding-top: 20px;
     padding-bottom: 20px;

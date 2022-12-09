@@ -39,6 +39,7 @@ class ModuleSummary(APIView):
         collections = BiologicalCollectionRecord.objects.filter(
             module_group=taxon_group
         )
+        # collections = TaxonGroup.objects.filter(taxonomies__taxonomy__taxongroup_set=taxon_group)
 
         if taxon_group.chart_data == 'division':
             summary['division'] = collections.values(
@@ -103,7 +104,7 @@ class ModuleSummary(APIView):
                 if key in iucn_category:
                     updated_summary[iucn_category[key]] = summary_temp[key]
             summary['conservation-status'] = updated_summary
-
+        x = TaxonGroup.objects.all().values()
         if taxon_group.logo:
             summary['icon'] = taxon_group.logo.url
         summary[
@@ -116,7 +117,13 @@ class ModuleSummary(APIView):
             'total_site_visit'] = (
             collections.distinct('survey').count()
         )
+        summary['module_id'] = taxon_group.id
+
+        summary['total_taxa'] = collections.distinct('taxonomy').count()
+        # summary['testing'] = x
+
         return summary
+
 
     def get(self, request, *args):
         response_data = dict()
