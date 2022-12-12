@@ -288,8 +288,9 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         return updated_site_visit_taxon
 
-    def create_or_get_survey(self, site_visit):
-        """Get or create a site survey"""
+    @staticmethod
+    def create_or_get_survey(site_visit):
+        """Get or create a site survey form SASS site visit"""
         survey = None
 
         # Check duplicate data

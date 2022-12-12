@@ -102,6 +102,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             });
         },
         downloadAsCSV: function (e) {
+
             let button = $(e.target);
             let name = button.html();
             let self = this;
@@ -110,19 +111,33 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             let alertModalBody = $('#alertModalBody');
             if (!is_logged_in) {
                 alertModalBody.html('Please log in first.')
-            } else {
-                alertModalBody.html(downloadRequestMessage);
-                $.get({
-                    url: self.csvDownloadsUrl,
-                    dataType: 'json',
-                    success: function (data) {}
-                });
-
-            }
-            $('#alertModal').modal({
+                $('#alertModal').modal({
                 'keyboard': false,
                 'backdrop': 'static'
             });
+
+            } else {
+                showDownloadPopup('CSV', 'Occurrence Data', function (downloadRequestId) {
+                    console.log(downloadRequestId);
+                    alertModalBody.html(downloadRequestMessage);
+                    $('#alertModal').modal({
+                        'keyboard': false,
+                        'backdrop': 'static'
+                    });
+                    let url = self.csvDownloadsUrl;
+                    if (!url.includes('?')) {
+                        url += '?';
+                    }
+                    url += '&downloadRequestId=' + downloadRequestId
+                    $.get({
+                        url: url,
+                        dataType: 'json',
+                        success: function (data) {}
+                    });
+                })
+
+
+            }
             button.html(name);
             button.prop('disabled', false);
         },
@@ -535,17 +550,15 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             var mediaFound = false;
             var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
             var this_GBIF_ID = data['gbif_id'];
-            var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row row gbif-images-row-fsdd"></div>');
+            var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row gbif-images-row-fsdd"></div>');
              $.get({
                  url: '/api/taxon-images/'+ self.taxonId,
                  dataType: 'json',
                  success: function (data) {
                      if (data.length > 0) {
                          data.forEach(function (image){
-                             var $firstColumnDiv = $('<div class="col-6"></div>');
-                             $firstColumnDiv.append('<a target="_blank" href="'+image['url']+'">' +
-                                '<img src="' + image['url'] + '" width="100%"/></a>');
-                            $rowWrapper.append($firstColumnDiv);
+                             $rowWrapper.append('<a target="_blank" href="'+image['url']+'">' +
+                                '<img src="' + image['url'] + '"/></a>');
                             $fetchingInfoDiv.hide();
                      });
                           $wrapper.append($rowWrapper);
@@ -558,7 +571,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                     var results = data['results'];
                                     var result = {};
                                     for (let result_id in results) {
-                                        var $firstColumnDiv = $('<div class="col-6" "></div>');
                                         result = results[result_id];
                                         if (!result.hasOwnProperty('media')) {
                                             continue;
@@ -574,9 +586,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                                         if (mediaFound) {
                                             $fetchingInfoDiv.hide();
                                         }
-                                        $firstColumnDiv.append('<a target="_blank" href="' + media['references'] + '">' +
-                                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '" width="100%"/></a>');
-                                        $rowWrapper.append($firstColumnDiv);
+                                        $rowWrapper.append('<a target="_blank" href="' + media['references'] + '">' +
+                                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '"/></a>');
                                     }
                                     $wrapper.append($rowWrapper);
                                     if (!mediaFound) {

@@ -124,7 +124,9 @@ class LocationSiteOverviewData(object):
                         group_origin['name'] = category[group_origin['name']]
             group_data[self.GROUP_ORIGIN] = list(group_origins)
 
-            all_cons_status = group_records.filter(taxonomy__iucn_status__national=True).annotate(
+            all_cons_status = group_records.filter(
+                taxonomy__iucn_status__national=False
+            ).annotate(
                 name=Case(When(taxonomy__iucn_status__isnull=False,
                                then=F('taxonomy__iucn_status__category')),
                           default=Value('Not evaluated'))

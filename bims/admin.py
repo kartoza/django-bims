@@ -317,11 +317,25 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
-    list_display = ('get_category_display', 'sensitive', 'iucn_colour')
+    list_display = ('get_category_display', 'sensitive',
+                    'iucn_colour', 'national', 'total_species')
+
+    list_filter = (
+        'national',
+    )
 
     def iucn_colour(self, obj):
-        return '<div style="background:%s; ' \
-               'width: 50px; height: 15px;"></div>' % obj.colour
+        return format_html('<div style="background:%s; ' \
+               'width: 50px; height: 15px;"></div>' % obj.colour)
+
+    def total_species(self, obj):
+        total_taxa =  Taxonomy.objects.filter(
+            iucn_status=obj
+        ).count()
+        return format_html(
+            f'<a href="/admin/bims/taxonomy/?iucn_status__id__exact={obj.id}">'
+            f'{total_taxa}</a>'
+        )
 
     iucn_colour.allow_tags = True
 
@@ -936,6 +950,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'import_date',
         'taxonomic_status',
         'legacy_canonical_name',
+        'iucn_status',
+        'validated',
         'verified'
     )
 
@@ -944,6 +960,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'verified',
         'import_date',
         'taxonomic_status',
+        'iucn_status'
     )
 
     search_fields = (

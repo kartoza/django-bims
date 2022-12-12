@@ -9,7 +9,7 @@ from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
-    LocationSitesCoordinate
+    LocationSitesCoordinate, GbifIdsDownloader
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
@@ -100,7 +100,6 @@ from bims.api_views.decision_support_tool import DecisionSupportToolView, \
 from bims.api_views.download_request import (
     DownloadRequestApi
 )
-
 
 urlpatterns = [
     url(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -299,5 +298,7 @@ urlpatterns = [
     url(r'^download-request/$',
         DownloadRequestApi.as_view(),
         name='download-request'
-    ),
+        ),
+    url(r'^gbif-ids/download/$',
+        GbifIdsDownloader.as_view()),
 ]
