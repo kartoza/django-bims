@@ -165,7 +165,6 @@ define([
             self.siteLayerSource.updateParams(newParams);
         },
         show: function (data) {
-            console.log(data);
             if (this.isOpen) {
                 return false;
             }
