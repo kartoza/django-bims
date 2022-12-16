@@ -430,10 +430,8 @@ const getTaxaList = (url) => {
                 }
                 let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
                 name += `<br/><span style="font-size: 9pt">${data['scientific_name']}</span><br/>`;
-                if (data['common_name'].length > 0) {
-                    $.each(data['common_name'], function (i, common_name) {
-                        name += ` <span class="badge badge-info">${common_name}</span>`
-                    });
+                if (data['common_name']) {
+                    name += ` <span class="badge badge-info">${data['common_name']}</span>`
                 }
                 if (data['gbif_key'] || data['iucn_redlist_id']) {
                     name += '<br/><div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';

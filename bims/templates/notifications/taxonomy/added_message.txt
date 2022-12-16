@@ -6,4 +6,4 @@ You have received the following notice from {{ current_site }}:
 Taxonomy : {{ taxonomy.canonical_name }}
 Rank : {{ taxonomy.rank }}
 
-{% trans "You can see the data by following this link" %}: http://{{ current_site }}/taxa-management/?&selected={{ taxon_group_id }}&validated=False/
+{% trans "You can see the data by following this link" %}: http://{{ current_site }}/taxa-management/?&selected={{ taxon_group_id }}&validated=False
