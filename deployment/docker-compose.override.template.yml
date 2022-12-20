@@ -3,7 +3,7 @@
 
 # Exactly the same as production but for dev env, we expose the port and uses
 # different port for the web.
-version: '2'
+version: '3.7'
 services:
 
   db:
@@ -11,14 +11,30 @@ services:
       - ./pg/postgres_data:/var/lib/postgresql
       - ./backups:/backups
       - ./sql:/sql
-    ports:
-      - "6543:5432"
 
   dbbackups:
     volumes:
       - ./backups:/backups
 
   uwsgi:
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+
+  worker:
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+
+  searchworker:
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+
+  geocontextworker:
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
@@ -32,25 +48,6 @@ services:
       # for geoserver
       - "63305:8080"
 
-  dev:
-    build:
-      context: docker
-      dockerfile: Dockerfile-dev
-    command: ''
-    entrypoint: [ ]
-    volumes:
-      - ../../django-bims:/home/web/django_project
-      - ./static:/home/web/static:rw
-      - ./media:/home/web/media:rw
-      - ./backups:/home/web/backups
-    ports:
-      # for django test server
-      - "63302:8080"
-      # for ssh
-      - "63303:22"
-      # for karma tests
-      - "63304:9876"
-
   web:
     volumes:
       - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
@@ -61,17 +58,3 @@ services:
     ports:
       # for django test server
       - "63307:80"
-
-
-  worker:
-    environment:
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - PYTHONPATH=/home/web/django_project
-      - DEFAULT_BACKEND_DATASTORE=
-
-
-  searchworker:
-    environment:
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - PYTHONPATH=/home/web/django_project
-      - DEFAULT_BACKEND_DATASTORE=
