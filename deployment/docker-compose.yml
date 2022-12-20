@@ -98,7 +98,7 @@ services:
     <<: *default-common-django
     entrypoint: [ ]
     hostname: worker
-    command: celery worker --app=bims.celery:app -Q update -B -l debug
+    command: celery --app=bims.celery:app worker -Q update -B -l debug
     links:
       - db:db
       - geoserver:geoserver
@@ -114,7 +114,7 @@ services:
     <<: *default-common-django
     entrypoint: [ ]
     hostname: worker
-    command: celery worker --app=bims.celery:app --schedule /home/geocontext-scheduler/celerybeat-schedule -Q geocontext -B -l debug
+    command: celery --app=bims.celery:app worker --schedule /home/geocontext-scheduler/celerybeat-schedule -Q geocontext -B -l debug
     links:
       - db:db
       - geoserver:geoserver
@@ -131,7 +131,7 @@ services:
     <<: *default-common-django
     entrypoint: [ ]
     hostname: worker
-    command: celery worker --app=bims.celery:app -Q search -B -l debug
+    command: celery --app=bims.celery:app worker -Q search -B -l debug
     links:
       - db:db
       - geoserver:geoserver
@@ -193,40 +193,3 @@ services:
    entrypoint:
     - memcached
     - -m 64
-
-  gbif_ipt:
-    image: kartoza/gbif_ipt:latest
-    links:
-      - db:db
-    volumes:
-      - ./ipt:/usr/local/ip
-    restart: unless-stopped
-
-  firefox-debug:
-    image: selenium/node-firefox-debug:3.141.59-dubnium
-    volumes:
-      - /dev/shm:/dev/shm
-      - ./scripts:/scripts
-    depends_on:
-      - hub
-    environment:
-      HUB_HOST: hub
-    ports:
-      - 5900:5900
-
-  firefox:
-    image: selenium/node-firefox:3.141.59-dubnium
-    volumes:
-      - /dev/shm:/dev/shm
-      - ./scripts:/scripts
-    depends_on:
-      - hub
-    environment:
-      HUB_HOST: hub
-
-  hub:
-    image: selenium/hub:3.141.59-dubnium
-    volumes:
-      - ./scripts:/scripts
-    ports:
-      - "4444:4444"

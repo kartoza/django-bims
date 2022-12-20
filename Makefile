@@ -47,7 +47,6 @@ build:
 	@echo "Building in production mode"
 	@echo "------------------------------------------------------------------"
 	@docker-compose ${ARGS} build uwsgi
-	@docker-compose ${ARGS} build dev
 
 dev:
 	@echo
@@ -61,7 +60,7 @@ web:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in production mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d web webpack-watcher dev
+	@docker-compose ${ARGS} up -d web
 	@# Dont confuse this with the dbbackup make command below
 	@# This one runs the postgis-backup cron container
 	@# We add --no-recreate so that it does not destroy & recreate the db container
