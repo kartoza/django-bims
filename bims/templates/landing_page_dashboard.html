@@ -68,12 +68,12 @@
         let nt_data = 0
         let ne_data = 0
         let vu_data = 0
-
         if (moduleData.hasOwnProperty(ce)) {
             ce_data += moduleData[ce];
         }
-        if (moduleData.hasOwnProperty(dd)) {
-            dd_data += moduleData[dd];
+        if (moduleData['conservation-status'].hasOwnProperty(dd)) {
+            console.log('test')
+            dd_data += moduleData['conservation-status']['Data deficient'];
         }
         if (moduleData.hasOwnProperty(en)) {
             en_data += moduleData[en];
@@ -150,12 +150,12 @@
         $moduleInfoContainer.append(
             `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalTaxa)}</span> Taxa</p>`
         )
-        $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${!isNaN(endangered)?getNumberWithCommas(endangered):0}</span> Endangered</p>`
-        )
-        $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${!isNaN(critEndangered)?getNumberWithCommas(critEndangered):0}</span> Critically Endangered</p>`
-        )
+        {#$moduleInfoContainer.append(#}
+        {#    `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${!isNaN(endangered)?getNumberWithCommas(endangered):0}</span> Endangered</p>`#}
+        {#)#}
+        {#$moduleInfoContainer.append(#}
+        {#    `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${!isNaN(critEndangered)?getNumberWithCommas(critEndangered):0}</span> Critically Endangered</p>`#}
+        {#)#}
         if (totalSass > 0) {
             $moduleInfoContainer.append(
                 `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`
