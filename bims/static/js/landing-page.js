@@ -76,6 +76,7 @@ function createSummaryChart(data){
         let ce = 0;
 
         let anuraData = data['conservation-status'];
+
         if (anuraData.hasOwnProperty('Least concern')) {
             lc += anuraData['Least concern'];
         }
@@ -94,11 +95,11 @@ function createSummaryChart(data){
         if (anuraData.hasOwnProperty('Critically endangered')) {
             ce += anuraData['Critically endangered'];
         }
-        if (anuraData.hasOwnProperty('Data Deficient')) {
-            dd += anuraData['Data Deficient'];
+        if (anuraData.hasOwnProperty('Data deficient')) {
+            dd += anuraData['Data deficient'];
         }
 
-        labels = ["Data Deficient", "Not evaluated", "Least concern", "Near threatened", "Vulnerable", "Endangered", "Critically endangered"],
+        labels = ["Data deficient", "Not evaluated", "Least concern", "Near threatened", "Vulnerable", "Endangered", "Critically endangered"],
             dataChart = [dd, ne, lc, nt, vu, en, ce];
         bColor = [
             '#D7CD47',
