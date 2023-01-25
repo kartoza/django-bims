@@ -988,3 +988,8 @@ class BioCollectionGeojsonSerializer(GeoFeatureModelSerializer):
 
 class BioCollectionOneRowWithLinkSerialier(BioCollectionOneRowSerializer):
     pass
+
+
+class BioCollectionBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BiologicalCollectionRecord

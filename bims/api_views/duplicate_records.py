@@ -1,6 +1,7 @@
 import logging
 import os
 import errno
+from datetime import datetime
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from rest_framework.views import APIView
@@ -26,7 +27,9 @@ class DuplicateRecordsApiView(APIView):
                 'message': 'Data is empty'
             })
 
-        filename = 'duplicate_records.csv'
+        filename = 'duplicate_records_{}.csv'.format(
+            datetime.now().date()
+        )
 
         # Check if filename exists
         path_folder = os.path.join(settings.MEDIA_ROOT,
@@ -40,15 +43,10 @@ class DuplicateRecordsApiView(APIView):
                 raise
             pass
 
-        if os.path.exists(path_file):
-            return JsonResponse({
-                'status': 'success',
-                'filename': filename
-            })
-
         if duplicated_values.count() > 1:
             download_duplicated_records_to_csv.delay(
-                path_file
+                path_file,
+                self.request.user.email
             )
         else:
             return JsonResponse({
