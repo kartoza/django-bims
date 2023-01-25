@@ -312,15 +312,29 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             this.displayTaxonomyRank(data['taxonomy_rank']);
 
             if (!this.mapTaxaSite) {
+                const baseLayer = [];
+                if(bingMapKey){
+                    baseLayer.push(
+                        new ol.layer.Tile({
+                            source: new ol.source.BingMaps({
+                            key: bingMapKey,
+                            imagerySet: 'AerialWithLabels'
+                        })
+                        })
+                    )
+                }
+                else{
+                    baseLayer.push(
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        })
+                    )
+                }
                 this.mapTaxaSite = new ol.Map({
                     controls: ol.control.defaults().extend([
                         new ol.control.ScaleLine()
                     ]),
-                    layers: [
-                        new ol.layer.Tile({
-                            source: new ol.source.OSM()
-                        })
-                    ],
+                    layers: baseLayer,
                     target: 'taxasite-map',
                     view: new ol.View({
                         center: [0, 0],

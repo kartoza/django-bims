@@ -3,19 +3,33 @@ let chartConfigs = {};
 
 function drawMap(data) {
     let scaleLineControl = new ol.control.ScaleLine();
-    map = new ol.Map({
-        controls: ol.control.defaults().extend([
-            scaleLineControl
-        ]),
-        layers: [
+    const baseLayer = [];
+    if(data['bing_map_key']){
+        baseLayer.push(
             new ol.layer.Tile({
-                source: new ol.source.OSM({
+                source: new ol.source.BingMaps({
+                    key: data['bing_map_key'],
+                    imagerySet: 'AerialWithLabels'
+                })
+            })
+        )
+    }
+    else{
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.OSM( {
                     wrapDateLine: false,
                     wrapX: false,
                     noWrap: true
                 })
             })
-        ],
+        )
+    }
+    map = new ol.Map({
+        controls: ol.control.defaults().extend([
+            scaleLineControl
+        ]),
+        layers: baseLayer,
         target: 'map',
         view: new ol.View({
             center: [0, 0],

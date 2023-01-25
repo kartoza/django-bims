@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.api_views.search import CollectionSearch
-from bims.models import LocationSite, LocationContext
+from bims.models import LocationSite, LocationContext, BaseMapLayer
 from bims.utils.geomorphological_zone import get_geomorphological_zone_class
 from bims.utils.logger import log
 from sass.models import (
@@ -467,6 +467,11 @@ class SassDashboardMultipleSitesApiView(APIView):
 
         source_references = collection_with_references.source_references()
 
+        try:
+            bing_map_key = BaseMapLayer.objects.get(source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            bing_map_key = ''
+
         return Response({
             'total_pages': paginator.num_pages,
             'current_page': page,
@@ -476,5 +481,6 @@ class SassDashboardMultipleSitesApiView(APIView):
             'ecological_chart_data': ecological_chart_data,
             'unique_ecoregions': unique_ecoregions,
             'coordinates': coordinates,
-            'source_references': source_references
+            'source_references': source_references,
+            'bing_map_key': bing_map_key
         })
