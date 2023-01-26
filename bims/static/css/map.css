@@ -2549,7 +2549,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #gbif-images-row {
-    line-height: 0;
    -webkit-column-count: 2;
    -webkit-column-gap:   0px;
    -moz-column-count:    2;
@@ -2566,7 +2565,6 @@ div:hover::-webkit-scrollbar {
 }
 
 .gbif-images-row {
-    line-height: 0;
    -webkit-column-count: 2;
    -webkit-column-gap:   0px;
    -moz-column-count:    2;
@@ -2880,4 +2878,8 @@ div:hover::-webkit-scrollbar {
     .navbar .container {
         max-width: 1140px !important;
     }
+}
+
+.taxon-image {
+    display: inline;
 }

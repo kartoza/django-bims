@@ -433,6 +433,11 @@ class TaxonImage(models.Model):
     taxonomy = models.ForeignKey(
         Taxonomy, on_delete=models.CASCADE
     )
+    source = models.CharField(
+        max_length=256,
+        blank=True,
+        default=''
+    )
 
 
 def check_taxa_duplicates(taxon_name, taxon_rank):
