@@ -119,16 +119,30 @@ define([
         },
         renderMap: function (data, target = 'locationsite-map') {
             let self = this;
+            const baseLayer = [];
             if (!self.mapLocationSite) {
+                if(bingMapKey){
+                    baseLayer.push(
+                        new ol.layer.Tile({
+                            source: new ol.source.BingMaps({
+                            key: bingMapKey,
+                            imagerySet: 'AerialWithLabels'
+                        })
+                        })
+                    )
+                }
+                else{
+                    baseLayer.push(
+                        new ol.layer.Tile({
+                            source: new ol.source.OSM()
+                        })
+                    )
+                }
                 self.mapLocationSite = new ol.Map({
                     controls: ol.control.defaults().extend([
                         new ol.control.ScaleLine()
                     ]),
-                    layers: [
-                        new ol.layer.Tile({
-                            source: new ol.source.OSM()
-                        })
-                    ],
+                    layers: baseLayer,
                     target: target,
                     view: new ol.View({
                         center: [0, 0],
