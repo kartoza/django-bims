@@ -375,8 +375,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     </div>`)
             });
             self.recordsAreaTable.html($tableArea);
-            var thirdPartyData = this.renderThirdPartyData(data);
-            this.imagesCard.append(thirdPartyData);
+            this.imagesCard.append(Shared.TaxonImagesUtil.renderTaxonImages(data['gbif_id'], self.taxonId));
         },
         downloadElementEvent: function (button_el) {
             let button = $(button_el.target);
@@ -540,69 +539,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     }
                 })
             }
-        },
-        renderThirdPartyData: function (data) {
-            var self = this;
-            var $thirdPartyData = $('<div>');
-            var template = _.template($('#third-party-template').html());
-            $thirdPartyData.append(template({}));
-            var $wrapper = $thirdPartyData.find('.third-party-wrapper');
-            var mediaFound = false;
-            var $fetchingInfoDiv = $thirdPartyData.find('.third-party-fetching-info');
-            var this_GBIF_ID = data['gbif_id'];
-            var $rowWrapper = $('<div id="gbif-images-row" class="gbif-images-row gbif-images-row-fsdd"></div>');
-             $.get({
-                 url: '/api/taxon-images/'+ self.taxonId,
-                 dataType: 'json',
-                 success: function (data) {
-                     if (data.length > 0) {
-                         data.forEach(function (image){
-                             $rowWrapper.append('<a target="_blank" href="'+image['url']+'">' +
-                                '<img src="' + image['url'] + '"/></a>');
-                            $fetchingInfoDiv.hide();
-                     });
-                          $wrapper.append($rowWrapper);
-                     } else {
-                         if (this_GBIF_ID) {
-                             $.get({
-                                url: 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + this_GBIF_ID + '&limit=4',
-                                dataType: 'json',
-                                success: function (data) {
-                                    var results = data['results'];
-                                    var result = {};
-                                    for (let result_id in results) {
-                                        result = results[result_id];
-                                        if (!result.hasOwnProperty('media')) {
-                                            continue;
-                                        }
-                                        if (result['media'].length === 0) {
-                                            continue;
-                                        }
-                                        var media = result['media'][0];
-                                        if (!media.hasOwnProperty('identifier')) {
-                                            continue;
-                                        }
-                                        mediaFound = true;
-                                        if (mediaFound) {
-                                            $fetchingInfoDiv.hide();
-                                        }
-                                        $rowWrapper.append('<a target="_blank" href="' + media['references'] + '">' +
-                                            '<img title="Source: ' + media['publisher'] + '" alt="' + media['rightsHolder'] + '" src="' + media['identifier'] + '"/></a>');
-                                    }
-                                    $wrapper.append($rowWrapper);
-                                    if (!mediaFound) {
-                                        $fetchingInfoDiv.html('Media not found');
-                                    }
-                                }
-                            });
-                        } else {
-                            $fetchingInfoDiv.html('Media not found');
-                        }
-                     }
-                 }
-             });
-
-            return $thirdPartyData;
         },
         renderFBISRPanelBlocks: function (data, stretch_selection = false) {
             var $detailWrapper = $('<div style="padding-left: 0;"></div>');
