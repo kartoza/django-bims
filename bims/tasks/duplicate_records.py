@@ -1,13 +1,16 @@
 import csv
+import os
 import logging
 from celery import shared_task
-from django.db.models import Q
 
 logger = logging.getLogger('bims')
 
 
 @shared_task(name='bims.tasks.download_duplicated_records_to_csv', queue='update')
-def download_duplicated_records_to_csv(path_file):
+def download_duplicated_records_to_csv(path_file, user_email):
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.contrib.sites.models import Site
     from bims.models import BiologicalCollectionRecord
     from bims.serializers.bio_collection_serializer import BioCollectionOneRowSerializer
     from bims.utils.celery import memcache_lock
@@ -26,21 +29,9 @@ def download_duplicated_records_to_csv(path_file):
             headers = []
             queryset = list(get_duplicate_records())
             for value in queryset:
-                survey_date = value['survey__date']
-                if isinstance(survey_date, str):
-                    if 'T' in survey_date:
-                        survey_date = survey_date.split('T')[0]
-                else:
-                    survey_date = str(survey_date)
-                query = Q(Q(site_id=value['site_id']) &
-                          Q(biotope_id=value['biotope_id']) &
-                          Q(specific_biotope_id=value['specific_biotope_id']) &
-                          Q(substratum_id=value['substratum_id']) &
-                          Q(taxonomy_id=value['taxonomy_id']) &
-                          Q(survey__date=survey_date) &
-                          Q(abundance_number=value['abundance_number']))
+                del value['duplicate']
                 records = BiologicalCollectionRecord.objects.filter(
-                    query
+                    **value
                 )
                 serializer = BioCollectionOneRowSerializer(
                     records,
@@ -65,6 +56,24 @@ def download_duplicated_records_to_csv(path_file):
                 writer.fieldnames = headers
                 for row in rows:
                     writer.writerow(row)
+
+            send_mail(
+                'Duplicate Records File Is Ready',
+                'Dear Admin,\n\n'
+                'File is ready to download:\n'
+                'http://{site}{path}\n\n'
+                'Sincerely,\nBIMS Team.'.format(
+                    site=Site.objects.get_current().domain,
+                    path=os.path.join(
+                        settings.MEDIA_URL,
+                        settings.PROCESSED_CSV_PATH,
+                        path_file.split('/')[-1]
+                    ),
+                ),
+                '{}'.format(settings.SERVER_EMAIL),
+                [user_email],
+                fail_silently=False
+            )
 
             return
 
