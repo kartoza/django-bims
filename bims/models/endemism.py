@@ -23,6 +23,10 @@ class Endemism(models.Model):
         default=0
     )
 
+    verified = models.BooleanField(
+        default=False
+    )
+
     class Meta:
         ordering = ['display_order']
 

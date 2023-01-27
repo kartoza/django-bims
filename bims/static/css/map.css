@@ -588,7 +588,6 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
-    max-height: 300px;
     overflow-y: auto;
     padding-top: 5px;
 }
@@ -2036,6 +2035,17 @@ div:hover::-webkit-scrollbar {
     margin-bottom: -5px;
 }
 
+.conservation-status-item {
+    display: flex;
+    padding-bottom: 5px;
+}
+
+.conservation-status-item label {
+    padding-left: 10px;
+    cursor: pointer;
+    margin-bottom: 0 !important;
+}
+
 .conservation-status-wrapper li {
     height: unset !important;
 }
@@ -2549,7 +2559,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #gbif-images-row {
-    line-height: 0;
    -webkit-column-count: 2;
    -webkit-column-gap:   0px;
    -moz-column-count:    2;
@@ -2566,7 +2575,6 @@ div:hover::-webkit-scrollbar {
 }
 
 .gbif-images-row {
-    line-height: 0;
    -webkit-column-count: 2;
    -webkit-column-gap:   0px;
    -moz-column-count:    2;
@@ -2880,4 +2888,8 @@ div:hover::-webkit-scrollbar {
     .navbar .container {
         max-width: 1140px !important;
     }
+}
+
+.taxon-image {
+    display: inline;
 }
