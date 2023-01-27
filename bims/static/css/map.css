@@ -588,7 +588,6 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
-    max-height: 300px;
     overflow-y: auto;
     padding-top: 5px;
 }
@@ -2034,6 +2033,17 @@ div:hover::-webkit-scrollbar {
     padding-top: 15px;
     overflow-y: unset;
     margin-bottom: -5px;
+}
+
+.conservation-status-item {
+    display: flex;
+    padding-bottom: 5px;
+}
+
+.conservation-status-item label {
+    padding-left: 10px;
+    cursor: pointer;
+    margin-bottom: 0 !important;
 }
 
 .conservation-status-wrapper li {
