@@ -2,13 +2,13 @@ import csv
 import os
 import logging
 from celery import shared_task
-from django.core.mail import send_mail
 
 logger = logging.getLogger('bims')
 
 
 @shared_task(name='bims.tasks.download_duplicated_records_to_csv', queue='update')
 def download_duplicated_records_to_csv(path_file, user_email):
+    from django.core.mail import send_mail
     from django.conf import settings
     from django.contrib.sites.models import Site
     from bims.models import BiologicalCollectionRecord

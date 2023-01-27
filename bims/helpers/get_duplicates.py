@@ -1,13 +1,13 @@
 from django.db.models import Count
-from preferences import preferences
-
-from bims.models import (
-    BiologicalCollectionRecord,
-)
 
 
 def get_duplicate_records():
     """Returns all duplicate records"""
+    from preferences import preferences
+    from bims.models import (
+        BiologicalCollectionRecord,
+    )
+
     return (
         BiologicalCollectionRecord.objects.filter(
             source_collection=preferences.SiteSetting.default_data_source,
