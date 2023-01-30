@@ -142,6 +142,8 @@ class DownloadRequest(models.Model):
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
+        if not self.requester:
+            return '-'
         if self.requester.first_name or self.requester.last_name:
             return '%s %s' % (
                 self.requester.first_name, self.requester.last_name)

@@ -21,7 +21,7 @@ class DownloadRequestListView(
     model = DownloadRequest
     context_object_name = 'download_requests'
     template_name = 'download_request_list.html'
-    paginate_by = 10
+    paginate_by = 20
 
     def test_func(self):
         return user_has_permission_to_validate(self.request.user)
@@ -121,6 +121,7 @@ class DownloadRequestListView(
         """
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
+        qs = qs.filter(requester__isnull=False)
         if (
                 self.approved_or_rejected is not None and
                 self.approved_or_rejected != ''
