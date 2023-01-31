@@ -47,6 +47,10 @@
         let alienNonInvasive = 0;
         let unspecified = 0;
 
+        let totalTaxa = 0;
+        let endangered = 0;
+        let critEndangered=0;
+
         let ce = 'Critically endangered'
         let dd = 'Data deficient'
         let en = 'Endangered'
@@ -64,12 +68,12 @@
         let nt_data = 0
         let ne_data = 0
         let vu_data = 0
-
         if (moduleData.hasOwnProperty(ce)) {
             ce_data += moduleData[ce];
         }
-        if (moduleData.hasOwnProperty(dd)) {
-            dd_data += moduleData[dd];
+        if (moduleData['conservation-status'].hasOwnProperty(dd)) {
+            console.log('test')
+            dd_data += moduleData['conservation-status']['Data deficient'];
         }
         if (moduleData.hasOwnProperty(en)) {
             en_data += moduleData[en];
@@ -117,8 +121,22 @@
         if (moduleData.hasOwnProperty('total_sass')) {
             totalSass += moduleData['total_sass'];
         }
+
+        if(moduleData.hasOwnProperty('total_taxa')){
+            totalTaxa += moduleData['total_taxa'];
+        }
+
+        if(moduleData.hasOwnProperty('conservation-status')){
+            endangered += moduleData['conservation-status']['Endangered'];
+        }
+        if(moduleData.hasOwnProperty('conservation-status')){
+            critEndangered += moduleData['conservation-status']['Critically endangered'];
+        }
+
+        let moduleId = moduleData['module_id'];
+        let taxonGroupUrl = `/map/#site-detail/taxon=&search=&siteId=&collector=&category=&yearFrom=&yearTo=&months=&boundary=&userBoundary=&referenceCategory=&spatialFilter=&reference=&endemic=&conservationStatus=[]&modules=${moduleId}&validated=&sourceCollection=[%22gbif%22,%22RBIS%22]&abioticData=&ecologicalCategory=&rank=&siteIdOpen=&orderBy=name&polygon=&thermalModule=&dst=`
         container.append(
-            `<h4 class="module-name">${moduleName}</h4>`
+            `<h4 class="module-name"><a href="${taxonGroupUrl}" class="module-name-link" target="_blank">${moduleName}</a></h4>`
         )
 
         let $moduleInfoContainer = $(`<div class="module-info-container"/>`);
@@ -130,8 +148,14 @@
             `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> Sites</p>`
         )
         $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
+            `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalTaxa)}</span> Taxa</p>`
         )
+        {#$moduleInfoContainer.append(#}
+        {#    `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${!isNaN(endangered)?getNumberWithCommas(endangered):0}</span> Endangered</p>`#}
+        {#)#}
+        {#$moduleInfoContainer.append(#}
+        {#    `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${!isNaN(critEndangered)?getNumberWithCommas(critEndangered):0}</span> Critically Endangered</p>`#}
+        {#)#}
         if (totalSass > 0) {
             $moduleInfoContainer.append(
                 `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`

@@ -36,21 +36,23 @@ class ModuleSummary(APIView):
         :return: dict of summary data
         """
         summary = {}
-        collections = BiologicalCollectionRecord.objects.filter(
-            module_group=taxon_group
-        )
+        collections = BiologicalCollectionRecord.objects.filter(module_group=taxon_group)
+
+        taxonomies = collections.distinct('taxonomy').values('taxonomy__id')
+
+        taxa = Taxonomy.objects.filter(id__in=[taxonomies])
 
         if taxon_group.chart_data == 'division':
-            summary['division'] = collections.values(
-                'taxonomy__additional_data__Division').annotate(
-                count=Count('taxonomy__additional_data__Division')
-            ).values('taxonomy__additional_data__Division', 'count')
+            summary['division'] = taxa.values(
+                'additional_data__Division').annotate(
+                count=Count('additional_data__Division')
+            ).values('additional_data__Division', 'count')
         elif taxon_group.chart_data == 'origin':
             origin_data = dict(
-                collections.exclude(taxonomy__origin__exact='').values(
-                    'taxonomy__origin').annotate(
-                    count=Count('taxonomy__origin')
-                ).values_list('taxonomy__origin', 'count'))
+                taxa.exclude(origin__exact='').values(
+                    'origin').annotate(
+                    count=Count('origin')
+                ).values_list('origin', 'count'))
             updated_origin_data = {}
             origin_category = dict(Taxonomy.CATEGORY_CHOICES)
             for key in origin_data.keys():
@@ -59,9 +61,9 @@ class ModuleSummary(APIView):
                 )
             summary['origin'] = updated_origin_data
         elif taxon_group.chart_data == 'endemism':
-            summary['endemism'] = dict(collections.annotate(
-                value=Case(When(taxonomy__endemism__isnull=False,
-                                then=F('taxonomy__endemism__name')),
+            summary['endemism'] = dict(taxa.annotate(
+                value=Case(When(endemism__isnull=False,
+                                then=F('endemism__name')),
                            default=Value('Unknown'))
             ).values('value').annotate(
                 count=Count('value')).values_list('value', 'count'))
@@ -89,9 +91,9 @@ class ModuleSummary(APIView):
             summary['total_sass'] = SiteVisit.objects.all().count()
         else:
             summary_temp = dict(
-                collections.exclude(taxonomy__origin__exact='').annotate(
-                    value=Case(When(taxonomy__iucn_status__isnull=False,
-                                    then=F('taxonomy__iucn_status__category')),
+                taxa.exclude(origin__exact='').annotate(
+                    value=Case(When(iucn_status__isnull=False,
+                                    then=F('iucn_status__category')),
                                default=Value('Not evaluated'))
                 ).values('value').annotate(
                     count=Count('value')
@@ -103,7 +105,7 @@ class ModuleSummary(APIView):
                 if key in iucn_category:
                     updated_summary[iucn_category[key]] = summary_temp[key]
             summary['conservation-status'] = updated_summary
-
+        x = TaxonGroup.objects.all().values()
         if taxon_group.logo:
             summary['icon'] = taxon_group.logo.url
         summary[
@@ -116,6 +118,11 @@ class ModuleSummary(APIView):
             'total_site_visit'] = (
             collections.distinct('survey').count()
         )
+        summary['module_id'] = taxon_group.id
+
+        summary['total_taxa'] = collections.distinct('taxonomy').count()
+        # summary['testing'] = x
+
         return summary
 
     def get(self, request, *args):

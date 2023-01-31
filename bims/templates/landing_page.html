@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load static from staticfiles %}
 {% load jsonify %}
+{% load site %}
 
 {% block subtitle %}
     Home
@@ -28,9 +29,9 @@
                 {% include "carousel.html" %}
             </header>
             {% endif %}
-            <section class="biodiversity-data-container" style="position: relative;">
+            <section class="biodiversity-data-container" id="data-records" style="position: relative;">
                 <div class="container">
-                    <div class="row">
+                    <div class="row" >
                         <div class="col-lg-8 mx-auto text-center">
                             <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_occurrence_records_title }}</h2>
                         </div>
@@ -42,26 +43,28 @@
                     </div>
                 </div>
             </section>
-            {% if custom_theme.landing_page_sections %}
-                {% for landing_page_section in custom_theme.landing_page_sections.all %}
-                    <section class="biodiversity-data-container custom-sections" style="position: relative;">
-                        <div class="container">
-                            {% if landing_page_section.title %}
-                                <div class="row">
-                                    <div class="col-lg-8 mx-auto text-center">
-                                        <h2 class="section-heading">{{ landing_page_section.title }}</h2>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            {% for section_content in landing_page_section.contents.all %}
-                                <div class="row">
-                                    {{ section_content.content | safe }}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </section>
-                {% endfor %}
-            {% endif %}
+
+        <!-- Refactored to discover and footer -->
+{#            {% if custom_theme.landing_page_sections %}#}
+{#                {% for landing_page_section in custom_theme.landing_page_sections.all %}#}
+{#                    <section class="biodiversity-data-container custom-sections" style="position: relative;">#}
+{#                        <div class="container">#}
+{#                            {% if landing_page_section.title %}#}
+{#                                <div class="row">#}
+{#                                    <div class="col-lg-8 mx-auto text-center">#}
+{#                                        <h2 class="section-heading">{{ landing_page_section.title }}</h2>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            {% endif %}#}
+{#                            {% for section_content in landing_page_section.contents.all %}#}
+{#                                <div class="row">#}
+{#                                    {{ section_content.content | safe }}#}
+{#                                </div>#}
+{#                            {% endfor %}#}
+{#                        </div>#}
+{#                    </section>#}
+{#                {% endfor %}#}
+{#            {% endif %}#}
             {% if custom_theme.partners.all %}
             <section class="biodiversity-data-container grid-logos" style="position: relative;">
                 <div class="container" style="margin-bottom: 25px">
@@ -90,8 +93,9 @@
                 <footer>
                 <div class="section-1-padding footer-bg bgimage-property ">
                     <div class="container">
+                    {% current_domain as domain_name %}
                         <div class="row rowsafari">
-                            <div class="col-sm-6 col-md-4 col-lg-4 res2-bot-pad res1-bot-pad count-res" style="text-align: center; margin-bottom: 25px;">
+                            <div class="col-sm-6 col-md-4 col-lg-3 res2-bot-pad res1-bot-pad count-res" style="text-align: center; margin-bottom: 25px;">
                                  {% if custom_theme.logo %}
                                      <img src="{{ custom_theme.logo.url }}" style="max-width: 100%; width: 120px"/>
                                  {% endif %}
@@ -107,8 +111,38 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-sm-6 col-md-8 col-lg-8 res1-bot-pad res2-bot-pad count-res">
-                                <h5 style="font-weight: bold; margin-bottom: 25px;">GET IN TOUCH</h5>
+                            <div class="col-sm-6 col-md-4 col-lg-3 res1-bot-pad res2-bot-pad count-res">
+                                <h5 style="font-weight: bold; margin-bottom: 25px;">Quick Links</h5>
+                                <div class="marg-top15 res-marg-top10 res2-top-marg10">
+                                    <ul class="nav flex-column">
+                                        <li class="nav-item mb-2"><a href="" class="nav-link p-0 text-dark">Home</a></li>
+                                        <li class="nav-item mb-2"><a href="{{ domain_name }}/pages/about_us/" class="nav-link p-0 text-dark">About</a></li>
+                                        <li class="nav-item mb-2"><a href="{{ domain_name }}/contact/" class="nav-link p-0 text-dark">Contact</a></li>
+                                        <li class="nav-item mb-2"><a href="{{ domain_name }}/map" class="nav-link p-0 text-dark">Explore Data</a></li>
+                                        {% if preferences.SiteSetting.docs_page_link %}
+                                            <li class="nav-item mb-2"><a href="{{ preferences.SiteSetting.docs_page_link }}" class="nav-link p-0 text-dark">Docs</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-4 col-lg-3 res1-bot-pad res2-bot-pad count-res">
+                                <h5 style="font-weight: bold; margin-bottom: 25px;">Resources</h5>
+                                <div class="marg-top15 res-marg-top10 res2-top-marg10">
+                                    <ul class="nav flex-column">
+                                        {% if preferences.SiteSetting.blog_page_link %}
+                                            <li class="nav-item mb-2"><a href="{{ preferences.SiteSetting.blog_page_link }}" class="nav-link p-0 text-dark">News</a></li>
+                                        {% endif %}
+                                        <li class="nav-item mb-2"><a href="{{ domain_name }}/site-visit/list/" class="nav-link p-0 text-dark">Site visits</a></li>
+                                        <li class="nav-item mb-2"><a href="{{ domain_name }}/source-references/" class="nav-link p-0 text-dark">Source References</a></li>
+                                        <li class="nav-item mb-2"><a href="https://coebiodiversity.ur.ac.rw/" class="nav-link p-0 text-dark" target="_blank">CoEB</a></li>
+                                        <li class="nav-item mb-2"><a href="https://herbariumrwanda.ur.ac.rw/" class="nav-link p-0 text-dark" target="_blank">Rwanda Herbarium</a></li>
+                                        <li class="nav-item mb-2"><a href="https://ur.ac.rw/" class="nav-link p-0 text-dark" target="_blank">University of Rwanda</a></li>
+
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-4 col-lg-3 res1-bot-pad res2-bot-pad count-res">
+                                <h5 style="font-weight: bold; margin-bottom: 25px;">Get In Touch</h5>
                                 <div class="marg-top15 res-marg-top10 res2-top-marg10">
                                     <div class="dis-tab-cell icon-width">
                                         <i class="fa fa-envelope footer-font-size"
@@ -140,7 +174,17 @@
                                     </div>
                                     <div class="dis-tab-cell-top">
                                         {{ custom_theme.address_1 | linebreaks }}
-                                        <p class="lt-space word-br"></p>{{ custom_theme.address_2 | linebreaks }}
+{#                                        <p class="lt-space word-br"></p>{{ custom_theme.address_2 | linebreaks }}#}
+                                    </div>
+                                </div>
+                                <div class="marg-top10">
+                                    <div class="dis-tab-cell icon-width">
+                                        <i class="fa fa-map-marker footer-font-size"
+                                           aria-hidden="true"></i>
+                                    </div>
+                                    <div class="dis-tab-cell-top">
+                                        {{ custom_theme.address_2 | linebreaks }}
+{#                                        <p class="lt-space word-br"></p>{{ custom_theme.address_2 | linebreaks }}#}
                                     </div>
                                 </div>
                             </div>
