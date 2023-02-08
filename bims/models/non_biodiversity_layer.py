@@ -25,7 +25,8 @@ class NonBiodiversityLayer(OrderedModel):
     layer_style = models.CharField(
         max_length=256,
         default='',
-        help_text='Leave blank to use default style'
+        help_text='Leave blank to use default style',
+        blank=True
     )
     default_visibility = models.BooleanField(
         default=False
