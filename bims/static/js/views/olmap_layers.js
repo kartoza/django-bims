@@ -232,14 +232,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             defaultVisibility = value['default_visibility'];
                         }
                         Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
-
                         var options = {
                             url: '/bims_proxy/' + encodeURI(value.wms_url),
                             params: {
                                 name: value.name,
                                 layers: value.wms_layer_name,
                                 format: value.wms_format,
-                                getFeatureFormat: value.get_feature_format
+                                getFeatureFormat: value.get_feature_format,
+                                STYLES: value.layer_style
                             }
                         };
 
@@ -261,7 +261,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             value.name,
                             options['url'],
                             options['params']['layers'],
-                            false
+                            false,
+                            value.layer_style
                         );
                     });
 
@@ -434,11 +435,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             return $(".control-drop-shadow").find(
                 "[data-name='" + layerName + "']");
         },
-        renderLegend: function (id, name, url, layer, visibleDefault) {
+        renderLegend: function (id, name, url, layer, visibleDefault, style='') {
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
             if (url.indexOf('.qgs') != -1) {
                 scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
             }
+            scr += '&STYLE=' + style;
             var html =
                 '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
