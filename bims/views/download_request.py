@@ -1,6 +1,7 @@
 
 # coding=utf-8
 import ast
+
 from django.views.generic import ListView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
@@ -20,7 +21,7 @@ class DownloadRequestListView(
     model = DownloadRequest
     context_object_name = 'download_requests'
     template_name = 'download_request_list.html'
-    paginate_by = 10
+    paginate_by = 20
 
     def test_func(self):
         return user_has_permission_to_validate(self.request.user)
@@ -43,7 +44,7 @@ class DownloadRequestListView(
                 download_request = DownloadRequest.objects.get(
                     id=int(approved_id)
                 )
-                download_request.processing = False
+                download_request.processing = True
                 download_request.approved = True
                 download_request.rejected = False
                 download_request.save()
@@ -58,7 +59,7 @@ class DownloadRequestListView(
                 download_request = DownloadRequest.objects.get(
                     id=int(rejected_id)
                 )
-                download_request.processing = False
+                download_request.processing = True
                 download_request.approved = False
                 download_request.rejected = True
                 download_request.rejection_message = rejection_message
@@ -112,7 +113,6 @@ class DownloadRequestListView(
         authors_order = ('first_name', 'last_name')
         filtered_authors = Profile.objects.filter(id__in=author_ids)
         ctx['requesters'] = filtered_authors.order_by(*authors_order)
-
         return ctx
 
     def get_queryset(self):
@@ -121,7 +121,7 @@ class DownloadRequestListView(
         """
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
-        qs = qs.exclude(request_file='')
+        qs = qs.filter(requester__isnull=False)
         if (
                 self.approved_or_rejected is not None and
                 self.approved_or_rejected != ''

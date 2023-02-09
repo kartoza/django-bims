@@ -1,6 +1,7 @@
 # coding=utf-8
 import datetime
 import os
+import json
 from django.http import HttpResponseForbidden, JsonResponse
 from django.conf import settings
 from rest_framework import serializers
@@ -10,7 +11,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
-from bims.api_views.csv_download import send_csv_via_email
+from bims.download.csv_download import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_csv_taxa_list as download_csv_taxa_list_task
 )
@@ -26,6 +27,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     genus = serializers.SerializerMethodField()
     family = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
+    sub_species = serializers.SerializerMethodField()
     taxon = serializers.SerializerMethodField()
     scientific_name_and_authority = serializers.SerializerMethodField()
     common_name = serializers.SerializerMethodField()
@@ -108,6 +110,9 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             )
         return '-'
 
+    def get_sub_species(self, obj: Taxonomy):
+        return obj.sub_species_name
+
     class Meta:
         model = Taxonomy
         fields = (
@@ -119,6 +124,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'family',
             'genus',
             'species',
+            'sub_species',
             'taxon',
             'scientific_name_and_authority',
             'common_name',
@@ -153,18 +159,27 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             if taxon_extra_attributes.exists():
                 for taxon_extra_attribute in taxon_extra_attributes:
                     taxon_attribute_name = taxon_extra_attribute.name
-                    key_title = taxon_attribute_name.lower().replace(' ', '_')
-                    if key_title not in self.context['headers']:
-                        self.context['headers'].append(key_title)
+                    if taxon_attribute_name not in self.context['headers']:
+                        self.context['headers'].append(taxon_attribute_name)
                     try:
+                        if (
+                            taxon_attribute_name == 'Growth form'
+                        ):
+                            if (
+                                taxon_attribute_name not in
+                                    instance.additional_data or
+                                    instance.additional_data[
+                                        taxon_attribute_name] == ''
+                            ):
+                                taxon_attribute_name = 'Growth Form'
                         if taxon_attribute_name in instance.additional_data:
-                            result[key_title] = (
+                            result[taxon_attribute_name] = (
                                 instance.additional_data[taxon_attribute_name]
                             )
                         else:
-                            result[key_title] = ''
+                            result[taxon_attribute_name] = ''
                     except TypeError:
-                        result[key_title] = ''
+                        result[taxon_attribute_name] = ''
 
         return result
 
@@ -179,12 +194,13 @@ def download_csv_taxa_list(request):
     )
 
     current_time = datetime.datetime.now()
+    filter_hash = hash(json.dumps(request.GET.dict()))
 
     # Check if the file exists in the processed directory
     filename = (
         f'{taxon_group}-{current_time.year}-'
         f'{current_time.month}-{current_time.day}-'
-        f'{current_time.hour}'
+        f'{current_time.hour}-{filter_hash}'
     ).replace(' ', '_')
     folder = settings.PROCESSED_CSV_PATH
     path_folder = os.path.join(

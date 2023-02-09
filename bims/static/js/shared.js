@@ -1,7 +1,7 @@
 /*global define*/
 'use strict';
 
-define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url'], function (Backbone, _, StorageUtil, ColorUtil, UrlUtil) {
+define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', 'utils/taxon_images'], function (Backbone, _, StorageUtil, ColorUtil, UrlUtil, TaxonImagesUtil) {
     return {
         SearchURLParametersTemplate: "?taxon=<%= taxon %>&search=<%= search %>&siteId=<%= siteId %>" +
             "&collector=<%= collector %>&category=<%= category %>" +
@@ -24,6 +24,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url'], 
         StorageUtil: new StorageUtil(),
         ColorUtil: new ColorUtil(),
         UrlUtil: new UrlUtil(),
+        TaxonImagesUtil: new TaxonImagesUtil(),
         UserBoundaries: {},
         UserBoundarySelected: [],
         PoliticalRegionBoundaries: null,

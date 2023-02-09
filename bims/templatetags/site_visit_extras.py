@@ -7,7 +7,7 @@ register = template.Library()
 
 def get_unvalidated_site_visits_url(user):
     return (
-        '{base_url}?validated=["non validated"]&o=date'.
+        '{base_url}?validated=["unvalidated"]&o=date'.
             format(
             base_url=reverse_lazy('site-visit-list'),
             id=user.id

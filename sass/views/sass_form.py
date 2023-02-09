@@ -288,8 +288,9 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         return updated_site_visit_taxon
 
-    def create_or_get_survey(self, site_visit):
-        """Get or create a site survey"""
+    @staticmethod
+    def create_or_get_survey(site_visit):
+        """Get or create a site survey form SASS site visit"""
         survey = None
 
         # Check duplicate data
@@ -586,7 +587,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
 
         last_taxon_group = ''
-        bold_bottom_border = False
         for sass_taxon in sass_taxon_list:
             if self.sass_version == 5:
                 sass_taxon_score = sass_taxon.sass_5_score

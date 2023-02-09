@@ -19,6 +19,7 @@ class TaxonomicRank(Enum):
     SUBORDER = 'Sub Order'
     INFRAORDER = 'Infra Order'
     SUBFAMILY = 'Sub Family'
+    VARIETY = 'Variety'
 
     @staticmethod
     def hierarchy():
@@ -36,5 +37,6 @@ class TaxonomicRank(Enum):
             TaxonomicRank.GENUS,
             TaxonomicRank.SPECIES,
             TaxonomicRank.SUBSPECIES,
-            TaxonomicRank.CULTIVAR_GROUP
+            TaxonomicRank.CULTIVAR_GROUP,
+            TaxonomicRank.VARIETY
         ]

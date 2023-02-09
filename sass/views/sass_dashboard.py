@@ -8,6 +8,8 @@ from django.db.models import (
     IntegerField, Q
 )
 from django.db.models.functions import Cast, Coalesce
+
+from bims.models import BaseMapLayer
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
@@ -465,6 +467,11 @@ class SassDashboardView(TemplateView):
                     list_chems[chem_name] = [{chem: data}]
         context['chemical_records'] = json.dumps(list_chems)
         context['is_chem_exists'] = len(list_chems) > 1
+
+        try:
+            context['bing_map_key'] = BaseMapLayer.objects.get(source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            context['bing_map_key'] = ''
 
         return context
 

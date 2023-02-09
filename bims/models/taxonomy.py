@@ -1,4 +1,12 @@
 import json
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
+from django.core.mail.message import EmailMultiAlternatives
+from django.template.loader import render_to_string
+
+from bims.models.validation import AbstractValidation
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
@@ -33,7 +41,7 @@ class TaxonomyField(models.CharField):
         super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
-class Taxonomy(models.Model):
+class Taxonomy(AbstractValidation):
     CATEGORY_CHOICES = (
         (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
         (ORIGIN_CATEGORIES['native'], 'Native'),
@@ -273,6 +281,10 @@ class Taxonomy(models.Model):
         return None
 
     @property
+    def data_name(self):
+        return self.canonical_name
+
+    @property
     def taxon_class(self):
         if self.rank != TaxonomicRank.CLASS.name and self.parent:
             return self.parent.taxon_class
@@ -329,6 +341,14 @@ class Taxonomy(models.Model):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
 
     @property
+    def sub_species_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBSPECIES.name)
+
+    @property
+    def variety_name(self):
+        self.get_taxon_rank_name(TaxonomicRank.VARIETY.name)
+
+    @property
     def is_species(self):
         return (
             self.rank == TaxonomicRank.SPECIES.name or
@@ -342,6 +362,24 @@ class Taxonomy(models.Model):
         elif self.scientific_name:
             return self.scientific_name
         return '-'
+
+    def send_new_taxon_email(self, taxon_group_id=None):
+        current_site = Site.objects.get_current()
+        staffs = get_user_model().objects.filter(is_superuser=True)
+        email_body = render_to_string(
+            'notifications/taxonomy/added_message.txt',
+            {
+                'taxonomy': self,
+                'current_site': current_site,
+                'taxon_group_id': taxon_group_id
+            }
+        )
+        msg = EmailMultiAlternatives(
+            '[{}] New Taxonomy email notification'.format(current_site),
+            email_body,
+            settings.DEFAULT_FROM_EMAIL,
+            list(staffs.values_list('email', flat=True)))
+        msg.send()
 
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
@@ -394,6 +432,11 @@ class TaxonImage(models.Model):
     )
     taxonomy = models.ForeignKey(
         Taxonomy, on_delete=models.CASCADE
+    )
+    source = models.CharField(
+        max_length=256,
+        blank=True,
+        default=''
     )
 
 

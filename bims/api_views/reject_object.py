@@ -1,4 +1,8 @@
 # coding=utf-8
+from bims.models.survey import Survey
+
+from bims.models.taxonomy import Taxonomy
+
 from bims.models.location_site import LocationSite
 from rest_framework.views import APIView
 from rest_framework import status
@@ -41,6 +45,35 @@ class RejectCollectionData(UserPassesTestMixin, LoginRequiredMixin, APIView):
             )
 
 
+class RejectSiteVisit(UserPassesTestMixin, LoginRequiredMixin, APIView):
+
+    def test_func(self):
+        return self.request.user.has_perm('bims.can_validate_site_visit')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to reject site vist')
+        return super(RejectSiteVisit, self).handle_no_permission()
+
+    def get(self, request):
+        object_pk = request.GET.get('pk', None)
+        rejection_message = request.GET.get('rejection_message', None)
+        try:
+            survey = Survey.objects.get(pk=object_pk)
+            survey.ready_for_validation = False
+            survey.reject(
+                rejection_message=rejection_message
+            )
+            survey.save()
+
+            return JsonResponse({'status': 'success'})
+        except Survey.DoesNotExist:
+            return HttpResponse(
+                'Object Does Not Exist',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
 class RejectSite(UserPassesTestMixin, LoginRequiredMixin, APIView):
 
     def test_func(self):
@@ -63,6 +96,50 @@ class RejectSite(UserPassesTestMixin, LoginRequiredMixin, APIView):
             site.reject(
                 rejection_message=rejection_message
             )
+            return JsonResponse({'status': 'success'})
+        except LocationSite.DoesNotExist:
+            return HttpResponse(
+                'Object Does Not Exist',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class RejectTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
+
+    def test_func(self):
+        taxon_pk = self.request.GET.get('pk', None)
+        if not taxon_pk:
+            return False
+        taxon = Taxonomy.objects.get(pk=taxon_pk)
+        return taxon
+
+    def get(self, request):
+        object_pk = request.GET.get('pk', None)
+        rejection_message = request.GET.get('rejection_message', None)
+        try:
+            taxon = Taxonomy.objects.get(pk=object_pk)
+            taxon.reject(
+                rejection_message=rejection_message,
+                show_redirect_url=False
+            )
+            # Check if taxon is associated with new site visit
+            site_visits = Survey.objects.filter(
+                id__in=taxon.biologicalcollectionrecord_set.values('survey')
+            )
+            unvalidated_site_visits = site_visits.filter(
+                validated=False
+            )
+
+            if unvalidated_site_visits.exists():
+                for unvalidated_site_visit in unvalidated_site_visits:
+                    unvalidated_site_visit.reject('Taxon is rejected')
+
+            # Check if taxon is not referenced to validated collection records
+            if not site_visits.filter(
+                validated=True
+            ).exists():
+                taxon.biologicalcollectionrecord_set.all().delete()
+                taxon.delete()
             return JsonResponse({'status': 'success'})
         except LocationSite.DoesNotExist:
             return HttpResponse(

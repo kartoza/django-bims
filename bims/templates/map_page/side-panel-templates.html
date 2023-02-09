@@ -1,6 +1,10 @@
 <script type='text/html' id='side-panel-template'>
     <div class="right-panel">
         <div class="row side-panel side-panel-info">
+
+            <div class="right-panel-loading">
+                <img src="/static/loading-fbis.gif"/>
+            </div>
             <div class="col-lg-12" id="content-panel">
             </div>
         </div>
@@ -36,7 +40,7 @@
                 <div style="font-weight: normal" class="origin-legends"></div>
             </div>
             <div class="col-2" style="padding-left: 0; padding-right: 0; text-align: center">Endemism<div style="font-weight: normal" class="endemism-legends"></div></div>
-            <div class="col-2" style="padding-left: 0; padding-right: 0; text-align: center">Cons. Status (Global)<div style="font-weight: normal"  class="cons-status-legends"></div></div>
+            <div class="col-2" style="padding-left: 0; padding-right: 0; text-align: center">Cons. Status (National)<div style="font-weight: normal"  class="cons-status-legends"></div></div>
             <div class="col-1" style="padding-left: 0; padding-right: 0; text-align: center">Number of Taxa</div>
         </div>
         <% _.each(data, function (value, key) { %>

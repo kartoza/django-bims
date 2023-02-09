@@ -1,0 +1,11 @@
+You have received the following notice from {{ site_name }}:
+
+
+
+The following data has been approved:
+{{ data_name }}
+
+
+{% if data_url %}
+You can check your data here: {{ data_url }}
+{% endif %}

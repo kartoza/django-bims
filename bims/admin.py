@@ -17,12 +17,16 @@ from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
+from django.db.models import Q
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
+
+from bims.utils.endemism import merge_endemism
+from bims.utils.sampling_method import merge_sampling_method
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -98,7 +102,8 @@ from bims.utils.gbif import search_exact_match, get_species, suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
-    update_location_context as update_location_context_task
+    update_location_context as update_location_context_task,
+    update_site_code as update_site_code_task
 )
 
 
@@ -194,7 +199,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         percentage = 0
         if groups.count() > 0:
             percentage = round(
-                groups.count()/len(site_setting_group_keys) * 100
+                groups.count() / len(site_setting_group_keys) * 100
             )
         return format_html(
             '''
@@ -210,6 +215,20 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             location_site_post_save_handler,
             sender=LocationSite
         )
+
+        if queryset.count() > 10:
+            """ Update site code in background """
+            update_site_code_task.delay(
+                [site.id for site in queryset]
+            )
+            full_message = (
+                'Updating site code for {} sites in background'.format(
+                    queryset.count()
+                )
+            )
+            self.message_user(request, full_message)
+
+            return
 
         for location_site in queryset:
             location_site.site_code, catchments_data = generate_site_code(
@@ -231,8 +250,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def update_location_context_in_background(self, request, queryset):
         """Action method to update location context in background"""
+        generate_spatial_scale_filter = queryset.count() <= 1
         for location_site in queryset:
-            update_location_context_task.delay(location_site.id)
+            update_location_context_task.delay(
+                location_site.id, False, generate_spatial_scale_filter)
         full_message = (
             'Updating location context for {} sites in background'.format(
                 queryset.count()
@@ -299,11 +320,25 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
 
 class IUCNStatusAdmin(admin.ModelAdmin):
-    list_display = ('get_category_display', 'sensitive', 'iucn_colour')
+    list_display = ('get_category_display', 'sensitive',
+                    'iucn_colour', 'national', 'total_species')
+
+    list_filter = (
+        'national',
+    )
 
     def iucn_colour(self, obj):
-        return '<div style="background:%s; ' \
-               'width: 50px; height: 15px;"></div>' % obj.colour
+        return format_html('<div style="background:%s; ' \
+                           'width: 50px; height: 15px;"></div>' % obj.colour)
+
+    def total_species(self, obj):
+        total_taxa = Taxonomy.objects.filter(
+            iucn_status=obj
+        ).count()
+        return format_html(
+            f'<a href="/admin/bims/taxonomy/?iucn_status__id__exact={obj.id}">'
+            f'{total_taxa}</a>'
+        )
 
     iucn_colour.allow_tags = True
 
@@ -382,8 +417,21 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'taxonomy__canonical_name',
         'original_species_name',
         'uuid',
-        'upstream_id'
+        'upstream_id',
+        'source_collection'
     )
+
+    def get_search_results(self, request, queryset, search_term):
+        uuid_queryset = queryset.filter(
+            Q(uuid__icontains=search_term) |
+            Q(uuid__icontains=search_term.replace('-', '')),
+        )
+        if uuid_queryset.count() > 0:
+            return uuid_queryset, False
+        queryset, use_distinct = super(
+            BiologicalCollectionAdmin, self
+        ).get_search_results(request, queryset, search_term)
+        return queryset, use_distinct
 
     def get_origin(self, obj):
         try:
@@ -449,7 +497,6 @@ class ProfileInline(admin.StackedInline):
 
 
 class ProfileCreationForm(UserCreationForm):
-
     class Meta:
         model = get_user_model()
         fields = ("username",)
@@ -615,9 +662,9 @@ class CustomUserAdmin(ProfileAdmin):
         import csv
         from django.http import HttpResponse
         try:
-            from StringIO import StringIO # for Python 2
+            from StringIO import StringIO  # for Python 2
         except ImportError:
-            from io import StringIO # for Python 3
+            from io import StringIO  # for Python 3
 
         f = StringIO()
         writer = csv.writer(f)
@@ -656,7 +703,7 @@ class CustomUserAdmin(ProfileAdmin):
         response['Content-Disposition'] = 'attachment; filename=users.csv'
         return response
 
-    download_csv.short_description =(
+    download_csv.short_description = (
         "Download CSV file for selected users"
     )
 
@@ -689,6 +736,7 @@ class CustomUserAdmin(ProfileAdmin):
             '<img src="/static/admin/img/icon-no.svg" alt="False">')
         true_response = format_html(
             '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+
     def role(self, obj):
         try:
             profile = BimsProfile.objects.get(user=obj)
@@ -696,6 +744,7 @@ class CustomUserAdmin(ProfileAdmin):
             return role[0] if len(role) > 0 else '-'
         except BimsProfile.DoesNotExist:
             return '-'
+
     role.admin_order_field = 'bims_profile__role'
 
     def sass_accredited_status(self, obj, **kwargs):
@@ -856,8 +905,34 @@ class EndemismAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'description',
-        'display_order'
+        'display_order',
+        'verified'
     )
+
+    actions = ['merge_endemisms']
+
+    def merge_endemisms(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 endemism', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified endemism', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified endemism',
+                messages.ERROR)
+            return
+        excluded = verified[0]
+        endemisms = queryset.exclude(id=verified[0].id)
+        merge_endemism(excluded, endemisms)
+        self.message_user(request, 'Endemism has been merged')
+
+    merge_endemisms.short_description = 'Merge endemism'
 
 
 class TaxonImagesInline(admin.TabularInline):
@@ -871,6 +946,21 @@ class TaxonomyAdminForm(forms.ModelForm):
             'gbif_data': JSONEditorWidget
         }
         fields = '__all__'
+
+
+class TaxonGroupAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'singular_name',
+        'category'
+    )
+    search_fields = (
+        'name',
+        'singular_name',
+    )
+    list_filter = (
+        'category',
+    )
 
 
 class TaxonomyAdmin(admin.ModelAdmin):
@@ -890,6 +980,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'import_date',
         'taxonomic_status',
         'legacy_canonical_name',
+        'iucn_status',
+        'validated',
         'verified'
     )
 
@@ -898,6 +990,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'verified',
         'import_date',
         'taxonomic_status',
+        'iucn_status'
     )
 
     search_fields = (
@@ -1008,11 +1101,27 @@ class FbisUUIDAdmin(admin.ModelAdmin):
 
 
 class SassBiotopeAdmin(admin.ModelAdmin):
+
+    def taxon_group_list(self, obj: Biotope):
+        return [taxon_group.name for taxon_group in obj.taxon_group.all()]
+
+    taxon_group_list.short_description = 'Taxon groups'
+
+    def used_in_SASS(self, obj: Biotope):
+        if obj.sassbiotopefraction_set.all().exists():
+            return format_html(
+                '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+        return format_html(
+            '<img src="/static/admin/img/icon-no.svg" alt="False">')
+
     list_display = (
         'name',
         'display_order',
         'biotope_form',
         'biotope_type',
+        'taxon_group_list',
+        'used_in_SASS',
+        'verified'
     )
     list_filter = (
         'name',
@@ -1022,6 +1131,30 @@ class SassBiotopeAdmin(admin.ModelAdmin):
         'display_order',
         'biotope_form'
     )
+
+    actions = ['merge_biotopes']
+
+    def merge_biotopes(self, request, queryset):
+        from bims.models import merge_biotope
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 biotope', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified biotope', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified biotope',
+                messages.ERROR)
+            return
+        excluded = verified[0]
+        biotopes = queryset.exclude(id=verified[0].id)
+        merge_biotope(excluded, biotopes)
+        self.message_user(request, 'Biotope has been merged')
 
 
 class DataSourceAdmin(admin.ModelAdmin):
@@ -1054,14 +1187,55 @@ class SpatialScaleGroupAdmin(admin.ModelAdmin):
 
 
 class SamplingMethodAdmin(admin.ModelAdmin):
+
+    def taxon_group_list(self, obj: SamplingMethod):
+        return [taxon_group.name for taxon_group in obj.taxon_group.all()]
+
+    taxon_group_list.short_description = 'Taxon groups'
+
     list_display = (
         'sampling_method',
-        'effort_measure'
+        'effort_measure',
+        'verified',
+        'taxon_group_list',
     )
+
+    list_filter = (
+        'sampling_method',
+        'effort_measure',
+        'verified'
+    )
+
+    actions = ['merge_sampling_methods']
+
+    def merge_sampling_methods(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 sampling method', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified sampling method', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified sampling method',
+                messages.ERROR)
+            return
+        excluded_sampling_method = verified[0]
+        sampling_methods = queryset.exclude(id=verified[0].id)
+        merge_sampling_method(
+            excluded_sampling_method=excluded_sampling_method,
+            sampling_methods=sampling_methods
+        )
+        self.message_user(request, 'Sampling method has been merged')
+
+    merge_sampling_methods.short_description = 'Merge sampling methods'
 
 
 class SiteImageAdmin(admin.ModelAdmin):
-
     list_display = (
         'get_site_code',
         'image',
@@ -1260,6 +1434,7 @@ class DownloadRequestPurposeAdmin(admin.ModelAdmin):
         'name',
     )
 
+
 class RequestLogAdmin(admin.ModelAdmin):
     list_display = (
         'user',
@@ -1394,9 +1569,9 @@ class DecisionSupportToolAdmin(admin.ModelAdmin):
 
 
 class UnitAdmin(admin.ModelAdmin):
-    list_display = ('unit_name', 'unit', )
-    list_filter = ('unit_name', 'unit', )
-    search_fields = ('unit_name', 'unit', )
+    list_display = ('unit_name', 'unit',)
+    list_filter = ('unit_name', 'unit',)
+    search_fields = ('unit_name', 'unit',)
 
 
 class ClimateDataAdmin(admin.ModelAdmin):
@@ -1417,7 +1592,7 @@ admin.site.register(SurveyDataOption)
 admin.site.register(SurveyDataValue, SurveyDataValueAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(Taxonomy, TaxonomyAdmin)
-admin.site.register(TaxonGroup)
+admin.site.register(TaxonGroup, TaxonGroupAdmin)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)

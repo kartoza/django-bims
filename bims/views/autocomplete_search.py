@@ -57,6 +57,7 @@ def autocomplete(request):
 
     # Taxonomy with rank
     taxonomic_ranks = [
+        TaxonomicRank.SUBSPECIES.name,
         TaxonomicRank.ORDER.name,
         TaxonomicRank.GENUS.name,
         TaxonomicRank.FAMILY.name,
@@ -202,7 +203,10 @@ def species_autocomplete(request):
 
     optional_query = {}
 
-    taxa_list = Taxonomy.objects.all()
+    taxa_list = Taxonomy.objects.filter(
+        Q(canonical_name__icontains=q) |
+        Q(scientific_name__icontains=q)
+    )
 
     if taxon_group_request:
         taxon_group, created = TaxonGroup.objects.get_or_create(
@@ -218,14 +222,12 @@ def species_autocomplete(request):
     if taxon_group_id:
         try:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-            taxa_list = taxon_group.taxonomies.all()
+            taxa_list = taxon_group.taxonomies.filter(
+                Q(canonical_name__icontains=q) |
+                Q(scientific_name__icontains=q)
+            )
         except TaxonGroup.DoesNotExist:
             pass
-
-    taxa_list = taxa_list.filter(
-        Q(canonical_name__icontains=q) |
-        Q(scientific_name__icontains=q)
-    )
 
     if rank:
         optional_query['rank__iexact'] = rank

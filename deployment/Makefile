@@ -6,7 +6,26 @@ dev:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in dev mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d dev
+	@docker-compose ${ARGS} up -d dev worker
+
+dev-test:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Running in DEVELOPMENT mode"
+	@echo "------------------------------------------------------------------"
+
+	@docker-compose ${ARGS} exec -T dev python manage.py test --settings=core.settings.test_docker --keepdb --noinput
+
+down:
+	# Synonymous with kill rm
+	@docker-compose  ${ARGS} down
+
+rm-only: kill
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Removing production instance!!! "
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} rm
 
 geoserver:
 	@echo

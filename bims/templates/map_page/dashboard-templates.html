@@ -107,7 +107,7 @@
                                     </button>
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="taxa-records-timeline-graph"></canvas>
+                                    <canvas id="taxa-records-timeline-graph" style="height: 300px" height="300"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -222,7 +222,7 @@
     </div>
     <div class="row">
         <div class="col-4 title_column">GBIF ID</div>
-        <div class="col-8"><%= gbif_id %></div>
+        <div class="col-8"><a href="https://www.gbif.org/species/<%= gbif_id %>" target="_blank"><%= gbif_id %></a></div>
     </div>
     <div class="row">
         <div class="col-4 title_column">Records</div>
@@ -354,7 +354,7 @@
                             <i class="fa fa-download"></i>
                         </button>
                     </div>
-                    {# Overview Site details #}
+                     Overview Site details
                     <div class="card-body" id="ssdd-overview-wrapper">
                         <div class="content-body" id="species-ssdd-site-details">
                             <div class="col-12 sub-title site-details-header">
@@ -482,7 +482,10 @@
                     <div class="card-footer">
                          <div class="container">
                             <button class="btn btn-info download-as-csv"
-                                    style="width: 100%;">Download as CSV
+                                    style="width: 48%;">Download as CSV
+                            </button>
+                             <button class="btn btn-info download-gbif-ids pull-right"
+                                    style="width: 48%;">Download GBIF ids
                             </button>
                         </div>
                     </div>
@@ -533,8 +536,10 @@
                                 </a>
                                 <a class="ssdd-export btn dropdown-item" data-title="Endemism" data-chart="endemism_pie">
                                     Download Endemism Chart</a>
-                                <a class="ssdd-export btn dropdown-item" data-title="Conservation Status" data-chart="cons_status_pie">
-                                    Download Conservation Status Chart</a>
+                                <a class="ssdd-export btn dropdown-item" data-title="Conservation Status Global" data-chart="cons_status_pie">
+                                    Download Conservation Status Global Chart</a>
+                                 <a class="ssdd-export btn dropdown-item" data-title="Conservation Status National" data-chart="cons_status_national_pie">
+                                    Download Conservation Status National Chart</a>
                                 <a class="ssdd-export btn dropdown-item" data-title="Sampling Method" data-chart="sampling_method_pie">
                                     Download Sampling Method Chart</a>
                                <a class="ssdd-export btn dropdown-item" data-title="Biotope" data-chart="biotope_pie">
@@ -545,7 +550,6 @@
                     <div class="card-body">
                         <div id="data-summary" class="content-body">
                             <div class="row no-gutters">
-                                <div class="col-1"></div>
                                 <div class="col-2 ssdd-titles">
                                     Origin
                                 </div>
@@ -553,7 +557,10 @@
                                     Endemism
                                 </div>
                                 <div class="col-2 ssdd-titles">
-                                    Conservation Status
+                                    Conservation Status Global
+                                </div>
+                                <div class="col-2 ssdd-titles">
+                                    Conservation Status National
                                 </div>
                                 <div class="col-2 ssdd-titles">
                                     Sampling Method
@@ -561,10 +568,9 @@
                                 <div class="col-2 ssdd-titles">
                                     Biotope
                                 </div>
-                                <div class="col-1"></div>
+
                             </div>
                             <div class="row no-gutters">
-                                <div class="col-1"></div>
                                 <div class="col-2 col-chart occurrence-origin-chart">
                                     <canvas id="species-ssdd-origin-pie"></canvas>
                                 </div>
@@ -574,16 +580,17 @@
                                 <div class="col-2 col-chart occurrence-conservation-status-chart">
                                     <canvas id="species-ssdd-conservation-status-pie"></canvas>
                                 </div>
+                                <div class="col-2 col-chart occurrence-conservation-status-national-chart">
+                                    <canvas id="species-ssdd-conservation-status-national-pie"></canvas>
+                                </div>
                                 <div class="col-2 col-chart occurrence-sampling-method-chart">
                                     <canvas id="species-ssdd-sampling-method-pie"></canvas>
                                 </div>
                                 <div class="col-2 col-chart occurrence-biotope-chart">
                                     <canvas id="species-ssdd-biotope-pie"></canvas>
                                 </div>
-                                <div class="col-1 col-chart"></div>
                             </div>
                             <div class="row species-ssdd-legends no-gutters">
-                                <div class="col-1"></div>
                                 <div class="col-2 species-ssdd-legend"
                                      id="species-ssdd-origin-legend"></div>
                                 <div class="col-2 species-ssdd-legend"
@@ -591,10 +598,12 @@
                                 <div class="col-2 species-ssdd-legend"
                                      id="species-ssdd-cons_status-legend"></div>
                                 <div class="col-2 species-ssdd-legend"
+                                     id="species-ssdd-cons_status_national-legend"></div>
+                                <div class="col-2 species-ssdd-legend"
                                      id="species-ssdd-sampling_method-legend"></div>
                                 <div class="col-2 species-ssdd-legend"
                                      id="species-ssdd-biotope-legend"></div>
-                                <div class="col-1"></div>
+
                             </div>
                         </div>
                     </div>
@@ -626,6 +635,7 @@
                     <div class="card-header">
                         <div class="card-header-title pull-left d-inline">
                             Taxa
+                            <div class="card-header-subtitle">Only the first 25 taxa are displayed for searches with >25 taxa returned</div>
                         </div>
                         <button class="ssdd-export btn btn-default pull-right"
                                 data-toggle="tooltip" data-placement="left"

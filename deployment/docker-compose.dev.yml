@@ -39,6 +39,7 @@ x-common-django:
     - STATIC_ROOT=/home/web/static/static
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
+    - PYTHONPATH=/home/web/django_project/
   restart: unless-stopped
   user: root
   extra_hosts:

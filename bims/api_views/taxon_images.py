@@ -17,6 +17,7 @@ class TaxonImageList(APIView):
 
         for image in taxon_images:
             taxon_image_list.append({
-                'url': image.taxon_image.url
+                'url': image.taxon_image.url,
+                'source': image.source
             })
         return Response(taxon_image_list)

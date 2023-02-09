@@ -2,6 +2,7 @@ from rest_framework import serializers
 from bims.models import Taxonomy, BiologicalCollectionRecord
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup
+from bims.utils.gbif import get_vernacular_names
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -31,9 +32,12 @@ class TaxonSerializer(serializers.ModelSerializer):
         ).count()
 
     def get_common_name(self, obj):
-        return list(
-            obj.vernacular_names.all().values_list('name', flat=True)
-        )
+
+        vernacular_names = list(obj.vernacular_names.filter(language='eng').values_list('name', flat=True))
+        if len(vernacular_names) == 0:
+            return ''
+        else:
+            return vernacular_names[0]
 
     def get_origin_name(self, obj):
         try:
@@ -149,10 +153,9 @@ class TaxonOccurencesSerializer(serializers.ModelSerializer):
 
 
 class TaxonSimpleSerializer(serializers.ModelSerializer):
-
     cons_status = serializers.SerializerMethodField()
 
-    def get_cons_status(self, obj:Taxonomy):
+    def get_cons_status(self, obj: Taxonomy):
         return obj.iucn_status.category if obj.iucn_status else '-'
 
     class Meta:
@@ -164,6 +167,10 @@ class TaxonSimpleSerializer(serializers.ModelSerializer):
 
 class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
+    taxa_count = serializers.SerializerMethodField()
+
+    def get_taxa_count(self, obj: TaxonGroup):
+        return obj.taxonomies.all().count()
 
     def get_extra_attributes(self, obj):
         return list(
@@ -172,4 +179,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaxonGroup
-        fields = ['id', 'name', 'category', 'logo', 'extra_attributes']
+        fields = ['id', 'name', 'category', 'logo', 'extra_attributes',
+                  'taxa_count']

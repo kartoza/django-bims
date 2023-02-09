@@ -7,7 +7,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             "": "toMap",
             "search/:query": "search",
             "search/:query/:filters": "searchWithFilters",
-            "search//:filters": "onlyFilters",
+            "search//(:filter)(/):filters": "onlyFilters",
             "site-detail/:query": "showSiteDetailedDashboard",
             "species-detail/:query": "showSpeciesDetailedDashboard",
             "site/:params": "showSingleSiteDetail"

@@ -1,6 +1,9 @@
 import copy
 import json
 import logging
+
+from bims.models.taxon_group import TaxonGroup
+
 from bims.scripts.species_keys import *  # noqa
 from bims.enums import TaxonomicRank
 from bims.models import (
@@ -12,9 +15,10 @@ from bims.models import (
     ORIGIN_CATEGORIES
 )
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif
+    fetch_all_species_from_gbif, fetch_gbif_vernacular_names
 )
 from bims.scripts.data_upload import DataCSVUpload
+from bims.utils.gbif import get_vernacular_names
 
 logger = logging.getLogger('bims')
 
@@ -26,6 +30,11 @@ class TaxaProcessor(object):
 
     def finish_processing_row(self, row, taxonomy):
         pass
+
+    def rank_name(self, taxon: Taxonomy):
+        if taxon.rank:
+            return taxon.rank.upper()
+        return ''
 
     def endemism(self, row):
         """Processing endemism data"""
@@ -54,12 +63,13 @@ class TaxaProcessor(object):
         else:
             cons_status = DataCSVUpload.row_value(
                 row, CONSERVATION_STATUS_NATIONAL)
-        if cons_status.lower() not in IUCN_CATEGORIES:
+        if cons_status:
+            iucn_status, _ = IUCNStatus.objects.get_or_create(
+                category=IUCN_CATEGORIES[cons_status.lower()]
+            )
+            return iucn_status
+        else:
             return None
-        iucn_status, _ = IUCNStatus.objects.get_or_create(
-            category=IUCN_CATEGORIES[cons_status.lower()]
-        )
-        return iucn_status
 
     def common_name(self, row):
         """Common name of species"""
@@ -95,7 +105,7 @@ class TaxaProcessor(object):
         """
         try:
             return ALL_TAXON_RANKS[ALL_TAXON_RANKS.index(rank.upper()) - 1]
-        except KeyError:
+        except Exception:  # noqa
             return 'KINGDOM'
 
     def validate_parents(self, taxon, row):
@@ -130,7 +140,7 @@ class TaxaProcessor(object):
             if (
                     csv_data not in parent.canonical_name and
                     csv_data not in parent.legacy_canonical_name or
-                    str(parent.rank).upper() != parent_rank
+                    self.rank_name(parent) != parent_rank
             ):
                 print('Different parent for {}'.format(str(taxon)))
                 parent_taxon = self.get_parent(
@@ -140,7 +150,7 @@ class TaxaProcessor(object):
                 taxon.save()
             taxon = parent
             parent = parent.parent
-            if taxon.rank.upper() != 'KINGDOM' and not parent:
+            if self.rank_name(taxon) != 'KINGDOM' and not parent:
                 parent = self.get_parent(
                     row, current_rank=taxon.rank.capitalize()
                 )
@@ -194,6 +204,12 @@ class TaxaProcessor(object):
             return None
         if current_rank == SPECIES:
             taxon_name = DataCSVUpload.row_value(row, GENUS) + ' ' + taxon_name
+        if current_rank == VARIETY:
+            taxon_name = (
+                    DataCSVUpload.row_value(row, GENUS) + ' ' +
+                    DataCSVUpload.row_value(row, SPECIES) + ' ' +
+                    DataCSVUpload.row_value(row, VARIETY)
+            )
         taxon = self.get_taxonomy(
             taxon_name,
             taxon_name,
@@ -202,22 +218,22 @@ class TaxaProcessor(object):
         if (
                 not taxon.gbif_key or
                 not taxon.parent or taxon.parent.rank != 'KINGDOM'):
-            ranks = copy.copy(TAXON_RANKS)
-            try:
-                ranks = ranks[:ranks.index(current_rank)]
-            except ValueError:
-                print(current_rank)
-                return
-            if len(ranks) > 0:
-                parent = self.get_parent(row, ranks[len(ranks) - 1])
+            parent_rank_name = parent_rank(current_rank)
+            if parent_rank_name:
+                parent = self.get_parent(row, parent_rank_name)
                 if parent:
                     taxon.parent = parent
                     taxon.save()
         return taxon
 
-    def process_data(self, row):
+    def process_data(self, row, taxon_group: TaxonGroup):
         """Processing row of the csv files"""
+        taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
+        try:
+            on_gbif = DataCSVUpload.row_value(row, ON_GBIF) != 'No'
+        except Exception:  # noqa
+            on_gbif = True
         if not taxon_name:
             self.handle_error(
                 row=row,
@@ -234,7 +250,7 @@ class TaxaProcessor(object):
         # Get rank
         rank = DataCSVUpload.row_value(row, TAXON_RANK)
         if not rank:
-            rank = DataCSVUpload.row_value(row, TAXON_RANK)
+            rank = DataCSVUpload.row_value(row, 'Taxon rank')
         if not rank:
             self.handle_error(
                 row=row,
@@ -247,14 +263,21 @@ class TaxaProcessor(object):
         )
         try:
             taxonomy = None
+
+            common_name = self.common_name(row)
+            if not common_name:
+                should_fetch_vernacular_names = True
+            else:
+                should_fetch_vernacular_names = False
+
             if taxa.exists():
-                taxonomy = taxa[0]
+                taxonomy = taxa.first()
                 logger.debug('{} already in the system'.format(
                     taxon_name
                 ))
             if not taxonomy:
                 # Fetch from gbif
-                if DataCSVUpload.row_value(row, ON_GBIF) == 'Yes':
+                if on_gbif:
                     gbif_link = DataCSVUpload.row_value(row, GBIF_LINK)
                     if not gbif_link:
                         gbif_link = DataCSVUpload.row_value(row, GBIF_URL)
@@ -263,35 +286,37 @@ class TaxaProcessor(object):
                     )
                     if gbif_key:
                         taxonomy = fetch_all_species_from_gbif(
-                            gbif_key=gbif_key
+                            gbif_key=gbif_key,
+                            fetch_vernacular_names=should_fetch_vernacular_names
                         )
-                if not taxonomy:
+                if not taxonomy and on_gbif:
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
                         taxonomic_rank=rank,
                         fetch_children=False,
-                        fetch_vernacular_names=False,
+                        fetch_vernacular_names=should_fetch_vernacular_names,
                         use_name_lookup=True
                     )
-            if not taxonomy:
+
+            if not taxonomy and on_gbif:
                 # Try again with lookup
                 logger.debug('Use different method')
                 taxonomy = fetch_all_species_from_gbif(
                     species=taxon_name,
                     taxonomic_rank=rank,
                     fetch_children=False,
-                    fetch_vernacular_names=False,
+                    fetch_vernacular_names=should_fetch_vernacular_names,
                     use_name_lookup=False
                 )
 
             # Taxonomy found or created then validate it
             if taxonomy:
                 if not taxonomy.parent:
-                    taxonomy.parent = self.get_parent(row, rank)
+                    taxonomy.parent = self.get_parent(row, parent_rank(rank))
 
             # Data from GBIF couldn't be found, so add it manually
             if not taxonomy:
-                parent = self.get_parent(row, rank)
+                parent = self.get_parent(row, parent_rank(rank))
                 if not parent:
                     self.handle_error(
                         row=row,
@@ -309,6 +334,8 @@ class TaxaProcessor(object):
                         rank=TaxonomicRank[rank.upper()].name,
                         parent=parent
                     )
+                    if taxonomic_status:
+                        taxonomy.taxonomic_status = taxonomic_status
 
             # -- Finish
             if taxonomy:
@@ -333,13 +360,16 @@ class TaxaProcessor(object):
                     row=row
                 )
 
+                # -- Add to taxon group
+                taxon_group.taxonomies.add(taxonomy)
+
                 # -- Endemism
                 endemism = self.endemism(row)
                 if endemism:
                     taxonomy.endemism = endemism
 
                 # -- Conservation status global
-                iucn_status = self.conservation_status(row)
+                iucn_status = self.conservation_status(row, True)
                 if iucn_status:
                     taxonomy.iucn_status = iucn_status
 
@@ -351,10 +381,15 @@ class TaxaProcessor(object):
                     )
 
                 # -- Common name
-                common_name = self.common_name(row)
                 if common_name:
                     taxonomy.vernacular_names.clear()
                     taxonomy.vernacular_names.add(common_name)
+                else:
+                    if (
+                        not taxonomy.vernacular_names.exists() and
+                        taxonomy.gbif_key
+                    ):
+                        fetch_gbif_vernacular_names(taxonomy)
 
                 # -- Origin
                 origin_data = self.origin(row)
@@ -366,6 +401,11 @@ class TaxaProcessor(object):
 
                 if taxonomy.canonical_name != taxon_name:
                     taxonomy.canonical_name = taxon_name
+
+                if not taxonomy.taxonomic_status and taxonomic_status:
+                    taxonomy.taxonomic_status = taxonomic_status
+                    
+                taxonomy.validated = True
                 taxonomy.save()
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa
@@ -379,7 +419,7 @@ class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
         # -- Add to taxon group
         taxon_group = self.upload_session.module_group
         if not taxon_group.taxonomies.filter(
-                id=taxonomy.id
+            id=taxonomy.id
         ).exists():
             taxon_group.taxonomies.add(taxonomy)
 
@@ -401,4 +441,5 @@ class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
         )
 
     def process_row(self, row):
-        self.process_data(row)
+        taxon_group = self.upload_session.module_group
+        self.process_data(row, taxon_group)

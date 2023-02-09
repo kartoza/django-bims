@@ -1,4 +1,5 @@
 from django.conf.urls import url
+
 from sass.views.sass_form import SassFormView, SassReadFormView, SassDeleteView
 from sass.views.sass_list import SassListView
 from sass.views.sass_dashboard import SassDashboardView

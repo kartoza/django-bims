@@ -7,7 +7,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from bims.tasks.email_csv import send_csv_via_email
-from bims.api_views.csv_download import (
+from bims.download.csv_download import (
     send_rejection_csv,
     send_new_csv_notification
 )
@@ -142,6 +142,8 @@ class DownloadRequest(models.Model):
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
+        if not self.requester:
+            return '-'
         if self.requester.first_name or self.requester.last_name:
             return '%s %s' % (
                 self.requester.first_name, self.requester.last_name)
@@ -174,12 +176,6 @@ class DownloadRequest(models.Model):
 
         if self.id:
             old_obj = DownloadRequest.objects.get(id=self.id)
-
-        if old_obj and not old_obj.request_file and self.request_file:
-            send_new_csv_notification(
-                self.requester,
-                self.request_date
-            )
 
         if old_obj and not self.processing and not self.rejected:
             if self.approved and self.approved != old_obj.approved:

@@ -1,0 +1,1 @@
+GRANT CONNECT ON DATABASE gis TO public;

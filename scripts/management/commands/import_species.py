@@ -34,7 +34,7 @@ CLASS = 'Class'
 PHYLUM = 'Phylum'
 KINGDOM = 'Kingdom'
 DIVISION = 'Division'
-GROWTH_FORM = 'Growth Form'
+GROWTH_FORM = 'Growth form'
 SCIENTIFIC_NAME = 'Scientific name and authority'
 FORMER_SPECIES_NAME = 'Former scientific name'
 

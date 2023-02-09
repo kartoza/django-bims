@@ -1,4 +1,8 @@
+import hashlib
+import json
 from collections import OrderedDict
+
+from bims.models.search_process import SITES_SUMMARY, SEARCH_PROCESSING
 
 from bims.models.water_temperature import WaterTemperature
 from django.db.models import F, Value, Case, When, Count, Q
@@ -13,6 +17,9 @@ from bims.models import (
     IUCNStatus, ChemicalRecord,
 )
 from bims.enums import TaxonomicGroupCategory
+from bims.tasks import location_sites_overview
+from bims.utils.api_view import BimsApiView
+from bims.utils.search_process import get_or_create_search_process
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from bims.models.location_site import LocationSite
 from bims.serializers.location_site_detail_serializer import (
@@ -65,29 +72,29 @@ class LocationSiteOverviewData(object):
                 module_group=group
             )
 
-            if group_records.exists() and not self.is_sass_exist:
+            if group_records.count() > 0 and not self.is_sass_exist:
                 try:
                     if isinstance(
                             collection_results.first(),
                             SiteVisitTaxon):
                         self.is_sass_exist = group_records.filter(
                             site_visit__isnull=False
-                        ).exists()
+                        ).count() > 0
                     else:
                         self.is_sass_exist = group_records.filter(
                             sitevisittaxon__isnull=False
-                        ).exists()
+                        ).count() > 0
                 except:  # noqa
                     self.is_sass_exist = False
 
             group_data[self.GROUP_OCCURRENCES] = group_records.count()
-            group_data[self.GROUP_SITES] = group_records.distinct(
-                'site'
+            group_data[self.GROUP_SITES] = LocationSite.objects.filter(
+                id__in=group_records.values('site')
             ).count()
-            group_data[self.GROUP_NUM_OF_TAXA] = group_records.distinct(
-                'taxonomy'
+            group_data[self.GROUP_NUM_OF_TAXA] = Taxonomy.objects.filter(
+                id__in=group_records.values('taxonomy')
             ).count()
-            group_data[self.GROUP_ENDEMISM] = group_records.annotate(
+            group_data[self.GROUP_ENDEMISM] = list(group_records.annotate(
                 name=Case(When(taxonomy__endemism__isnull=False,
                                then=F('taxonomy__endemism__name')),
                           default=Value('Unknown'))
@@ -97,7 +104,8 @@ class LocationSiteOverviewData(object):
                 count=Count('name')
             ).values(
                 'name', 'count'
-            ).order_by('name')
+            ).order_by('name'))
+
             group_origins = group_records.annotate(
                 name=Case(When(taxonomy__origin='',
                                then=Value('Unknown')),
@@ -114,9 +122,11 @@ class LocationSiteOverviewData(object):
                 for group_origin in group_origins:
                     if group_origin['name'] in category:
                         group_origin['name'] = category[group_origin['name']]
-            group_data[self.GROUP_ORIGIN] = group_origins
+            group_data[self.GROUP_ORIGIN] = list(group_origins)
 
-            all_cons_status = group_records.annotate(
+            all_cons_status = group_records.filter(
+                taxonomy__iucn_status__national=False
+            ).annotate(
                 name=Case(When(taxonomy__iucn_status__isnull=False,
                                then=F('taxonomy__iucn_status__category')),
                           default=Value('Not evaluated'))
@@ -132,7 +142,8 @@ class LocationSiteOverviewData(object):
                 for cons_status in all_cons_status:
                     if cons_status['name'] in category:
                         cons_status['name'] = category[cons_status['name']]
-            group_data[self.GROUP_CONS_STATUS] = all_cons_status
+            group_data[self.GROUP_CONS_STATUS] = list(all_cons_status)
+
         return biodiversity_data
 
 
@@ -148,6 +159,48 @@ class MultiLocationSitesOverview(APIView, LocationSiteOverviewData):
         response_data[self.BIODIVERSITY_DATA] = self.biodiversity_data()
         response_data[self.SASS_EXIST] = self.is_sass_exist
         return Response(response_data)
+
+
+class MultiLocationSitesBackgroundOverview(BimsApiView):
+    def get(self, request):
+        parameters = request.GET
+        search_uri = request.build_absolute_uri()
+
+        search_process, created = get_or_create_search_process(
+            search_type=SITES_SUMMARY,
+            query=search_uri
+        )
+        results = search_process.get_file_if_exits()
+        if results:
+            return Response(results)
+
+        data_for_process_id = dict()
+        data_for_process_id['search_uri'] = search_uri
+
+        process_id = hashlib.sha256(
+            str(
+                json.dumps(
+                    data_for_process_id, sort_keys=True
+                )
+            ).encode('utf-8')
+        ).hexdigest()
+
+        search_process.set_process_id(process_id)
+        search_process.set_status(SEARCH_PROCESSING)
+
+        task = location_sites_overview.delay(
+            search_parameters=parameters,
+            search_process_id=search_process.id
+        )
+
+        result_file = search_process.get_file_if_exits(
+            finished=False
+        )
+        if result_file:
+            result_file['task_id'] = task.id
+            return Response(result_file)
+
+        return Response({'status': 'Process does not exists'})
 
 
 class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):

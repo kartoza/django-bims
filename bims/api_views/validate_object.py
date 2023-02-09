@@ -1,4 +1,6 @@
 # coding=utf-8
+from bims.models.taxonomy import Taxonomy
+
 from bims.models.location_site import LocationSite
 from rest_framework.views import APIView
 from rest_framework import status
@@ -22,9 +24,12 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
         object_pk = request.GET.get('pk', None)
         try:
             site_visit = Survey.objects.get(pk=object_pk)
-            site_visit.validated = True
-            site_visit.ready_for_validation = False
-            site_visit.save()
+            if not site_visit.can_be_validated:
+                return HttpResponse(
+                    'Site visit cannot be validated',
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            site_visit.validate()
 
             messages.add_message(
                 request,
@@ -61,6 +66,29 @@ class ValidateSite(UserPassesTestMixin, LoginRequiredMixin, APIView):
             site = LocationSite.objects.get(pk=pk)
             site.validated = True
             site.save()
+            return JsonResponse({'status': 'success'})
+        except LocationSite.DoesNotExist:
+            return HttpResponse(
+                'Object Does Not Exist',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class ValidateTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
+
+    def test_func(self):
+        return self.request.user.has_perm('bims.can_validate_taxon')
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to validate Taxon')
+        return super(ValidateTaxon, self).handle_no_permission()
+
+    def get(self, request):
+        pk = request.GET.get('pk', None)
+        try:
+            taxon = Taxonomy.objects.get(pk=pk)
+            taxon.validate(False)
             return JsonResponse({'status': 'success'})
         except LocationSite.DoesNotExist:
             return HttpResponse(

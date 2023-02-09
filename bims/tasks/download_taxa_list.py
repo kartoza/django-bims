@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
-    from bims.api_views.csv_download import send_csv_via_email
+    from bims.download.csv_download import send_csv_via_email
     from bims.api_views.taxon import TaxaList
     class RequestGet:
         def __init__(self, get_data):
@@ -42,6 +42,8 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
             header = header.replace('_or_', '/')
             if not header.istitle():
                 header = header.replace('_', ' ').capitalize()
+            if header == 'Sub species':
+                header = 'SubSpecies'
             updated_headers.append(header)
         writer.writerow(updated_headers)
 

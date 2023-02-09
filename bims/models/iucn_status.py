@@ -16,7 +16,13 @@ IUCN_CATEGORIES = {
     'critically endangered': 'CR',
     'extinct in the wild': 'EW',
     'extinct': 'EX',
+    'regionally extinct': 'RE',
+    'critically endangered, possibly extinct': 'CE',
+    'critically rare': 'CA',
+    'rare': 'RA',
     'data deficient': 'DD',
+    'data deficient - insufficient information': 'DI',
+    'data deficient - taxonomically problematic': 'DT',
     'not evaluated': 'NE'
 }
 
@@ -32,7 +38,16 @@ class IUCNStatus(models.Model):
         (IUCN_CATEGORIES['extinct in the wild'], 'Extinct in the wild'),
         (IUCN_CATEGORIES['extinct'], 'Extinct'),
         (IUCN_CATEGORIES['data deficient'], 'Data deficient'),
-        (IUCN_CATEGORIES['not evaluated'], 'Not evaluated')
+        (IUCN_CATEGORIES['not evaluated'], 'Not evaluated'),
+        (IUCN_CATEGORIES['regionally extinct'], 'Regionally Extinct'),
+        (IUCN_CATEGORIES['critically endangered, possibly extinct'],
+         'Critically Endangered, Possibly Extinct'),
+        (IUCN_CATEGORIES['critically rare'], 'Critically Rare'),
+        (IUCN_CATEGORIES['rare'], 'Rare'),
+        (IUCN_CATEGORIES['data deficient - insufficient information'],
+         'Data Deficient - Insufficient Information'),
+        (IUCN_CATEGORIES['data deficient - taxonomically problematic'],
+         'Data Deficient - Taxonomically Problematic'),
     )
 
     category = models.CharField(
@@ -45,6 +60,10 @@ class IUCNStatus(models.Model):
         default=False
     )
     colour = ColorField(default='#009106')
+
+    national = models.BooleanField(
+        default=False
+    )
 
     def get_status(self):
         """"Return status name."""

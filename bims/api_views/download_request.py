@@ -1,3 +1,4 @@
+from bims.download.csv_download import send_new_csv_notification
 from bims.models.taxonomy import Taxonomy
 
 from bims.models.location_site import LocationSite
@@ -60,6 +61,12 @@ class DownloadRequestApi(APIView):
             taxon=taxon,
             notes=notes
         )
+
+        if download_request.id and not download_request.request_file:
+            send_new_csv_notification(
+                download_request.requester,
+                download_request.request_date
+            )
 
         return Response({
             'success': success,

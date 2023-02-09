@@ -1,3 +1,4 @@
+from bims.models.taxonomy import Taxonomy
 from rest_framework.views import APIView, Response
 from django.db.models import Case, F, Count, Value, When
 from django.db.models.functions import ExtractYear
@@ -64,8 +65,10 @@ class OccurrencesChartData(ChartDataApiView):
     """
     def categories(self, collection_results):
         return list(collection_results.annotate(
-            name=Case(When(taxonomy__origin='',
-                           then=Value('Unknown')),
+            name=Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    When(taxonomy__origin__icontains='unknown',
+                         then=Value('Unknown')),
                       default=F('taxonomy__origin'))
         ).values_list(
             'name', flat=True
@@ -74,8 +77,10 @@ class OccurrencesChartData(ChartDataApiView):
     def chart_data(self, collection_results):
         return collection_results.annotate(
             year=ExtractYear('collection_date'),
-            name=Case(When(taxonomy__origin='',
-                           then=Value('Unknown')),
+            name=Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    When(taxonomy__origin__icontains='unknown',
+                         then=Value('Unknown')),
                       default=F('taxonomy__origin'))
         ).values(
             'year', 'name'
@@ -95,7 +100,7 @@ class LocationSitesConservationChartData(ChartDataApiView):
         return list(collection_results.annotate(
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Not evaluated'))
+                      default=Value('NE'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -105,7 +110,7 @@ class LocationSitesConservationChartData(ChartDataApiView):
             year=ExtractYear('collection_date'),
             name=Case(When(taxonomy__iucn_status__category__isnull=False,
                            then=F('taxonomy__iucn_status__category')),
-                      default=Value('Not evaluated')),
+                      default=Value('NE')),
         ).values(
             'year', 'name'
         ).annotate(
@@ -118,10 +123,15 @@ class LocationSitesConservationChartData(ChartDataApiView):
 class LocationSitesTaxaChartData(ChartDataApiView):
     """
     """
+    taxa = None
     def categories(self, collection_results):
-        taxa = collection_results.values('taxonomy').distinct('taxonomy')[0:25]
+        if not self.taxa:
+            self.taxa = Taxonomy.objects.filter(
+                biologicalcollectionrecord__id__in=
+                collection_results.values_list('id', flat=True)
+            ).distinct()[:25]
         return list(collection_results.filter(
-            taxonomy__in=taxa
+            taxonomy__in=self.taxa
         ).annotate(
             name=F('taxonomy__scientific_name'),
         ).values_list(
@@ -129,14 +139,20 @@ class LocationSitesTaxaChartData(ChartDataApiView):
         ).distinct('name'))
 
     def chart_data(self, collection_results):
-        taxa = collection_results.values('taxonomy').distinct('taxonomy')[0:25]
+        if not self.taxa:
+            self.taxa = Taxonomy.objects.filter(
+                biologicalcollectionrecord__id__in=
+                collection_results.values_list('id', flat=True)
+            ).distinct()[:25]
         return collection_results.filter(
-            taxonomy__in=taxa
+            taxonomy__in=self.taxa
         ).annotate(
             year=ExtractYear('collection_date'),
             name=F('taxonomy__scientific_name'),
+        ).values(
+            'year', 'name'
         ).annotate(
-            count=Count('year')
+            count=Count('year'),
         ).values(
             'year', 'name', 'count'
         ).order_by('year')

@@ -1,5 +1,7 @@
 # coding=utf8
 import ast
+import logging
+
 from django.http import Http404
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -11,9 +13,11 @@ from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from bims.models import TaxonGroup
+from bims.models import TaxonGroup, VernacularName
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif
+from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
+
+logger = logging.getLogger('bims')
 
 
 class TaxonDetail(APIView):
@@ -44,6 +48,7 @@ class TaxonDetail(APIView):
         return taxonomic_rank_values
 
     def get(self, request, pk, format=None):
+
         taxon = self.get_object(pk)
 
         serializer = TaxonSerializer(taxon)
@@ -74,15 +79,37 @@ class TaxonDetail(APIView):
         for rank in taxonomic_rank:
             data.update(rank)
         common_names = []
+        results = []
 
         # Common name
         if taxon.vernacular_names.exists():
             common_names = list(
-                taxon.vernacular_names.all().values_list('name', flat=True))
+                taxon.vernacular_names.filter(language='eng').values_list('name', flat=True))
         if len(common_names) == 0:
-            data['common_name'] = 'Unknown'
+            vernacular_names = get_vernacular_names(taxon.gbif_key)
+            if vernacular_names:
+                results = vernacular_names['results']
+            if len(results) == 0:
+                data['common_name'] = 'Unknown'
+            else:
+                for result in results:
+                    if 'language' in result and result['language'] == 'eng':
+                        fields = {'language': result['language']}
+                        data['common_name'] = result['vernacularName']
+                        if 'source' in result:
+                            fields['source'] = result['source']
+                        if 'taxonKey' in result:
+                            fields['taxon_key'] = int(result['taxonKey'])
+                        vernacular_name, status = (
+                            VernacularName.objects.get_or_create(
+                                name=result['vernacularName'],
+                                **fields
+                            )
+                        )
+                        taxon.vernacular_names.add(vernacular_name)
+                        break
         else:
-            data['common_name'] = ', '.join(common_names)
+            data['common_name'] = common_names[0]
 
         return Response(data)
 
@@ -99,6 +126,8 @@ class FindTaxon(APIView):
     taxa_id = 'taxaId'
     source = 'source'
     stored_local = 'storedLocal'
+    validated = 'validated'
+    taxon_group_ids = 'taxonGroupIds'
 
     def get(self, request, *args):
         taxon_list = []
@@ -109,11 +138,24 @@ class FindTaxon(APIView):
 
         # Find classes to narrow down the results
         taxon_group = query_dict.get('taxonGroup', None)
+        taxon_group_id = query_dict.get('taxonGroupId', None)
         taxon_name = query_dict.get('q', None)
         if taxon_group:
             del query_dict['taxonGroup']
             try:
                 taxon_group = TaxonGroup.objects.get(name=taxon_group)
+                phylum_keys = list(taxon_group.taxonomies.filter(
+                    parent__rank=TaxonomicRank.PHYLUM
+                ).values_list('parent__gbif_key', flat=True))
+            except (
+                    TaxonGroup.DoesNotExist,
+                    TaxonGroup.MultipleObjectsReturned):
+                pass
+
+        if taxon_group_id:
+            del query_dict['taxonGroupId']
+            try:
+                taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
                 phylum_keys = list(taxon_group.taxonomies.filter(
                     parent__rank=TaxonomicRank.PHYLUM
                 ).values_list('parent__gbif_key', flat=True))
@@ -137,8 +179,15 @@ class FindTaxon(APIView):
                 continue
             taxa = Taxonomy.objects.filter(gbif_key=key)
             taxa_id = ''
+            validated = False
+            taxon_group_ids = []
             if taxa.exists():
-                taxa_id = taxa[0].id
+                taxon = taxa.first()
+                taxa_id = taxon.id
+                validated = taxon.validated
+                taxon_group_ids = taxon.taxongroup_set.all().values_list(
+                    'id', flat=True
+                )
             taxon_list.append({
                 self.scientific_name: gbif['scientificName'],
                 self.canonical_name: gbif['canonicalName'],
@@ -146,7 +195,9 @@ class FindTaxon(APIView):
                 self.key: key,
                 self.taxa_id: taxa_id,
                 self.source: 'gbif',
-                self.stored_local: taxa.exists()
+                self.stored_local: taxa.exists(),
+                self.validated: validated,
+                self.taxon_group_ids: taxon_group_ids
             })
 
         if not taxon_list:
@@ -164,6 +215,8 @@ class FindTaxon(APIView):
                         self.source: 'local' if not taxon.gbif_key else 'gbif',
                         self.stored_local: True,
                         self.taxa_id: taxon.id,
+                        self.validated: taxon.validated,
+                        self.taxon_group_ids: []
                     })
 
         return Response(taxon_list)
@@ -181,6 +234,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         gbif_key = self.request.POST.get('gbifKey', None)
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
+        taxon_group_id = self.request.POST.get('taxonGroupId', None)
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         family = None
@@ -190,7 +244,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
                 fetch_parent=True,
-                get_vernacular=False
+                get_vernacular=True
             )
         elif taxon_name and rank:
             taxonomy, created = Taxonomy.objects.get_or_create(
@@ -198,6 +252,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 canonical_name=taxon_name,
                 rank=rank
             )
+        if taxon_group_id:
+            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            taxon_group.taxonomies.add(taxonomy)
+        else:
             if taxon_group:
                 try:
                     taxon_group = TaxonGroup.objects.get(name=taxon_group)
@@ -207,6 +265,13 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
+
+            # Check if it's a new taxonomy
+            if not taxonomy.validated:
+                taxonomy.owner = self.request.user
+                taxonomy.ready_to_be_validate()
+                taxonomy.send_new_taxon_email(taxon_group_id)
+
             if family:
                 taxonomy.parent = family
                 taxonomy.save()
@@ -238,6 +303,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_name = request.GET.get('taxon', '')
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
+        validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
         # Filter by parent
         parent_ids = request.GET.get('parent', '').split(',')
@@ -280,6 +346,19 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if validated:
+            try:
+                validated = ast.literal_eval(validated.replace('/', ''))
+                if not validated:
+                    taxon_list = taxon_list.exclude(
+                        validated=True
+                    )
+                else:
+                    taxon_list = taxon_list.filter(
+                        validated=True
+                    )
+            except ValueError:
+                pass
         if is_gbif:
             try:
                 is_gbif = ast.literal_eval(is_gbif)

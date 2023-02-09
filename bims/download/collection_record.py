@@ -8,7 +8,7 @@ from bims.models.download_request import DownloadRequest
 logger = logging.getLogger(__name__)
 
 
-def queryset_iterator(qs, batch_size = 500, gc_collect = True):
+def queryset_iterator(qs, batch_size=500, gc_collect=True):
     iterator = (
         qs.values_list('pk', flat=True).order_by('pk').distinct().iterator()
     )
@@ -37,6 +37,9 @@ def write_to_csv(headers: list,
         for header in headers:
             if header == 'class_name':
                 header = 'class'
+            if header == 'sub_species':
+                formatted_headers.append('SubSpecies')
+                continue
             header = header.replace('_or_', '/')
             if not header.isupper():
                 header = header.replace('_', ' ').capitalize()
@@ -72,7 +75,7 @@ def download_collection_records(
     )
     from bims.api_views.search import CollectionSearch
     from bims.models import BiologicalCollectionRecord
-    from bims.api_views.csv_download import send_csv_via_email
+    from bims.download.csv_download import send_csv_via_email
 
     start = time.time()
 
@@ -109,6 +112,9 @@ def download_collection_records(
     headers = []
     collection_data = []
 
+    if download_request and download_request.rejected:
+        return
+
     for obj in queryset_iterator(collection_results):
         collection_data.append(obj)
         if len(collection_data) >= record_number:
@@ -140,6 +146,7 @@ def download_collection_records(
             del collection_data
             del serializer
             collection_data = []
+
             gc.collect()
 
     if collection_data:

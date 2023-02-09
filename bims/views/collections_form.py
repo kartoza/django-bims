@@ -12,7 +12,7 @@ from django.contrib.gis.geos import Point
 from django.utils.decorators import method_decorator
 from django.db.models import F
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.contrib.gis.measure import Distance
 from django.http import HttpResponseRedirect, Http404
 from bims.utils.get_key import get_key
@@ -149,6 +149,83 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
             survey=self.survey
         )
 
+    # -- Algae data
+    curation_process = post_data.get('curation_process', None)
+    indicator_chl_a = post_data.get('indicator_chl_a', None)
+    indicator_afdm = post_data.get('indicator_afdm', None)
+    ai = post_data.get('ai', '')
+    if not ai:
+        ai = None
+    if curation_process or indicator_afdm or indicator_chl_a:
+        algae_data = AlgaeData.objects.filter(
+            survey=self.survey
+        )
+        if algae_data.exists():
+            if algae_data.count() > 1:
+                algae_data.exclude(id=algae_data[0].id).delete()
+        else:
+            AlgaeData.objects.create(survey=self.survey)
+            algae_data = AlgaeData.objects.filter(survey=self.survey)
+        algae_data.update(
+            curation_process=curation_process,
+            indicator_afdm=indicator_afdm,
+            indicator_chl_a=indicator_chl_a,
+            ai=ai
+        )
+
+    # -- Biomass chemical records
+    chem_units = {}
+    chl_type = post_data.get('chl_type', None)
+    afdm_type = post_data.get('afdm_type', None)
+    chl_a = post_data.get('chl_a', None)
+    if chl_type and chl_a:
+        chem_units[chl_type] = chl_a
+        # Check existing data first, then remove it
+        chla_codes = ['CHLA-B', 'CHLA-W']
+        chla_records = ChemicalRecord.objects.filter(
+            date=self.survey.date,
+            location_site=self.survey.site,
+            survey=self.survey,
+            chem__in=Chem.objects.filter(
+                chem_code__in=chla_codes
+            )
+        )
+        if chla_records.exists():
+            chla_records.delete()
+    afdm = post_data.get('afdm', None)
+    if afdm_type and afdm:
+        chem_units[afdm_type] = afdm
+        # Check existing data first, then remove it
+        afdm_codes = ['AFDM-B', 'AFDM-W']
+        afdm_records = ChemicalRecord.objects.filter(
+            date=self.survey.date,
+            location_site=self.survey.site,
+            survey=self.survey,
+            chem__in=Chem.objects.filter(
+                chem_code__in=afdm_codes
+            )
+        )
+        if afdm_records.exists():
+            afdm_records.delete()
+    for chem_unit in chem_units:
+        chem = Chem.objects.filter(
+            chem_code__iexact=chem_unit
+        )
+        if chem.exists():
+            chem = chem[0]
+        else:
+            chem = Chem.objects.create(
+                chem_code=chem_unit
+            )
+        chem_record, _ = ChemicalRecord.objects.get_or_create(
+            date=self.survey.date,
+            chem=chem,
+            location_site=self.survey.site,
+            survey=self.survey,
+            value=chem_units[chem_unit]
+        )
+
+
     collection_record_ids = []
     for taxon in taxa_id_list:
         observed_key = '{}-observed'.format(taxon)
@@ -204,6 +281,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     location_site = None
     session_identifier = 'collection-form'
     taxon_group_name = ''
+    taxon_group_id = None
     survey = None
     all_taxa = None
 
@@ -298,9 +376,14 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             context['bing_key'] = ''
 
         # -- Taxa list
-        taxon_group, created = TaxonGroup.objects.get_or_create(
-            name=self.taxon_group_name
-        )
+        if self.taxon_group_id:
+            taxon_group = TaxonGroup.objects.get(
+                id=self.taxon_group_id
+            )
+        else:
+            taxon_group, created = TaxonGroup.objects.get_or_create(
+                name=self.taxon_group_name
+            )
         self.all_taxa = self.get_all_taxa(taxon_group)
 
         # Get from same river catchment
@@ -322,44 +405,47 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 'reference_category').values(
                 name=F('reference_category'))
         )
-        context['taxon_group_name'] = self.taxon_group_name
-        taxon_group = TaxonGroup.objects.filter(
-            name=self.taxon_group_name
+        context['taxon_group_name'] = (
+            taxon_group.singular_name
+            if taxon_group.singular_name
+            else taxon_group.name
         )
+        context['taxon_group_id'] = taxon_group.id
+
         context['broad_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_BROAD
             ).values(
                 'id', 'name', 'description', 'display_order'
-            ).order_by('display_order')
+            ).order_by('name')
         )
         context['specific_biotope_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_SPECIFIC
             ).values(
                 'id', 'name', 'description', 'display_order'
-            ).order_by('display_order')
+            ).order_by('name')
         )
 
         context['substratum_list'] = list(
             Biotope.objects.filter(
-                taxon_group__in=taxon_group,
+                taxon_group=taxon_group,
                 biotope_type=BIOTOPE_TYPE_SUBSTRATUM
             ).values(
                 'id', 'name', 'description', 'display_order'
-            ).order_by('display_order')
+            ).order_by('name')
         )
 
         sampling_method_lower_list = []
         context['sampling_method_list'] = []
         sampling_method_list = list(
             SamplingMethod.objects.filter(
-                taxon_group__in=taxon_group
+                taxon_group=taxon_group
             ).values(
                 'id', 'sampling_method'
-            ).order_by('order')
+            ).order_by('sampling_method')
         )
         for sampling_method in sampling_method_list:
             sampling_method_name = (
@@ -404,11 +490,20 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             'location_site': self.location_site.name,
             'form': self.session_identifier
         })
+        next_url = (
+           '{base_url}?collectors=[{id}]&validated=["in review"]&'
+           'o=date'.format(
+                base_url=reverse_lazy('site-visit-list'),
+                id=self.request.user.id
+            )
+        )
         source_reference_url = (
-            '{base_url}?session={session}&identifier={identifier}'.format(
+            '{base_url}?session={session}&'
+            'identifier={identifier}&next={next}'.format(
                 base_url=reverse('source-reference-form'),
                 session=session_uuid,
-                identifier=self.session_identifier
+                identifier=self.session_identifier,
+                next=next_url
             )
         )
 
@@ -441,6 +536,7 @@ class ModuleFormView(CollectionFormView):
             taxon_group.singular_name if taxon_group.singular_name else
             taxon_group.name
         )
+        self.taxon_group_id = taxon_group.id
         self.session_identifier = '{}-form'.format(
             taxon_group.name.lower()
         )

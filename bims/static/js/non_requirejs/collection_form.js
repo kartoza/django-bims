@@ -17,7 +17,7 @@ let collectionIdList = [];
 let taxonAutocompleteHandler = {
     source: function (request, response) {
         $.ajax({
-            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term) + '&exclude=' + taxaIdList.join() + '&taxonGroup=' + taxonGroupName,
+            url: '/species-autocomplete/?term=' + encodeURIComponent(request.term) + '&exclude=' + taxaIdList.join() + '&taxonGroupId=' + taxonGroupId,
             type: 'get',
             dataType: 'json',
             success: function (data) {
@@ -454,7 +454,7 @@ $('#find-taxon-button').click(function () {
 
     // Show response list
     $.ajax({
-        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroup=${taxonGroupName}`,
+        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroupId=${taxonGroupId}`,
         type: 'get',
         dataType: 'json',
         success: function (data) {
@@ -528,6 +528,7 @@ function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
         'taxonName': name,
         'rank': rank,
         'taxonGroup': taxonGroupName,
+        'taxonGroupId': taxonGroupId,
         'csrfmiddlewaretoken': csrfToken
     };
     let table = $('.find-taxon-table');

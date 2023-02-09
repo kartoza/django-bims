@@ -3,8 +3,10 @@ import os
 import errno
 from hashlib import sha256
 import datetime
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, HttpResponse
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+
 from bims.api_views.search import CollectionSearch
 from sass.models import SassTaxon, SiteVisit
 from sass.models.site_visit_taxon import SiteVisitTaxon
@@ -13,7 +15,7 @@ from sass.tasks.download_sass_data_site import (
     download_sass_summary_data_task, download_sass_taxon_data_task
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.api_views.csv_download import send_csv_via_email
+from bims.download.csv_download import send_csv_via_email
 
 FAILED_STATUS = 'failed'
 SUCCESS_STATUS = 'success'
@@ -159,7 +161,8 @@ def download_sass_taxon_data(request, **kwargs):
     """
     csv_name = request.GET.get('csvName')
     site_visit_id = request.GET.get('siteVisitId')
-    site_visit = SiteVisit.objects.get(id=site_visit_id)
+    site_visit = get_object_or_404(SiteVisit, id=site_visit_id)
+    site = site_visit.location_site
     sass_version = site_visit.sass_version
     taxon_filters = dict()
 
@@ -190,8 +193,7 @@ def download_sass_taxon_data(request, **kwargs):
         return JsonResponse(get_response(SUCCESS_STATUS, filename))
 
     download_sass_taxon_data_task.delay(
-        taxon_filters,
-        sass_version,
+        site.id,
         filename,
         request.GET,
         path_file,

@@ -137,6 +137,48 @@
                     </button>
                 </div>
             </div>
+
+        <div class="source-collection-wrapper">
+        </div>
+
+        <div class="row sub-filter">
+            <div class="col-lg-12 subtitle">
+                VALIDATION STATUS <i
+                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            </div>
+        </div>
+        <div class="row validation-filter-row" style="display: none">
+            <div class="col-lg-12 filter-content">
+                <div><input id="filter-validation-validated"
+                            name="filter-validation" type="checkbox"
+                            value="validated"> <label class="checkbox-label" for="filter-validation-validated">Validated</label>
+                </div>
+                <div><input id="filter-validation-non-validated" name="filter-validation" type="checkbox"
+                            value="unvalidated"> <label class="checkbox-label" for="filter-validation-non-validated">Unvalidated</label>
+                </div>
+                {% if preferences.SiteSetting.enable_sass %}
+                    <div>
+                        <input id="filter-validation-sass-acredited" name="filter-validation" type="checkbox"
+                            value="sass accredited">
+                        <label class="checkbox-label" for="filter-validation-sass-acredited">SASS Accredited</label>
+                    </div>
+                    <div>
+                        <input id="filter-validation-non-sass-acredited" name="filter-validation" type="checkbox"
+                            value="non sass accredited">
+                        <label class="checkbox-label" for="filter-validation-non-sass-acredited">Non SASS Accredited</label>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="button-filter-wrapper">
+                <button class="apply-filter"><i class="fa fa-check"
+                                                aria-hidden="true"></i> Apply
+                </button>
+                <button class="clear-filter"><i class="fa fa-times"
+                                                aria-hidden="true"></i> Clear
+                </button>
+            </div>
         </div>
 
         <div class="row sub-filter">
@@ -264,7 +306,24 @@
                 <div class="small-space"></div>
             </div>
         </div>
-
+        <div class="row conservation-status-row" style="display: none">
+            <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
+                {% for status_data in conservation_status_data %}
+                    <div class="conservation-status-item">
+                        <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
+                        <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
+                            data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="button-filter-wrapper">
+                <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                <button class="clear-filter clear-conservation-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear
+                </button>
+            </div>
+            <div class="small-space"></div>
+        </div>
+        </div>
         <div class="reference-category-wrapper"></div>
 
         <div class="study-reference-wrapper">
@@ -653,7 +712,7 @@
                    class="layer-selector-input" <%= checked %>>
             <div class="layer-selector-name"><%= name %></div>
             <% if (source && source !== 'Base') { %>
-            <span><i class="fa fa-info-circle layer-source" value="<%= key %>" aria-hidden="true"></i></span>
+                <div class="layer-info-icon"><i class="fa fa-info-circle layer-source" value="<%= key %>" aria-hidden="true"></i></div>
             <% } %>
         </div>
         <div class="options">

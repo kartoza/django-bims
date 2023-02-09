@@ -295,6 +295,9 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
             rank=TaxonomicRank[
                 detail['rank']].name,
         )
+        taxon.gbif_data = detail
+        taxon.save()
+
         # Get vernacular names
         if get_vernacular:
             vernacular_names = get_vernacular_names(detail['key'])

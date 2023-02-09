@@ -410,7 +410,8 @@ class OccurrenceProcessor(object):
         # -- Processing taxon species --
         species_name = DataCSVUpload.row_value(record, SPECIES_NAME)
         taxon_rank = DataCSVUpload.row_value(
-            record, TAXON_RANK).upper().strip()
+            record, TAXON_RANK
+        ).replace(' ', '').upper().strip()
         # Find existing taxonomy with ACCEPTED taxonomic status
         print('module group', self.module_group, taxon_rank, species_name)
         taxa = Taxonomy.objects.filter(

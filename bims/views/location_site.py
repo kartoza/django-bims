@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 import pytz
+from django.db import IntegrityError
+from preferences import preferences
 
 from bims.models.taxon_group import TaxonGroup
 from django.db.models import Q
@@ -36,7 +38,7 @@ from bims.serializers.survey_serializer import SurveySerializer
 def handle_location_site_post_data(
         post_data: dict,
         collector: get_user_model(),
-        location_site: LocationSite = None) -> LocationSite:
+        location_site: LocationSite = None) -> LocationSite or None:
     """
     Handle post request to create or update a location site
     :param post_data: data from POST request
@@ -122,7 +124,14 @@ def handle_location_site_post_data(
         post_dict['river_id'] = river.id
 
     if not location_site:
-        location_site = LocationSite.objects.create(**post_dict)
+        try:
+            location_site = LocationSite.objects.create(**post_dict)
+        except IntegrityError:
+            sites = LocationSite.objects.filter(**post_dict)
+            if sites.exists():
+                location_site = sites.first()
+            else:
+                return None
     else:
         for key in post_dict:
             setattr(location_site, key, post_dict[key])
@@ -294,6 +303,9 @@ class LocationSiteFormView(TemplateView):
             self.request.user,
             self.location_site
         )
+
+        if not location_site:
+            raise Http404('Error creating location site')
 
         self.check_site_images(location_site)
 
@@ -475,6 +487,7 @@ class NonValidatedSiteView(
         filter_river_name = self.request.GET.get('river_name', None)
         context = super(
             NonValidatedSiteView, self).get_context_data(**kwargs)
+        context['total'] = self.get_queryset().count()
         context['custom_url'] = ''
         if filter_site_code:
             context['custom_url'] = '&site_code={}'.format(filter_site_code)
@@ -490,13 +503,18 @@ class NonValidatedSiteView(
         filter_river_name = self.request.GET.get('river_name', None)
         filter_pk = self.request.GET.get('pk', None)
         if self.queryset is None:
-            gbif_site = BiologicalCollectionRecord.objects.filter(
-                Q(source_collection='gbif') |
-                Q(owner__last_name='VM') |
-                Q(owner_id__isnull=True)).values('site_id')
+            gbif_site = BiologicalCollectionRecord.objects.exclude(
+                source_collection=preferences.SiteSetting.default_data_source
+            ).filter(
+                owner_id__isnull=True
+            ).values('site_id')
             queryset = LocationSite.objects.filter(
-                validated=False
-            ).exclude(pk__in=gbif_site).order_by('site_code')
+                validated=False,
+                owner_id__isnull=False,
+            ).exclude(
+                Q(pk__in=gbif_site) |
+                Q(owner__username__icontains='_vm')
+            ).order_by('site_code')
             if filter_pk is not None:
                 queryset = queryset.filter(pk=filter_pk)
             if filter_site_code is not None:

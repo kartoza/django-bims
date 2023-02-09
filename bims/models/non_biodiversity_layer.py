@@ -22,6 +22,12 @@ class NonBiodiversityLayer(OrderedModel):
         max_length=64,
         default='image/png'
     )
+    layer_style = models.CharField(
+        max_length=256,
+        default='',
+        help_text='Leave blank to use default style',
+        blank=True
+    )
     default_visibility = models.BooleanField(
         default=False
     )

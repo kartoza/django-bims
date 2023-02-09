@@ -6,11 +6,13 @@ from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Q, Value, CharField
 )
 from django.db.models.functions import Cast, Concat
+from sass.models.site_visit import SiteVisit
+
 from bims.api_views.search import CollectionSearch
 from sass.models import SiteVisitTaxon, SassTaxon
 from geonode.people.models import Profile
 from bims.models.location_context import LocationContext
-from bims.api_views.csv_download import send_csv_via_email
+from bims.download.csv_download import send_csv_via_email
 from sass.serializers.sass_data_serializer import SassDataSerializer, SassTaxonDataSerializer
 from sass.serializers.sass_data_serializer import SassSummaryDataSerializer
 
@@ -208,7 +210,12 @@ def download_sass_summary_data_task(
 
 @shared_task(name='sass.tasks.download_sass_taxon_data', queue='update')
 def download_sass_taxon_data_task(
-        taxon_filters, sass_version, filename, filters, path_file, user_id, send_email=False):
+        location_site_id,
+        filename,
+        filters,
+        path_file,
+        user_id,
+        send_email=False):
     from bims.utils.celery import memcache_lock
 
     user = Profile.objects.get(id=user_id)
@@ -220,31 +227,84 @@ def download_sass_taxon_data_task(
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            sass_taxon = SassTaxon.objects.filter(**taxon_filters).order_by(
-            'display_order_sass_%s' % sass_version
-        )
-            serializer = SassTaxonDataSerializer(
-                sass_taxon,
-                many=True
+            sass_site_visits = SiteVisit.objects.filter(
+                location_site_id=location_site_id
+            ).order_by('-site_visit_date')
+            location_site = sass_site_visits.first().location_site
+            sass_taxa = SassTaxon.objects.filter(
+                sass_5_score__isnull=False
+            ).order_by(
+                'display_order_sass_5'
             )
-            headers = serializer.data[0].keys()
-            rows = serializer.data
 
-            formatted_headers = []
-            # Rename headers
-            for header in headers:
-                formatted_headers.append(header.replace('_', ' ').capitalize())
+            site_code = (
+                location_site.site_code
+                if location_site.site_code else
+                '-'
+            )
+            river = (
+                location_site.river.name
+                if location_site.river else
+                '-'
+            )
+            sampling_dates = ['Sampling date']
+            taxon_data = []
+            sass_score = ['SASS SCORE']
+            number_of_taxa = ['NUMBER OF TAXA']
+            aspt = ['ASPT']
+
+            for sass_taxon in sass_taxa:
+                taxon_data.append(
+                    [sass_taxon.taxon_sass_4 if
+                     sass_taxon.taxon_sass_4 else sass_taxon.taxon_sass_5])
+
+            for sass_site_visit in sass_site_visits:
+                sampling_dates.append(
+                    sass_site_visit.site_visit_date
+                )
+                _number_of_taxa = 0
+                _sass_score = 0
+                for index in range(len(taxon_data)):
+                    sass_taxon = sass_taxa[index]
+                    site_visit_taxa = SiteVisitTaxon.objects.filter(
+                        site_visit=sass_site_visit,
+                        sass_taxon=sass_taxon
+                    )
+                    if site_visit_taxa.count() > 0:
+                        taxon_abundance = (
+                          site_visit_taxa.first().taxon_abundance.abc
+                        )
+                        _number_of_taxa += 1
+                        _sass_score += sass_taxon.sass_5_score
+                    else:
+                        taxon_abundance = ''
+                    taxon_data[index].append(taxon_abundance)
+
+                number_of_taxa.append(_number_of_taxa)
+                sass_score.append(_sass_score)
+                try:
+                    aspt_score = round(_sass_score/_number_of_taxa, 2)
+                except:  # noqa
+                    aspt_score = 0
+                aspt.append(aspt_score)
+
+            site_codes = [
+                'Site Code',
+                *[site_code for _ in range(len(sampling_dates)-1)]
+            ]
+            rivers = [
+                'River',
+                *[river for _ in range(len(sampling_dates)-1)]
+            ]
 
             with open(path_file, 'w') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
-                writer.writeheader()
-                writer.fieldnames = headers
-                for row in rows:
-                    try:
-                        writer.writerow(row)
-                    except ValueError:
-                        writer.fieldnames = row.keys()
-                        writer.writerow(row)
+                writer = csv.writer(
+                    csv_file,
+                    delimiter=',')
+                for row in [
+                    site_codes, sampling_dates, rivers,
+                    *taxon_data, sass_score, number_of_taxa, aspt]:
+                    writer.writerow(row)
 
             if send_email:
                 send_csv_via_email(

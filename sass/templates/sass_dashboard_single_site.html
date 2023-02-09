@@ -22,6 +22,7 @@
         const siteId = "{{ site_id }}";
         const arrAvg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
         const sassExists = {% if sass_exists %}true{% else %}false{% endif %};
+        const bingMapKey = "{{ bing_map_key }}"
     </script>
     <style>
           .carousel-inner, .carousel-item {
@@ -233,12 +234,6 @@
                                 <button class="btn btn-info download-latest-as-csv" data-identifier="{{ site_code }}">
                                     Download as CSV
                                 </button>
-                                <div class="form-check pull-right justify-content-center" style="margin-top: 2px;">
-                                    <input class="form-check-input" type="checkbox" value="" id="include-all-taxon">
-                                  <label class="form-check-label" for="flexCheckDefault" style="margin-top: 3px;">
-                                    Include all taxon
-                                  </label>
-                                </div>
 
                         </div>
                     </div>
@@ -275,6 +270,7 @@
                             {% endfor %}
                             </tbody>
                         </table>
+
                         <div class="download-container">
                             Download all SASS data for this site :
                             <button class="btn btn-info download-as-csv" data-identifier="{{ site_code }}">
@@ -282,7 +278,24 @@
                             </button>
                         </div>
                     </div>
-
+                    <div class="vertical-space">
+                    </div>
+                    <div class="table-container">
+                         <div class="table-title">
+                            Download Site level SASS data for populating
+                            the River Ecostatus Monitoring MIRAI model
+                        </div>
+                        <div class="download-container">
+                            <div class="download-button-container">
+                                <button class="btn btn-info download-site-level-sass-data"
+                                        data-identifier="{{ site_code }}">
+                                    Download as CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vertical-space">
+                    </div>
                 </div>
                 <div class="col-md-6 mp">
                     <div class="chart-container">

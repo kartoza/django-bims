@@ -121,7 +121,7 @@
     width: -webkit-fill-available;
 }
 
-.download-as-csv, .download-chem-csv {
+.download-as-csv, .download-chem-csv, .download-gbif-ids {
     text-transform: none;
     font-size: 10pt;
 }
@@ -129,6 +129,11 @@
 .card-header-title {
     padding-top: 8px;
     height: 30px;
+}
+
+.card-header-subtitle {
+    font-size: 10pt;
+    font-weight: bold;
 }
 
 .chart-label {
