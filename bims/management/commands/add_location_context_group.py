@@ -43,8 +43,12 @@ class Command(BaseCommand):
             help='Generate site code')
 
     def handle(self, *args, **options):
+        from bims.models.location_context_filter_group_order import (
+            location_context_post_save_handler
+        )
 
         signals.post_save.disconnect(
+            location_context_post_save_handler,
             sender=LocationContextGroup
         )
 

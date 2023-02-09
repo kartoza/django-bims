@@ -1,5 +1,8 @@
 # coding=utf-8
 import logging
+
+from django.db.models import signals
+
 from celery import shared_task
 from bims.utils.logger import log
 
@@ -57,9 +60,17 @@ def location_sites_overview(
 
 
 @shared_task(name='bims.tasks.update_location_context', queue='geocontext')
-def update_location_context(location_site_id, generate_site_code=False):
+def update_location_context(
+        location_site_id,
+        generate_site_code=False,
+        generate_filter=True):
     from bims.models import LocationSite
     from bims.utils.location_context import get_location_context_data
+    from bims.models.location_context_group import LocationContextGroup
+    from bims.models.location_context_filter_group_order import (
+        location_context_post_save_handler
+    )
+
     if isinstance(location_site_id, str):
         if ',' in location_site_id:
             get_location_context_data(
@@ -73,6 +84,12 @@ def update_location_context(location_site_id, generate_site_code=False):
     except LocationSite.DoesNotExist:
         log('Location site does not exist')
         return
+
+    if not generate_filter:
+        signals.post_save.disconnect(
+            location_context_post_save_handler,
+            sender=LocationContextGroup
+        )
 
     get_location_context_data(
         site_id=str(location_site_id),

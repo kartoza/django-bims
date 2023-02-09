@@ -250,8 +250,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def update_location_context_in_background(self, request, queryset):
         """Action method to update location context in background"""
+        generate_spatial_scale_filter = queryset.count() <= 1
         for location_site in queryset:
-            update_location_context_task.delay(location_site.id)
+            update_location_context_task.delay(
+                location_site.id, False, generate_spatial_scale_filter)
         full_message = (
             'Updating location context for {} sites in background'.format(
                 queryset.count()
