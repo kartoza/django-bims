@@ -18,9 +18,9 @@ class Command(BaseCommand):
             ))
         return sql
 
-    def create_materialized_view(self, view_name, query):
+    def create_view(self, view_name, query):
         sql = (
-            'CREATE MATERIALIZED VIEW "{view_name}" AS {sql_raw}'.
+            'CREATE VIEW "{view_name}" AS {sql_raw}'.
                 format(
                 view_name=view_name,
                 sql_raw=query
@@ -75,7 +75,7 @@ class Command(BaseCommand):
                         view_name))
             except: # noqa
                 pass
-        cursor.execute('''%s''' % self.create_materialized_view(
+        cursor.execute('''%s''' % self.create_view(
             view_name=view_name,
             query=q
         ))

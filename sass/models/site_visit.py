@@ -160,14 +160,11 @@ class SiteVisit(AbstractAdditionalData):
 
 @receiver(post_save, sender=SiteVisit)
 def site_visit_post_save_handler(**kwargs):
-    from sass.scripts.site_visit_ecological_condition_generator import (
-        generate_site_visit_ecological_condition
+    from sass.tasks.site_visit_ecological_condition import (
+        site_visit_ecological_condition_task
     )
     try:
         site_visit = kwargs['instance']
     except KeyError:
         return
-    log('Generate site visit ecological condition')
-    site_visits = list()
-    site_visits.append(site_visit)
-    generate_site_visit_ecological_condition(site_visits)
+    site_visit_ecological_condition_task.delay(site_visit.id)
