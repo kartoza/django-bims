@@ -18,9 +18,10 @@ from rest_framework.response import Response
 from bims.api_views.search import CollectionSearch
 from bims.models.water_temperature import WaterTemperature
 from bims.utils.api_view import BimsApiView
+from bims.models.chemical_record import ChemicalRecord
 
 
-class SiteModuleSerializer(serializers.ModelSerializer):
+class SiteWaterTemperatureSerializer(serializers.ModelSerializer):
     site_id = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
     total_water_temperature_data = serializers.SerializerMethodField()
@@ -40,6 +41,29 @@ class SiteModuleSerializer(serializers.ModelSerializer):
         model = LocationSite
         fields = [
             'site_id', 'name', 'total_water_temperature_data'
+        ]
+
+
+class SitePhysicoChemistrySerializer(serializers.ModelSerializer):
+    site_id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    total_chemical_records = serializers.SerializerMethodField()
+
+    def get_total_chemical_records(self, obj: LocationSite) -> int:
+        return self.context['chemical_records'].filter(
+            location_site=obj
+        ).count()
+
+    def get_site_id(self, obj: LocationSite) -> int:
+        return obj.id
+
+    def get_name(self, obj: LocationSite) -> str:
+        return obj.site_code if obj.site_code else obj.name
+
+    class Meta:
+        model = LocationSite
+        fields = [
+            'site_id', 'name', 'total_chemical_records'
         ]
 
 
@@ -120,11 +144,52 @@ class SearchModule(CollectionSearch):
             'total': 0,
             'total_survey': 0,
             'total_sites': self.sites.count(),
-            'sites': SiteModuleSerializer(
+            'sites': SiteWaterTemperatureSerializer(
                 self.sites,
                 many=True,
                 context={
                     'water_temperature': self.water_temperature
+                }
+            ).data
+        }
+
+
+class PhysicoChemistryModule(CollectionSearch):
+    sites = None
+    chemical_records = ChemicalRecord.objects.all()
+    survey = Survey.objects.none()
+
+    def extent(self):
+        # Get extent from collection results
+        if self.chemical_records.count() < 1:
+            return []
+        extent = self.sites.aggregate(extent=Extent('geometry_point'))
+        return list(extent['extent'])
+
+    def run_search(self):
+        if self.search_query:
+            self.chemical_records = self.chemical_records.filter(
+                location_site__site_code__icontains=self.search_query
+            )
+        if self.reference:
+            self.chemical_records = self.chemical_records.filter(
+                source_reference__in=self.reference
+            )
+        self.sites = LocationSite.objects.filter(
+            id__in=self.chemical_records.values('location_site')
+        )
+
+    def get_summary_data(self):
+        self.run_search()
+        return {
+            'total': 0,
+            'total_survey': 0,
+            'total_sites': self.sites.count(),
+            'sites': SitePhysicoChemistrySerializer(
+                self.sites,
+                many=True,
+                context={
+                    'chemical_records': self.chemical_records
                 }
             ).data
         }

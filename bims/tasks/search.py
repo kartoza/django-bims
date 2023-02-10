@@ -1,4 +1,5 @@
 import logging
+
 from celery import shared_task
 
 logger = logging.getLogger(__name__)
@@ -9,6 +10,7 @@ def search_task(parameters, search_process_id, background=True):
     from bims.utils.celery import memcache_lock
     from bims.api_views.search import CollectionSearch
     from bims.api_views.search_module import SearchModule
+    from bims.api_views.search_module import PhysicoChemistryModule
     from bims.models.search_process import (
         SearchProcess,
         SEARCH_PROCESSING,
@@ -21,6 +23,13 @@ def search_task(parameters, search_process_id, background=True):
     except SearchProcess.DoesNotExist:
         return
 
+    if parameters['module'] == 'water_temperature':
+        search = SearchModule(parameters)
+    elif parameters['module'] == 'physico_chemistry':
+        search = PhysicoChemistryModule(parameters)
+    else:
+        search = CollectionSearch(parameters)
+
     if background:
         lock_id = '{0}-lock-{1}'.format(
             search_process.file_path,
@@ -30,10 +39,6 @@ def search_task(parameters, search_process_id, background=True):
         with memcache_lock(lock_id, oid) as acquired:
             if acquired:
                 search_process.set_status(SEARCH_PROCESSING)
-                if parameters['module'] == 'water_temperature':
-                    search = SearchModule(parameters)
-                else:
-                    search = CollectionSearch(parameters)
                 search_results = search.get_summary_data()
                 if search_results:
                     search_process.set_search_raw_query(
@@ -51,10 +56,6 @@ def search_task(parameters, search_process_id, background=True):
             'Search %s is already being processed by another worker',
             search_process.process_id)
     else:
-        if parameters['module'] == 'water_temperature':
-            search = SearchModule(parameters)
-        else:
-            search = CollectionSearch(parameters)
         search_results = search.get_summary_data()
         if search_results:
             search_process.set_search_raw_query(
