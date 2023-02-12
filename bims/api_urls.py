@@ -17,6 +17,7 @@ from bims.api_views.location_type import (
 from bims.api_views.non_biodiversity_layer import (
     NonBiodiversityLayerList
 )
+from bims.api_views.search_module import SearchModuleAPIView
 from bims.api_views.taxon import (
     TaxonDetail,
     FindTaxon,
@@ -142,6 +143,8 @@ urlpatterns = [
         ChemicalRecordDownloader.as_view()),
     url(r'^collection-search/$',
         CollectionSearchAPIView.as_view(), name='collection-search'),
+    url(r'^search-module/$',
+        SearchModuleAPIView.as_view(), name='search-module'),
     url(r'^boundary/geojson$',
         BoundaryGeojson.as_view(), name='boundary-geojson'),
     url(r'^list-boundary/$',
