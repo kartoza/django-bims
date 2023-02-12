@@ -73,7 +73,15 @@ define([
             Shared.Dispatcher.on('search:showMoreTaxa', this.showMoreTaxa, this);
         },
         handleModuleChanged: function (e) {
-            let value = e.target.value;
+            let value = document.querySelector('input[name="module"]:checked').value;
+            if (!window.selectedModule) {
+                window.selectedModule = value
+            } else {
+                if (window.selectedModule !== value) {
+                    window.selectedModule = value;
+                    $('.search-reset').click();
+                }
+            }
             let occurrencesFilter = [
                 'biodiversity-module-container',
                 'data-source-container',
@@ -84,12 +92,14 @@ define([
                 'decision-support-tool-container'
             ]
             if (value === 'occurrence') {
+                $('.occurrence-sort').show();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
                         document.getElementById(container).style.display = 'block';
                     }
                 }
             } else {
+                $('.occurrence-sort').hide();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
                         document.getElementById(container).style.display = 'none';

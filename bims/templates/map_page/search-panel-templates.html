@@ -69,29 +69,18 @@
             </div>
             <div style="display: none;"
                  data-toggle="tooltip" data-placement="top" class="thermal-module-filters-wrapper">
-
                 <div class="form-check module-radio-wrapper">
                     <input class="radio-module" type="radio" id="occurrence-module" name="module" value="occurrence" checked>
                     <label class="form-check-label" for="occurrence-module">Occurrence</label>
                 </div>
-
                 <div class="form-check module-radio-wrapper">
                     <input class="radio-module" type="radio" id="water_temperature-module" name="module" value="water_temperature">
                     <label class="form-check-label" for="water_temperature-module">Water Temperature (time series)</label>
                 </div>
-
                 <div class="form-check module-radio-wrapper">
                     <input class="radio-module" type="radio" id="physico_chemistry-module" name="module" value="physico_chemistry">
                     <label class="form-check-label" for="physico_chemistry-module">Physico-chemistry</label>
                 </div>
-{#                <div class="form-check module-checkbox-wrapper">#}
-{#                    <input type="checkbox" class="form-check-input" id="thermal-module-filter">#}
-{#                    <label class="form-check-label" for="thermal-module-filter">Water Temperature (time series)</label>#}
-{#                </div>#}
-{#                <div class="form-check module-checkbox-wrapper">#}
-{#                    <input type="checkbox" class="form-check-input" id="abiotic-data-filter">#}
-{#                    <label class="form-check-label" for="abiotic-data-filter">Physico-chemistry</label>#}
-{#                </div>#}
             </div>
 
         <div class="source-collection-wrapper" id="data-source-container">
@@ -410,10 +399,10 @@
             <select class="form-control" id="sortby-select">
                 <option value="name">Name : Ascending</option>
                 <option value="-name">Name : Descending</option>
-                <option value="-total">Occurrences : High to low</option>
-                <option value="total">Occurrences : Low to high</option>
-                <option value="-total_survey">Site Visits : High to low</option>
-                <option value="total_survey">Site Visits : Low to high</option>
+                <option value="-total" class="occurrence-sort">Occurrences : High to low</option>
+                <option value="total" class="occurrence-sort">Occurrences : Low to high</option>
+                <option value="-total_survey" class="occurrence-sort">Site Visits : High to low</option>
+                <option value="total_survey" class="occurrence-sort">Site Visits : Low to high</option>
             </select>
         </div>
         <div class="row" style="margin-top: 10px; margin-bottom: 12px">
