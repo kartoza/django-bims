@@ -1039,7 +1039,7 @@ define([
             let element = $(e.target);
             this.currentSort = element.val();
             element.find('option').text(function(i,t){
-                return this.selected ? 'Sort by : ' + t : t.replace('Sort by : ', '');
+                return this.selected ? (t.startsWith('Sort by : ') ? t : 'Sort by : ' + t) : t.replace('Sort by : ', '');
             });
             if (Shared.CurrentState.SEARCH) {
                 // do search
