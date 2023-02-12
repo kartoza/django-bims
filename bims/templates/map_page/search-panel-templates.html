@@ -77,12 +77,12 @@
 
                 <div class="form-check module-radio-wrapper">
                     <input class="radio-module" type="radio" id="water_temperature-module" name="module" value="water_temperature">
-                    <label class="form-check-label" for="thermal-module">Water Temperature (time series)</label>
+                    <label class="form-check-label" for="water_temperature-module">Water Temperature (time series)</label>
                 </div>
 
                 <div class="form-check module-radio-wrapper">
                     <input class="radio-module" type="radio" id="physico_chemistry-module" name="module" value="physico_chemistry">
-                    <label class="form-check-label" for="abiotic-module">Physico-chemistry</label>
+                    <label class="form-check-label" for="physico_chemistry-module">Physico-chemistry</label>
                 </div>
 {#                <div class="form-check module-checkbox-wrapper">#}
 {#                    <input type="checkbox" class="form-check-input" id="thermal-module-filter">#}
@@ -136,48 +136,6 @@
                                                     aria-hidden="true"></i> Clear
                     </button>
                 </div>
-            </div>
-
-        <div class="source-collection-wrapper">
-        </div>
-
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                VALIDATION STATUS <i
-                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row validation-filter-row" style="display: none">
-            <div class="col-lg-12 filter-content">
-                <div><input id="filter-validation-validated"
-                            name="filter-validation" type="checkbox"
-                            value="validated"> <label class="checkbox-label" for="filter-validation-validated">Validated</label>
-                </div>
-                <div><input id="filter-validation-non-validated" name="filter-validation" type="checkbox"
-                            value="unvalidated"> <label class="checkbox-label" for="filter-validation-non-validated">Unvalidated</label>
-                </div>
-                {% if preferences.SiteSetting.enable_sass %}
-                    <div>
-                        <input id="filter-validation-sass-acredited" name="filter-validation" type="checkbox"
-                            value="sass accredited">
-                        <label class="checkbox-label" for="filter-validation-sass-acredited">SASS Accredited</label>
-                    </div>
-                    <div>
-                        <input id="filter-validation-non-sass-acredited" name="filter-validation" type="checkbox"
-                            value="non sass accredited">
-                        <label class="checkbox-label" for="filter-validation-non-sass-acredited">Non SASS Accredited</label>
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="button-filter-wrapper">
-                <button class="apply-filter"><i class="fa fa-check"
-                                                aria-hidden="true"></i> Apply
-                </button>
-                <button class="clear-filter"><i class="fa fa-times"
-                                                aria-hidden="true"></i> Clear
-                </button>
             </div>
         </div>
 
@@ -322,7 +280,6 @@
                 </button>
             </div>
             <div class="small-space"></div>
-        </div>
         </div>
         <div class="reference-category-wrapper"></div>
 
@@ -1213,6 +1170,7 @@
             <% if (module === "occurrence") { %> <%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> <% } %>
 
             <% if (module === "water_temperature") { %>  <%= total_thermal %> water temperature data <% } %>
+            <% if (module === "physico_chemistry") { %>  <%= total_chemical_records %> physico-chemical data <% } %>
         </a>
     </div>
 </script>

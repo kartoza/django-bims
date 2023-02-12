@@ -7,6 +7,7 @@ define(['backbone'], function (Backbone) {
             survey: 0,
             record_type: '',
             total_thermal: 0,
+            total_chemical_records: 0,
             module: 'occurrence'
         },
         destroy: function () {

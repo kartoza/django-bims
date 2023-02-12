@@ -15,7 +15,7 @@ from rest_framework import serializers
 from bims.models.location_site import LocationSite
 from rest_framework.response import Response
 
-from bims.api_views.search import CollectionSearch
+from bims.api_views.search import CollectionSearch, MAX_PAGINATED_SITES
 from bims.models.water_temperature import WaterTemperature
 from bims.utils.api_view import BimsApiView
 from bims.models.chemical_record import ChemicalRecord
@@ -77,35 +77,38 @@ class SearchModuleAPIView(BimsApiView):
 
 class SearchModule(CollectionSearch):
     sites = None
-    water_temperature = WaterTemperature.objects.all()
+    module = None
     survey = Survey.objects.none()
+    date_field = 'date_time'
 
     def extent(self):
         # Get extent from collection results
-        if self.water_temperature.count() < 1:
+        if self.module.count() < 1:
             return []
         extent = self.sites.aggregate(extent=Extent('geometry_point'))
-        return list(extent['extent'])
+        if 'extent' in extent and extent['extent']:
+            return list(extent['extent'])
+        return []
 
     def run_search(self):
         if self.search_query:
-            self.water_temperature = self.water_temperature.filter(
+            self.module = self.module.filter(
                 location_site__site_code__icontains=self.search_query
             )
         if self.reference:
-            self.water_temperature = self.water_temperature.filter(
+            self.module = self.module.filter(
                 source_reference__in=self.reference
             )
 
         if self.year_ranges:
-            self.water_temperature = self.water_temperature.filter(
-                date_time__range=self.year_ranges
-            )
+            self.module = self.module.filter(**{
+                f'{self.date_field}__range': self.year_ranges
+            })
 
         if self.months:
-            self.water_temperature = self.water_temperature.filter(
-                date_time__month__in=self.months
-            )
+            self.module = self.module.filter(**{
+                f'{self.date_field}__month__in': self.months
+            })
 
         if self.reference_category:
             clauses = (
@@ -115,7 +118,7 @@ class SearchModule(CollectionSearch):
                 self.reference_category
             )
             reference_category_filter = reduce(operator.or_, clauses)
-            self.water_temperature = self.water_temperature.filter(
+            self.module = self.module.filter(
                 reference_category_filter
             )
 
@@ -124,12 +127,12 @@ class SearchModule(CollectionSearch):
                 full_name=Concat('first_name', Value(' '), 'last_name')
             ).filter(full_name__in=self.collector)
             collector_list = list(collectors.values_list('id', flat=True))
-            self.water_temperature = self.water_temperature.filter(
+            self.module = self.module.filter(
                 owner__in=collector_list
             )
 
         self.sites = LocationSite.objects.filter(
-            id__in=self.water_temperature.values('location_site')
+            id__in=self.module.values('location_site')
         )
 
         spatial_filters = self.spatial_filter
@@ -138,58 +141,41 @@ class SearchModule(CollectionSearch):
                 spatial_filters
             )
 
-    def get_summary_data(self):
-        self.run_search()
-        return {
-            'total': 0,
-            'total_survey': 0,
-            'total_sites': self.sites.count(),
-            'sites': SiteWaterTemperatureSerializer(
-                self.sites,
-                many=True,
-                context={
-                    'water_temperature': self.water_temperature
-                }
-            ).data
-        }
-
-
-class PhysicoChemistryModule(CollectionSearch):
-    sites = None
-    chemical_records = ChemicalRecord.objects.all()
-    survey = Survey.objects.none()
-
-    def extent(self):
-        # Get extent from collection results
-        if self.chemical_records.count() < 1:
-            return []
-        extent = self.sites.aggregate(extent=Extent('geometry_point'))
-        return list(extent['extent'])
-
-    def run_search(self):
-        if self.search_query:
-            self.chemical_records = self.chemical_records.filter(
-                location_site__site_code__icontains=self.search_query
-            )
-        if self.reference:
-            self.chemical_records = self.chemical_records.filter(
-                source_reference__in=self.reference
-            )
-        self.sites = LocationSite.objects.filter(
-            id__in=self.chemical_records.values('location_site')
-        )
+    def serialize_sites(self):
+        return []
 
     def get_summary_data(self):
         self.run_search()
         return {
-            'total': 0,
+            'total': self.module.count() if self.module else 0,
             'total_survey': 0,
             'total_sites': self.sites.count(),
-            'sites': SitePhysicoChemistrySerializer(
-                self.sites,
-                many=True,
-                context={
-                    'chemical_records': self.chemical_records
-                }
-            ).data
+            'sites': self.serialize_sites()
         }
+
+
+class WaterTemperatureModule(SearchModule):
+    module = WaterTemperature.objects.all()
+
+    def serialize_sites(self):
+        return SiteWaterTemperatureSerializer(
+            self.sites,
+            many=True,
+            context={
+                'water_temperature': self.module
+            }
+        ).data
+
+
+class PhysicoChemistryModule(SearchModule):
+    module = ChemicalRecord.objects.all()
+    date_field = 'date'
+
+    def serialize_sites(self):
+        return SitePhysicoChemistrySerializer(
+            self.sites,
+            many=True,
+            context={
+                'chemical_records': self.module
+            }
+        ).data

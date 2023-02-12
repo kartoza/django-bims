@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 def search_task(parameters, search_process_id, background=True):
     from bims.utils.celery import memcache_lock
     from bims.api_views.search import CollectionSearch
-    from bims.api_views.search_module import SearchModule
-    from bims.api_views.search_module import PhysicoChemistryModule
+    from bims.api_views.search_module import (
+        PhysicoChemistryModule,
+        WaterTemperatureModule
+    )
     from bims.models.search_process import (
         SearchProcess,
         SEARCH_PROCESSING,
@@ -24,7 +26,7 @@ def search_task(parameters, search_process_id, background=True):
         return
 
     if parameters['module'] == 'water_temperature':
-        search = SearchModule(parameters)
+        search = WaterTemperatureModule(parameters)
     elif parameters['module'] == 'physico_chemistry':
         search = PhysicoChemistryModule(parameters)
     else:

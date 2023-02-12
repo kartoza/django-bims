@@ -28,6 +28,7 @@ define([
         pageMoreTaxa: 2,
         extent: [],
         searchXHR: null,
+        module: 'occurrence',
         searchFinishedCallback: null,
         initialize: function (searchFinishedCallback) {
             this.searchFinishedCallback = searchFinishedCallback;
@@ -138,6 +139,7 @@ define([
             return this.searchXHR;
         },
         parse: function (response) {
+            this.module = document.querySelector('input[name="module"]:checked').value;
             if (response.hasOwnProperty('records')) {
                 this.recordsData = response['records'];
             }
@@ -152,6 +154,11 @@ define([
             }
             if (response.hasOwnProperty('total_records')) {
                 this.totalRecords = response['total_records'];
+            }
+            if (this.module !== 'occurrence') {
+                if (response['total']) {
+                    this.totalRecords = response['total'];
+                }
             }
             if (response.hasOwnProperty('total_sites')) {
                 this.totalSites = response['total_sites'];
@@ -195,9 +202,7 @@ define([
                 }
             }
 
-            let selectedModule = document.querySelector('input[name="module"]:checked').value;
-
-            var $searchResultsWrapper = $('<div></div>');
+            let $searchResultsWrapper = $('<div></div>');
             $searchResultsWrapper.append(
                 '<div class="search-results-wrapper">' +
                 '<div class="search-results-total" data-visibility="true"> SITES ' +
@@ -205,7 +210,7 @@ define([
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="site-detail-dashboard-button-wrapper"></span></div>' +
                 '<div id="site-list" class="search-results-section"></div>' +
                 '</div>');
-            if (selectedModule === 'occurrence') {
+            if (this.module === 'occurrence') {
                 $searchResultsWrapper.append(
                     '<div class="search-results-wrapper">' +
                     '<div class="search-results-total" data-visibility="true"> TAXA ' +
@@ -253,10 +258,14 @@ define([
                 });
                 $.each(this.sitesData, function (key, data) {
                     let total_water_temperature_data = 0;
+                    let total_chemical_records = 0;
                     let _total = 0;
                     let _total_survey = 0;
                     if (data['total_water_temperature_data']) {
                         total_water_temperature_data = data['total_water_temperature_data']
+                    }
+                    if (data['total_chemical_records']) {
+                        total_chemical_records = data['total_chemical_records']
                     }
                     if (typeof data['total'] !== 'undefined') {
                         _total = data['total'];
@@ -269,9 +278,10 @@ define([
                         count: numberWithCommas(_total),
                         survey: numberWithCommas(_total_survey),
                         total_thermal: numberWithCommas(total_water_temperature_data),
+                        total_chemical_records: numberWithCommas(total_chemical_records),
                         name: data['name'],
                         record_type: 'site',
-                        module: selectedModule
+                        module: self.module
                     });
                     let searchResultView = new SearchResultView({
                         model: searchModel
@@ -395,12 +405,23 @@ define([
                 success: function (data) {
                     var siteData = data['data'];
                     for (var i = 0; i < siteData.length; i++) {
-                        var searchModel = new SearchModel({
+                        let total_water_temperature_data = 0;
+                        let total_chemical_records = 0;
+                        if (siteData[i]['total_water_temperature_data']) {
+                            total_water_temperature_data = siteData[i]['total_water_temperature_data']
+                        }
+                        if (siteData[i]['total_chemical_records']) {
+                            total_chemical_records = siteData[i]['total_chemical_records']
+                        }
+                        let searchModel = new SearchModel({
                             id: siteData[i]['site_id'],
                             name: siteData[i]['name'],
                             record_type: 'site',
-                            count: numberWithCommas(siteData[i]['total']),
-                            survey: numberWithCommas(siteData[i]['total_survey']),
+                            count: siteData[i]['total'] ? numberWithCommas(siteData[i]['total']) : 0,
+                            survey: siteData[i]['total_survey'] ? numberWithCommas(siteData[i]['total_survey']) : 0,
+                            total_thermal: numberWithCommas(total_water_temperature_data),
+                            total_chemical_records: numberWithCommas(total_chemical_records),
+                            module: self.module
                         });
                         var searchResultView = new SearchResultView({
                             model: searchModel
