@@ -146,8 +146,22 @@ class SearchModule(CollectionSearch):
 
     def get_summary_data(self):
         self.run_search()
+
+        # Get order_by
+        order_by = self.get_request_data('orderBy', 'name')
+        valid_order = [
+            'total', '-total', 'name', '-name', 'total_survey', '-total_survey'
+        ]
+        if order_by not in valid_order:
+            order_by = 'name'
+
+        self.sites = self.sites.order_by(order_by)
+        total = self.module.count() if self.module else 0
+        if self.sites.count() == 0:
+            total = 0
+
         return {
-            'total': self.module.count() if self.module else 0,
+            'total': total,
             'total_survey': 0,
             'total_sites': self.sites.count(),
             'sites': self.serialize_sites()
