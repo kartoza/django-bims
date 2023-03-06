@@ -79,32 +79,33 @@ def fetch_gbif_vernacular_names(taxonomy: Taxonomy):
     if not taxonomy.gbif_key:
         return False
     vernacular_names = get_vernacular_names(taxonomy.gbif_key)
+    logger.info('Fetching vernacular names for {}'.format(
+        taxonomy.canonical_name
+    ))
     if vernacular_names:
-        print('Found %s vernacular names' % len(
+        logger.info('Found %s vernacular names' % len(
             vernacular_names['results']))
+        order = 1
         for result in vernacular_names['results']:
             fields = {}
-            if 'source' in result:
-                fields['source'] = result['source']
+            source = result['source'] if 'source' in result else ''
             if 'language' in result:
                 fields['language'] = result['language']
             if 'taxonKey' in result:
                 fields['taxon_key'] = int(result['taxonKey'])
-            try:
-                vernacular_name, status = (
-                    VernacularName.objects.get_or_create(
-                        name=result['vernacularName']
-                    ))
-            except VernacularName.MultipleObjectsReturned:
-                vernacular_name = VernacularName.objects.filter(
-                    name=result['vernacularName']
-                ).first()
+            fields['order'] = order
 
-            VernacularName.objects.filter(
-                name__iexact=vernacular_name.name
-            ).update(**fields)
+            vernacular_name, created = (
+                VernacularName.objects.update_or_create(
+                    name=result['vernacularName'],
+                    source=source,
+                    defaults=fields
+                )
+            )
 
             taxonomy.vernacular_names.add(vernacular_name)
+            order += 1
+
         taxonomy.save()
 
 
