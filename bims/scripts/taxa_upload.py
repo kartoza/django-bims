@@ -79,12 +79,14 @@ class TaxaProcessor(object):
         try:
             vernacular_name, _ = VernacularName.objects.get_or_create(
                 name=common_name_value,
-                language='en'
+                language='en',
+                is_upload=True
             )
         except VernacularName.MultipleObjectsReturned:
             vernacular_name = VernacularName.objects.filter(
                 name=common_name_value,
-                language='en'
+                language='en',
+                is_upload=True
             )[0]
         return vernacular_name
 

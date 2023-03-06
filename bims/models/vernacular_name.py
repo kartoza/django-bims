@@ -30,5 +30,15 @@ class VernacularName(models.Model):
         null=True
     )
 
+    order = models.IntegerField(
+        blank=True,
+        null=True
+    )
+
+    is_upload = models.BooleanField(
+        default=False,
+        help_text='Whether this data coming from data upload'
+    )
+
     def __str__(self):
         return self.name

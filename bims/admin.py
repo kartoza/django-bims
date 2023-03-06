@@ -25,6 +25,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
+from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from geonode.documents.admin import DocumentAdmin
@@ -1004,9 +1005,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'accepted_taxonomy'
     )
 
-    actions = ['merge_taxa', 'update_taxa']
+    actions = ['merge_taxa', 'update_taxa', 'fetch_common_names']
 
     inlines = [TaxonImagesInline]
+
+    def fetch_common_names(self, request, queryset):
+        taxa_ids = list(queryset.values_list('id', flat=True))
+        fetch_vernacular_names.delay([str(taxa_id) for taxa_id in taxa_ids])
 
     def update_taxa(self, request, queryset):
         for taxa in queryset:
