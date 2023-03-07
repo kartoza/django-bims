@@ -136,3 +136,7 @@
     padding-top: 0;
     padding-bottom: 0;
 }
+
+.progress-bar-download-request{
+    background-color: var(--main-accent-color);
+}

@@ -318,7 +318,7 @@ class CollectionSearch(object):
             spatial_filter_splitted = spatial_filter.split(',')
             if 'group' in spatial_filter_splitted:
                 spatial_filter_groups.append(
-                    spatial_filter.split(',')[1]
+                    ','.join(spatial_filter.split(',')[1:])
                 )
             else:
                 if spatial_filter_splitted[0] != 'value':
@@ -326,8 +326,8 @@ class CollectionSearch(object):
                 or_condition |= Q(**{
                     'locationcontext__group__key':
                         spatial_filter_splitted[1],
-                    'locationcontext__value': spatial_filter_splitted[2]}
-                                  )
+                    'locationcontext__value': ','.join(
+                        spatial_filter_splitted[2:])})
         if spatial_filter_groups:
             or_condition |= Q(**{
                 'locationcontext__group__key__in':

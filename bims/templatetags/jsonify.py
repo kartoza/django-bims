@@ -24,8 +24,8 @@ def get_html_for_radio_group(name, sass_rating):
     except:  # noqa
         value = 0
     result_html = (
-                '<div class="form-control sass-radio-label" '
-                'name="{name}">').format(name = name)
+        '<div class="form-control sass-radio-label" '
+        'name="{name}">').format(name=name)
     for x in range(0, 6):
         if x == value:
             checked = 'checked'
@@ -35,16 +35,16 @@ def get_html_for_radio_group(name, sass_rating):
             '<input type="radio" '
             'name="{name}" value="{x}" '
             '{checked}>').format(
-                name=name,
-                checked=checked,
-                x = x)
+            name=name,
+            checked=checked,
+            x=x)
 
         result_html += (
             '<span class="col-m" style="width: {column_width}%">'
             '{next_radio_button}'
             '</span>').format(
-                next_radio_button=next_radio_button,
-                column_width=column_width)
+            next_radio_button=next_radio_button,
+            column_width=column_width)
     result_html += '</div>'
     return result_html
 
@@ -64,3 +64,13 @@ def get_html_for_radio_group_headings(column_count):
 @register.filter
 def value_by_key(d, key):
     return d[key]
+
+
+@register.filter
+def split(string, separator):
+    return string.split(separator)
+
+
+@register.filter
+def percent(value, total):
+    return int(value) * 100 / int(total)

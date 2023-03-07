@@ -418,6 +418,13 @@ html, body, .map, .map-wrapper, #map-container {
     text-overflow: ellipsis;
     max-width: 250px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+#layers-selector .layer-info-icon {
+    margin-left: auto;
+    margin-top: 1px;
 }
 
 #layers-selector li .row-title label {
@@ -522,11 +529,16 @@ html, body, .map, .map-wrapper, #map-container {
 .layer-selector-input {
     margin-right: 5px;
     cursor: pointer;
+    margin-top: 3px;
+}
+
+#layers-selector .ui-icon-arrowthick-2-n-s {
+    margin-top: 2px;
 }
 
 .layer-selector-name {
-    max-width: 180px;
-    text-overflow: ellipsis;
+    max-width: 190px;
+    white-space: initial;
     overflow: hidden;
     display: inline-block;
     margin-bottom: -5px;
@@ -588,7 +600,6 @@ html, body, .map, .map-wrapper, #map-container {
 
 .filter-content {
     text-align: left;
-    max-height: 300px;
     overflow-y: auto;
     padding-top: 5px;
 }
@@ -1937,6 +1948,11 @@ div:hover::-webkit-scrollbar {
     text-align: left;
 }
 
+.module-radio-wrapper {
+    text-align: left;
+    padding-left: 0;
+}
+
 .button-filter-module {
     padding: 8px 0px;
 }
@@ -2034,6 +2050,17 @@ div:hover::-webkit-scrollbar {
     padding-top: 15px;
     overflow-y: unset;
     margin-bottom: -5px;
+}
+
+.conservation-status-item {
+    display: flex;
+    padding-bottom: 5px;
+}
+
+.conservation-status-item label {
+    padding-left: 10px;
+    cursor: pointer;
+    margin-bottom: 0 !important;
 }
 
 .conservation-status-wrapper li {
@@ -2549,7 +2576,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #gbif-images-row {
-    line-height: 0;
    -webkit-column-count: 2;
    -webkit-column-gap:   0px;
    -moz-column-count:    2;
@@ -2566,7 +2592,6 @@ div:hover::-webkit-scrollbar {
 }
 
 .gbif-images-row {
-    line-height: 0;
    -webkit-column-count: 2;
    -webkit-column-gap:   0px;
    -moz-column-count:    2;
@@ -2880,4 +2905,8 @@ div:hover::-webkit-scrollbar {
     .navbar .container {
         max-width: 1140px !important;
     }
+}
+
+.taxon-image {
+    display: inline;
 }

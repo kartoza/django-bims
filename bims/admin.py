@@ -25,6 +25,8 @@ from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
+from bims.tasks import fetch_vernacular_names
+from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
@@ -198,7 +200,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         percentage = 0
         if groups.count() > 0:
             percentage = round(
-                groups.count()/len(site_setting_group_keys) * 100
+                groups.count() / len(site_setting_group_keys) * 100
             )
         return format_html(
             '''
@@ -249,8 +251,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
 
     def update_location_context_in_background(self, request, queryset):
         """Action method to update location context in background"""
+        generate_spatial_scale_filter = queryset.count() <= 1
         for location_site in queryset:
-            update_location_context_task.delay(location_site.id)
+            update_location_context_task.delay(
+                location_site.id, False, generate_spatial_scale_filter)
         full_message = (
             'Updating location context for {} sites in background'.format(
                 queryset.count()
@@ -326,10 +330,10 @@ class IUCNStatusAdmin(admin.ModelAdmin):
 
     def iucn_colour(self, obj):
         return format_html('<div style="background:%s; ' \
-               'width: 50px; height: 15px;"></div>' % obj.colour)
+                           'width: 50px; height: 15px;"></div>' % obj.colour)
 
     def total_species(self, obj):
-        total_taxa =  Taxonomy.objects.filter(
+        total_taxa = Taxonomy.objects.filter(
             iucn_status=obj
         ).count()
         return format_html(
@@ -494,7 +498,6 @@ class ProfileInline(admin.StackedInline):
 
 
 class ProfileCreationForm(UserCreationForm):
-
     class Meta:
         model = get_user_model()
         fields = ("username",)
@@ -660,9 +663,9 @@ class CustomUserAdmin(ProfileAdmin):
         import csv
         from django.http import HttpResponse
         try:
-            from StringIO import StringIO # for Python 2
+            from StringIO import StringIO  # for Python 2
         except ImportError:
-            from io import StringIO # for Python 3
+            from io import StringIO  # for Python 3
 
         f = StringIO()
         writer = csv.writer(f)
@@ -701,7 +704,7 @@ class CustomUserAdmin(ProfileAdmin):
         response['Content-Disposition'] = 'attachment; filename=users.csv'
         return response
 
-    download_csv.short_description =(
+    download_csv.short_description = (
         "Download CSV file for selected users"
     )
 
@@ -734,6 +737,7 @@ class CustomUserAdmin(ProfileAdmin):
             '<img src="/static/admin/img/icon-no.svg" alt="False">')
         true_response = format_html(
             '<img src="/static/admin/img/icon-yes.svg" alt="True">')
+
     def role(self, obj):
         try:
             profile = BimsProfile.objects.get(user=obj)
@@ -741,6 +745,7 @@ class CustomUserAdmin(ProfileAdmin):
             return role[0] if len(role) > 0 else '-'
         except BimsProfile.DoesNotExist:
             return '-'
+
     role.admin_order_field = 'bims_profile__role'
 
     def sass_accredited_status(self, obj, **kwargs):
@@ -901,8 +906,34 @@ class EndemismAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'description',
-        'display_order'
+        'display_order',
+        'verified'
     )
+
+    actions = ['merge_endemisms']
+
+    def merge_endemisms(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 endemism', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified endemism', messages.ERROR)
+            return
+        if verified.count() > 1:
+            self.message_user(
+                request, 'There are more than 1 verified endemism',
+                messages.ERROR)
+            return
+        excluded = verified[0]
+        endemisms = queryset.exclude(id=verified[0].id)
+        merge_endemism(excluded, endemisms)
+        self.message_user(request, 'Endemism has been merged')
+
+    merge_endemisms.short_description = 'Merge endemism'
 
 
 class TaxonImagesInline(admin.TabularInline):
@@ -974,9 +1005,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'accepted_taxonomy'
     )
 
-    actions = ['merge_taxa', 'update_taxa']
+    actions = ['merge_taxa', 'update_taxa', 'fetch_common_names']
 
     inlines = [TaxonImagesInline]
+
+    def fetch_common_names(self, request, queryset):
+        taxa_ids = list(queryset.values_list('id', flat=True))
+        fetch_vernacular_names.delay([str(taxa_id) for taxa_id in taxa_ids])
 
     def update_taxa(self, request, queryset):
         for taxa in queryset:
@@ -1206,7 +1241,6 @@ class SamplingMethodAdmin(admin.ModelAdmin):
 
 
 class SiteImageAdmin(admin.ModelAdmin):
-
     list_display = (
         'get_site_code',
         'image',
@@ -1405,6 +1439,7 @@ class DownloadRequestPurposeAdmin(admin.ModelAdmin):
         'name',
     )
 
+
 class RequestLogAdmin(admin.ModelAdmin):
     list_display = (
         'user',
@@ -1539,9 +1574,9 @@ class DecisionSupportToolAdmin(admin.ModelAdmin):
 
 
 class UnitAdmin(admin.ModelAdmin):
-    list_display = ('unit_name', 'unit', )
-    list_filter = ('unit_name', 'unit', )
-    search_fields = ('unit_name', 'unit', )
+    list_display = ('unit_name', 'unit',)
+    list_filter = ('unit_name', 'unit',)
+    search_fields = ('unit_name', 'unit',)
 
 
 class ClimateDataAdmin(admin.ModelAdmin):

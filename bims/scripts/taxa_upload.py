@@ -63,10 +63,13 @@ class TaxaProcessor(object):
         else:
             cons_status = DataCSVUpload.row_value(
                 row, CONSERVATION_STATUS_NATIONAL)
-        iucn_status, _ = IUCNStatus.objects.get_or_create(
-            category=IUCN_CATEGORIES[cons_status.lower()]
-        )
-        return iucn_status
+        if cons_status:
+            iucn_status, _ = IUCNStatus.objects.get_or_create(
+                category=IUCN_CATEGORIES[cons_status.lower()]
+            )
+            return iucn_status
+        else:
+            return None
 
     def common_name(self, row):
         """Common name of species"""
@@ -76,12 +79,14 @@ class TaxaProcessor(object):
         try:
             vernacular_name, _ = VernacularName.objects.get_or_create(
                 name=common_name_value,
-                language='en'
+                language='en',
+                is_upload=True
             )
         except VernacularName.MultipleObjectsReturned:
             vernacular_name = VernacularName.objects.filter(
                 name=common_name_value,
-                language='en'
+                language='en',
+                is_upload=True
             )[0]
         return vernacular_name
 
@@ -228,7 +233,7 @@ class TaxaProcessor(object):
         taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
         try:
-            on_gbif = DataCSVUpload.row_value(row, ON_GBIF) == 'Yes'
+            on_gbif = DataCSVUpload.row_value(row, ON_GBIF) != 'No'
         except Exception:  # noqa
             on_gbif = True
         if not taxon_name:
@@ -366,7 +371,7 @@ class TaxaProcessor(object):
                     taxonomy.endemism = endemism
 
                 # -- Conservation status global
-                iucn_status = self.conservation_status(row)
+                iucn_status = self.conservation_status(row, True)
                 if iucn_status:
                     taxonomy.iucn_status = iucn_status
 

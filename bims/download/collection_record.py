@@ -8,7 +8,7 @@ from bims.models.download_request import DownloadRequest
 logger = logging.getLogger(__name__)
 
 
-def queryset_iterator(qs, batch_size = 500, gc_collect = True):
+def queryset_iterator(qs, batch_size=500, gc_collect=True):
     iterator = (
         qs.values_list('pk', flat=True).order_by('pk').distinct().iterator()
     )
@@ -112,6 +112,9 @@ def download_collection_records(
     headers = []
     collection_data = []
 
+    if download_request and download_request.rejected:
+        return
+
     for obj in queryset_iterator(collection_results):
         collection_data.append(obj)
         if len(collection_data) >= record_number:
@@ -143,6 +146,7 @@ def download_collection_records(
             del collection_data
             del serializer
             collection_data = []
+
             gc.collect()
 
     if collection_data:

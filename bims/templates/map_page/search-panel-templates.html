@@ -38,93 +38,96 @@
         </div>
 
         {% if bims_preferences.enable_module_filter %}
-            <div class="row sub-filter">
-                <div class="col-lg-12 subtitle">
-                    BIODIVERSITY MODULE <i
-                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+            <div id="biodiversity-module-container">
+                <div class="row sub-filter">
+                    <div class="col-lg-12 subtitle">
+                        BIODIVERSITY MODULE <i
+                            class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                            class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                    </div>
                 </div>
-            </div>
-            <div style="display: none;"
-                 data-toggle="tooltip" data-placement="top" class="module-filters-wrapper">
-                <div class="module-filters row"></div>
-                <div class="button-filter-wrapper button-filter-module">
-                    <button class="apply-filter"><i class="fa fa-check"
-                                                    aria-hidden="true"></i> Apply
-                    </button>
-                    <button class="clear-filter clear-filter-biodiversity-module"><i class="fa fa-times"
-                                                    aria-hidden="true"></i> Clear
-                    </button>
+                <div style="display: none;"
+                     data-toggle="tooltip" data-placement="top" class="module-filters-wrapper">
+                    <div class="module-filters row"></div>
+                    <div class="button-filter-wrapper button-filter-module">
+                        <button class="apply-filter"><i class="fa fa-check"
+                                                        aria-hidden="true"></i> Apply
+                        </button>
+                        <button class="clear-filter clear-filter-biodiversity-module"><i class="fa fa-times"
+                                                                                         aria-hidden="true"></i> Clear
+                        </button>
+                    </div>
                 </div>
             </div>
         {% endif %}
         <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    ABIOTIC MODULE <i
+                    MODULE <i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                    <div>
+                        <span id="module-info" class="badge badge-secondary">Occurrences</span>
+                    </div>
                 </div>
             </div>
             <div style="display: none;"
                  data-toggle="tooltip" data-placement="top" class="thermal-module-filters-wrapper">
-                <div class="form-check module-checkbox-wrapper">
-                    <input type="checkbox" class="form-check-input" id="thermal-module-filter">
-                    <label class="form-check-label" for="thermal-module-filter">Water Temperature (time series)</label>
+                <div class="form-check module-radio-wrapper">
+                    <input class="radio-module" type="radio" id="occurrence-module" name="module" value="occurrence" checked>
+                    <label class="form-check-label" for="occurrence-module">Occurrence</label>
                 </div>
-                <div class="form-check module-checkbox-wrapper">
-                    <input type="checkbox" class="form-check-input" id="abiotic-data-filter">
-                    <label class="form-check-label" for="abiotic-data-filter">Physico-chemistry</label>
+                <div class="form-check module-radio-wrapper">
+                    <input class="radio-module" type="radio" id="water_temperature-module" name="module" value="water_temperature">
+                    <label class="form-check-label" for="water_temperature-module">Water Temperature (time series)</label>
                 </div>
-                <div class="button-filter-wrapper button-filter-module">
+                <div class="form-check module-radio-wrapper">
+                    <input class="radio-module" type="radio" id="physico_chemistry-module" name="module" value="physico_chemistry">
+                    <label class="form-check-label" for="physico_chemistry-module">Physico-chemistry</label>
+                </div>
+            </div>
+
+        <div class="source-collection-wrapper" id="data-source-container">
+        </div>
+
+        <div id="validation-status-container">
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    VALIDATION STATUS <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row validation-filter-row" style="display: none">
+                <div class="col-lg-12 filter-content">
+                    <div><input id="filter-validation-validated"
+                                name="filter-validation" type="checkbox"
+                                value="validated"> <label class="checkbox-label" for="filter-validation-validated">Validated</label>
+                    </div>
+                    <div><input id="filter-validation-non-validated" name="filter-validation" type="checkbox"
+                                value="non validated"> <label class="checkbox-label" for="filter-validation-non-validated">Unvalidated</label>
+                    </div>
+                    {% if preferences.SiteSetting.enable_sass %}
+                        <div>
+                            <input id="filter-validation-sass-acredited" name="filter-validation" type="checkbox"
+                                   value="sass accredited">
+                            <label class="checkbox-label" for="filter-validation-sass-acredited">SASS Accredited</label>
+                        </div>
+                        <div>
+                            <input id="filter-validation-non-sass-acredited" name="filter-validation" type="checkbox"
+                                   value="non sass accredited">
+                            <label class="checkbox-label" for="filter-validation-non-sass-acredited">Non SASS Accredited</label>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="button-filter-wrapper">
                     <button class="apply-filter"><i class="fa fa-check"
                                                     aria-hidden="true"></i> Apply
                     </button>
-                    <button class="clear-filter clear-filter-module"><i class="fa fa-times"
+                    <button class="clear-filter"><i class="fa fa-times"
                                                     aria-hidden="true"></i> Clear
                     </button>
                 </div>
-            </div>
-
-        <div class="source-collection-wrapper">
-        </div>
-
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                VALIDATION STATUS <i
-                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row validation-filter-row" style="display: none">
-            <div class="col-lg-12 filter-content">
-                <div><input id="filter-validation-validated"
-                            name="filter-validation" type="checkbox"
-                            value="validated"> <label class="checkbox-label" for="filter-validation-validated">Validated</label>
-                </div>
-                <div><input id="filter-validation-non-validated" name="filter-validation" type="checkbox"
-                            value="unvalidated"> <label class="checkbox-label" for="filter-validation-non-validated">Unvalidated</label>
-                </div>
-                {% if preferences.SiteSetting.enable_sass %}
-                    <div>
-                        <input id="filter-validation-sass-acredited" name="filter-validation" type="checkbox"
-                            value="sass accredited">
-                        <label class="checkbox-label" for="filter-validation-sass-acredited">SASS Accredited</label>
-                    </div>
-                    <div>
-                        <input id="filter-validation-non-sass-acredited" name="filter-validation" type="checkbox"
-                            value="non sass accredited">
-                        <label class="checkbox-label" for="filter-validation-non-sass-acredited">Non SASS Accredited</label>
-                    </div>
-                {% endif %}
-            </div>
-
-            <div class="button-filter-wrapper">
-                <button class="apply-filter"><i class="fa fa-check"
-                                                aria-hidden="true"></i> Apply
-                </button>
-                <button class="clear-filter"><i class="fa fa-times"
-                                                aria-hidden="true"></i> Clear
-                </button>
             </div>
         </div>
 
@@ -154,86 +157,109 @@
         <div class="spatial-filter-wrapper"></div>
 
         {% if use_ecological_condition and preferences.SiteSetting.enable_sass %}
+            <div id="ecological-category-container">
+                <div class="row sub-filter">
+                    <div class="col-lg-12 subtitle">
+                        ECOLOGICAL CATEGORY (SASS) <i
+                            class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                            class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                    </div>
+                </div>
+                <div class="row ecological-condition" style="display: none;"
+                     data-toggle="tooltip" data-placement="top">
+                    <div class="row col-lg-12">
+                        <div class="col-lg-4 neutral ecological-condition-item" data-category="A" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Unmodified natural">
+                            Natural (N)
+                        </div>
+                        <div class="col-lg-4 good ecological-condition-item" data-category="B"  data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Largely natural with few modifications">
+                            Good (G)
+                        </div>
+                        <div class="col-lg-4 fair ecological-condition-item" data-category="C" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Moderately modified">
+                            Fair (F)
+                        </div>
+                    </div>
+                    <div class="row col-lg-12">
+                        <div class="col-lg-6 poor ecological-condition-item" data-category="D" style="font-size: 9pt" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Largely modified">
+                            Poor (P)
+                        </div>
+                        <div class="col-lg-6 seriously-modified ecological-condition-item" data-category="E" style="font-size: 9pt" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Seriously modified (S)/Critically or extremely modified (CM)">
+                            Seriously/Critically Modified (S/CM)
+                        </div>
+                    </div>
+                    <div class="button-filter-wrapper">
+                        <button class="apply-filter"><i class="fa fa-check"
+                                                        aria-hidden="true"></i> Apply
+                        </button>
+                        <button class="clear-filter"><i class="fa fa-times"
+                                                        aria-hidden="true"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div id="origin-and-endemism-container">
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    ECOLOGICAL CATEGORY (SASS) <i
+                    ORIGIN AND ENDEMISM<i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
-            <div class="row ecological-condition" style="display: none;"
-                 data-toggle="tooltip" data-placement="top">
-                <div class="row col-lg-12">
-                    <div class="col-lg-4 neutral ecological-condition-item" data-category="A" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Unmodified natural">
-                        Natural (N)
+            <div class="row" style="display: none" id="origin-filter-wrapper">
+                <div class="btn-group-wrapper text-center">
+                    <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
+                    <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
+                    <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
+                    <div class="smaller-font btn-group btn-group-sm">
+                        <button id="non-native-origin-btn" type="button" class="btn origin-btn btn-secondary">Non-Native</button>
                     </div>
-                    <div class="col-lg-4 good ecological-condition-item" data-category="B"  data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Largely natural with few modifications">
-                        Good (G)
-                    </div>
-                    <div class="col-lg-4 fair ecological-condition-item" data-category="C" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Moderately modified">
-                        Fair (F)
+                    <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
+                        <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
+                        <div class="native-origin-dropdown dropdown-menu origin-menu" aria-labelledby="native-origin-btn">
+                            <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All native </div>
+                        </div>
                     </div>
                 </div>
-                <div class="row col-lg-12">
-                    <div class="col-lg-6 poor ecological-condition-item" data-category="D" style="font-size: 9pt" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Largely modified">
-                        Poor (P)
-                    </div>
-                    <div class="col-lg-6 seriously-modified ecological-condition-item" data-category="E" style="font-size: 9pt" data-toggle="popover" data-placement="top" data-trigger="hover" data-content="Seriously modified (S)/Critically or extremely modified (CM)">
-                        Seriously/Critically Modified (S/CM)
-                    </div>
+                <div class="col-lg-12 filter-content" id="filter-category">
                 </div>
                 <div class="button-filter-wrapper">
-                <button class="apply-filter"><i class="fa fa-check"
-                                                aria-hidden="true"></i> Apply
-                </button>
-                <button class="clear-filter"><i class="fa fa-times"
-                                                aria-hidden="true"></i> Clear
-                </button>
-            </div>
-            </div>
-        {% endif %}
-
-          <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                ORIGIN AND ENDEMISM<i
-                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-            </div>
-        </div>
-        <div class="row" style="display: none" id="origin-filter-wrapper">
-                <div class="btn-group-wrapper text-center">
-                <input class="origin-checkbox" type="checkbox" value="alien" name="category-value" style="display: none" id="alien"/>
-                <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
-                <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
-                <div class="smaller-font btn-group btn-group-sm">
-                    <button id="non-native-origin-btn" type="button" class="btn origin-btn btn-secondary">Non-Native</button>
+                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                    <button class="clear-filter clear-origin-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
                 </div>
-                <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
-                    <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>
-                    <div class="native-origin-dropdown dropdown-menu origin-menu" aria-labelledby="native-origin-btn">
-                        <div class="dropdown-item endemic-dropdown-item" data-endemic-value="all-endemic"><input id="all-endemic-checkbox" class="endemic-checkbox" type="checkbox"> All native </div>
-                    </div>
-                </div>
-                </div>
-            <div class="col-lg-12 filter-content" id="filter-category">
-            </div>
-            <div class="button-filter-wrapper">
-                <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
-                <button class="clear-filter clear-origin-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
             </div>
         </div>
 
-        <div class="row sub-filter">
-            <div class="col-lg-12 subtitle">
-                CONSERVATION STATUS GLOBAL <i
-                    class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
-                    class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+        <div id="conservation-status-container">
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                    CONSERVATION STATUS GLOBAL <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row conservation-status-row" style="display: none">
+                <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
+                    {% for status_data in conservation_status_data %}
+                        <div>
+                            <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
+                            <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
+                                   data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                    <button class="clear-filter clear-conservation-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear
+                    </button>
+                </div>
+                <div class="small-space"></div>
             </div>
         </div>
         <div class="row conservation-status-row" style="display: none">
             <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
                 {% for status_data in conservation_status_data %}
-                    <div>
+                    <div class="conservation-status-item">
                         <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
                         <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
                             data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
@@ -291,7 +317,8 @@
             </div>
         </div>
 
-        <div class="row sub-filter">
+        <div id="decision-support-tool-container">
+            <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
                     DECISION SUPPORT TOOL <i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
@@ -301,8 +328,8 @@
             <div class="row filter-decision-support-tools-row" style="display: none">
                 <div class="chosen-wrapper">
                     <select data-placeholder="Choose decision suppport tools"
-                        id="filter-decision-support-tools"
-                        multiple>
+                            id="filter-decision-support-tools"
+                            multiple>
                     </select>
                 </div>
                 <div class="button-filter-wrapper">
@@ -311,6 +338,8 @@
                 </div>
             </div>
         </div>
+
+    </div>
 
 </script>
 
@@ -373,10 +402,10 @@
             <select class="form-control" id="sortby-select">
                 <option value="name">Name : Ascending</option>
                 <option value="-name">Name : Descending</option>
-                <option value="-total">Occurrences : High to low</option>
-                <option value="total">Occurrences : Low to high</option>
-                <option value="-total_survey">Site Visits : High to low</option>
-                <option value="total_survey">Site Visits : Low to high</option>
+                <option value="-total" class="occurrence-sort">Occurrences : High to low</option>
+                <option value="total" class="occurrence-sort">Occurrences : Low to high</option>
+                <option value="-total_survey" class="occurrence-sort">Site Visits : High to low</option>
+                <option value="total_survey" class="occurrence-sort">Site Visits : Low to high</option>
             </select>
         </div>
         <div class="row" style="margin-top: 10px; margin-bottom: 12px">
@@ -632,7 +661,7 @@
                    class="layer-selector-input" <%= checked %>>
             <div class="layer-selector-name"><%= name %></div>
             <% if (source && source !== 'Base') { %>
-            <span><i class="fa fa-info-circle layer-source" value="<%= key %>" aria-hidden="true"></i></span>
+                <div class="layer-info-icon"><i class="fa fa-info-circle layer-source" value="<%= key %>" aria-hidden="true"></i></div>
             <% } %>
         </div>
         <div class="options">
@@ -1129,9 +1158,11 @@
 <script type="text/template" id="search-result-site-template">
     <div class="result-search" data-search-result-id="<%= id %>">
         <p class="group-title"><%= name %></p>
-        <a class="group-description"><%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %>
+        <a class="group-description">
+            <% if (module === "occurrence") { %> <%= count %> <% if (count.length > 1) { %> occurrences <% } else { %> occurrence <% } %> &bull; <%= survey %><% if (survey.length > 1) { %> visits <% } else { %> visit <% } %> <% } %>
 
-            <% if (total_thermal > 0) { %>  &bull; <%= total_thermal %> water temperature data <% } else { %> <% } %>
+            <% if (module === "water_temperature") { %>  <%= total_thermal %> water temperature data <% } %>
+            <% if (module === "physico_chemistry") { %>  <%= total_chemical_records %> physico-chemical data <% } %>
         </a>
     </div>
 </script>

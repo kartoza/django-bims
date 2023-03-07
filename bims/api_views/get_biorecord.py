@@ -145,20 +145,24 @@ class BioCollectionSummary(APIView):
             taxonomy_parent = taxonomy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
 
-        common_names = []
-        # Common name
-        if taxonomy.vernacular_names.filter(language='eng').exists():
-            common_names = list(
-                taxonomy.vernacular_names.all().filter(language='eng').values()
+        common_names = taxonomy.vernacular_names.filter(
+            language__startswith='en'
+        )
+
+        # Check if common names from upload exist, if exist use that instead
+        if common_names.filter(is_upload=True).exists():
+            response_data['common_name'] = (
+                common_names.filter(
+                    is_upload=True
+                )[0].name
             )
-        elif taxonomy.vernacular_names.all().values().exists():
-            common_names = list(taxonomy.vernacular_names.all().values())
-        if len(common_names) == 0:
-            response_data['common_name'] = taxonomy.canonical_name
         else:
-            response_data['common_name'] = str(
-                common_names[0]['name']
-            )
+            if common_names.exists():
+                response_data['common_name'] = common_names.order_by(
+                    'order', 'id'
+                )[0].name
+            else:
+                response_data['common_name'] = taxonomy.canonical_name
 
         # Source references
         collection_with_references = collection_results.exclude(

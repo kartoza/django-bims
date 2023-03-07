@@ -97,6 +97,16 @@
                             <%= rank %>
                         </td>
                     </tr>
+                    <% if (gbif_key) {  %>
+                    <tr class="species-detail-row">
+                        <td class="species-detail-cell cell-header">
+                            GBIF Link
+                        </td>
+                        <td class="species-detail-cell cell-content">
+                            <a href="https://www.gbif.org/species/<%= gbif_key %>" target="_blank">https://www.gbif.org/species/<%= gbif_key %></a>
+                        </td>
+                    </tr>
+                    <% } %>
                     <% if (additional_data["BDI Link"]) { %>
                      <tr class="species-detail-row">
                         <td class="species-detail-cell cell-header">

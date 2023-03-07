@@ -210,11 +210,20 @@
         });
 
         function onDownloadDuplicateCSVClicked(e) {
+            const alertModalBody = $('#alertModalBody');
             let downloadButton = $(e.target);
+            let csvName = 'duplicate-records'
             let url = '/api/duplicate-records/download/';
-            downloadButton.html("Processing...");
-            downloadButton.prop("disabled", true);
-            downloadCSV(url, downloadButton);
+            downloadCSV(url, downloadButton, csvName, true);
+            alertModalBody.html(
+                'Your data download is underway. ' +
+                'This may take some time. ' +
+                'You will be notified by email when your download is ready. '
+            );
+            $('#alertModal').modal({
+                'keyboard': false,
+                'backdrop': 'static'
+            });
         }
     </script>
 

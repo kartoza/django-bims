@@ -251,7 +251,7 @@ function renderSASSTaxonPerBiotope() {
             '</td>');
         $tr.append('<td class="gravel">' +
             '</td>');
-        $tr.append('<td class="gravel">' +
+        $tr.append('<td class="site">' +
             value['taxon_abundance__abc'] +
             '</td>');
         totalSass['site'] += parseInt(value['sass_score']);
