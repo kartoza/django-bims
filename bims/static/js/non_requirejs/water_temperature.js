@@ -2,17 +2,33 @@ let map = null;
 
 function drawMap() {
     let scaleLineControl = new ol.control.ScaleLine();
+    const baseLayer = [];
+    if(bingMapKey){
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.BingMaps({
+                    key: bingMapKey,
+                    imagerySet: 'AerialWithLabels'
+                })
+            })
+        )
+    }
+    else{
+        baseLayer.push(
+            new ol.layer.Tile({
+                source: new ol.source.OSM( {
+                    wrapDateLine: false,
+                    wrapX: false,
+                    noWrap: true
+                })
+            })
+        )
+    }
     map = new ol.Map({
         controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
-        layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM({
-                    wrapX: false
-                })
-            })
-        ],
+        layers: baseLayer,
         target: 'map',
         view: new ol.View({
             center: [0, 0],

@@ -593,6 +593,12 @@ class WaterTemperatureSiteView(TemplateView):
             )
         context['refined_geomorphological'] = refined_geomorphological
 
+        try:
+            context['bing_key'] = BaseMapLayer.objects.get(
+                source_type='bing').key
+        except BaseMapLayer.DoesNotExist:
+            context['bing_key'] = ''
+
         return context
 
     def get(self, request, *args, **kwargs):
