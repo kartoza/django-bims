@@ -489,20 +489,39 @@ class CollectionSearch(object):
             filters['decisionsupporttool__name__in'] = (
                 self.decision_support_tools
             )
-
         if self.year_ranges:
             filters['survey__date__range'] = self.year_ranges
         if self.months:
             filters['survey__date__month__in'] = self.months
         if self.reference:
             filters['source_reference__in'] = self.reference
-        if self.conservation_status:
-            self.filter_taxa_records(
-                {
-                    'iucn_status__category__in':
-                        self.conservation_status
-                }
+
+        all_conservation_status = self.conservation_status
+        if all_conservation_status:
+            global_conservation_status = (
+                [status
+                for status in all_conservation_status
+                if 'N__' not in status]
             )
+            national_conservation_status = (
+                [status.replace('N__', '')
+                 for status in all_conservation_status
+                 if 'N__' in status]
+            )
+            if global_conservation_status:
+                self.filter_taxa_records(
+                    {
+                        'iucn_status__category__in':
+                            global_conservation_status,
+                    }
+                )
+            if national_conservation_status:
+                self.filter_taxa_records(
+                    {
+                        'national_conservation_status__category__in':
+                            national_conservation_status,
+                    }
+                )
         if self.source_collection:
             for source_collection in self.source_collection:
                 if source_collection not in source_collection_filters:

@@ -233,19 +233,40 @@
         <div id="conservation-status-container">
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    CONSERVATION STATUS GLOBAL <i
+                    CONSERVATION STATUS <i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
             </div>
             <div class="row conservation-status-row" style="display: none">
+                <div class="small-subtitle sub-panel"
+                     style="text-transform:capitalize;">
+                    Conservation Status Global
+                </div>
                 <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
                     {% for status_data in conservation_status_data %}
-                        <div>
-                            <input type="checkbox" id="conservation-status-{{ status_data.status }}" value="{{ status_data.status }}">
-                            <label for="conservation-status-{{ status_data.status }}" data-toggle="popover"
-                                   data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
-                        </div>
+                        {% if not status_data.is_national %}
+                            <div>
+                                <input type="checkbox" id="conservation-status-global-{{ status_data.status }}" value="{{ status_data.status }}">
+                                <label for="conservation-status-global-{{ status_data.status }}" data-toggle="popover"
+                                       data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="small-subtitle sub-panel"
+                     style="text-transform:capitalize;">
+                    Conservation Status National
+                </div>
+                <div class="col-lg-12 filter-content conservation-status-wrapper form-group">
+                    {% for status_data in conservation_status_data %}
+                        {% if status_data.is_national %}
+                            <div>
+                                <input type="checkbox" id="conservation-status-national-{{ status_data.status }}" value="N__{{ status_data.status }}">
+                                <label for="conservation-status-national-{{ status_data.status }}" data-toggle="popover"
+                                       data-placement="top" data-container="#map-container" data-trigger="hover" data-content="{{ status_data.desc }}">{{ status_data.name }}</label>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
                 <div class="button-filter-wrapper">

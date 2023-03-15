@@ -2047,9 +2047,8 @@ div:hover::-webkit-scrollbar {
 .tooltip, .popover { pointer-events: none; max-width: 350px; }
 
 .conservation-status-wrapper {
-    padding-top: 15px;
     overflow-y: unset;
-    margin-bottom: -5px;
+    margin-bottom: 10px;
 }
 
 .conservation-status-item {

@@ -91,7 +91,8 @@ class MapPageView(TemplateView):
 
         # Get all the iucn conservation status
         if context['use_conservation_status']:
-            iucn_statuses = IUCNStatus.objects.all().distinct('category')
+            iucn_statuses = IUCNStatus.objects.all().distinct(
+                'category', 'national')
             conservation_status_data = []
             conservation_status_desc = {
                 'CR': 'A taxon is Critically Endangered when the best '
@@ -146,12 +147,14 @@ class MapPageView(TemplateView):
                 if iucn_status.category in categories:
                     conservation_status_data.append({
                         'status': str(iucn_status.category),
+                        'is_national': iucn_status.national,
                         'name': categories[iucn_status.category].title(),
                         'desc': desc
                     })
                 else:
                     conservation_status_data.append({
                         'status': str(iucn_status.category),
+                        'is_national': iucn_status.national,
                         'name': iucn_status.category,
                         'desc': desc
                     })

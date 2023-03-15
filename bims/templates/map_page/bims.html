@@ -56,12 +56,8 @@
         const userCanValidate = "{% if can_validate %} true {% else %} false {% endif %}";
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
         var filterParameters = {};
-        var conservationStatusData = [];
         const is_sass_enabled = {% if preferences.SiteSetting.enable_sass %}true{% else %}false{% endif %};
         const is_water_temperature_enabled = {% if preferences.SiteSetting.enable_water_temperature %}true{% else %}false{% endif %};
-        {% if use_conservation_status %}
-            conservationStatusData = {{ conservation_status_data | safe }};
-        {% endif %}
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const emptyWMSSiteParameter = '{{ bims_preferences.empty_location_site_cluster }}';

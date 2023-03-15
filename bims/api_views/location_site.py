@@ -130,10 +130,15 @@ class LocationSitesSummary(APIView):
     origin_name_list = {}
 
     def conservation_status_data(self, national, collection_results):
-
-        cons_status_data = collection_results.filter(
-            taxonomy__iucn_status__isnull=False, taxonomy__iucn_status__national=national
-        ).annotate(
+        if not national:
+            cons_status_data = collection_results.filter(
+                taxonomy__iucn_status__isnull=False
+            )
+        else:
+            cons_status_data = collection_results.filter(
+                taxonomy__national_conservation_status__isnull=False
+            )
+        cons_status_data = cons_status_data.annotate(
             name=F('taxonomy__iucn_status__category')
         ).values(
             'name'
@@ -349,14 +354,22 @@ class LocationSitesSummary(APIView):
             origin=Case(When(taxonomy__origin='',
                              then=Value('Unknown')),
                         default=F('taxonomy__origin')),
-            cons_status=Case(When(taxonomy__iucn_status__isnull=False,
+            cons_status=Case(
+                            When(taxonomy__iucn_status__isnull=False,
                                   then=F('taxonomy__iucn_status__category')),
+                             default=Value('Not evaluated')),
+            cons_status_national=Case(
+                            When(
+                                taxonomy__national_conservation_status__isnull
+                                =False,
+                                then=F('taxonomy__iucn_status__category')),
                              default=Value('Not evaluated')),
             endemism=Case(When(taxonomy__endemism__isnull=False,
                                then=F('taxonomy__endemism__name')),
                           default=Value('Unknown')),
         ).values(
-            'taxon', 'origin', 'cons_status', 'endemism'
+            'taxon', 'origin', 'cons_status',
+            'cons_status_national', 'endemism'
         ).annotate(
             count=Count('taxon')
         ).order_by('taxon')
