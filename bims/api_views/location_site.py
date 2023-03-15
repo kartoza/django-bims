@@ -687,7 +687,7 @@ class GbifIdsDownloader(APIView):
 
     def convert_to_csv(self, data):
 
-        headers = ['GBIF KEY', 'GBIF LINK']
+        headers = ['TAXON', 'GBIF SPECIES LINK', 'GBIF OCCURRENCE LINK']
         today_date = datetime.date.today()
         filename = sha256(
             'gbif_ids_{date}_{total}'.format(
