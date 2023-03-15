@@ -690,8 +690,10 @@ class GbifIdsDownloader(APIView):
         headers = ['GBIF KEY', 'GBIF LINK']
         today_date = datetime.date.today()
         filename = sha256(
-            'gbif_ids_{}'.format(
-                today_date).encode('utf-8')
+            'gbif_ids_{date}_{total}'.format(
+                date=today_date,
+                total=len(data),
+            ).encode('utf-8')
         ).hexdigest()
         filename += '.csv'
 
@@ -713,43 +715,35 @@ class GbifIdsDownloader(APIView):
                 'filename': filename
             })
 
-        site_id = self.request.GET.get('siteId', None)
-        if site_id:
-            with open(path_file, 'w') as csv_file:
-                writer = csv.DictWriter(csv_file, fieldnames=headers)
-                writer.writeheader()
-                writer.fieldnames = headers
-                for row in data:
-                    writer.writerow(row)
-            return JsonResponse({
-                'status': 'success',
-                'filename': path_file.replace(
-                    settings.MEDIA_ROOT,
-                    ''
-                )
-            })
+        with open(path_file, 'w') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            writer.writeheader()
+            writer.fieldnames = headers
+            for row in data:
+                writer.writerow(row)
+        return JsonResponse({
+            'status': 'success',
+            'filename': path_file.replace(
+                settings.MEDIA_ROOT,
+                ''
+            )
+        })
 
     def get(self, request):
-        site_id = request.GET.get('siteId', None)
-        gbif_ids = []
-        try:
-            location_site = LocationSite.objects.get(id=site_id)
-        except LocationSite.DoesNotExist:
-            return JsonResponse({
-                'status': 'failed',
-                'message': "Location site doesn't exist"
-            })
-
-        records = BiologicalCollectionRecord.objects.filter(
-            site=location_site.id,
-            source_collection='gbif').distinct('taxonomy_id')
+        search = CollectionSearch(request.GET.dict())
+        collection_results = search.process_search()
         data = []
-        if records:
-            for record in records:
+        if collection_results:
+            for record in collection_results:
                 data.append({
-                    'GBIF KEY': record.taxonomy.gbif_key,
-                    'GBIF LINK': 'https://gbif.org/species/{0}'.format(
-                        record.taxonomy.gbif_key)
+                    'TAXON': record.taxonomy.canonical_name,
+                    'GBIF SPECIES LINK': 'https://gbif.org/species/{0}'.format(
+                        record.taxonomy.gbif_key),
+                    'GBIF OCCURRENCE LINK': (
+                        'https://gbif.org/occurrence/{}'.format(
+                            record.upstream_id
+                        )
+                    )
                 })
             return self.convert_to_csv(data)
 
