@@ -916,9 +916,13 @@ define([
 
             // Conservation status
             if (allFilters.hasOwnProperty('conservationStatus')) {
-                var conservationStatus = JSON.parse(allFilters['conservationStatus']);
+                let conservationStatus = JSON.parse(allFilters['conservationStatus']);
                 $.each(conservationStatus, function (index, category) {
-                    $('#conservation-status-' + category).prop('checked', true);
+                    if (category.startsWith("N__")) {
+                        $('#conservation-status-national-' + category.replace('N__', '')).prop('checked', true);
+                    } else {
+                        $('#conservation-status-global--' + category).prop('checked', true);
+                    }
                 });
             }
 
