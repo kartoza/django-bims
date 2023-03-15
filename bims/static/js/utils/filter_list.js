@@ -149,6 +149,30 @@ function renderFilterList($div, asTable = true) {
     });
 
     $.each(tableData, function (key, data) {
+        if (key.toLowerCase().includes('conservation status')) {
+            const consCategories = data.split(',');
+            const consCategory = {
+                national: [],
+                global: []
+            }
+            for (const category of consCategories) {
+                if (category.startsWith('N__')) {
+                    consCategory.national.push(category.replace('N__', ''))
+                } else {
+                    consCategory.global.push(category)
+                }
+            }
+            data = '';
+            if (consCategory.national.length > 0) {
+                data += `National: ${consCategory.national.join()}`
+            }
+            if (consCategory.global.length > 0) {
+                if (data) {
+                    data += '; '
+                }
+                data += `Global: ${consCategory.global.join()}`
+            }
+        }
         if (asTable) {
             let $tr = $('<div class="row">');
             $tr.append('<div class="col-4">' + key + '</div>');
