@@ -53,6 +53,13 @@ def google_analytic_key(request):
     return {'GOOGLE_ANALYTIC_KEY': get_key('GOOGLE_ANALYTIC_KEY')}
 
 
+def bing_api_key(request):
+    """
+    Return Bing analytic key
+    """
+    return {'BING_MAP_KEY': get_key('BING_MAP_KEY')}
+
+
 def site_ready(request):
     """
     Return if site is ready
