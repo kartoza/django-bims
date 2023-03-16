@@ -1417,6 +1417,56 @@ class AlgaeDataAdmin(admin.ModelAdmin):
     )
 
 
+class DownloadRequestStatusFilter(django_admin.SimpleListFilter):
+    title = _('Download Request Status')
+
+    # Parameter for the filter that will be used in the URL query.
+    parameter_name = 'status'
+
+    def lookups(self, request, model_admin):
+        """
+        Returns a list of tuples. The first element in each
+        tuple is the coded value for the option that will
+        appear in the URL query. The second element is the
+        human-readable name for the option that will appear
+        in the right sidebar.
+        """
+        return (
+            ('pending', _('Pending')),
+            ('approved', _('Approved')),
+            ('rejected', _('Rejected')),
+            ('processing', _('Processing')),
+        )
+
+    def queryset(self, request, queryset):
+        """
+        Returns the filtered queryset based on the value
+        provided in the query string and retrievable via
+        `self.value()`.
+        """
+        if self.value() == 'processing':
+            return queryset.filter(
+                processing=True
+            ).exclude(
+                Q(approved=True) | Q(rejected=True)
+            )
+        if self.value() == 'approved':
+            return queryset.filter(
+                approved=True
+            )
+        if self.value() == 'rejected':
+            return queryset.filter(
+                rejected=True
+            )
+        if self.value() == 'pending':
+            return queryset.filter(
+                processing=False,
+                approved=False,
+                rejected=False
+            )
+        return queryset
+
+
 class DownloadRequestAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'requester',
@@ -1430,7 +1480,20 @@ class DownloadRequestAdmin(admin.ModelAdmin):
         'resource_type',
         'resource_name',
         'purpose',
+        'status'
     )
+    list_filter = (
+        DownloadRequestStatusFilter,
+    )
+
+    def status(self, obj: DownloadRequest):
+        if obj.approved:
+            return 'Approved'
+        if obj.rejected:
+            return 'Rejected'
+        if obj.processing:
+            return 'Processing'
+        return 'Pending'
 
 
 class DownloadRequestPurposeAdmin(admin.ModelAdmin):

@@ -1,5 +1,6 @@
 import logging
 import csv
+import os
 import time
 import gc
 
@@ -77,29 +78,38 @@ def download_collection_records(
     from bims.models import BiologicalCollectionRecord
     from bims.download.csv_download import send_csv_via_email
 
+    def get_download_request(request_id):
+        try:
+            return DownloadRequest.objects.get(
+                id=request_id
+            )
+        except DownloadRequest.DoesNotExist:
+            return None
+
+    def write_batch_to_csv(headers, rows, path_file, start_index):
+        bio_serializer = (
+            BioCollectionOneRowSerializer(
+                rows, many=True,
+                context={'header': headers})
+        )
+        csv_row = write_to_csv(
+            headers,
+            bio_serializer.data,
+            path_file,
+            start_index)
+        del bio_serializer
+        return csv_row
+
     start = time.time()
 
     filters = request
     download_request_id = filters.get('downloadRequestId', '')
-    download_request = None
-    if download_request_id:
-        try:
-            download_request = DownloadRequest.objects.get(
-                id=download_request_id
-            )
-        except DownloadRequest.DoesNotExist:
-            pass
+    download_request = get_download_request(download_request_id)
 
     site_results = None
     search = CollectionSearch(filters)
     collection_results = search.process_search()
     total_records = collection_results.count()
-
-    logger.debug('Total records : {}'.format(total_records))
-
-    logger.debug('Search time : {}'.format(
-        round(time.time() - start, 2))
-    )
 
     if not collection_results and site_results:
         site_ids = site_results.values_list('id', flat=True)
@@ -108,7 +118,7 @@ def download_collection_records(
         ).distinct()
 
     current_csv_row = 0
-    record_number = 100 if total_records >= 100 else total_records
+    record_number = min(total_records, 100)
     headers = []
     collection_data = []
 
@@ -118,54 +128,44 @@ def download_collection_records(
     for obj in queryset_iterator(collection_results):
         collection_data.append(obj)
         if len(collection_data) >= record_number:
-            serializer = BioCollectionOneRowSerializer(
-                collection_data,
-                many=True,
-                context={
-                    'header': headers
-                }
-            )
-            rows = serializer.data
-            headers = serializer.context['header']
             start_index = current_csv_row
-            current_csv_row = write_to_csv(
+            current_csv_row = write_batch_to_csv(
                 headers,
-                rows,
+                collection_data,
                 path_file,
-                current_csv_row
-            )
+                current_csv_row)
+
             logger.debug('Serialize time {0}:{1}: {2}'.format(
                 start_index,
                 current_csv_row,
                 round(time.time() - start, 2))
             )
-            if download_request:
-                download_request.progress = f'{start_index}/{total_records}'
-                download_request.save()
-            del rows
+
             del collection_data
-            del serializer
             collection_data = []
 
             gc.collect()
 
+            download_request = get_download_request(download_request_id)
+
+            if download_request.rejected:
+                logger.debug('Download request is rejected, closing.')
+                try:
+                    os.remove(path_file)
+                except Exception: # noqa
+                    pass
+                return
+            else:
+                download_request.progress = f'{start_index}/{total_records}'
+                download_request.save()
+
     if collection_data:
-        serializer = BioCollectionOneRowSerializer(
-            collection_data,
-            many=True,
-            context={
-                'header': headers
-            }
-        )
-        rows = serializer.data
-        headers = serializer.context['header']
         start_index = current_csv_row
-        current_csv_row = write_to_csv(
+        current_csv_row = write_batch_to_csv(
             headers,
-            rows,
+            collection_data,
             path_file,
-            current_csv_row
-        )
+            current_csv_row)
         logger.debug('Serialize time {0}:{1}: {2}'.format(
             start_index,
             current_csv_row,
@@ -177,6 +177,7 @@ def download_collection_records(
     )
 
     if download_request:
+        download_request = get_download_request(download_request_id)
         download_request.progress = f'{current_csv_row}/{total_records}'
         download_request.save()
 
