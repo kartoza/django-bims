@@ -754,6 +754,45 @@ define([
             button.html(name);
             button.prop('disabled', false);
         },
+
+        downloadGBIfIds: function (e){
+            let csv_name = 'GBIF ids'
+            let button = $(e.target);
+            let self = this;
+            let name = button.html();
+
+            let alertModalBody = $('#alertModalBody');
+            button.html('Checking...');
+            button.prop('disabled', true);
+
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.')
+                $('#alertModal').modal({
+                    'keyboard': false,
+                    'backdrop': 'static'
+                });
+            } else {
+                showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
+                    alertModalBody.html(downloadRequestMessage);
+                    $('#alertModal').modal({
+                        'keyboard': false,
+                        'backdrop': 'static'
+                    });
+                    let url = self.csvDownloadGbifIdsUrl;
+                    if (!url.includes('?')) {
+                        url += '?';
+                    }
+                    url += '&downloadRequestId=' + downloadRequestId
+                    $.get({
+                        url: url,
+                        dataType: 'json',
+                        success: function (data) {}
+                    });
+                });
+            }
+            button.html(name);
+            button.prop('disabled', false);
+        },
         downloadChemRecordsAsCSV: function (e) {
             let button = $(e.target);
             let that = this;
@@ -1627,16 +1666,5 @@ define([
                 }
             })
         },
-
-        downloadGBIfIds: function (e){
-            let csv_name = 'GBIF_ids'
-            let button = $(e.target);
-            let that = this;
-            showDownloadPopup('CSV', 'GBIF ids', function () {
-                button.html('Processing...');
-                button.prop("disabled", true);
-                that.downloadingCSV(that.csvDownloadGbifIdsUrl, button, csv_name);
-            });
-        }
     })
 });
