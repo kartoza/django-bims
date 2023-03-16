@@ -59,7 +59,7 @@ class DownloadRequestListView(
                 download_request = DownloadRequest.objects.get(
                     id=int(rejected_id)
                 )
-                download_request.processing = True
+                download_request.processing = False
                 download_request.approved = False
                 download_request.rejected = True
                 download_request.rejection_message = rejection_message
