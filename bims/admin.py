@@ -1460,9 +1460,7 @@ class DownloadRequestStatusFilter(django_admin.SimpleListFilter):
             )
         if self.value() == 'pending':
             return queryset.filter(
-                processing=False,
-                approved=False,
-                rejected=False
+                Q(progress='') | Q(progress__isnull=True)
             )
         return queryset
 
