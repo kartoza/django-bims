@@ -5,9 +5,12 @@ import json
 import os
 from collections import OrderedDict
 import errno
-import datetime
+from datetime import datetime
 from hashlib import sha256
+
+from bims.download.csv_download import send_csv_via_email
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Polygon
 from django.db.models import Q, F, Count, Value, Case, When
 from django.db.models.functions import ExtractYear
@@ -53,6 +56,8 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.location_context_filter_group_order import (
     LocationContextFilterGroupOrder
 )
+from bims.tasks.email_csv import send_csv_via_email as send_csv_via_email_task
+from bims.tasks.collection_record import download_gbif_ids
 
 
 class LocationSiteList(APIView):
@@ -683,59 +688,41 @@ class LocationSitesCoordinate(ListAPIView):
         return collection_results
 
 
-class GbifIdsDownloader(APIView):
+def generate_gbif_ids_data(
+        path_file,
+        request,
+        send_email=False,
+        user_id=None
+):
+    from bims.models.download_request import DownloadRequest
 
-    def convert_to_csv(self, data):
-
-        headers = ['TAXON', 'GBIF SPECIES LINK', 'GBIF OCCURRENCE LINK']
-        today_date = datetime.date.today()
-        filename = sha256(
-            'gbif_ids_{date}_{total}'.format(
-                date=today_date,
-                total=len(data),
-            ).encode('utf-8')
-        ).hexdigest()
-        filename += '.csv'
-
-        # Check if filename exists
-        folder = settings.PROCESSED_CSV_PATH
-        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
-        path_file = os.path.join(path_folder, filename)
-
+    filters = request
+    headers = ['TAXON', 'GBIF SPECIES LINK', 'GBIF OCCURRENCE LINK']
+    download_request_id = filters.get('downloadRequestId', '')
+    download_request = None
+    if download_request_id:
         try:
-            os.mkdir(path_folder)
-        except OSError as exc:
-            if exc.errno != errno.EEXIST:
-                raise
+            download_request = DownloadRequest.objects.get(
+                id=download_request_id
+            )
+        except DownloadRequest.DoesNotExist:
             pass
 
-        if os.path.exists(path_file):
-            return JsonResponse({
-                'status': 'success',
-                'filename': filename
-            })
+    if download_request and download_request.rejected:
+        download_request.processing = False
+        download_request.save()
+        return False
 
+    search = CollectionSearch(filters)
+    collection_results = search.process_search()
+
+    if collection_results.count() > 0:
         with open(path_file, 'w') as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=headers)
             writer.writeheader()
-            writer.fieldnames = headers
-            for row in data:
-                writer.writerow(row)
-        return JsonResponse({
-            'status': 'success',
-            'filename': path_file.replace(
-                settings.MEDIA_ROOT,
-                ''
-            )
-        })
-
-    def get(self, request):
-        search = CollectionSearch(request.GET.dict())
-        collection_results = search.process_search()
-        data = []
-        if collection_results:
-            for record in collection_results:
-                data.append({
+            total_records = collection_results.count()
+            for index, record in enumerate(collection_results):
+                writer.writerow({
                     'TAXON': record.taxonomy.canonical_name,
                     'GBIF SPECIES LINK': 'https://gbif.org/species/{0}'.format(
                         record.taxonomy.gbif_key),
@@ -745,9 +732,73 @@ class GbifIdsDownloader(APIView):
                         )
                     )
                 })
-            return self.convert_to_csv(data)
 
-        return JsonResponse({
-            'status': 'failed',
-            'message': 'Not GBIF'
+                if download_request:
+                    download_request.progress = (
+                        f'{index + 1}/{total_records}'
+                    )
+                    download_request.save()
+
+    if download_request:
+        download_request.processing = False
+        download_request.save()
+
+    if send_email and user_id:
+        UserModel = get_user_model()
+        try:
+            user = UserModel.objects.get(id=user_id)
+            send_csv_via_email(
+                user=user,
+                csv_file=path_file,
+                download_request_id=download_request_id
+            )
+        except UserModel.DoesNotExist:
+            pass
+
+    return True
+
+
+class GbifIdsDownloader(APIView):
+
+    def get_hashed_name(self, request):
+        query_string = json.dumps(
+            request.GET.dict()
+        ) + datetime.today().strftime('%Y%m%d')
+        return sha256(
+            query_string.encode('utf-8')
+        ).hexdigest()
+
+    def get(self, request):
+        filename = self.get_hashed_name(request)
+        filename += '.csv'
+
+        # Check if filename exists
+        folder = settings.PROCESSED_CSV_PATH
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        path_file = os.path.join(path_folder, filename)
+        download_request_id = self.request.GET.get('downloadRequestId', '')
+
+        try:
+            os.mkdir(path_folder)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
+
+        if os.path.exists(path_file):
+            send_csv_via_email_task.delay(
+                user_id=self.request.user.id,
+                csv_file=path_file,
+                download_request_id=download_request_id
+            )
+        else:
+            download_gbif_ids.delay(
+                path_file,
+                self.request.GET,
+                send_email=True,
+                user_id=self.request.user.id)
+
+        return Response({
+            'status': 'processing',
+            'filename': filename
         })

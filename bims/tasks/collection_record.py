@@ -65,3 +65,33 @@ def download_collection_record_task(
     logger.info(
         'Csv %s is already being processed by another worker',
         path_file)
+
+
+@shared_task(name='bims.tasks.download_gbif_ids', queue='update')
+def download_gbif_ids(path_file, request, send_email=False, user_id=None):
+    from bims.utils.celery import memcache_lock
+    from bims.api_views.location_site import generate_gbif_ids_data
+
+    if IN_CELERY_WORKER_PROCESS:
+        lock_id = '{0}-lock-{1}'.format(
+            download_gbif_ids.name,
+            path_file
+        )
+
+        oid = '{0}'.format(path_file)
+        with memcache_lock(lock_id, oid) as acquired:
+            if acquired:
+                return generate_gbif_ids_data(
+                    path_file, request, send_email, user_id
+                )
+        logger.info(
+            'Csv %s is already being processed by another worker',
+            path_file)
+    else:
+        return generate_gbif_ids_data(
+            path_file, request, send_email, user_id
+        )
+
+    logger.info(
+        'Csv %s is already being processed by another worker',
+        path_file)
