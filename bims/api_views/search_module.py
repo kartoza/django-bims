@@ -7,7 +7,7 @@ from django.db.models.functions import Concat
 from geonode.people.models import Profile
 from bims.models.source_reference import LIST_SOURCE_REFERENCES
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Value
+from django.db.models import Q, Value, F
 
 from bims.models.survey import Survey
 from rest_framework import serializers
@@ -132,7 +132,9 @@ class SearchModule(CollectionSearch):
             )
 
         self.sites = LocationSite.objects.filter(
-            id__in=self.module.values('location_site')
+            id__in=list(
+                self.module.values_list('location_site__id', flat=True)
+            )
         )
 
         spatial_filters = self.spatial_filter
@@ -140,6 +142,15 @@ class SearchModule(CollectionSearch):
             self.sites = self.sites.filter(
                 spatial_filters
             )
+
+        if self.sites and not self.location_sites_raw_query:
+            self.location_sites_raw_query = self.sites.annotate(
+                site_id=F('id')
+            ).values(
+                'site_id',
+                'geometry_point',
+                'name'
+            ).query.sql_with_params()
 
     def serialize_sites(self):
         return []
