@@ -76,7 +76,7 @@ def download_collection_records(
     )
     from bims.api_views.search import CollectionSearch
     from bims.models import BiologicalCollectionRecord
-    from bims.download.csv_download import send_csv_via_email
+    from bims.tasks.email_csv import send_csv_via_email
 
     def get_download_request(request_id):
         try:
@@ -192,7 +192,7 @@ def download_collection_records(
         try:
             user = UserModel.objects.get(id=user_id)
             send_csv_via_email(
-                user=user,
+                user_id=user.id,
                 csv_file=path_file,
                 download_request_id=download_request_id
             )

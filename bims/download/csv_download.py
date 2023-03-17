@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from preferences import preferences
 from bims.tasks.collection_record import download_collection_record_task
-from bims.tasks.email_csv import send_csv_via_email as send_csv_via_email_task
+from bims.tasks.email_csv import send_csv_via_email
 
 
 class CsvDownload(APIView):
@@ -60,7 +60,7 @@ class CsvDownload(APIView):
             os.remove(path_file)
 
         if os.path.exists(path_file):
-            send_csv_via_email_task.delay(
+            send_csv_via_email.delay(
                 user_id=request.user.id,
                 csv_file=path_file,
                 download_request_id=download_request_id
@@ -136,66 +136,5 @@ def send_rejection_csv(user, rejection_message = ''):
         message,
         settings.DEFAULT_FROM_EMAIL,
         [user.email])
-    msg.content_subtype = 'html'
-    msg.send()
-
-
-def send_csv_via_email(
-        user, csv_file, file_name = 'OccurrenceData',
-        approved=False,
-        download_request_id=None):
-    """
-    Send an email to requesting user with csv file attached
-    :param user: User object
-    :param csv_file: Path of csv file
-    :param file_name: Name of the file
-    :param approved: Whether the request has been approved or not
-    :param download_request_id: Id of the download request
-    :return:
-    """
-    from bims.models.download_request import DownloadRequest
-    if not approved:
-        if preferences.SiteSetting.enable_download_request_approval:
-            download_request = DownloadRequest.objects.get(
-                id=download_request_id
-            )
-            download_request.request_category = file_name
-            download_request.request_file = csv_file
-            download_request.save()
-            return
-        else:
-            pass
-
-    email_template = 'csv_download/csv_created'
-    ctx = {
-        'username': user.username,
-        'current_site': Site.objects.get_current(),
-    }
-    subject = render_to_string(
-        '{0}_subject.txt'.format(email_template),
-        ctx
-    )
-    message = render_to_string(
-        '{}_message.txt'.format(email_template),
-        ctx
-    )
-    msg = EmailMultiAlternatives(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email])
-    zip_folder = os.path.join(
-        settings.MEDIA_ROOT, settings.PROCESSED_CSV_PATH, user.username)
-    if not os.path.exists(zip_folder):
-        os.mkdir(zip_folder)
-    zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
-    with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        zf.write(csv_file, '{}.csv'.format(file_name))
-        if preferences.SiteSetting.readme_download:
-            zf.write(
-                preferences.SiteSetting.readme_download.path,
-                os.path.basename(preferences.SiteSetting.readme_download.path)
-            )
-    msg.attach_file(zip_file, 'application/octet-stream')
     msg.content_subtype = 'html'
     msg.send()

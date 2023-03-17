@@ -773,11 +773,6 @@ define([
                 });
             } else {
                 showDownloadPopup('CSV', csv_name, function (downloadRequestId) {
-                    alertModalBody.html(downloadRequestMessage);
-                    $('#alertModal').modal({
-                        'keyboard': false,
-                        'backdrop': 'static'
-                    });
                     let url = self.csvDownloadGbifIdsUrl;
                     if (!url.includes('?')) {
                         url += '?';
@@ -786,7 +781,21 @@ define([
                     $.get({
                         url: url,
                         dataType: 'json',
-                        success: function (data) {}
+                        success: function (data) {
+                            $('#alertModal').modal({
+                                'keyboard': false,
+                                'backdrop': 'static'
+                            });
+                            if (data['status'] === 'failed') {
+                                let errorMessage = 'Unexpected Error'
+                                if (data['message']) {
+                                    errorMessage = data['message']
+                                }
+                                alertModalBody.html('ERROR : ' + errorMessage);
+                            } else {
+                                alertModalBody.html(downloadRequestMessage);
+                            }
+                        }
                     });
                 });
             }

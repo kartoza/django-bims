@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
-    from bims.download.csv_download import send_csv_via_email
+    from bims.tasks.email_csv import send_csv_via_email
     from bims.api_views.taxon import TaxaList
     class RequestGet:
         def __init__(self, get_data):
@@ -54,7 +54,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
     try:
         user = UserModel.objects.get(id=user_id)
         send_csv_via_email(
-            user=user,
+            user_id=user.id,
             csv_file=csv_file_path,
             file_name=filename,
             approved=True
