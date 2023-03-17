@@ -15,7 +15,7 @@ from sass.tasks.download_sass_data_site import (
     download_sass_summary_data_task, download_sass_taxon_data_task
 )
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.download.csv_download import send_csv_via_email
+from bims.tasks.email_csv import send_csv_via_email
 
 FAILED_STATUS = 'failed'
 SUCCESS_STATUS = 'success'
@@ -93,7 +93,7 @@ def download_sass_data_site(request, **kwargs):
 
     if os.path.exists(path_file):
         send_csv_via_email(
-            user=request.user,
+            user_id=request.user.id,
             csv_file=path_file,
             file_name=csv_name,
             download_request_id=filters.get('downloadRequestId', '')
@@ -137,7 +137,7 @@ def download_sass_summary_data(request):
 
     if os.path.exists(path_file):
         send_csv_via_email(
-            user=request.user,
+            user_id=request.user.id,
             csv_file=path_file,
             file_name=csv_name,
             download_request_id=filters.get('downloadRequestId', '')
@@ -185,7 +185,7 @@ def download_sass_taxon_data(request, **kwargs):
 
     if os.path.exists(path_file):
         send_csv_via_email(
-            user=request.user,
+            user_id=request.user.id,
             csv_file=path_file,
             file_name=csv_name,
             download_request_id=request.GET.get('downloadRequestId', '')

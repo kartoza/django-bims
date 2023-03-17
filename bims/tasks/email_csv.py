@@ -29,16 +29,15 @@ def send_csv_via_email(
 
     user = get_user_model().objects.get(id=user_id)
 
-    if not approved:
-        if preferences.SiteSetting.enable_download_request_approval:
+    if not approved and download_request_id:
+        try:
             download_request = DownloadRequest.objects.get(
                 id=download_request_id
             )
             download_request.request_category = file_name
             download_request.request_file = csv_file
             download_request.save()
-            return
-        else:
+        except DownloadRequest.DoesNotExist:
             pass
 
     email_template = 'csv_download/csv_created'

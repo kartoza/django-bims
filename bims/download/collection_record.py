@@ -76,7 +76,9 @@ def download_collection_records(
     )
     from bims.api_views.search import CollectionSearch
     from bims.models import BiologicalCollectionRecord
-    from bims.download.csv_download import send_csv_via_email
+    from bims.tasks.email_csv import send_csv_via_email
+
+    headers = []
 
     def get_download_request(request_id):
         try:
@@ -86,19 +88,22 @@ def download_collection_records(
         except DownloadRequest.DoesNotExist:
             return None
 
-    def write_batch_to_csv(headers, rows, path_file, start_index):
+    def write_batch_to_csv(header, rows, path_file, start_index):
         bio_serializer = (
             BioCollectionOneRowSerializer(
                 rows, many=True,
-                context={'header': headers})
+                context={'header': header})
         )
+        bio_data = bio_serializer.data
+        if len(header) == 0:
+            header = bio_serializer.context['header']
         csv_row = write_to_csv(
-            headers,
-            bio_serializer.data,
+            header,
+            bio_data,
             path_file,
             start_index)
         del bio_serializer
-        return csv_row
+        return csv_row, header
 
     start = time.time()
 
@@ -119,7 +124,6 @@ def download_collection_records(
 
     current_csv_row = 0
     record_number = min(total_records, 100)
-    headers = []
     collection_data = []
 
     if download_request and download_request.rejected:
@@ -129,11 +133,12 @@ def download_collection_records(
         collection_data.append(obj)
         if len(collection_data) >= record_number:
             start_index = current_csv_row
-            current_csv_row = write_batch_to_csv(
+            current_csv_row, headers = write_batch_to_csv(
                 headers,
                 collection_data,
                 path_file,
-                current_csv_row)
+                current_csv_row
+            )
 
             logger.debug('Serialize time {0}:{1}: {2}'.format(
                 start_index,
@@ -161,7 +166,7 @@ def download_collection_records(
 
     if collection_data:
         start_index = current_csv_row
-        current_csv_row = write_batch_to_csv(
+        current_csv_row, headers = write_batch_to_csv(
             headers,
             collection_data,
             path_file,
@@ -192,7 +197,7 @@ def download_collection_records(
         try:
             user = UserModel.objects.get(id=user_id)
             send_csv_via_email(
-                user=user,
+                user_id=user.id,
                 csv_file=path_file,
                 download_request_id=download_request_id
             )

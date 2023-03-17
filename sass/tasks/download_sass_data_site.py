@@ -12,7 +12,7 @@ from bims.api_views.search import CollectionSearch
 from sass.models import SiteVisitTaxon, SassTaxon
 from geonode.people.models import Profile
 from bims.models.location_context import LocationContext
-from bims.download.csv_download import send_csv_via_email
+from bims.tasks.email_csv import send_csv_via_email
 from sass.serializers.sass_data_serializer import SassDataSerializer, SassTaxonDataSerializer
 from sass.serializers.sass_data_serializer import SassSummaryDataSerializer
 
@@ -68,7 +68,7 @@ def download_sass_data_site_task(
 
             if send_email:
                 send_csv_via_email(
-                    user=user,
+                    user_id=user.id,
                     csv_file=path_file,
                     file_name=filters.get('csvName', 'SASS-Data'),
                     download_request_id=filters.get(
@@ -194,7 +194,7 @@ def download_sass_summary_data_task(
 
             if send_email:
                 send_csv_via_email(
-                    user=user,
+                    user_id=user.id,
                     csv_file=path_file,
                     file_name=filters.get('csvName', 'SASS-Summary'),
                     download_request_id=filters.get(
@@ -308,7 +308,7 @@ def download_sass_taxon_data_task(
 
             if send_email:
                 send_csv_via_email(
-                    user=user,
+                    user_id=user.id,
                     csv_file=path_file,
                     file_name=filters.get('csvName', 'SASS-Data'),
                     download_request_id=filters.get(

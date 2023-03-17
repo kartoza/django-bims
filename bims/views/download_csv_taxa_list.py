@@ -11,7 +11,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
-from bims.download.csv_download import send_csv_via_email
+from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_csv_taxa_list as download_csv_taxa_list_task
 )
@@ -214,7 +214,7 @@ def download_csv_taxa_list(request):
 
     if os.path.exists(path_file):
         send_csv_via_email(
-            user=request.user,
+            user_id=request.user.id,
             csv_file=path_file,
             file_name=filename,
             approved=True

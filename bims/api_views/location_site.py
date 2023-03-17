@@ -8,7 +8,6 @@ import errno
 from datetime import datetime
 from hashlib import sha256
 
-from bims.download.csv_download import send_csv_via_email
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Polygon
@@ -21,6 +20,7 @@ from rest_framework.generics import ListAPIView
 from sorl.thumbnail import get_thumbnail
 from preferences import preferences
 
+from bims.models.download_request import DownloadRequest
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
@@ -56,7 +56,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.location_context_filter_group_order import (
     LocationContextFilterGroupOrder
 )
-from bims.tasks.email_csv import send_csv_via_email as send_csv_via_email_task
+from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.collection_record import download_gbif_ids
 
 
@@ -694,7 +694,11 @@ def generate_gbif_ids_data(
         send_email=False,
         user_id=None
 ):
-    from bims.models.download_request import DownloadRequest
+    def get_download_request(download_request_id):
+        try:
+            return DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return None
 
     filters = request
     headers = ['TAXON', 'GBIF SPECIES LINK', 'GBIF OCCURRENCE LINK']
@@ -715,6 +719,9 @@ def generate_gbif_ids_data(
 
     search = CollectionSearch(filters)
     collection_results = search.process_search()
+    collection_results = collection_results.exclude(
+        upstream_id=''
+    )
 
     if collection_results.count() > 0:
         with open(path_file, 'w') as csv_file:
@@ -733,23 +740,32 @@ def generate_gbif_ids_data(
                     )
                 })
 
-                if download_request:
+                download_request = get_download_request(download_request_id)
+                if download_request and not download_request.rejected:
                     download_request.progress = (
                         f'{index + 1}/{total_records}'
                     )
                     download_request.save()
+                elif download_request.rejected:
+                    return False
 
     if download_request:
         download_request.processing = False
+        download_request.request_file = path_file
         download_request.save()
 
-    if send_email and user_id:
+    download_request = get_download_request(download_request_id)
+    if (
+        send_email and user_id and
+        download_request and download_request.approved
+    ):
         UserModel = get_user_model()
         try:
             user = UserModel.objects.get(id=user_id)
             send_csv_via_email(
-                user=user,
+                user_id=user.id,
                 csv_file=path_file,
+                file_name='GBIFRecords',
                 download_request_id=download_request_id
             )
         except UserModel.DoesNotExist:
@@ -785,13 +801,30 @@ class GbifIdsDownloader(APIView):
                 raise
             pass
 
-        if os.path.exists(path_file):
-            send_csv_via_email_task.delay(
+        try:
+            download_request = DownloadRequest.objects.get(
+                id=download_request_id
+            )
+        except DownloadRequest.DoesNotExist:
+            return Response({
+                'status': 'failed',
+                'message': 'Download request does not exist'
+            })
+
+        if os.path.exists(path_file) and download_request.approved:
+            send_csv_via_email.delay(
                 user_id=self.request.user.id,
                 csv_file=path_file,
+                file_name='GBIFRecords',
                 download_request_id=download_request_id
             )
         else:
+            if os.path.exists(path_file):
+                return Response({
+                    'status': 'failed',
+                    'message': 'Download request has been requested'
+                })
+
             download_gbif_ids.delay(
                 path_file,
                 self.request.GET,
