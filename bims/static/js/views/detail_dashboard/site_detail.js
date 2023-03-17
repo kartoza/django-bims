@@ -29,7 +29,6 @@ define([
         dummyPieColors: ['#2d2d2d', '#565656', '#6d6d6d', '#939393', '#adadad', '#bfbfbf', '#d3d3d3'],
         fetchBaseUrl: '/api/location-sites-summary/?',
         fetchLocationSiteCoordinateUrl: '/api/location-sites-coordinate/?',
-        csvDownloadUrl: '/api/collection/download/',
         csvDownloadEmailUrl: '/api/csv-download/',
         chemCsvDownloadUrl: '/api/chemical-record/download/',
         locationSiteCoordinateRequestXHR: null,
@@ -189,14 +188,12 @@ define([
                 direction: 'right'
             }, 300, function () {
                 if (typeof data === 'string') {
-                    self.csvDownloadUrl += '?' + data;
                     self.chemCsvDownloadUrl += '?' + data;
                     self.csvDownloadEmailUrl += '?' + data;
                     self.fetchData(data, true);
                     self.currentFiltersUrl = '?' + data;
                     self.csvDownloadGbifIdsUrl += '?' + data;
                 } else {
-                    self.csvDownloadUrl += self.apiParameters(filterParameters);
                     self.chemCsvDownloadUrl += self.apiParameters(filterParameters);
                     self.csvDownloadEmailUrl += self.apiParameters(filterParameters);
                     self.currentFiltersUrl = self.apiParameters(filterParameters);
@@ -734,11 +731,6 @@ define([
                 });
             } else {
                 showDownloadPopup('CSV', 'Occurrence Data', function (downloadRequestId) {
-                    alertModalBody.html(downloadRequestMessage);
-                    $('#alertModal').modal({
-                        'keyboard': false,
-                        'backdrop': 'static'
-                    });
                     let url = self.csvDownloadEmailUrl;
                     if (!url.includes('?')) {
                         url += '?';
@@ -747,7 +739,17 @@ define([
                     $.get({
                         url: url,
                         dataType: 'json',
-                        success: function (data) {}
+                        success: function (data) {
+                            if (data['status'] !== 'failed') {
+                                alertModalBody.html(downloadRequestMessage);
+                            } else {
+                                alertModalBody.html(data['message'])
+                            }
+                            $('#alertModal').modal({
+                                'keyboard': false,
+                                'backdrop': 'static'
+                            });
+                        }
                     });
                 })
             }

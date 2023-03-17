@@ -30,6 +30,7 @@ class CsvDownload(APIView):
         ).hexdigest()
 
     def get(self, request, *args):
+        from bims.models.download_request import DownloadRequest
         # User need to be logged in before requesting csv download
         if not request.user.is_authenticated:
             return HttpResponseForbidden('Not logged in')
@@ -59,13 +60,27 @@ class CsvDownload(APIView):
         if os.path.exists(path_file):
             os.remove(path_file)
 
-        if os.path.exists(path_file):
+        try:
+            download_request = DownloadRequest.objects.get(
+                id=download_request_id
+            )
+        except DownloadRequest.DoesNotExist:
+            return Response({
+                'status': 'failed',
+                'message': 'Download request does not exist'
+            })
+        if os.path.exists(path_file) and download_request.approved:
             send_csv_via_email.delay(
                 user_id=request.user.id,
                 csv_file=path_file,
                 download_request_id=download_request_id
             )
         else:
+            if os.path.exists(path_file):
+                return Response({
+                    'status': 'failed',
+                    'message': 'Download request has been requested'
+                })
             download_collection_record_task.delay(
                 path_file,
                 self.request.GET,
@@ -79,7 +94,7 @@ class CsvDownload(APIView):
         })
 
 
-def send_new_csv_notification(user, date_request):
+def send_new_csv_notification(user, date_request, approval_needed=True):
     """
     Send an email notify admin/staff that new request has been created
     :param user: User object
@@ -97,10 +112,16 @@ def send_new_csv_notification(user, date_request):
         '{0}_subject.txt'.format(email_template),
         ctx
     )
-    message = render_to_string(
-        '{}_message.txt'.format(email_template),
-        ctx
-    )
+    if not approval_needed:
+        message = render_to_string(
+            '{}_message_without_approval.txt'.format(email_template),
+            ctx
+        )
+    else:
+        message = render_to_string(
+            '{}_message.txt'.format(email_template),
+            ctx
+        )
     msg = EmailMultiAlternatives(
         subject,
         message,

@@ -1,3 +1,5 @@
+from preferences import preferences
+
 from bims.download.csv_download import send_new_csv_notification
 from bims.models.taxonomy import Taxonomy
 
@@ -26,6 +28,10 @@ class DownloadRequestApi(APIView):
         location_site = None
         taxon = None
         success = False
+
+        approval_needed = (
+            preferences.SiteSetting.enable_download_request_approval
+        )
 
         if not resource_name or not resource_type or not purpose:
             raise Http404('Missing required field.')
@@ -62,10 +68,15 @@ class DownloadRequestApi(APIView):
             notes=notes
         )
 
-        if download_request.id and not download_request.request_file:
+        if not approval_needed:
+            download_request.approved = True
+            download_request.save()
+
+        if download_request:
             send_new_csv_notification(
                 download_request.requester,
-                download_request.request_date
+                download_request.request_date,
+                approval_needed
             )
 
         return Response({
