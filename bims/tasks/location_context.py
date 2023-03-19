@@ -161,13 +161,16 @@ def generate_spatial_scale_filter():
                 for index, value in enumerate(spatial_tree_value):
                     if value['query'] == "":
                         del(spatial_tree_value[index])
+
+                # Sort values that have a number prefix, e.g. "1 - Limpopo."
                 spatial_tree_value_sorted = sorted(
                     spatial_tree_value,
                     key=lambda i: (
                         int(i['query'].split(' ')[0])
                         if i['query'].split(' ')[0].isdigit()
-                        else i['query'])
+                        else 99)
                 )
+
             except TypeError:
                 continue
             layer_name = group.layer_name
