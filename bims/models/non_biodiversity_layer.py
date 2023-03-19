@@ -36,6 +36,32 @@ class NonBiodiversityLayer(OrderedModel):
         default='text/plain'
     )
 
+    csv_file = models.FileField(
+        upload_to='non_biodiversity_layer_csv_file',
+        null=True,
+        blank=True,
+        help_text='A CSV file that will be filtered and downloaded based on '
+                  'matching values between "layer_csv_attribute" '
+                  'and "csv_attribute". This will also show the download '
+                  'button in the attribute data panel.'
+    )
+
+    csv_attribute = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        help_text='Column name in the csv that will be used to '
+                  'filter csv_file.'
+    )
+
+    layer_csv_attribute = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        help_text='Attribute in the layer that will be used '
+                  'to filter csv_file.'
+    )
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
