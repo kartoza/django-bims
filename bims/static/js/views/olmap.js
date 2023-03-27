@@ -233,7 +233,8 @@ define([
                     data: {
                         'layerSource': layerSource
                     },
-                    success: function (data) {
+                    success: function (result) {
+                        const data = result['feature_data'];
                         let objectData = {};
                         if (data.constructor === Object) {
                             objectData = data;

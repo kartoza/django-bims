@@ -665,10 +665,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             type: 'POST',
                             url: '/get_feature/',
                             data: {
-                                'layerSource': layerSource
+                                'layerSource': layerSource,
+                                'layerName': layer.layerName
                             },
-                            success: function (data) {
+                            success: function (result) {
                                 // process properties
+                                const data = result['feature_data'];
                                 if (coordinate !== lastCoordinate || !data) {
                                     return;
                                 }
@@ -693,7 +695,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 }
                                 featuresInfo[layer_key] = {
                                     'layerName': layer['layerName'],
-                                    'properties': properties
+                                    'properties': properties,
+                                    'layerAttr': result['layer_attr'],
+                                    'layerId': result['layer_id']
                                 };
                             },
                         }));
@@ -717,12 +721,45 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
             });
         },
+        downloadFilteredLayerData: function (layerFilter, layerId, layerName, $button) {
+            let _layerFilter = layerFilter;
+            if (layerFilter.endsWith('.0')) {
+                _layerFilter = layerFilter.replace('.0', '')
+            }
+            $.get(`/api/download-layer-data/${layerId}/${_layerFilter}/`, function(response) {
+                const data = response['data'];
+                if (data) {
+                    const csvData = [
+                        Object.keys(data).join(','),
+                        Object.values(data).join(','),
+                        ''
+                    ].join('\n')
+                    // CSV file
+                    let csvFile = new Blob([csvData], {type: "text/csv"});
+                    // Download link
+                    let downloadLink = document.createElement("a");
+                    // File name
+                    downloadLink.download = `${layerName}-${layerFilter}.csv`
+                    // Create a link to the file
+                    downloadLink.href = window.URL.createObjectURL(csvFile);
+                    // Hide download link
+                    downloadLink.style.display = "none";
+                    // Add the link to DOM
+                    document.body.appendChild(downloadLink);
+                    // Click download link
+                    downloadLink.click();
+                }
+
+                $button.removeAttr("disabled");
+            })
+        },
         renderFeaturesInfo: function (featuresInfo, coordinate) {
             var that = this;
             let tabs = '<ul class="nav nav-tabs">';
             let content = '';
             $.each(featuresInfo, function (key_feature, feature) {
                 var layerName = feature['layerName'];
+                let contentId = `info-${key_feature.replace(':', '-')}`;
                 if (layerName.indexOf(that.administrativeKeyword) >= 0) {
                     layerName = that.administrativeKeyword;
                     key_feature = 'administrative';
@@ -732,13 +769,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     'title="' + layerName + '" ' +
                     'data-tab="info-' + key_feature + '">' +
                     layerName + '</li>';
-                content += '<div class="info-wrapper" data-tab="info-' + key_feature + '">';
-
-                // For ticket https://github.com/kartoza/django-bims/issues/2838
-                // Add a download button for specific layer
-                if (key_feature.includes('mv_flow_regime_type')) {
-                    content += '<a class="btn btn-xs btn-primary" href="/static/data/Flow type metrics.xlsx">Download data</a>'
-                }
+                content += '<div class="info-wrapper" data-tab="info-' + key_feature + '" id="' + contentId + '">';
 
                 content += '<table>';
                 $.each(feature['properties'], function (key, property) {
@@ -762,6 +793,21 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $('.info-wrapper').hide();
                 $('.info-wrapper[data-tab="' + $(this).data('tab') + '"]').show();
             });
+
+            $.each(featuresInfo, function (key_feature, feature) {
+                let layerAttr = feature['layerAttr'];
+                let layerName = feature['layerName'];
+                let contentId = `info-${key_feature.replace(':', '-')}`;
+                if (layerAttr) {
+                    let downloadButton = $('<button class="btn btn-xs btn-primary">Download data</button>');
+                    downloadButton.click(function () {
+                        $(this).attr("disabled", true);
+                        that.downloadFilteredLayerData(feature['properties'][layerAttr], feature['layerId'], layerName, $(this));
+                    });
+                    $(`#${contentId}`).prepend(downloadButton);
+                }
+            });
+
             if ($('.nav-tabs').innerHeight() > $(infoWrapperTab[0]).innerHeight()) {
                 let width = $('.info-popup').width() / infoWrapperTab.length;
                 infoWrapperTab.innerWidth(width);

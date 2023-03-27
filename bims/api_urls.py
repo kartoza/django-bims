@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.urls import path
 # from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
     BoundaryList,
@@ -15,7 +16,7 @@ from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
 )
 from bims.api_views.non_biodiversity_layer import (
-    NonBiodiversityLayerList
+    NonBiodiversityLayerList, DownloadLayerData
 )
 from bims.api_views.search_module import SearchModuleAPIView
 from bims.api_views.taxon import (
@@ -304,4 +305,8 @@ urlpatterns = [
         ),
     url(r'^gbif-ids/download/$',
         GbifIdsDownloader.as_view()),
+
+    path('download-layer-data/<int:layer_id>/<str:query_filter>/',
+        DownloadLayerData.as_view(),
+        name='download-layer-data')
 ]
