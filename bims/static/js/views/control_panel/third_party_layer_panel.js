@@ -49,7 +49,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         },
         addMiniSASSLayer: function () {
             let options = {
-                url: '/bims_proxy/http://minisass.org:8080/geoserver/wms',
+                url: '/bims_proxy/http://minisass.org/geoserver/wms',
                 params: {
                     name: 'MiniSASS',
                     layers: 'miniSASS:minisass_observations',
@@ -168,10 +168,12 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                     data: {
                         'layerSource': layerSource
                     },
-                    success: function (data) {
-                        if (!data) {
+                    success: function (result) {
+                        if (!result) {
                             return true;
                         }
+                        const data = result['feature_data'];
+                        if (!data) return true;
                         self.showContentToSidePanel(
                             lon, lat, layerName, data, siteExist, openSidePanel
                         )

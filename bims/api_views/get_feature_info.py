@@ -1,10 +1,13 @@
 import re
 import requests
 from requests.exceptions import HTTPError, ConnectionError
-from django.http import HttpResponse
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authentication import BasicAuthentication
 from bims.permissions.auth_class import CsrfExemptSessionAuthentication
+from bims.models.non_biodiversity_layer import (
+    NonBiodiversityLayer
+)
 
 
 class GetFeatureInfo(APIView):
@@ -17,10 +20,27 @@ class GetFeatureInfo(APIView):
 
     def post(self, request):
         layer_source = request.POST.get('layerSource', None)
+        layer_name = request.POST.get('layerName', None)
+        layer = None
+        if layer_name:
+            try:
+                layer = NonBiodiversityLayer.objects.get(
+                    name=layer_name
+                )
+            except NonBiodiversityLayer.DoesNotExist:
+                pass
         layer_source = self.remove_proxy(layer_source)
         try:
             response = requests.get(layer_source)
-            return HttpResponse(response)
+            return Response({
+                'feature_data': response.text,
+                'layer_attr': layer.layer_csv_attribute if layer else None,
+                'layer_id': layer.id if layer else None
+            })
         except (HTTPError, KeyError, ConnectionError) as e:
             print(e)
-            return HttpResponse('')
+            return Response({
+                'feature_data': '',
+                'layer_attr': None,
+                'layer_id': None
+            })
