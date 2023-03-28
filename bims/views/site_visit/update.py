@@ -66,6 +66,22 @@ class SiteVisitUpdateView(
             if collection_to_remove.exists():
                 collection_to_remove.delete()
 
+    def _form_data(self, form, key, default_value=None):
+        """
+        Retrieves data from a form based on the specified key.
+        Default value is returned if they key is not found
+        :param form: The valid form data to retrieve the data
+        :param key: The key in the form data to retrieve the value for
+        :param default_value: The default value to return if the specified
+            key is not found
+        :return: The value from the form data for the specified key,
+            or the default value if the key is not found
+        """
+        form_data = form.data.get(key, default_value)
+        if not form_data and form_data != default_value:
+            return default_value
+        return form_data
+
     def form_valid(self, form):
         # This method is called when valid form data has been POSTed.
         # It should return an HttpResponse.
@@ -152,30 +168,37 @@ class SiteVisitUpdateView(
                                 original_species_name=taxonomy.canonical_name,
                                 site=self.object.site,
                                 collector_user=collector_user,
-                                sampling_method_id=form.data.get(
-                                    'sampling_method', None),
+                                sampling_method_id=self._form_data(
+                                    form, 'sampling_method', None
+                                ),
                                 abundance_number=abundance,
                                 owner=owner,
-                                biotope_id=form.data.get('biotope', None),
-                                specific_biotope_id=(
-                                    form.data.get('specific_biotope', None)
+                                biotope_id=self._form_data(
+                                    form, 'biotope', None
+                                ),
+                                specific_biotope_id=self._form_data(
+                                    form, 'specific_biotope', None
                                 ),
                                 substratum_id=(
-                                    form.data.get('substratum', None)
+                                    self._form_data(
+                                        form, 'substratum', None
+                                    )
                                 ),
-                                reference=form.data.get(
-                                    'study_reference', ''
+                                reference=self._form_data(
+                                    form, 'study_reference', ''
                                 ),
-                                reference_category=form.data.get(
-                                    'reference_category', ''
+                                reference_category=self._form_data(
+                                    form, 'reference_category', ''
                                 ),
-                                sampling_effort=form.data.get(
-                                    'sampling_effort', ''),
-                                abundance_type=form.data.get(
-                                    'abundance_type', ''),
+                                sampling_effort=self._form_data(
+                                    form, 'sampling_effort', ''
+                                ),
+                                abundance_type=self._form_data(
+                                    form, 'abundance_type', ''
+                                ),
                                 survey=self.object,
-                                record_type=form.data.get(
-                                    'record_type', ''
+                                record_type=self._form_data(
+                                    form, 'record_type', ''
                                 )
                             )
                         )
