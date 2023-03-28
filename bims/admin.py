@@ -21,7 +21,8 @@ from django.db.models import Q
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, \
+    ReadOnlyPasswordHashField
 
 from django_json_widget.widgets import JSONEditorWidget
 
@@ -611,16 +612,7 @@ class SignedUpFilter(SimpleListFilter):
 # Inherits from GeoNode's ProfileAdmin page
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {'fields': (
-            'first_name', 'last_name', 'email', 'organization')}),
-        ('Profiles',
-         {'classes': ('placeholder bims_profile-group',), 'fields': ()}),
-        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',
-                                       'groups')}),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
-    )
+    change_form_template = 'admin/user_changeform.html'
     inlines = [ProfileInline]
     add_fieldsets = (
         (None, {
@@ -655,7 +647,9 @@ class CustomUserAdmin(ProfileAdmin):
         SignedUpFilter,
         RoleFilter
     )
-    readonly_fields = ()
+    readonly_fields = (
+        'password',
+    )
 
     actions = ['merge_users', 'download_csv']
 
