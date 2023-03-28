@@ -1,0 +1,209 @@
+{% extends 'main_base.html' %}
+{% load jsonify %}
+{% load static from staticfiles %}
+{% load thumbnail %}
+
+{% block subtitle %}
+    Pesticide Dashboard
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script type="text/javascript">
+        const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
+        const siteCode = "{{ site_code }}";
+        const siteId = "{{ site_id }}";
+        const year = "{{ year }}";
+        const sourceReferences = {{ source_references | safe }};
+        const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
+        const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
+        const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
+        const geomorphologicalGroup = {% if geomorphological_group %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
+        const freshwaterEcoregion = {% if freshwater_ecoregion_of_the_world %}{{ freshwater_ecoregion_of_the_world | safe }}{% else %}[]{% endif %};
+        const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
+        const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
+        const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
+        const originalGeomorphologicalZone = '{{ original_geomorphological }}';
+        const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
+        const availableYears = {{ years }};
+    </script>
+    <style>
+
+        #legend-summary-id ul {
+            list-style: none;
+            font-size: 12px;
+        }
+        #legend-summary-id li {
+            display: inline;
+            margin-right: 10px;
+        }
+        #legend-summary-id li span{
+            width: 40px;
+            height: 12px;
+            display: inline-block;
+
+        }
+        .year-container {
+            display: flex;
+            max-width: 500px;
+            align-items: center;
+        }
+        .col-form-label {
+            width: 50px;
+        }
+        .col-header {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            font-size: 13pt;
+            font-weight: bold;
+        }
+        .row-indicator {
+            padding-top: 1em;
+            margin-left: 0.1em;
+            padding-left: 0;
+        }
+        .row-indicator .col-lg-3, .row-indicator .col-lg-4, .row-indicator .col-lg-2 {
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .row-indicator p {
+            border-bottom: 1px solid rgba(138, 138, 138, 0.31);
+            height: 20px;
+        }
+
+        .col-header {
+            margin-bottom: 1em;
+            background-color: #bebebe;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            font-size: 11pt;
+            border: 0;
+        }
+
+        .col-header:first-child {
+            padding-left: 10px;
+        }
+
+        .row-indicator .col-lg-4 p {
+            padding-left: 10px;
+        }
+        .fa-question-circle {
+            cursor: pointer;
+        }
+        #update-date {
+            margin-left: 10px;
+            font-size: 10pt;
+        }
+        #ui-datepicker-div {
+            margin-top: -80px;
+        }
+        #water-temperature {
+            min-height: 600px;
+            display: flex;
+            justify-content: center;
+        }
+
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+    <script type="text/javascript">
+    </script>
+    <div style="padding-bottom: 0.2em">
+        <div class="body-form container">
+            <div class="logo hide-logo pull-right"><img width="50"
+                                                        src="{% static 'img/bims-stamp.png' %}">
+            </div>
+
+            <div class="modal fade" id="alertModal" tabindex="-1" role="dialog"
+                 aria-labelledby="alertModalLabel" aria-hidden="true"
+                 style="z-index: 99999">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-body" id="alertModalBody">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                    data-dismiss="modal">Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-title">
+                <h2>Pesticide Dashboard for {{ site_code }}</h2>
+                <div class="dashboard-close"><i class="fa fa-times"
+                                                aria-hidden="true"></i></div>
+                <div style="float: right; right: 0">
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="map-container">
+                        <div class="chart-title">Map
+                            <i data-download-title="SASS charts"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download map as PNG"
+                               class="fa fa-download pull-right download-icon download-map"></i>
+                        </div>
+                        <div id="map"></div>
+                    </div>
+                    <div class="vertical-space"></div>
+
+                    {% include 'includes/overview_table.html' %}
+
+                    <div class="vertical-space"></div>
+
+                <div class="col-md-6 mp">
+
+
+                    <div class="vertical-space"></div>
+                    {% if full_year_data > 304 %}
+                    <div class="table-container" >
+
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
+    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/libs/canvas2svg.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/highstock.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/data.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/exporting.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/export-data.js" %}"></script>
+    <script src="{% static "js/libs/highcharts/modules/accessibility.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/utils/table_download.js" %}"></script>
+    <script src="{% static "js/utils/svg_download.js" %}"></script>
+    <script src="{% static "js/sass_dashboard_close.js" %}"></script>
+    <script src="{% static "js/metadata_table.js" %}"></script>
+    <script src="{% static "js/map-dashboard.js" %}"></script>
+    <script src="{% static "js/non_requirejs/water_temperature.js" %}"></script>
+
+{% endblock %}
