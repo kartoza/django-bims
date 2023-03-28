@@ -225,6 +225,14 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
             else:
                 value_key = 'Water temperature'
 
+        if date_field not in headers:
+            self.add_error_messages(
+                row - 1,
+                'The header for the date should be named either '
+                '"Date" or "Date Time"'
+            )
+            finished = True
+
         if not finished:
             for temperature_data in data:
                 # Check date format
@@ -286,7 +294,6 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                             date_format
                         )
                     )
-
                 row += 1
 
         if not self.is_valid:
