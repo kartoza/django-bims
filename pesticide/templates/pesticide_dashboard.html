@@ -19,11 +19,10 @@
     <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
     <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
     <script type="text/javascript">
-        const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
-        const siteCode = "{{ site_code }}";
-        const siteId = "{{ site_id }}";
-        const year = "{{ year }}";
-        const sourceReferences = {{ source_references | safe }};
+        const coordinates = [{{ location_site.get_centroid.x }}, {{ location_site.get_centroid.y }}];
+        const siteCode = "{{ location_site.site_code }}";
+        const siteId = "{{ location_site.id }}";
+        const pesticideRisk = {{ pesticide_risk | safe }};
         const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
         const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
         const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
@@ -34,7 +33,6 @@
         const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
         const originalGeomorphologicalZone = '{{ original_geomorphological }}';
         const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
-        const availableYears = {{ years }};
     </script>
     <style>
 
@@ -145,7 +143,7 @@
             </div>
 
             <div class="dashboard-title">
-                <h2>Pesticide Dashboard for {{ site_code }}</h2>
+                <h2>Pesticide Dashboard for {{ location_site.site_code }}</h2>
                 <div class="dashboard-close"><i class="fa fa-times"
                                                 aria-hidden="true"></i></div>
                 <div style="float: right; right: 0">
@@ -154,7 +152,7 @@
                 <div class="col-md-6">
                     <div class="map-container">
                         <div class="chart-title">Map
-                            <i data-download-title="SASS charts"
+                            <i data-download-title="Map"
                                data-toggle="tooltip" data-placement="left"
                                title="Download map as PNG"
                                class="fa fa-download pull-right download-icon download-map"></i>
@@ -166,16 +164,12 @@
                     {% include 'includes/overview_table.html' %}
 
                     <div class="vertical-space"></div>
+            </div>
 
-                <div class="col-md-6 mp">
-
-
-                    <div class="vertical-space"></div>
-                    {% if full_year_data > 304 %}
-                    <div class="table-container" >
-
-                    </div>
-                    {% endif %}
+            <div class="col-md-6 mp">
+                <div class="chart-container">
+                    <div class="chart-title">Potential Risk</div>
+                    <div id="container"></div>
                 </div>
             </div>
         </div>
@@ -190,7 +184,6 @@
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/moment.js" %}"></script>
-    <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
     <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
     <script src="{% static "js/libs/canvas2svg.js" %}"></script>
     <script src="{% static "js/libs/highcharts/highstock.js" %}"></script>
@@ -204,6 +197,6 @@
     <script src="{% static "js/sass_dashboard_close.js" %}"></script>
     <script src="{% static "js/metadata_table.js" %}"></script>
     <script src="{% static "js/map-dashboard.js" %}"></script>
-    <script src="{% static "js/non_requirejs/water_temperature.js" %}"></script>
+    <script src="{% static "js/pesticide_dashboard.js" %}"></script>
 
 {% endblock %}

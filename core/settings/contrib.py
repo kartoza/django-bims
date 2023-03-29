@@ -177,6 +177,7 @@ STATICFILES_DIRS = [
     absolute_path('sass', 'static'),
     absolute_path('scripts', 'static'),
     absolute_path('td_biblio', 'static'),
+    absolute_path('pesticide', 'static'),
 ]
 
 MIDDLEWARE += (
