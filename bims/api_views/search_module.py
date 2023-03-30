@@ -133,7 +133,9 @@ class SearchModule(CollectionSearch):
 
         self.sites = LocationSite.objects.filter(
             id__in=list(
-                self.module.values_list('location_site__id', flat=True)
+                self.module.exclude(location_site__isnull=True).values_list(
+                    'location_site__id', flat=True
+                )
             )
         )
 
