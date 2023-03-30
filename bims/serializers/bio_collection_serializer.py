@@ -1,6 +1,8 @@
 import json
 import logging
 import uuid
+
+from bims.models.chem import Chem
 from preferences import preferences
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
@@ -776,9 +778,27 @@ class BioCollectionOneRowSerializer(
                 CHLA_B: CHLA_B,
                 AFDM: AFDM
             }
-            for chem_key in chemical_units:
-                if chem_key not in self.context['header']:
-                    self.context['header'].append(chem_key)
+            for chem_key, chem_value in chemical_units.items():
+                chemical_unit_obj = Chem.objects.filter(
+                    chem_code__iexact=chem_key
+                ).first()
+                if not chemical_unit_obj:
+                    continue
+
+                unit = (
+                    chemical_unit_obj.chem_unit.unit if
+                    chemical_unit_obj.chem_unit else ""
+                )
+
+                chemical_unit = (
+                    f'{chemical_unit_obj.chem_description} '
+                    f'({unit})'
+                )
+
+                if chemical_unit not in self.context['header']:
+                    self.context['header'].append(
+                        chemical_unit
+                    )
                 identifier = '{site_id}{collection_date}{chem_key}'.format(
                     site_id=instance.site.id,
                     collection_date=instance.collection_date,
@@ -790,7 +810,7 @@ class BioCollectionOneRowSerializer(
                 )
                 if not chem_data:
                     chem_record = ChemicalRecord.objects.filter(
-                        chem__chem_code__iexact=chemical_units[chem_key],
+                        chem_id=chemical_unit_obj.id,
                         survey__site=instance.site,
                         survey__date=instance.collection_date
                     )
@@ -804,7 +824,7 @@ class BioCollectionOneRowSerializer(
                         chem_data
                     )
                 if chem_data:
-                    result[chem_key] = chem_data
+                    result[chemical_unit] = chem_data
 
         else:
             if chem_records_identifier in self.context['chem_records_cached']:
