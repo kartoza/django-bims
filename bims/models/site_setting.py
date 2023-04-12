@@ -246,6 +246,15 @@ class SiteSetting(Preferences):
         default='Copyright © Kartoza'
     )
 
+    pesticide_quaternary_data_file = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File containing pesticide data per quaternary. '
+            'If not provided, the pesticide dashboard will be unavailable.'
+        )
+    )
+
     def save(self, *args, **kwargs):
         max_allowed = 10
         attempt = 0

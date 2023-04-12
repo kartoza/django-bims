@@ -173,14 +173,38 @@
                     <div id="container"></div>
                 </div>
                 <div class="vertical-space"></div>
-                <div class="table-container" style="margin-bottom: 10px;">
+                <div class="table-container">
                     <div class="table-title">Top 10 Pesticides
                         <i data-download-title="Top 10 Pesticides"
                            data-toggle="tooltip" data-placement="left"
                            class="fa fa-download pull-right download-icon download-table"></i>
                     </div>
+                    <div class="loading-data">
+                        Loading data...
+                    </div>
                     <table class="top-10-pesticides table" style="margin-bottom: 0">
                     </table>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="chart-container">
+                    <div class="chart-title">Download Data</div>
+                    <div class="container" style="padding-top: 10px;">
+                        <button class="btn btn-info download-pesticide-by-quaternary"
+                            disabled
+                            style="width: 100%;"
+                            data-identifier="{{ site_code }}">Download Pesticide Use
+                        </button>
+                        <div class="vertical-space"></div>
+                         <button class="btn btn-info download-generic-pesticide-risk-indicator"
+                            style="width: 100%;"
+                            data-identifier="{{ site_code }}">Download Generic Pesticide Risk Indicator
+                        </button>
+                        <div class="vertical-space"></div>
+                         <button class="btn btn-info download-specific-pesticide-risk-indicator"
+                            style="width: 100%;"
+                            data-identifier="{{ site_code }}">Download Specific Pesticide Risk Indicator
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

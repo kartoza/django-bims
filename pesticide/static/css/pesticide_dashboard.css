@@ -10,3 +10,7 @@
     border-top: 3px solid #dee2e6;
     padding: 0.60rem 0.25rem 0.25rem 0.25rem !important;
 }
+
+.loading-data {
+    padding: 10px;
+}
