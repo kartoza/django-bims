@@ -1,0 +1,16 @@
+.top-10-pesticides {
+    font-size: 10pt;
+}
+
+.top-10-pesticides.table td {
+    padding: 0.25rem !important;
+}
+
+.top-10-pesticides.table th {
+    border-top: 3px solid #dee2e6;
+    padding: 0.60rem 0.25rem 0.25rem 0.25rem !important;
+}
+
+.loading-data {
+    padding: 10px;
+}

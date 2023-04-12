@@ -35,6 +35,7 @@ urlpatterns = [
     url(r'^', include('bims.urls')),
     url(r'^mobile/', include('mobile.urls')),
     url(r'^', include('bims_theme.urls')),
+    url(r'^', include('pesticide.urls')),
     url(r'^sass/', include('sass.urls')),
     url(r'^bibliography/',
         include(('td_biblio.urls', 'bibliography'),

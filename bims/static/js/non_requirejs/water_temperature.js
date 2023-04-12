@@ -179,30 +179,6 @@ $(function () {
     createDashboardMap(map, coordinates);
     renderWaterTemperatureChart()
     renderSourceReferences()
-
-    $('.download-map').click(function () {
-        map.once('postrender', function (event) {
-            showDownloadPopup('IMAGE', 'Map', function () {
-                var canvas = $('#map');
-                html2canvas(canvas, {
-                    useCORS: true,
-                    background: '#FFFFFF',
-                    allowTaint: false,
-                    onrendered: function (canvas) {
-                        let link = document.createElement('a');
-                        link.setAttribute("type", "hidden");
-                        link.href = canvas.toDataURL("image/png");
-                        link.download = 'map.png';
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                    }
-                });
-            })
-        });
-        map.renderSync();
-    })
-
     $(".date-input").datepicker({
         changeMonth: true,
         changeYear: true,

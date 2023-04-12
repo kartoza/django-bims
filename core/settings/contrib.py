@@ -113,6 +113,7 @@ try:
         absolute_path('bims', 'templates'),
         absolute_path('sass', 'templates'),
         absolute_path('td_biblio', 'templates'),
+        absolute_path('pesticide', 'templates'),
     ] + TEMPLATES[0]['DIRS']
 
     TEMPLATES[0]['OPTIONS']['context_processors'] += [
@@ -176,6 +177,7 @@ STATICFILES_DIRS = [
     absolute_path('sass', 'static'),
     absolute_path('scripts', 'static'),
     absolute_path('td_biblio', 'static'),
+    absolute_path('pesticide', 'static'),
 ]
 
 MIDDLEWARE += (

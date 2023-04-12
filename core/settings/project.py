@@ -16,7 +16,8 @@ INSTALLED_APPS += (
     'td_biblio',
     'scripts',
     'bims_theme',
-    'mobile'
+    'mobile',
+    'pesticide'
 )
 
 # Set languages which want to be translated
