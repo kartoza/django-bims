@@ -12,6 +12,7 @@
     <!-- Custom styles for this template -->
     <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <link href="{% static "css/pesticide_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
           rel="stylesheet">
     <link rel="stylesheet"
@@ -170,6 +171,16 @@
                 <div class="chart-container">
                     <div class="chart-title">Potential Risk</div>
                     <div id="container"></div>
+                </div>
+                <div class="vertical-space"></div>
+                <div class="table-container" style="margin-bottom: 10px;">
+                    <div class="table-title">Top 10 Pesticides
+                        <i data-download-title="Top 10 Pesticides"
+                           data-toggle="tooltip" data-placement="left"
+                           class="fa fa-download pull-right download-icon download-table"></i>
+                    </div>
+                    <table class="top-10-pesticides table" style="margin-bottom: 0">
+                    </table>
                 </div>
             </div>
         </div>
