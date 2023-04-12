@@ -92,4 +92,5 @@ function createDashboardMap(map, coordinates) {
         });
         map.renderSync();
     })
+    return map;
 }
