@@ -51,27 +51,6 @@
             display: inline-block;
 
         }
-        .year-container {
-            display: flex;
-            max-width: 500px;
-            align-items: center;
-        }
-        .col-form-label {
-            width: 50px;
-        }
-        .col-header {
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
-            padding-top: 8px;
-            padding-bottom: 8px;
-            font-size: 13pt;
-            font-weight: bold;
-        }
-        .row-indicator {
-            padding-top: 1em;
-            margin-left: 0.1em;
-            padding-left: 0;
-        }
         .row-indicator .col-lg-3, .row-indicator .col-lg-4, .row-indicator .col-lg-2 {
             padding-left: 0;
             padding-right: 0;
@@ -81,39 +60,9 @@
             border-bottom: 1px solid rgba(138, 138, 138, 0.31);
             height: 20px;
         }
-
-        .col-header {
-            margin-bottom: 1em;
-            background-color: #bebebe;
-            padding-top: 15px;
-            padding-bottom: 15px;
-            font-size: 11pt;
-            border: 0;
-        }
-
-        .col-header:first-child {
-            padding-left: 10px;
-        }
-
         .row-indicator .col-lg-4 p {
             padding-left: 10px;
         }
-        .fa-question-circle {
-            cursor: pointer;
-        }
-        #update-date {
-            margin-left: 10px;
-            font-size: 10pt;
-        }
-        #ui-datepicker-div {
-            margin-top: -80px;
-        }
-        #water-temperature {
-            min-height: 600px;
-            display: flex;
-            justify-content: center;
-        }
-
     </style>
 
 {% endblock %}
@@ -170,6 +119,9 @@
             <div class="col-md-6 mp">
                 <div class="chart-container">
                     <div class="chart-title">Potential Risk</div>
+                    <div class="loading-data">
+                        Loading data...
+                    </div>
                     <div id="container"></div>
                 </div>
                 <div class="vertical-space"></div>
@@ -183,6 +135,15 @@
                         Loading data...
                     </div>
                     <table class="top-10-pesticides table" style="margin-bottom: 0">
+                        <tr class="Algae-pesticide">
+                            <th colspan="2">Algae</th>
+                        </tr>
+                        <tr class="Fish-pesticide">
+                            <th colspan="2">Fish</th>
+                        </tr>
+                        <tr class="Invert-pesticide">
+                            <th colspan="2">Invert</th>
+                        </tr>
                     </table>
                 </div>
                 <div class="vertical-space"></div>
