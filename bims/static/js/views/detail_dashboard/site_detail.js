@@ -751,7 +751,7 @@ define([
                             });
                         }
                     });
-                })
+                }, false)
             }
             button.html(name);
             button.prop('disabled', false);
@@ -799,7 +799,7 @@ define([
                             }
                         }
                     });
-                });
+                }, false);
             }
             button.html(name);
             button.prop('disabled', false);

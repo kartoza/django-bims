@@ -1,4 +1,4 @@
-function showDownloadPopup(resource_type, resource_name, callback) {
+function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true) {
   const $downloadPopup = $('#download-popup');
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
@@ -23,7 +23,8 @@ function showDownloadPopup(resource_type, resource_name, callback) {
       site_id: site_id,
       survey_id: survey_id,
       taxon_id: taxon_id,
-      notes: $('#download-notes').val()
+      notes: $('#download-notes').val(),
+      auto_approved: auto_approved ? 'True' : 'False'
     };
 
     $.ajax({
