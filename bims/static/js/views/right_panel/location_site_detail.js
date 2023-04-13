@@ -332,6 +332,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             container.append(biodiversitySectionTemplate({ data: data.biodiversity_data,
                 is_sass_enabled: is_sass_enabled,
                 is_water_temperature_enabled: is_water_temperature_enabled,
+                is_pesticide_dashboard_enabled: is_pesticide_dashboard_enabled,
                 sass_exist: data.sass_exist,
                 add_data: true,
                 water_temperature_exist: data.water_temperature_exist,
@@ -414,6 +415,11 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                 url += self.apiParameters(filterParameters);
                 window.location.href = url;
             });
+            $('.sp-pesticide-dashboard').click(function(e) {
+                let url = '/pesticide-dashboard/' + self.siteId + '/';
+                url += self.apiParameters(filterParameters);
+                window.location.href = url;
+            })
         },
         flatten_arr: function (arr) {
             let self = this;
