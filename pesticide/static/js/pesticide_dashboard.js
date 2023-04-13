@@ -37,7 +37,7 @@ function downloadPesticideData(url, filename, extension = 'csv') {
         } catch (error) {
             console.error('Error fetching CSV data:', error);
         }
-    })
+    }, true)
 }
 
 class RiskChart {

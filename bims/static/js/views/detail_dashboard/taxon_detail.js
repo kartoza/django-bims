@@ -118,7 +118,6 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
             } else {
                 showDownloadPopup('CSV', 'Occurrence Data', function (downloadRequestId) {
-                    console.log(downloadRequestId);
                     alertModalBody.html(downloadRequestMessage);
                     $('#alertModal').modal({
                         'keyboard': false,
@@ -134,9 +133,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         dataType: 'json',
                         success: function (data) {}
                     });
-                })
-
-
+                }, false)
             }
             button.html(name);
             button.prop('disabled', false);

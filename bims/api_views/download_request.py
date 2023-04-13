@@ -1,5 +1,5 @@
 from preferences import preferences
-
+import ast
 from bims.download.csv_download import send_new_csv_notification
 from bims.models.taxonomy import Taxonomy
 
@@ -16,8 +16,20 @@ from bims.models.download_request import (
 
 
 class DownloadRequestApi(APIView):
+    """
+    An API view for handling download requests. The view accepts POST requests
+    with resource_name, resource_type, and purpose as required fields. It supports
+    optional fields like dashboard_url, site_id, taxon_id, and notes. The view
+    processes the download request and sends a notification email if the request
+    is successful.
+    """
 
     def post(self, request):
+        """
+        Handles the POST request for creating a new download request. Validates the
+        input, creates the download request, and sends a notification email if
+        successful.
+        """
         resource_name = request.POST.get('resource_name')
         resource_type = request.POST.get('resource_type')
         purpose = request.POST.get('purpose')
@@ -25,6 +37,9 @@ class DownloadRequestApi(APIView):
         site_id = request.POST.get('site_id', '')
         taxon_id = request.POST.get('taxon_id', '')
         notes = request.POST.get('notes', '')
+        auto_approved = ast.literal_eval(
+            request.POST.get('auto_approved', 'False')
+        )
         location_site = None
         taxon = None
         success = False
@@ -68,7 +83,7 @@ class DownloadRequestApi(APIView):
             notes=notes
         )
 
-        if not approval_needed:
+        if not approval_needed or auto_approved:
             download_request.approved = True
             download_request.save()
 
