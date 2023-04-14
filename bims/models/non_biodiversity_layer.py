@@ -62,6 +62,13 @@ class NonBiodiversityLayer(OrderedModel):
                   'to filter csv_file.'
     )
 
+    enable_styles_selection = models.BooleanField(
+        default=False,
+        verbose_name='Enable styles selection',
+        help_text='Check this box to show the styles selection '
+                  'in the layer selector.'
+    )
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""

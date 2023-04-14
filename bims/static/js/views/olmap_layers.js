@@ -19,15 +19,89 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         orders: {},
         administrativeOrder: 0,
         layerSelector: null,
+        legends: {},
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
             Shared.Dispatcher.on('layers:renderLegend', this.renderLegend, this);
-            var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'transparency');
+            let administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'transparency');
             if (administrativeVisibility !== null) {
                 this.administrativeTransparency = administrativeVisibility;
             }
+        },
+        fetchAvailableStyles: function (layerName) {
+            let select = document.getElementById(`style-${layerName}`);
+            const that = this;
+            const layer = that.layers[layerName].layer;
+            const source = layer.getSource();
+            const params = source.getParams();
+            const wmsCapabilitiesUrl = `${source.getUrls()[0]}?service=WMS&version=1.3.0&request=GetCapabilities`;
+
+            function styleChangedHandler() {
+                const selectedOption = select.options[select.selectedIndex];
+                params.STYLES = selectedOption.value;
+                layer.getSource().updateParams(params);
+
+                if (that.legends[layerName]) {
+                    that.renderLegend(
+                        layerName,
+                        params.name,
+                        source.getUrls()[0],
+                        params.layers,
+                        false,
+                        params.STYLES
+                    );
+                    const $legendElement = that.getLegendElement(layerName);
+                    that.legends[layerName] = $legendElement;
+                    if ($legendElement.length > 0) {
+                        const selected = Shared.StorageUtil.getItemDict(layerName, 'selected');
+                        if (selected) {
+                            $legendElement.show();
+                            let legendDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
+                            if (legendDisplayed !== false || typeof legendDisplayed === 'undefined') {
+                                Shared.Dispatcher.trigger('map:showMapLegends');
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!select.disabled) {
+                return;
+            }
+
+            fetch(wmsCapabilitiesUrl)
+                .then((response) => response.text())
+                .then((xml) => {
+                    select.innerHTML = '';
+                    select.disabled = false;
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xml, "application/xml");
+                    const layers = xmlDoc.getElementsByTagName("Layer");
+                    for (let i = 0; i < layers.length; i++) {
+                        const layerTitle = layers[i].getElementsByTagName("Name")[0].textContent;
+                        if (layerTitle === `${layerName}`) {
+                            const styles = layers[i].getElementsByTagName("Style");
+                            const styleNames = [];
+                            for (let j = 0; j < styles.length; j++) {
+                                const styleName = styles[j].getElementsByTagName("Name")[0].textContent;
+                                const styleTitle = styles[j].getElementsByTagName("Title")[0].textContent;
+                                styleNames.push(styleName);
+                                let option = document.createElement('option');
+                                option.text = styleTitle;
+                                option.value = styleName;
+                                select.add(option);
+                            }
+                            if (styleNames.length > 1) {
+                                select.removeEventListener('change', styleChangedHandler);
+                                select.addEventListener('change', styleChangedHandler);
+                            }
+                            return styleNames;
+                        }
+                    }
+                })
+                .catch((error) => console.error("Error fetching WMS capabilities:", error));
         },
         isBiodiversityLayerLoaded: function () {
             return true;
@@ -39,7 +113,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             return $checkbox.is(':checked');
         },
-        initLayer: function (layer, layerName, visibleInDefault, category, source) {
+        initLayer: function (layer, layerName, visibleInDefault, category, source, enableStylesSelection = false) {
             layer.set('added', false);
             var layerType = layerName;
             var layerSource = '';
@@ -78,7 +152,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 'visibleInDefault': visibleInDefault,
                 'layerName': layerName,
                 'category': layerCategory,
-                'source': layerSource
+                'source': layerSource,
+                'enableStylesSelection': enableStylesSelection
             };
             if (!visibleInDefault) {
                 layer.setVisible(false);
@@ -254,15 +329,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.name, defaultVisibility, '', wmsUrl
-                        );
-                        self.renderLegend(
-                            value.wms_layer_name,
-                            value.name,
-                            options['url'],
-                            options['params']['layers'],
-                            false,
-                            value.layer_style
+                            value.name, defaultVisibility, '', wmsUrl, value['enable_styles_selection']
                         );
                     });
 
@@ -275,6 +342,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                     $('.layer-source').click(function (e) {
                         self.showLayerSource(e.target.attributes["value"].value);
+                    });
+
+                    $('.layer-source-style').click(function (e) {
+                        self.showLayerStyle(e.target.attributes["value"].value);
                     });
 
                     self.addGeonodeLayersToMap(map);
@@ -378,12 +449,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         selectorChanged: function (layerName, selected) {
             Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
             this.changeLayerVisibility(layerName, selected);
-            var needToReloadXHR = true;
+            let needToReloadXHR = true;
             this.toggleLegend(layerName, selected, needToReloadXHR);
         },
         toggleLegend: function (layerName, selected, reloadXHR) {
             // show/hide legend
-            var $legendElement = this.getLegendElement(layerName);
+            let $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
                 if (reloadXHR) {
                     Shared.Dispatcher.trigger('map:reloadXHR');
@@ -396,6 +467,25 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
 
             if (selected) {
+                if (!this.legends[layerName]) {
+                    try {
+                        const layer = this.layers[layerName];
+                        const source = layer.layer.getSource();
+                        const params = layer.layer.getSource().getParams();
+                        // Draw legend
+                        this.renderLegend(
+                            layerName,
+                            params.name,
+                            source.getUrls()[0],
+                            params.layers,
+                            false,
+                            params.STYLES
+                        );
+                        $legendElement = this.getLegendElement(layerName);
+                        this.legends[layerName] = $legendElement;
+                    } catch (e) {
+                    }
+                }
                 if ($legendElement.length > 0) {
                     $legendElement.show();
                     let legendDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
@@ -441,17 +531,24 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
             }
             scr += '&STYLE=' + style;
-            var html =
-                '<div data-name="' + id + '" class="legend-row"';
+            let html = '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
                 html += ' style="display: None"'
             }
-            html += '>' +
+            let existingLegend = this.getLegendElement(id);
+            let content = (
                 '<b>' + name + '</b><br>' +
-                '<img src="' + scr + '"></div>';
-            $('#map-legend').prepend(html);
+                '<img src="' + scr + '">'
+            )
+            if (existingLegend.length > 0) {
+                existingLegend.html(content)
+            } else {
+                html += '>' +
+                    content + '</div>';
+                $('#map-legend').prepend(html);
+            }
         },
-        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source, isFirstTime) {
+        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
@@ -491,6 +588,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 display: layerDisplayed,
                 source: source,
                 category: category,
+                enableStylesSelection: enableStylesSelection
             }));
             if (isFirstTime) {
                 $rowTemplate.prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
@@ -594,7 +692,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     source = 'Base';
                 }
 
-                self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source, isFirstTime);
+                self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source, isFirstTime, value['enableStylesSelection']);
             });
 
             // RENDER LAYERS
@@ -821,6 +919,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 this.getLayerAbstract(layerKey);
             }
         },
+        showLayerStyleOptions: function (layerKey) {
+            let layerSourceContainer = $('div.layer-source-style-container[value="' + layerKey + '"]');
+            if (layerSourceContainer.is(':visible')) {
+                layerSourceContainer.slideUp(200);
+            } else {
+                layerSourceContainer.slideDown(200);
+                // Fetch styles from geoserver
+                this.fetchAvailableStyles(layerKey);
+            }
+        },
+        showLayerStyle: function (layerKey) {
+            if (Object.keys(this.layers).length === 0) {
+                return false;
+            }
+            this.showLayerStyleOptions(layerKey);
+        },
         getLayerAbstract: function (layerKey) {
             let layerProvider = '';
             let layerName = '';
@@ -873,7 +987,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 },
                 complete() {
                     layerSourceContainer.html(`
-                        <div class="layer-abstract">
+                        <div class="layer-abstract cancel-sortable">
                             ` + abstract_result + `
                         </div>`);
                 }
@@ -882,7 +996,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         initializeLayerSelector: function () {
             let self = this;
             this.layerSelector = $('#layers-selector');
-            this.layerSelector.sortable({cancel: '.layer-abstract'});
+            this.layerSelector.sortable({cancel: '.cancel-sortable'});
             this.layerSelector.on('sortupdate', function () {
                 let $layerSelectorInput = $('.layer-selector-input');
                 $($layerSelectorInput.get().reverse()).each(function (index, value) {

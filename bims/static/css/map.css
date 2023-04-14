@@ -423,8 +423,13 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 #layers-selector .layer-info-icon {
-    margin-left: auto;
+    margin-left: 5px;
+}
+
+#layers-selector .layer-selector-pull-right {
+    display: flex;
     margin-top: 1px;
+    margin-left: auto;
 }
 
 #layers-selector li .row-title label {

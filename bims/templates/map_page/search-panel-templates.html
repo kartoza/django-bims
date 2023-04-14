@@ -681,9 +681,14 @@
             <input type="checkbox" value="<%= key %>"
                    class="layer-selector-input" <%= checked %>>
             <div class="layer-selector-name"><%= name %></div>
-            <% if (source && source !== 'Base') { %>
-                <div class="layer-info-icon"><i class="fa fa-info-circle layer-source" value="<%= key %>" aria-hidden="true"></i></div>
-            <% } %>
+            <div class="layer-selector-pull-right">
+                <% if (source && source !== 'Base') { %>
+                    <div class="layer-info-icon"><i class="fa fa-info-circle layer-source cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
+                <% } %>
+                <% if (enableStylesSelection) { %>
+                <div class="layer-info-icon"><i class="fa fa-bars layer-source-style cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
+                <% } %>
+            </div>
         </div>
         <div class="options">
             <div class="group">
@@ -699,6 +704,14 @@
             </div>
         </div>
         <div value="<%= key %>" class="layer-source-info" style="display: none" data-fetching="false"></div>
+        <div value="<%= key %>" class="layer-source-style-container" style="display: none; padding: 2px 20px" data-fetching="false">
+           <div class="form-group cancel-sortable">
+            <label for="style-<%= key %>">Styles</label>
+            <select disabled class="form-control" id="style-<%= key %>">
+                <option>Fetching styles...</option>
+            </select>
+          </div>
+        </div>
 </script>
 
 <script type="text/html" id="map-control-panel">
