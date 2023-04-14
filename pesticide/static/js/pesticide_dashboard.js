@@ -1,21 +1,21 @@
 let dashboardMap = null;
 let wmsUrl = 'https://maps.kartoza.com/geoserver/wms';
 let pesticideLayers = {
-    'Algae': '',
     'Fish': '',
-    'Invert': ''
+    'Invert': '',
+    'Algae': '',
 }
 const riskModules = {
-    'Algae': 'mv_algae_risk',
     'Fish': 'mv_fish_risk',
     'Invert': 'mv_invert_risk',
+    'Algae': 'mv_algae_risk',
 }
 const IGNORED_VALUE = ['fid', 'geom', 'QUATERNARY', 'Toxic Unit Score', 'risk_category']
 let QUATERNARY = '';
 let riskCategories = {
-    'mv_algae_risk': '',
     'mv_fish_risk': '',
-    'mv_invert_risk': ''
+    'mv_invert_risk': '',
+    'mv_algae_risk': '',
 };
 
 function downloadPesticideData(url, filename, extension = 'csv') {
@@ -47,12 +47,12 @@ class RiskChart {
         this.coordinates = coordinates;
 
         this.colorMapping = {
-            '': '',
-            'Very Low': 'green',
-            'Low': 'yellow',
-            'Medium': 'blue',
-            'High': 'orange',
-            'Very High': 'red',
+            '': '#d3d3d3',
+            'Very Low': '#80bfab',
+            'Low': '#ffffbf',
+            'Medium': '#fec980',
+            'High': '#f07c4a',
+            'Very High': '#e31a1c',
         };
         this.RISKS = ['', 'Very Low', 'Low', 'Medium', 'High', 'Very High'];
 
@@ -202,6 +202,7 @@ class RiskChart {
             this.getFeatureData(key, layer, _coordinates, (values) => {
                 if (values) {
                     const top10 = values.slice(0, 10);
+                    top10.sort((a, b) => a.value - b.value);
                     const tableClass = $(`.top-10-pesticides .${key}-pesticide`)
                     for (const pesticide of top10) {
                         tableClass.after(
