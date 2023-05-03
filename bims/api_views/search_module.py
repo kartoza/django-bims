@@ -7,7 +7,7 @@ from django.db.models.functions import Concat
 from geonode.people.models import Profile
 from bims.models.source_reference import LIST_SOURCE_REFERENCES
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Value, F
+from django.db.models import Q, Value, F, Count
 
 from bims.models.survey import Survey
 from rest_framework import serializers
@@ -24,12 +24,7 @@ from bims.models.chemical_record import ChemicalRecord
 class SiteWaterTemperatureSerializer(serializers.ModelSerializer):
     site_id = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
-    total_water_temperature_data = serializers.SerializerMethodField()
-
-    def get_total_water_temperature_data(self, obj: LocationSite) -> int:
-        return self.context['water_temperature'].filter(
-            location_site=obj
-        ).count()
+    total_water_temperature_data = serializers.IntegerField()
 
     def get_site_id(self, obj: LocationSite) -> int:
         return obj.id
@@ -47,12 +42,7 @@ class SiteWaterTemperatureSerializer(serializers.ModelSerializer):
 class SitePhysicoChemistrySerializer(serializers.ModelSerializer):
     site_id = serializers.SerializerMethodField()
     name = serializers.SerializerMethodField()
-    total_chemical_records = serializers.SerializerMethodField()
-
-    def get_total_chemical_records(self, obj: LocationSite) -> int:
-        return self.context['chemical_records'].filter(
-            location_site=obj
-        ).count()
+    total_chemical_records = serializers.IntegerField()
 
     def get_site_id(self, obj: LocationSite) -> int:
         return obj.id
@@ -80,6 +70,9 @@ class SearchModule(CollectionSearch):
     module = None
     survey = Survey.objects.none()
     date_field = 'date_time'
+
+    def annotate(self):
+        return
 
     def extent(self):
         # Get extent from collection results
@@ -132,17 +125,25 @@ class SearchModule(CollectionSearch):
             )
 
         self.sites = LocationSite.objects.filter(
-            id__in=list(
-                self.module.exclude(location_site__isnull=True).values_list(
+            id__in=
+                self.module.exclude(
+                    location_site__isnull=True
+                ).values_list(
                     'location_site__id', flat=True
                 )
-            )
         )
+
+        self.annotate()
 
         spatial_filters = self.spatial_filter
         if spatial_filters:
             self.sites = self.sites.filter(
                 spatial_filters
+            )
+
+        if self.get_request_data('polygon'):
+            self.sites = self.sites.filter(
+                geometry_point__within=self.polygon
             )
 
         if self.sites and not self.location_sites_raw_query:
@@ -169,7 +170,9 @@ class SearchModule(CollectionSearch):
             order_by = 'name'
 
         self.sites = self.sites.order_by(order_by)
-        total = self.module.count() if self.module else 0
+        total = self.module.filter(
+            location_site__in=self.sites
+        ).count() if self.module else 0
         if self.sites.count() == 0:
             total = 0
 
@@ -184,6 +187,11 @@ class SearchModule(CollectionSearch):
 class WaterTemperatureModule(SearchModule):
     module = WaterTemperature.objects.all()
 
+    def annotate(self):
+        self.sites = self.sites.annotate(
+            total_water_temperature_data=Count('watertemperature')
+        )
+
     def serialize_sites(self):
         return SiteWaterTemperatureSerializer(
             self.sites,
@@ -197,6 +205,11 @@ class WaterTemperatureModule(SearchModule):
 class PhysicoChemistryModule(SearchModule):
     module = ChemicalRecord.objects.all()
     date_field = 'date'
+
+    def annotate(self):
+        self.sites = self.sites.annotate(
+            total_chemical_records=Count('chemical_collection_record')
+        )
 
     def serialize_sites(self):
         return SitePhysicoChemistrySerializer(
