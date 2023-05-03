@@ -289,15 +289,28 @@ $(document).ready(function () {
             style: markerStyle,
         }),
     )
-
+    let scaleLineControl = new ol.control.ScaleLine();
     let map = new ol.Map({
         target: 'site-map',
+        controls: ol.control.defaults().extend([
+            scaleLineControl
+        ]),
         layers: baseLayer,
         view: new ol.View({
             center: locationSiteCoordinate,
             zoom: 10
         })
     });
+    let graticule = new ol.Graticule({
+        strokeStyle: new ol.style.Stroke({
+            color: 'rgba(0,0,0,1)',
+            width: 1,
+            lineDash: [2.5, 4]
+        }),
+        showLabels: true
+    });
+
+    graticule.setMap(map);
     
     let options = {
         url: 'https://maps.kartoza.com/geoserver/wms',
