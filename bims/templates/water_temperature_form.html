@@ -19,6 +19,8 @@
     <script type="text/javascript">
         const location_site_lat = '{{ location_site_lat }}';
         const location_site_long = '{{ location_site_long }}';
+        const siteCode = "{{ location_site_code }}";
+        const coordinates = [{{ location_site_long }}, {{ location_site_lat }}];
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
         const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
@@ -73,11 +75,13 @@
                        class="col-sm-1 col-form-label col-form-label">Latitude</label>
                 <input type="text" id="latitude" name="latitude"
                        class="col-sm-2 form-control form-control-sm"
+                       disabled
                        value="{{ location_site_lat }}">
                 <label for="date"
                        class="col-sm-1 col-form-label col-form-label">Longitude</label>
                 <input type="text" id="longitude" name="longitude"
                        class="col-sm-2 form-control form-control-sm"
+                       disabled
                        value="{{ location_site_long }}">
             </div>
 
@@ -230,10 +234,12 @@
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/map-dashboard.js" %}"></script>
     <script src="{% static 'js/non_requirejs/water_temperature_form.js' %}"></script>
     <script src="{% static "lib/clockpicker/jquery-clockpicker.min.js" %}"></script>
     <script src="{% static "js/utils/user_autocomplete.js" %}"></script>
     <script>
+        let map = null;
         $('.clockpicker').clockpicker();
         $('#logging-interval').change((e) => {
             let val = $(e.target).val();
@@ -242,6 +248,10 @@
             } else {
                 $('.clockpicker-container').show();
             }
+        })
+
+        $(function () {
+            createDashboardMap(map, coordinates);
         })
     </script>
 
