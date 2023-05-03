@@ -1,5 +1,5 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM python:3.7-slim-stretch as prod
+FROM python:3.7-slim-buster as prod
 MAINTAINER Dimas Ciputra<dimas@kartoza.com>
 
 RUN mkdir -p /usr/src/{app,geonode}
