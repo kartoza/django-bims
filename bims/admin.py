@@ -1,7 +1,10 @@
 # coding=utf-8
+import csv
 from datetime import timedelta
 from datetime import date
 import json
+
+from django.http import HttpResponse
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -107,6 +110,25 @@ from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
+
+
+class ExportCsvMixin:
+    def export_as_csv(self, request, queryset):
+
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename={}.csv'.format(meta)
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow([getattr(obj, field) for field in field_names])
+
+        return response
+
+    export_as_csv.short_description = "Export Selected"
 
 
 class LocationSiteForm(forms.ModelForm):
@@ -382,7 +404,7 @@ class PermissionAdmin(admin.ModelAdmin):
     list_filter = ('content_type', 'name', PermissionContenTypeFilter)
 
 
-class BiologicalCollectionAdmin(admin.ModelAdmin):
+class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
     date_hierarchy = 'collection_date'
 
     class Media:
@@ -396,10 +418,11 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'taxonomy',
         'get_origin',
         'collection_date',
-        'is_validated',
-        'is_rejected',
         'collector',
         'owner',
+        'site',
+        'abundance_number',
+        'biotope'
     )
     raw_id_fields = (
         'site',
@@ -419,10 +442,12 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'taxonomy__canonical_name',
         'original_species_name',
         'uuid',
+        'site__site_code',
         'survey__uuid',
         'upstream_id',
         'source_collection'
     )
+    actions = ['export_as_csv']
 
     def get_search_results(self, request, queryset, search_term):
         uuid_queryset = queryset.filter(
@@ -1369,16 +1394,35 @@ class LocationContextFilterAdmin(admin.ModelAdmin):
 
 
 class SurveyAdmin(admin.ModelAdmin):
+
+    date_hierarchy = 'date'
     raw_id_fields = (
         'site',
+    )
+    search_fields = (
+        'site__site_code',
+        'uuid'
+    )
+    list_filter = (
+        ('date', DateRangeFilter),
     )
     list_display = (
         'id',
         'site',
         'date',
         'validated',
-        'owner'
+        'owner',
+        'link_to_dashboard'
     )
+
+
+    def link_to_dashboard(self, obj):
+        link = reverse('site-visit-detail',
+                       args=[obj.id])
+        return format_html(
+            "<a href='{}'>Dashboard ⎘</a>",
+            link,
+        )
 
 
 class SurveyDataValueAdmin(admin.ModelAdmin):
