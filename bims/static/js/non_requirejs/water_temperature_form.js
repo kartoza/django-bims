@@ -109,6 +109,7 @@ $('#upload').click((event) => {
         setTimeout(function () {
             window.scrollTo(0, 0);
         }, 500);
+        loading.hide();
         return;
     }
 

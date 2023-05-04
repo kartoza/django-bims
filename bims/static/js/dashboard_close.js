@@ -26,9 +26,16 @@ function dashboardClose(e) {
         } catch (e) {
             previousUrl = '/map/';
         }
+    } else {
+        if (siteId) {
+            previousUrl = '/map/#site/siteIdOpen=' + siteId;
+        }
     }
-    window.location.href = previousUrl;
-    return false;
+    if (window.document.referrer.indexOf('/map/') > -1 && window.document.referrer.indexOf(window.location.origin) > -1) {
+        window.history.back();
+    } else {
+        window.location.href = previousUrl;
+    }
 }
 
 $(function () {
