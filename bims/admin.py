@@ -419,6 +419,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin):
         'taxonomy__canonical_name',
         'original_species_name',
         'uuid',
+        'survey__uuid',
         'upstream_id',
         'source_collection'
     )

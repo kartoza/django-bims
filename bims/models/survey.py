@@ -5,6 +5,8 @@
 import uuid
 
 from django.db import models
+from django.db.models.signals import post_delete, pre_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from bims.models import LocationSite
 from bims.models.validation import AbstractValidation
@@ -46,7 +48,12 @@ class Survey(AbstractValidation):
 
     @property
     def taxon_group(self):
-        return self.biological_collection_record.first().module_group
+        bio = self.biological_collection_record.filter(
+            module_group__isnull=False
+        ).first()
+        if not bio:
+            return None
+        return bio.module_group
 
     @property
     def unvalidated_species_exists(self):
@@ -163,3 +170,15 @@ class SurveyDataValue(models.Model):
         SurveyDataOption,
         on_delete=models.CASCADE
     )
+
+
+@receiver(pre_delete, sender=Survey)
+def survey_pre_delete(sender, instance, **kwargs):
+    from bims.models.biological_collection_record import (
+        BiologicalCollectionRecord
+    )
+    records = BiologicalCollectionRecord.objects.filter(
+        survey_id=instance.id
+    )
+    records.delete()
+
