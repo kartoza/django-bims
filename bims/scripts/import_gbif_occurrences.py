@@ -136,6 +136,9 @@ def import_gbif_occurrences(
 
 
     for result in json_result['results']:
+        # Prevent pulling FBIS data back down from GBIF
+        if 'projectId' in result and result['projectId'].lower() == 'fbis':
+            continue
         if session_id:
             if HarvestSession.objects.get(id=session_id).canceled:
                 if log_file:
