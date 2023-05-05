@@ -1085,8 +1085,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
             return super().change_view(
                 request, object_id, form_url, extra_context=extra_context,
             )
-        name = Taxonomy.objects.get(pk=object_id).scientific_name.split(' ')
-        parameter = {'limit': 10, 'q': name[0]}
+        name = Taxonomy.objects.get(pk=object_id).scientific_name
+        parameter = {'limit': 20, 'q': name}
         results = suggest_search(parameter)
         extra_context['results'] = json.dumps(results)
         return super().change_view(

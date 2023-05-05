@@ -17,7 +17,6 @@
             }
             containerValue['fetch_gbif'] = true;
             container.value = JSON.stringify(containerValue);
-            document.getElementById("taxonomy_form").submit();
         }
 
         (function($) {
@@ -75,7 +74,6 @@
                                    `<th>Key</th><th>Kingdom</th><th>Scientific Name</th><th>Canonical Name</th><th>Rank</th><th>Status</th><th>Parent</th><th>Action</th>`
                         let suggest = JSON.parse(results);
                         suggest.forEach(function (value){
-                            console.log(value);
                             row += `<tr><td>`+value.key+`</td>
                                     <td>`+value.kingdom+`</td>
                                     <td>`+value.scientificName+`</td>
