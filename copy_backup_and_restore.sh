@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # Get the latest backup from production
-SOURCE_FOLDER=/var/lib/docker/volumes/Healthyrivers_db-backups_176af/_data
-SOURCE_SERVER=healthyrivers.co.za
+SOURCE_FOLDER=/source
+SOURCE_SERVER=server
 
-DEST_FOLDER=/var/lib/docker/volumes/kbims-healthyrivers_db-backups_2cf33/_data
+DEST_FOLDER=/destination
 
 echo "copy latest backup file"
 rm $DEST_FOLDER/latest.dmp
