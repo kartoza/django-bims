@@ -108,7 +108,7 @@ class RiskChart {
                 text: '',
             },
             xAxis: {
-                categories: ['Algae', 'Fish', 'Invert'],
+                categories: ['Fish', 'Invertebrates', 'Algae'],
             },
             yAxis: {
                 min: 0,
