@@ -4,6 +4,8 @@
 import requests
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
+from django.contrib.gis.gdal.error import GDALException
+
 from django.contrib.gis.geos import GEOSGeometry
 from django.conf import settings
 from django.http import JsonResponse
@@ -128,6 +130,7 @@ def parse_farm(xml_document):
     try:
         xmldoc = minidom.parseString(xml_document)
     except ExpatError:
+        print("Error parsing XML document:", xml_document)
         return feature
 
     try:
@@ -139,16 +142,26 @@ def parse_farm(xml_document):
 
         geom_gml = wfs_xml_feature.getElementsByTagName(
                 'kartoza:wkb_geometry')[0]
-        geom_gml_dom = geom_gml.childNodes[0]
-        envelope = GEOSGeometry.from_gml(geom_gml_dom.toxml())
-        feature['envelope_extent'] = envelope.extent
-        feature['envelope_centroid'] = envelope.centroid.coords
+        geom_gml_dom = None
+        for child_node in geom_gml.childNodes:
+            if 'gml' in str(child_node):
+                geom_gml_dom = child_node
+
+        if not geom_gml_dom:
+            return None
+
+        try:
+            envelope = GEOSGeometry.from_gml(geom_gml_dom.toxml())
+            feature['envelope_extent'] = envelope.extent
+            feature['envelope_centroid'] = envelope.centroid.coords
+        except GDALException as e:
+            print("Error parsing GML string:", e)
 
         return feature
 
     except IndexError:
+        print("Error: Could not find the expected XML elements.")
         return feature
-
 
 # TODO(IS): Separate into two method (filter and get)
 def parse_locate_return(xml_document, with_envelope=False):
