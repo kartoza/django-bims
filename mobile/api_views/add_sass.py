@@ -27,8 +27,8 @@ from sass.models.site_visit import SiteVisit
 from bims.models.location_site import LocationSite
 from django.core.files.base import ContentFile
 from rest_framework.views import APIView
+from bims.models.profile import Profile as BimsProfile
 
-from sass.views.sass_form import SassFormView
 
 BIOTOPE_TYPES = {
     'sic': 'Stones in current',
@@ -103,6 +103,17 @@ class AddSASS(APIView):
         if not survey.mobile:
             survey.mobile = True
             survey.save()
+
+        # Accredited
+        accredited = post_data.get('accredited', False)
+        if accredited and site_visit.owner:
+            bims_profile = BimsProfile.objects.get(user=site_visit.owner)
+            if not bims_profile.is_accredited(
+                collection_date=site_visit.site_visit_date
+            ):
+                bims_profile.accredit(
+                    date_accredit_to=site_visit.site_visit_date.date()
+                )
 
         if post_data.get('abiotic'):
             process_abiotic_data(survey, post_data.get('abiotic'))
