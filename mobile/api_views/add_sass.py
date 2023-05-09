@@ -1,6 +1,7 @@
 import base64
 import datetime
 
+from bims.models.survey import Survey
 from rest_framework.permissions import IsAuthenticated
 
 from mobile.api_views.add_site_visit import process_abiotic_data
@@ -94,7 +95,11 @@ class AddSASS(APIView):
             other_biota=post_data.get('otherBiota', '')
         )
 
-        survey = SassFormView.create_or_get_survey(site_visit)
+        survey = Survey.objects.create(
+            owner=site_visit.owner,
+            date=site_visit.site_visit_date,
+            site=site_visit.location_site
+        )
         if not survey.mobile:
             survey.mobile = True
             survey.save()

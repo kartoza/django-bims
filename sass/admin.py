@@ -123,8 +123,13 @@ class SiteVisitTaxonAdmin(admin.ModelAdmin):
 
     raw_id_fields = (
         'site_visit',
+        'sass_taxon',
         'site',
-        'taxonomy'
+        'owner',
+        'taxonomy',
+        'source_reference',
+        'collector_user',
+        'survey'
     )
 
 
