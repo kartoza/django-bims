@@ -79,6 +79,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(xml, "application/xml");
                     const layers = xmlDoc.getElementsByTagName("Layer");
+                    const fetchedStyles = {};
                     for (let i = 0; i < layers.length; i++) {
                         const layerTitle = layers[i].getElementsByTagName("Name")[0].textContent;
                         if (layerTitle === `${layerName}`) {
@@ -87,15 +88,27 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             for (let j = 0; j < styles.length; j++) {
                                 const styleName = styles[j].getElementsByTagName("Name")[0].textContent;
                                 const styleTitle = styles[j].getElementsByTagName("Title")[0].textContent;
+                                fetchedStyles[styleTitle] = styleName;
                                 styleNames.push(styleName);
-                                let option = document.createElement('option');
-                                option.text = styleTitle;
-                                option.value = styleName;
-                                select.add(option);
                             }
                             if (styleNames.length > 1) {
                                 select.removeEventListener('change', styleChangedHandler);
                                 select.addEventListener('change', styleChangedHandler);
+                                let styleKeys = Object.keys(fetchedStyles);
+                                let orderedStyles = {};
+                                const firstKey = styleKeys.shift();
+                                styleKeys.sort();
+                                styleKeys.unshift(firstKey);
+                                styleKeys.forEach((key) => {
+                                    orderedStyles[key] = fetchedStyles[key]
+                                });
+                                for (const styleKey in orderedStyles) {
+                                    let style = orderedStyles[styleKey];
+                                    let option = document.createElement('option');
+                                    option.text = styleKey;
+                                    option.value = style;
+                                    select.add(option);
+                                }
                             }
                             return styleNames;
                         }
