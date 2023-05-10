@@ -11,6 +11,21 @@ class LocationSiteSerializer(serializers.ModelSerializer):
     geometry = serializers.SerializerMethodField()
     location_type = LocationTypeSerializer(read_only=True)
     record_type = serializers.SerializerMethodField()
+    river_name = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+
+    def get_description(self, obj):
+        return obj.site_description
+
+    def get_owner(self, obj):
+        return (
+            f'{obj.owner.first_name} {obj.owner.last_name}'
+            if obj.owner else ''
+        )
+
+    def get_river_name(self, obj):
+        return obj.river.name if obj.river else ''
 
     def get_record_type(self, obj):
         return 'site'
@@ -25,7 +40,11 @@ class LocationSiteSerializer(serializers.ModelSerializer):
         model = LocationSite
         fields = [
             'id', 'site_code',
-            'name', 'geometry', 'location_type', 'record_type'
+            'name', 'geometry',
+            'location_type',
+            'record_type', 'river_name',
+            'owner',
+            'description'
         ]
 
 
