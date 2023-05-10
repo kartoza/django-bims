@@ -1,6 +1,8 @@
 import base64
 import datetime
 
+from bims.models.source_reference import SourceReference
+
 from bims.models.survey import Survey
 from rest_framework.permissions import IsAuthenticated
 
@@ -108,12 +110,22 @@ class AddSASS(APIView):
         accredited = post_data.get('accredited', False)
         if accredited and site_visit.owner:
             bims_profile = BimsProfile.objects.get(user=site_visit.owner)
+            site_visit_date = site_visit.site_visit_date
+            if isinstance(site_visit_date, datetime.datetime):
+                site_visit_date = site_visit_date.date()
             if not bims_profile.is_accredited(
-                collection_date=site_visit.site_visit_date
+                collection_date=site_visit_date
             ):
                 bims_profile.accredit(
-                    date_accredit_to=site_visit.site_visit_date.date()
+                    date_accredit_to=site_visit_date
                 )
+
+        source_reference_id = post_data.get('sourceReferenceId', None)
+        source_reference = None
+        if source_reference_id:
+            source_reference = SourceReference.objects.get(
+                id=source_reference_id
+            )
 
         if post_data.get('abiotic'):
             process_abiotic_data(survey, post_data.get('abiotic'))
@@ -213,7 +225,8 @@ class AddSASS(APIView):
                             original_species_name=
                             sass_taxon.taxon.canonical_name,
                             validated=False,
-                            survey=survey
+                            survey=survey,
+                            source_reference=source_reference
                         )
                     )
                     site_visit_taxon.notes = 'from sass'
