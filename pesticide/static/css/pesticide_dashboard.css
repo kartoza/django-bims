@@ -14,3 +14,13 @@
 .loading-data {
     padding: 10px;
 }
+
+.table-desc {
+    padding-top: 10px;
+}
+
+.download-desc {
+    padding-top: 10px;
+    padding-bottom: 5px;
+    font-size: 14px;
+}
