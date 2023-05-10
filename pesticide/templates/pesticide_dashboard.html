@@ -131,6 +131,12 @@
                            data-toggle="tooltip" data-placement="left"
                            class="fa fa-download pull-right download-icon download-table"></i>
                     </div>
+                    <div class="table-desc">
+                        <p>
+                            Tables provide a summary of the top 10 pesticides with the highest toxic unit values (for algae, invertebrates and fish respectively) applied in the quaternary catchment.
+                            These tables can be used to prioritise which pesticides are likely to pose the greatest risk to each class of aquatic biota in the quaternary catchment”.
+                        </p>
+                    </div>
                     <div class="loading-data">
                         Loading data...
                     </div>
@@ -147,20 +153,32 @@
                     </table>
                 </div>
                 <div class="vertical-space"></div>
-                <div class="chart-container">
+                <div class="chart-container" style="margin-bottom: 50px;">
                     <div class="chart-title">Download Data</div>
                     <div class="container" style="padding-top: 10px;">
+                        <div class="download-desc">Download data on the quantity of each pesticide applied in the quaternary catchment (in kg/ha)</div>
                         <button class="btn btn-info download-pesticide-by-quaternary"
                             disabled
                             style="width: 100%;"
                             data-identifier="{{ site_code }}">Download Pesticide Use
                         </button>
                         <div class="vertical-space"></div>
+                        <hr/>
+                        <div class="download-desc">Please refer to the following publication for use of the indicator: Dabrowski, J.M. (2022).
+                            An Integrated Approach to Managing and Mitigating the Risk of Agricultural Nonpoint Source Pesticide Pollution to the Aquatic Environment.
+                            Volume 2: Development of Risk Maps and a Risk Indicator for Identifying Hotspots and Prioritising Risks of Pesticide use to Aquatic Ecosystem Health.
+                            WRC Report No. TT 885/22. Water Research Commission, Pretoria</div>
                          <button class="btn btn-info download-generic-pesticide-risk-indicator"
                             style="width: 100%;"
                             data-identifier="{{ site_code }}">Download Generic Pesticide Risk Indicator
                         </button>
                         <div class="vertical-space"></div>
+
+                        <hr/>
+                        <div class="download-desc">Please refer to the following publication for use of the indicator: Dabrowski, J.M. (2022). An Integrated Approach to Managing and Mitigating the Risk of Agricultural
+                            Nonpoint Source Pesticide Pollution to the Aquatic Environment.
+                            Volume 2: Development of Risk Maps and a Risk Indicator for Identifying Hotspots and Prioritising Risks of Pesticide use to Aquatic Ecosystem Health.
+                            WRC Report No. TT 885/22. Water Research Commission, Pretoria</div>
                          <button class="btn btn-info download-specific-pesticide-risk-indicator"
                             style="width: 100%;"
                             data-identifier="{{ site_code }}">Download Specific Pesticide Risk Indicator
