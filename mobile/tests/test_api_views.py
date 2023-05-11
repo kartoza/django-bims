@@ -251,7 +251,7 @@ class TestAddLocationSite(TestCase):
             'longitude': 1,
             'river_name': 'RIVER',
             'site_code': 'SITE_CODE',
-            'site_description': 'desc',
+            'description': 'desc',
             'additional_data': json.dumps({
                 'source_collection': 'mobile'
             })
