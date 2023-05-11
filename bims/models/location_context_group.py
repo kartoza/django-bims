@@ -45,6 +45,13 @@ class LocationContextGroup(models.Model):
         default='',
         help_text='Identifier to retrieve the desired value (for border)'
     )
+    order = models.IntegerField(
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        ordering = ('order', )
 
     def __str__(self):
         return self.name
