@@ -7,5 +7,4 @@ if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
 export PYTHONPATH=/home/web/django_project:$PYTHONPATH
-export DJANGO_SETTINGS_MODULE=core.settings.dev_docker
 cd /home/web/django_project
