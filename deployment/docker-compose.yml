@@ -68,12 +68,20 @@ x-common-django:
 services:
 
   db:
-    image: dimasciput/postgis:9.6-2.4
+    container_name: bims_db
+    image: kartoza/postgis:11.5-2.5
+    shm_size: 1g
     environment:
-      - ALLOW_IP_RANGE=0.0.0.0/0
-      - POSTGRES_USER=${POSTGRES_USER:-docker}
-      - POSTGRES_PASS=${POSTGRES_PASS:-docker}
-    restart: unless-stopped
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_USER: ${POSTGRES_USER:-docker}
+      POSTGRES_PASS: ${POSTGRES_PASS:-docker}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
+    volumes:
+      - ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+      - ./sql:/sql
+    ports:
+      - "6543:5432"
 
   geoserver:
     image: kartoza/geoserver:2.19.0
