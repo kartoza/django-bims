@@ -163,11 +163,17 @@ def process_source_reference(
                 source_id=entry.id,
                 note=None
             )
-            source_reference, _ = (
-                SourceReferenceBibliography.objects.get_or_create(
-                    source=entry
+            try:
+                source_reference, _ = (
+                    SourceReferenceBibliography.objects.get_or_create(
+                        source=entry
+                    )
                 )
-            )
+            except SourceReferenceBibliography.MultipleObjectsReturned:
+                source_reference = SourceReferenceBibliography.objects.filter(
+                    source=entry
+                ).first()
+
             source_reference_found = True
 
     if not source_reference_found:
@@ -218,6 +224,12 @@ def process_source_reference(
                         SourceReferenceBibliography.objects.create(
                             source=entry
                         )
+                    )
+                except SourceReferenceBibliography.MultipleObjectsReturned:
+                    source_reference = (
+                        SourceReferenceBibliography.objects.filter(
+                            source=entry
+                        ).first()
                     )
             else:
                 return 'Peer reviewed should have a DOI', None
