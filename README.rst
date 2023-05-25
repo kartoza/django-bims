@@ -1,30 +1,29 @@
-=====
-BIMS
-=====
+## Welcome
 
-.. image:: https://badges.gitter.im/django-bims/community.svg
-   :alt: Join the chat at https://gitter.im/django-bims/community
-   :target: https://gitter.im/django-bims/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
-BIMS is a Django app.
-
-Note that BIMS is under development and not yet feature complete.
+Welcome to the Biodiversity Information Management System (BIMS) Source Code Repository
 
 The latest source code is available at http://github.com/kartoza/django-bims.
+
+BIMS is a platform for managing and visualising biodiversity data.
+
+Make your data available to decision makers, researchers & biologists.
+
+This project is a [Freshwater Researcy Centre](https://www.frcsa.org.za/) FRC Initiative, supported by [Kartoza](https://kartoza.com) as implementing partner.
+
+See a running instance at https://freshwaterbiodiversity.org/
 
 * **Developers:** See our `project setup guide`_ and `developer guide`_
 
 
-Project Activity
-----------------
+## Project Activity
 
 |Test Badge| 
 
 |Build Badge|
 
 
-Quick Installation Guide
-------------------------
+## Quick Installation Guide
+
 For deployment we use `docker`_ so you need to have docker
 running on the host. HealthyRivers is a django app so it will help if you have
 some knowledge of running a django site.
@@ -68,11 +67,15 @@ The keys are:
 
 
 
-Thank you
+## Thank you
 _________
 
-Thank you to the individual contributors who have helped to build HealthyRivers:
 
+
+Thank you to the individual contributors who have helped to build BIMS:
+
+* Dr. Helen Dallas (Implementation Lead)
+* Dr. Jeremy Shelton (Freshwater Expert)
 * Tim Sutton (Lead developer): tim@kartoza.com
 * Dimas Ciputra: dimas@kartoza.com
 * Irwan Fathurrahman: irwan@kartoza.com
