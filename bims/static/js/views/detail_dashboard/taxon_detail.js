@@ -196,13 +196,13 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
 
                     if (keys[i] === 'DOI/URL' && document && source[keys[i]].indexOf('/uploaded/') > -1) {
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
-                    } else if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) !== 'http') {
+                    } else if (keys[i] === 'DOI/URL' && source[keys[i]] && source[keys[i]].substring(0, 4) !== 'http') {
                         itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
                     } else {
-                        if (keys[i] === 'DOI/URL' && source[keys[i]].substring(0, 4) === 'http') {
+                        if (keys[i] === 'DOI/URL' && source[keys[i]] && source[keys[i]].substring(0, 4) === 'http') {
                             itemDiv.append(`<td><a href="${source[keys[i]]}" target="_blank">${source[keys[i]]}<a/></td>`);
                         } else {
-                            itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                            itemDiv.append('<td>' + (source[keys[i]] ? source[keys[i]] : '-') + '</td>')
                         }
                     }
                 }
