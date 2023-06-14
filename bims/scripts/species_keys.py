@@ -55,19 +55,21 @@ ALL_TAXON_RANKS = [
     'SUBSPECIES',
     'VARIETY'
 ]
+PARENT_RANKS = {
+    'KINGDOM': None,
+    'PHYLUM': KINGDOM,
+    'CLASS': PHYLUM,
+    'SUBCLASS': CLASS,
+    'ORDER': CLASS,
+    'SUBORDER': ORDER,
+    'FAMILY': ORDER,
+    'SUBFAMILY': FAMILY,
+    'GENUS': FAMILY,
+    'SPECIES': GENUS,
+    'SUBSPECIES': SPECIES,
+    'VARIETY': SPECIES,
+}
 
 def parent_rank(current_rank):
-    current_rank = current_rank.lower()
-    if current_rank == KINGDOM.lower():
-        return None
-    if current_rank == VARIETY.lower():
-        return SPECIES
-    if current_rank == GENUS.lower():
-        return FAMILY
-    if current_rank == FAMILY.lower():
-        return ORDER
-    if current_rank == ORDER.lower():
-        return CLASS
-    if current_rank == SPECIES.lower():
-        return GENUS
-    return TAXON_RANKS[TAXON_RANKS.index(current_rank) - 1]
+    current_rank = current_rank.upper()
+    return PARENT_RANKS.get(current_rank)
