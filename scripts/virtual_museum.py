@@ -52,7 +52,7 @@ class TaxaDarwinCore(TaxaProcessor):
         if module_group:
             self.module_group = module_group
         for species_single_data in species_data:
-            self.process_data(species_single_data)
+            self.process_data(species_single_data, module_group)
 
 
 class OccurrenceDarwinCore(OccurrenceProcessor):
