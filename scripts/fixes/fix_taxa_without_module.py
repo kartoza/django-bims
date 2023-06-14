@@ -9,7 +9,7 @@ def fix_taxa_without_modules():
     taxa = Taxonomy.objects.filter(
         taxongroup__isnull=True,
         biologicalcollectionrecord__module_group__isnull=False
-    ).distinct()
+    )
 
     for index, taxon in enumerate(taxa, start=1):
         print(f'Updating {taxon} {index}/{len(taxa)}')
