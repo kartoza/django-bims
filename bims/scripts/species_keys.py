@@ -57,14 +57,17 @@ ALL_TAXON_RANKS = [
 ]
 
 def parent_rank(current_rank):
-    if current_rank == KINGDOM:
+    current_rank = current_rank.lower()
+    if current_rank == KINGDOM.lower():
         return None
-    if current_rank == VARIETY:
+    if current_rank == VARIETY.lower():
         return SPECIES
-    if current_rank == GENUS:
+    if current_rank == GENUS.lower():
         return FAMILY
-    if current_rank == FAMILY:
+    if current_rank == FAMILY.lower():
         return ORDER
-    if current_rank == ORDER:
+    if current_rank == ORDER.lower():
         return CLASS
+    if current_rank == SPECIES.lower():
+        return GENUS
     return TAXON_RANKS[TAXON_RANKS.index(current_rank) - 1]
