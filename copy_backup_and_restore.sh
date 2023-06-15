@@ -25,9 +25,8 @@ docker exec $DOCKER_DB su - postgres -c "psql gis -f /backups/restore.sql"
 
 echo "fix duplicates"
 docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM django_content_type a WHERE a.ctid <> (SELECT min(b.ctid) FROM django_content_type b WHERE a.app_label = b.app_label and a.model = b.model);\""
-docker exec $DOCKER_DB su - postgres -c "psql -d gis -c \"DELETE FROM bims_sitesetting;\""
 
 echo "migrate and add default location site view"
 docker exec $DOCKER_UWSGI python manage.py migrate
 docker exec $DOCKER_UWSGI python manage.py add_default_location_site_view
-docker exec $DOCKER_UWSGI python manage.py loaddata sitesetting.json
+docker exec $DOCKER_UWSGI python manage.py bims_loaddata sitesetting.json
