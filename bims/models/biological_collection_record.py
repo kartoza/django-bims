@@ -204,12 +204,6 @@ class BiologicalCollectionRecord(AbstractValidation):
         verbose_name='Custodian',
     )
 
-    sampling_method_string = models.CharField(
-        max_length=50,
-        blank=True,
-        default=''
-    )
-
     sampling_method = models.ForeignKey(
         'bims.SamplingMethod',
         null=True,
@@ -361,6 +355,17 @@ class BiologicalCollectionRecord(AbstractValidation):
             if taxon_groups.exists():
                 self.module_group = taxon_groups[0]
                 self.save()
+        record_types = [
+            'visual observation',
+            'photographic record'
+        ]
+        if (
+                self.sampling_method and
+                not self.record_type and
+                self.sampling_method.sampling_method.lower() in record_types
+        ):
+            self.record_type = self.sampling_method.sampling_method
+            self.save()
 
     def save(self, *args, **kwargs):
         max_allowed = 10

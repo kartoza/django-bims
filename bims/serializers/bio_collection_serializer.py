@@ -525,7 +525,7 @@ class BioCollectionOneRowSerializer(
     def get_sampling_method(self, obj):
         if obj.sampling_method:
             return obj.sampling_method.sampling_method.capitalize()
-        return obj.sampling_method_string
+        return '-'
 
     def get_broad_biotope(self, obj):
         if obj.biotope:
