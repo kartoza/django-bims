@@ -188,9 +188,13 @@ class FindTaxon(APIView):
                 taxon_group_ids = taxon.taxongroup_set.all().values_list(
                     'id', flat=True
                 )
+            try:
+                canonicalName = gbif['canonicalName']
+            except KeyError:
+                canonicalName = gbif['scientificName']
             taxon_list.append({
                 self.scientific_name: gbif['scientificName'],
-                self.canonical_name: gbif['canonicalName'],
+                self.canonical_name: canonicalName,
                 self.rank: gbif['rank'],
                 self.key: key,
                 self.taxa_id: taxa_id,
