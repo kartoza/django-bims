@@ -264,7 +264,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         try:
             geocontext_data = json.loads(geocontext_data_string)
             for geocontext_value in geocontext_data['services']:
-                if not geocontext_value['value']:
+                if 'value' not in geocontext_value:
                     continue
                 try:
                     location_context_group, group_created = (
@@ -286,21 +286,20 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
                     for _group in _remaining_groups:
                         _group.delete()
                     location_context_group = _first_group
-                try:
-                    location_context, created = (
-                        LocationContext.objects.get_or_create(
-                            site=self,
-                            group=location_context_group,
-                        )
-                    )
-                except LocationContext.MultipleObjectsReturned:
+                if LocationContext.objects.filter(
+                        site=self,
+                        group=location_context_group).exists():
                     LocationContext.objects.filter(
                         site=self,
                         group=location_context_group
                     ).delete()
-                    location_context = LocationContext.objects.create(
+
+                if geocontext_value.get('value') is not None:
+                    LocationContext.objects.create(
                         site=self,
-                        group=location_context_group
+                        group=location_context_group,
+                        fetch_time=timezone.now(),
+                        value=str(geocontext_value['value'])
                     )
                 if (
                         not location_context_group.name or
@@ -311,10 +310,8 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
                 location_context_group.geocontext_group_key = (
                     geocontext_data['key']
                 )
-                location_context.fetch_time = timezone.now()
-                location_context.value = str(geocontext_value['value'])
                 location_context_group.save()
-                location_context.save()
+
         except (ValueError, KeyError, TypeError):
             return False, 'Could not format the geocontext data'
         return True, 'Added'
