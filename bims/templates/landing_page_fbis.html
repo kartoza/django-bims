@@ -23,7 +23,7 @@
     <div id="section-wrapper">
         {% if custom_theme.carousels.all %}
             <header class="masthead text-center text-white d-flex" id="header">
-                {% include "carousel.html" %}
+                {% include "carousel.html" with app="fbis" %}
             </header>
         {% else %}
         <header class="masthead text-center text-white d-flex" id="header-fbis">
