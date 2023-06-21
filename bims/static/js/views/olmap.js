@@ -48,7 +48,7 @@ define([
             'click .zoom-out': 'zoomOutMap',
             'click .layer-control': 'layerControlClicked',
             'click #map-legend-wrapper': 'mapLegendClicked',
-            'click .print-map-control': 'downloadMap',
+            // 'click .print-map-control': 'downloadMap',
             'click #start-tutorial': 'startTutorial',
         },
         clusterLevel: {
@@ -830,10 +830,9 @@ define([
                 }, 100)
             }
         },
-        downloadMap: function () {
+        downloadMap: function (fileType = 'png') {
             var that = this;
             var downloadMap = true;
-
             that.map.once('postcompose', function (event) {
                 var canvas = event.context.canvas;
                 try {
@@ -849,6 +848,7 @@ define([
 
             if (downloadMap) {
                 $('#ripple-loading').show();
+                $('.map-control-panel-box').hide();
                 $('.map-control-panel').hide();
                 $('.zoom-control').hide();
                 $('.bug-report-wrapper').hide();
@@ -866,8 +866,8 @@ define([
                         onrendered: function (canvas) {
                             var link = document.createElement('a');
                             link.setAttribute("type", "hidden");
-                            link.href = canvas.toDataURL("image/png");
-                            link.download = 'map.png';
+                            link.href = canvas.toDataURL("image/" + fileType);
+                            link.download = 'map.' + fileType;
                             document.body.appendChild(link);
                             link.click();
                             link.remove();
