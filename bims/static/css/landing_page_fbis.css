@@ -542,3 +542,37 @@ html, body {
     margin-top: 0.5em;
     margin-bottom: 1em;
 }
+
+.footer-font-size {
+    font-size: 35px;
+    color: var(--main-accent-color);
+}
+.footer-icon {
+    margin-right: 10px;
+    margin-left: 10px;
+    width: 50px
+}
+
+.footer-shrink {
+    background-color: rgba(170, 217, 147, 0.5) !important;
+    transition: 0.3s;
+}
+
+.get-in-touch-details {
+    display: flex;
+    align-items: center;
+}
+
+.get-in-touch-details .icon-width > i{
+    height: 50px;
+    margin-right: 10px;
+}
+
+.icon-width {
+    width: 60px !important;
+}
+
+.get-in-touch-container {
+    padding-top: 35px;
+    background: #f8f7f4;
+}
