@@ -9,6 +9,7 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/landing_page_fbis.css" %}" rel="stylesheet">
+    <link href="{% static "css/custom_landing_page.css" %}" rel="stylesheet">
     <script>
         const showModuleSummaries = true;
     </script>
@@ -20,7 +21,12 @@
 
 {% block body_content %}
     <div id="section-wrapper">
-        <header class="masthead text-center text-white d-flex" id="header">
+        {% if custom_theme.carousels.all %}
+            <header class="masthead text-center text-white d-flex" id="header">
+                {% include "carousel.html" with app="fbis" %}
+            </header>
+        {% else %}
+        <header class="masthead text-center text-white d-flex" id="header-fbis">
             <div id="title-header">
                 <div class="title-header-buttons">
                     <div class="title-header-text">
@@ -46,9 +52,9 @@
                 </div>
             </div>
         </header>
-
+        {% endif %}
         <section id="fish-data">
-            <div class="container modules-container" style="margin-bottom: 50px">
+            <div class="container modules-container" style="min-height: 455px">
                 <div class="row" style="margin-bottom: 20px;">
                     <div class="col-lg-8 mx-auto text-center">
                         <h2 class="section-heading">Biodiversity Records</h2>
@@ -60,6 +66,112 @@
                     {% include 'landing_page_dashboard.html' %}
                 </div>
         </section>
+        {% if custom_theme.landing_page_sections %}
+                {% for landing_page_section in custom_theme.landing_page_sections.all %}
+                    <section class="biodiversity-data-container custom-sections" style="position: relative;">
+                        <div class="container">
+                            {% if landing_page_section.title %}
+                                <div class="row">
+                                    <div class="col-lg-8 mx-auto text-center">
+                                        <h2 class="section-heading">{{ landing_page_section.title }}</h2>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="row custom-sections-row">
+                            {% for section_content in landing_page_section.contents.all %}
+                                <div class="custom-sections-content">
+                                    {{ section_content.content | safe }}
+                                </div>
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </section>
+                {% endfor %}
+        {% endif %}
+        {% if custom_theme.partners.all %}
+            <section class="biodiversity-data-container grid-logos" style="position: relative;">
+                <div class="container" style="margin-bottom: 25px">
+                    <div class="row">
+                        <div class="col-lg-8 mx-auto text-center">
+                            <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_partners_title }}</h2>
+                        </div>
+                    </div>
+                    <div class="partner-container">
+                        <div class="flex-container">
+                            {% for partner in custom_theme.partners.all %}
+                                <div class="flex-item">
+                                    <a href="{{ partner.link }}" target="_blank">
+                                        <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+        <div class="vertical-spacer"></div>
+        {% if custom_theme.is_footer_enabled %}
+            <div class="section-1-padding footer-bg bgimage-property get-in-touch-container">
+                <div class="container">
+                    <div class="row rowsafari">
+                        <div class="col-sm-6 col-md-6 col-lg-6 res2-bot-pad res1-bot-pad count-res" style="text-align: center; margin-bottom: 25px;">
+                             {% if custom_theme.logo %}
+                                 <img src="{{ custom_theme.logo.url }}" style="max-width: 100%; width: 120px"/>
+                             {% endif %}
+                            <div style="margin-top: 20px;">
+                                {% if custom_theme.twitter_link %}
+                                    <a href="{{ custom_theme.twitter_link }}" target="_blank"><img src="{% static 'img/twitter.png' %}" class="footer-icon"/></a>
+                                {% endif %}
+                                {% if custom_theme.facebook_link %}
+                                    <a href="{{ custom_theme.facebook_link }}" target="_blank"><img src="{% static 'img/facebook.png' %}" class="footer-icon"/></a>
+                                {% endif %}
+                                {% if custom_theme.instagram_link %}
+                                    <a href="{{ custom_theme.instagram_link }}" target="_blank"><img src="{% static 'img/instagram.png' %}" class="footer-icon"/></a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-6 col-lg-6 res1-bot-pad res2-bot-pad count-res">
+                            <h5 style="font-weight: bold; margin-bottom: 25px;">GET IN TOUCH</h5>
+                            <div class="marg-top15 res-marg-top10 res2-top-marg10 get-in-touch-details">
+                                <div class="dis-tab-cell icon-width">
+                                    <i class="fa fa-envelope footer-font-size"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="dis-tab-cell-top">
+                                    <p class="lt-space word-br marg-bot5">
+                                        <a href="mailto:{{ custom_theme.email_1 }}">{{ custom_theme.email_1 }}</a>
+                                    </p>
+                                    <p class="lt-space marg-bot5 word-br">
+                                        <a href="mailto:{{ custom_theme.email_2 }}">{{ custom_theme.email_2 }}</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="marg-top10 get-in-touch-details">
+                                <div class="dis-tab-cell icon-width">
+                                    <i class="fa fa-phone footer-font-size"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="dis-tab-cell-top">
+                                    <p class="lt-space marg-bot5">{{ custom_theme.phone_1 }}</p>
+                                    <p class="lt-space marg-bot5">{{ custom_theme.phone_2 }}</p>
+                                </div>
+                            </div>
+                            <div class="marg-top10 get-in-touch-details">
+                                <div class="dis-tab-cell icon-width">
+                                    <i class="fa fa-map-marker footer-font-size"
+                                       aria-hidden="true"></i>
+                                </div>
+                                <div class="dis-tab-cell-top">
+                                    {{ custom_theme.address_1 | linebreaks }}
+                                    <p class="lt-space word-br"></p>{{ custom_theme.address_2 | linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <div class="vertical-spacer"></div>
         <div id="about">
             <div class="row" style="margin-right: 0 !important;">

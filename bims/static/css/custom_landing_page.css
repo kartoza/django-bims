@@ -1,0 +1,164 @@
+.flex-container {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+}
+.flex-item {
+    margin: auto;
+}
+
+.flex-item img {
+    max-height: 200px !important;
+    max-width: 100%;
+    margin-bottom: 20px;
+}
+
+.custom-sections .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+@media (min-width: 400px) {
+    .flex-item img {
+        max-width: 400px !important;
+    }
+}
+
+.partner-container {
+    margin-top: 40px;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+img::selection {
+    color: #fff;
+    background: transparent;
+}
+
+img::-moz-selection {
+    color: #fff;
+    background: transparent;
+}
+
+header.masthead {
+    padding-top: 10rem;
+    padding-bottom: calc(10rem - 56px);
+    background-position: center center;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    background-color: black;
+    height: 700px !important;
+    min-height: auto !important;
+}
+
+.header-image {
+    background-position: center center;
+    background-size: cover;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-attachment: scroll;
+    height: 100%;
+}
+
+header.masthead hr {
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+header.masthead h1 {
+    font-size: 2rem;
+}
+
+header.masthead p {
+    font-weight: 300;
+}
+
+@media (min-width: 768px) {
+    header.masthead p {
+        font-size: 1.15rem;
+    }
+}
+
+.carousel-title h2 {
+    font-size: 47px !important;
+    font-weight: 700;
+    text-align: left;
+}
+
+@media (max-width: 500px) {
+    .carousel-title {
+        font-size: 25px !important;
+    }
+}
+
+/*@media (min-width: 400px) {*/
+/*    header.masthead {*/
+/*        height: 300px !important;*/
+/*    }*/
+/*    .carousel-title {*/
+/*        padding-left: 40px !important;*/
+/*    }*/
+/*    .carousel-title h2 {*/
+/*        font-size: 1em;*/
+/*    }*/
+/*    .carousel-title h5 {*/
+/*        font-size: 0.7em;*/
+/*    }*/
+/*}*/
+
+
+@media (min-width: 992px) {
+    header.masthead {
+        min-height: 650px;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    header.masthead h1 {
+        font-size: 3rem;
+    }
+    .carousel-title {
+        padding-left: 100px !important;
+    }
+    .carousel-title h2 {
+        font-size: 2em;
+    }
+    .carousel-title h5 {
+        font-size: 1em;
+    }
+}
+
+@media (min-width: 1200px) {
+    header.masthead h1 {
+        font-size: 4rem;
+    }
+}
+
+#title-header {
+    position: absolute;
+    width: 100%;
+    height: 600px;
+    top: 0;
+}
+
+.title-header-buttons {
+    height: 100%;
+    width: 100%;
+}
+
+.title-header-buttons div {
+    margin: 0 auto;
+    margin-top: 250px;
+    width: 250px;
+    padding: 5px 10px;
+    background-color: white;
+    color: var(--main-accent-color);
+    border: 2px solid var(--main-accent-color);
+    text-align: left;
+    border-radius: 4px;
+}

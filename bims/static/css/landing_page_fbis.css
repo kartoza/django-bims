@@ -85,11 +85,11 @@ img::-moz-selection {
     background: transparent;
 }
 
-#header {
+#header-fbis {
     background-image: url('/static/img/landing_page_banner.jpeg');
 }
 
-header.masthead {
+#header-fbis.masthead {
     padding-top: 10rem;
     padding-bottom: calc(10rem - 56px);
     background-position: center center;
@@ -102,50 +102,40 @@ header.masthead {
     min-height: auto !important;
 }
 
-header.masthead hr {
+#header-fbis.masthead hr {
     margin-top: 30px;
     margin-bottom: 30px;
 }
 
-header.masthead h1 {
+#header-fbis.masthead h1 {
     font-size: 2rem;
 }
 
-header.masthead p {
+#header-fbis.masthead p {
     font-weight: 300;
 }
 
 @media (min-width: 768px) {
-    header.masthead p {
+    #header-fbis.masthead p {
         font-size: 1.15rem;
     }
 }
 
 @media (min-width: 992px) {
-    header.masthead {
+    #header-fbis.masthead {
         min-height: 650px;
         padding-top: 0;
         padding-bottom: 0;
     }
-    header.masthead h1 {
+    #header-fbis.masthead h1 {
         font-size: 3rem;
     }
 }
 
 @media (min-width: 1200px) {
-    header.masthead h1 {
+    #header-fbis.masthead h1 {
         font-size: 4rem;
     }
-}
-
-#title-header {
-    display: table;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 700px;
-    text-align: left;
 }
 
 .title-header-text {
@@ -164,7 +154,6 @@ header.masthead p {
 #carouselIndicators {
     width: 100%;
     position: relative;
-    height: 400px;
     overflow-y: hidden;
 }
 
@@ -538,4 +527,53 @@ html, body {
 
 .module-loading {
     width: 100%; display: flex; justify-content: center;
+    margin-top: 10%;
+}
+
+.custom-sections-row {
+    justify-content: space-evenly;
+}
+
+.custom-sections-content {
+    flex-direction: column;
+}
+
+.custom-sections .section-heading {
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+}
+
+.footer-font-size {
+    font-size: 35px;
+    color: var(--main-accent-color);
+}
+.footer-icon {
+    margin-right: 10px;
+    margin-left: 10px;
+    width: 50px
+}
+
+.footer-shrink {
+    background-color: rgba(170, 217, 147, 0.5) !important;
+    transition: 0.3s;
+}
+
+.get-in-touch-details {
+    display: flex;
+    align-items: center;
+}
+
+.get-in-touch-details .icon-width > i{
+    height: 50px;
+    margin-right: 10px;
+}
+
+.icon-width {
+    width: 60px !important;
+}
+
+.get-in-touch-container {
+    padding-top: 35px;
+    padding-bottom: 10px;
+    background: #f8f7f4;
 }
