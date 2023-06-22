@@ -2914,3 +2914,9 @@ div:hover::-webkit-scrollbar {
 .taxon-image {
     display: inline;
 }
+
+#download-map-format {
+    width: 100px;
+    text-align: center;
+    border-radius: 5px;
+}

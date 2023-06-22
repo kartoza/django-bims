@@ -45,7 +45,8 @@ define(
                 'input #layer-selector-search': 'handleSearchInLayerSelector',
                 'click #permalink-control': 'handlePermalinkClicked',
                 'click #print-control': 'downloadMapClicked',
-                'click .download-map-btn': 'downloadMap'
+                'click .download-map-btn': 'downloadMap',
+                'click .download-map-container-close ': 'closeDownloadMapPanel',
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -181,7 +182,9 @@ define(
                 }
             },
             downloadMap: function (e) {
-                 Shared.Dispatcher.trigger('map:downloadMap');
+                let selectElement = document.getElementById("download-map-format");
+                let selectedValue = selectElement.value;
+                Shared.Dispatcher.trigger('map:downloadMap', selectedValue);
             },
             downloadMapClicked: function (e) {
                 if ($('.download-map-container').is(":hidden")) {
