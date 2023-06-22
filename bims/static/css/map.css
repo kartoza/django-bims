@@ -2916,7 +2916,7 @@ div:hover::-webkit-scrollbar {
 }
 
 #download-map-format {
-    width: 100px;
+    width: 80px;
     text-align: center;
     border-radius: 5px;
 }
