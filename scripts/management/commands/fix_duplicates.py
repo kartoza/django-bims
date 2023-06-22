@@ -121,11 +121,17 @@ class Command(BaseCommand):
                     records_with_source_reference = records_with_owners.filter(
                         source_reference__isnull=False)
 
-                    if records_with_source_reference.exists():
+                    if records_with_source_reference.exists() and records_with_owners.count() == duplicate_records.count():
                         # If we have records with both owner and source reference, keep them and delete the rest.
-                        records_to_delete = records_with_owners.exclude(
-                            id__in=records_with_source_reference.values('id'))
-                        records_to_keep = records_with_source_reference
+                        if records_with_source_reference.count() != records_with_owners.count():
+                            records_to_delete = records_with_owners.exclude(
+                                id__in=records_with_source_reference.values('id'))
+                            records_to_keep = records_with_source_reference
+                        else:
+                            records_to_delete = duplicate_records.exclude(
+                                id=duplicate_records.first().id)
+                            records_to_keep = BiologicalCollectionRecord.objects.filter(
+                                id=duplicate_records.first().id)
                     else:
                         # If none of the records with owners have a source reference, keep them and delete the rest.
                         records_to_delete = duplicate_records.exclude(
