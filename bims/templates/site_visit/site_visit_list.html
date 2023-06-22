@@ -440,8 +440,11 @@
                     let select = $('.source-collection-select');
                     $.each(response, (index, data) => {
                         let selected = '';
-                        if (sourceCollection.indexOf(data['source_collection']) > -1) {
-                            selected = 'selected'
+
+                        if (sourceCollection.length === 1) {
+                            if (sourceCollection.indexOf(data['source_collection']) > -1) {
+                                selected = 'selected'
+                            }
                         }
                         select.append(
                             `<option value=${data['source_collection']} ${selected} >${data['source_collection'].toUpperCase()}</option>`
