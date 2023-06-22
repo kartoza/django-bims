@@ -549,7 +549,7 @@ html, body, .map, .map-wrapper, #map-container {
     margin-bottom: -5px;
 }
 
-.locate-options-container {
+.locate-options-container, .download-map-container {
     display: none;
     padding-bottom: 0 !important;
 }
@@ -573,7 +573,7 @@ html, body, .map, .map-wrapper, #map-container {
     background-color: rgba(0, 0, 0, 0.2);
 }
 
-.locate-options-container .content {
+.locate-options-container .content, .download-map-container .content {
     border-top: 1px solid darkgray;
     margin-top: 3px;
 }
@@ -2913,4 +2913,10 @@ div:hover::-webkit-scrollbar {
 
 .taxon-image {
     display: inline;
+}
+
+#download-map-format {
+    width: 80px;
+    text-align: center;
+    border-radius: 5px;
 }

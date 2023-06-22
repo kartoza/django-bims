@@ -43,7 +43,10 @@ define(
                 'click .spatial-filter': 'spatialFilterClicked',
                 'click .validate-data': 'validateDataClicked',
                 'input #layer-selector-search': 'handleSearchInLayerSelector',
-                'click #permalink-control': 'handlePermalinkClicked'
+                'click #permalink-control': 'handlePermalinkClicked',
+                'click #print-control': 'downloadMapClicked',
+                'click .download-map-btn': 'downloadMap',
+                'click .download-map-container-close ': 'closeDownloadMapPanel',
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -176,6 +179,27 @@ define(
                     this.closeThirdPartyPanel();
                 } else {
                     this.closeLocatePanel();
+                }
+            },
+            downloadMap: function (e) {
+                let selectElement = document.getElementById("download-map-format");
+                let selectedValue = selectElement.value;
+                Shared.Dispatcher.trigger('map:downloadMap', selectedValue);
+            },
+            downloadMapClicked: function (e) {
+                if ($('.download-map-container').is(":hidden")) {
+                    this.hidePopOver($(e.target));
+                    this.resetAllControlState();
+                    this.openDownloadMapPanel();
+                    this.closeSearchPanel();
+                    this.closeLassoPanel();
+                    this.closeFilterPanel();
+                    this.closeSpatialFilterPanel();
+                    this.closeValidateData();
+                    this.closeThirdPartyPanel();
+                    this.closeLocatePanel();
+                } else {
+                    this.closeDownloadMapPanel();
                 }
             },
             uploadDataClicked: function (e) {
@@ -313,6 +337,14 @@ define(
             closeLocatePanel: function () {
                 this.$el.find('.locate-control').removeClass('control-panel-selected');
                 $('.locate-options-container').hide();
+            },
+            openDownloadMapPanel: function () {
+                this.$el.find('.download-map-control').addClass('control-panel-selected');
+                $('.download-map-container').show();
+            },
+            closeDownloadMapPanel: function () {
+                this.$el.find('download-map-control').removeClass('control-panel-selected');
+                $('.download-map-container').hide();
             },
             openLocateCoordinates: function (e) {
                 this.closeLocatePanel();

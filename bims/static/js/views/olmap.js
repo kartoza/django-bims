@@ -20,12 +20,13 @@ define([
     'views/bug_report',
     'views/detail_dashboard/taxon_detail',
     'views/detail_dashboard/site_detail',
-    'htmlToCanvas'
+    'htmlToCanvas',
+    'jspdf'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, MultipleLocationSitesDetail, BugReportView,
-             TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas) {
+             TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas, jsPDF) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
         className: 'map-wrapper',
@@ -48,7 +49,7 @@ define([
             'click .zoom-out': 'zoomOutMap',
             'click .layer-control': 'layerControlClicked',
             'click #map-legend-wrapper': 'mapLegendClicked',
-            'click .print-map-control': 'downloadMap',
+            // 'click .print-map-control': 'downloadMap',
             'click #start-tutorial': 'startTutorial',
         },
         clusterLevel: {
@@ -830,10 +831,9 @@ define([
                 }, 100)
             }
         },
-        downloadMap: function () {
+        downloadMap: function (fileType = 'png') {
             var that = this;
             var downloadMap = true;
-
             that.map.once('postcompose', function (event) {
                 var canvas = event.context.canvas;
                 try {
@@ -849,6 +849,7 @@ define([
 
             if (downloadMap) {
                 $('#ripple-loading').show();
+                $('.map-control-panel-box').hide();
                 $('.map-control-panel').hide();
                 $('.zoom-control').hide();
                 $('.bug-report-wrapper').hide();
@@ -864,13 +865,24 @@ define([
                         background: '#FFFFFF',
                         allowTaint: false,
                         onrendered: function (canvas) {
-                            var link = document.createElement('a');
-                            link.setAttribute("type", "hidden");
-                            link.href = canvas.toDataURL("image/png");
-                            link.download = 'map.png';
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
+                            if (fileType === 'pdf') {
+                                // Create a new instance of jsPDF
+                                let pdf = new jsPDF.jsPDF('l', 'mm', [divWidth, divHeight]);
+
+                                // Add the canvas image to the PDF
+                                pdf.addImage(canvas.toDataURL("image/png"), 'PNG', 0, 0, divWidth, divHeight);
+
+                                // Save the PDF
+                                pdf.save('map.pdf');
+                            } else {
+                                var link = document.createElement('a');
+                                link.setAttribute("type", "hidden");
+                                link.href = canvas.toDataURL("image/" + fileType);
+                                link.download = 'map.' + fileType;
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                            }
                             $('.zoom-control').show();
                             $('.map-control-panel').show();
                             $('#ripple-loading').hide();
