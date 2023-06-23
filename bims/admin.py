@@ -528,6 +528,22 @@ class ProfileInline(admin.StackedInline):
     model = BimsProfile
 
 
+class BimsProfileAdmin(admin.ModelAdmin):
+    model = BimsProfile
+    list_display = [
+        'user',
+        'first_name',
+        'last_name',
+        'qualifications',
+        'role',
+        'sass_accredited_date_from',
+        'sass_accredited_date_to']
+    search_fields = (
+        'user__first_name',
+        'user__username'
+    )
+
+
 class ProfileCreationForm(UserCreationForm):
     class Meta:
         model = get_user_model()
@@ -1768,3 +1784,4 @@ admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
 admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)
 admin.site.register(Unit, UnitAdmin)
 admin.site.register(ClimateData, ClimateDataAdmin)
+admin.site.register(BimsProfile, BimsProfileAdmin)
