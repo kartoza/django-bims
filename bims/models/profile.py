@@ -68,6 +68,18 @@ class Profile(models.Model):
         null=True,
     )
 
+    @property
+    def first_name(self):
+        if self.user:
+            return self.user.first_name
+        return '-'
+
+    @property
+    def last_name(self):
+        if self.user:
+            return self.user.last_name
+        return '-'
+
     def is_accredited(self, collection_date = None):
         if (
             not self.sass_accredited_date_to or
