@@ -162,7 +162,7 @@ def get_location_context_data(
                 group=group_key
             ))
 
-            if should_generate_site_code:
+            if not location_site.site_code and should_generate_site_code:
                 site_code, catchments_data = generate_site_code(
                     location_site,
                     lat=location_site.latitude,
