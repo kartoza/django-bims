@@ -14,7 +14,7 @@ function svgChartDownload(chartConfig, title) {
                 filter: function (item, chart) {
                     // Logic to remove a particular legend item goes here
                     if (item.text !== undefined) {
-                        return !item.text.includes('hide_this_legend');
+                        return !item.text.includes('hide_this_legend') && !item.text.includes('hide');
                     }
                     return false
                 }
