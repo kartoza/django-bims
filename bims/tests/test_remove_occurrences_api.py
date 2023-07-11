@@ -2,6 +2,7 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIRequestFactory
+from preferences import preferences
 from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
@@ -30,7 +31,9 @@ class TestRemoveOccurrencesApi(TestCase):
         self.factory = APIRequestFactory()
 
     def test_remove_data(self):
-        site_setting, _ = SiteSetting.objects.get_or_create()
+        site_setting = SiteSetting.objects.get(
+            id=preferences.SiteSetting.id
+        )
         site_setting.enable_remove_all_occurrences_tool = True
         site_setting.save()
 
