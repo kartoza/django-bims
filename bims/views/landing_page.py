@@ -4,7 +4,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from preferences import preferences
 
 from wagtail.core.models import Site
-from wagtail.core.views import serve
+from wagtail.views import serve
 from bims_theme.models.theme import CustomTheme
 
 
