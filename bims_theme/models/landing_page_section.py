@@ -2,7 +2,7 @@
 """Landing page section model definition.
 
 """
-
+from colorfield.fields import ColorField
 from django.db import models
 from ordered_model.models import OrderedModel
 
@@ -29,6 +29,11 @@ class LandingPageSection(OrderedModel):
     contents = models.ManyToManyField(
         'bims_theme.LandingPageSectionContent',
         blank=True
+    )
+
+    background_color = ColorField(
+        default='#FFFFFF',
+        help_text='Background color for the section'
     )
 
     def __str__(self):

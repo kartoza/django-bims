@@ -44,7 +44,8 @@
             </section>
             {% if custom_theme.landing_page_sections %}
                 {% for landing_page_section in custom_theme.landing_page_sections.all %}
-                    <section class="biodiversity-data-container custom-sections" style="position: relative;">
+                    <section class="biodiversity-data-container custom-sections"
+                             style="position: relative; background-color: {{ landing_page_section.background_color }}">
                         <div class="container">
                             {% if landing_page_section.title %}
                                 <div class="row">
@@ -62,29 +63,29 @@
                     </section>
                 {% endfor %}
             {% endif %}
-            {% if custom_theme.partners.all %}
-            <section class="biodiversity-data-container grid-logos" style="position: relative;">
-                <div class="container" style="margin-bottom: 25px">
-                    <div class="row">
-                        <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_partners_title }}</h2>
-                        </div>
-                        <div class="partner-container">
-                            <div class="flex-container">
-                                {% for partner in custom_theme.partners.all %}
-                                    <div class="flex-item">
-                                        <a href="{{ partner.link }}" target="_blank">
-                                            <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
-                                        </a>
-                                    </div>
-                                {% endfor %}
+            {% for funder_section in funders_partners %}
+                <section class="biodiversity-data-container grid-logos custom-sections" style="position: relative; background-color: {{ funder_section.color }}">
+                    <div class="container" style="margin-bottom: 25px">
+                        <div class="row">
+                            <div class="col-lg-8 mx-auto text-center">
+                                <h2 class="section-heading">{{ funder_section.title }}</h2>
                             </div>
-                        </div>
+                            <div class="partner-container">
+                                <div class="flex-container">
+                                    {% for partner in funder_section.org.all %}
+                                        <div class="flex-item">
+                                            <a href="{{ partner.link }}" target="_blank">
+                                                <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
 
+                        </div>
                     </div>
-                </div>
-            </section>
-            {% endif %}
+                </section>
+            {% endfor %}
 
             {% if custom_theme.is_footer_enabled %}
                 <footer>

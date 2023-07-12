@@ -2,7 +2,7 @@
 
 from django.contrib.auth.decorators import login_required
 from django.conf.urls import url, include
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, path
 from django.views.generic import RedirectView
 from django.views.generic import TemplateView
 
@@ -259,6 +259,7 @@ urlpatterns = [
         r'^account/moderation_sent/(?P<inactive_user>[^/]*)$',
         moderator_contacted,
         name='moderator_contacted'),
+    path('ckeditor/', include('ckeditor_uploader.urls')),
 ]
 
 # Api urls

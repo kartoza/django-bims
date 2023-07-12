@@ -1,10 +1,12 @@
 <div id="carouselIndicators" class="carousel slide" data-ride="carousel">
+    {% if headers|length > 1 %}
     <ol class="carousel-indicators">
         {% for header in headers %}
             <li data-target="#carouselIndicators" data-slide-to="{{ forloop.counter0 }}"
                 {% if forloop.counter == 1 %}class="active"{% endif %}></li>
         {% endfor %}
     </ol>
+    {% endif %}
     <div class="carousel-inner">
         {% for header in headers %}
             {% if forloop.counter == 1 %}
@@ -14,10 +16,16 @@
             {% endif %}
                 <div class="carousel-overlay" style="background-color: {{ header.overlay }}; opacity: {{ header.overlay_opacity }}"></div>
                 <div class="carousel-title" style="color: {{ header.color }}">
-                    <h2>{{ header.title }}</h2>
-                    <h5>{{ header.paragraph | safe }}</h5>
+                    <div>
+                        <p style="font-size: {{ header.title_font_size }}px; font-weight: {{ header.text_style }}; text-align: {{ header.text_alignment }}">
+                            {{ header.title | linebreaksbr }}
+                        </p>
+                    </div>
+                    <h5><p style="font-size: {{ header.description_font_size }}px; font-weight: {{ header.text_style }}; text-align: {{ header.text_alignment }}">
+                        {{ header.paragraph | linebreaksbr }}
+                    </p></h5>
                     {% if app == 'fbis' %}
-                    <div style="text-align: left">
+                    <div style="text-align: {{ header.text_alignment }}">
                         {% if not user.is_authenticated %}
                             <a class="btn btn-account btn-l js-scroll-trigger"
                                href="/accounts/login/">Login</a>

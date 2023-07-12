@@ -577,3 +577,12 @@ html, body {
     padding-bottom: 10px;
     background: #f8f7f4;
 }
+
+.carousel-overlay {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background-color: #ffffff;
+    top: 0;
+    opacity: 0;
+}
