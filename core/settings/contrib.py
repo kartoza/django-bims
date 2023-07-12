@@ -40,7 +40,8 @@ INSTALLED_APPS = (
     'grappelli',
     'colorfield',
     'polymorphic',
-    'webpack_loader'
+    'webpack_loader',
+    'ckeditor_uploader'
 ) + INSTALLED_APPS
 
 # Grapelli settings
@@ -456,3 +457,6 @@ CACHES = {
 FILE_UPLOAD_PERMISSIONS = 0o644
 LOGIN_URL = '/accounts/login/'
 LOGOUT_URL = '/accounts/logout/'
+
+# CKEDITOR CONFIGURATIONS
+CKEDITOR_UPLOAD_PATH = 'ckeditor/'

@@ -45,12 +45,47 @@ class CustomTheme(models.Model):
         blank=True,
         help_text='Carousels that will appear on the landing page'
     )
+    partners_section_title = models.CharField(
+        max_length=100,
+        default='PARTNERS',
+        help_text='Title for the partners display section'
+    )
+    partners_section_order = models.PositiveIntegerField(
+        default=1,
+        help_text='The order of the partners section from the bottom'
+    )
     partners = models.ManyToManyField(
         'bims_theme.Partner',
         null=True,
         blank=True,
         help_text='List of partners that will appear on the landing page'
     )
+    partners_section_background_color = ColorField(
+        default='#FFFFFF',
+        help_text='Background color for the partners section'
+    )
+
+    funders_section_title = models.CharField(
+        max_length=100,
+        default='FUNDERS',
+        help_text='Title for the funders display section'
+    )
+    funders_section_order = models.PositiveIntegerField(
+        default=0,
+        help_text='The order of the funders section from the bottom'
+    )
+    funders = models.ManyToManyField(
+        'bims_theme.Partner',
+        related_name='theme_funders',
+        null=True,
+        blank=True,
+        help_text='Specify funders to be featured on the landing page'
+    )
+    funders_section_background_color = ColorField(
+        default='#FFFFFF',
+        help_text='Background color for the funders section'
+    )
+
     menu_items = models.ManyToManyField(
         'bims_theme.MenuItem',
         null=True,
