@@ -486,7 +486,7 @@ class CollectionSearch(object):
                 }
             )
         if self.decision_support_tools:
-            filters['decisionsupporttool__name__in'] = (
+            filters['decisionsupporttool__dst_name__name__in'] = (
                 self.decision_support_tools
             )
         if self.year_ranges:

@@ -11,6 +11,9 @@ from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.models.decision_support_tool import DecisionSupportTool
+from bims.models.decision_support_tool_name import (
+    DecisionSupportToolName
+)
 
 
 @shared_task(name='bims.tasks.process_decision_support_tool', queue='update')
@@ -59,10 +62,15 @@ def process_decision_support_tool(dst_file_path):
                 continue
 
             try:
+                dst_name, _ = (
+                    DecisionSupportToolName.objects.update_or_create(
+                        name=name
+                    )
+                )
                 dst, dst_created = (
                     DecisionSupportTool.objects.get_or_create(
                         biological_collection_record=bio,
-                        name=name
+                        dst_name=dst_name
                     )
                 )
             except DecisionSupportTool.MultipleObjectsReturned:
