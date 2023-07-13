@@ -21,8 +21,8 @@ class DecisionSupportToolList(APIView):
 
     def get(self, request, *args):
         dst = DecisionSupportTool.objects.all().values_list(
-            'name', flat=True
-        ).order_by('name').distinct('name')
+            'dst_name__name', flat=True
+        ).order_by('dst_name__name').distinct('dst_name__name')
         return HttpResponse(
             json.dumps(list(dst)),
             content_type='application/json'

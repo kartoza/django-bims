@@ -15,6 +15,13 @@ class DecisionSupportTool(models.Model):
         on_delete=models.CASCADE
     )
 
+    dst_name = models.ForeignKey(
+        'bims.DecisionSupportToolName',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     name = models.CharField(
         max_length=255,
         null=False,

@@ -97,7 +97,9 @@ from bims.models import (
     TaxonImage,
     WaterTemperature,
     TaxonExtraAttribute,
-    DecisionSupportTool, Unit
+    DecisionSupportTool,
+    Unit,
+    DecisionSupportToolName
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1668,10 +1670,17 @@ class TaxonExtraAttributeAdmin(admin.ModelAdmin):
     )
 
 
+class DecisionSupportToolNameAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+    )
+
+
 class DecisionSupportToolAdmin(admin.ModelAdmin):
     change_list_template = 'admin/dst_changelist.html'
     list_display = (
-        'name', 'get_bio_uuid'
+        'dst_name',
+        'get_bio_uuid'
     )
     raw_id_fields = (
         'biological_collection_record',
@@ -1680,7 +1689,7 @@ class DecisionSupportToolAdmin(admin.ModelAdmin):
         'name',
     )
     search_fields = (
-        'name',
+        'dst_name__name',
         'biological_collection_record__uuid'
     )
 
@@ -1785,3 +1794,5 @@ admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)
 admin.site.register(Unit, UnitAdmin)
 admin.site.register(ClimateData, ClimateDataAdmin)
 admin.site.register(BimsProfile, BimsProfileAdmin)
+admin.site.register(
+    DecisionSupportToolName, DecisionSupportToolNameAdmin)

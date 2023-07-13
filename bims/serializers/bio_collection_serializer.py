@@ -552,8 +552,8 @@ class BioCollectionOneRowSerializer(
         dst_set = obj.decisionsupporttool_set.all()
         if dst_set.exists():
             dst_set_names = dst_set.values_list(
-                'name', flat=True
-            ).order_by('name').distinct('name')
+                'dst_name__name', flat=True
+            ).order_by('dst_name__name').distinct('dst_name__name')
             return ', '.join(list(dst_set_names))
         return '-'
 
