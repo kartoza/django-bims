@@ -20,6 +20,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         administrativeOrder: 0,
         layerSelector: null,
         legends: {},
+        sourceIsDown: {},
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -126,20 +127,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             return $checkbox.is(':checked');
         },
-        initLayer: function (layer, layerName, visibleInDefault, category, source, enableStylesSelection = false) {
+        initLayer: function (layer, layerTitle, layerName, visibleInDefault, category = null, source = null, enableStylesSelection = false) {
             layer.set('added', false);
             var layerType = layerName;
             var layerSource = '';
             var layerCategory = '';
-            try {
-                var layerOptions = layer.getSource()['i'];
-                if (layerOptions) {
-                    layerType = layer.getSource()['i']['layers'];
-                }
-            } catch (e) {
-                if (e instanceof TypeError) {
-                }
-            }
             if (layerName.indexOf(this.administrativeKeyword) >= 0) {
                 layerType = layerName;
             }
@@ -164,6 +156,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 'layer': layer,
                 'visibleInDefault': visibleInDefault,
                 'layerName': layerName,
+                'layerTitle': layerTitle,
                 'category': layerCategory,
                 'source': layerSource,
                 'enableStylesSelection': enableStylesSelection
@@ -220,6 +213,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
             self.initLayer(
                 self.biodiversityTileLayer,
+                'Sites',
                 'Sites',
                 true,
             );
@@ -320,6 +314,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             defaultVisibility = value['default_visibility'];
                         }
                         Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
+                        self.sourceIsDown[value.name] = false;
                         var options = {
                             url: '/bims_proxy/' + encodeURI(value.wms_url),
                             params: {
@@ -340,9 +335,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         self.initLayer(
                             new ol.layer.Tile({
-                                source: new ol.source.TileWMS(options)
+                                source: new ol.source.TileWMS(options),
                             }),
-                            value.name, defaultVisibility, '', wmsUrl, value['enable_styles_selection']
+                            value.name,
+                            value['wms_layer_name'], defaultVisibility, '', wmsUrl, value['enable_styles_selection']
                         );
                     });
 
@@ -413,7 +409,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options)
                             }),
-                            value.title, false, category, 'GeoNode'
+                            value.title, value.typename, false, category, 'GeoNode'
                         );
 
                         self.renderLegend(
@@ -561,7 +557,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $('#map-legend').prepend(html);
             }
         },
-        renderLayersSelector: function (key, name, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
+        renderLayersSelector: function (key, name, title, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
@@ -595,6 +591,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             let $rowTemplate = $(rowTemplate({
                 id: layerId,
                 name: name,
+                title: title,
                 key: key,
                 checked: checked,
                 transparency_value: transparencyDefault,
@@ -659,12 +656,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             $.each(reversedOrders, function (index, key) {
                 var value = self.layers[key];
                 var layerName = '';
+                var layerTitle = '';
                 var defaultVisibility = false;
                 var category = '';
                 var source = '';
 
                 if (typeof value !== 'undefined') {
                     layerName = value['layerName'];
+                    layerTitle = value['layerTitle'];
                     defaultVisibility = value['visibleInDefault'];
                     if (value.hasOwnProperty('category')) {
                         category = value['category'];
@@ -705,7 +704,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     source = 'Base';
                 }
 
-                self.renderLayersSelector(key, layerName, defaultVisibility, currentLayerTransparency, category, source, isFirstTime, value['enableStylesSelection']);
+                self.renderLayersSelector(key, layerName, layerTitle, defaultVisibility, currentLayerTransparency, category, source, isFirstTime, typeof value !== 'undefined' ? value['enableStylesSelection'] : false);
             });
 
             // RENDER LAYERS
@@ -805,7 +804,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                     return;
                                 }
                                 featuresInfo[layer_key] = {
-                                    'layerName': layer['layerName'],
+                                    'layerName': layer['layerTitle'],
                                     'properties': properties,
                                     'layerAttr': result['layer_attr'],
                                     'layerId': result['layer_id']

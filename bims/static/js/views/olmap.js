@@ -634,7 +634,10 @@ define([
                 offset: [0, -10]
             });
             this.map.addOverlay(this.popup);
-            this.layers.addLayersToMap(this.map);
+
+            setTimeout(function () {
+                self.layers.addLayersToMap(self.map);
+            }, 500);
             this.initExtent = this.getCurrentBbox();
         },
         removeLayer: function (layer) {
