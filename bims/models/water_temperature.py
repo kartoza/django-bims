@@ -42,6 +42,72 @@ class WaterTemperatureManager(models.Manager):
         return self.get_queryset().source_references()
 
 
+class WaterTemperatureThreshold(models.Model):
+    upper_maximum_threshold = models.FloatField(
+        default=23.2,
+        blank=False,
+        null=False
+    )
+    upper_minimum_threshold = models.FloatField(
+        default=12.0,
+        blank=False,
+        null=False
+    )
+    upper_mean_threshold = models.FloatField(
+        default=18.0,
+        blank=False,
+        null=False
+    )
+    upper_record_length = models.FloatField(
+        default=0.0,
+        blank=False,
+        null=False
+    )
+    upper_degree_days = models.FloatField(
+        default=10.0,
+        blank=False,
+        null=False
+    )
+    lower_maximum_threshold = models.FloatField(
+        default=23.2,
+        blank=False,
+        null=False
+    )
+    lower_minimum_threshold = models.FloatField(
+        default=12.0,
+        blank=False,
+        null=False
+    )
+    lower_mean_threshold = models.FloatField(
+        default=25.0,
+        blank=False,
+        null=False
+    )
+    lower_record_length = models.FloatField(
+        default=0.0,
+        blank=False,
+        null=False
+    )
+    lower_degree_days = models.FloatField(
+        default=10.0,
+        blank=False,
+        null=False
+    )
+    location_site = models.ForeignKey(
+        LocationSite,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Creator of the threshold',
+    )
+
+
 class WaterTemperature(models.Model):
 
     objects = WaterTemperatureManager()
@@ -246,6 +312,16 @@ def calculate_indicators(
     weekly_max_threshold_dur_max = 0
     date_time = []
 
+    water_temperature_threshold = WaterTemperatureThreshold.objects.filter(
+        location_site=location_site
+    ).first()
+    if not water_temperature_threshold:
+        water_temperature_threshold, _ = WaterTemperatureThreshold.objects.get_or_create(
+            location_site=None,
+            creator=None
+        )
+
+
     for day in range(len(temperature_data_annual)):
         mean_data = []
         min_data = []
@@ -287,10 +363,13 @@ def calculate_indicators(
         weekly_mean_data = sum(mean_data) / len(mean_data)
         weekly_data['weekly_mean_data'].append(weekly_mean_data)
         # Check if weekly mean is exceeding the threshold
+        mean_threshold = (
+            water_temperature_threshold.upper_mean_threshold if site_zone == 'upper' else
+            water_temperature_threshold.lower_mean_threshold
+        )
         if day <= len(temperature_data_annual) - 7:
             if (
-                weekly_mean_data >=
-                THRESHOLD_VALUE[site_zone]['mean_threshold']
+                weekly_mean_data >= mean_threshold
             ):
                 weekly_mean_threshold += 1
                 weekly_mean_threshold_dur += 1
@@ -302,10 +381,13 @@ def calculate_indicators(
         weekly_min_data = sum(min_data) / len(min_data)
         weekly_data['weekly_min_data'].append(weekly_min_data)
         # Check if weekly min is exceeding the threshold
+        minimum_threshold = (
+            water_temperature_threshold.upper_minimum_threshold if site_zone == 'upper' else
+            water_temperature_threshold.lower_minimum_threshold
+        )
         if day <= len(temperature_data_annual) - 7:
             if (
-                weekly_min_data <=
-                THRESHOLD_VALUE[site_zone]['minimum_threshold']
+                weekly_min_data <= minimum_threshold
             ):
                 if weekly_min_threshold == 0:
                     weekly_min_threshold = 6
@@ -319,10 +401,13 @@ def calculate_indicators(
         weekly_max_data = sum(max_data) / len(max_data)
         weekly_data['weekly_max_data'].append(weekly_max_data)
         # Check if weekly max is exceeding the threshold
+        maximum_threshold = (
+            water_temperature_threshold.upper_maximum_threshold if site_zone == 'upper' else
+            water_temperature_threshold.lower_maximum_threshold
+        )
         if day <= len(temperature_data_annual) - 7:
             if (
-                weekly_max_data >=
-                    THRESHOLD_VALUE[site_zone]['maximum_threshold']
+                weekly_max_data >= maximum_threshold
             ):
                 weekly_max_threshold += 1
                 weekly_max_threshold_dur += 1

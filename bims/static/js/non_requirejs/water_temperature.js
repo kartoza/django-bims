@@ -175,6 +175,31 @@ function changeYear(selectObject) {
   window.location.href = `/water-temperature/${siteId}/${value}/${url.search}`;
 }
 
+function fetchThreshold() {
+    let url = `/api/water-temperature-threshold/?location_site=${siteId}`;
+    $.ajax({
+        type: 'GET',
+        url: url,
+        success: function (data) {
+            $('.loading-threshold').hide();
+            $('.threshold_data').prop("disabled", false);
+            $('#maximum_threshold').val(data['maximum_threshold'])
+            $('#minimum_threshold').val(data['minimum_threshold'])
+            $('#mean_threshold').val(data['mean_threshold'])
+            $('#record_length').val(data['record_length'])
+            $('#degree_days').val(data['degree_days'])
+        },
+        error: function () {
+            console.error('Error fetching threshold');
+        }
+    })
+}
+
+$('.edit-threshold').click(function () {
+    fetchThreshold();
+})
+
+
 $(function () {
     createDashboardMap(map, coordinates);
     renderWaterTemperatureChart()
@@ -200,4 +225,31 @@ $(function () {
         url.searchParams.set('endDate', endDate)
         window.location.href = `/water-temperature/${siteId}/${startDateYear}/${url.search}`;
     })
+
+    $('#threshold-form').on('submit', function(e) {
+        e.preventDefault();  // Prevent the form from submitting normally
+        $('.threshold_data').prop("disabled", true);
+        const postData = {
+            'maximum_threshold': $('#maximum_threshold').val(),
+            'minimum_threshold': $('#minimum_threshold').val(),
+            'mean_threshold': $('#mean_threshold').val(),
+            'record_length': $('#record_length').val(),
+            'degree_days': $('#degree_days').val(),
+        }
+        $.ajax({
+            url: $(this).attr('action'),  // Get the action attribute from the form
+            type: 'POST',
+            headers: {"X-CSRFToken": csrfToken},
+            data: postData,
+            success: function(data) {
+                // Redirect to the current page
+                location.reload();
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                // Handle any errors
+                console.log(errorThrown);
+                location.reload()
+            }
+        });
+    });
 });

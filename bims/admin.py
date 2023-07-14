@@ -99,7 +99,8 @@ from bims.models import (
     TaxonExtraAttribute,
     DecisionSupportTool,
     Unit,
-    DecisionSupportToolName
+    DecisionSupportToolName,
+    WaterTemperatureThreshold
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1664,6 +1665,15 @@ class WaterTemperatureAdmin(admin.ModelAdmin):
     )
 
 
+class WaterTemperatureThresholdAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'location_site', 'creator'
+    )
+    raw_id_fields = (
+        'location_site', 'creator'
+    )
+
+
 class TaxonExtraAttributeAdmin(admin.ModelAdmin):
     list_display = (
         'name', 'taxon_group'
@@ -1796,3 +1806,6 @@ admin.site.register(ClimateData, ClimateDataAdmin)
 admin.site.register(BimsProfile, BimsProfileAdmin)
 admin.site.register(
     DecisionSupportToolName, DecisionSupportToolNameAdmin)
+admin.site.register(
+    WaterTemperatureThreshold, WaterTemperatureThresholdAdmin
+)
