@@ -20,7 +20,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         administrativeOrder: 0,
         layerSelector: null,
         legends: {},
-        sourceIsDown: {},
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -165,7 +164,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 layer.setVisible(false);
             }
         },
-        addBiodiveristyLayersToMap: function (map) {
+        addBiodiversityLayersToMap: function (map) {
             var self = this;
             // ---------------------------------
             // HIGHLIGHT PINNED LAYER
@@ -272,7 +271,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 biodiversityOrder = 0;
             }
             self.orders[0] = 'Sites';
-            self.addBiodiveristyLayersToMap(map);
+            self.addBiodiversityLayersToMap(map);
             self.renderLayers(false);
 
             $.ajax({
@@ -314,7 +313,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             defaultVisibility = value['default_visibility'];
                         }
                         Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
-                        self.sourceIsDown[value.name] = false;
                         var options = {
                             url: '/bims_proxy/' + encodeURI(value.wms_url),
                             params: {
@@ -721,7 +719,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
             });
             if (isFirstTime) {
-                self.initializeLayerSelector();
+                setTimeout(function () {
+                    self.initializeLayerSelector();
+                }, 500)
                 self.refreshLayerOrders();
             }
         },
