@@ -35,6 +35,7 @@
         const originalGeomorphologicalZone = '{{ original_geomorphological }}';
         const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
         const availableYears = {{ years }};
+        let csrfToken = '{{ csrf_token }}';
     </script>
     <style>
 
@@ -151,6 +152,11 @@
                 <div style="float: right; right: 0">
                 {% if user.is_superuser or is_owner %}
                     <a href="/water-temperature-form/edit/?siteId={{ site_id }}&year={{ year }}" class="btn btn-warning"><i class="fa fa-pencil" aria-hidden="true"></i> Edit {{ year }} Data</a>
+                {% endif %}
+                {% if user.is_superuser or is_owner %}
+                    <a href="#" class="btn btn-warning edit-threshold" data-toggle="modal" data-target="#editModal" data-keyboard="false" data-backdrop="static">
+                        <i class="fa fa-pencil" aria-hidden="true"></i> Edit Threshold
+                    </a>
                 {% endif %}
                 {% if user.is_authenticated %}
                     <a href="/water-temperature-form/?siteId={{ site_id }}" class="btn btn-warning"><i class="fa fa-plus" aria-hidden="true"></i> Add</a>
@@ -381,6 +387,52 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalLabel">Edit Threshold</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="threshold-form" action="/api/water-temperature-threshold/?location_site={{ site_id }}&water_temperature={{ water_temperature_data.id }}" method="post">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <div class="loading-threshold" style="font-style: italic; padding-bottom: 10px; font-size: 10pt">
+                                Loading data...
+                            </div>
+                            <!-- Each form group represents a field in your model -->
+                            <div class="form-group">
+                                <label for="upper_maximum_threshold">Maximum Threshold</label>
+                                <input disabled type="text" class="form-control threshold_data" id="maximum_threshold" name="maximum_threshold">
+                            </div>
+                            <div class="form-group">
+                                <label for="minimum_threshold">Minimum Threshold</label>
+                                <input disabled type="text" class="form-control threshold_data" id="minimum_threshold" name="minimum_threshold">
+                            </div>
+                            <div class="form-group">
+                                <label for="mean_threshold">Mean Threshold</label>
+                                <input disabled type="text" class="form-control threshold_data" id="mean_threshold" name="mean_threshold">
+                            </div>
+                            <div class="form-group">
+                                <label for="record_length">Record Length</label>
+                                <input disabled type="text" class="form-control threshold_data" id="record_length" name="record_length">
+                            </div>
+                            <div class="form-group">
+                                <label for="degree_days">Degree Days</label>
+                                <input disabled type="text" class="form-control threshold_data" id="degree_days" name="degree_days">
+                            </div>
+                            <!-- Add more fields here -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary threshold_data" disabled>Save changes</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

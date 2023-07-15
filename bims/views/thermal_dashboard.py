@@ -1,6 +1,7 @@
 
 import time
 
+from braces.views import LoginRequiredMixin
 from django.http import Http404
 from django.views.generic import TemplateView
 
@@ -9,7 +10,7 @@ from bims.models.water_temperature import WaterTemperature, \
     calculate_indicators
 
 
-class ThermalDashboardView(TemplateView):
+class ThermalDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'thermal/indicators_of_thermal_alteration.html'
 
     def get_context_data(self, **kwargs):

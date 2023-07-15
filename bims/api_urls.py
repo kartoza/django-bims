@@ -34,7 +34,7 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
-from bims.api_views.thermal_data import ThermalDataApiView
+from bims.api_views.thermal_data import ThermalDataApiView, WaterTemperatureThresholdApiView
 from bims.api_views.validate_object import (
     ValidateSite,
     ValidateTaxon
@@ -283,6 +283,9 @@ urlpatterns = [
         ),
     url(r'^thermal-data/$',
         ThermalDataApiView.as_view(),
+        ),
+    url(r'^water-temperature-threshold/$',
+        WaterTemperatureThresholdApiView.as_view(),
         ),
     url(r'^source-reference-list/$',
         SourceReferenceAPIView.as_view(),

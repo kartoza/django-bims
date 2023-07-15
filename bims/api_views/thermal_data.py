@@ -1,13 +1,14 @@
+import ast
 import logging
 from datetime import datetime
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-
+from rest_framework import status
 from bims.models import LocationSite
 from bims.models.water_temperature import calculate_indicators, \
-    WaterTemperature, thermograph_data
+    WaterTemperature, thermograph_data, WaterTemperatureThreshold, get_thermal_zone
 
 logger = logging.getLogger('bims')
 
@@ -71,3 +72,98 @@ class ThermalDataApiView(APIView):
         return JsonResponse(
             thermograph
         )
+
+
+class WaterTemperatureThresholdApiView(APIView):
+
+    def get(self, request, *args):
+        location_site = LocationSite.objects.get(
+            id=request.GET.get('location_site', None)
+        )
+        threshold = WaterTemperatureThreshold.objects.filter(
+            location_site=location_site
+        ).first()
+        if not threshold:
+            WaterTemperatureThreshold.objects.first()
+        thermal_zone = get_thermal_zone(location_site)
+
+        return JsonResponse({
+            'maximum_threshold': (
+                threshold.upper_maximum_threshold if thermal_zone == 'upper' else threshold.lower_maximum_threshold
+            ),
+            'minimum_threshold': (
+                threshold.upper_minimum_threshold if thermal_zone == 'upper' else threshold.lower_minimum_threshold
+            ),
+            'mean_threshold': (
+                threshold.upper_mean_threshold if thermal_zone == 'upper' else threshold.lower_mean_threshold
+            ),
+            'record_length': (
+                threshold.upper_record_length if thermal_zone == 'upper' else threshold.lower_record_length
+            ),
+            'degree_days': (
+                threshold.upper_degree_days if thermal_zone == 'upper' else threshold.lower_degree_days
+            )
+        })
+
+    def post(self, request, *args):
+        if not request.user.is_authenticated:
+            raise Http404()
+
+        try:
+            location_site = LocationSite.objects.get(
+                id=request.GET.get('location_site', None)
+            )
+            water_temperature_id = request.GET.get(
+                'water_temperature'
+            )
+            is_owner = (
+                WaterTemperature.objects.get(
+                    id=water_temperature_id
+                ).owner == request.user
+            )
+
+            if not is_owner and not request.user.is_superuser:
+                raise Exception()
+
+            thermal_zone = get_thermal_zone(location_site)
+
+            threshold = WaterTemperatureThreshold.objects.filter(
+                location_site=location_site
+            ).first()
+
+            if not threshold:
+                threshold = WaterTemperatureThreshold.objects.create(
+                    location_site=location_site
+                )
+            if not threshold:
+                return JsonResponse(
+                    {'error': 'No WaterTemperatureThreshold found.'},
+                    status=status.HTTP_404_NOT_FOUND)
+
+            if thermal_zone == 'upper':
+                threshold.upper_maximum_threshold = request.data.get(
+                    'maximum_threshold', threshold.upper_maximum_threshold)
+                threshold.upper_minimum_threshold = request.data.get(
+                    'minimum_threshold', threshold.upper_minimum_threshold)
+                threshold.upper_mean_threshold = request.data.get(
+                    'mean_threshold', threshold.upper_mean_threshold)
+                threshold.upper_record_length = request.data.get(
+                    'record_length', threshold.upper_record_length)
+                threshold.upper_degree_days = request.data.get(
+                    'degree_days', threshold.upper_degree_days)
+            else:
+                threshold.lower_maximum_threshold = request.data.get(
+                    'maximum_threshold', threshold.lower_maximum_threshold)
+                threshold.lower_minimum_threshold = request.data.get(
+                    'minimum_threshold', threshold.lower_minimum_threshold)
+                threshold.lower_mean_threshold = request.data.get(
+                    'mean_threshold', threshold.lower_mean_threshold)
+                threshold.lower_record_length = request.data.get(
+                    'record_length', threshold.lower_record_length)
+                threshold.lower_degree_days = request.data.get(
+                    'degree_days', threshold.lower_degree_days)
+
+            threshold.save()
+            return HttpResponse('Threshold updated successfully.', status=status.HTTP_200_OK)
+        except Exception as e:
+            return HttpResponse('An error occurred: ' + str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
