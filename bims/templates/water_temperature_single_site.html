@@ -399,7 +399,7 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <form id="threshold-form" action="/api/water-temperature-threshold/?location_site={{ site_id }}&is_owner={{ is_owner }}" method="post">
+                    <form id="threshold-form" action="/api/water-temperature-threshold/?location_site={{ site_id }}&water_temperature={{ water_temperature_data.id }}" method="post">
                         {% csrf_token %}
                         <div class="modal-body">
                             <div class="loading-threshold" style="font-style: italic; padding-bottom: 10px; font-size: 10pt">

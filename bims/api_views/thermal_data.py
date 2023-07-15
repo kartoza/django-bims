@@ -113,8 +113,13 @@ class WaterTemperatureThresholdApiView(APIView):
             location_site = LocationSite.objects.get(
                 id=request.GET.get('location_site', None)
             )
-            is_owner = ast.literal_eval(
-                request.GET.get('is_owner', 'False')
+            water_temperature_id = request.GET.get(
+                'water_temperature'
+            )
+            is_owner = (
+                WaterTemperature.objects.get(
+                    id=water_temperature_id
+                ).owner == request.user
             )
 
             if not is_owner and not request.user.is_superuser:

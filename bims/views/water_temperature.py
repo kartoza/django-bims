@@ -549,11 +549,14 @@ class WaterTemperatureSiteView(TemplateView):
         context['execution_time'] = time.time() - start_time
         context['start_date'] = (
             self.start_date if self.start_date else
-                water_temperature_data.first().date_time
+            water_temperature_data.first().date_time
         )
         context['end_date'] = (
             self.end_date if self.end_date else
-                water_temperature_data.last().date_time
+            water_temperature_data.last().date_time
+        )
+        context['water_temperature_data'] = (
+            water_temperature_data.first()
         )
         source_references = (
             water_temperature_data.exclude(
