@@ -43,7 +43,8 @@ from bims.models import (
     VernacularName,
     ChemicalRecord,
     SiteImage,
-    WaterTemperature
+    WaterTemperature,
+    WaterTemperatureThreshold
 )
 
 
@@ -440,6 +441,11 @@ class SiteImageF(factory.django.DjangoModelFactory):
 class WaterTemperatureF(factory.django.DjangoModelFactory):
     class Meta:
         model = WaterTemperature
+
+
+class WaterTemperatureThresholdF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = WaterTemperatureThreshold
 
 
 class ChemicalRecordF(factory.django.DjangoModelFactory):
