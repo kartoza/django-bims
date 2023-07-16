@@ -84,7 +84,7 @@ class WaterTemperatureThresholdApiView(APIView):
             location_site=location_site
         ).first()
         if not threshold:
-            WaterTemperatureThreshold.objects.first()
+            threshold = WaterTemperatureThreshold.objects.first()
         thermal_zone = get_thermal_zone(location_site)
 
         return JsonResponse({
