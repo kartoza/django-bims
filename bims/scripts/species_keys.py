@@ -8,6 +8,7 @@ SUBFAMILY = 'SubFamily'
 SUBORDER = 'SubOrder'
 SUBCLASS = 'SubClass'
 SUBSPECIES = 'SubSpecies'
+SUBPHYLUM = 'SubPhylum'
 FAMILY = 'Family'
 ORDER = 'Order'
 CLASS = 'Class'
@@ -30,6 +31,7 @@ VARIETY = 'Variety'
 TAXON_RANKS = [
     KINGDOM,
     PHYLUM,
+    SUBPHYLUM,
     CLASS,
     SUBCLASS,
     ORDER,
@@ -44,6 +46,7 @@ TAXON_RANKS = [
 ALL_TAXON_RANKS = [
     'KINGDOM',
     'PHYLUM',
+    'SUBPHYLUM',
     'CLASS',
     'SUBCLASS',
     'ORDER',
@@ -58,6 +61,7 @@ ALL_TAXON_RANKS = [
 PARENT_RANKS = {
     'KINGDOM': None,
     'PHYLUM': KINGDOM,
+    'SUBPHYLUM': PHYLUM,
     'CLASS': PHYLUM,
     'SUBCLASS': CLASS,
     'ORDER': CLASS,
