@@ -242,6 +242,8 @@ class TaxaProcessor(object):
                 message='Missing Taxon value'
             )
             return
+
+
         if SCIENTIFIC_NAME in row:
             scientific_name = (DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
                                if DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
@@ -259,9 +261,18 @@ class TaxaProcessor(object):
                 message='Missing taxon rank'
             )
             return
+
+        # Check if parent and taxon has the same name
+        parent = self.get_parent(row, parent_rank(rank))
+        if parent and parent.canonical_name == taxon_name:
+            self.handle_error(
+                row=row,
+                message='Parent cannot have the same name as the taxon'
+            )
+            return
+
         taxa = Taxonomy.objects.filter(
-            canonical_name__iexact=taxon_name,
-            rank=rank.upper()
+            canonical_name__iexact=taxon_name
         )
         try:
             taxonomy = None
@@ -273,7 +284,20 @@ class TaxaProcessor(object):
                 should_fetch_vernacular_names = False
 
             if taxa.exists():
-                taxonomy = taxa.first()
+                taxa_same_rank = taxa.filter(
+                    rank=rank.upper()
+                )
+                if taxa_same_rank.exists():
+                    taxonomy = taxa_same_rank.first()
+                else:
+                    taxonomy = taxa.first()
+
+                if taxonomy.rank != rank.upper():
+                    logger.debug('{} has different RANK'.format(
+                        taxon_name
+                    ))
+                    taxonomy.rank = rank.upper()
+
                 logger.debug('{} already in the system'.format(
                     taxon_name
                 ))

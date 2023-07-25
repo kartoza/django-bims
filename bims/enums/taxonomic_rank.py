@@ -12,6 +12,7 @@ class TaxonomicRank(Enum):
     CLASS = 'Class'
     SUBCLASS = 'Sub Class'
     PHYLUM = 'Phylum'
+    SUBPHYLUM = 'SubPhylum'
     KINGDOM = 'Kingdom'
     DOMAIN = 'Domain'
     LIFE = 'Life'
