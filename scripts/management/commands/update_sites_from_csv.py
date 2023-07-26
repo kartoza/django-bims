@@ -12,7 +12,7 @@ LATITUDE = 'Latitude'
 LONGITUDE = 'Longitude'
 CORRECTED_LATITUDE = 'Corrected Latitude'
 CORRECTED_LONGITUDE = 'Corrected Longitude'
-ORIGINAL_SITE_CODE = 'Original Site Code'
+USER_SITE_CODE = 'User Site Code'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
 ORIGINAL_RIVER_NAME = 'Original River Name'
 FBIS_SITE_CODE = 'FBIS Site Code'
@@ -51,11 +51,11 @@ class Command(BaseCommand):
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 # Search LocationSite with the same original latitude and longitude
-                if ORIGINAL_SITE_CODE in row:
+                if USER_SITE_CODE in row:
                     location_sites = LocationSite.objects.filter(
-                        legacy_site_code=row[ORIGINAL_SITE_CODE]
+                        legacy_site_code=row[USER_SITE_CODE]
                     )
-                    site_code = ORIGINAL_SITE_CODE
+                    site_code = USER_SITE_CODE
                 elif FBIS_SITE_CODE in row:
                     location_sites = LocationSite.objects.filter(
                         site_code=row[FBIS_SITE_CODE]

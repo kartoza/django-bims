@@ -251,7 +251,7 @@ class PhysicoChemicalSiteView(TemplateView):
         ]
         ctx['site_code'] = self.location_site.site_code
         ctx['site_id'] = self.location_site.id
-        ctx['original_site_code'] = self.location_site.legacy_site_code
+        ctx['user_site_code'] = self.location_site.legacy_site_code
         ctx['original_river_name'] = self.location_site.legacy_river_name
         ctx['site_image'] = SiteImage.objects.filter(
             site=self.location_site

@@ -259,7 +259,10 @@ class OccurrenceProcessor(object):
             longitude,
             latitude)
         # Create or get location site
-        legacy_site_code = DataCSVUpload.row_value(record, ORIGINAL_SITE_CODE)
+        legacy_site_code = DataCSVUpload.row_value(record, USER_SITE_CODE)
+        if not legacy_site_code:
+            legacy_site_code = DataCSVUpload.row_value(
+                record, ORIGINAL_SITE_CODE)
         location_site_name = ''
         if DataCSVUpload.row_value(record, LOCATION_SITE):
             location_site_name = DataCSVUpload.row_value(record, LOCATION_SITE)

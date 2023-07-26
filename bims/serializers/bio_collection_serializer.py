@@ -97,7 +97,7 @@ class BioCollectionOneRowSerializer(
     uuid = serializers.SerializerMethodField()
     original_river_name = serializers.SerializerMethodField()
     site_code = serializers.SerializerMethodField()
-    original_site_code = serializers.SerializerMethodField()
+    user_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     refined_geomorphological_zone = serializers.SerializerMethodField()
     river_name = serializers.SerializerMethodField()
@@ -277,7 +277,7 @@ class BioCollectionOneRowSerializer(
     def get_site_code(self, obj):
         return obj.site.site_code
 
-    def get_original_site_code(self, obj):
+    def get_user_site_code(self, obj):
         return obj.site.legacy_site_code
 
     def get_river_name(self, obj):
@@ -603,7 +603,7 @@ class BioCollectionOneRowSerializer(
             'uuid',
             'original_river_name',
             'river_name',
-            'original_site_code',
+            'user_site_code',
             'site_code',
             'site_description',
             'refined_geomorphological_zone',
