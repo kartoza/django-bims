@@ -14,7 +14,7 @@ CORRECTED_LATITUDE = 'Corrected Latitude'
 CORRECTED_LONGITUDE = 'Corrected Longitude'
 USER_SITE_CODE = 'User Site Code'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
-ORIGINAL_RIVER_NAME = 'Original River Name'
+USER_RIVER_NAME = 'User River Name'
 FBIS_SITE_CODE = 'FBIS Site Code'
 
 
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                     continue
                 if location_sites.count() > 0:
                     location_site = location_sites[0]
-                    location_site.legacy_river_name = row[ORIGINAL_RIVER_NAME]
+                    location_site.legacy_river_name = row[USER_RIVER_NAME]
 
                     if REFINED_GEO_ZONE in row:
                         location_site.refined_geomorphological = row[REFINED_GEO_ZONE]

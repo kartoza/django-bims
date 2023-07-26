@@ -3,7 +3,7 @@ import csv
 from celery import shared_task
 FILE_HEADERS = [
     'UUID',
-    'Original Site Code',
+    'User Site Code',
     'Site description',
     'Latitude',
     'Longitude',

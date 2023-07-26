@@ -59,7 +59,7 @@ class FilterHistorySerializer(object):
 
 class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
     filter_history = serializers.SerializerMethodField()
-    original_river_name = serializers.SerializerMethodField()
+    user_river_name = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
     user_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
@@ -83,7 +83,7 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
         fields = [
             'filter_history',
             'FBIS_site_code',
-            'original_river_name',
+            'user_river_name',
             'user_site_code',
             'site_description',
             'river_name',
@@ -238,7 +238,7 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
             return obj.taxon_abundance.abc
         return ''
 
-    def get_original_river_name(self, obj):
+    def get_user_river_name(self, obj):
         if obj.site_visit.location_site.legacy_river_name:
             return obj.site_visit.location_site.legacy_river_name
         return '-'
@@ -252,7 +252,7 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
 class SassSummaryDataSerializer(
     serializers.ModelSerializer, FilterHistorySerializer):
     filter_history = serializers.SerializerMethodField()
-    original_river_name = serializers.SerializerMethodField()
+    user_river_name = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
     user_site_code = serializers.SerializerMethodField()
     sass_score = serializers.SerializerMethodField()
@@ -463,7 +463,7 @@ class SassSummaryDataSerializer(
             return site.refined_geomorphological
         return '-'
 
-    def get_original_river_name(self, obj):
+    def get_user_river_name(self, obj):
         site = LocationSite.objects.get(id=obj['site_id'])
         if site.legacy_river_name:
             return site.legacy_river_name
@@ -494,7 +494,7 @@ class SassSummaryDataSerializer(
         fields = [
             'filter_history',
             'FBIS_site_code',
-            'original_river_name',
+            'user_river_name',
             'user_site_code',
             'site_description',
             'river_name',

@@ -350,7 +350,7 @@ class SassDashboardView(TemplateView):
         context['site_image'] = SiteImage.objects.filter(
             site=self.location_site)
         context['user_site_code'] = self.location_site.legacy_site_code
-        context['original_river_name'] = self.location_site.legacy_river_name
+        context['user_river_name'] = self.location_site.legacy_river_name
         site_description = self.location_site.site_description
         if not site_description:
             site_description = self.location_site.name

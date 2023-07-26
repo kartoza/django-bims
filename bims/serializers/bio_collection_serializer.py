@@ -95,7 +95,7 @@ class BioCollectionOneRowSerializer(
     Serializer for biological collection record.
     """
     uuid = serializers.SerializerMethodField()
-    original_river_name = serializers.SerializerMethodField()
+    user_river_name = serializers.SerializerMethodField()
     site_code = serializers.SerializerMethodField()
     user_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
@@ -235,7 +235,7 @@ class BioCollectionOneRowSerializer(
             return str(uuid.UUID(obj.uuid))
         return '-'
 
-    def get_original_river_name(self, obj):
+    def get_user_river_name(self, obj):
         if obj.site.legacy_river_name:
             return obj.site.legacy_river_name
         return '-'
@@ -601,7 +601,7 @@ class BioCollectionOneRowSerializer(
         model = BiologicalCollectionRecord
         fields = [
             'uuid',
-            'original_river_name',
+            'user_river_name',
             'river_name',
             'user_site_code',
             'site_code',

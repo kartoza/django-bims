@@ -14,7 +14,7 @@ class GetSiteCode(LoginRequiredMixin, APIView):
         lon = request.GET.get('lon', None)
         site_id = request.GET.get('site_id', None)
         river_name = request.GET.get(
-            'original_river_name', ''
+            'user_river_name', ''
         )
         location_site = None
         if site_id:

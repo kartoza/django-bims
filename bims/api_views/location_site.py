@@ -561,7 +561,7 @@ class LocationSitesSummary(APIView):
             river_and_geo = OrderedDict()
             river_and_geo['River'] = site_river
             river_and_geo[
-                'Original River Name'] = location_site.legacy_river_name
+                'User River Name'] = location_site.legacy_river_name
             river_and_geo['Geomorphological zone'] = (
                 location_context.value_from_key(
                     'geo_class_recoded')
