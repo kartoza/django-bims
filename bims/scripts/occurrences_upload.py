@@ -235,7 +235,11 @@ class OccurrenceProcessor(object):
         site_description = DataCSVUpload.row_value(record, SITE_DESCRIPTION)
         refined_geo = DataCSVUpload.row_value(record, REFINED_GEO_ZONE)
         legacy_river_name = DataCSVUpload.row_value(
-            record, ORIGINAL_RIVER_NAME)
+            record, USER_RIVER_NAME
+        )
+        if not legacy_river_name:
+            legacy_river_name = DataCSVUpload.row_value(
+                record, ORIGINAL_RIVER_NAME)
         longitude = DataCSVUpload.row_value(record, LONGITUDE)
         latitude = DataCSVUpload.row_value(record, LATITUDE)
         if not longitude or not latitude:

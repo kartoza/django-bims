@@ -32,10 +32,10 @@ let validator = $('#site-form').validate({
 
         // river name
         let riverName = $('#river_name').val();
-        let originalRiverName = $('#original_river_name').val();
+        let userRiverName = $('#user_river_name').val();
 
         if (siteCodeGeneratorMethod === 'fbis') {
-            if (!riverName && !originalRiverName) {
+            if (!riverName && !userRiverName) {
                 formAlert.show();
                 formAlert.html('River name is required.');
                 return false;
@@ -192,13 +192,13 @@ const updateSiteCode = (e) => {
     let button = $('#update-site-code');
     let siteCodeInput = $('#site_code');
     let catchmentInput = $('#catchment_geocontext');
-    let originalRiverName = $('#original_river_name').val();
+    let userRiverName = $('#user_river_name').val();
     let buttonLabel = button.html();
 
     document.getElementById('update-site-code').disabled = true;
     button.html('Generating...');
     siteCodeInput.prop('disabled', true);
-    let url = '/api/get-site-code/?original_river_name=' + originalRiverName  + '&lon=' + longitude + '&lat=' + latitude;
+    let url = '/api/get-site-code/?user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude;
     if (siteId) {
         url += '&site_id=' + siteId
     }

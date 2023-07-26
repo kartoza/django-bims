@@ -7,7 +7,7 @@
  "longitude": "28",
  "refined_geomorphological_zone": "Lower foothill",
  "river_name": "NXAMAGELE",
- "original_river_name": "NXAMAGELE_",
+ "user_river_name": "NXAMAGELE_",
  "legacy_site_code": "S7NXAM-LEGACY",
  "site_code": "S7NXAM-00001",
  "site_description": "Description test"

@@ -60,6 +60,7 @@ LOCATION_SITE = 'Original River Name'
 ORIGINAL_SITE_CODE = 'Original Site Code'
 USER_SITE_CODE = 'User Site Code'
 ORIGINAL_RIVER_NAME = 'Original River Name'
+USER_RIVER_NAME = 'User River Name'
 FBIS_SITE_CODE = 'FBIS Site Code'
 SITE_DESCRIPTION = 'Site description'
 REFINED_GEO_ZONE = 'Refined Geomorphological Zone'
@@ -574,7 +575,9 @@ class Command(BaseCommand):
         )
         site_description = self.row_value(record, SITE_DESCRIPTION)
         refined_geo = self.row_value(record, REFINED_GEO_ZONE)
-        legacy_river_name = self.row_value(record, ORIGINAL_RIVER_NAME)
+        legacy_river_name = self.row_value(record, USER_RIVER_NAME)
+        if not legacy_river_name:
+            legacy_river_name = self.row_value(record, ORIGINAL_RIVER_NAME)
         record_point = Point(
             float(self.row_value(record, LONGITUDE)),
             float(self.row_value(record, LATITUDE)))

@@ -69,9 +69,9 @@ def handle_location_site_post_data(
         None
     )
     river_name = post_data.get('river_name', None)
-    original_river_name = post_data.get('original_river_name', '')
+    user_river_name = post_data.get('user_river_name', '')
     if not river_name:
-        river_name = original_river_name
+        river_name = user_river_name
 
     site_code = post_data.get('site_code', None)
     site_description = post_data.get('site_description', '')
@@ -111,7 +111,7 @@ def handle_location_site_post_data(
         'geometry_point': geometry_point,
         'location_type': location_type,
         'site_code': site_code,
-        'legacy_river_name': original_river_name,
+        'legacy_river_name': user_river_name,
         'legacy_site_code': legacy_site_code,
         'date_created': date
     }
