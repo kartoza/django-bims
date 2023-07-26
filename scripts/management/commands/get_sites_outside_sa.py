@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 csv_file, delimiter=',', quotechar='"',
                 quoting=csv.QUOTE_MINIMAL)
             writer.writerow([
-                'Site Code', 'Original Site Code', 'Lat', 'Lon', 'Link'])
+                'Site Code', 'User Site Code', 'Lat', 'Lon', 'Link'])
             for site in sites:
                 print(site)
                 csv_data = []

@@ -58,6 +58,7 @@ LATITUDE = 'Latitude'
 LONGITUDE = 'Longitude'
 LOCATION_SITE = 'Original River Name'
 ORIGINAL_SITE_CODE = 'Original Site Code'
+USER_SITE_CODE = 'User Site Code'
 ORIGINAL_RIVER_NAME = 'Original River Name'
 FBIS_SITE_CODE = 'FBIS Site Code'
 SITE_DESCRIPTION = 'Site description'
@@ -578,7 +579,9 @@ class Command(BaseCommand):
             float(self.row_value(record, LONGITUDE)),
             float(self.row_value(record, LATITUDE)))
         # Create or get location site
-        legacy_site_code = self.row_value(record, ORIGINAL_SITE_CODE)
+        legacy_site_code = self.row_value(record, USER_SITE_CODE)
+        if not legacy_site_code:
+            legacy_site_code = self.row_value(record, ORIGINAL_SITE_CODE)
         try:
             location_site, status = (
                 LocationSite.objects.get_or_create(

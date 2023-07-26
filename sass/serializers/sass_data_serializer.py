@@ -61,7 +61,7 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
     filter_history = serializers.SerializerMethodField()
     original_river_name = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
-    original_site_code = serializers.SerializerMethodField()
+    user_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
     river_name = serializers.SerializerMethodField()
     geomorphological_zone = serializers.SerializerMethodField()
@@ -84,7 +84,7 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
             'filter_history',
             'FBIS_site_code',
             'original_river_name',
-            'original_site_code',
+            'user_site_code',
             'site_description',
             'river_name',
             'geomorphological_zone',
@@ -243,7 +243,7 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
             return obj.site_visit.location_site.legacy_river_name
         return '-'
 
-    def get_original_site_code(self, obj):
+    def get_user_site_code(self, obj):
         if obj.site_visit.location_site.legacy_site_code:
             return obj.site_visit.location_site.legacy_site_code
         return '-'
@@ -254,7 +254,7 @@ class SassSummaryDataSerializer(
     filter_history = serializers.SerializerMethodField()
     original_river_name = serializers.SerializerMethodField()
     FBIS_site_code = serializers.SerializerMethodField()
-    original_site_code = serializers.SerializerMethodField()
+    user_site_code = serializers.SerializerMethodField()
     sass_score = serializers.SerializerMethodField()
     number_of_taxa = serializers.SerializerMethodField()
     ASPT = serializers.SerializerMethodField()
@@ -469,7 +469,7 @@ class SassSummaryDataSerializer(
             return site.legacy_river_name
         return '-'
 
-    def get_original_site_code(self, obj):
+    def get_user_site_code(self, obj):
         site = LocationSite.objects.get(id=obj['site_id'])
         if site.legacy_site_code:
             return site.legacy_site_code
@@ -495,7 +495,7 @@ class SassSummaryDataSerializer(
             'filter_history',
             'FBIS_site_code',
             'original_river_name',
-            'original_site_code',
+            'user_site_code',
             'site_description',
             'river_name',
             'geomorphological_zone',

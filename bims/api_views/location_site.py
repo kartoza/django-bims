@@ -538,7 +538,7 @@ class LocationSitesSummary(APIView):
         overview['{} Site Code'.format(
             preferences.SiteSetting.default_site_name
         )] = location_site.site_code
-        overview['Original Site Code'] = location_site.legacy_site_code
+        overview['User Site Code'] = location_site.legacy_site_code
         overview['Site coordinates'] = (
             'Longitude: {long}, Latitude: {lat}'.format(
                 long=self.parse_string(location_site.longitude),
