@@ -250,6 +250,14 @@ class TestApiView(TestCase):
 
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
+        self.assertGreater(
+            response.data['general_summary']['total_occurrences'],
+            1
+        )
+        self.assertGreater(
+            response.data['general_summary']['total_taxa'],
+            1
+        )
         self.assertTrue(len(response.data['fish']) > 0)
         self.assertEqual(len(response.data['algae']['division']), 1)
 

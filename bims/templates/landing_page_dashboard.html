@@ -166,6 +166,9 @@
                 $('.module-loading').hide();
                 const $container = $('.summary-data');
                  $.each(data, function(key, summaryData) {
+                     if (!summaryData['icon']) {
+                       return true;
+                     }
                      let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
                      $container.append(_container);
                      createModuleCharts(
