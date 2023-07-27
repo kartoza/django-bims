@@ -49,6 +49,24 @@ class TestLocationSiteMobile(TestCase):
         )
         self.assertTrue(len(res.data) > 0)
 
+    def test_get_nearest_sites_by_extent(self):
+        LocationSiteF.create(
+            geometry_point=Point(
+                23.366389,
+                -32.380556
+            )
+        )
+        api_url = (
+                reverse('mobile-nearest-sites') +
+                '?extent=22.554688,-32.402798,23.554688,-31.402798'
+        )
+        client = APIClient()
+        res = client.get(api_url)
+        self.assertEqual(
+            res.status_code, status.HTTP_200_OK
+        )
+        self.assertTrue(len(res.data) > 0)
+
 
 class TestAllTaxaAPI(TestCase):
     def test_get_all_taxa_without_module(self):
