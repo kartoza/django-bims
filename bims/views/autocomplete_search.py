@@ -133,7 +133,7 @@ def autocomplete(request):
 
 def user_autocomplete(request):
     q = request.GET.get('term', '').capitalize()
-    if not request.is_ajax() and len(q) < 2:
+    if not is_ajax(request) and len(q) < 2:
         data = 'fail'
     else:
         user_model_str = settings.AUTH_USER_MODEL
@@ -167,10 +167,12 @@ def user_autocomplete(request):
     mime_type = 'application/json'
     return HttpResponse(data, mime_type)
 
+def is_ajax(request):
+    return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
 def data_source_autocomplete(request):
     q = request.GET.get('term', '').capitalize()
-    if not request.is_ajax() and len(q) < 2:
+    if not is_ajax(request) and len(q) < 2:
         data = 'fail'
     else:
         search_qs = DataSource.objects.filter(
@@ -232,7 +234,7 @@ def species_autocomplete(request):
     if rank:
         optional_query['rank__iexact'] = rank
 
-    if not request.is_ajax() and len(q) < 2:
+    if not is_ajax(request) and len(q) < 2:
         data = 'fail'
     else:
         if taxon_group_species:

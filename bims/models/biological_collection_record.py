@@ -8,7 +8,7 @@ from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 
 from preferences import preferences
 from bims.models.location_site import LocationSite
