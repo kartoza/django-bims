@@ -1,18 +1,20 @@
 import json
 from datetime import datetime
+from unittest.mock import patch
+
 import factory
 from django.db.models import signals
 
 from bims.models.location_site import LocationSite
 from django.contrib.gis.geos import Point
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from bims.tests.model_factories import (
     LocationSiteF, TaxonomyF,
-    TaxonGroupF, UserF, BiotopeF, SamplingMethodF
+    TaxonGroupF, UserF, BiotopeF, SamplingMethodF, RiverF
 )
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.survey import Survey
@@ -313,3 +315,20 @@ class TestAddLocationSite(TestCase):
             location_site.additional_data.get('source_collection'),
             'mobile'
         )
+
+
+class TestRiverName(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.river = RiverF.create()
+
+    @patch('mobile.api_views.river.fetch_river_name')
+    def test_fetch_river_name(self, mock_fetch_river_name):
+        mock_fetch_river_name.return_value = self.river.name
+        response = self.client.get(
+            reverse('fetch-river-name'),
+            {'lat': '50', 'lon': '50'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['river_name'], self.river.name)
+
+        mock_fetch_river_name.assert_called_once_with('50', '50')
