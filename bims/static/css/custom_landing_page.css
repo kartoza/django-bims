@@ -162,3 +162,22 @@ header.masthead p {
     text-align: left;
     border-radius: 4px;
 }
+
+.general-summary {
+    margin-bottom: 10px;
+}
+
+.general-summary .row {
+    justify-content: center;
+}
+
+.general-summary .module-container {
+    text-align: center;
+}
+
+.general-summary .gs-total {
+    color: #595959;
+    font-weight: bold;
+    font-size: 18pt;
+    margin-top: 5px;
+}

@@ -53,6 +53,37 @@
             </div>
         </header>
         {% endif %}
+        <section>
+            <div class="container general-summary">
+                <div class="row">
+                    <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                        <img height="100px" src="{% static "img/occurrences-icon.png" %}"/>
+                        <h3 class="gs-total" id="total_occurrences">...</h3>
+                        <div class="gs-text">Occurrence Records</div>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                        <img height="100px" src="{% static "img/taxa-icon.png" %}"/>
+                        <h3 class="gs-total" id="total_taxa">...</h3>
+                        <div class="gs-text">Taxa</div>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                        <img height="100px" src="{% static "img/users-icon.png" %}"/>
+                        <h3 class="gs-total" id="total_users">...</h3>
+                        <div class="gs-text">Users</div>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                        <img height="100px" src="{% static "img/upload-icon.png" %}"/>
+                        <h3 class="gs-total" id="total_uploads">...</h3>
+                        <div class="gs-text">Uploads</div>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                        <img height="100px" src="{% static "img/download-icon.png" %}"/>
+                        <h3 class="gs-total" id="total_downloads">...</h3>
+                        <div class="gs-text">Downloads</div>
+                    </div>
+                </div>
+            </div>
+        </section>
         <section id="fish-data">
             <div class="container modules-container" style="min-height: 455px">
                 <div class="row" style="margin-bottom: 20px;">
