@@ -1,7 +1,24 @@
 <div class="row summary-data">
+    <div class="row general-summary"></div>
+    <div class="row module-summary"></div>
 </div>
 
 <script>
+
+    const summaryIcons = {
+      'total_downloads': '/static/img/download-icon.png',
+      'total_uploads': '/static/img/upload-icon.png',
+      'total_taxa': '/static/img/taxa-icon.png',
+      'total_users': '/static/img/users-icon.png',
+      'total_occurrences': '/static/img/occurrences-icon.png',
+    }
+    const summaryText = {
+      'total_downloads': 'Downloads',
+      'total_uploads': 'Uploads',
+      'total_taxa': 'Taxa',
+      'total_users': 'Users',
+      'total_occurrences': 'Occurrence records',
+    }
     function getNumberWithCommas(number) {
         try {
             return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -165,17 +182,30 @@
             function (data) {
                 $('.module-loading').hide();
                 const $container = $('.summary-data');
+                const $generalSummary = $('.general-summary');
+                const $moduleSummary = $('.module-summary');
+
                  $.each(data, function(key, summaryData) {
                      if (!summaryData['icon']) {
+                       if (key === 'general_summary') {
+                         $.each(summaryData, function(gsKey, gsData) {
+                           let container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
+                           container.append(`<img height="100px" src="${summaryIcons[gsKey]}" />`);
+                           container.append(`<h3 class="gs-total">${getNumberWithCommas(gsData)}</h3>`)
+                           container.append(`<div class="gs-text">${summaryText[gsKey]}</div>`)
+                           $generalSummary.append(container);
+                         });
+                       }
                        return true;
+                     } else {
+                         let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
+                         $moduleSummary.append(_container);
+                         createModuleCharts(
+                             summaryData,
+                             key,
+                             _container
+                         )
                      }
-                     let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
-                     $container.append(_container);
-                     createModuleCharts(
-                         summaryData,
-                         key,
-                         _container
-                     )
                  });
             }
         )

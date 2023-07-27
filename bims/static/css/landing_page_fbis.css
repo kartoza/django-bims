@@ -504,6 +504,22 @@ html, body {
     display: flex;
     justify-content: center;
 }
+.summary-data>.row {
+    width: 100%;
+    justify-content: center;
+}
+
+.general-summary .gs-total {
+    color: #595959;
+    font-weight: bold;
+    font-size: 25pt;
+    margin-top: 5px;
+}
+
+.general-summary .gs-text {
+    color: #595959;
+    font-size: 15pt;
+}
 
 .summary-data .fa {
     font-size: 50pt;
