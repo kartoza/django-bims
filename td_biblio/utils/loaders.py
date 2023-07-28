@@ -17,7 +17,7 @@ from time import strptime
 from bibtexparser import customization as bp_customization
 from bibtexparser.bparser import BibTexParser
 from bibtexparser.latexenc import string_to_latex
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from habanero import cn
 
 from td_biblio.exceptions import DOILoaderError, PMIDLoaderError

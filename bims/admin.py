@@ -15,7 +15,7 @@ from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
 from django.core.mail import send_mail
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
