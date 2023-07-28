@@ -2,7 +2,6 @@ let map = null;
 let markerSource = null;
 let riversLayer = 'https://maps.kartoza.com/geoserver/wms';
 
-
 const modal = `<!-- Modal -->
 <div id="error-modal" class="modal hide fade" tabindex="-1" role="dialog">
     <div class="modal-dialog">
@@ -68,7 +67,6 @@ let validator = $('#site-form').validate({
                 submitButton.removeAttr('disabled')
             }
         })
-
     }
 });
 
@@ -77,6 +75,15 @@ let showSiteCodeError = function () {
         site_code: 'Invalid Site Code format'
     });
 };
+
+const mapOnClicked = (e) => {
+    let coords = ol.proj.toLonLat(e.coordinate);
+    let lat = coords[1];
+    let lon = coords[0];
+    $('#latitude').val(lat);
+    $('#longitude').val(lon);
+    updateCoordinate(false);
+}
 
 $(function () {
     $('body').append(modal);
@@ -131,14 +138,7 @@ $(function () {
         map.addLayer(riverLayer);
     }
 
-    map.on('click', function (e) {
-        let coords = ol.proj.toLonLat(e.coordinate);
-        let lat = coords[1];
-        let lon = coords[0];
-        $('#latitude').val(lat);
-        $('#longitude').val(lon);
-        updateCoordinate(false);
-    });
+    map.on('click', mapOnClicked);
 
     map.getView().fit(extent);
 
@@ -166,6 +166,10 @@ $(function () {
 
     if (locationSiteLat && locationSiteLong) {
         addMarkerToMap(parseFloat(locationSiteLat), parseFloat(locationSiteLong));
+    }
+
+    if(typeof mapReady !== 'undefined') {
+        mapReady(map);
     }
 });
 

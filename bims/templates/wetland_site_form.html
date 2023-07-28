@@ -1,0 +1,73 @@
+{% extends 'main_base.html' %}
+{% load static %}
+{% load thumbnail %}
+{% block subtitle %}
+    Wetland Site Form
+{% endblock %}
+
+{% block head %}
+     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <script>
+        const bingKey = '{{ bing_key }}';
+        const defaultExtentMap = '{{ preferences.SiteSetting.default_extent_map }}';
+        const isFbis = {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}true{% else %}false{% endif %};
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
+        const locationSiteLat = '{{ location_site_lat }}';
+        const locationSiteLong = '{{ location_site_long }}';
+    </script>
+
+{% endblock %}
+
+{% block body_content %}
+    <form action="{{ request.path }}" method="post" id="site-form"
+          class="needs-validation" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if update %}
+            <input type="hidden" name="id" value="{{ site_id }}">
+        {% endif %}
+        <div class="body-form container">
+            {% if messages %}
+                    {% for message in messages %}
+                        {% if message.extra_tags == 'wetland_site_form' %}
+                            <div class="alert alert-success {{ message.tags }}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+            {% endif %}
+            <div class="dashboard-title">
+                <h2>
+                    {% if update %}
+                        Update a wetland site {{ site_identifier }}
+                    {% else %}
+                        Add a wetland site
+                    {% endif %}
+                    <div class="site-form-close">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </div>
+                </h2>
+            </div>
+            <div id="site-map"></div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery.validate.min.js" %}"></script>
+    <script src="{% static "js/libs/additional-methods.min.js" %}"></script>
+    <script src="{% static "js/non_requirejs/site_form.js" %}"></script>
+    <script src="{% static "js/wetland_site.js" %}"></script>
+
+{% endblock %}
