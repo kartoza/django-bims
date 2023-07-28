@@ -1,5 +1,4 @@
-
-from django.urls import re_path
+from django.urls import re_path, path
 
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -13,6 +12,7 @@ from mobile.api_views.add_site_visit import AddSiteVisit
 from mobile.api_views.add_location_site import AddLocationSiteView
 from mobile.api_views.taxon_group import TaxonGroupList
 from mobile.api_views.source_reference import SourceReferenceMobileList
+from mobile.api_views.river import FetchRiverName
 
 
 urlpatterns = [
@@ -49,4 +49,7 @@ urlpatterns = [
     re_path(r'^abiotic-list/$',
         AbioticList.as_view(),
         name='abiotic-list'),
+    path('river/',
+        FetchRiverName.as_view(),
+        name='fetch-river-name'),
 ]

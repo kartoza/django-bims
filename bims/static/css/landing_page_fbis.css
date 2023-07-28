@@ -504,6 +504,17 @@ html, body {
     display: flex;
     justify-content: center;
 }
+.summary-data>.row {
+    width: 100%;
+    justify-content: center;
+}
+
+
+
+.general-summary .gs-text {
+    color: #595959;
+    font-size: 15pt;
+}
 
 .summary-data .fa {
     font-size: 50pt;

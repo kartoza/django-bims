@@ -457,6 +457,11 @@ html, body {
     justify-content: center;
 }
 
+.summary-data>.row {
+    width: 100%;
+    justify-content: center;
+}
+
 .module-numbers {
     font-weight: bold;
 }
