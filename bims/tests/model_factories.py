@@ -46,6 +46,7 @@ from bims.models import (
     WaterTemperature,
     WaterTemperatureThreshold
 )
+from sass.models import River
 
 
 class LocationTypeF(factory.django.DjangoModelFactory):
@@ -461,3 +462,10 @@ class SamplingMethodF(factory.django.DjangoModelFactory):
         model = SamplingMethod
 
     sampling_method = factory.Sequence(lambda n: u'method %s' % n)
+
+
+class RiverF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = River
+
+    name = factory.Sequence(lambda n: u'river %s' % n)
