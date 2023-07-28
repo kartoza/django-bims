@@ -201,6 +201,12 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         geometry = None
         validation_error = ValidationError('Only one geometry allowed.')
 
+        if (
+            self.geometry_point and
+            self.location_type.allowed_geometry == 'POINT'
+        ):
+            return self.geometry_point
+
         if self.geometry_polygon:
             if geometry:
                 raise validation_error
