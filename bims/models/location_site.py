@@ -185,10 +185,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
     def get_centroid(self):
         """ Getting centroid of location site """
 
-        if (
-            self.geometry_point and
-            self.location_type.allowed_geometry == 'POINT'
-        ):
+        if self.geometry_point:
             return self.geometry_point
         else:
             if self.get_geometry():
@@ -201,11 +198,10 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         geometry = None
         validation_error = ValidationError('Only one geometry allowed.')
 
-        if (
-            self.geometry_point and
-            self.location_type.allowed_geometry == 'POINT'
-        ):
-            return self.geometry_point
+        if self.geometry_point:
+            if geometry:
+                raise validation_error
+            geometry = self.geometry_point
 
         if self.geometry_polygon:
             if geometry:
@@ -407,9 +403,6 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
                     if not lon_lat_changed:
                         self.geometry_point.x = self.longitude
                         self.geometry_point.y = self.latitude
-                if self.location_type.allowed_geometry != 'POINT':
-                    self.geometry_point = self.get_centroid()
-
                 super(LocationSite, self).save(*args, **kwargs)
                 self.__original_centroid = self.get_centroid()
             else:
