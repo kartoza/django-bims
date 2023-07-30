@@ -69,6 +69,7 @@ let mapReady = (map) => {
               let olFeature = new ol.format.GeoJSON().readFeatures(feature);
               vectorLayer.getSource().clear()
               vectorLayer.getSource().addFeatures(olFeature);
+              $('.wetland-detail').val(JSON.stringify(feature['properties']));
             }
           }
           resolve(features);

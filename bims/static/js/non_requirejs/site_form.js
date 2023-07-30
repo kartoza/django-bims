@@ -144,21 +144,21 @@ $(function () {
 
     $('[data-toggle="popover"]').popover();
 
-    let biodiversityLayersOptions = {
-        url: geoserverPublicUrl + 'wms',
-        params: {
-            LAYERS: locationSiteGeoserverLayer,
-            FORMAT: 'image/png8',
-            viewparams: 'where:' + defaultWMSSiteParameters
-        },
-        ratio: 1,
-        serverType: 'geoserver'
-    };
-    let biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
-    let biodiversityTileLayer = new ol.layer.Image({
-        source: biodiversitySource
-    });
-    map.addLayer(biodiversityTileLayer);
+    // let biodiversityLayersOptions = {
+    //     url: geoserverPublicUrl + 'wms',
+    //     params: {
+    //         LAYERS: locationSiteGeoserverLayer,
+    //         FORMAT: 'image/png8',
+    //         viewparams: 'where:' + defaultWMSSiteParameters
+    //     },
+    //     ratio: 1,
+    //     serverType: 'geoserver'
+    // };
+    // let biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
+    // let biodiversityTileLayer = new ol.layer.Image({
+    //     source: biodiversitySource
+    // });
+    // map.addLayer(biodiversityTileLayer);
     $('#update-coordinate').click(updateCoordinateHandler);
     $('#update-site-code').click(updateSiteCode);
     $('#fetch-river-name').click(fetchRiverName);

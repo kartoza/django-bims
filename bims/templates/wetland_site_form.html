@@ -54,6 +54,246 @@
                 </h2>
             </div>
             <div id="site-map"></div>
+            <br/>
+            <div class="wetland-detail" style="min-height: 100px;">
+            </div>
+            <div class="form-group row">
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label">Latitude*</label>
+                <div class="col-sm-2">
+                    <input type="text" id="latitude" name="latitude"
+                           class="form-control form-control-sm" style="height: 100%"
+                           value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
+                </div>
+                <label for="date"
+                       class="col-sm-2 col-form-label col-form-label" style="text-align: right">Longitude*</label>
+                <div class="col-sm-2">
+                    <input type="text" id="longitude" name="longitude"
+                           class="form-control form-control-sm" style="height: 100%"
+                           value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
+                </div>
+                <div class="update-taxon-container col-sm-4">
+                    <button id="update-coordinate" type="button" style="width: 100%"
+                            class="btn btn-default" disabled>
+                        Update coordinate
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="river_name" class="col-sm-2 col-form-label">
+                    River Name
+                </label>
+                <div class="col-sm-6">
+                    <input type="text" name="river_name" id="river_name" class="form-control form-control-sm" value="{{ river_name }}" readonly>
+                </div>
+                <div class="update-taxon-container col-sm-4">
+                    <button id="fetch-river-name" type="button"
+                            class="btn btn-default" style="width: 100%;" disabled>
+                        Fetch River Name
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="user_river_name"
+                       class="col-sm-2 col-form-label col-form-label">User River Name</label>
+                <div class="col-sm-10">
+                    <input type="text" name="user_river_name" id="user_river_name"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{% if legacy_river_name %}{{ legacy_river_name }}{% else %}{% endif %}" >
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>
+                <div class="col-sm-6">
+                    <input type="text" name="geomorphological_zone" id="geomorphological_zone"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ original_geo_zone }}" readonly>
+                    <input type="hidden" name="geomorphological_group_geocontext" id="geomorphological_group_geocontext">
+                </div>
+                <div class="update-taxon-container col-sm-4">
+                    <button id="fetch-geomorphological-zone" type="button"
+                            class="btn btn-default" style="width: 100%;" disabled>
+                        Fetch data
+                    </button>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Refined Geomorphological Zone</label>
+                <div class="col-sm-10">
+                    <select name="refined_geomorphological_zone" class="form-control form-control-sm" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                        <option value="">-</option>
+                        {% for geo in geomorphological_zone_category %}
+                            <option value="{{ geo.1 }}" {% if geo.1 == refined_geo_zone %}selected{% endif %}>{{ geo.1 }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label col-form-label">Site
+                    Description</label>
+                <div class="col-sm-10">
+                    <input type="text" name="site_description"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ site_description }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="site_name"
+                       class="col-sm-2 col-form-label">Owner
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" onClick="this.setSelectionRange(0, this.value.length)"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ fullname }}" id="owner" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} >
+                    <small class="form-text text-muted">Please select the Owner, if you are the data capturer and not the Owner</small>
+                    <input type="hidden" name="owner" id="owner_id" value="{{ user_id }}">
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="site_image" class="col-2 col-form-label">
+                    Site Image
+                </label>
+                <div class="col-10">
+                    <div class="input-group input-file">
+                        <input type="file" class="form-control"
+                               accept="image/*" name="site-image"
+                               placeholder='Choose a file...'/>
+                        <input type="hidden" id="id_site_image_delete" name="id_site_image_delete" value="">
+                    </div>
+                    <small id="emailHelp" class="form-text text-muted" style="margin-bottom: 10px;">
+                        Click the <b>save</b> button after choosing the file to upload a new image.
+                    </small>
+
+                    {% if site_image %}
+                        <div id="siteImageCarousel" class="site-image-gallery carousel slide" data-ride="carousel" data-interval="false">
+                        <!-- Indicators -->
+                        <ol class="carousel-indicators">
+                            {% for image in site_image %}
+                                {% if forloop.counter0 == 0 %}
+                                    <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}" class="active"></li>
+                                {% else %}
+                                    <li data-target="#siteImageCarousel" data-slide-to="{{ forloop.counter0 }}"></li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                        <div class="carousel-inner">
+                            {% for image in site_image %}
+                                {% if forloop.counter0 == 0 %}
+                                    <div class="carousel-item active" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
+                                {% else %}
+                                    <div class="carousel-item" data-id="{{ image.id }}" data-image-url="{{ image.image.url }}">
+                                {% endif %}
+                            {% if image.image|is_portrait %}
+                                {% thumbnail image.image "x500" crop="center" as thumb %}
+                                    <a href="/uploaded/{{ image.image }}"
+                                       target="_blank"><img
+                                            src="{{ thumb.url }}"
+                                            height="{{ thumb.height }}"
+                                            width="{{ thumb.width }}"/>
+                                    </a>
+                                {% endthumbnail %}
+                            {% else %}
+                                {% thumbnail image.image "500" crop="center" as thumb %}
+                                    <a href="/uploaded/{{ image.image }}"
+                                       target="_blank"><img
+                                            src="{{ thumb.url }}"
+                                            height="{{ thumb.height }}"
+                                            width="{{ thumb.width }}"/>
+                                    </a>
+                                {% endthumbnail %}
+                            {% endif %}
+                            </div>
+                            {% endfor %}
+                            </div>
+                            <!-- Left and right controls -->
+                            <a class="carousel-control-prev"
+                               href="#siteImageCarousel" role="button"
+                               data-slide="prev">
+                            <span class="carousel-control-prev-icon"
+                                  aria-hidden="true"></span>
+                                <span class="sr-only">Previous</span>
+                            </a>
+                            <a class="carousel-control-next"
+                               href="#siteImageCarousel" role="button"
+                               data-slide="next">
+                            <span class="carousel-control-next-icon"
+                                  aria-hidden="true"></span>
+                                <span class="sr-only">Next</span>
+                            </a>
+                            <div class="image-buttons-wrapper">
+                                <div class="btn btn-danger delete-image-btn">Delete this image</div>
+                                <div class="btn btn-success open-image-btn">Open image</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="form-group submit-holder">
+                    {% if update %}
+                        {% if allow_to_edit %}
+                            <input type="button" data-toggle="modal" data-target="#confirm-delete" class="btn btn-danger" value="DELETE">
+                            <input class="btn btn-success submit-button" type="submit" value="SAVE">
+                        {% endif %}
+                    {% else %}
+                        <div class="disclaimer" style="margin-bottom: 10px;">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               value="" id="disclaimerCheck">
+                                        <label class="form-check-label"
+                                               for="disclaimerCheck"
+                                               style="padding-top: 2px;">
+                                            {{ preferences.SiteSetting.disclaimer_form_text|urlize|linebreaks }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="submit-wrapper">
+                            <input class="btn btn-success submit-button" type="submit" id="submitBtn" disabled value="ADD">
+                        </div>
+                        <script>
+                            const checkbox = document.getElementById('disclaimerCheck');
+                            const submitButton = document.getElementById('submitBtn');
+                            checkbox.addEventListener('change', (event) => {
+                                if (event.target.checked) {
+                                    submitButton.disabled = false;
+                                } else {
+                                    submitButton.disabled = true;
+                                }
+                            })
+                        </script>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="modal fade" id="confirm-delete-site-image" tabindex="-1" role="dialog"
+                 aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            Confirm Delete
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete the site image?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default"
+                                    data-dismiss="modal">Cancel
+                            </button>
+                            <button type="submit" href="#" class="btn btn-danger success">Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </form>
 {% endblock %}
