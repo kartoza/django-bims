@@ -64,12 +64,32 @@ let mapReady = (map) => {
           if (features.length > 0) {
             const feature = features[0];
             const bbox = feature['bbox'];
+
             map.getView().fit(bbox, {size: map.getSize()});
             if (renderResult) {
+
+              let centroidX = (bbox[0] + bbox[2]) / 2;
+              let centroidY = (bbox[1] + bbox[3]) / 2;
+
+              let transformedCoordinate = ol.proj.transform([centroidX, centroidY], 'EPSG:3857', 'EPSG:4326');
+              let longitude = transformedCoordinate[0];
+              let latitude = transformedCoordinate[1];
+
+              $('#latitude').val(latitude);
+              $('#longitude').val(longitude);
+
+              $('#fetch-river-name').attr('disabled', false);
+              $('#fetch-geomorphological-zone').attr('disabled', false);
+              $('#update-site-code').attr('disabled', false);
+
+              $('#river_name').val('');
+              $('#site_code').val('');
+              $('#geomorphological_zone').val('');
+
               let olFeature = new ol.format.GeoJSON().readFeatures(feature);
               vectorLayer.getSource().clear()
               vectorLayer.getSource().addFeatures(olFeature);
-              $('.wetland-detail').val(JSON.stringify(feature['properties']));
+              $('#wetland_detail').val(feature['properties']['wetlid']);
             }
           }
           resolve(features);
@@ -92,7 +112,6 @@ let mapReady = (map) => {
     );
     layerSource += '&QUERY_LAYERS=' + wmsLayerName;
     const zoomLevel = map.getView().getZoom();
-    console.log(zoomLevel)
     getFeature(layerSource, zoomLevel > 10).then(function(features) {
         if (features.length > 0 && zoomLevel <= 10) {
           let bbox = features[0]['bbox'];
@@ -122,7 +141,7 @@ let mapReady = (map) => {
             })
           });
 
-          map.addLayer(pointLayer);
+          // map.addLayer(pointLayer);
 
           layerSource = wmsLayer.getSource().getGetFeatureInfoUrl(
             point,
