@@ -167,6 +167,12 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         default=timezone.now
     )
 
+    wetland_id = models.CharField(
+        default='',
+        blank=True,
+        max_length=256
+    )
+
     @property
     def location_site_identifier(self):
         """

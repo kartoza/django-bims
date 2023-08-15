@@ -1,4 +1,5 @@
 import json
+from django.contrib.gis.geos import GEOSGeometry
 from datetime import datetime
 import pytz
 from django.db import IntegrityError
@@ -54,6 +55,18 @@ def handle_location_site_post_data(
     legacy_site_code = post_data.get('legacy_site_code', '')
     additional_data = post_data.get('additional_data', None)
     date = post_data.get('date', datetime.now())
+    site_geometry = post_data.get('site-geometry', None)
+    wetland_id = post_data.get('wetland_id', None)
+
+    if site_geometry and 'geometry' in site_geometry:
+        try:
+            site_geometry_data = json.loads(site_geometry)
+            site_geometry = GEOSGeometry(json.dumps(site_geometry_data['geometry']))
+        except json.decoder.JSONDecodeError:
+            site_geometry = None
+    else:
+        site_geometry = None
+
     if date and not isinstance(date, datetime):
         if isinstance(date, str):
             timestamp = int(date)
@@ -98,10 +111,16 @@ def handle_location_site_post_data(
         owner = collector
 
     geometry_point = Point(longitude, latitude)
-    location_type, status = LocationType.objects.get_or_create(
-        name='PointObservation',
-        allowed_geometry='POINT'
-    )
+    if not site_geometry:
+        location_type, status = LocationType.objects.get_or_create(
+            name='PointObservation',
+            allowed_geometry='POINT'
+        )
+    else:
+        location_type, status = LocationType.objects.get_or_create(
+            name='MultipolygonObservation',
+            allowed_geometry='MULTIPOLYGON'
+        )
     post_dict = {
         'name': site_code,
         'owner': owner,
@@ -115,6 +134,10 @@ def handle_location_site_post_data(
         'legacy_site_code': legacy_site_code,
         'date_created': date
     }
+    if site_geometry:
+        post_dict['geometry_multipolygon'] = site_geometry
+    if wetland_id:
+        post_dict['wetland_id'] = wetland_id
 
     if river_name:
         river, river_created = River.objects.get_or_create(

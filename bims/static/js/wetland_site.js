@@ -87,6 +87,21 @@ let mapReady = (map) => {
               $('#geomorphological_zone').val('');
 
               let olFeature = new ol.format.GeoJSON().readFeatures(feature);
+
+              const format = new ol.format.GeoJSON();
+              const featureObj = format.readFeature(feature, {
+                dataProjection: 'EPSG:3857',
+                featureProjection: 'EPSG:3857'
+              })
+              const geometry = featureObj.getGeometry();
+              geometry.transform('EPSG:3857', 'EPSG:4326');
+
+              const convertedGeojsonStr = format.writeFeature(featureObj, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:4326'
+              });
+
+              $('#site-geometry').val(convertedGeojsonStr);
               vectorLayer.getSource().clear()
               vectorLayer.getSource().addFeatures(olFeature);
               $('#wetland_detail').val(feature['properties']['wetlid']);
