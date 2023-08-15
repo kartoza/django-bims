@@ -63,7 +63,7 @@ services:
     container_name: bims_dev_db
     profiles:
       - dev
-    image: kartoza/postgis:14-3.3
+    image: kartoza/postgis:15-3.3
     shm_size: 1g
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
