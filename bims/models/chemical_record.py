@@ -2,7 +2,7 @@ import json
 from django.utils import timezone
 from django.contrib.gis.db import models
 from django.db.models import Q
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from bims.models import LocationSite, SourceReference, Survey
 from bims.models.biological_collection_record import (
     BiologicalCollectionQuerySet

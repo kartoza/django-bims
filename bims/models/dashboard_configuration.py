@@ -4,7 +4,7 @@
 """
 from datetime import datetime
 from django.db import models
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 from bims.models.taxon_group import TaxonGroup
 
 

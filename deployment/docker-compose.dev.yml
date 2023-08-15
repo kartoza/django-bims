@@ -103,6 +103,7 @@ services:
     <<: *default-common-django
     container_name: bims_dev_worker
     hostname: worker
+    image: bims_dev
     links:
       - db:db
       - cache:cache

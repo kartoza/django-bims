@@ -33,6 +33,7 @@ from bims.models import (
     SourceReference,
     SiteImage, WATER_TEMPERATURE_KEY
 )
+from bims.views.autocomplete_search import is_ajax
 
 from bims.views.mixin.session_form import SessionFormMixin
 
@@ -321,7 +322,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
     upload_task = None
 
     def post(self, request, *args, **kwargs):
-        if not request.is_ajax():
+        if not is_ajax(request):
             return HttpResponseForbidden()
 
         upload_session_id = request.POST.get('upload_session_id', None)

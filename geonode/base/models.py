@@ -29,7 +29,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.utils.html import escape
 from django.contrib.auth import get_user_model
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 from polymorphic.models import PolymorphicModel

@@ -18,7 +18,7 @@ from bims.models.endemism import Endemism
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
 from bims.models.vernacular_name import VernacularName
-from django.contrib.postgres.fields import JSONField
+from django.db.models import JSONField
 
 ORIGIN_CATEGORIES = {
     'non-native': 'alien',

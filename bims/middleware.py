@@ -5,7 +5,7 @@ import warnings
 import django
 from django.db import IntegrityError, transaction
 from django.utils import timezone
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
@@ -40,6 +40,10 @@ else:
 
 
 class VisitorTrackingMiddleware(MiddlewareMixin):
+    @staticmethod
+    def is_ajax(request):
+        return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+
     def _should_track(self, user, request, response):
         # Session framework not installed, nothing to see here..
         if not hasattr(request, 'session'):
@@ -49,7 +53,7 @@ class VisitorTrackingMiddleware(MiddlewareMixin):
             return False
 
         # Do not track AJAX requests
-        if request.is_ajax() and not TRACK_AJAX_REQUESTS:
+        if self.is_ajax(request) and not TRACK_AJAX_REQUESTS:
             return False
 
         # Do not track if HTTP HttpResponse status_code blacklisted
@@ -101,7 +105,7 @@ class VisitorTrackingMiddleware(MiddlewareMixin):
         # grab the latest User-Agent and store it
         user_agent = request.META.get('HTTP_USER_AGENT', None)
         if user_agent:
-            visitor.user_agent = smart_text(
+            visitor.user_agent = smart_str(
                 user_agent, encoding='latin-1', errors='ignore')
 
         time_on_site = 0
