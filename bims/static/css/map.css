@@ -2852,7 +2852,8 @@ div:hover::-webkit-scrollbar {
 }
 
 .ol-scale-line {
-    margin-bottom: 30px;
+    margin-left: 30px;
+    margin-bottom: 45px;
 }
 
 .search-header-row {
