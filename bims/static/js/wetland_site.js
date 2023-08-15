@@ -133,30 +133,6 @@ let mapReady = (map) => {
           let centroidX = (bbox[0] + bbox[2]) / 2;
           let centroidY = (bbox[1] + bbox[3]) / 2;
           let point = [centroidX, centroidY];
-          console.log(point)
-
-          let pointFeature = new ol.Feature({
-            geometry: new ol.geom.Point(point)
-          });
-
-          let pointSource = new ol.source.Vector({
-            features: [pointFeature]
-          });
-
-          let pointLayer = new ol.layer.Vector({
-            source: pointSource,
-            style: new ol.style.Style({
-              image: new ol.style.Circle({
-                radius: 7,
-                fill: new ol.style.Fill({color: 'black'}),
-                stroke: new ol.style.Stroke({
-                  color: [255, 0, 0], width: 2
-                })
-              })
-            })
-          });
-
-          // map.addLayer(pointLayer);
 
           layerSource = wmsLayer.getSource().getGetFeatureInfoUrl(
             point,
