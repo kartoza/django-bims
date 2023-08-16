@@ -1046,9 +1046,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 let order = Shared.StorageUtil.getItemDict(layerName, 'order');
                 if (order != null) {
                     self.changeLayerOder(layerName, order);
+                } else {
+                    if (layerName === 'Sites') {
+                        self.changeLayerOder(layerName, 0)
+                    }
                 }
             });
-            self.layerSelector.trigger('sortupdate');
+            if (self && self.layerSelector) {
+                self.layerSelector.trigger('sortupdate');
+            } else {
+                setTimeout(function () {
+                    self.layerSelector.trigger('sortupdate');
+                }, 600)
+            }
         }
     })
 });
