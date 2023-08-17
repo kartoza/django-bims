@@ -31,7 +31,7 @@ django-modelsdoc==0.1.11
 
 # contacts page
 django-contact-us==0.4.3
-django-ordered-model==3.4.1
+django-ordered-model==3.7.4
 
 # Statistics Dashboard
 
