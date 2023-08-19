@@ -52,7 +52,9 @@ def handle_location_site_post_data(
         owner = None
     latitude = post_data.get('latitude', None)
     longitude = post_data.get('longitude', None)
-    legacy_site_code = post_data.get('legacy_site_code', '')
+    legacy_site_code = post_data.get('user_site_code', '')
+    if not legacy_site_code:
+        legacy_site_code = post_data.get('legacy_site_code', '')
     additional_data = post_data.get('additional_data', None)
     date = post_data.get('date', datetime.now())
     site_geometry = post_data.get('site-geometry', None)
@@ -126,7 +128,7 @@ def handle_location_site_post_data(
         'owner': owner,
         'latitude': latitude,
         'longitude': longitude,
-        'site_description': site_description,
+        'site_description': site_description if site_description else '',
         'geometry_point': geometry_point,
         'location_type': location_type,
         'site_code': site_code,
