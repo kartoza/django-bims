@@ -20,7 +20,7 @@ STOP_WORDS = (
     'this', 'that', 'to',
 )
 
-STATICFILES_STORAGE = 'pipeline.storage.PipelineManifestStorage'
+STATICFILES_STORAGE = 'bims.storage.NoSourceMapsStorage'
 STATICFILES_FINDERS += (
     'pipeline.finders.PipelineFinder',
 )
