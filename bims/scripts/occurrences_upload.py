@@ -700,9 +700,14 @@ class OccurrenceProcessor(object):
         if self.module_group:
             record.module_group = self.module_group
 
+        # -- Ecosystem type
+        record.ecosystem_type = DataCSVUpload.row_value(
+            row, ECOSYSTEM_TYPE)
+
         # -- Additional data
         record.additional_data = json.dumps(row)
         record.validated = True
+
         record.save()
 
         if not str(record.site.id) in self.site_ids:

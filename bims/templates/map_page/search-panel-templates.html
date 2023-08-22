@@ -37,6 +37,7 @@
             </div>
         </div>
 
+        {% if preferences.SiteSetting.default_data_source == 'fbis' %}
         <div id="ecosystem-type-container">
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
@@ -63,6 +64,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         {% if bims_preferences.enable_module_filter %}
             <div id="biodiversity-module-container">
