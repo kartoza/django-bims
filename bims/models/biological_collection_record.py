@@ -130,6 +130,16 @@ ABUNDANCE_TYPE_SPECIES_VALVE = 'species_valve_per_frustule_count'
 ABUNDANCE_TYPE_DENSITY_CELLS_M2 = 'density_cells_per_m2'
 ABUNDANCE_TYPE_DENSITY_CELLS_ML = 'density_cells_per_mL'
 
+ECOSYSTEM_RIVER = 'River'
+ECOSYSTEM_WETLAND = 'Wetland'
+ECOSYSTEM_OPEN_WATERBODY = 'Open waterbody'
+
+ECOSYSTEM_TYPE_CHOICES = (
+    (ECOSYSTEM_RIVER, ECOSYSTEM_RIVER),
+    (ECOSYSTEM_WETLAND, ECOSYSTEM_WETLAND),
+    (ECOSYSTEM_OPEN_WATERBODY, ECOSYSTEM_OPEN_WATERBODY)
+)
+
 
 class BiologicalCollectionRecord(AbstractValidation):
     """Biological collection model."""
@@ -317,6 +327,14 @@ class BiologicalCollectionRecord(AbstractValidation):
     record_type = models.CharField(
         max_length=50,
         blank=True,
+        default='',
+        null=True
+    )
+
+    ecosystem_type = models.CharField(
+        max_length=128,
+        blank=True,
+        choices=ECOSYSTEM_TYPE_CHOICES,
         default='',
         null=True
     )

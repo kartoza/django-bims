@@ -23,6 +23,10 @@ let filterParametersJSON = {
         'label': 'Site Id',
         'type': 'comma'
     },
+    'ecosystemType': {
+        'label': 'Ecosystem Type',
+        'type': 'comma'
+    },
     'collector': {
         'label': 'Collector',
         'type': 'json'

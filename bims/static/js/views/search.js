@@ -515,6 +515,20 @@ define([
             }
             filterParameters['validated'] = validated;
 
+            // Ecosystem type filter
+            let ecosystemTypeFilter = [];
+            let ecosystemType = '';
+            $('[name=filter-ecosystem-type]:checked').each(function () {
+                ecosystemTypeFilter.push($(this).attr('value'));
+            });
+            if (ecosystemTypeFilter.length > 0 && $('[name=filter-ecosystem-type]').length !== ecosystemTypeFilter.length) {
+                ecosystemType = ecosystemTypeFilter.join();
+                self.highlightPanel('.ecosystem-type-row', true);
+            } else {
+                self.highlightPanel('.ecosystem-type-row', false);
+            }
+            filterParameters['ecosystemType'] = ecosystemType;
+
             // ecological category
             var ecologicalConditions = '';
             if (self.selectedEcologicalConditions.length > 0) {
@@ -556,29 +570,18 @@ define([
             Shared.Dispatcher.trigger('map:closeHighlight');
             Shared.Dispatcher.trigger(Shared.EVENTS.SEARCH.HIT, filterParameters);
             Shared.Dispatcher.trigger('sidePanel:closeSidePanel');
-            if (!filterParameters['search']
-                && !filterParameters['collector']
-                && !filterParameters['validated']
-                && !filterParameters['category']
-                && !filterParameters['yearFrom']
-                && !filterParameters['yearTo']
-                && !filterParameters['userBoundary']
-                && !filterParameters['referenceCategory']
-                && !filterParameters['reference']
-                && !filterParameters['endemic']
-                && !filterParameters['modules']
-                && !filterParameters['conservationStatus']
-                && !filterParameters['spatialFilter']
-                && !filterParameters['ecologicalCategory']
-                && !filterParameters['sourceCollection']
-                && !filterParameters['abioticData']
-                && !filterParameters['polygon']
-                && !filterParameters['boundary']
-                && !filterParameters['dst']
-                && !filterParameters['thermalModule']) {
+            const keysToCheck = [
+                'search', 'collector', 'validated', 'ecosystemType', 'category',
+                'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory', 'reference',
+                'endemic', 'modules', 'conservationStatus', 'spatialFilter',
+                'ecologicalCategory', 'sourceCollection', 'abioticData', 'polygon',
+                'boundary', 'dst', 'thermalModule'
+            ];
+            const hasAnyTruthyValue = keysToCheck.some(key => filterParameters[key]);
+            if (!hasAnyTruthyValue) {
                 Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
                 Shared.Router.clearSearch();
-                return false
+                return false;
             }
             this.searchResultCollection.search(
                 this.searchPanel,
@@ -650,6 +653,8 @@ define([
             $('.map-search-result').hide();
             this.searchPanel.clearSidePanel();
             this.clearClickedOriginButton();
+
+            $('[name=filter-ecosystem-type]').prop('checked', true);
 
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
@@ -853,6 +858,18 @@ define([
             if (allFilters.hasOwnProperty('module')) {
                 document.getElementById(allFilters['module'] + '-module').checked = true;
                 $('[name="module"]').trigger('change');
+            }
+
+            // Search module
+            if (allFilters.hasOwnProperty('ecosystemType')) {
+                let ecosystemTypes = allFilters['ecosystemType'].split(',');
+                $('[name=filter-ecosystem-type]').each(function () {
+                    if (ecosystemTypes.includes($(this).attr('value'))) {
+                        $(this).prop('checked', true);
+                    } else {
+                        $(this).prop('checked', false);
+                    }
+                });
             }
 
             // Collectors
