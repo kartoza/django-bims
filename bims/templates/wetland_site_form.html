@@ -21,9 +21,17 @@
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const locationSiteLat = '{{ location_site_lat }}';
         const locationSiteLong = '{{ location_site_long }}';
+        const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
         let siteId = null;
     </script>
 
+    <style>
+
+        .btn-info {
+            margin-bottom: 10px;
+            width: 272px;
+        }
+    </style>
 {% endblock %}
 
 {% block body_content %}
@@ -33,6 +41,7 @@
         {% if update %}
             <input type="hidden" name="id" value="{{ site_id }}">
         {% endif %}
+        <input type="hidden" name="ecosystem_type" value="Wetland">
         <div class="body-form container">
             {% if messages %}
                     {% for message in messages %}
@@ -56,15 +65,31 @@
                 </h2>
             </div>
             <div id="site-map"></div>
-            <br/>
-            <div class="form-group row">
-                <label for="wetland_detail" class="col-sm-2 col-form-label">
-                    Wetland
-                </label>
-                <div class="col-sm-10">
-                    <input type="text" name="wetland_id" id="wetland_detail" class="form-control form-control-sm" value="{{ wetland_detail }}" readonly>
+            {% if update %}
+                <div class="form-group row">
+                    <div class="col-lg-12">
+                        {% for module in taxon_group %}
+                            <a href="/module-form/?siteId={{ site_id }}&module={{ module.id }}"
+                               class="btn btn-info">Add {% if module.singular_name %}{{ module.singular_name }}{% else %}{{ module.name }}{% endif %} data</a>
+                        {% endfor %}
+
+                        {% if preferences.SiteSetting.enable_sass %}
+                            <a href="/sass/{{ site_id }}/"
+                               class="btn btn-info">Add SASS data</a>
+                        {% endif %}
+
+                        {% if preferences.SiteSetting.enable_water_temperature %}
+                            <a href="/water-temperature-form/?siteId={{ site_id }}"
+                               class="btn btn-info">Add water temperature
+                                data</a>
+                        {% endif %}
+                        <a href="/physico-chemical-form/?siteId={{ site_id }}"
+                           class="btn btn-info">Add physico-chemical
+                            data</a>
+                    </div>
                 </div>
-            </div>
+            {% endif %}
+            <br/>
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Latitude*</label>
@@ -83,23 +108,20 @@
                            value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>
             </div>
+            <input type="hidden" name="additional_data" id="additional-data">
             <div class="form-group row">
                 <label for="river_name" class="col-sm-2 col-form-label">
-                    River Name
+                    Wetland Name
                 </label>
-                <div class="col-sm-6">
+                <div class="col-sm-10">
                     <input type="text" name="river_name" id="river_name" class="form-control form-control-sm" value="{{ river_name }}" readonly>
                 </div>
-                <div class="update-taxon-container col-sm-4">
-                    <button id="fetch-river-name" type="button"
-                            class="btn btn-default" style="width: 100%;" disabled>
-                        Fetch River Name
-                    </button>
-                </div>
+
+                <button id="fetch-river-name" style="display: none"/>
             </div>
             <div class="form-group row">
                 <label for="user_river_name"
-                       class="col-sm-2 col-form-label col-form-label">User River Name</label>
+                       class="col-sm-2 col-form-label col-form-label">User Wetland Name</label>
                 <div class="col-sm-10">
                     <input type="text" name="user_river_name" id="user_river_name"
                            class="form-control form-control-sm"
@@ -113,22 +135,18 @@
                 <div class="col-sm-6">
                     <input type="text" name="site_code" id="site_code"
                            class="form-control form-control-sm"
+                           readonly
                            placeholder="" value="{{ site_code }}" required {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
                     <small id="siteCodeHelp" class="form-text text-muted">
                         The following standard has been adopted for naming site code: <br/>
-                        {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
-                            Secondary catchment code, 1st four letters of river name, 1st five letters of location. E.g. X2CROC-VELOR (Crocodile River @ Veloren Vallei Nature Reserve)
-                        {% elif preferences.SiteSetting.default_data_source.lower == 'rbis' %}
-                            Catchment + Province ID + District ID + site count. E.g. NNYU1205-00001
-                        {% else %}
-                            1st two site name + 1st two site description + site count
-                        {% endif %}
+                        1st four letters of Quaternary code + 1st four letters of wetland name or user wetland name + site count.
                     </small>
                     <input type="hidden" name="catchment_geocontext" id="catchment_geocontext">
                     <input type="hidden" name="site-geometry" id="site-geometry">
                 </div>
                 <div class="update-taxon-container col-sm-4">
-                    <button id="update-site-code" type="button"
+                    <button id="update-site-code" style="display: none"></button>
+                    <button id="wetland-site-code" type="button"
                             class="btn btn-default" style="width: 100%" disabled>
                         Generate site code
                     </button>

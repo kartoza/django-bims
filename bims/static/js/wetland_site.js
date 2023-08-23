@@ -1,4 +1,4 @@
-
+let wetlandData = null;
 
 let mapReady = (map) => {
 
@@ -80,9 +80,8 @@ let mapReady = (map) => {
 
               $('#fetch-river-name').attr('disabled', false);
               $('#fetch-geomorphological-zone').attr('disabled', false);
-              $('#update-site-code').attr('disabled', false);
+              $('#wetland-site-code').attr('disabled', false);
 
-              $('#river_name').val('');
               $('#site_code').val('');
               $('#geomorphological_zone').val('');
 
@@ -104,7 +103,9 @@ let mapReady = (map) => {
               $('#site-geometry').val(convertedGeojsonStr);
               vectorLayer.getSource().clear()
               vectorLayer.getSource().addFeatures(olFeature);
-              $('#wetland_detail').val(feature['properties']['wetlid']);
+              wetlandData = feature['properties'];
+              $('#additional-data').val(JSON.stringify(wetlandData));
+              $('#river_name').val(wetlandData['name'] ? wetlandData['name'] : '-');
             }
           }
           resolve(features);
@@ -148,3 +149,38 @@ let mapReady = (map) => {
     });
   });
 }
+
+let wetlandSiteCodeButton =  $('#wetland-site-code');
+
+wetlandSiteCodeButton.click(function () {
+  if (!wetlandData) return false
+
+  let siteCodeInput = $('#site_code');
+  wetlandSiteCodeButton.attr('disabled', true);
+  wetlandSiteCodeButton.html('Generating...');
+
+  let siteCode = wetlandData['quaternary'].substring(0, 4);
+
+  let wetlandName = $('#river_name').val() !== '-' ? $('#river_name').val() : '';
+  if (!wetlandName) {
+    wetlandName = $('#user_river_name').val()
+  }
+
+  if (wetlandName) {
+    wetlandName = '-' + wetlandName.substring(0, 4);
+  }
+
+  siteCode += wetlandName;
+
+  let url = '/api/get-site-code/?user_site_code=' + siteCode;
+
+  $.ajax({
+    url: url,
+    success: function (data) {
+      siteCodeInput.val(data['site_code']);
+    }
+  }).done(function () {
+    wetlandSiteCodeButton.attr('disabled', false);
+    wetlandSiteCodeButton.html('Generate site code');
+  });
+});
