@@ -605,6 +605,7 @@ class BioCollectionOneRowSerializer(
             'river_name',
             'user_site_code',
             'site_code',
+            'ecosystem_type',
             'site_description',
             'refined_geomorphological_zone',
             'latitude',
