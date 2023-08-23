@@ -16,6 +16,9 @@ from rest_framework.response import Response
 from preferences import preferences
 from bims.tasks.collection_record import download_collection_record_task
 from bims.tasks.email_csv import send_csv_via_email
+from bims.models.notification import (
+    get_recipients_for_notification, DOWNLOAD_REQUEST
+)
 
 
 class CsvDownload(APIView):
@@ -102,7 +105,9 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
     :return:
     """
     email_template = 'csv_download/csv_new'
-    staffs = get_user_model().objects.filter(is_superuser=True)
+    recipients = get_recipients_for_notification(
+        DOWNLOAD_REQUEST
+    )
     ctx = {
         'username': user.username,
         'current_site': Site.objects.get_current(),
@@ -126,7 +131,8 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
         subject,
         message,
         settings.DEFAULT_FROM_EMAIL,
-        list(staffs.values_list('email', flat=True)))
+        recipients
+    )
     msg.content_subtype = 'html'
     msg.send()
 
