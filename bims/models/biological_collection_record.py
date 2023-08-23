@@ -20,6 +20,7 @@ from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
 from bims.models.survey import Survey
+from bims.enums.ecosystem_type import ECOSYSTEM_TYPE_CHOICES
 from td_biblio.models import Entry
 
 
@@ -129,16 +130,6 @@ ABUNDANCE_TYPE_DENSITY = 'density'
 ABUNDANCE_TYPE_SPECIES_VALVE = 'species_valve_per_frustule_count'
 ABUNDANCE_TYPE_DENSITY_CELLS_M2 = 'density_cells_per_m2'
 ABUNDANCE_TYPE_DENSITY_CELLS_ML = 'density_cells_per_mL'
-
-ECOSYSTEM_RIVER = 'River'
-ECOSYSTEM_WETLAND = 'Wetland'
-ECOSYSTEM_OPEN_WATERBODY = 'Open waterbody'
-
-ECOSYSTEM_TYPE_CHOICES = (
-    (ECOSYSTEM_RIVER, ECOSYSTEM_RIVER),
-    (ECOSYSTEM_WETLAND, ECOSYSTEM_WETLAND),
-    (ECOSYSTEM_OPEN_WATERBODY, ECOSYSTEM_OPEN_WATERBODY)
-)
 
 
 class BiologicalCollectionRecord(AbstractValidation):

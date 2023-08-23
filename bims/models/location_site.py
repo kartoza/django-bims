@@ -20,11 +20,11 @@ from django.utils import timezone
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.models.document_links_mixin import DocumentLinksMixin
-from bims.models.search_process import SearchProcess
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup
 from bims.utils.decorator import prevent_recursion
+from bims.enums.ecosystem_type import ECOSYSTEM_TYPE_CHOICES
 
 LOGGER = logging.getLogger(__name__)
 
@@ -171,6 +171,14 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         default='',
         blank=True,
         max_length=256
+    )
+
+    ecosystem_type = models.CharField(
+        max_length=128,
+        blank=True,
+        choices=ECOSYSTEM_TYPE_CHOICES,
+        default='',
+        null=True
     )
 
     @property
