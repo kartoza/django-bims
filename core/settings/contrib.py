@@ -270,8 +270,11 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.Visitor',
     'bims.Taxonomy',
     'bims.LocationContext',
+    'bims.LocationContextGroup',
     'bims.SearchProcess',
-    'flatpages.FlatPage'
+    'flatpages.FlatPage',
+    'wagtailcore.ReferenceIndex',
+    'td_biblio.author'
 ]
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
