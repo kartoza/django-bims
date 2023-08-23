@@ -65,9 +65,10 @@ def _get_catchments_data(
 
 
 def fbis_catchment_generator(
-        location_site:LocationSite=None, lat=None, lon=None, river_name=''):
+        location_site: LocationSite = None, lat=None, lon=None, river_name=''):
     """
     Generate catchment string for FBIS Site Code
+    :param river_name: The name of the river
     :param location_site: Location site object
     :param lat: Latitude of site
     :param lon: Longitude of site

@@ -433,6 +433,9 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
             self.location_site = LocationSite.objects.get(id=location_site_id)
         except LocationSite.DoesNotExist:
             raise Http404('Location site does not exist')
+        if self.location_site.ecosystem_type == 'Wetland':
+            self.template_name = 'wetland_site_form.html'
+
         return super(LocationSiteFormUpdateView, self).get(
             request, *args, **kwargs)
 
