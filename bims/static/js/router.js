@@ -13,32 +13,19 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             "site/:params": "showSingleSiteDetail"
         },
         initializeParameters: function () {
-            this.parameters['taxon'] = '';
-            this.parameters['months'] = '';
-            this.parameters['siteId'] = '';
-            this.parameters['search'] = '';
-            this.parameters['collector'] = '';
-            this.parameters['category'] = '';
-            this.parameters['yearFrom'] = '';
-            this.parameters['yearTo'] = '';
-            this.parameters['userBoundary'] = '';
-            this.parameters['referenceCategory'] = '';
-            this.parameters['boundary'] = '';
-            this.parameters['reference'] = '';
-            this.parameters['endemic'] = '';
-            this.parameters['conservationStatus'] = '';
-            this.parameters['spatialFilter'] = '';
-            this.parameters['taxon'] = '';
-            this.parameters['validated'] = '';
-            this.parameters['modules'] = '';
-            this.parameters['sourceCollection'] = '';
-            this.parameters['ecologicalCategory'] = '';
-            this.parameters['module'] = '';
-            this.parameters['rank'] = '';
-            this.parameters['orderBy'] = '';
-            this.parameters['siteIdOpen'] = '';
-            this.parameters['polygon'] = '';
-            this.parameters['dst'] = '';
+            const parameterKeys = [
+                'taxon', 'months', 'siteId', 'search', 'collector',
+                'category', 'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory',
+                'boundary', 'reference', 'endemic', 'conservationStatus', 'spatialFilter',
+                'taxon', 'validated', 'modules', 'sourceCollection', 'ecologicalCategory',
+                'module', 'rank', 'orderBy', 'siteIdOpen', 'polygon',
+                'dst', 'ecosystemType'
+            ];
+
+            parameterKeys.forEach(key => {
+                this.parameters[key] = '';
+            });
+
             if (typeof filterParameters !== 'undefined') {
                 filterParameters = $.extend(true, {}, this.parameters);
             }

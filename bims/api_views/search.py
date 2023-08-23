@@ -308,6 +308,14 @@ class CollectionSearch(object):
             return None
 
     @property
+    def ecosystem_type(self):
+        ecosystem_type = self.get_request_data('ecosystemType')
+        if ecosystem_type:
+            return ecosystem_type.split(',')
+        else:
+            return None
+
+    @property
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filter_groups = []
@@ -660,6 +668,12 @@ class CollectionSearch(object):
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
                 bio_filtered = True
+
+        if self.ecosystem_type:
+            bio = bio.filter(
+               ecosystem_type__in=self.ecosystem_type
+            )
+            bio_filtered = True
 
         if self.modules:
             # For Intersection methods :

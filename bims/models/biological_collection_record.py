@@ -20,6 +20,7 @@ from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
 from bims.models.survey import Survey
+from bims.enums.ecosystem_type import ECOSYSTEM_TYPE_CHOICES
 from td_biblio.models import Entry
 
 
@@ -317,6 +318,14 @@ class BiologicalCollectionRecord(AbstractValidation):
     record_type = models.CharField(
         max_length=50,
         blank=True,
+        default='',
+        null=True
+    )
+
+    ecosystem_type = models.CharField(
+        max_length=128,
+        blank=True,
+        choices=ECOSYSTEM_TYPE_CHOICES,
         default='',
         null=True
     )

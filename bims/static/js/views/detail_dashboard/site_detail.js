@@ -1446,8 +1446,7 @@ define([
                             continue;
                         }
                     }
-
-                    if(keys[i] === 'DOI/URL' && document && source[keys[i]].indexOf('/uploaded/') > -1) {
+                    if(keys[i] === 'DOI/URL' && document && source[keys[i]] && source[keys[i]].indexOf('/uploaded/') > -1) {
                         itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
                     } else if (keys[i] === 'DOI/URL' && source[keys[i]] && source[keys[i]].substring(0, 4) !== 'http') {
                         itemDiv.append(`<td><a href="http://dx.doi.org/${source[keys[i]]}" target="_blank">${source[keys[i]]}</a></td>`);
