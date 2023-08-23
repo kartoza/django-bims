@@ -70,6 +70,7 @@
                        class="col-sm-2 col-form-label col-form-label">Latitude*</label>
                 <div class="col-sm-2">
                     <input type="text" id="latitude" name="latitude"
+                           readonly
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>
@@ -77,6 +78,7 @@
                        class="col-sm-2 col-form-label col-form-label" style="text-align: right">Longitude*</label>
                 <div class="col-sm-2">
                     <input type="text" id="longitude" name="longitude"
+                           readonly
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>

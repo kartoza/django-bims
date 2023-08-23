@@ -354,6 +354,9 @@ class BiologicalCollectionRecord(AbstractValidation):
                     preferences.SiteSetting.default_data_source
                 )
                 self.save()
+        if self.ecosystem_type != self.site.ecosystem_type:
+            self.ecosystem_type = self.site.ecosystem_type
+            self.save()
         if self.taxonomy and not self.module_group:
             # Get taxon group if exists
             taxonomies = [self.taxonomy.id]
