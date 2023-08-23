@@ -123,7 +123,18 @@
                         </ul>
                     </li>
                 {% endif %}
+                {% if preferences.SiteSetting.default_data_source == 'fbis' %}
+                <li class="dropdown dropdown-admin">
+                    <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">Add Site</a>
+                    <ul class="dropdown-menu" style="width: 180px; z-index: 9999">
+                        <li class="dropdown-menu-item"><a href="/location-site-form/add/?type=River">River</a></li>
+                        <li class="dropdown-menu-item" ><a href="/add-wetland-site/">Wetland</a></li>
+                        <li class="dropdown-menu-item" ><a href="/location-site-form/add/?type=Open waterbody">Open waterbody</a></li>
+                    </ul>
+                </li>
+                {% else %}
                 <a class="p-2" href="/location-site-form/add/">Add Site</a>
+                {% endif %}
                 <span class="p-2"></span>
                 <a class="nav-login-button" href="/accounts/logout">LOGOUT</a>
             {% endif %}

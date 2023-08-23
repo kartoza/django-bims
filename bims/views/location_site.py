@@ -59,6 +59,7 @@ def handle_location_site_post_data(
     date = post_data.get('date', datetime.now())
     site_geometry = post_data.get('site-geometry', None)
     wetland_id = post_data.get('wetland_id', None)
+    ecosystem_type = post_data.get('ecosystem_type', '')
 
     if site_geometry and 'geometry' in site_geometry:
         try:
@@ -134,7 +135,8 @@ def handle_location_site_post_data(
         'site_code': site_code,
         'legacy_river_name': user_river_name,
         'legacy_site_code': legacy_site_code,
-        'date_created': date
+        'date_created': date,
+        'ecosystem_type': ecosystem_type
     }
     if site_geometry:
         post_dict['geometry_multipolygon'] = site_geometry
@@ -299,6 +301,7 @@ class LocationSiteFormView(TemplateView):
         context['geomorphological_zone_category'] = [
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
+        context['ecosystem_type'] = self.request.GET.get('type', '')
         try:
             context['bing_key'] = (
                 BaseMapLayer.objects.get(source_type='bing').key
@@ -362,6 +365,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['location_site_long'] = self.location_site.longitude
         context_data['site_code'] = self.location_site.site_code
         context_data['site_description'] = self.location_site.site_description
+        context_data['ecosystem_type'] = self.location_site.ecosystem_type
         context_data['refined_geo_zone'] = (
             self.location_site.refined_geomorphological
         )

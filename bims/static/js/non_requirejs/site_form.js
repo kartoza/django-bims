@@ -87,9 +87,8 @@ const mapOnClicked = (e) => {
 
 $(function () {
     $('body').append(modal);
-    let southAfrica = [2910598.850835484, -3326258.3640110902];
     let mapView = new ol.View({
-        center: southAfrica,
+        center: [0,0],
         zoom: 5
     });
     const baseLayer = [];
@@ -144,21 +143,6 @@ $(function () {
 
     $('[data-toggle="popover"]').popover();
 
-    // let biodiversityLayersOptions = {
-    //     url: geoserverPublicUrl + 'wms',
-    //     params: {
-    //         LAYERS: locationSiteGeoserverLayer,
-    //         FORMAT: 'image/png8',
-    //         viewparams: 'where:' + defaultWMSSiteParameters
-    //     },
-    //     ratio: 1,
-    //     serverType: 'geoserver'
-    // };
-    // let biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
-    // let biodiversityTileLayer = new ol.layer.Image({
-    //     source: biodiversitySource
-    // });
-    // map.addLayer(biodiversityTileLayer);
     $('#update-coordinate').click(updateCoordinateHandler);
     $('#update-site-code').click(updateSiteCode);
     $('#fetch-river-name').click(fetchRiverName);

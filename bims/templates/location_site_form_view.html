@@ -26,7 +26,6 @@
         const siteCodeGeneratorMethod = '{{ preferences.SiteSetting.site_code_generator }}';
         const bingKey = '{{ bing_key }}';
         const isFbis = {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}true{% else %}false{% endif %};
-
     </script>
     <style>
         .carousel {
@@ -65,6 +64,7 @@
         {% if update %}
             <input type="hidden" name="id" value="{{ site_id }}">
         {% endif %}
+        <input type="hidden" name="ecosystem_type" value="{{ ecosystem_type }}">
         <div class="body-form container">
             {% if messages %}
                     {% for message in messages %}
@@ -78,9 +78,9 @@
             <div class="dashboard-title">
                 <h2>
                     {% if update %}
-                        Update a location site {{ site_identifier }}
+                        Update a{% if ecosystem_type %}{% if ecosystem_type.0 == 'O' %}n{% endif %} {{ ecosystem_type }} {% else %} location{% endif %} site {{ site_identifier }}
                     {% else %}
-                        Add a location site
+                        {% if ecosystem_type %} Add a{% if ecosystem_type.0 == 'O' %}n{% endif %} {{ ecosystem_type }} site {% else %} Add a location site {% endif %}
                     {% endif %}
                     <div class="site-form-close">
                         <i class="fa fa-times" aria-hidden="true"></i>
