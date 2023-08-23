@@ -86,6 +86,7 @@ define([
                 }
             }
             let occurrencesFilter = [
+                'ecosystem-type-container',
                 'biodiversity-module-container',
                 'data-source-container',
                 'validation-status-container',
