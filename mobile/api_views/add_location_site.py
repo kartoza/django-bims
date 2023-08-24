@@ -5,6 +5,7 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.core.mail import EmailMessage
 from django.contrib.sites.models import Site
+from django.conf import settings
 import csv
 
 import pytz
@@ -70,8 +71,8 @@ class AddLocationSiteView(APIView):
         email = EmailMessage(
             '[{}] New Location Site Data Submission'.format(current_site),
             email_body,
-            'from@example.com',
-            [self.request.user.email],
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[self.request.user.email],
             bcc=bcc_recipients
         )
         email.attach_file(csv_file_name)
