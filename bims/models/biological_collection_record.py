@@ -20,7 +20,9 @@ from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
 from bims.models.survey import Survey
-from bims.enums.ecosystem_type import ECOSYSTEM_TYPE_CHOICES
+from bims.enums.ecosystem_type import (
+    ECOSYSTEM_TYPE_CHOICES, HYDROPERIOD_CHOICES
+)
 from td_biblio.models import Entry
 
 
@@ -266,6 +268,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         choices=ABUNDANCE_TYPE_CHOICES,
         default=ABUNDANCE_TYPE_NUMBER,
         blank=True
+    )
+
+    hydroperiod = models.CharField(
+        max_length=255,
+        choices=HYDROPERIOD_CHOICES,
+        blank=True,
+        null=True,
+        default=''
     )
 
     biotope = models.ForeignKey(
