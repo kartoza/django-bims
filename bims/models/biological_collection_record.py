@@ -274,6 +274,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         max_length=255,
         choices=HYDROPERIOD_CHOICES,
         blank=True,
+        null=True,
         default=''
     )
 
