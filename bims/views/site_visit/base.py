@@ -8,6 +8,7 @@ from bims.models.algae_data import AlgaeData
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.chem import Chem
 from bims.models.basemap_layer import BaseMapLayer
+from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
 
 
 class SiteVisitBaseView(View):
@@ -18,6 +19,12 @@ class SiteVisitBaseView(View):
         if self.collection_records.exists():
             return self.collection_records[0].module_group
         return None
+
+    def hydroperiod(self):
+        """Get hydroperiod data from one of the occurrences"""
+        if self.collection_records.exists():
+            return self.collection_records.first().hydroperiod
+        return ''
 
     def owner(self):
         """Get owner of the site visit"""
@@ -157,6 +164,8 @@ class SiteVisitBaseView(View):
         context['sampling_effort_value'] = sampling_effort_value
         context['sampling_effort_unit'] = sampling_effort_unit
         context['abundance_type'] = self.abundance_type()
+        context['hydroperiod_choices'] = HYDROPERIOD_CHOICES
+        context['hydroperiod'] = self.hydroperiod()
 
         context['broad_biotope_list'] = (
             Biotope.objects.broad_biotope_list(

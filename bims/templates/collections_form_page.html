@@ -167,10 +167,25 @@
                            value="{{ user.id }}">
                 </div>
             </div>
+            {% if location_site.ecosystem_type == 'Wetland' %}
+                <div class="form-group row">
+                    <label for="date"
+                           class="col-sm-2 col-form-label col-form-label">Hydroperiod</label>
+                    <div class="col-sm-10">
+                        <select class="form-control"
+                                name="hydroperiod" id="hydroperiod">
+                            <option value=""> Not specified</option>
+                            {% for hydroperiod in hydroperiod_choices %}
+                                <option value="{{ hydroperiod.0 }}">{{ hydroperiod.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% endif %}
             <div class="form-group row">
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Broad
-                    Biotope</label>
+                    Biotope / Habitat</label>
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="biotope" id="broad-biotope">
