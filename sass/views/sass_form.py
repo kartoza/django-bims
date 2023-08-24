@@ -51,6 +51,7 @@ from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.utils.search_process import clear_finished_search_process
 
 from bims.enums import TaxonomicGroupCategory
+from bims.models.notification import get_recipients_for_notification, SASS_CREATED
 
 BIOTOPE_STONES = 'SIC/SOOC'
 BIOTOPE_VEGETATION = 'MV/AQV'
@@ -478,7 +479,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 'site_visit_id': site_visit.id,
                 'current_site': Site.objects.get_current()
             }
-            staffs = get_user_model().objects.filter(is_superuser=True)
             email_template = 'notifications/sass_created'
             subject = render_to_string(
                 '{0}_subject.txt'.format(email_template),
@@ -492,7 +492,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 subject,
                 email_body,
                 settings.DEFAULT_FROM_EMAIL,
-                list(staffs.values_list('email', flat=True)))
+                get_recipients_for_notification(
+                    SASS_CREATED
+                )
+            )
             msg.send()
 
         signals.post_save.connect(

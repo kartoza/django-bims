@@ -1,13 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
-from django.db.models import Count, F, Case, When, Value
+from django.db.models import Count, F, Case, When, Value, Q
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
     IUCNStatus,
     UploadSession,
-    DownloadRequest
+    DownloadRequest,
+    Survey
 )
 from bims.models.taxonomy import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
@@ -162,12 +163,20 @@ class ModuleSummary(APIView):
         Returns:
             dict: A dictionary containing the calculated summary metrics.
         """
+        upload_counts = Survey.objects.exclude(
+            Q(owner__username__icontains='gbif') |
+            Q(owner__username__icontains='admin') |
+            Q(owner__username__icontains='map_vm')
+        ).count()
+
         counts = (
             BiologicalCollectionRecord.objects.all().aggregate(
                 total_occurrences=Count('id')),
             Taxonomy.objects.all().aggregate(total_taxa=Count('id')),
-            get_user_model().objects.all().aggregate(total_users=Count('id')),
-            UploadSession.objects.all().aggregate(total_uploads=Count('id')),
+            get_user_model().objects.filter(
+                last_login__isnull=False
+            ).aggregate(total_users=Count('id')),
+            {'total_uploads': upload_counts},
             DownloadRequest.objects.filter(
                 request_category__icontains='occurrence')
             .aggregate(total_downloads=Count('id'))
