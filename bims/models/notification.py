@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 # Notification Choices
 SITE_VISIT_VALIDATION = 'SITE_VISIT_VALIDATION'
 SITE_VALIDATION = 'SITE_VALIDATION'
+NEW_TAXONOMY = 'NEW_TAXONOMY'
 DOWNLOAD_REQUEST = 'DOWNLOAD_REQUEST'
 ACCOUNT_CREATED = 'ACCOUNT_CREATED'
 SASS_CREATED = 'SASS_CREATED'
@@ -17,6 +18,7 @@ NOTIFICATION_TYPES = (
     (DOWNLOAD_REQUEST, 'Download request notification'),
     (ACCOUNT_CREATED, 'Account created email notification'),
     (SASS_CREATED, 'SASS created email notification'),
+    (NEW_TAXONOMY, 'New taxonomy email notification'),
 )
 
 
@@ -47,10 +49,12 @@ def get_recipients_for_notification(notification_name: str) -> List[str]:
     """
     Fetches the recipient emails for a given notification type.
 
-    If the specific notification type isn't found, returns the emails of all superusers as a fallback.
+    If the specific notification type isn't found, returns the emails of
+        all superusers as a fallback.
 
     Args:
-    - notification_name (str): The name of the notification type to fetch recipients for.
+    - notification_name (str): The name of the notification type to
+        fetch recipients for.
 
     Returns:
     - List[str]: A list of email addresses.

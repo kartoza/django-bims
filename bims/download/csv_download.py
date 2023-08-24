@@ -3,17 +3,14 @@ from hashlib import sha256
 import json
 import os
 import errno
-import zipfile
-from datetime import datetime, date
+from datetime import datetime
 from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 from django.contrib.sites.models import Site
-from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from preferences import preferences
 from bims.tasks.collection_record import download_collection_record_task
 from bims.tasks.email_csv import send_csv_via_email
 from bims.models.notification import (
