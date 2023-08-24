@@ -19,6 +19,10 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from bims.models import Profile
+from bims.models.notification import (
+    get_recipients_for_notification,
+    ACCOUNT_CREATED
+)
 
 
 class LocalAccountAdapter(DefaultAccountAdapter, BaseInvitationsAdapter):
@@ -127,7 +131,6 @@ class AccountAdapter(LocalAccountAdapter):
 
     def respond_user_inactive(self, request, user):
         # Sent email to superuser
-        staffs = get_user_model().objects.filter(is_superuser=True)
         try:
             current_site = Site.objects.get_current()
             profile = Profile.objects.get(user=user)
@@ -156,7 +159,8 @@ class AccountAdapter(LocalAccountAdapter):
                 subject,
                 email_body,
                 settings.DEFAULT_FROM_EMAIL,
-                list(staffs.values_list('email', flat=True)))
+                get_recipients_for_notification(ACCOUNT_CREATED)
+            )
             msg.send()
 
         except BaseException:

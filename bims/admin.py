@@ -100,7 +100,8 @@ from bims.models import (
     DecisionSupportTool,
     Unit,
     DecisionSupportToolName,
-    WaterTemperatureThreshold
+    WaterTemperatureThreshold,
+    Notification
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1723,6 +1724,16 @@ class ClimateDataAdmin(admin.ModelAdmin):
     list_display = ('title', 'climate_geocontext_group_key')
 
 
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'get_users')
+
+    def get_users(self, obj):
+        return ", ".join([user.username for user in obj.users.all()])
+    get_users.short_description = 'Users'
+
+    filter_horizontal = ('users',)
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1809,4 +1820,8 @@ admin.site.register(
     DecisionSupportToolName, DecisionSupportToolNameAdmin)
 admin.site.register(
     WaterTemperatureThreshold, WaterTemperatureThresholdAdmin
+)
+admin.site.register(
+    Notification,
+    NotificationAdmin
 )
