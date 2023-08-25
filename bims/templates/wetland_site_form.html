@@ -120,6 +120,12 @@
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>
+                <div class="update-taxon-container col-sm-4">
+                    <button id="update-coordinate" type="button" style="width: 100%"
+                            class="btn btn-default" disabled>
+                        Update coordinate
+                    </button>
+                </div>
             </div>
             <input type="hidden" name="additional_data" id="additional-data">
             <div class="form-group row">
