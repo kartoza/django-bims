@@ -52,6 +52,7 @@ from bims.utils.search_process import clear_finished_search_process
 
 from bims.enums import TaxonomicGroupCategory
 from bims.models.notification import get_recipients_for_notification, SASS_CREATED
+from sass.tasks.send_sass_email import send_sass_email
 
 BIOTOPE_STONES = 'SIC/SOOC'
 BIOTOPE_VEGETATION = 'MV/AQV'
@@ -470,33 +471,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         # Send email to superusers
         if new_site_visit:
-            ctx = {
-                'collector': self.request.user,
-                'owner': site_visit.owner,
-                'sass_version': site_visit.sass_version,
-                'site_visit_date': site_visit.site_visit_date.strftime(
-                    '%m/%d/%Y'),
-                'site_visit_id': site_visit.id,
-                'current_site': Site.objects.get_current()
-            }
-            email_template = 'notifications/sass_created'
-            subject = render_to_string(
-                '{0}_subject.txt'.format(email_template),
-                ctx
+            send_sass_email.delay(
+                user_id=self.request.user.id,
+                site_visit_id=site_visit.id
             )
-            email_body = render_to_string(
-                '{0}_message.txt'.format(email_template),
-                ctx
-            )
-            msg = EmailMultiAlternatives(
-                subject,
-                email_body,
-                settings.DEFAULT_FROM_EMAIL,
-                get_recipients_for_notification(
-                    SASS_CREATED
-                )
-            )
-            msg.send()
 
         signals.post_save.connect(
             location_site_post_save_handler,
@@ -528,7 +506,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 identifier=self.session_identifier
             )
         )
-
 
         abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
             base_url=reverse('abiotic-form'),
