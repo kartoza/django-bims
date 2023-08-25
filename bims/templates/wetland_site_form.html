@@ -31,6 +31,15 @@
             margin-bottom: 10px;
             width: 272px;
         }
+
+        #site-map {
+            width: 100%;
+            max-height: 500px;
+            height: 500px;
+            padding-bottom: 15px;
+            position: relative; /* set to relative to properly position the overlay */
+        }
+
     </style>
 {% endblock %}
 
@@ -64,7 +73,13 @@
                     </div>
                 </h2>
             </div>
-            <div id="site-map"></div>
+            <div id="site-map">
+                <!-- Loading overlay -->
+                <div id="map-loading">
+                    <div class="loading-text">Checking Wetland Data</div>
+                </div>
+            </div>
+
             {% if update %}
                 <div class="form-group row">
                     <div class="col-lg-12">
@@ -94,16 +109,14 @@
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Latitude*</label>
                 <div class="col-sm-2">
-                    <input type="text" id="latitude" name="latitude"
-                           readonly
+                    <input type="number" id="latitude" name="latitude"
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label" style="text-align: right">Longitude*</label>
                 <div class="col-sm-2">
-                    <input type="text" id="longitude" name="longitude"
-                           readonly
+                    <input type="number" id="longitude" name="longitude"
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>

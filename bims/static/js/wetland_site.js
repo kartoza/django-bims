@@ -38,7 +38,14 @@ let mapReady = (map) => {
 
   map.un('click', mapOnClicked);
 
-  const getFeature = (layerSource, renderResult) => {
+  const getFeature = (layerSource, coordinates, renderResult) => {
+    let _coordinates = ol.proj.transform(coordinates, 'EPSG:3857', 'EPSG:4326');
+    if (markerSource) {
+      markerSource.clear();
+    }
+    $('#latitude').val('');
+    $('#longitude').val('');
+
     return new Promise((resolve, reject) => {
       $.ajax({
         type: 'POST',
@@ -67,16 +74,8 @@ let mapReady = (map) => {
 
             map.getView().fit(bbox, {size: map.getSize()});
             if (renderResult) {
-
-              let centroidX = (bbox[0] + bbox[2]) / 2;
-              let centroidY = (bbox[1] + bbox[3]) / 2;
-
-              let transformedCoordinate = ol.proj.transform([centroidX, centroidY], 'EPSG:3857', 'EPSG:4326');
-              let longitude = transformedCoordinate[0];
-              let latitude = transformedCoordinate[1];
-
-              $('#latitude').val(latitude);
-              $('#longitude').val(longitude);
+              $('#latitude').val(_coordinates[1]);
+              $('#longitude').val(_coordinates[0]);
 
               $('#fetch-river-name').attr('disabled', false);
               $('#fetch-geomorphological-zone').attr('disabled', false);
@@ -101,11 +100,13 @@ let mapReady = (map) => {
               });
 
               $('#site-geometry').val(convertedGeojsonStr);
-              vectorLayer.getSource().clear()
-              vectorLayer.getSource().addFeatures(olFeature);
+              // vectorLayer.getSource().clear()
+              // vectorLayer.getSource().addFeatures(olFeature);
               wetlandData = feature['properties'];
               $('#additional-data').val(JSON.stringify(wetlandData));
               $('#river_name').val(wetlandData['name'] ? wetlandData['name'] : '-');
+
+              moveMarkerOnTheMap(_coordinates[1], _coordinates[0], false);
             }
           }
           resolve(features);
@@ -128,7 +129,8 @@ let mapReady = (map) => {
     );
     layerSource += '&QUERY_LAYERS=' + wmsLayerName;
     const zoomLevel = map.getView().getZoom();
-    getFeature(layerSource, zoomLevel > 10).then(function(features) {
+    $('#map-loading').css('display', 'flex');
+    getFeature(layerSource, e.coordinate,zoomLevel > 10).then(function(features) {
         if (features.length > 0 && zoomLevel <= 10) {
           let bbox = features[0]['bbox'];
           let centroidX = (bbox[0] + bbox[2]) / 2;
@@ -142,7 +144,11 @@ let mapReady = (map) => {
             {'INFO_FORMAT': 'application/json'}
           );
           layerSource += '&QUERY_LAYERS=' + wmsLayerName;
-          getFeature(layerSource, true)
+          getFeature(layerSource, e.coordinate, true).then(function (f) {
+            $('#map-loading').hide();
+          })
+        } else {
+          $('#map-loading').hide();
         }
     }).catch(function(error) {
         // handle any errors

@@ -25,6 +25,17 @@ body {
     padding-bottom: 15px;
 }
 
+/* Loading overlay styles */
+#loading {
+    position: absolute;
+    width: 600px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    line-height: 400px;
+    font-size: 24px;
+}
+
 #update-coordinate {
     margin-top: 2px;
 }
@@ -84,4 +95,37 @@ label.error {
 .survey a {
     color: white;
     font-size: 10pt;
+}
+
+
+/* Loading overlay styles */
+#map-loading {
+    display: none;
+    color: #444444;
+    position: absolute;
+    width: 100%;
+    max-height: 500px;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.8);
+    line-height: 500px;
+    font-size: 24px;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    justify-content: center;
+}
+#map-loading .loading-text {
+    width: 300px;
+}
+#map-loading .loading-text::after {
+    display: inline-block;
+    animation: dotty steps(1,end) 1s infinite;
+    content: '';
+}
+@keyframes dotty {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+    100% { content: ''; }
 }
