@@ -21,6 +21,7 @@ const getFeature = (layerSource, coordinates, renderResult) => {
   }
   $('#latitude').val('');
   $('#longitude').val('');
+  $('#hydrogeomorphic_type').val('');
 
   return new Promise((resolve, reject) => {
     $.ajax({
@@ -58,7 +59,6 @@ const getFeature = (layerSource, coordinates, renderResult) => {
             $('#wetland-site-code').attr('disabled', false);
 
             $('#site_code').val('');
-            $('#geomorphological_zone').val('');
 
             let olFeature = new ol.format.GeoJSON().readFeatures(feature);
 
@@ -80,7 +80,8 @@ const getFeature = (layerSource, coordinates, renderResult) => {
             // vectorLayer.getSource().addFeatures(olFeature);
             wetlandData = feature['properties'];
             $('#additional-data').val(JSON.stringify(wetlandData));
-            $('#river_name').val(wetlandData['name'] ? wetlandData['name'] : '-');
+            $('#river_name').val(wetlandData['name'] ? wetlandData['name'] : '');
+            $('#hydrogeomorphic_type').val(wetlandData['hgm_type'] ? wetlandData['hgm_type'] : '');
 
             moveMarkerOnTheMap(_coordinates[1], _coordinates[0], false);
           }

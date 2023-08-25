@@ -34,6 +34,7 @@ from bims.models import (
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
 from bims.serializers.survey_serializer import SurveySerializer
+from bims.enums.ecosystem_type import HYDROGEOMORPHIC_CHOICES
 
 
 def handle_location_site_post_data(
@@ -60,6 +61,11 @@ def handle_location_site_post_data(
     site_geometry = post_data.get('site-geometry', None)
     wetland_id = post_data.get('wetland_id', None)
     ecosystem_type = post_data.get('ecosystem_type', '')
+
+    wetland_name = post_data.get('wetland_name', '')
+    user_wetland_name = post_data.get('user_wetland_name', '')
+    hydrogeomorphic_type = post_data.get('hydrogeomorphic_type', '')
+    user_hydrogeomorphic_type = post_data.get('user_hydrogeomorphic_type', '')
 
     if site_geometry and 'geometry' in site_geometry:
         try:
@@ -136,7 +142,11 @@ def handle_location_site_post_data(
         'legacy_river_name': user_river_name,
         'legacy_site_code': legacy_site_code,
         'date_created': date,
-        'ecosystem_type': ecosystem_type
+        'ecosystem_type': ecosystem_type,
+        'wetland_name': wetland_name,
+        'user_wetland_name': user_wetland_name,
+        'hydrogeomorphic_type': hydrogeomorphic_type,
+        'user_hydrogeomorphic_type': user_hydrogeomorphic_type
     }
     if site_geometry:
         post_dict['geometry_multipolygon'] = site_geometry
@@ -301,6 +311,7 @@ class LocationSiteFormView(TemplateView):
         context['geomorphological_zone_category'] = [
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
+        context['hydrogeomorphic_type_category'] = HYDROGEOMORPHIC_CHOICES
         context['ecosystem_type'] = self.request.GET.get('type', '')
         try:
             context['bing_key'] = (
@@ -362,6 +373,10 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
     def additional_context_data(self):
         context_data = dict()
         context_data['location_site_lat'] = self.location_site.latitude
+        context_data['user_wetland_name'] = self.location_site.user_wetland_name
+        context_data['wetland_name'] = self.location_site.wetland_name
+        context_data['hydrogeomorphic_type'] = self.location_site.hydrogeomorphic_type
+        context_data['user_hydrogeomorphic_type'] = self.location_site.user_hydrogeomorphic_type
         context_data['location_site_long'] = self.location_site.longitude
         context_data['site_code'] = self.location_site.site_code
         context_data['site_description'] = self.location_site.site_description

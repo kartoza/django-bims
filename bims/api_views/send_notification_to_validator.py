@@ -1,15 +1,12 @@
 # coding=utf-8
 from braces.views import LoginRequiredMixin
 from django.core.mail import send_mail
-from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
-from django.contrib.auth.models import Permission
 from django.contrib.sites.models import Site
 from django.conf import settings
 from django.contrib import messages
 from rest_framework.views import APIView
 from rest_framework import status
-from geonode.people.models import Profile
 
 from bims.models import LocationSite
 from bims.models.survey import Survey
