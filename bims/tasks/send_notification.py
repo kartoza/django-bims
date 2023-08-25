@@ -1,3 +1,4 @@
+from celery import shared_task
 from django.conf import settings
 
 from bims.celery import app
@@ -35,3 +36,16 @@ def send_queued_notifications(self, *args):
             send_all(settings.NOTIFICATION_LOCK_LOCATION)
         else:
             send_all(*args)
+
+
+@shared_task(name='bims.tasks.send_mail_notification', queue='update')
+def send_mail_notification(subject, body, from_email, recipient_list):
+
+    from django.core.mail import send_mail
+    send_mail(
+        subject,
+        body,
+        from_email,
+        recipient_list,
+        fail_silently=False
+    )
