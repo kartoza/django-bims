@@ -23,6 +23,7 @@
         const locationSiteLong = '{{ location_site_long }}';
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
         let siteId = null;
+        {% if additional_data %}window.wetlandData = {{ additional_data | safe }};{% endif %}
     </script>
 
     <style>
@@ -166,7 +167,7 @@
                 <div class="update-taxon-container col-sm-4">
                     <button id="update-site-code" style="display: none"></button>
                     <button id="wetland-site-code" type="button"
-                            class="btn btn-default" style="width: 100%" disabled>
+                            class="btn btn-default" style="width: 100%" {% if not update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
                         Generate site code
                     </button>
                 </div>

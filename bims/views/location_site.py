@@ -381,6 +381,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['site_code'] = self.location_site.site_code
         context_data['site_description'] = self.location_site.site_description
         context_data['ecosystem_type'] = self.location_site.ecosystem_type
+        context_data['additional_data'] = json.dumps(self.location_site.additional_data);
         context_data['refined_geo_zone'] = (
             self.location_site.refined_geomorphological
         )

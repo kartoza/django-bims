@@ -3,10 +3,17 @@ let wmsSource = null;
 let wmsLayer = null;
 let wmsLayerName = 'kartoza:nwm6_beta_v3_20230714';
 
+if (window.wetlandData) {
+  wetlandData = window.wetlandData;
+}
+
 updateCoordinate = function (zoomToMap = true) {
   try {
     let latitude = parseFloat($('#latitude').val());
     let longitude = parseFloat($('#longitude').val());
+    if (!latitude || !longitude) {
+      return false;
+    }
     let _coordinates = ol.proj.transform([longitude, latitude], 'EPSG:4326', 'EPSG:3857');
     mapClicked(_coordinates);
   } catch (e) {
@@ -30,6 +37,7 @@ const getFeature = (layerSource, coordinates, renderResult) => {
       data: {
         'layerSource': layerSource
       },
+      timeout: 5000,
       success: function (result) {
         const data = result['feature_data'];
         let objectData = {};
@@ -89,7 +97,11 @@ const getFeature = (layerSource, coordinates, renderResult) => {
         resolve(features);
       },
       error: function (err) {
-        console.log(err);
+        if(err.status === 0){
+          alert("The site is unreachable at the moment.");
+        } else {
+          alert("An error occurred: " + err.statusText);
+        }
         reject(err);
       }
     });
@@ -110,6 +122,7 @@ let mapClicked = (coordinate) => {
   layerSource += '&QUERY_LAYERS=' + wmsLayerName;
   const zoomLevel = map.getView().getZoom();
   $('#map-loading').css('display', 'flex');
+  $('#update-coordinate').attr('disabled', true);
   getFeature(layerSource, coordinate,zoomLevel > 10).then(function(features) {
     if (features.length > 0 && zoomLevel <= 10) {
       let bbox = features[0]['bbox'];
@@ -126,9 +139,11 @@ let mapClicked = (coordinate) => {
       layerSource += '&QUERY_LAYERS=' + wmsLayerName;
       getFeature(layerSource, coordinate, true).then(function (f) {
         $('#map-loading').hide();
+        $('#update-coordinate').attr('disabled', false);
       })
     } else {
       $('#map-loading').hide();
+      $('#update-coordinate').attr('disabled', false);
     }
   }).catch(function(error) {
     // handle any errors
@@ -187,14 +202,16 @@ wetlandSiteCodeButton.click(function () {
 
   let siteCode = wetlandData['quaternary'].substring(0, 4);
 
-  let wetlandName = $('#river_name').val() !== '-' ? $('#river_name').val() : '';
+  let wetlandName = $('#wetland_name').val() !== '-' ? $('#wetland_name').val() : '';
   if (!wetlandName) {
-    wetlandName = $('#user_river_name').val()
+    wetlandName = $('#user_wetland_name').val()
   }
 
   if (wetlandName) {
     wetlandName = '-' + wetlandName.substring(0, 4);
   }
+
+  console.log('wetlandName', wetlandName)
 
   siteCode += wetlandName;
 
