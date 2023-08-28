@@ -1,6 +1,5 @@
 # coding=utf-8
 from braces.views import LoginRequiredMixin
-from django.core.mail import send_mail
 from django.http import JsonResponse, HttpResponse
 from django.contrib.sites.models import Site
 from django.conf import settings
@@ -15,6 +14,7 @@ from bims.models.notification import (
     SITE_VISIT_VALIDATION,
     SITE_VALIDATION
 )
+from bims.tasks.send_notification import send_mail_notification
 
 
 def send_notification_validation(pk, model = None, request = None):
@@ -57,7 +57,7 @@ def send_notification_validation(pk, model = None, request = None):
                     )
                 )
 
-                send_mail(
+                send_mail_notification.delay(
                     'Site visit is ready to be validated',
                     'Dear Validator,\n\n'
                     'The following site visit is ready to be reviewed:\n'
@@ -69,8 +69,7 @@ def send_notification_validation(pk, model = None, request = None):
                         site_visit_list_url
                     ),
                     '{}'.format(settings.SERVER_EMAIL),
-                    validator_emails,
-                    fail_silently=False
+                    validator_emails
                 )
                 return JsonResponse({'status': 'success'})
             except Survey.DoesNotExist:
@@ -89,15 +88,14 @@ def send_notification_validation(pk, model = None, request = None):
                 new_site.ready_for_validation = True
                 new_site.save()
 
-                send_mail(
+                send_mail_notification.delay(
                     'New site is ready to be validated',
                     'Dear Validator,\n\n'
                     'The following site is ready to be reviewed:\n'
                     '{}/nonvalidated-site/?pk={}\n\n'
                     'Sincerely,\nBIMS Team.'.format(site, new_site.pk),
                     '{}'.format(settings.SERVER_EMAIL),
-                    validator_emails,
-                    fail_silently=False
+                    validator_emails
                 )
                 return JsonResponse({'status': 'success'})
 
