@@ -23,6 +23,7 @@
         const locationSiteLong = '{{ location_site_long }}';
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
         let siteId = null;
+        {% if additional_data %}window.wetlandData = {{ additional_data | safe }};{% endif %}
     </script>
 
     <style>
@@ -31,6 +32,15 @@
             margin-bottom: 10px;
             width: 272px;
         }
+
+        #site-map {
+            width: 100%;
+            max-height: 500px;
+            height: 500px;
+            padding-bottom: 15px;
+            position: relative; /* set to relative to properly position the overlay */
+        }
+
     </style>
 {% endblock %}
 
@@ -64,7 +74,13 @@
                     </div>
                 </h2>
             </div>
-            <div id="site-map"></div>
+            <div id="site-map">
+                <!-- Loading overlay -->
+                <div id="map-loading">
+                    <div class="loading-text">Checking Wetland Data</div>
+                </div>
+            </div>
+
             {% if update %}
                 <div class="form-group row">
                     <div class="col-lg-12">
@@ -94,38 +110,42 @@
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label">Latitude*</label>
                 <div class="col-sm-2">
-                    <input type="text" id="latitude" name="latitude"
-                           readonly
+                    <input type="number" id="latitude" name="latitude"
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_lat }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
                 </div>
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label" style="text-align: right">Longitude*</label>
                 <div class="col-sm-2">
-                    <input type="text" id="longitude" name="longitude"
-                           readonly
+                    <input type="number" id="longitude" name="longitude"
                            class="form-control form-control-sm" style="height: 100%"
                            value="{{ location_site_long }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %} required>
+                </div>
+                <div class="update-taxon-container col-sm-4">
+                    <button id="update-coordinate" type="button" style="width: 100%"
+                            class="btn btn-default" disabled>
+                        Update coordinate
+                    </button>
                 </div>
             </div>
             <input type="hidden" name="additional_data" id="additional-data">
             <div class="form-group row">
-                <label for="river_name" class="col-sm-2 col-form-label">
+                <label for="wetland_name" class="col-sm-2 col-form-label">
                     Wetland Name
                 </label>
                 <div class="col-sm-10">
-                    <input type="text" name="river_name" id="river_name" class="form-control form-control-sm" value="{{ river_name }}" readonly>
+                    <input type="text" name="wetland_name" id="wetland_name" class="form-control form-control-sm" value="{% if wetland_name %}{{ wetland_name }}{% else %}{% endif %}" readonly>
                 </div>
 
                 <button id="fetch-river-name" style="display: none"/>
             </div>
             <div class="form-group row">
-                <label for="user_river_name"
+                <label for="user_wetland_name"
                        class="col-sm-2 col-form-label col-form-label">User Wetland Name</label>
                 <div class="col-sm-10">
-                    <input type="text" name="user_river_name" id="user_river_name"
+                    <input type="text" name="user_wetland_name" id="user_wetland_name"
                            class="form-control form-control-sm"
-                           placeholder="" value="{% if legacy_river_name %}{{ legacy_river_name }}{% else %}{% endif %}" >
+                           placeholder="" value="{% if user_wetland_name %}{{ user_wetland_name }}{% else %}{% endif %}" >
                 </div>
             </div>
             <div class="form-group row">
@@ -147,7 +167,7 @@
                 <div class="update-taxon-container col-sm-4">
                     <button id="update-site-code" style="display: none"></button>
                     <button id="wetland-site-code" type="button"
-                            class="btn btn-default" style="width: 100%" disabled>
+                            class="btn btn-default" style="width: 100%" {% if not update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
                         Generate site code
                     </button>
                 </div>
@@ -163,28 +183,21 @@
             </div>
             <div class="form-group row">
                 <label for="site_name"
-                       class="col-sm-2 col-form-label col-form-label">Geomorphological Zone</label>
-                <div class="col-sm-6">
-                    <input type="text" name="geomorphological_zone" id="geomorphological_zone"
+                       class="col-sm-2 col-form-label col-form-label">Hydrogeomorphic Type</label>
+                <div class="col-sm-10">
+                    <input type="text" name="hydrogeomorphic_type" id="hydrogeomorphic_type"
                            class="form-control form-control-sm"
-                           placeholder="" value="{{ original_geo_zone }}" readonly>
-                    <input type="hidden" name="geomorphological_group_geocontext" id="geomorphological_group_geocontext">
+                           placeholder="" value="{{ hydrogeomorphic_type }}" readonly>
                 </div>
-                <div class="update-taxon-container col-sm-4">
-                    <button id="fetch-geomorphological-zone" type="button"
-                            class="btn btn-default" style="width: 100%;" disabled>
-                        Fetch data
-                    </button>
-                </div>
+                <span id="fetch-geomorphological-zone" style="display: none"></span>
             </div>
             <div class="form-group row">
                 <label for="site_name"
-                       class="col-sm-2 col-form-label col-form-label">Refined Geomorphological Zone</label>
+                       class="col-sm-2 col-form-label col-form-label">User Hydrogeomorphic Type</label>
                 <div class="col-sm-10">
-                    <select name="refined_geomorphological_zone" class="form-control form-control-sm" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
-                        <option value="">-</option>
-                        {% for geo in geomorphological_zone_category %}
-                            <option value="{{ geo.1 }}" {% if geo.1 == refined_geo_zone %}selected{% endif %}>{{ geo.1 }}</option>
+                    <select name="user_hydrogeomorphic_type" class="form-control form-control-sm" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                        {% for geo in hydrogeomorphic_type_category %}
+                            <option value="{{ geo.1 }}" {% if geo.1 == user_hydrogeomorphic_type %}selected{% endif %}>{{ geo.1 }}</option>
                         {% endfor %}
                     </select>
                 </div>

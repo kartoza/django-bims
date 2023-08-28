@@ -24,7 +24,9 @@ from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup
 from bims.utils.decorator import prevent_recursion
-from bims.enums.ecosystem_type import ECOSYSTEM_TYPE_CHOICES
+from bims.enums.ecosystem_type import (
+    ECOSYSTEM_TYPE_CHOICES, HYDROGEOMORPHIC_NONE, HYDROGEOMORPHIC_CHOICES
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -180,6 +182,31 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         default='',
         null=True
     )
+    wetland_name = models.CharField(
+        max_length=256,
+        blank=True,
+        default='',
+        null=True
+    )
+    user_wetland_name = models.CharField(
+        max_length=256,
+        blank=True,
+        default='',
+        null=True
+    )
+    hydrogeomorphic_type = models.CharField(
+        max_length=128,
+        blank=True,
+        default='',
+        null=True
+    )
+    user_hydrogeomorphic_type = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        default=HYDROGEOMORPHIC_NONE,
+        choices=HYDROGEOMORPHIC_CHOICES
+    )
 
     @property
     def location_site_identifier(self):
@@ -200,8 +227,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         """ Getting centroid of location site """
 
         if (
-            self.geometry_point and
-            self.location_type.allowed_geometry == 'POINT'
+            self.geometry_point
         ):
             return self.geometry_point
         else:

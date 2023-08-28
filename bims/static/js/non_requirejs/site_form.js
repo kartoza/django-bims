@@ -337,7 +337,7 @@ let addMarkerToMap = (lat, lon, zoomToMap = true) => {
             anchor: [0.55, 43],
             anchorXUnits: 'fraction',
             anchorYUnits: 'pixels',
-            opacity: 0.75,
+            opacity: 1,
             src: '/static/img/map-marker.png'
         }))
     });
@@ -348,10 +348,11 @@ let addMarkerToMap = (lat, lon, zoomToMap = true) => {
     map.addLayer(new ol.layer.Vector({
         source: markerSource,
         style: markerStyle,
+        zIndex: 1000
     }));
     if (zoomToMap) {
         map.getView().setCenter(locationSiteCoordinate);
-        map.getView().setZoom(6);
+        map.getView().setZoom(14);
     }
     if (allowToEdit) {
         document.getElementById('update-site-code').disabled = false;
