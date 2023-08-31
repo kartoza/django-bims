@@ -5,6 +5,7 @@ from datetime import date
 import json
 
 from django.http import HttpResponse
+from django.conf import settings
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -865,7 +866,7 @@ class CustomUserAdmin(ProfileAdmin):
             'Kind regards,\nBIMS Team.'.format(
                 **data
             ),
-            obj.email,
+            settings.DEFAULT_FROM_EMAIL,
             [obj.email],
             fail_silently=False
         )
