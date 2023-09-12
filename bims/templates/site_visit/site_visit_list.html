@@ -66,6 +66,11 @@
             cursor: pointer;
             color: rgba(255, 255, 255, 0.8);
         }
+
+        .message-bar a {
+            color: #FFFFFF;
+            text-decoration: underline;
+        }
     </style>
 
 {% endblock %}
@@ -202,10 +207,10 @@
             <div class="col-10 list-content">
                 {% if messages %}
                     {% for message in messages %}
-                        {% if "site_visit_validation"  in message.tag %}
+                        {% if "site_visit_validation" in message.tags %}
                             <div class="message-bar"><span class="message"></span>{{ message }}<span class="close-bar">✖</span></div>
                         {% endif %}
-                        {% if "delete_site_visit" in message.tag %}
+                        {% if "delete_site_visit" in message.tags %}
                             <div class="message-bar"><span class="message"></span>{{ message }}<span class="close-bar">✖</span></div>
                         {% endif %}
                     {% endfor %}
