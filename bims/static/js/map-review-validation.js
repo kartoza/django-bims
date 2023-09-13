@@ -102,6 +102,7 @@ function validateObject(pk) {
 $('#validateBtn').click(function () {
     const modal = $('#confirmValidateModal');
     const id = modal.data('id');
+    $('#validateBtn').attr('disabled', true);
     $.ajax({
         url: validateUrl,
         data: {'pk': id},
