@@ -13,6 +13,7 @@ from mobile.api_views.add_location_site import AddLocationSiteView
 from mobile.api_views.taxon_group import TaxonGroupList
 from mobile.api_views.source_reference import SourceReferenceMobileList
 from mobile.api_views.river import FetchRiverName
+from mobile.api_views.wetland import FetchWetland
 
 
 urlpatterns = [
@@ -52,4 +53,7 @@ urlpatterns = [
     path('river/',
         FetchRiverName.as_view(),
         name='fetch-river-name'),
+    path('wetland/',
+         FetchWetland.as_view(),
+         name='fetch-wetland'),
 ]
