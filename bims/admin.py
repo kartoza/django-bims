@@ -1735,6 +1735,11 @@ class NotificationAdmin(admin.ModelAdmin):
     filter_horizontal = ('users',)
 
 
+class TaxonImageAdmin(admin.ModelAdmin):
+    list_display = ('taxonomy', 'source', 'date')
+    raw_id_fields = ('taxonomy', 'uploader', 'owner', 'survey')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1790,6 +1795,8 @@ admin.site.register(DownloadRequestPurpose, DownloadRequestPurposeAdmin)
 admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
 admin.site.register(RequestLog, RequestLogAdmin)
 admin.site.register(IngestedData, IngestedDataAdmin)
+
+admin.site.register(TaxonImage, TaxonImageAdmin)
 
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(
