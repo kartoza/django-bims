@@ -324,6 +324,11 @@ class TestRiverName(TestCase):
 
     @patch('mobile.api_views.river.fetch_river_name')
     def test_fetch_river_name(self, mock_fetch_river_name):
+        user = UserF.create(is_superuser=True)
+        self.client.login(
+            username=user.username,
+            password='password'
+        )
         mock_fetch_river_name.return_value = self.river.name
         response = self.client.get(
             reverse('fetch-river-name'),
