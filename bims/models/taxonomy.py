@@ -443,6 +443,32 @@ class TaxonImage(models.Model):
         blank=True,
         default=''
     )
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='User who uploaded the taxon image (Optional)',
+        related_name='taxon_image_uploader'
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Owner of the taxon image (Optional)',
+        related_name='taxon_image_owner'
+    )
+    date = models.DateField(
+        null=True,
+        blank=True
+    )
+    survey = models.ForeignKey(
+        'bims.Survey',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
 
 
 def check_taxa_duplicates(taxon_name, taxon_rank):

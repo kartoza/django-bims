@@ -1,6 +1,7 @@
 from typing import Union, Dict
 
 from guardian.mixins import LoginRequiredMixin
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -46,7 +47,8 @@ def fetch_wetland_data(latitude: float, longitude: float) -> Union[Dict, None]:
     return wetland
 
 
-class FetchWetland(LoginRequiredMixin, APIView):
+class FetchWetland(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args):
         lat = float(request.GET.get('lat', '0'))
