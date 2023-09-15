@@ -44,10 +44,15 @@ class LocationSiteSerializer(serializers.ModelSerializer):
             'id', 'site_code',
             'name', 'geometry',
             'location_type',
-            'record_type', 'river_name',
-            'user_site_code', 'user_river_name',
+            'record_type',
+            'river_name',
+            'user_site_code',
+            'user_river_name',
             'owner',
-            'description'
+            'description',
+            'ecosystem_type',
+            'wetland_name',
+            'user_wetland_name'
         ]
 
 
