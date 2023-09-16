@@ -17,6 +17,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bims.views.location_site import handle_location_site_post_data
+from bims.enums.ecosystem_type import (
+    ECOSYSTEM_RIVER, ECOSYSTEM_WETLAND
+)
+from bims.serializers.location_site_serializer import (
+    LocationSiteSerializer
+)
 
 
 class AddLocationSiteView(APIView):
@@ -30,13 +36,21 @@ class AddLocationSiteView(APIView):
         current_site = Site.objects.get_current()
 
         csv_data = [
-            ["ID", "Site Code", "User Site Code", "River Name",
-             "User River Name", "Description", "Owner", "URL"],
+            ["ID", "Site Code", "Ecosystem Type",
+             "User Site Code",
+             "River Name",
+             "User River Name",
+             "Wetland Name",
+             "User Wetland Name",
+             "Description", "Owner", "URL"],
             [location_site.id,
              location_site.site_code,
+             location_site.ecosystem_type.capitalize(),
              location_site.legacy_site_code,
              location_site.river.name if location_site.river else '-',
              location_site.legacy_river_name,
+             location_site.wetland_name,
+             location_site.user_wetland_name,
              location_site.site_description,
              location_site.owner.username,
              'http://{url}/location-site-form/update/?id={id}'.format(
@@ -83,18 +97,39 @@ class AddLocationSiteView(APIView):
     def post(self, request, *args, **kwargs):
         post_data = copy.deepcopy(request.data)
 
-        # Fetch river name
+        ecosystem_type = post_data.get(
+            'ecosystem_type', ECOSYSTEM_RIVER).capitalize()
         river_name = post_data.get('river_name', '')
-        if not river_name:
-            river_name = fetch_river_name(
-                post_data.get('latitude'), post_data.get('longitude'))
+        site_code = ''
+        wetland_name = post_data.get('wetland_name', '')
+        user_wetland_name = post_data.get('user_wetland_name', '')
+
+        if ecosystem_type == ECOSYSTEM_WETLAND:
+            wetland_data = post_data.get('wetland_data', None)
+            if wetland_data:
+                site_code = wetland_data['quaternary'][:4]
+                post_data['hydrogeomorphic_type'] = wetland_data['hgm_type']
+                post_data['wetland_id'] = wetland_data['wetlid']
+            else:
+                pass
+            if wetland_name:
+                site_code += '-' + wetland_name.replace(' ', '')[:4]
+            else:
+                site_code += '-' + user_wetland_name.replace(' ', '')[:4]
+        else:
+            # Fetch river name
+            if not river_name:
+                river_name = fetch_river_name(
+                    post_data.get('latitude'),
+                    post_data.get('longitude'))
 
         # Generate site code
         site_code, catchments_data = generate_site_code(
             location_site=None,
             lat=post_data.get('latitude'),
             lon=post_data.get('longitude'),
-            river_name=river_name
+            river_name=river_name,
+            user_site_code=site_code
         )
         post_data['legacy_site_code'] = post_data.get('site_code')
         post_data['site_code'] = site_code
@@ -115,8 +150,5 @@ class AddLocationSiteView(APIView):
         self.send_location_site_email(location_site)
 
         return Response(
-            {
-                'id': location_site.id,
-                'site_code': site_code
-            }
+            LocationSiteSerializer(location_site).data
         )

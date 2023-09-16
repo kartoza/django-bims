@@ -60,7 +60,7 @@ def handle_location_site_post_data(
     date = post_data.get('date', datetime.now())
     site_geometry = post_data.get('site-geometry', None)
     wetland_id = post_data.get('wetland_id', None)
-    ecosystem_type = post_data.get('ecosystem_type', '')
+    ecosystem_type = post_data.get('ecosystem_type', '').capitalize()
 
     wetland_name = post_data.get('wetland_name', '')
     user_wetland_name = post_data.get('user_wetland_name', '')
