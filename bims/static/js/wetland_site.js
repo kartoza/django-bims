@@ -211,8 +211,6 @@ wetlandSiteCodeButton.click(function () {
     wetlandName = '-' + wetlandName.substring(0, 4);
   }
 
-  console.log('wetlandName', wetlandName)
-
   siteCode += wetlandName;
 
   let url = '/api/get-site-code/?user_site_code=' + siteCode;
