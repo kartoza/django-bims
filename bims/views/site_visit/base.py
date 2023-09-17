@@ -9,6 +9,7 @@ from bims.models.chemical_record import ChemicalRecord
 from bims.models.chem import Chem
 from bims.models.basemap_layer import BaseMapLayer
 from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
+from bims.models.taxonomy import TaxonImage
 
 
 class SiteVisitBaseView(View):
@@ -199,4 +200,12 @@ class SiteVisitBaseView(View):
             )
         except SiteImage.DoesNotExist:
             pass
+
+        try:
+            context['taxon_images'] = TaxonImage.objects.filter(
+                survey=self.object
+            )
+        except TaxonImage.DoesNotExist:
+            pass
+
         return context
