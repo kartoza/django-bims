@@ -24,7 +24,7 @@ body, #wrap {
     font-size: 12pt;
 }
 
-@media screen and (max-width: 1310px) {
+@media screen and (max-width: 1200px) {
     .hr-navbar .my-2 a {
         font-size: 13px;
         padding-left: 15px;
@@ -33,7 +33,7 @@ body, #wrap {
         width: auto !important;
         z-index: 9999;
         max-height: 250px;
-        overflow-y: scroll;
+        overflow-y: auto;
     }
 }
 
@@ -42,7 +42,6 @@ body, #wrap {
 }
 
 li.dropdown-menu-item a {
-    padding-right: 25px;
 }
 
 li.dropdown-menu-item {
