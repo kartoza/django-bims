@@ -761,7 +761,8 @@ class CollectionSearch(object):
                 site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
-                'name'
+                'name',
+                'ecosystem_type'
             ).query.sql_with_params()
 
         if not self.location_sites_raw_query and self.search_query:
@@ -770,7 +771,8 @@ class CollectionSearch(object):
             ).annotate(site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
-                'name'
+                'name',
+                'ecosystem_type'
             ).query.sql_with_params()
 
         self.collection_records = bio

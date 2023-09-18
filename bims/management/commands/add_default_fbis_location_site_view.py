@@ -18,7 +18,7 @@ class Command(BaseCommand):
         view_name = 'default_fbis_location_site_cluster'
         query = (
             'SELECT bims_locationsite.id AS site_id,'
-            'bims_locationsite.geometry_point, bims_locationsite.name '
+            'bims_locationsite.geometry_point, bims_locationsite.name, bims_locationsite.ecosystem_type '
             'FROM bims_locationsite;'
         )
         cursor = connection.cursor()
