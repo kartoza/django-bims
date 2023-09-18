@@ -152,7 +152,8 @@ class SearchModule(CollectionSearch):
             ).values(
                 'site_id',
                 'geometry_point',
-                'name'
+                'name',
+                'ecosystem_type'
             ).query.sql_with_params()
 
     def serialize_sites(self):
