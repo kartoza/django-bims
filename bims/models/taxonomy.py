@@ -18,6 +18,10 @@ from bims.models.endemism import Endemism
 from bims.utils.iucn import get_iucn_status
 from bims.permissions.generate_permission import generate_permission
 from bims.models.vernacular_name import VernacularName
+from bims.models.notification import (
+    get_recipients_for_notification,
+    NEW_TAXONOMY
+)
 from django.db.models import JSONField
 
 ORIGIN_CATEGORIES = {
@@ -365,7 +369,7 @@ class Taxonomy(AbstractValidation):
 
     def send_new_taxon_email(self, taxon_group_id=None):
         current_site = Site.objects.get_current()
-        staffs = get_user_model().objects.filter(is_superuser=True)
+        recipients = get_recipients_for_notification(NEW_TAXONOMY)
         email_body = render_to_string(
             'notifications/taxonomy/added_message.txt',
             {
@@ -378,7 +382,8 @@ class Taxonomy(AbstractValidation):
             '[{}] New Taxonomy email notification'.format(current_site),
             email_body,
             settings.DEFAULT_FROM_EMAIL,
-            list(staffs.values_list('email', flat=True)))
+            recipients
+        )
         msg.send()
 
 
@@ -437,6 +442,32 @@ class TaxonImage(models.Model):
         max_length=256,
         blank=True,
         default=''
+    )
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='User who uploaded the taxon image (Optional)',
+        related_name='taxon_image_uploader'
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Owner of the taxon image (Optional)',
+        related_name='taxon_image_owner'
+    )
+    date = models.DateField(
+        null=True,
+        blank=True
+    )
+    survey = models.ForeignKey(
+        'bims.Survey',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
     )
 
 

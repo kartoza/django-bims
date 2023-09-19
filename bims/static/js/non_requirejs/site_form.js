@@ -2,7 +2,6 @@ let map = null;
 let markerSource = null;
 let riversLayer = 'https://maps.kartoza.com/geoserver/wms';
 
-
 const modal = `<!-- Modal -->
 <div id="error-modal" class="modal hide fade" tabindex="-1" role="dialog">
     <div class="modal-dialog">
@@ -68,7 +67,6 @@ let validator = $('#site-form').validate({
                 submitButton.removeAttr('disabled')
             }
         })
-
     }
 });
 
@@ -78,11 +76,19 @@ let showSiteCodeError = function () {
     });
 };
 
+const mapOnClicked = (e) => {
+    let coords = ol.proj.toLonLat(e.coordinate);
+    let lat = coords[1];
+    let lon = coords[0];
+    $('#latitude').val(lat);
+    $('#longitude').val(lon);
+    updateCoordinate(false);
+}
+
 $(function () {
     $('body').append(modal);
-    let southAfrica = [2910598.850835484, -3326258.3640110902];
     let mapView = new ol.View({
-        center: southAfrica,
+        center: [0,0],
         zoom: 5
     });
     const baseLayer = [];
@@ -131,34 +137,12 @@ $(function () {
         map.addLayer(riverLayer);
     }
 
-    map.on('click', function (e) {
-        let coords = ol.proj.toLonLat(e.coordinate);
-        let lat = coords[1];
-        let lon = coords[0];
-        $('#latitude').val(lat);
-        $('#longitude').val(lon);
-        updateCoordinate(false);
-    });
+    map.on('click', mapOnClicked);
 
     map.getView().fit(extent);
 
     $('[data-toggle="popover"]').popover();
 
-    let biodiversityLayersOptions = {
-        url: geoserverPublicUrl + 'wms',
-        params: {
-            LAYERS: locationSiteGeoserverLayer,
-            FORMAT: 'image/png8',
-            viewparams: 'where:' + defaultWMSSiteParameters
-        },
-        ratio: 1,
-        serverType: 'geoserver'
-    };
-    let biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
-    let biodiversityTileLayer = new ol.layer.Image({
-        source: biodiversitySource
-    });
-    map.addLayer(biodiversityTileLayer);
     $('#update-coordinate').click(updateCoordinateHandler);
     $('#update-site-code').click(updateSiteCode);
     $('#fetch-river-name').click(fetchRiverName);
@@ -166,6 +150,10 @@ $(function () {
 
     if (locationSiteLat && locationSiteLong) {
         addMarkerToMap(parseFloat(locationSiteLat), parseFloat(locationSiteLong));
+    }
+
+    if(typeof mapReady !== 'undefined') {
+        mapReady(map);
     }
 });
 
@@ -349,7 +337,7 @@ let addMarkerToMap = (lat, lon, zoomToMap = true) => {
             anchor: [0.55, 43],
             anchorXUnits: 'fraction',
             anchorYUnits: 'pixels',
-            opacity: 0.75,
+            opacity: 1,
             src: '/static/img/map-marker.png'
         }))
     });
@@ -360,10 +348,11 @@ let addMarkerToMap = (lat, lon, zoomToMap = true) => {
     map.addLayer(new ol.layer.Vector({
         source: markerSource,
         style: markerStyle,
+        zIndex: 1000
     }));
     if (zoomToMap) {
         map.getView().setCenter(locationSiteCoordinate);
-        map.getView().setZoom(6);
+        map.getView().setZoom(14);
     }
     if (allowToEdit) {
         document.getElementById('update-site-code').disabled = false;

@@ -27,6 +27,7 @@ CATCH_PER_UNIT = 'Catch Per Unit Effort (CPUE)'
 BROAD_BIOTOPE = 'Broad biotope'
 SPECIFIC_BIOTOPE = 'Specific biotope'
 SUBSTRATUM = 'Substratum'
+ECOSYSTEM_TYPE = 'Ecosystem type'
 
 # Chemical records
 TEMP = 'TEMP'

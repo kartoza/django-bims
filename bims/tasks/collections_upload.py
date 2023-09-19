@@ -3,12 +3,16 @@ import csv
 from celery import shared_task
 FILE_HEADERS = [
     'UUID',
-    'User Site Code',
     'Site description',
     'Latitude',
     'Longitude',
     'Sampling Date',
     'Taxon'
+]
+
+FILE_HEADERS_USER_SITE_CODE = [
+    'User Site Code',
+    'Original Site Code'
 ]
 
 
@@ -32,18 +36,20 @@ def collections_upload(session_id):
     def check_header(_csv_file):
         reader = csv.DictReader(_csv_file)
         headers = reader.fieldnames
-        for header in FILE_HEADERS:
-            if header not in headers:
-                error_message = (
-                    'Header row does not follow the correct format'
-                )
-                upload_session.progress = error_message
-                upload_session.error_file = (
-                    upload_session.process_file
-                )
-                upload_session.processed = True
-                upload_session.save()
-                return False
+        if (
+            (not all(header in headers for header in FILE_HEADERS)) or
+            (not any(header in headers for header in FILE_HEADERS_USER_SITE_CODE))
+        ):
+            error_message = (
+                'Header row does not follow the correct format'
+            )
+            upload_session.progress = error_message
+            upload_session.error_file = (
+                upload_session.process_file
+            )
+            upload_session.processed = True
+            upload_session.save()
+            return False
         return True
 
     try:

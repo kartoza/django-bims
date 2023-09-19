@@ -3,6 +3,7 @@ import base64
 from bims.models.chemical_record import ChemicalRecord
 
 from bims.models.survey import Survey
+from bims.models.taxonomy import TaxonImage
 from django.core.files.base import ContentFile
 from django.http import Http404
 from rest_framework.permissions import IsAuthenticated
@@ -76,6 +77,30 @@ class AddSiteVisit(APIView):
             survey = add_survey_occurrences(self, post_data, site_image)
             survey.mobile = True
             survey.save()
+
+            occurrence_photos = post_data.get('occurrence_photos', None)
+            if occurrence_photos:
+                for occurrence_photo in occurrence_photos:
+                    occurrence_photo_file_name = (
+                        f'{post_data["date"]}_{request.user.id}_'
+                        f'{occurrence_photo["id"]}.jpeg'
+                    )
+                    base_64_string = occurrence_photo['base64Image']
+                    header, image_data = base_64_string.split(",")[0], base_64_string.split(",")[1]
+                    occurrence_photo_file = ContentFile(
+                        base64.b64decode(
+                            image_data,
+                        ),
+                        name=occurrence_photo_file_name
+                    )
+                    TaxonImage.objects.create(
+                        taxonomy_id=occurrence_photo['id'],
+                        survey_id=survey.id,
+                        taxon_image=occurrence_photo_file,
+                        date=post_data.get('date'),
+                        uploader=request.user,
+                        source='Mobile App'
+                    )
 
             process_abiotic_data(
                 survey,

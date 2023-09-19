@@ -34,6 +34,7 @@ from bims.models import (
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.models.algae_data import AlgaeData
+from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
 
 logger = logging.getLogger('bims')
 
@@ -46,6 +47,7 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     date_string = post_data.get('date', None)
     owner_id = post_data.get('owner_id', '').strip()
     biotope_id = post_data.get('biotope', None)
+    hydroperiod = post_data.get('hydroperiod', None)
     specific_biotope_id = post_data.get('specific_biotope', None)
     substratum_id = post_data.get('substratum', None)
     sampling_method_id = post_data.get('sampling_method', None)
@@ -259,7 +261,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
                         abundance_type=abundance_type,
                         survey=self.survey,
                         record_type=record_type,
-                        source_reference=source_reference
+                        source_reference=source_reference,
+                        hydroperiod=hydroperiod
                     )
                 )
                 collection_record_ids.append(collection_record.id)
@@ -362,6 +365,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context = super(CollectionFormView, self).get_context_data(**kwargs)
         if not self.location_site:
             return context
+        context['location_site'] = self.location_site
         context['geoserver_public_location'] = get_key(
             'GEOSERVER_PUBLIC_LOCATION')
         context['location_site_name'] = self.location_site.name
@@ -369,6 +373,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
+        context['hydroperiod_choices'] = HYDROPERIOD_CHOICES
 
         try:
             context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key

@@ -7,6 +7,7 @@ from rest_framework import status
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
+from django.utils.safestring import mark_safe
 from bims.models.survey import Survey
 
 
@@ -31,11 +32,15 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
                 )
             site_visit.validate()
 
-            messages.add_message(
-                request,
-                messages.SUCCESS,
-                'Object validated successfully.',
-                'site_visit_validation'
+            site_visit_url = f'/site-visit/detail/{object_pk}/'
+            if site_visit.sass_site_visit:
+                site_visit_url = f'/sass/view/{site_visit.sass_site_visit.id}/'
+
+            link = f'<a href="{site_visit_url}" target="_blank">View details</a>'
+            messages.success(
+                self.request,
+                mark_safe(f'Site visit validated successfully. {link}.'),
+                extra_tags='site_visit_validation'
             )
 
             return JsonResponse({'status': 'success'})

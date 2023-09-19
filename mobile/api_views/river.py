@@ -1,4 +1,4 @@
-
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -7,6 +7,8 @@ from sass.models import River
 
 
 class FetchRiverName(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, *args):
         lat = request.GET.get('lat', '')
         lon = request.GET.get('lon', '')

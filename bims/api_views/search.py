@@ -308,6 +308,14 @@ class CollectionSearch(object):
             return None
 
     @property
+    def ecosystem_type(self):
+        ecosystem_type = self.get_request_data('ecosystemType')
+        if ecosystem_type:
+            return ecosystem_type.split(',')
+        else:
+            return None
+
+    @property
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filter_groups = []
@@ -661,6 +669,12 @@ class CollectionSearch(object):
                 ))
                 bio_filtered = True
 
+        if self.ecosystem_type:
+            bio = bio.filter(
+               ecosystem_type__in=self.ecosystem_type
+            )
+            bio_filtered = True
+
         if self.modules:
             # For Intersection methods :
             if len(self.modules) > 1:
@@ -747,7 +761,8 @@ class CollectionSearch(object):
                 site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
-                'name'
+                'name',
+                'ecosystem_type'
             ).query.sql_with_params()
 
         if not self.location_sites_raw_query and self.search_query:
@@ -756,7 +771,8 @@ class CollectionSearch(object):
             ).annotate(site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
-                'name'
+                'name',
+                'ecosystem_type'
             ).query.sql_with_params()
 
         self.collection_records = bio

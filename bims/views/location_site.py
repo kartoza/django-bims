@@ -1,4 +1,5 @@
 import json
+from django.contrib.gis.geos import GEOSGeometry
 from datetime import datetime
 import pytz
 from django.db import IntegrityError
@@ -33,6 +34,7 @@ from bims.models import (
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
 from bims.serializers.survey_serializer import SurveySerializer
+from bims.enums.ecosystem_type import HYDROGEOMORPHIC_CHOICES
 
 
 def handle_location_site_post_data(
@@ -51,9 +53,29 @@ def handle_location_site_post_data(
         owner = None
     latitude = post_data.get('latitude', None)
     longitude = post_data.get('longitude', None)
-    legacy_site_code = post_data.get('legacy_site_code', '')
+    legacy_site_code = post_data.get('user_site_code', '')
+    if not legacy_site_code:
+        legacy_site_code = post_data.get('legacy_site_code', '')
     additional_data = post_data.get('additional_data', None)
     date = post_data.get('date', datetime.now())
+    site_geometry = post_data.get('site-geometry', None)
+    wetland_id = post_data.get('wetland_id', None)
+    ecosystem_type = post_data.get('ecosystem_type', '').capitalize()
+
+    wetland_name = post_data.get('wetland_name', '')
+    user_wetland_name = post_data.get('user_wetland_name', '')
+    hydrogeomorphic_type = post_data.get('hydrogeomorphic_type', '')
+    user_hydrogeomorphic_type = post_data.get('user_hydrogeomorphic_type', '')
+
+    if site_geometry and 'geometry' in site_geometry:
+        try:
+            site_geometry_data = json.loads(site_geometry)
+            site_geometry = GEOSGeometry(json.dumps(site_geometry_data['geometry']))
+        except json.decoder.JSONDecodeError:
+            site_geometry = None
+    else:
+        site_geometry = None
+
     if date and not isinstance(date, datetime):
         if isinstance(date, str):
             timestamp = int(date)
@@ -98,23 +120,38 @@ def handle_location_site_post_data(
         owner = collector
 
     geometry_point = Point(longitude, latitude)
-    location_type, status = LocationType.objects.get_or_create(
-        name='PointObservation',
-        allowed_geometry='POINT'
-    )
+    if not site_geometry:
+        location_type, status = LocationType.objects.get_or_create(
+            name='PointObservation',
+            allowed_geometry='POINT'
+        )
+    else:
+        location_type, status = LocationType.objects.get_or_create(
+            name='MultipolygonObservation',
+            allowed_geometry='MULTIPOLYGON'
+        )
     post_dict = {
         'name': site_code,
         'owner': owner,
         'latitude': latitude,
         'longitude': longitude,
-        'site_description': site_description,
+        'site_description': site_description if site_description else '',
         'geometry_point': geometry_point,
         'location_type': location_type,
         'site_code': site_code,
         'legacy_river_name': user_river_name,
         'legacy_site_code': legacy_site_code,
-        'date_created': date
+        'date_created': date,
+        'ecosystem_type': ecosystem_type,
+        'wetland_name': wetland_name,
+        'user_wetland_name': user_wetland_name,
+        'hydrogeomorphic_type': hydrogeomorphic_type,
+        'user_hydrogeomorphic_type': user_hydrogeomorphic_type
     }
+    if site_geometry:
+        post_dict['geometry_multipolygon'] = site_geometry
+    if wetland_id:
+        post_dict['wetland_id'] = wetland_id
 
     if river_name:
         river, river_created = River.objects.get_or_create(
@@ -274,6 +311,8 @@ class LocationSiteFormView(TemplateView):
         context['geomorphological_zone_category'] = [
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
+        context['hydrogeomorphic_type_category'] = HYDROGEOMORPHIC_CHOICES
+        context['ecosystem_type'] = self.request.GET.get('type', '')
         try:
             context['bing_key'] = (
                 BaseMapLayer.objects.get(source_type='bing').key
@@ -334,9 +373,15 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
     def additional_context_data(self):
         context_data = dict()
         context_data['location_site_lat'] = self.location_site.latitude
+        context_data['user_wetland_name'] = self.location_site.user_wetland_name
+        context_data['wetland_name'] = self.location_site.wetland_name
+        context_data['hydrogeomorphic_type'] = self.location_site.hydrogeomorphic_type
+        context_data['user_hydrogeomorphic_type'] = self.location_site.user_hydrogeomorphic_type
         context_data['location_site_long'] = self.location_site.longitude
         context_data['site_code'] = self.location_site.site_code
         context_data['site_description'] = self.location_site.site_description
+        context_data['ecosystem_type'] = self.location_site.ecosystem_type
+        context_data['additional_data'] = json.dumps(self.location_site.additional_data);
         context_data['refined_geo_zone'] = (
             self.location_site.refined_geomorphological
         )
@@ -404,6 +449,9 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
             self.location_site = LocationSite.objects.get(id=location_site_id)
         except LocationSite.DoesNotExist:
             raise Http404('Location site does not exist')
+        if self.location_site.ecosystem_type == 'Wetland':
+            self.template_name = 'wetland_site_form.html'
+
         return super(LocationSiteFormUpdateView, self).get(
             request, *args, **kwargs)
 

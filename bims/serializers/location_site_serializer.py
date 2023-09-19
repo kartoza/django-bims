@@ -14,6 +14,8 @@ class LocationSiteSerializer(serializers.ModelSerializer):
     river_name = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
+    user_site_code = serializers.CharField(source='legacy_site_code', read_only=True)
+    user_river_name = serializers.CharField(source='legacy_river_name', read_only=True)
 
     def get_description(self, obj):
         return obj.site_description
@@ -42,9 +44,15 @@ class LocationSiteSerializer(serializers.ModelSerializer):
             'id', 'site_code',
             'name', 'geometry',
             'location_type',
-            'record_type', 'river_name',
+            'record_type',
+            'river_name',
+            'user_site_code',
+            'user_river_name',
             'owner',
-            'description'
+            'description',
+            'ecosystem_type',
+            'wetland_name',
+            'user_wetland_name'
         ]
 
 

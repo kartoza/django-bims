@@ -265,10 +265,11 @@ class TestAddLocationSite(TestCase):
         )
         self.api_url = reverse('mobile-add-location-site')
         self.post_data = {
-            'owner': self.user.id,
+            'owner': str(self.user.id),
             'date': int(datetime.now().timestamp()),
             'latitude': 1,
             'longitude': 1,
+            'ecosystem_type': 'river',
             'river_name': 'RIVER',
             'site_code': 'SITE_CODE',
             'description': 'desc',
@@ -305,7 +306,8 @@ class TestAddLocationSite(TestCase):
     def test_add_location_site(self):
         res = self.client.post(
             self.api_url,
-            self.post_data
+            self.post_data,
+            format='json'
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         location_site = LocationSite.objects.get(
@@ -314,6 +316,73 @@ class TestAddLocationSite(TestCase):
         self.assertEqual(
             location_site.additional_data.get('source_collection'),
             'mobile'
+        )
+        self.assertEqual(
+            location_site.ecosystem_type,
+            'River'
+        )
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_add_wetland_location_site(self):
+        self.post_data['ecosystem_type'] = 'wetland'
+        self.post_data['wetland_name'] = 'na me'
+        self.post_data['wetland_data'] = {
+            'wetlid': 'TEST',
+            'hgm_type': 'hydrogeomorphic',
+            'quaternary': 'quaternary'
+        }
+        res = self.client.post(
+            self.api_url,
+            data=self.post_data,
+            format='json'
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        location_site = LocationSite.objects.get(
+            id=res.data['id']
+        )
+        self.assertEqual(
+            location_site.ecosystem_type,
+            'Wetland'
+        )
+        self.assertEqual(
+            location_site.hydrogeomorphic_type,
+            'hydrogeomorphic'
+        )
+        self.assertEqual(
+            location_site.wetland_id,
+            'TEST'
+        )
+        self.assertTrue(
+            location_site.site_code.startswith('quat-name')
+        )
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_add_wetland_location_site_without_wetland_data(self):
+        self.post_data['ecosystem_type'] = 'wetland'
+        self.post_data['wetland_name'] = 'NAME'
+        res = self.client.post(
+            self.api_url,
+            data=self.post_data,
+            format='json'
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        location_site = LocationSite.objects.get(
+            id=res.data['id']
+        )
+        self.assertEqual(
+            location_site.ecosystem_type,
+            'Wetland'
+        )
+        self.assertEqual(
+            location_site.hydrogeomorphic_type,
+            ''
+        )
+        self.assertEqual(
+            location_site.wetland_id,
+            ''
+        )
+        self.assertTrue(
+            location_site.site_code.startswith('-NAME-')
         )
 
 
@@ -324,6 +393,11 @@ class TestRiverName(TestCase):
 
     @patch('mobile.api_views.river.fetch_river_name')
     def test_fetch_river_name(self, mock_fetch_river_name):
+        user = UserF.create(is_superuser=True)
+        self.client.login(
+            username=user.username,
+            password='password'
+        )
         mock_fetch_river_name.return_value = self.river.name
         response = self.client.get(
             reverse('fetch-river-name'),

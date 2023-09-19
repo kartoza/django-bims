@@ -5,6 +5,7 @@ from datetime import date
 import json
 
 from django.http import HttpResponse
+from django.conf import settings
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -100,7 +101,8 @@ from bims.models import (
     DecisionSupportTool,
     Unit,
     DecisionSupportToolName,
-    WaterTemperatureThreshold
+    WaterTemperatureThreshold,
+    Notification
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -442,7 +444,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'taxonomy',
         'taxonomy__origin',
         'record_type',
-        'sampling_method'
+        'sampling_method',
+        'ecosystem_type'
     )
     search_fields = (
         'taxonomy__scientific_name',
@@ -863,7 +866,7 @@ class CustomUserAdmin(ProfileAdmin):
             'Kind regards,\nBIMS Team.'.format(
                 **data
             ),
-            obj.email,
+            settings.DEFAULT_FROM_EMAIL,
             [obj.email],
             fail_silently=False
         )
@@ -1722,6 +1725,21 @@ class ClimateDataAdmin(admin.ModelAdmin):
     list_display = ('title', 'climate_geocontext_group_key')
 
 
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'get_users')
+
+    def get_users(self, obj):
+        return ", ".join([user.username for user in obj.users.all()])
+    get_users.short_description = 'Users'
+
+    filter_horizontal = ('users',)
+
+
+class TaxonImageAdmin(admin.ModelAdmin):
+    list_display = ('taxonomy', 'source', 'date')
+    raw_id_fields = ('taxonomy', 'uploader', 'owner', 'survey')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1778,6 +1796,8 @@ admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
 admin.site.register(RequestLog, RequestLogAdmin)
 admin.site.register(IngestedData, IngestedDataAdmin)
 
+admin.site.register(TaxonImage, TaxonImageAdmin)
+
 admin.site.register(LocationContextGroup, LocationContextGroupAdmin)
 admin.site.register(
     LocationContextFilterGroupOrder, LocationContextFilterGroupOrderAdmin)
@@ -1808,4 +1828,8 @@ admin.site.register(
     DecisionSupportToolName, DecisionSupportToolNameAdmin)
 admin.site.register(
     WaterTemperatureThreshold, WaterTemperatureThresholdAdmin
+)
+admin.site.register(
+    Notification,
+    NotificationAdmin
 )

@@ -228,6 +228,11 @@ class OccurrenceProcessor(object):
     def location_site(self, record):
         """ Process location site data """
         location_site = None
+
+        # -- Ecosystem type
+        ecosystem_type = DataCSVUpload.row_value(
+            record, ECOSYSTEM_TYPE)
+
         location_type, status = LocationType.objects.get_or_create(
             name='PointObservation',
             allowed_geometry='POINT'
@@ -292,7 +297,8 @@ class OccurrenceProcessor(object):
             if len(str(latitude)) > 5 and len(str(longitude)) > 5:
                 location_site = LocationSite.objects.filter(
                     latitude__startswith=latitude,
-                    longitude__startswith=longitude
+                    longitude__startswith=longitude,
+                    ecosystem_type=ecosystem_type
                 ).first()
 
         if not location_site:
@@ -300,13 +306,15 @@ class OccurrenceProcessor(object):
                 location_site, status = (
                     LocationSite.objects.get_or_create(
                         location_type=location_type,
-                        geometry_point=record_point
+                        geometry_point=record_point,
+                        ecosystem_type=ecosystem_type
                     )
                 )
             except LocationSite.MultipleObjectsReturned:
                 location_site = LocationSite.objects.filter(
                     location_type=location_type,
-                    geometry_point=record_point
+                    geometry_point=record_point,
+                    ecosystem_type=ecosystem_type
                 ).first()
         if not location_site.name and location_site_name:
             location_site.name = location_site_name
@@ -700,9 +708,14 @@ class OccurrenceProcessor(object):
         if self.module_group:
             record.module_group = self.module_group
 
+        # -- Ecosystem type
+        record.ecosystem_type = DataCSVUpload.row_value(
+            row, ECOSYSTEM_TYPE)
+
         # -- Additional data
         record.additional_data = json.dumps(row)
         record.validated = True
+
         record.save()
 
         if not str(record.site.id) in self.site_ids:

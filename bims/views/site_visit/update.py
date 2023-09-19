@@ -91,6 +91,7 @@ class SiteVisitUpdateView(
         taxa_id_list = form.data.get('taxa-id-list', '')
         owner_id = form.data.get('owner_id', None)
         collector_id = form.data.get('collector_id', None)
+        hydroperiod = form.data.get('hydroperiod', '')
         owner = None
         collector_user = None
         if owner_id:
@@ -136,7 +137,8 @@ class SiteVisitUpdateView(
                 sampling_method_id=form.data.get('sampling_method', None),
                 abundance_type=form.data.get('abundance_type', ''),
                 owner=owner,
-                collector_user=collector_user
+                collector_user=collector_user,
+                hydroperiod=hydroperiod
             )
 
             # Remove deleted collection records
@@ -199,7 +201,8 @@ class SiteVisitUpdateView(
                                 survey=self.object,
                                 record_type=self._form_data(
                                     form, 'record_type', ''
-                                )
+                                ),
+                                hydroperiod=hydroperiod
                             )
                         )
                         if status:

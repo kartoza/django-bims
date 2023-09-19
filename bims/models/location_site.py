@@ -20,11 +20,13 @@ from django.utils import timezone
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
 from bims.models.document_links_mixin import DocumentLinksMixin
-from bims.models.search_process import SearchProcess
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup
 from bims.utils.decorator import prevent_recursion
+from bims.enums.ecosystem_type import (
+    ECOSYSTEM_TYPE_CHOICES, HYDROGEOMORPHIC_NONE, HYDROGEOMORPHIC_CHOICES
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -167,6 +169,45 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         default=timezone.now
     )
 
+    wetland_id = models.CharField(
+        default='',
+        blank=True,
+        max_length=256
+    )
+
+    ecosystem_type = models.CharField(
+        max_length=128,
+        blank=True,
+        choices=ECOSYSTEM_TYPE_CHOICES,
+        default='',
+        null=True
+    )
+    wetland_name = models.CharField(
+        max_length=256,
+        blank=True,
+        default='',
+        null=True
+    )
+    user_wetland_name = models.CharField(
+        max_length=256,
+        blank=True,
+        default='',
+        null=True
+    )
+    hydrogeomorphic_type = models.CharField(
+        max_length=128,
+        blank=True,
+        default='',
+        null=True
+    )
+    user_hydrogeomorphic_type = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        default=HYDROGEOMORPHIC_NONE,
+        choices=HYDROGEOMORPHIC_CHOICES
+    )
+
     @property
     def location_site_identifier(self):
         """
@@ -186,8 +227,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         """ Getting centroid of location site """
 
         if (
-            self.geometry_point and
-            self.location_type.allowed_geometry == 'POINT'
+            self.geometry_point
         ):
             return self.geometry_point
         else:
@@ -478,36 +518,38 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     update_location_context.delay(instance.id)
 
 
-def generate_site_code(location_site=None, lat=None, lon=None, river_name=''):
+def generate_site_code(location_site=None, lat=None, lon=None, river_name='', user_site_code=''):
     """Generate site code"""
     from bims.utils.site_code import (
         fbis_catchment_generator,
         rbis_catchment_generator
     )
     from preferences import preferences
-
     site_code = ''
     catchment_site_code = ''
     catchments_data = {}
     catchment_generator_method = preferences.SiteSetting.site_code_generator
-    if catchment_generator_method == 'fbis':
-        catchment_site_code, catchments_data = fbis_catchment_generator(
-            location_site=location_site,
-            lat=lat,
-            lon=lon,
-            river_name=river_name
-        )
-    elif catchment_generator_method == 'rbis':
-        catchment_site_code, catchments_data = rbis_catchment_generator(
-            location_site=location_site,
-            lat=lat,
-            lon=lon
-        )
+    if not user_site_code:
+        if catchment_generator_method == 'fbis':
+            catchment_site_code, catchments_data = fbis_catchment_generator(
+                location_site=location_site,
+                lat=lat,
+                lon=lon,
+                river_name=river_name
+            )
+        elif catchment_generator_method == 'rbis':
+            catchment_site_code, catchments_data = rbis_catchment_generator(
+                location_site=location_site,
+                lat=lat,
+                lon=lon
+            )
+        else:
+            if location_site:
+                catchment_site_code += location_site.name[:2].upper()
+                catchment_site_code += location_site.site_description[:4].upper()
+        site_code += catchment_site_code
     else:
-        if location_site:
-            catchment_site_code += location_site.name[:2].upper()
-            catchment_site_code += location_site.site_description[:4].upper()
-    site_code += catchment_site_code
+        site_code = user_site_code
 
     # Add hyphen
     site_code += '-'

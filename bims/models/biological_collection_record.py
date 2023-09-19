@@ -20,6 +20,9 @@ from bims.models.source_reference import SourceReference
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
 from bims.models.survey import Survey
+from bims.enums.ecosystem_type import (
+    ECOSYSTEM_TYPE_CHOICES, HYDROPERIOD_CHOICES
+)
 from td_biblio.models import Entry
 
 
@@ -267,6 +270,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True
     )
 
+    hydroperiod = models.CharField(
+        max_length=255,
+        choices=HYDROPERIOD_CHOICES,
+        blank=True,
+        null=True,
+        default=''
+    )
+
     biotope = models.ForeignKey(
         'bims.Biotope',
         null=True,
@@ -321,6 +332,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         null=True
     )
 
+    ecosystem_type = models.CharField(
+        max_length=128,
+        blank=True,
+        choices=ECOSYSTEM_TYPE_CHOICES,
+        default='',
+        null=True
+    )
+
     @property
     def data_name(self):
         return self.original_species_name
@@ -345,6 +364,9 @@ class BiologicalCollectionRecord(AbstractValidation):
                     preferences.SiteSetting.default_data_source
                 )
                 self.save()
+        if self.ecosystem_type != self.site.ecosystem_type:
+            self.ecosystem_type = self.site.ecosystem_type
+            self.save()
         if self.taxonomy and not self.module_group:
             # Get taxon group if exists
             taxonomies = [self.taxonomy.id]

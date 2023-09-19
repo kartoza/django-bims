@@ -57,6 +57,7 @@ from bims.views.location_site import (
     NonValidatedSiteView,
     SiteLocationDetailView
 )
+from bims.views.wetland_site import WetlandSiteFormView
 from bims.views.source_reference_form import SourceReferenceView
 from bims.views.bug_report import BugReportView
 from bims.views.abiotic_form import AbioticFormView
@@ -153,6 +154,9 @@ urlpatterns = [
     re_path(r'^location-site-form/add/$',
         LocationSiteFormView.as_view(),
         name='location-site-form'),
+    path('add-wetland-site/',
+        WetlandSiteFormView.as_view(),
+        name='add-wetland-site'),
     re_path(r'^location-site-form/update/$',
         LocationSiteFormUpdateView.as_view(),
         name='location-site-update-form'),
