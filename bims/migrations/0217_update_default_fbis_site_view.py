@@ -6,9 +6,6 @@ from django.db import migrations
 
 fixture = 'survey_data'
 
-def load_fixture(apps, schema_editor):
-    call_command('add_default_fbis_location_site_view')
-
 
 class Migration(migrations.Migration):
 
@@ -17,5 +14,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(load_fixture),
     ]

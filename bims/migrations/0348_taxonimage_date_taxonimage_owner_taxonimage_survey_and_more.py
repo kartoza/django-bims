@@ -2,7 +2,11 @@
 
 from django.conf import settings
 from django.db import migrations, models
+from django.core.management import call_command
 import django.db.models.deletion
+
+def load_fixture(apps, schema_editor):
+    call_command('add_default_fbis_location_site_view')
 
 
 class Migration(migrations.Migration):
@@ -33,4 +37,5 @@ class Migration(migrations.Migration):
             name='uploader',
             field=models.ForeignKey(blank=True, help_text='User who uploaded the taxon image (Optional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='taxon_image_uploader', to=settings.AUTH_USER_MODEL),
         ),
+        migrations.RunPython(load_fixture),
     ]
