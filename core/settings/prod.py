@@ -26,3 +26,7 @@ DEBUG = TEMPLATE_DEBUG = False
 SERVER_EMAIL = os.environ.get('ADMIN_EMAILS', 'admin@kartoza.com')
 EMAIL_HOST = 'kartoza.com'
 DEFAULT_FROM_EMAIL = os.environ.get('ADMIN_EMAILS', 'admin@kartoza.com')
+
+CSRF_TRUSTED_ORIGINS = ast.literal_eval(
+    os.environ.get('CSRF_TRUSTED_ORIGINS', '["*"]')
+)
