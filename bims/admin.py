@@ -984,6 +984,11 @@ class EndemismAdmin(admin.ModelAdmin):
 
 class TaxonImagesInline(admin.TabularInline):
     model = TaxonImage
+    raw_id_fields = (
+        'survey',
+        'owner',
+        'uploader'
+    )
 
 
 class TaxonomyAdminForm(forms.ModelForm):
