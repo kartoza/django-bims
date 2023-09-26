@@ -50,6 +50,7 @@ x-common-django:
     - STATIC_ROOT=/home/web/static/static
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
+    - CSRF_TRUSTED_ORIGINS=['django-bims.test']
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
