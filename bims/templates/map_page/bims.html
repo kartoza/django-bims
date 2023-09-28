@@ -19,7 +19,15 @@
     <link href="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/chosen/chosen.min.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/gridstack-1.1.2/gridstack.min.css" %}" rel="stylesheet">
+    <link rel="stylesheet"
+          href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/bug_report_panel_style.css" %}" rel="stylesheet">
+
+    <style>
+        .select2-container--classic .select2-selection--multiple .select2-selection__choice {
+            height: 25px !important;
+        }
+    </style>
 
     <script type="text/javascript">
         String.prototype.replaceAll = function(search, replacement) {

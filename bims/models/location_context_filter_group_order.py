@@ -26,6 +26,15 @@ class LocationContextFilterGroupOrder(models.Model):
         default=False,
         help_text='Show this location context group in side panel'
     )
+    is_hidden_in_spatial_filter = models.BooleanField(
+        default=False,
+        help_text='Indicates if the item should be hidden in the spatial filter.'
+    )
+    use_autocomplete_in_filter = models.BooleanField(
+        default=False,
+        help_text='Enable autocomplete for the filter. '
+                  'Useful when dealing with large datasets in the location context.'
+    )
 
     @property
     def filter_display_order(self):

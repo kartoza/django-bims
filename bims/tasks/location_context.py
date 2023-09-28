@@ -132,7 +132,9 @@ def generate_spatial_scale_filter_if_empty():
     name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter():
-    from bims.models import LocationContext, LocationContextFilter
+    from bims.models import (
+        LocationContext, LocationContextFilter, LocationContextFilterGroupOrder
+    )
     spatial_tree = []
     location_context_filters = LocationContextFilter.objects.all(
     ).order_by(
@@ -151,33 +153,46 @@ def generate_spatial_scale_filter():
             ).distinct('value').order_by('value').exclude(value='None')
             if not location_contexts:
                 continue
-            spatial_tree_value = list(
-                location_contexts.annotate(
-                    query=F('value'),
-                    key=F('group__key')
-                ).values('query', 'key'))
-            try:
-                # Check empty query
-                for index, value in enumerate(spatial_tree_value):
-                    if value['query'] == "":
-                        del(spatial_tree_value[index])
 
-                # Sort values that have a number prefix, e.g. "1 - Limpopo."
-                spatial_tree_value_sorted = sorted(
-                    spatial_tree_value,
-                    key=lambda i: (
-                        int(i['query'].split(' ')[0])
-                        if i['query'].split(' ')[0].isdigit()
-                        else 99)
-                )
+            location_filter_group_order = (
+                LocationContextFilterGroupOrder.objects.filter(
+                    filter_id=location_context_filter.id,
+                    group_id=group.id).first()
+            )
 
-            except TypeError:
+            if not location_filter_group_order:
                 continue
+
+            spatial_tree_value_sorted = []
+            if not location_filter_group_order.use_autocomplete_in_filter:
+                spatial_tree_value = list(
+                    location_contexts.annotate(
+                        query=F('value'),
+                        key=F('group__key')
+                    ).values('query', 'key'))
+                try:
+                    # Check empty query
+                    for index, value in enumerate(spatial_tree_value):
+                        if value['query'] == "":
+                            del(spatial_tree_value[index])
+
+                    # Sort values that have a number prefix, e.g. "1 - Limpopo."
+                    spatial_tree_value_sorted = sorted(
+                        spatial_tree_value,
+                        key=lambda i: (
+                            int(i['query'].split(' ')[0])
+                            if i['query'].split(' ')[0].isdigit()
+                            else 99)
+                    )
+                except TypeError:
+                    continue
+
             layer_name = group.layer_name
             spatial_tree_children = {
                 'key': group.key,
                 'name': group.name,
                 'value': spatial_tree_value_sorted,
+                'autocomplete': location_filter_group_order.use_autocomplete_in_filter,
                 'layer_name': layer_name,
                 'wms_url': group.wms_url,
                 'wms_format': group.wms_format,
