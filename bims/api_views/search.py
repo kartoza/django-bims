@@ -10,6 +10,7 @@ from bims.models.chemical_record import ChemicalRecord
 from bims.models.water_temperature import WaterTemperature
 from django.db.models import Q, Count, F, Value, Case, When, IntegerField
 from django.db.models.functions import Concat
+from django.db.models.query import QuerySet
 from django.contrib.gis.db.models import Union, Extent
 from django.contrib.gis.geos import Polygon
 from django.contrib.contenttypes.models import ContentType
@@ -311,7 +312,13 @@ class CollectionSearch(object):
     def ecosystem_type(self):
         ecosystem_type = self.get_request_data('ecosystemType')
         if ecosystem_type:
-            return ecosystem_type.split(',')
+            ecosystem_types = ecosystem_type.split(',')
+            if 'Unspecified' in ecosystem_types:
+                ecosystem_types = (
+                    list(map(
+                        lambda x: x.replace('Unspecified', ''), ecosystem_types))
+                )
+            return ecosystem_types
         else:
             return None
 
@@ -410,7 +417,7 @@ class CollectionSearch(object):
         :return: search results
         """
         collection_record_model = BiologicalCollectionRecord
-        filtered_location_sites = LocationSite.objects.none()
+        filtered_location_sites = None
         bio_filtered = False
 
         if self.is_sass_records_only():
@@ -648,9 +655,22 @@ class CollectionSearch(object):
             bio = bio.filter(reference_category_filter)
             bio_filtered = True
 
+        ecosystem_types = self.ecosystem_type
+        if ecosystem_types:
+            if not isinstance(filtered_location_sites, QuerySet):
+                filtered_location_sites = LocationSite.objects.filter(
+                    ecosystem_type__in=ecosystem_types
+                )
+            else:
+                filtered_location_sites = filtered_location_sites.filter(
+                    ecosystem_type__in=ecosystem_types
+                )
+        else:
+            filtered_location_sites = LocationSite.objects.none()
+
         spatial_filters = self.spatial_filter
         if spatial_filters:
-            if not filtered_location_sites:
+            if not isinstance(filtered_location_sites, QuerySet):
                 filtered_location_sites = LocationSite.objects.filter(
                     spatial_filters
                 )
@@ -668,12 +688,6 @@ class CollectionSearch(object):
                     user_boundaries.aggregate(area=Union('geometry'))['area']
                 ))
                 bio_filtered = True
-
-        if self.ecosystem_type:
-            bio = bio.filter(
-               ecosystem_type__in=self.ecosystem_type
-            )
-            bio_filtered = True
 
         if self.modules:
             # For Intersection methods :
@@ -695,7 +709,7 @@ class CollectionSearch(object):
             bio_filtered = True
 
         if self.get_request_data('polygon'):
-            if not filtered_location_sites:
+            if not isinstance(filtered_location_sites, QuerySet):
                 filtered_location_sites = LocationSite.objects.filter(
                     geometry_point__within=self.polygon
                 )
@@ -709,14 +723,14 @@ class CollectionSearch(object):
                 )
 
         if self.abiotic_data:
-            if not filtered_location_sites:
+            if not isinstance(filtered_location_sites, QuerySet):
                 filtered_location_sites = LocationSite.objects.all()
 
             filtered_location_sites = filtered_location_sites.filter(
                 survey__chemical_collection_record__isnull=False
             )
 
-        if filtered_location_sites.exists():
+        if isinstance(filtered_location_sites, QuerySet):
             bio = bio.filter(
                 site__in=filtered_location_sites
             ).select_related()
@@ -731,7 +745,7 @@ class CollectionSearch(object):
             water_temperature = list(WaterTemperature.objects.all().order_by(
                 'location_site').distinct('location_site').values_list(
                 'location_site', flat=True))
-            if not filtered_location_sites:
+            if not isinstance(filtered_location_sites, QuerySet):
                 filtered_location_sites = LocationSite.objects.filter(
                     id__in=water_temperature
                 )
