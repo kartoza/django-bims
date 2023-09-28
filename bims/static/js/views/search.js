@@ -522,7 +522,7 @@ define([
             $('[name=filter-ecosystem-type]:checked').each(function () {
                 ecosystemTypeFilter.push($(this).attr('value'));
             });
-            if (ecosystemTypeFilter.length > 0 && $('[name=filter-ecosystem-type]').length !== ecosystemTypeFilter.length) {
+            if (ecosystemTypeFilter.length > 0) {
                 ecosystemType = ecosystemTypeFilter.join();
                 self.highlightPanel('.ecosystem-type-row', true);
             } else {
