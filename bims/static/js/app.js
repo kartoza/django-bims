@@ -6,6 +6,7 @@ require.config({
         backbone: 'libs/backbone-1.3.3/backbone-min',
         bootstrap: 'libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
+        select2: 'libs/select2/select2.min',
         layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
@@ -30,12 +31,16 @@ require.config({
         underscore: {
             exports: '_'
         },
+        select2: {
+            exports: 'select2'
+        },
         backbone: {
             deps: [
                 'underscore',
                 'bootstrap',
                 'jqueryUi',
-                'jquery'
+                'jquery',
+                'select2'
             ],
             exports: 'Backbone'
         },

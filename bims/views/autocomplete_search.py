@@ -12,6 +12,8 @@ from sass.models.river import River
 from bims.enums import TaxonomicRank
 from sass.enums.chem_unit import ChemUnit
 
+MAX_SPATIAL_DATA_VALUES = 100
+
 
 def autocomplete(request):
     # Search from taxon name
@@ -322,3 +324,36 @@ def abiotic_autocomplete(request):
         data = json.dumps(results)
     mime_type = 'application/json'
     return HttpResponse(data, mime_type)
+
+
+def location_context_value_autocomplete(request) -> HttpResponse:
+    """Autocomplete search for spatial values."""
+    from bims.models import (
+        LocationContextGroup,
+        LocationContext
+    )
+
+    query = request.GET.get('q', '').lower()
+    group_key = request.GET.get('groupKey', '')
+
+    data = []
+
+    if group_key:
+        try:
+            group = LocationContextGroup.objects.get(
+                key=group_key
+            )
+        except LocationContextGroup.DoesNotExist:
+            return HttpResponse(data, 'application/json')
+
+        data = list(LocationContext.objects.filter(
+            group_id=group.id,
+            value__istartswith=query
+        ).order_by(
+            'value'
+        ).annotate(context_id=F('value')).values(
+            'context_id', 'value',
+        ).distinct('value'))[:MAX_SPATIAL_DATA_VALUES]
+
+    return HttpResponse(
+        json.dumps(data), 'application/json')

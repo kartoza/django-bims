@@ -42,7 +42,8 @@ from bims.views.autocomplete_search import (
     data_source_autocomplete,
     species_autocomplete,
     site_autocomplete,
-    abiotic_autocomplete
+    abiotic_autocomplete,
+    location_context_value_autocomplete
 )
 from bims.views.collections_form import (
     FishFormView,
@@ -138,6 +139,9 @@ urlpatterns = [
     re_path(r'^abiotic-autocomplete/$',
         abiotic_autocomplete,
         name='abiotic-autocomplete-search'),
+    re_path(r'^location-context-autocomplete/$',
+            location_context_value_autocomplete,
+            name='location-context-autocomplete'),
     re_path(r'^bims_proxy/(?P<path>.*)', proxy_request),
     re_path(r'^fish-form/$', FishFormView.as_view(), name='fish-form'),
     re_path(r'^invert-form/$', InvertFormView.as_view(), name='invert-form'),
