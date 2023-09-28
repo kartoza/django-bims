@@ -12,7 +12,7 @@ from sass.models.river import River
 from bims.enums import TaxonomicRank
 from sass.enums.chem_unit import ChemUnit
 
-MAX_SPATIAL_DATA_VALUES = 10
+MAX_SPATIAL_DATA_VALUES = 100
 
 
 def autocomplete(request):
@@ -349,6 +349,8 @@ def location_context_value_autocomplete(request) -> HttpResponse:
         data = list(LocationContext.objects.filter(
             group_id=group.id,
             value__istartswith=query
+        ).order_by(
+            'value'
         ).annotate(context_id=F('value')).values(
             'context_id', 'value',
         ).distinct('value'))[:MAX_SPATIAL_DATA_VALUES]

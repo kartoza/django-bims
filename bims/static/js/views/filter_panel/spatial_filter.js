@@ -288,7 +288,7 @@ define([
                                 cache: true
                             },
                             placeholder: 'Search',
-                            minimumInputLength: 1,
+                            minimumInputLength: 0,
                             theme: 'classic',
                         }).on('select2:select', function (e) {
                             let data = e.params.data;
