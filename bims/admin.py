@@ -102,7 +102,8 @@ from bims.models import (
     Unit,
     DecisionSupportToolName,
     WaterTemperatureThreshold,
-    Notification
+    Notification,
+    RecordType
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -443,7 +444,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         ('collection_date', DateRangeFilter),
         'taxonomy',
         'taxonomy__origin',
-        'record_type',
+        'record_type__name',
         'sampling_method',
         'ecosystem_type'
     )
@@ -1838,3 +1839,4 @@ admin.site.register(
     Notification,
     NotificationAdmin
 )
+admin.site.register(RecordType)

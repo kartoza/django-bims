@@ -18,6 +18,7 @@ from bims.tests.model_factories import (
 )
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.survey import Survey
+from bims.models.record_type import RecordType
 
 
 class TestLocationSiteMobile(TestCase):
@@ -252,6 +253,9 @@ class TestAddSiteVisit(TestCase):
             data
         )
         self.assertEqual(len(res.data), 1)
+        self.assertTrue(RecordType.objects.filter(
+            name='mobile'
+        ).exists())
 
 
 class TestAddLocationSite(TestCase):

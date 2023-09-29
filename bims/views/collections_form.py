@@ -35,6 +35,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.models.algae_data import AlgaeData
 from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
+from bims.models.record_type import RecordType
 
 logger = logging.getLogger('bims')
 
@@ -54,7 +55,13 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     abundance_type = post_data.get('abundance_type', None)
     reference = post_data.get('study_reference', '')
     reference_category = post_data.get('reference_category', '')
-    record_type = post_data.get('record_type', None)
+    record_type_str = post_data.get('record_type', None)
+    if record_type_str is not None and record_type_str != '':
+        record_type, _ = RecordType.objects.get_or_create(
+            name=record_type_str
+        )
+    else:
+        record_type = None
     site_id = post_data.get('site-id', None)
     source_reference_id = post_data.get('source_reference_id', None)
 
@@ -374,6 +381,11 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
         context['hydroperiod_choices'] = HYDROPERIOD_CHOICES
+        context['record_types'] = list(
+            RecordType.objects.filter(
+                is_hidden_in_form=False
+            ).values_list('name', flat=True)
+        )
 
         try:
             context['bing_key'] = BaseMapLayer.objects.get(source_type='bing').key

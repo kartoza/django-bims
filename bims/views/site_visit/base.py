@@ -10,6 +10,7 @@ from bims.models.chem import Chem
 from bims.models.basemap_layer import BaseMapLayer
 from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
 from bims.models.taxonomy import TaxonImage
+from bims.models.record_type import RecordType
 
 
 class SiteVisitBaseView(View):
@@ -131,6 +132,14 @@ class SiteVisitBaseView(View):
             return abundance_type[0].abundance_type
         return None
 
+    def record_type(self):
+        record_types = self.collection_records.filter(
+            record_type__isnull=False
+        )
+        if record_types.exists():
+            return record_types.first().record_type.name
+        return None
+
     def source_reference(self):
         """Get existing source reference"""
         source_reference_records = self.collection_records.exclude(
@@ -167,6 +176,14 @@ class SiteVisitBaseView(View):
         context['abundance_type'] = self.abundance_type()
         context['hydroperiod_choices'] = HYDROPERIOD_CHOICES
         context['hydroperiod'] = self.hydroperiod()
+        context['record_types'] = list(
+            RecordType.objects.exclude(name='').filter(
+                name__isnull=False
+            ).values_list(
+                'name', flat=True
+            )
+        )
+        context['record_type_val'] = self.record_type()
 
         context['broad_biotope_list'] = (
             Biotope.objects.broad_biotope_list(

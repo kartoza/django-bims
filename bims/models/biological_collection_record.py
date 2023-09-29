@@ -23,6 +23,7 @@ from bims.models.survey import Survey
 from bims.enums.ecosystem_type import (
     ECOSYSTEM_TYPE_CHOICES, HYDROPERIOD_CHOICES
 )
+from bims.models.record_type import RecordType
 from td_biblio.models import Entry
 
 
@@ -325,11 +326,11 @@ class BiologicalCollectionRecord(AbstractValidation):
         on_delete=models.SET_NULL
     )
 
-    record_type = models.CharField(
-        max_length=50,
+    record_type = models.ForeignKey(
+        'bims.RecordType',
+        null=True,
         blank=True,
-        default='',
-        null=True
+        on_delete=models.SET_NULL
     )
 
     ecosystem_type = models.CharField(
@@ -386,7 +387,10 @@ class BiologicalCollectionRecord(AbstractValidation):
                 not self.record_type and
                 self.sampling_method.sampling_method.lower() in record_types
         ):
-            self.record_type = self.sampling_method.sampling_method
+            record_type, created = RecordType.objects.get_or_create(
+                name=self.sampling_method.sampling_method
+            )
+            self.record_type = record_type
             self.save()
 
     def save(self, *args, **kwargs):

@@ -18,6 +18,7 @@ from bims.views.site_visit.base import SiteVisitBaseView
 from bims.models.algae_data import AlgaeData
 from bims.models.chem import Chem
 from bims.models.chemical_record import ChemicalRecord
+from bims.models.record_type import RecordType
 
 
 class SiteVisitUpdateView(
@@ -94,6 +95,16 @@ class SiteVisitUpdateView(
         hydroperiod = form.data.get('hydroperiod', '')
         owner = None
         collector_user = None
+        record_type_str = self._form_data(
+            form, 'record_type', ''
+        )
+        if record_type_str != '':
+            record_type, _ = RecordType.objects.get_or_create(
+                name=record_type_str
+            )
+        else:
+            record_type = None
+
         if owner_id:
             try:
                 owner = get_user_model().objects.get(
@@ -138,7 +149,8 @@ class SiteVisitUpdateView(
                 abundance_type=form.data.get('abundance_type', ''),
                 owner=owner,
                 collector_user=collector_user,
-                hydroperiod=hydroperiod
+                hydroperiod=hydroperiod,
+                record_type=record_type
             )
 
             # Remove deleted collection records
@@ -199,9 +211,7 @@ class SiteVisitUpdateView(
                                     form, 'abundance_type', ''
                                 ),
                                 survey=self.object,
-                                record_type=self._form_data(
-                                    form, 'record_type', ''
-                                ),
+                                record_type=record_type,
                                 hydroperiod=hydroperiod
                             )
                         )
