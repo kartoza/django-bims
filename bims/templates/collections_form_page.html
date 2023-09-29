@@ -271,11 +271,9 @@
                 <div class="col-sm-10">
                      <select class="form-control" name="record_type">
                          <option value=""> Not specified</option>
-                         <option value="Visual observation"> Visual observation</option>
-                         <option value="Photographic recor"> Photographic record</option>
-                         <option value="Specimen collection"> Specimen collection</option>
-                         <option value="Acoustic record"> Acoustic record</option>
-                         <option value="DNA sample"> DNA sample</option>
+                         {% for record_type in record_types %}
+                             <option value="{{ record_type }}"> {{ record_type }}</option>
+                         {% endfor %}
                      </select>
 
                 </div>

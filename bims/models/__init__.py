@@ -58,3 +58,4 @@ from bims.models.geocontext_setting import GeocontextSetting
 from bims.models.decision_support_tool_name import *  # noqa
 
 from bims.models.notification import Notification
+from bims.models.record_type import RecordType

@@ -594,7 +594,7 @@ class BioCollectionOneRowSerializer(
 
     def get_record_type(self, obj):
         if obj.record_type:
-            return obj.record_type
+            return obj.record_type.name
         return '-'
 
     class Meta:
