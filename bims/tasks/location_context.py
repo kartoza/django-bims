@@ -157,7 +157,9 @@ def generate_spatial_scale_filter():
             location_filter_group_order = (
                 LocationContextFilterGroupOrder.objects.filter(
                     filter_id=location_context_filter.id,
-                    group_id=group.id).first()
+                    group_id=group.id,
+                    is_hidden_in_spatial_filter=False
+                ).first()
             )
 
             if not location_filter_group_order:

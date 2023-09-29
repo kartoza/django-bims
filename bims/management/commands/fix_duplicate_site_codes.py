@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 preferences.SiteSetting.site_code_generator)
             for site in sites:
                 print('Updating {}'.format(site.id))
-                site_code =  generate_site_code(
+                site_code = generate_site_code(
                     site,
                     site.latitude,
                     site.longitude
