@@ -99,7 +99,7 @@ function renderFilterList($div, asTable = true) {
     $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
             if (data['type'] === 'comma') {
-                tableData[data['label']] = urlParams[key].split(',');
+                tableData[data['label']] = decodeURIComponent(urlParams[key]).split(',');
             } else if (data['type'] === 'string') {
                 tableData[data['label']] = urlParams[key];
             } else if (data['type'] === 'spatial_filter') {
