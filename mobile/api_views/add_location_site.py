@@ -101,14 +101,11 @@ class AddLocationSiteView(APIView):
             'ecosystem_type', ECOSYSTEM_RIVER).capitalize()
         river_name = post_data.get('river_name', '')
         site_code = '-'
-        wetland_name = post_data.get('wetland_name', '')
         user_wetland_name = post_data.get('user_wetland_name', '')
         wetland_data = None
 
         if ecosystem_type == ECOSYSTEM_WETLAND:
             wetland_data = post_data.get('wetland_data', None)
-            post_data['user_wetland_name'] = user_wetland_name
-            post_data['wetland_name'] = wetland_name
         else:
             # Fetch river name
             if not river_name:
@@ -138,8 +135,11 @@ class AddLocationSiteView(APIView):
         # Generate site code
         site_code, catchments_data = generate_site_code(
             location_site=location_site,
+            lat=location_site.latitude,
+            lon=location_site.longitude,
             river_name=river_name,
-            ecosystem_type=ecosystem_type
+            ecosystem_type=ecosystem_type,
+            wetland_name=user_wetland_name
         )
 
         location_site.site_code = site_code

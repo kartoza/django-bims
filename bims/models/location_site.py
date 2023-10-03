@@ -518,7 +518,8 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     update_location_context.delay(instance.id)
 
 
-def generate_site_code(location_site=None, lat=None, lon=None, river_name='', ecosystem_type=''):
+def generate_site_code(
+        location_site=None, lat=None, lon=None, river_name='', ecosystem_type='', wetland_name=''):
     """Generate site code"""
     from bims.utils.site_code import (
         fbis_catchment_generator,
@@ -533,10 +534,11 @@ def generate_site_code(location_site=None, lat=None, lon=None, river_name='', ec
     if catchment_generator_method == 'fbis':
         if ecosystem_type.lower() == 'wetland':
             wetland_data = location_site.additional_data if (
+                location_site and
                 location_site.additional_data and
                 'wetlid' in location_site.additional_data
             ) else {}
-            catchment_site_code = wetland_catchment(location_site, wetland_data)
+            catchment_site_code = wetland_catchment(lat, lon, wetland_data, wetland_name)
         else:
             catchment_site_code, catchments_data = fbis_catchment_generator(
                 location_site=location_site,

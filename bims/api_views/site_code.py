@@ -13,20 +13,24 @@ class GetSiteCode(LoginRequiredMixin, APIView):
         lat = request.GET.get('lat', None)
         lon = request.GET.get('lon', None)
         site_id = request.GET.get('site_id', None)
-        user_site_code = request.GET.get('user_site_code', '')
         river_name = request.GET.get(
             'user_river_name', ''
         )
+        wetland_name = request.GET.get(
+            'user_wetland_name', ''
+        )
+        ecosystem_type = request.GET.get('ecosystem_type', '')
         location_site = None
         if site_id:
             try:
                 location_site = LocationSite.objects.get(
                     id=site_id
                 )
+                ecosystem_type = location_site.ecosystem_type
             except LocationSite.DoesNotExist:
                 pass
 
-        if not river_name and not user_site_code:
+        if not river_name and ecosystem_type.lower() != 'wetland':
             river_name = fetch_river_name(lat, lon)
 
         site_code, catchment = generate_site_code(
@@ -34,7 +38,8 @@ class GetSiteCode(LoginRequiredMixin, APIView):
             lat=lat,
             lon=lon,
             river_name=river_name,
-            ecosystem_type=location_site.ecosystem_type
+            ecosystem_type=ecosystem_type,
+            wetland_name=wetland_name
         )
 
         return Response({

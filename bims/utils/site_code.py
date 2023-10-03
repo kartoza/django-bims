@@ -153,11 +153,13 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
     return level_2 + district_id, catchments_data
 
 
-def wetland_catchment(location_site: LocationSite, wetland_data: Dict) -> str:
+def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> str:
     """
     Generates a catchment code for a given wetland based on location and data.
 
-    :param location_site: Location site object
+    :param user_wetland_name: Wetland name from user
+    :param lat: Latitude of the location site
+    :param lon: Longitude of the location site
     :param wetland_data: A dictionary containing data about the wetland layer.
     :return: The generated catchment code, e.g. L112-NAME
     """
@@ -166,7 +168,8 @@ def wetland_catchment(location_site: LocationSite, wetland_data: Dict) -> str:
     wetland_site_code = ''
     quaternary_catchment_area_key = 'quaternary_catchment_area'
     catchments, catchments_data = _get_catchments_data(
-        location_site=location_site,
+        lat=lat,
+        lon=lon,
         catchment_key=FBIS_CATCHMENT_KEY
     )
     if quaternary_catchment_area_key in catchments:
@@ -175,13 +178,13 @@ def wetland_catchment(location_site: LocationSite, wetland_data: Dict) -> str:
     wetland_site_code += '-'
     if not wetland_data:
         wetland_data = fetch_wetland_data(
-            location_site.latitude,
-            location_site.longitude
+            float(lat),
+            float(lon)
         )
 
     if wetland_data and 'name' in wetland_data and wetland_data['name']:
         wetland_site_code += wetland_data['name'][:4]
-    elif location_site.user_wetland_name:
-        wetland_site_code += location_site.user_wetland_name[:4]
+    elif user_wetland_name:
+        wetland_site_code += user_wetland_name[:4]
 
     return wetland_site_code
