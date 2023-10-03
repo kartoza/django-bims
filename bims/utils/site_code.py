@@ -1,9 +1,13 @@
 import json
+from typing import Dict
+
 import requests
 from bims.models.location_site import LocationSite
 from requests.exceptions import HTTPError
 from bims.location_site.river import fetch_river_name
 from bims.utils.get_key import get_key
+
+FBIS_CATCHMENT_KEY = 'river_catchment_areas_group'
 
 
 def _fetch_catchments_data(catchment_key, lon, lat):
@@ -77,13 +81,12 @@ def fbis_catchment_generator(
         4 characters from river name
         , catchments data in dictionary
     """
-    catchment_key = 'river_catchment_areas_group'
     catchment_code = ''
     catchments, catchments_data = _get_catchments_data(
         location_site=location_site,
         lat=lat,
         lon=lon,
-        catchment_key=catchment_key
+        catchment_key=FBIS_CATCHMENT_KEY
     )
     for key, value in catchments.items():
         if 'secondary_catchment_area' in key and not catchment_code:
@@ -148,3 +151,37 @@ def rbis_catchment_generator(location_site=None, lat=None, lon=None):
         district_id = district_data['districts_id']
 
     return level_2 + district_id, catchments_data
+
+
+def wetland_catchment(location_site: LocationSite, wetland_data: Dict) -> str:
+    """
+    Generates a catchment code for a given wetland based on location and data.
+
+    :param location_site: Location site object
+    :param wetland_data: A dictionary containing data about the wetland layer.
+    :return: The generated catchment code, e.g. L112-NAME
+    """
+    from mobile.api_views.wetland import fetch_wetland_data
+
+    wetland_site_code = ''
+    quaternary_catchment_area_key = 'quaternary_catchment_area'
+    catchments, catchments_data = _get_catchments_data(
+        location_site=location_site,
+        catchment_key=FBIS_CATCHMENT_KEY
+    )
+    if quaternary_catchment_area_key in catchments:
+        wetland_site_code += catchments[quaternary_catchment_area_key]
+
+    wetland_site_code += '-'
+    if not wetland_data:
+        wetland_data = fetch_wetland_data(
+            location_site.latitude,
+            location_site.longitude
+        )
+
+    if wetland_data and 'name' in wetland_data and wetland_data['name']:
+        wetland_site_code += wetland_data['name'][:4]
+    elif location_site.user_wetland_name:
+        wetland_site_code += location_site.user_wetland_name[:4]
+
+    return wetland_site_code

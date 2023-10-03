@@ -34,7 +34,7 @@ class GetSiteCode(LoginRequiredMixin, APIView):
             lat=lat,
             lon=lon,
             river_name=river_name,
-            user_site_code=user_site_code
+            ecosystem_type=location_site.ecosystem_type
         )
 
         return Response({

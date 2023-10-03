@@ -518,38 +518,43 @@ def location_site_post_save_handler(sender, instance, **kwargs):
     update_location_context.delay(instance.id)
 
 
-def generate_site_code(location_site=None, lat=None, lon=None, river_name='', user_site_code=''):
+def generate_site_code(location_site=None, lat=None, lon=None, river_name='', ecosystem_type=''):
     """Generate site code"""
     from bims.utils.site_code import (
         fbis_catchment_generator,
-        rbis_catchment_generator
+        rbis_catchment_generator,
+        wetland_catchment
     )
     from preferences import preferences
     site_code = ''
     catchment_site_code = ''
     catchments_data = {}
     catchment_generator_method = preferences.SiteSetting.site_code_generator
-    if not user_site_code:
-        if catchment_generator_method == 'fbis':
+    if catchment_generator_method == 'fbis':
+        if ecosystem_type.lower() == 'wetland':
+            wetland_data = location_site.additional_data if (
+                location_site.additional_data and
+                'wetlid' in location_site.additional_data
+            ) else {}
+            catchment_site_code = wetland_catchment(location_site, wetland_data)
+        else:
             catchment_site_code, catchments_data = fbis_catchment_generator(
                 location_site=location_site,
                 lat=lat,
                 lon=lon,
                 river_name=river_name
             )
-        elif catchment_generator_method == 'rbis':
-            catchment_site_code, catchments_data = rbis_catchment_generator(
-                location_site=location_site,
-                lat=lat,
-                lon=lon
-            )
-        else:
-            if location_site:
-                catchment_site_code += location_site.name[:2].upper()
-                catchment_site_code += location_site.site_description[:4].upper()
-        site_code += catchment_site_code
+    elif catchment_generator_method == 'rbis':
+        catchment_site_code, catchments_data = rbis_catchment_generator(
+            location_site=location_site,
+            lat=lat,
+            lon=lon
+        )
     else:
-        site_code = user_site_code
+        if location_site:
+            catchment_site_code += location_site.name[:2].upper()
+            catchment_site_code += location_site.site_description[:4].upper()
+    site_code += catchment_site_code
 
     # Add hyphen
     site_code += '-'
