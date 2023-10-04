@@ -96,6 +96,8 @@ class BioCollectionOneRowSerializer(
     """
     uuid = serializers.SerializerMethodField()
     user_river_name = serializers.SerializerMethodField()
+    wetland_name = serializers.SerializerMethodField()
+    user_wetland_name = serializers.SerializerMethodField()
     site_code = serializers.SerializerMethodField()
     user_site_code = serializers.SerializerMethodField()
     site_description = serializers.SerializerMethodField()
@@ -149,6 +151,9 @@ class BioCollectionOneRowSerializer(
     recorded_by = serializers.SerializerMethodField()
     decision_support_tool = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
+    ecosystem_type = serializers.SerializerMethodField()
+    hydroperiod = serializers.SerializerMethodField()
+    wetland_indicator_status = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -219,6 +224,25 @@ class BioCollectionOneRowSerializer(
 
     def chem_data(self, obj, chem):
         return chem
+
+    def get_ecosystem_type(self, obj: BiologicalCollectionRecord):
+        return obj.site.ecosystem_type
+
+    def get_wetland_name(self, obj: BiologicalCollectionRecord):
+        return obj.site.wetland_name if obj.site.wetland_name else '-'
+
+    def get_user_wetland_name(self, obj: BiologicalCollectionRecord):
+        return obj.site.user_wetland_name if obj.site.user_wetland_name else '-'
+
+    def get_hydroperiod(self, obj: BiologicalCollectionRecord):
+        if obj.hydroperiod:
+            return obj.hydroperiod.name
+        return '-'
+
+    def get_wetland_indicator_status(self, obj: BiologicalCollectionRecord):
+        if obj.wetland_indicator_status:
+            return obj.wetland_indicator_status.name
+        return '-'
 
     def get_abundance_measure(self, obj):
         if obj.abundance_type:
@@ -603,6 +627,8 @@ class BioCollectionOneRowSerializer(
             'uuid',
             'user_river_name',
             'river_name',
+            'user_wetland_name',
+            'wetland_name',
             'user_site_code',
             'site_code',
             'ecosystem_type',
@@ -626,6 +652,8 @@ class BioCollectionOneRowSerializer(
             'sampling_effort_value',
             'abundance_measure',
             'abundance_value',
+            'hydroperiod',
+            'wetland_indicator_status',
             'broad_biotope',
             'specific_biotope',
             'substratum',

@@ -271,12 +271,18 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True
     )
 
-    hydroperiod = models.CharField(
-        max_length=255,
-        choices=HYDROPERIOD_CHOICES,
+    hydroperiod = models.ForeignKey(
+        'bims.Hydroperiod',
         blank=True,
         null=True,
-        default=''
+        on_delete=models.SET_NULL
+    )
+
+    wetland_indicator_status = models.ForeignKey(
+        'bims.WetlandIndicatorStatus',
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL
     )
 
     biotope = models.ForeignKey(

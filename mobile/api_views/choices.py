@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from bims.models import Biotope, TaxonGroup
 from bims.models.sampling_method import SamplingMethod
-from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
+from bims.models.hydroperiod import Hydroperiod
 
 
 class AllChoicesApi(APIView):
@@ -34,6 +34,10 @@ class AllChoicesApi(APIView):
                 'name': sampling_method['sampling_method']
             })
 
+        hydroperiod_choices = list(
+            Hydroperiod.objects.all().values_list('name', flat=True)
+        )
+
         return Response({
             'broad_biotope': Biotope.objects.broad_biotope_list(
                 taxon_group),
@@ -46,5 +50,5 @@ class AllChoicesApi(APIView):
             'hydroperiod': [{
                 'id': hydroperiod[0],
                 'name': hydroperiod[1]
-            } for hydroperiod in HYDROPERIOD_CHOICES]
+            } for hydroperiod in hydroperiod_choices]
         })

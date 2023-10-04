@@ -19,6 +19,10 @@ from bims.models.algae_data import AlgaeData
 from bims.models.chem import Chem
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.record_type import RecordType
+from bims.models.hydroperiod import Hydroperiod
+from bims.models.wetland_indicator_status import (
+    WetlandIndicatorStatus
+)
 
 
 class SiteVisitUpdateView(
@@ -92,12 +96,28 @@ class SiteVisitUpdateView(
         taxa_id_list = form.data.get('taxa-id-list', '')
         owner_id = form.data.get('owner_id', None)
         collector_id = form.data.get('collector_id', None)
-        hydroperiod = form.data.get('hydroperiod', '')
+        hydroperiod = form.data.get('hydroperiod', None)
+        wetland_indicator_status = form.data.get('wetland_indicator_status', None)
         owner = None
         collector_user = None
         record_type_str = self._form_data(
             form, 'record_type', ''
         )
+
+        if hydroperiod:
+            hydroperiod = Hydroperiod.objects.get(
+                name=hydroperiod
+            )
+        else:
+            hydroperiod = None
+
+        if wetland_indicator_status:
+            wetland_indicator_status = WetlandIndicatorStatus.objects.get(
+                name=wetland_indicator_status
+            )
+        else:
+            wetland_indicator_status = None
+
         if record_type_str != '':
             record_type, _ = RecordType.objects.get_or_create(
                 name=record_type_str
@@ -150,6 +170,7 @@ class SiteVisitUpdateView(
                 owner=owner,
                 collector_user=collector_user,
                 hydroperiod=hydroperiod,
+                wetland_indicator_status=wetland_indicator_status,
                 record_type=record_type
             )
 
@@ -212,7 +233,8 @@ class SiteVisitUpdateView(
                                 ),
                                 survey=self.object,
                                 record_type=record_type,
-                                hydroperiod=hydroperiod
+                                hydroperiod=hydroperiod,
+                                wetland_indicator_status=wetland_indicator_status
                             )
                         )
                         if status:

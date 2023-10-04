@@ -25,8 +25,7 @@ from django.db.models import Q
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.contrib.auth.forms import UserCreationForm, \
-    ReadOnlyPasswordHashField
+from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
@@ -103,7 +102,9 @@ from bims.models import (
     DecisionSupportToolName,
     WaterTemperatureThreshold,
     Notification,
-    RecordType
+    RecordType,
+    Hydroperiod,
+    WetlandIndicatorStatus
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1751,6 +1752,16 @@ class RecordTypeAdmin(OrderedModelAdmin):
     ordering = ('order',)
 
 
+class WetlandIndicatorStatusAdmin(OrderedModelAdmin):
+    list_display = ('name', 'move_up_down_links', 'order')
+    ordering = ('order',)
+
+
+class HydroperiodAdmin(OrderedModelAdmin):
+    list_display = ('name', 'move_up_down_links', 'order')
+    ordering = ('order',)
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1845,3 +1856,9 @@ admin.site.register(
     NotificationAdmin
 )
 admin.site.register(RecordType, RecordTypeAdmin)
+admin.site.register(
+    WetlandIndicatorStatus, WetlandIndicatorStatusAdmin)
+admin.site.register(
+    Hydroperiod,
+    HydroperiodAdmin
+)
