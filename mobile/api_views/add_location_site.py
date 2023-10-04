@@ -106,6 +106,11 @@ class AddLocationSiteView(APIView):
 
         if ecosystem_type == ECOSYSTEM_WETLAND:
             wetland_data = post_data.get('wetland_data', None)
+            if wetland_data:
+                if 'hgm_type' in wetland_data:
+                    post_data['hydrogeomorphic_type'] = wetland_data['hgm_type']
+                if 'wetlid' in wetland_data:
+                    post_data['wetland_id'] = wetland_data['wetlid']
         else:
             # Fetch river name
             if not river_name:
