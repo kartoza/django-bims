@@ -3,9 +3,10 @@
 
 """
 from django.db import models
+from ordered_model.models import OrderedModel
 
 
-class RecordType(models.Model):
+class RecordType(OrderedModel):
     name = models.CharField(
         max_length=256,
     )
