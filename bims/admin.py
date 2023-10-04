@@ -1746,6 +1746,11 @@ class TaxonImageAdmin(admin.ModelAdmin):
     raw_id_fields = ('taxonomy', 'uploader', 'owner', 'survey')
 
 
+class RecordTypeAdmin(OrderedModelAdmin):
+    list_display = ('name', 'is_hidden_in_form', 'move_up_down_links', 'order')
+    ordering = ('order',)
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1839,4 +1844,4 @@ admin.site.register(
     Notification,
     NotificationAdmin
 )
-admin.site.register(RecordType)
+admin.site.register(RecordType, RecordTypeAdmin)
