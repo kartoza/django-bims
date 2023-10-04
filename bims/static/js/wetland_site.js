@@ -3,6 +3,8 @@ let wmsSource = null;
 let wmsLayer = null;
 let wmsLayerName = 'kartoza:nwm6_beta_v3_20230714';
 
+let wetlandSiteCodeButton =  $('#wetland-site-code');
+
 if (window.wetlandData) {
   wetlandData = window.wetlandData;
 }
@@ -23,12 +25,6 @@ updateCoordinate = function (zoomToMap = true) {
 
 const getFeature = (layerSource, coordinates, renderResult) => {
   let _coordinates = ol.proj.transform(coordinates, 'EPSG:3857', 'EPSG:4326');
-  if (markerSource) {
-    markerSource.clear();
-  }
-  $('#latitude').val('');
-  $('#longitude').val('');
-  $('#hydrogeomorphic_type').val('');
 
   return new Promise((resolve, reject) => {
     $.ajax({
@@ -59,8 +55,6 @@ const getFeature = (layerSource, coordinates, renderResult) => {
 
           map.getView().fit(bbox, {size: map.getSize()});
           if (renderResult) {
-            $('#latitude').val(_coordinates[1]);
-            $('#longitude').val(_coordinates[0]);
 
             $('#fetch-river-name').attr('disabled', false);
             $('#fetch-geomorphological-zone').attr('disabled', false);
@@ -90,18 +84,11 @@ const getFeature = (layerSource, coordinates, renderResult) => {
             $('#additional-data').val(JSON.stringify(wetlandData));
             $('#river_name').val(wetlandData['name'] ? wetlandData['name'] : '');
             $('#hydrogeomorphic_type').val(wetlandData['hgm_type'] ? wetlandData['hgm_type'] : '');
-
-            moveMarkerOnTheMap(_coordinates[1], _coordinates[0], false);
           }
         }
         resolve(features);
       },
       error: function (err) {
-        if(err.status === 0){
-          alert("The site is unreachable at the moment.");
-        } else {
-          alert("An error occurred: " + err.statusText);
-        }
         reject(err);
       }
     });
@@ -113,6 +100,15 @@ let mapClicked = (coordinate) => {
   if (!wmsLayer) return;
 
   let view = map.getView();
+
+  let _coordinates = ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326');
+  moveMarkerOnTheMap(_coordinates[1], _coordinates[0], false);
+
+  wetlandSiteCodeButton.attr('disabled', false);
+
+  $('#latitude').val(_coordinates[1]);
+  $('#longitude').val(_coordinates[0]);
+
   let layerSource = wmsLayer.getSource().getGetFeatureInfoUrl(
       coordinate,
       view.getResolution(),
@@ -146,6 +142,7 @@ let mapClicked = (coordinate) => {
       $('#update-coordinate').attr('disabled', false);
     }
   }).catch(function(error) {
+    $('#map-loading').hide();
     // handle any errors
   });
 }
@@ -191,29 +188,15 @@ let mapReady = (map) => {
   });
 }
 
-let wetlandSiteCodeButton =  $('#wetland-site-code');
-
 wetlandSiteCodeButton.click(function () {
-  if (!wetlandData) return false
-
   let siteCodeInput = $('#site_code');
   wetlandSiteCodeButton.attr('disabled', true);
   wetlandSiteCodeButton.html('Generating...');
 
-  let siteCode = wetlandData['quaternary'].substring(0, 4);
+  let latitude = parseFloat($('#latitude').val());
+  let longitude = parseFloat($('#longitude').val());
 
-  let wetlandName = $('#wetland_name').val() !== '-' ? $('#wetland_name').val() : '';
-  if (!wetlandName) {
-    wetlandName = $('#user_wetland_name').val()
-  }
-
-  if (wetlandName) {
-    wetlandName = '-' + wetlandName.substring(0, 4);
-  }
-
-  siteCode += wetlandName;
-
-  let url = '/api/get-site-code/?user_site_code=' + siteCode;
+  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#user_wetland_name').val()}&lat=${latitude}&lon=${longitude}`;
 
   $.ajax({
     url: url,

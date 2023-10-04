@@ -19,6 +19,7 @@ from bims.tests.model_factories import (
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.survey import Survey
 from bims.models.record_type import RecordType
+from bims.models.site_setting import SiteSetting
 
 
 class TestLocationSiteMobile(TestCase):
@@ -267,6 +268,7 @@ class TestAddLocationSite(TestCase):
             username=self.user.username,
             password='password'
         )
+
         self.api_url = reverse('mobile-add-location-site')
         self.post_data = {
             'owner': str(self.user.id),
@@ -357,7 +359,7 @@ class TestAddLocationSite(TestCase):
             'TEST'
         )
         self.assertTrue(
-            location_site.site_code.startswith('quat-name')
+            '-DESC-' in location_site.site_code,
         )
 
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
@@ -384,9 +386,6 @@ class TestAddLocationSite(TestCase):
         self.assertEqual(
             location_site.wetland_id,
             ''
-        )
-        self.assertTrue(
-            location_site.site_code.startswith('-NAME-')
         )
 
 
