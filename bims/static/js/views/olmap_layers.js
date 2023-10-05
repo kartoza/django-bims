@@ -476,6 +476,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         },
         toggleLegend: function (layerName, selected, reloadXHR) {
             // show/hide legend
+            try {
+                const layer = this.layers[layerName];
+                const params = layer.layer.getSource().getParams();
+                if (siteCodeGeneratorMethod === 'fbis' && params.name === 'Rivers') {
+                    return;
+                }
+            } catch (e) {
+                return;
+            }
+
             let $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
 
