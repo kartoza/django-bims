@@ -239,9 +239,11 @@ define([
                     this.updateChecked();
                 }
                 var $item = $('<div class="boundary-item"></div>');
-                $item.append('<input class="boundary-item-input" type="checkbox" ' +
-                    'data-level="' + level + '" name="' + dataName + '" ' +
-                    'value="' + dataValue + '" ' + checked + ' ' + dataLayerName + ' ' + dataWMSURL + ' ' + dataWMSFormat + ' ' + dataLayerIdentifier + '>');
+                if (!data[i]['autocomplete']) {
+                    $item.append('<input class="boundary-item-input" type="checkbox" ' +
+                        'data-level="' + level + '" name="' + dataName + '" ' +
+                        'value="' + dataValue + '" ' + checked + ' ' + dataLayerName + ' ' + dataWMSURL + ' ' + dataWMSFormat + ' ' + dataLayerIdentifier + '>');
+                }
                 $item.append('<label> ' + label + '</label>');
                 wrapper.append($item);
 
