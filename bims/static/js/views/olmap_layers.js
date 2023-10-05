@@ -459,17 +459,36 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             let needToReloadXHR = true;
             this.toggleLegend(layerName, selected, needToReloadXHR);
         },
+        renderSitesLegend: function () {
+            let $mapLegend = $('#map-legend');
+            if ($mapLegend.find('#site-legend').length > 0) {
+                return;
+            }
+            let html = $(`<div data-name="Sites" id="site-legend" class="legend-row" style="width: 200px"/>`);
+            html.append($(`<b>Sites</b><br/>`));
+            html.append(_.template($('#fbis-site-legend').html()));
+            $mapLegend.prepend(html);
+            this.legends['Sites'] = html;
+
+        },
+        hideSitesLegend: function () {
+            $('#map-legend').find('#site-legend').remove();
+        },
         toggleLegend: function (layerName, selected, reloadXHR) {
             // show/hide legend
             let $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
+
+                if (siteCodeGeneratorMethod === 'fbis') {
+                    if (selected) {
+                        this.renderSitesLegend();
+                    } else {
+                        this.hideSitesLegend();
+                    }
+                    $legendElement = this.getLegendElement(layerName);
+                }
                 if (reloadXHR) {
                     Shared.Dispatcher.trigger('map:reloadXHR');
-                }
-                if (selected) {
-                    Shared.Dispatcher.trigger('biodiversityLegend:show');
-                } else {
-                    Shared.Dispatcher.trigger('biodiversityLegend:hide');
                 }
             }
 

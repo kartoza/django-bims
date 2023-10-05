@@ -79,6 +79,7 @@
         const defaultBasemap = '{{ preferences.SiteSetting.default_basemap }}';
         const userID = {% if user.id %}{{ user.id }}{% else %}null{% endif %};
         const virtualMuseumExists = {% if preferences.SiteSetting.virtual_museum_source_filter != '' %} true {% else %} false {% endif %};
+        const siteCodeGeneratorMethod = '{{ preferences.SiteSetting.site_code_generator }}';
     </script>
     {% block extra_head %}
 
