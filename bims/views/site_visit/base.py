@@ -8,9 +8,12 @@ from bims.models.algae_data import AlgaeData
 from bims.models.chemical_record import ChemicalRecord
 from bims.models.chem import Chem
 from bims.models.basemap_layer import BaseMapLayer
-from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
 from bims.models.taxonomy import TaxonImage
 from bims.models.record_type import RecordType
+from bims.models.hydroperiod import Hydroperiod
+from bims.models.wetland_indicator_status import (
+    WetlandIndicatorStatus
+)
 
 
 class SiteVisitBaseView(View):
@@ -24,8 +27,18 @@ class SiteVisitBaseView(View):
 
     def hydroperiod(self):
         """Get hydroperiod data from one of the occurrences"""
-        if self.collection_records.exists():
-            return self.collection_records.first().hydroperiod
+        collection = self.collection_records.first()
+        if collection:
+            if collection.hydroperiod:
+                return self.collection_records.first().hydroperiod.name
+        return ''
+
+    def wetland_indicator_status(self):
+        """Get wetland indicator status data from one of the occurrences"""
+        collection = self.collection_records.first()
+        if collection:
+            if collection.wetland_indicator_status:
+                return collection.wetland_indicator_status.name
         return ''
 
     def owner(self):
@@ -174,8 +187,16 @@ class SiteVisitBaseView(View):
         context['sampling_effort_value'] = sampling_effort_value
         context['sampling_effort_unit'] = sampling_effort_unit
         context['abundance_type'] = self.abundance_type()
-        context['hydroperiod_choices'] = HYDROPERIOD_CHOICES
+        context['hydroperiod_choices'] = list(
+            Hydroperiod.objects.all().values_list('name', flat=True)
+        )
+        context['wetland_indicator_status_choices'] = list(
+            WetlandIndicatorStatus.objects.all().values_list('name', flat=True)
+        )
         context['hydroperiod'] = self.hydroperiod()
+        context['wetland_indicator_status'] = (
+            self.wetland_indicator_status()
+        )
         context['record_types'] = list(
             RecordType.objects.exclude(name='').filter(
                 name__isnull=False

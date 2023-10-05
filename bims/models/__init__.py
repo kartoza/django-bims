@@ -59,3 +59,5 @@ from bims.models.decision_support_tool_name import *  # noqa
 
 from bims.models.notification import Notification
 from bims.models.record_type import RecordType
+from bims.models.hydroperiod import Hydroperiod
+from bims.models.wetland_indicator_status import WetlandIndicatorStatus

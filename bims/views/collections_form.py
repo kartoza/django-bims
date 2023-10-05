@@ -29,12 +29,13 @@ from bims.models import (
     BIOTOPE_TYPE_SUBSTRATUM,
     Survey,
     Chem, ChemicalRecord,
-    BaseMapLayer, COLLECTION_RECORD_KEY
+    BaseMapLayer, COLLECTION_RECORD_KEY,
+    Hydroperiod,
+    WetlandIndicatorStatus
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.models.algae_data import AlgaeData
-from bims.enums.ecosystem_type import HYDROPERIOD_CHOICES
 from bims.models.record_type import RecordType
 
 logger = logging.getLogger('bims')
@@ -49,6 +50,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     owner_id = post_data.get('owner_id', '').strip()
     biotope_id = post_data.get('biotope', None)
     hydroperiod = post_data.get('hydroperiod', None)
+    wetland_indicator_status = post_data.get(
+        'wetland_indicator_status', None)
     specific_biotope_id = post_data.get('specific_biotope', None)
     substratum_id = post_data.get('substratum', None)
     sampling_method_id = post_data.get('sampling_method', None)
@@ -234,6 +237,19 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
             value=chem_units[chem_unit]
         )
 
+    if hydroperiod:
+        hydroperiod = Hydroperiod.objects.get(
+            name=hydroperiod
+        )
+    else:
+        hydroperiod = None
+
+    if wetland_indicator_status:
+        wetland_indicator_status = WetlandIndicatorStatus.objects.get(
+            name=wetland_indicator_status
+        )
+    else:
+        wetland_indicator_status = None
 
     collection_record_ids = []
     for taxon in taxa_id_list:
@@ -269,7 +285,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
                         survey=self.survey,
                         record_type=record_type,
                         source_reference=source_reference,
-                        hydroperiod=hydroperiod
+                        hydroperiod=hydroperiod,
+                        wetland_indicator_status=wetland_indicator_status
                     )
                 )
                 collection_record_ids.append(collection_record.id)
@@ -380,7 +397,12 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
-        context['hydroperiod_choices'] = HYDROPERIOD_CHOICES
+        context['hydroperiod_choices'] = list(
+            Hydroperiod.objects.all().values_list('name', flat=True)
+        )
+        context['wetland_indicator_status_choices'] = list(
+            WetlandIndicatorStatus.objects.all().values_list('name', flat=True)
+        )
         context['record_types'] = list(
             RecordType.objects.filter(
                 is_hidden_in_form=False

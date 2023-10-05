@@ -176,7 +176,20 @@
                                 name="hydroperiod" id="hydroperiod">
                             <option value=""> Not specified</option>
                             {% for hydroperiod in hydroperiod_choices %}
-                                <option value="{{ hydroperiod.0 }}">{{ hydroperiod.1 }}</option>
+                                <option value="{{ hydroperiod }}">{{ hydroperiod }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="date"
+                           class="col-sm-2 col-form-label col-form-label">Wetland Indicator Status</label>
+                    <div class="col-sm-10">
+                        <select class="form-control"
+                                name="wetland_indicator_status" id="wetland_indicator_status">
+                            <option value=""> Not specified</option>
+                            {% for wetland_indicator_status in wetland_indicator_status_choices %}
+                                <option value="{{ wetland_indicator_status }}">{{ wetland_indicator_status }}</option>
                             {% endfor %}
                         </select>
                     </div>

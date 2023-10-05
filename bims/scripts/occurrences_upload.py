@@ -37,6 +37,9 @@ from bims.models import (
     source_reference_post_save_handler,
     SourceReferenceDatabase,
     SourceReferenceDocument,
+    Hydroperiod,
+    WetlandIndicatorStatus,
+    RecordType,
     location_context_post_save_handler
 )
 from bims.utils.user import create_users_from_string
@@ -50,7 +53,6 @@ from bims.tasks.source_reference import (
     generate_source_reference_filter
 )
 from bims.models.location_site import generate_site_code
-
 
 logger = logging.getLogger('bims')
 
@@ -239,6 +241,12 @@ class OccurrenceProcessor(object):
         )
         site_description = DataCSVUpload.row_value(record, SITE_DESCRIPTION)
         refined_geo = DataCSVUpload.row_value(record, REFINED_GEO_ZONE)
+        wetland_name = DataCSVUpload.row_value(record, WETLAND_NAME)
+        user_wetland_name = DataCSVUpload.row_value(record, USER_WETLAND_NAME)
+        user_hydrogeomorphic_type = DataCSVUpload.row_value(
+            record,
+            USER_HYDROGEOMORPHIC_TYPE
+        )
         legacy_river_name = DataCSVUpload.row_value(
             record, USER_RIVER_NAME
         )
@@ -275,8 +283,8 @@ class OccurrenceProcessor(object):
         location_site_name = ''
         if DataCSVUpload.row_value(record, LOCATION_SITE):
             location_site_name = DataCSVUpload.row_value(record, LOCATION_SITE)
-        elif DataCSVUpload.row_value(record, WETLAND_NAME):
-            location_site_name = DataCSVUpload.row_value(record, WETLAND_NAME)
+        elif wetland_name:
+            location_site_name = wetland_name
 
         # Find existing location site by data source site code
         data_source = preferences.SiteSetting.default_data_source.upper()
@@ -326,6 +334,12 @@ class OccurrenceProcessor(object):
             location_site.refined_geomorphological = refined_geo
         if legacy_river_name:
             location_site.legacy_river_name = legacy_river_name
+        if wetland_name or location_site.wetland_name:
+            location_site.wetland_name = wetland_name
+        if user_wetland_name or location_site.user_wetland_name:
+            location_site.user_wetland_name = user_wetland_name
+        if user_hydrogeomorphic_type or location_site.user_hydrogeomorphic_type:
+            location_site.user_hydrogeomorphic_type = user_hydrogeomorphic_type
         if not location_site.site_code:
             site_code, catchments_data = generate_site_code(
                 location_site,
@@ -652,6 +666,42 @@ class OccurrenceProcessor(object):
             optional_data['abundance_number'] = abundance_number
         if abundance_type:
             optional_data['abundance_type'] = abundance_type
+
+        # -- Record type
+        record_type = DataCSVUpload.row_value(row, RECORD_TYPE)
+        if record_type:
+            record_type = RecordType.objects.filter(
+                name__iexact=record_type
+            ).first()
+        else:
+            record_type = None
+        optional_data['record_type'] = record_type
+
+        # -- Wetland component
+        hydroperiod = DataCSVUpload.row_value(row, HYDROPERIOD)
+        wetland_indicator_status = (
+            DataCSVUpload.row_value(
+                row,
+                WETLAND_INDICATOR_STATUS
+            )
+        )
+        if hydroperiod:
+            hydroperiod = Hydroperiod.objects.filter(
+                name__iexact=hydroperiod
+            ).first()
+        else:
+            hydroperiod = None
+
+        optional_data['hydroperiod'] = hydroperiod
+
+        if wetland_indicator_status:
+            wetland_indicator_status = WetlandIndicatorStatus.objects.filter(
+                name__iexact=wetland_indicator_status
+            ).first()
+        else:
+            wetland_indicator_status = None
+
+        optional_data['wetland_indicator_status'] = wetland_indicator_status
 
         # -- Processing chemical records
         self.chemical_records(
