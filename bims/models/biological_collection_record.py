@@ -271,6 +271,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True
     )
 
+    abundance_type_link = models.ForeignKey(
+        'bims.AbundanceType',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     hydroperiod = models.ForeignKey(
         'bims.Hydroperiod',
         blank=True,

@@ -61,3 +61,4 @@ from bims.models.notification import Notification
 from bims.models.record_type import RecordType
 from bims.models.hydroperiod import Hydroperiod
 from bims.models.wetland_indicator_status import WetlandIndicatorStatus
+from bims.models.abundance_type import AbundanceType
