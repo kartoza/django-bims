@@ -23,6 +23,7 @@ from bims.models.hydroperiod import Hydroperiod
 from bims.models.wetland_indicator_status import (
     WetlandIndicatorStatus
 )
+from bims.models.abundance_type import AbundanceType
 
 
 class SiteVisitUpdateView(
@@ -97,6 +98,7 @@ class SiteVisitUpdateView(
         owner_id = form.data.get('owner_id', None)
         collector_id = form.data.get('collector_id', None)
         hydroperiod = form.data.get('hydroperiod', None)
+        abundance_type = form.data.get('abundance_type', None)
         wetland_indicator_status = form.data.get('wetland_indicator_status', None)
         owner = None
         collector_user = None
@@ -139,6 +141,13 @@ class SiteVisitUpdateView(
             except get_user_model().DoesNotExist:
                 collector_user = None
 
+        if abundance_type:
+            abundance_type = AbundanceType.objects.get(
+                name=abundance_type
+            )
+        else:
+            abundance_type = None
+
         if collection_id_list:
             self.collection_records = BiologicalCollectionRecord.objects.filter(
                 id__in=collection_id_list
@@ -166,7 +175,7 @@ class SiteVisitUpdateView(
                 specific_biotope_id=form.data.get('specific_biotope', None),
                 substratum_id=form.data.get('substratum', None),
                 sampling_method_id=form.data.get('sampling_method', None),
-                abundance_type=form.data.get('abundance_type', ''),
+                abundance_type=abundance_type,
                 owner=owner,
                 collector_user=collector_user,
                 hydroperiod=hydroperiod,
@@ -228,9 +237,7 @@ class SiteVisitUpdateView(
                                 sampling_effort=self._form_data(
                                     form, 'sampling_effort', ''
                                 ),
-                                abundance_type=self._form_data(
-                                    form, 'abundance_type', ''
-                                ),
+                                abundance_type=abundance_type,
                                 survey=self.object,
                                 record_type=record_type,
                                 hydroperiod=hydroperiod,

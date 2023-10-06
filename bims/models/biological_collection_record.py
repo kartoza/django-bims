@@ -264,14 +264,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         null=True
     )
 
-    abundance_type = models.CharField(
-        max_length=50,
-        choices=ABUNDANCE_TYPE_CHOICES,
-        default=ABUNDANCE_TYPE_NUMBER,
-        blank=True
-    )
-
-    abundance_type_link = models.ForeignKey(
+    abundance_type = models.ForeignKey(
         'bims.AbundanceType',
         null=True,
         blank=True,

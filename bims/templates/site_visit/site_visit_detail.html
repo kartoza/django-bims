@@ -417,30 +417,12 @@
                             Abundance
                         </div>
                         <div class="pull-left">
-                            {% if taxon_group.name == 'Algae' %}
-                                 <select class="form-control "
-                                        name="abundance_type" disabled>
-                                    <option value="species_valve_per_frustule_count" {% if abundance_type == 'species_valve_per_frustule_count' %} selected {% endif %}> Species valve/frustule count</option>
-                                    <option value="percentage" {% if abundance_type == 'percentage' %} selected {% endif %}> Percentage
-                                        Abundance
-                                    </option>
-                                    <option value="density_cells_per_m2" {% if abundance_type == 'density_cells_per_m2' %} selected {% endif %}> Density (cells/m2)
-                                    <option value="density_cells_per_m2" {% if abundance_type == 'density' %} selected {% endif %}> Density (cells/m2)
-                                    <option value="density_cells_per_mL" {% if abundance_type == 'density_cells_per_mL' %} selected {% endif %}> Density (cells/mL)
-                                    </option>
-                                </select>
-                            {% else %}
-                                <select class="form-control "
-                                        name="abundance_type" disabled>
-                                    <option value="number" {% if abundance_type == 'number' %} selected {% endif %}> Number</option>
-                                    <option value="percentage" {% if abundance_type == 'percentage' %} selected {% endif %}> Percentage
-                                        Abundance
-                                    </option>
-                                    <option value="density" {% if abundance_type == 'density' %} selected {% endif %}> Density
-                                        (m&sup2;)
-                                    </option>
-                                </select>
-                            {% endif %}
+                            <select class="form-control "
+                                    name="abundance_type">
+                                {% for abundance_type_obj in abundance_types %}
+                                    <option value="{{ abundance_type_obj.name }}" {% if abundance_type_obj.name == abundance_type %} selected {% endif %} disabled>{{ abundance_type_obj.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </th>
                 </tr>

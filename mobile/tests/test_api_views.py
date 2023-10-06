@@ -20,6 +20,7 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.survey import Survey
 from bims.models.record_type import RecordType
 from bims.models.site_setting import SiteSetting
+from bims.models.abundance_type import AbundanceType
 
 
 class TestLocationSiteMobile(TestCase):
@@ -192,6 +193,9 @@ class TestAddSiteVisit(TestCase):
 
     def test_add_survey_occurrences(self):
         location_site = LocationSiteF.create()
+        AbundanceType.objects.get_or_create(
+            name='Number'
+        )
         taxa = TaxonomyF.create()
         biotope = BiotopeF.create(
             biotope_type='broad'
@@ -225,7 +229,8 @@ class TestAddSiteVisit(TestCase):
         )
         self.assertEqual(len(res.data), 1)
         bio = BiologicalCollectionRecord.objects.filter(
-            survey=res.data['survey_id']
+            survey=res.data['survey_id'],
+            abundance_type__name='Number'
         ).first()
         self.assertEqual(
             bio.sampling_method, sampling_method

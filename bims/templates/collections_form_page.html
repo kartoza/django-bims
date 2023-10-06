@@ -360,29 +360,12 @@
                                 Abundance
                             </div>
                             <div class="pull-left">
-                                {% if taxon_group_name == 'Algae' %}
-                                     <select class="form-control "
-                                            name="abundance_type">
-                                        <option value="species_valve_per_frustule_count"> Species valve/frustule count</option>
-                                        <option value="percentage"> Percentage
-                                            Abundance
-                                        </option>
-                                        <option value="density_cells_per_m2"> Density (cells/m2)
-                                        <option value="density_cells_per_mL"> Density (cells/mL)
-                                        </option>
-                                    </select>
-                                {% else %}
-                                    <select class="form-control "
-                                            name="abundance_type">
-                                        <option value="number"> Number</option>
-                                        <option value="percentage"> Percentage
-                                            Abundance
-                                        </option>
-                                        <option value="density"> Density
-                                            (m&sup2;)
-                                        </option>
-                                    </select>
-                                {% endif %}
+                                <select class="form-control "
+                                        name="abundance_type">
+                                {% for abundance_type in abundance_types %}
+                                    <option value="{{ abundance_type.name }}">{{ abundance_type.name }}</option>
+                                {% endfor %}
+                                </select>
                             </div>
                         </th>
                     </tr>

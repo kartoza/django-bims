@@ -246,7 +246,7 @@ class BioCollectionOneRowSerializer(
 
     def get_abundance_measure(self, obj):
         if obj.abundance_type:
-            return obj.get_abundance_type_display()
+            return obj.abundance_type.name
         return '-'
 
     def get_abundance_value(self, obj):
