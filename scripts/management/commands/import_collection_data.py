@@ -41,6 +41,7 @@ from bims.models import (
     TaxonGroup,
     source_reference_post_save_handler,
     SourceReferenceDatabase,
+    AbundanceType,
     SourceReferenceDocument
 )
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
@@ -920,7 +921,7 @@ class Command(BaseCommand):
                     )
 
                     # -- Processing Abundance
-                    abundance_type = ''
+                    abundance_type = None
                     abundance_number = None
 
                     if self.row_value(record, ABUNDANCE_MEASURE):
@@ -931,6 +932,10 @@ class Command(BaseCommand):
                             abundance_type = 'density'
                         elif 'percentage' in abundance_type:
                             abundance_type = 'percentage'
+                        abundance_type = AbundanceType.objects.filter(
+                            name__icontains=abundance_type
+                        ).first()
+
                     if self.row_value(record, ABUNDANCE_VALUE):
                         try:
                             abundance_number = float(self.row_value(record, ABUNDANCE_VALUE))

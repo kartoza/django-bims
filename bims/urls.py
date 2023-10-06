@@ -32,7 +32,6 @@ from bims.views.shapefile_upload import (
 )
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
-from bims.views.bio_records_edit import BioRecordsUpdateView
 from bims.views.download_csv_taxa_list import (
     download_csv_taxa_list
 )
@@ -113,8 +112,6 @@ urlpatterns = [
     re_path(r'^under-development/$',
         UnderDevelopmentView.as_view(), name='under-development'),
     re_path(r'^tracking/$', dashboard, name='tracking-dashboard'),
-    re_path(r'^update/(?P<pk>\d+)/$',
-        BioRecordsUpdateView.as_view(), name='update-records'),
     re_path(r'^get_feature/$',
         GetFeatureInfo.as_view(),
         name='get-feature'),

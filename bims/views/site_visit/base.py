@@ -14,6 +14,8 @@ from bims.models.hydroperiod import Hydroperiod
 from bims.models.wetland_indicator_status import (
     WetlandIndicatorStatus
 )
+from bims.models.abundance_type import AbundanceType
+from bims.serializers.abundance_type import AbundanceTypeSerializer
 
 
 class SiteVisitBaseView(View):
@@ -139,10 +141,10 @@ class SiteVisitBaseView(View):
     def abundance_type(self):
         """Get existing abundance type from collection"""
         abundance_type = self.collection_records.exclude(
-            abundance_type=''
+            abundance_type__isnull=True
         )
         if abundance_type.exists():
-            return abundance_type[0].abundance_type
+            return abundance_type.first().abundance_type.name
         return None
 
     def record_type(self):
@@ -187,6 +189,20 @@ class SiteVisitBaseView(View):
         context['sampling_effort_value'] = sampling_effort_value
         context['sampling_effort_unit'] = sampling_effort_unit
         context['abundance_type'] = self.abundance_type()
+
+        abundance_types = None
+        if self.taxon_group():
+            abundance_types = AbundanceType.objects.filter(
+                specific_module__name=self.taxon_group().name
+            )
+        if not abundance_types:
+            abundance_types = AbundanceType.objects.filter(
+                specific_module__isnull=True
+            )
+        context['abundance_types'] = AbundanceTypeSerializer(
+            abundance_types,
+            many=True
+        ).data
         context['hydroperiod_choices'] = list(
             Hydroperiod.objects.all().values_list('name', flat=True)
         )

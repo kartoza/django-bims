@@ -221,7 +221,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
 
     @property
     def data_name(self):
-        self.location_site_identifier
+        return self.location_site_identifier
 
     def get_centroid(self):
         """ Getting centroid of location site """

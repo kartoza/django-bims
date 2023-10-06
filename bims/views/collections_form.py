@@ -31,12 +31,14 @@ from bims.models import (
     Chem, ChemicalRecord,
     BaseMapLayer, COLLECTION_RECORD_KEY,
     Hydroperiod,
-    WetlandIndicatorStatus
+    WetlandIndicatorStatus,
+    AbundanceType
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.models.algae_data import AlgaeData
 from bims.models.record_type import RecordType
+from bims.serializers.abundance_type import AbundanceTypeSerializer
 
 logger = logging.getLogger('bims')
 
@@ -94,6 +96,10 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         source_reference = SourceReference.objects.get(
             id=source_reference_id
         )
+
+    abundance_type = AbundanceType.objects.filter(
+        name__iexact=abundance_type
+    ).first()
 
     sampling_effort = '{effort} {type}'.format(
         effort=post_data.get('sampling_effort', ''),
@@ -397,6 +403,19 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['location_site_lat'] = self.location_site.get_centroid().y
         context['location_site_long'] = self.location_site.get_centroid().x
         context['site_id'] = self.location_site.id
+
+        abundance_types = AbundanceType.objects.filter(
+            specific_module__name=self.taxon_group_name
+        )
+        if not abundance_types:
+            abundance_types = AbundanceType.objects.filter(
+                specific_module__isnull=True
+            )
+        context['abundance_types'] = AbundanceTypeSerializer(
+            abundance_types,
+            many=True
+        ).data
+
         context['hydroperiod_choices'] = list(
             Hydroperiod.objects.all().values_list('name', flat=True)
         )

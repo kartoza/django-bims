@@ -40,6 +40,7 @@ from bims.models import (
     Hydroperiod,
     WetlandIndicatorStatus,
     RecordType,
+    AbundanceType,
     location_context_post_save_handler
 )
 from bims.utils.user import create_users_from_string
@@ -644,7 +645,7 @@ class OccurrenceProcessor(object):
         )
 
         # -- Optional data - Abundance
-        abundance_type = ''
+        abundance_type = None
         abundance_number = None
 
         if DataCSVUpload.row_value(row, ABUNDANCE_MEASURE):
@@ -656,6 +657,11 @@ class OccurrenceProcessor(object):
                 abundance_type = 'density'
             elif 'percentage' in abundance_type:
                 abundance_type = 'percentage'
+
+            abundance_type = AbundanceType.objects.filter(
+                name__icontains=abundance_type
+            ).first()
+
         if DataCSVUpload.row_value(row, ABUNDANCE_VALUE):
             try:
                 abundance_number = float(
