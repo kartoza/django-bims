@@ -206,8 +206,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 serverType: 'geoserver',
                 transition: 0
             };
-            self.biodiversitySource = new ol.source.ImageWMS(biodiversityLayersOptions);
-            self.biodiversityTileLayer = new ol.layer.Image({
+            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
+            self.biodiversityTileLayer = new ol.layer.Tile({
                 source: self.biodiversitySource
             });
             self.initLayer(
