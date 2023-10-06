@@ -189,9 +189,12 @@ class SiteVisitBaseView(View):
         context['sampling_effort_value'] = sampling_effort_value
         context['sampling_effort_unit'] = sampling_effort_unit
         context['abundance_type'] = self.abundance_type()
-        abundance_types = AbundanceType.objects.filter(
-            specific_module__name=self.taxon_group().name
-        )
+
+        abundance_types = None
+        if self.taxon_group():
+            abundance_types = AbundanceType.objects.filter(
+                specific_module__name=self.taxon_group().name
+            )
         if not abundance_types:
             abundance_types = AbundanceType.objects.filter(
                 specific_module__isnull=True
