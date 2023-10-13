@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Dict
 
 import requests
@@ -163,24 +164,20 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
     :param wetland_data: A dictionary containing data about the wetland layer.
     :return: The generated catchment code, e.g. L112-NAME
     """
-    from mobile.api_views.wetland import fetch_wetland_data
-
     wetland_site_code = ''
     quaternary_catchment_area_key = 'quaternary_catchment_area'
+    quaternary_geocontext_key = 'quaternary_catchment_group'
+
     catchments, catchments_data = _get_catchments_data(
         lat=lat,
         lon=lon,
-        catchment_key=FBIS_CATCHMENT_KEY
+        catchment_key=quaternary_geocontext_key
     )
+
     if quaternary_catchment_area_key in catchments:
         wetland_site_code += catchments[quaternary_catchment_area_key]
 
     wetland_site_code += '-'
-    if not wetland_data:
-        wetland_data = fetch_wetland_data(
-            float(lat),
-            float(lon)
-        )
 
     if wetland_data and 'name' in wetland_data and wetland_data['name']:
         wetland_site_code += wetland_data['name'][:4]
