@@ -1,5 +1,7 @@
 import os
+import csv
 import zipfile
+
 from celery import shared_task
 
 
@@ -73,3 +75,80 @@ def send_csv_via_email(
     msg.attach_file(zip_file, 'application/octet-stream')
     msg.content_subtype = 'html'
     msg.send()
+
+
+@shared_task(name='bims.tasks.send_location_site_email', queue='search')
+def send_location_site_email(location_site_id, user_id):
+    """
+    Send the new location site data to the user and staff.
+    Create CSV from location site and attach it to email.
+    """
+    from django.contrib.auth import get_user_model
+    from django.conf import settings
+    from django.core.mail import EmailMessage
+    from django.contrib.sites.models import Site
+    from bims.models.location_site import LocationSite
+
+    user = get_user_model().objects.get(id=user_id)
+    location_site = LocationSite.objects.get(id=location_site_id)
+
+    current_site = Site.objects.get_current()
+
+    csv_data = [
+        ["ID", "Site Code", "Ecosystem Type",
+         "User Site Code",
+         "River Name",
+         "User River Name",
+         "Wetland Name",
+         "User Wetland Name",
+         "Description", "Owner", "URL"],
+        [location_site.id,
+         location_site.site_code,
+         location_site.ecosystem_type.capitalize(),
+         location_site.legacy_site_code,
+         location_site.river.name if location_site.river else '-',
+         location_site.legacy_river_name,
+         location_site.wetland_name,
+         location_site.user_wetland_name,
+         location_site.site_description,
+         location_site.owner.username,
+         'http://{url}/location-site-form/update/?id={id}'.format(
+             url=current_site,
+             id=location_site.id
+         )
+         ]]
+
+    # Write CSV data to a file
+    csv_file_name = f"location_site_{location_site.id}.csv"
+    with open(csv_file_name, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerows(csv_data)
+
+    email_body = """
+        You have received the following notice from {current_site}:
+        
+        A new location site has been submitted through the mobile app. 
+        Details of the submission are attached in the CSV file.
+        """.format(current_site=current_site)
+
+    bcc_recipients = list(
+        get_user_model().objects.filter(is_superuser=True).values_list('email', flat=True)
+    )
+
+    owner_email = user.email
+
+    if owner_email in bcc_recipients:
+        bcc_recipients.remove(owner_email)
+
+    # Send an email with the attached CSV
+    email = EmailMessage(
+        '[{}] New Location Site Data Submission'.format(current_site),
+        email_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user.email],
+        bcc=bcc_recipients
+    )
+    email.attach_file(csv_file_name)
+    email.send()
+
+    os.remove(csv_file_name)
