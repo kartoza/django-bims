@@ -28,15 +28,14 @@ class Command(BaseCommand):
         for dupe_site in dupe_sites:
             sites = LocationSite.objects.filter(
                 site_code=dupe_site['site_code']
-            ).exclude(
-                biological_collection_record__source_collection=
-                preferences.SiteSetting.site_code_generator)
+            )
             for site in sites:
                 print('Updating {}'.format(site.id))
                 site_code = generate_site_code(
                     site,
                     site.latitude,
-                    site.longitude
+                    site.longitude,
+                    site.ecosystem_type
                 )
                 print(f'{dupe_site["site_code"]} -> {site_code}')
                 if site_code:
