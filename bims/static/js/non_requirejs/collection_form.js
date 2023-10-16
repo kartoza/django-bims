@@ -454,7 +454,7 @@ $('#find-taxon-button').click(function () {
 
     // Show response list
     $.ajax({
-        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroupId=${taxonGroupId}`,
+        url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&status=accepted&status=synonym&taxonGroupId=${taxonGroupId}`,
         type: 'get',
         dataType: 'json',
         success: function (data) {

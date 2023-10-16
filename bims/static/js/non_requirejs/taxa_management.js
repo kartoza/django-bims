@@ -230,7 +230,7 @@ $findTaxonButton.click(function () {
 
     // Show response list
     $.ajax({
-        url: `/api/find-taxon/?q=${taxonName}&status=accepted&taxonGroup=fish`,
+        url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&status=accepted&status=synonym&taxonGroupId=${selectedTaxonGroup}`,
         type: 'get',
         dataType: 'json',
         success: function (data) {
