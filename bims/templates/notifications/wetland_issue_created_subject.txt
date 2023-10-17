@@ -1,1 +1,1 @@
-[{{ current_site }}] Ticket created email notification
+[{{ current_site }}] Wetland mapping feedback created email notification
