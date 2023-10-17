@@ -60,6 +60,7 @@ from bims.views.location_site import (
 from bims.views.wetland_site import WetlandSiteFormView
 from bims.views.source_reference_form import SourceReferenceView
 from bims.views.bug_report import BugReportView
+from bims.views.wetland_feedback import WetlandFeedbackView
 from bims.views.abiotic_form import AbioticFormView
 from bims.views.svg_to_pdf import svg_to_pdf
 from bims.api_views.delete_collection_data import CollectionDeleteApiView
@@ -166,6 +167,8 @@ urlpatterns = [
         name='location-site-delete-form'),
     re_path(r'^bug-report/$', BugReportView.as_view(),
         name='bug-report'),
+    re_path(r'^wetland-feedback/$', WetlandFeedbackView.as_view(),
+        name='wetland-feedback'),
     re_path(r'^abiotic/$', AbioticFormView.as_view(),
         name='abiotic-form'),
     re_path(r'^svg_to_pdf/$', svg_to_pdf, name='svg-to-pdf'),
