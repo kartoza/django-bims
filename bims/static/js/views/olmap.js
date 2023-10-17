@@ -483,6 +483,7 @@ define([
             if (Shared.LegendsDisplayed === true) {
                 return true;
             }
+            this.$mapLegendWrapper = $('#map-legend-wrapper');
             Shared.LegendsDisplayed = true;
             var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
             var $mapLegendSymbol = this.$mapLegendWrapper.find('#map-legend-symbol');
@@ -506,6 +507,7 @@ define([
                 return true;
             }
             Shared.LegendsDisplayed = false;
+            this.$mapLegendWrapper = $('#map-legend-wrapper');
             var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
             var $mapLegendSymbol = this.$mapLegendWrapper.find('#map-legend-symbol');
 
