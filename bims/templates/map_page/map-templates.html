@@ -5,7 +5,6 @@
 <script type="text/javascript" src="{% static "js/views/introjs-tutorial.js" %}"></script>
 
 <script type='text/html' id='map-template'>
-
     <div id="map" class="map"></div>
     <div id="loading-warning"><span>LOADING....</span></div>
     <div id="footer-message"><span>Additional Info</span></div>
@@ -159,6 +158,55 @@
         Fetching...
     </div>
     <div class="content container-fluid third-party-wrapper" style="padding-top: 0;">
+    </div>
+</script>
+
+<script type="text/template" id="wetland-mapping-feedback">
+    <div id="wetland-map-feedback">
+        <div class="wetland-mapping-feedback-panel">
+            <div class="brp-title">
+                WETLAND MAP FEEDBACK
+                <span class="close-wetland-mapping-panel"><i class="fa fa-times" aria-hidden="true"></i></span>
+            </div>
+            <div class="alert alert-success success-feedback" role="alert" style="border-radius: 0; display: none; margin-bottom: 0">
+                <b>Thank you!</b>
+            </div>
+            <div class="alert alert-warning warning-feedback" role="alert" style="border-radius: 0; margin-bottom: 0">
+                Select location on the map.
+            </div>
+            <div class="brp-summary wetland-form">
+                <div class="form-group">
+                    <textarea class="form-control" rows="1" id="wetland-feedback-issue" placeholder="Wetland mapping issue"></textarea>
+                </div>
+            </div>
+            <div class="brp-type wetland-form">
+                <select class="custom-select" id="wetland-feedback-type">
+                    <option selected value="Wetland not mapped">Wetland not mapped</option>
+                    <option value="Wetland incorrectly mapped">Wetland incorrectly mapped</option>
+                    <option value="Not a wetland">Not a wetland</option>
+                </select>
+            </div>
+            <div class="brp-summary wetland-form">
+                <div class="form-group">
+                    <textarea class="form-control" rows="1" id="wetland-feedback-username" disabled placeholder="Username">{{ request.user.username }}</textarea>
+                </div>
+            </div>
+            <div class="brp-description wetland-form">
+                <div class="form-group">
+                    <textarea class="form-control" rows="4" id="wetland-feedback-desc" placeholder="Detailed description"></textarea>
+                </div>
+            </div>
+            <div class="brp-loading-panel" style="display: none">
+                <img src="/static/img/small-loading.svg" width="150"
+                     alt="Loading view">
+            </div>
+            <div class="brp-submit">
+                <button type="button" disabled class="btn btn-outline-dark" id="submit-feedback-button">Submit</button>
+            </div>
+        </div>
+        <div class="wetland-mapping-button">
+            <i class="fa fa-bug" aria-hidden="true"></i>
+        </div>
     </div>
 </script>
 

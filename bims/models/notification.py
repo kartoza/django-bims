@@ -11,6 +11,7 @@ NEW_TAXONOMY = 'NEW_TAXONOMY'
 DOWNLOAD_REQUEST = 'DOWNLOAD_REQUEST'
 ACCOUNT_CREATED = 'ACCOUNT_CREATED'
 SASS_CREATED = 'SASS_CREATED'
+WETLAND_ISSUE_CREATED = 'WETLAND_ISSUE_CREATED'
 
 NOTIFICATION_TYPES = (
     (SITE_VISIT_VALIDATION, 'Site visit is ready to be validated'),
@@ -19,6 +20,7 @@ NOTIFICATION_TYPES = (
     (ACCOUNT_CREATED, 'Account created email notification'),
     (SASS_CREATED, 'SASS created email notification'),
     (NEW_TAXONOMY, 'New taxonomy email notification'),
+    (WETLAND_ISSUE_CREATED, 'New taxonomy email notification'),
 )
 
 

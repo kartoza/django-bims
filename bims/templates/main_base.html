@@ -55,6 +55,7 @@
         const isSiteNoticeAvailable = {% if preferences.SiteSetting.site_notice %}true{% else %}false{% endif %};
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const reportUrl = '{% url "bug-report" %}';
+        const wetlandFeedbackUrl = '{% url "wetland-feedback" %}';
         const githubRepo = '{{ preferences.SiteSetting.github_feedback_repo }}';
         const downloadRequestMessage = '{{ download_request_message }}';
         const mainAccentColor = '{% if custom_theme.main_accent_color %}{{ custom_theme.main_accent_color }}{% else %}#18A090{% endif %}';

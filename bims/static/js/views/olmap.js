@@ -18,6 +18,7 @@ define([
     'views/right_panel/records_detail',
     'views/right_panel/multiple_location_sites_details',
     'views/bug_report',
+    'views/wetland_mapping_feedback',
     'views/detail_dashboard/taxon_detail',
     'views/detail_dashboard/site_detail',
     'htmlToCanvas',
@@ -25,7 +26,8 @@ define([
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
              ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
-             LocationSiteDetail, TaxonDetail, RecordsDetail, MultipleLocationSitesDetail, BugReportView,
+             LocationSiteDetail, TaxonDetail, RecordsDetail, MultipleLocationSitesDetail,
+             BugReportView, WetlandMappingFeedbackView,
              TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas, jsPDF) {
     return Backbone.View.extend({
         template: _.template($('#map-template').html()),
@@ -42,6 +44,9 @@ define([
         scaleLineControl: null,
         mapIsReady: false,
         polygonDrawn: false,
+        feedbackMarker: null,
+        feedbackLayer: null,
+        addWetlandMappingIssueActive: false,
         initCenter: [22.948492328125, -31.12543669218031],
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
         events: {
@@ -115,6 +120,8 @@ define([
             Shared.Dispatcher.on('map:toggleMapInteraction', this.toggleMapInteraction, this);
             Shared.Dispatcher.on('map:setPolygonDrawn', this.setPolygonDrawn, this);
 
+            Shared.Dispatcher.on('wetlandFeedback:togglePanel', this.toggleWetlandFeedback, this);
+
             this.render();
             this.clusterBiologicalCollection = new ClusterBiologicalCollection(this);
             this.mapControlPanel.searchView.initDateFilter();
@@ -136,6 +143,17 @@ define([
             });
             this.pointLayer.setZIndex(1000);
             this.map.addLayer(this.pointLayer);
+        },
+        toggleWetlandFeedback: function () {
+            this.addWetlandMappingIssueActive = !this.addWetlandMappingIssueActive;
+            if (!this.addWetlandMappingIssueActive) {
+                // Remove the marker
+                if (this.feedbackLayer && this.map) {
+                    this.map.removeLayer(this.feedbackLayer);
+                    this.feedbackLayer = null;
+                    this.feedbackMarker = null;
+                }
+            }
         },
         zoomInMap: function (e) {
             var view = this.map.getView();
@@ -199,6 +217,32 @@ define([
         setPolygonDrawn: function (polygon) {
            this.polygonDrawn = polygon
         },
+        showFeedbackMarker: function (coordinate) {
+            if (!this.feedbackMarker) {
+                this.feedbackMarker = new ol.Feature({
+                    geometry: new ol.geom.Point(coordinate),
+                });
+                let vectorSource = new ol.source.Vector({
+                    features: [this.feedbackMarker]
+                });
+                let iconStyle = new ol.style.Style({
+                    image: new ol.style.Icon(({
+                        anchor: [0.5, 46],
+                        anchorXUnits: 'fraction',
+                        anchorYUnits: 'pixels',
+                        opacity: 0.75,
+                        src: '/static/img/map-marker.png'
+                    }))
+                });
+                this.feedbackLayer = new ol.layer.Vector({
+                    source: vectorSource,
+                    style: iconStyle
+                });
+                this.map.addLayer(this.feedbackLayer);
+            } else {
+                this.feedbackMarker.getGeometry().setCoordinates(coordinate);
+            }
+        },
         mapClicked: function (e) {
             // Event handler when the map is clicked
             const self = this;
@@ -212,6 +256,13 @@ define([
             let lonlat = ol.proj.transform(e.coordinate, 'EPSG:3857', 'EPSG:4326');
             let lon = lonlat[0];
             let lat = lonlat[1];
+
+            if (this.addWetlandMappingIssueActive) {
+                // Show marker on the map
+                this.showFeedbackMarker(e.coordinate);
+                Shared.Dispatcher.trigger('wetlandFeedback:locationUpdated', lonlat);
+                return;
+            }
 
             let layer = this.layers.layers['Sites'];
             let siteVisible = layer['layer'].getVisible();
@@ -513,7 +564,9 @@ define([
                 self.mapMoved();
             });
 
+            this.wetlandMappingFeedbackView = new WetlandMappingFeedbackView();
             this.bugReportView = new BugReportView();
+            this.$el.append(this.wetlandMappingFeedbackView.render().$el);
             this.$el.append(this.bugReportView.render().$el);
             this.$el.append(this.taxonDetailDashboard.render().$el);
             this.$el.append(this.siteDetailedDashboard.render().$el);
@@ -635,9 +688,7 @@ define([
             });
             this.map.addOverlay(this.popup);
 
-            setTimeout(function () {
-                self.layers.addLayersToMap(self.map);
-            }, 500);
+            self.layers.addLayersToMap(self.map);
             this.initExtent = this.getCurrentBbox();
         },
         removeLayer: function (layer) {

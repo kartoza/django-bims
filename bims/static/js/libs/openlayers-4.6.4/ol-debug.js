@@ -6242,7 +6242,7 @@ ol.proj.cloneTransform = function(input, opt_output, opt_dimension) {
  * geometry transforms.
  *
  * @param {ol.Coordinate} coordinate Coordinate.
- * @param {ol.ProjectionLike} source Source projection-like.
+ * @param {string} source Source projection-like.
  * @param {ol.ProjectionLike} destination Destination projection-like.
  * @return {ol.Coordinate} Coordinate.
  * @api
