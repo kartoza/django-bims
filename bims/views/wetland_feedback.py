@@ -41,7 +41,7 @@ class WetlandFeedbackView(LoginRequiredMixin, View):
         subject = render_to_string(
             '{0}_subject.txt'.format(email_template),
             ctx
-        )
+        ).strip()
         message = render_to_string(
             '{}_message_admins.txt'.format(email_template),
             ctx
