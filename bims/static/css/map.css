@@ -2921,3 +2921,7 @@ div:hover::-webkit-scrollbar {
     text-align: center;
     border-radius: 5px;
 }
+
+.ol-attribution {
+    margin-bottom: 45px;
+}

@@ -82,7 +82,7 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                     attributions: ['<a id="home-link" target="_top" href="../">Map tiles</a> by ' +
                     '<a target="_top" href="http://stamen.com">Stamen Design</a>, under <a target="_top" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by ' +
                     '<a target="_top" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'],
-                    url: '/bims_proxy/http://a.tile.stamen.com/toner/{z}/{x}/{y}.png'
+                    url: '/bims_proxy/https://tiles.stadiamaps.com/toner/{z}/{x}/{y}.png'
                 })
             });
             layer.set('title', 'Plain B&W');
@@ -122,8 +122,6 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                     url: '/bims_proxy/http://aerial.openstreetmap.org.za/ngi-aerial/{z}/{x}/{y}.jpg'
                 })
             });
-
-            baseSourceLayers.push(this.getDarkMatterBasemap());
 
             // add bing
             if (bingMapKey) {
@@ -191,8 +189,16 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
                 } else if (baseMapData['source_type'] === "stamen") {
                     _baseMap = new ol.layer.Tile({
                         title: baseMapData['title'],
-                        source: new ol.source.Stamen({
-                            layer: baseMapData['layer_name']
+                        source: new ol.source.XYZ({
+                            attributions: [
+                                '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a>',
+                                '&copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a>',
+                                '&copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>',
+                                '&copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>'
+                            ],
+                            url: '/bims_proxy/' + 'https://tiles-eu.stadiamaps.com/tiles/' + baseMapData['layer_name'] + '/{z}/{x}/{y}.jpg?api_key=' + baseMapData['key'],
+                            tilePixelRatio: 2,
+                            maxZoom: 20
                         })
                     });
                 }

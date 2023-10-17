@@ -20,7 +20,7 @@ NOTIFICATION_TYPES = (
     (ACCOUNT_CREATED, 'Account created email notification'),
     (SASS_CREATED, 'SASS created email notification'),
     (NEW_TAXONOMY, 'New taxonomy email notification'),
-    (WETLAND_ISSUE_CREATED, 'New taxonomy email notification'),
+    (WETLAND_ISSUE_CREATED, 'New wetland issue email notification'),
 )
 
 
