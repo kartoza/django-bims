@@ -44,7 +44,7 @@ class BaseMapLayer(OrderedModel):
         default='',
         blank=True,
         help_text=(
-            'Key is required if the source of the map is Bing'
+            'Key is required if the source of the map is Bing or Stamen'
         )
     )
     additional_params = JSONField(
