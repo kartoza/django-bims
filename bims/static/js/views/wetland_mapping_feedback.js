@@ -70,6 +70,16 @@ define([
             this.successFeedback = this.$el.find('.success-feedback');
             this.warningFeedback = this.$el.find('.warning-feedback');
             this.submitButton = this.$el.find('#submit-feedback-button');
+
+            if (!is_logged_in) {
+                this.issueTextDiv.attr('disabled', true);
+                this.descriptionTextDiv.attr('disabled', true);
+                this.$el.find('#wetland-feedback-type').attr('disabled', true);
+                this.warningFeedback.html(
+                    `Please <a href="/accounts/login/">login</a> to leave feedback.`
+                )
+                this.warningFeedback.show();
+            }
             return this;
         },
         textAreaOnChanged: function () {
@@ -94,6 +104,9 @@ define([
             this.textAreaOnChanged();
         },
         submitFeedback: function () {
+            if (!is_logged_in) {
+                return false;
+            }
             let self = this;
             this.loading = true;
             let postData = {
@@ -131,7 +144,9 @@ define([
                     Shared.Dispatcher.trigger('wetlandFeedback:togglePanel');
                     Shared.Dispatcher.trigger('wetlandFeedback:togglePanel');
                 },
-                complete: function(data) {
+                complete: function(jqXHR, textStatus) {
+                    console.log(JSON.stringify(jqXHR))
+                    console.log(textStatus)
                     if (self.loading) {
                         self.loading = false;
                         self.issueTextDiv.val('').blur();

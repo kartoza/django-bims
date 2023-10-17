@@ -145,6 +145,9 @@ define([
             this.map.addLayer(this.pointLayer);
         },
         toggleWetlandFeedback: function () {
+            if (!is_logged_in) {
+                return;
+            }
             this.addWetlandMappingIssueActive = !this.addWetlandMappingIssueActive;
             if (!this.addWetlandMappingIssueActive) {
                 // Remove the marker
