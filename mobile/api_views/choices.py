@@ -48,7 +48,7 @@ class AllChoicesApi(APIView):
             ),
             'sampling_method': sampling_method_list,
             'hydroperiod': [{
-                'id': hydroperiod[0],
-                'name': hydroperiod[1]
+                'id': hydroperiod,
+                'name': hydroperiod
             } for hydroperiod in hydroperiod_choices]
         })
