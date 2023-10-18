@@ -46,7 +46,11 @@ define([
         polygonDrawn: false,
         feedbackMarker: null,
         feedbackLayer: null,
+        resizingLegend: false,
+        mapLegendInitialized: false,
         addWetlandMappingIssueActive: false,
+        lastLegendWidth: null,
+        lastLegendHeight: null,
         initCenter: [22.948492328125, -31.12543669218031],
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
         events: {
@@ -467,15 +471,36 @@ define([
         layerControlClicked: function (e) {
         },
         mapLegendClicked: function (e) {
+            if (this.resizingLegend) return;
             var $mapLegend = this.$mapLegendWrapper.find('#map-legend');
+            const $mapLegendContainer = $('#map-legend-container');
 
             if ($mapLegend.is(':visible')) {
+                this.lastLegendWidth = this.$mapLegendWrapper.width();
+                this.lastLegendHeight = this.$mapLegendWrapper.height();
+                this.$mapLegendWrapper.css('width', '31px')
+                this.$mapLegendWrapper.css('height', '31px')
+                $mapLegendContainer.css('overflow-x', 'hidden');
+                $mapLegendContainer.css('overflow-y', 'hidden');
                 this.hideMapLegends(true);
             } else {
+                if (this.lastLegendHeight && this.lastLegendWidth) {
+                    this.$mapLegendWrapper.css('width', this.lastLegendWidth)
+                    this.$mapLegendWrapper.css('height', this.lastLegendHeight)
+                    $mapLegendContainer.css('overflow-x', 'auto');
+                    $mapLegendContainer.css('overflow-y', 'auto');
+                }
                 this.showMapLegends(true);
             }
         },
         showMapLegends: function (showTooltip) {
+            if (!this.mapLegendInitialized) {
+                let self = this;
+                setTimeout(function () {
+                    self.showMapLegends(showTooltip);
+                }, 500)
+                return;
+            }
             let legendsDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
             if (!legendsDisplayed) {
                 Shared.StorageUtil.setItem('legendsDisplayed', true);
@@ -497,6 +522,7 @@ define([
             if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
+            this.$mapLegendWrapper.resizable('option', 'disabled', false);
         },
         hideMapLegends: function (showTooltip) {
             let legendsDisplayed = Shared.StorageUtil.getItem('legendsDisplayed');
@@ -520,6 +546,8 @@ define([
             if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
             }
+            if (!this.mapLegendInitialized) return;
+            this.$mapLegendWrapper.resizable('option', 'disabled', true);
         },
         getCurrentZoom: function () {
             return this.map.getView().getZoom();
@@ -578,7 +606,7 @@ define([
 
             this.$mapLegendWrapper = $('#map-legend-wrapper');
             this.$mapLegendWrapper.draggable({
-                containment: '#map',
+                containment: '.map-wrapper',
                 start: function (event, ui) {
                     self.$mapLegendWrapper.css('bottom', 'auto');
                     $("[data-toggle=tooltip]").tooltip('hide');
@@ -588,7 +616,25 @@ define([
                     var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
                     self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
                 }
+            }).resizable({
+                containment: '.map-wrapper',
+                handles: 'se',
+                minWidth: 100,
+                minHeight: 100,
+                start: function (event, ui) {
+                    self.resizingLegend = true;
+                    $("[data-toggle=tooltip]").tooltip('hide');
+                    $(this).css('max-height', 'none');
+                    $(this).css('max-width', 'none');
+                },
+                stop: function (event, ui) {
+                    setTimeout(function () {
+                        self.resizingLegend = false;
+                    }, 500);
+                }
             });
+            this.mapLegendInitialized = true;
+            this.$mapLegendWrapper.resizable('option', 'disabled', true);
 
             this.map.getLayers().forEach(function (layer) {
                 try {
@@ -909,9 +955,11 @@ define([
             if (downloadMap) {
                 $('#ripple-loading').show();
                 $('.map-control-panel-box').hide();
+                $('.ol-control').hide();
                 $('.map-control-panel').hide();
                 $('.zoom-control').hide();
                 $('.bug-report-wrapper').hide();
+                $('#wetland-map-feedback').hide();
                 $('.print-map-control').addClass('control-panel-selected');
                 that.whenMapIsReady(function () {
                     var canvas = document.getElementsByClassName('map-wrapper');
@@ -946,6 +994,8 @@ define([
                             $('.map-control-panel').show();
                             $('#ripple-loading').hide();
                             $('.bug-report-wrapper').show();
+                            $('.ol-control').show();
+                            $('#wetland-map-feedback').show();
                             $('.print-map-control').removeClass('control-panel-selected');
                         }
                     })

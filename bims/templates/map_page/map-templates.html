@@ -24,8 +24,10 @@
     <div id="map-legend-wrapper" class="control-drop-shadow hide-legend"
          data-toggle="tooltip" data-placement="bottom"
          data-original-title="Show legends" data-html="true">
-        <div id="map-legend-symbol">L</div>
-        <div id="map-legend" style="display: none"></div>
+        <div id="map-legend-container">
+            <div id="map-legend-symbol">L</div>
+            <div id="map-legend" style="display: none"></div>
+        </div>
     </div>
     <div id="start-tutorial" class="map-legend-symbol control-drop-shadow
     hide-legend" data-toggle="tooltip" data-placement="bottom"
@@ -204,8 +206,10 @@
                 <button type="button" disabled class="btn btn-outline-dark" id="submit-feedback-button">Submit</button>
             </div>
         </div>
-        <div class="wetland-mapping-button">
-            <i class="fa fa-bug" aria-hidden="true"></i>
+        <div class="wetland-mapping-button" data-toggle="tooltip" data-placement="left"
+             data-original-title="WETLAND MAP FEEDBACK">
+            <img src="{% static 'img/wetland-mapping-icon.png' %}" width="28px"
+                 style="margin-top: -6px;">
         </div>
     </div>
 </script>
@@ -255,7 +259,8 @@
 
             </div>
         </div>
-        <div class="bug-report-button">
+        <div class="bug-report-button" data-toggle="tooltip" data-placement="left"
+             data-original-title="SEND FEEDBACK">
             <i class="fa fa-comment" aria-hidden="true"></i>
         </div>
     </div>
