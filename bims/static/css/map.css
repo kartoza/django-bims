@@ -1101,11 +1101,10 @@ div:hover::-webkit-scrollbar {
     border-radius: 5px;
     min-height: 31px;
     min-width: 31px;
-    max-width: 250px;
     max-height: 450px;
-    overflow-x: scroll;
-    overflow-y: scroll;
+    max-width: 250px;
     position: absolute;
+    overflow: hidden;
     left: 0.5em;
     bottom: 70px;
     background-color: white;
@@ -1113,20 +1112,11 @@ div:hover::-webkit-scrollbar {
     z-index: 999;
 }
 
-.map-legend-wrapper {
-    border-radius: 5px;
-    min-height: 31px;
-    min-width: 31px;
-    max-width: 250px;
-    max-height: 450px;
-    overflow-x: scroll;
-    overflow-y: scroll;
-    position: absolute;
-    left: 0.5em;
-    bottom: 40px;
-    background-color: white;
-    cursor: pointer;
-    z-index: 999;
+#map-legend-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
 }
 
 #map-legend-symbol {
