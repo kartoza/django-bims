@@ -33,6 +33,11 @@ class CustomTheme(models.Model):
         null=True,
         blank=True
     )
+    navbar_logo = models.ImageField(
+        upload_to='navbar_site_logo',
+        null=True,
+        blank=True
+    )
     landing_page_sections = models.ManyToManyField(
         'bims_theme.LandingPageSection',
         null=True,

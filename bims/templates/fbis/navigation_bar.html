@@ -62,8 +62,13 @@
     <h5 class="my-0 mr-md-auto font-weight-normal">
         <a href="/">
         <a href="/">
-            <img id="fbis_logo_home" src="{% static "img/FBIS icon.png" %}"
-            width="130"/>
+            {% if custom_theme.navbar_logo %}
+                <img id="fbis_logo_home" src="{{ custom_theme.navbar_logo.url }}" style="max-height: 45px"/>
+            {% elif custom_theme.logo %}
+                <img id="fbis_logo_home" src="{{ custom_theme.logo.url }}" style="max-height: 45px"/>
+            {% else %}
+                <img id="fbis_logo_home" src="{% static "img/FBIS icon.png" %}" style="max-height: 45px"/>
+            {% endif %}
         </a>
         </a>
     </h5>
