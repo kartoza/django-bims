@@ -77,7 +77,9 @@
     <div class="container">
         {% current_domain as domain_name %}
         <a class="navbar-brand bims-title-big" href="{{ domain_name }}/" style="padding-top: 0 !important; padding-bottom: 0 !important;">
-            {% if custom_theme.logo %}
+            {% if custom_theme.navbar_logo %}
+                <img src="{{ custom_theme.navbar_logo.url }}" height="35"/>
+            {% elif custom_theme.logo %}
                 <img src="{{ custom_theme.logo.url }}" height="35"/>
             {% else %}
                 {% if custom_theme.site_name %}{{ custom_theme.site_name }}{% else %}{{ APPLICATION_NAME }}{% endif %}
