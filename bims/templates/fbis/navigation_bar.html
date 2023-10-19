@@ -92,17 +92,19 @@
                 <a class="nav-login-button" href="/accounts/signup">SIGN UP</a>
             {% else %}
                 <li class="dropdown dropdown-admin">
-                <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">{{ request.user.first_name }}
+                <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">
+                    {% if request.user.first_name %}
+                        {{ request.user.first_name }}
+                    {% else %}
+                        {{ request.user.username }}
+                    {% endif %}
                     </a>
                     <ul class="dropdown-menu" style="width: 180px">
                         <li class="dropdown-menu-item"><a href="/profile/">Profile</a></li>
                         <li class="dropdown-menu-item"><a href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a></li>
                     </ul>
                 </li>
-                {% if bims_preferences.enable_upload_data %}
-                    <a class="p-2" href="/upload">Upload Data</a>
-                {% endif %}
-                {% if user.is_staff or user.is_superuser %}
+                {% if user.is_superuser %}
                     <li class="dropdown dropdown-admin">
                     <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">Administration
                         </a>
@@ -125,6 +127,14 @@
                             <li class="dropdown-menu-item"><a href="/backups-management/">Backups</a></li>
                             <li class="dropdown-menu-item"><a href="/summary-report">Summary Report</a></li>
                             <li class="dropdown-menu-item"><a href="https://analytics.google.com/analytics/web/" target="_blank">Analytics</a></li>
+                        </ul>
+                    </li>
+                {% elif user.is_staff %}
+                    <li class="dropdown dropdown-admin">
+                        <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">Administration
+                        </a>
+                        <ul class="dropdown-menu" style="width: 250px; z-index: 9999">
+                            <li class="dropdown-menu-item"><a href="/admin/">Admin Page</a></li>
                         </ul>
                     </li>
                 {% endif %}
