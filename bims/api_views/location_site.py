@@ -571,7 +571,7 @@ class LocationSitesSummary(APIView):
                 refined_geomorphological = (
                     location_site.refined_geomorphological
                 )
-            river_and_geo['Refined Geomorphological zone'] = (
+            river_and_geo['Original Geomorphological zone'] = (
                 refined_geomorphological
             )
             result['River and Geomorphological Zone'] = river_and_geo

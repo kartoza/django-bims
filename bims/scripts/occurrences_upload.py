@@ -242,6 +242,8 @@ class OccurrenceProcessor(object):
         )
         site_description = DataCSVUpload.row_value(record, SITE_DESCRIPTION)
         refined_geo = DataCSVUpload.row_value(record, REFINED_GEO_ZONE)
+        if not refined_geo:
+            refined_geo = DataCSVUpload.row_value(record, ORIGINAL_GEO_ZONE)
         wetland_name = DataCSVUpload.row_value(record, WETLAND_NAME)
         user_wetland_name = DataCSVUpload.row_value(record, USER_WETLAND_NAME)
         user_hydrogeomorphic_type = DataCSVUpload.row_value(
