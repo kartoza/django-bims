@@ -55,7 +55,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'owner'
         ]
 
-    def get_site_detail_info(self, obj):
+    def get_site_detail_info(self, obj: LocationSite):
         site_coordinates = "{latitude}, {longitude}".format(
             latitude=round(obj.geometry_point.x, 3),
             longitude=round(obj.geometry_point.y, 3))
@@ -67,6 +67,7 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             'site_code': parse_string(obj.site_code),
             'site_coordinates': parse_string(site_coordinates),
             'site_description': parse_string(obj.site_description),
+            'ecosystem_type': obj.ecosystem_type if obj.ecosystem_type else 'Unspecified',
         }
 
         if preferences.SiteSetting.site_code_generator == 'fbis':

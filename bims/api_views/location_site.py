@@ -560,7 +560,7 @@ class LocationSitesSummary(APIView):
 
         if preferences.SiteSetting.site_code_generator == 'fbis':
             river_and_geo = OrderedDict()
-            river_and_geo['River/Wetland/Open Waterbody/Unspecified'] = (
+            river_and_geo['Ecosystem Type'] = (
                 location_site.ecosystem_type if location_site.ecosystem_type else 'Unspecified'
             )
             river_and_geo['River'] = site_river
