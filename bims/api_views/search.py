@@ -655,18 +655,19 @@ class CollectionSearch(object):
             bio = bio.filter(reference_category_filter)
             bio_filtered = True
 
-        ecosystem_types = self.ecosystem_type
-        if ecosystem_types:
-            if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
-                    ecosystem_type__in=ecosystem_types
-                )
+        if self.parameters.get('ecosystemType'):
+            ecosystem_types = self.ecosystem_type
+            if ecosystem_types:
+                if not isinstance(filtered_location_sites, QuerySet):
+                    filtered_location_sites = LocationSite.objects.filter(
+                        ecosystem_type__in=ecosystem_types
+                    )
+                else:
+                    filtered_location_sites = filtered_location_sites.filter(
+                        ecosystem_type__in=ecosystem_types
+                    )
             else:
-                filtered_location_sites = filtered_location_sites.filter(
-                    ecosystem_type__in=ecosystem_types
-                )
-        else:
-            filtered_location_sites = LocationSite.objects.none()
+                filtered_location_sites = LocationSite.objects.none()
 
         spatial_filters = self.spatial_filter
         if spatial_filters:
