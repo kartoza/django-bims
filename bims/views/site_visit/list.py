@@ -5,7 +5,12 @@ from django.db.models import Count
 from django.contrib.auth import get_user_model
 from django.db.models import Subquery, OuterRef
 from bims.models.survey import Survey
-from bims.models.location_site import LocationSite
+from bims.enums.ecosystem_type import (
+    ECOSYSTEM_RIVER,
+    ECOSYSTEM_WETLAND,
+    ECOSYSTEM_OPEN_WATERBODY,
+    ECOSYSTEM_UNSPECIFIED
+)
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.taxon_group import TaxonGroup, TaxonomicGroupCategory
 from bims.api_views.search import CollectionSearch
@@ -40,12 +45,6 @@ class SiteVisitListView(ListView):
 
         # Base queryset
         qs = super(SiteVisitListView, self).get_queryset()
-
-        # Get all ecosystem type
-        search_filters['ecosystemType'] = ','.join(list(
-            LocationSite.objects.all().values_list(
-                'ecosystem_type', flat=True).distinct()
-        ))
 
         if search_filters:
             search = CollectionSearch(search_filters)

@@ -58,6 +58,7 @@ from bims.models.location_context_filter_group_order import (
 )
 from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.collection_record import download_gbif_ids
+from bims.enums.ecosystem_type import ECOSYSTEM_WETLAND
 
 
 class LocationSiteList(APIView):
@@ -559,9 +560,14 @@ class LocationSitesSummary(APIView):
 
         if preferences.SiteSetting.site_code_generator == 'fbis':
             river_and_geo = OrderedDict()
+            river_and_geo['River/Wetland/Open Waterbody/Unspecified'] = (
+                location_site.ecosystem_type
+            )
             river_and_geo['River'] = site_river
             river_and_geo[
-                'User River Name'] = location_site.legacy_river_name
+                'User River Name'] = (
+                location_site.legacy_river_name if location_site.legacy_river_name else '-'
+            )
             river_and_geo['Geomorphological zone'] = (
                 location_context.value_from_key(
                     'geo_class_recoded')
@@ -571,10 +577,31 @@ class LocationSitesSummary(APIView):
                 refined_geomorphological = (
                     location_site.refined_geomorphological
                 )
-            river_and_geo['Original Geomorphological zone'] = (
+            river_and_geo['User Geomorphological zone'] = (
                 refined_geomorphological
             )
-            result['River and Geomorphological Zone'] = river_and_geo
+            river_and_geo['Wetland Name (NWM6)'] = (
+                location_site.wetland_name if location_site.wetland_name else '-'
+            )
+            river_and_geo['User Wetland Name'] = (
+                location_site.user_wetland_name if location_site.user_wetland_name else '-'
+            )
+            river_and_geo['Hydrogeomorphic Type (NWM6)'] = (
+                location_site.hydrogeomorphic_type if location_site.hydrogeomorphic_type else '-'
+            )
+            river_and_geo['User Hydrogeomorphic Type'] = (
+                location_site.user_hydrogeomorphic_type if location_site.user_hydrogeomorphic_type else '-'
+            )
+
+            wetland_area = ''
+            if location_site.ecosystem_type == ECOSYSTEM_WETLAND and location_site.additional_data:
+                wetland_area = location_site.additional_data.get('area_ha', '')
+
+            river_and_geo['Wetland area (hectares)'] = (
+                wetland_area if wetland_area else '-'
+            )
+
+            result['Ecosystem Characteristics'] = river_and_geo
 
         # Location context group data
         location_context_filters = (

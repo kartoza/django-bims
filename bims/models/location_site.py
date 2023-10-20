@@ -66,7 +66,7 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
         blank=True,
         null=True,
         max_length=200,
-        verbose_name='Original geomorphological',
+        verbose_name='User geomorphological',
         choices=[(g.value, g.value) for g in GeomorphologicalZoneCategory],
         help_text='Would be used in preference to the one discovered '
                   'in geocontext',
