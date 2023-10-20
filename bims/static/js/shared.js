@@ -8,7 +8,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', '
             "&yearFrom=<%= yearFrom %>&yearTo=<%= yearTo %>&months=<%= months %>" +
             "&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
             "&referenceCategory=<%= referenceCategory %>" +
-            "&spatialFilter=<%= spatialFilter %>" +
+            "&spatialFilter=<%= encodeURIComponent(spatialFilter) %>" +
             "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>&sourceCollection=<%= sourceCollection %>" +
             "&module=<%= module %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
