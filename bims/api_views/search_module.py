@@ -121,7 +121,7 @@ class SearchModule(CollectionSearch):
             ).filter(full_name__in=self.collector)
             collector_list = list(collectors.values_list('id', flat=True))
             self.module = self.module.filter(
-                owner__in=collector_list
+                owner_id__in=collector_list
             )
 
         self.sites = LocationSite.objects.filter(
@@ -132,6 +132,11 @@ class SearchModule(CollectionSearch):
                     'location_site__id', flat=True
                 )
         )
+
+        if self.ecosystem_type:
+            self.sites = self.sites.filter(
+                ecosystem_type__in=self.ecosystem_type
+            )
 
         self.annotate()
 
@@ -171,9 +176,12 @@ class SearchModule(CollectionSearch):
             order_by = 'name'
 
         self.sites = self.sites.order_by(order_by)
+        site_ids = list(self.sites.values_list(
+            'id', flat=True
+        ))
         total = self.module.filter(
-            location_site__in=self.sites
-        ).count() if self.module else 0
+            location_site_id__in=site_ids
+        ).count() if self.module.count() > 0 else 0
         if self.sites.count() == 0:
             total = 0
 
