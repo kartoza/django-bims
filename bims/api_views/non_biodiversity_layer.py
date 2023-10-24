@@ -1,5 +1,6 @@
 # coding=utf8
 import csv
+import re
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -31,6 +32,11 @@ class DownloadLayerData(APIView):
     permission_classes = [IsAuthenticated,]
     _layer = None
 
+    @staticmethod
+    def contains_decimal(s):
+        pattern = r'-?\d+\.\d+'
+        return bool(re.search(pattern, s))
+
     def _get_response(self, message, data=None):
         return Response({
             'layer': self._layer.name if self._layer else None,
@@ -58,12 +64,19 @@ class DownloadLayerData(APIView):
         with open(self._layer.csv_file.path) as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                if self._layer.csv_attribute not in row:
+                cleaned_row = {key.replace("\ufeff", ""): value for key, value in row.items()}
+                if self._layer.csv_attribute not in cleaned_row:
                     return self._get_response(
                         message='CSV attribute not found'
                     )
-                if row[self._layer.csv_attribute] == query_filter:
-                    data = row
+                if not self.contains_decimal(
+                    cleaned_row[self._layer.csv_attribute]
+                ) and self.contains_decimal(
+                    query_filter
+                ):
+                    query_filter = query_filter.split('.')[0]
+                if cleaned_row[self._layer.csv_attribute] == query_filter:
+                    data = cleaned_row
         return self._get_response(
             message,
             data
