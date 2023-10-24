@@ -24,6 +24,9 @@ from bims.models.wetland_indicator_status import (
     WetlandIndicatorStatus
 )
 from bims.models.abundance_type import AbundanceType
+from bims.models.sampling_effort_measure import (
+    SamplingEffortMeasure
+)
 
 
 class SiteVisitUpdateView(
@@ -148,6 +151,12 @@ class SiteVisitUpdateView(
         else:
             abundance_type = None
 
+        sampling_effort_measure = form.data.get('sampling_effort_type', None)
+        if sampling_effort_measure:
+            sampling_effort_measure = SamplingEffortMeasure.objects.filter(
+                name=sampling_effort_measure
+            ).first()
+
         if collection_id_list:
             self.collection_records = BiologicalCollectionRecord.objects.filter(
                 id__in=collection_id_list
@@ -165,9 +174,6 @@ class SiteVisitUpdateView(
                 )
                 sampling_effort = form.data.get('sampling_effort', '')
                 if sampling_effort:
-                    sampling_effort += (
-                            ' ' + form.data.get('sampling_effort_type', '')
-                    )
                     collection_record.sampling_effort = sampling_effort
                 collection_record.save()
             self.collection_records.update(
@@ -180,7 +186,8 @@ class SiteVisitUpdateView(
                 collector_user=collector_user,
                 hydroperiod=hydroperiod,
                 wetland_indicator_status=wetland_indicator_status,
-                record_type=record_type
+                record_type=record_type,
+                sampling_effort_link=sampling_effort_measure
             )
 
             # Remove deleted collection records

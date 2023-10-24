@@ -41,6 +41,7 @@ from bims.models import (
     WetlandIndicatorStatus,
     RecordType,
     AbundanceType,
+    SamplingEffortMeasure,
     location_context_post_save_handler
 )
 from bims.utils.user import create_users_from_string
@@ -622,9 +623,33 @@ class OccurrenceProcessor(object):
             sampling_effort += DataCSVUpload.row_value(
                 row,
                 SAMPLING_EFFORT_VALUE) + ' '
-        if DataCSVUpload.row_value(row, SAMPLING_EFFORT):
-            sampling_effort += DataCSVUpload.row_value(row, SAMPLING_EFFORT)
         optional_data['sampling_effort'] = sampling_effort
+
+        sampling_effort_measure = DataCSVUpload.row_value(row, SAMPLING_EFFORT)
+        if 'min' in sampling_effort_measure.lower():
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name='Time(min)'
+            )
+        elif (
+                'area' in sampling_effort_measure.lower() or
+                'm2' in sampling_effort_measure.lower() or
+                'meter' in sampling_effort_measure.lower() or
+                'metre' in sampling_effort_measure.lower()
+        ):
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name='Area(m2)'
+            )
+        elif 'replicates' in sampling_effort_measure.lower():
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name='Replicates'
+            )
+        else:
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name=sampling_effort_measure
+            )
+
+        if sampling_effort_measure:
+            optional_data['sampling_effort_link'] = sampling_effort_measure
 
         # -- Optional data - Processing biotope
         # Broad biotope

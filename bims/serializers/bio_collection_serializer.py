@@ -270,8 +270,8 @@ class BioCollectionOneRowSerializer(
         return '-'
 
     def get_sampling_effort_measure(self, obj):
-        if obj.sampling_effort:
-            return ' '.join(obj.sampling_effort.split(' ')[1:])
+        if obj.sampling_effort_link:
+            return obj.sampling_effort_link.name
         return '-'
 
     def get_sampling_effort_value(self, obj):

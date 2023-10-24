@@ -1,4 +1,5 @@
 from django.views.generic import View
+from django.db.models import Q
 from django.db.models.functions import Length
 from bims.models.biotope import Biotope
 from bims.models.sampling_method import SamplingMethod
@@ -15,7 +16,11 @@ from bims.models.wetland_indicator_status import (
     WetlandIndicatorStatus
 )
 from bims.models.abundance_type import AbundanceType
+from bims.models.sampling_effort_measure import SamplingEffortMeasure
 from bims.serializers.abundance_type import AbundanceTypeSerializer
+from bims.serializers.sampling_effort_measure import (
+    SamplingEffortMeasureSerializer
+)
 
 
 class SiteVisitBaseView(View):
@@ -129,10 +134,16 @@ class SiteVisitBaseView(View):
         try:
             if sampling_effort.exists():
                 sampling_effort_str = sampling_effort[0].sampling_effort
+                sampling_effort_measure = sampling_effort[0].sampling_effort_link
+                sampling_effort_measure_str = ''
+                if sampling_effort_measure:
+                    sampling_effort_measure_str = (
+                        sampling_effort_measure.name
+                    )
                 sampling_effort_arr = sampling_effort_str.split(' ')
                 return (
                     sampling_effort_arr[0].strip(),
-                    sampling_effort_arr[1].strip().lower()
+                    sampling_effort_measure_str
                 )
         except IndexError:
             pass
@@ -203,6 +214,15 @@ class SiteVisitBaseView(View):
             abundance_types,
             many=True
         ).data
+        sampling_effort_measures = SamplingEffortMeasure.objects.filter(
+            Q(specific_module__name=self.taxon_group().name) |
+            Q(specific_module__isnull=True)
+        )
+        context['sampling_effort_measures'] = SamplingEffortMeasureSerializer(
+            sampling_effort_measures,
+            many=True
+        ).data
+
         context['hydroperiod_choices'] = list(
             Hydroperiod.objects.all().values_list('name', flat=True)
         )

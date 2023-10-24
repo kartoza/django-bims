@@ -105,7 +105,8 @@ from bims.models import (
     RecordType,
     Hydroperiod,
     WetlandIndicatorStatus,
-    AbundanceType
+    AbundanceType,
+    SamplingEffortMeasure
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1768,6 +1769,11 @@ class AbundanceTypeAdmin(OrderedModelAdmin):
     ordering = ('order',)
 
 
+class SamplingEffortMeasureAdmin(OrderedModelAdmin):
+    list_display = ('name', 'move_up_down_links', 'order')
+    ordering = ('order',)
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1871,4 +1877,8 @@ admin.site.register(
 admin.site.register(
     AbundanceType,
     AbundanceTypeAdmin,
+)
+admin.site.register(
+    SamplingEffortMeasure,
+    SamplingEffortMeasureAdmin
 )
