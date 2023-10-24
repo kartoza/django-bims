@@ -121,7 +121,12 @@ function renderFilterList($div, asTable = true) {
             } else if (data['type'] === 'unicode') {
                 tableData[data['label']] = decodeURIComponent(urlParams[key]);
             } else if (data['type'] === 'json') {
-                let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
+                let json_data = '';
+                try {
+                    json_data = JSON.parse(decodeURIComponent(urlParams[key]));
+                } catch (e) {
+                    json_data = JSON.parse(decodeURIComponent(decodeURIComponent(urlParams[key])));
+                }
                 try {
                     if (typeof json_data !== 'undefined' && json_data.length > 0) {
                         tableData[data['label']] = '';

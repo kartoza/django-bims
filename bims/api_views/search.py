@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 import operator
 import hashlib
 import ast
@@ -128,7 +129,12 @@ class CollectionSearch(object):
         """
         json_query = self.get_request_data(field=field)
         if json_query:
-            return json.loads(json_query)
+            try:
+                return json.loads(json_query)
+            except json.decoder.JSONDecodeError:
+                return json.loads(
+                    urllib.parse.unquote(json_query)
+                )
         else:
             return None
 
