@@ -385,7 +385,7 @@ define(
 
                 Shared.StorageUtil.setItem(this.layerSelectorSearchKey, searchValue);
                 layerSelectors.css('display', 'block').filter(function (index) {
-                    return $(this).data("name").toLowerCase().indexOf(searchValue.toLowerCase()) === -1;
+                    return $(this).data("layer-title").toLowerCase().indexOf(searchValue.toLowerCase()) === -1;
                 }).css('display', 'none');
             },
             fallbackCopyTextToClipboard: function (text, $divTarget) {
