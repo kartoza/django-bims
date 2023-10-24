@@ -25,7 +25,7 @@ class GetFeatureInfo(APIView):
         if layer_name:
             try:
                 layer = NonBiodiversityLayer.objects.get(
-                    name=layer_name
+                    wms_layer_name=layer_name
                 )
             except NonBiodiversityLayer.DoesNotExist:
                 pass
