@@ -250,6 +250,9 @@ class OccurrenceProcessor(object):
         # -- Ecosystem type
         ecosystem_type = DataCSVUpload.row_value(
             record, ECOSYSTEM_TYPE)
+        if not ecosystem_type:
+            ecosystem_type = DataCSVUpload.row_value(
+                record, ECOSYSTEM_TYPE_2)
 
         location_type, status = LocationType.objects.get_or_create(
             name='PointObservation',
@@ -328,22 +331,23 @@ class OccurrenceProcessor(object):
                 ).first()
 
         if not location_site:
-            try:
+            location_site = LocationSite.objects.filter(
+                geometry_point=record_point,
+                ecosystem_type=ecosystem_type
+            ).first()
+            if not location_site:
                 location_site, status = (
                     LocationSite.objects.get_or_create(
-                        location_type=location_type,
                         geometry_point=record_point,
-                        ecosystem_type=ecosystem_type
+                        ecosystem_type=ecosystem_type,
+                        location_type=location_type
                     )
                 )
-            except LocationSite.MultipleObjectsReturned:
-                location_site = LocationSite.objects.filter(
-                    location_type=location_type,
-                    geometry_point=record_point,
-                    ecosystem_type=ecosystem_type
-                ).first()
+
         if not location_site.name and location_site_name:
             location_site.name = location_site_name
+        if not location_site.location_type:
+            location_site.location_type = location_type
         if not location_site.legacy_site_code and legacy_site_code:
             location_site.legacy_site_code = legacy_site_code
         if not location_site.site_description and site_description:
@@ -809,8 +813,13 @@ class OccurrenceProcessor(object):
             record.module_group = self.module_group
 
         # -- Ecosystem type
-        record.ecosystem_type = DataCSVUpload.row_value(
+        ecosystem_type = DataCSVUpload.row_value(
             row, ECOSYSTEM_TYPE)
+        if not ecosystem_type:
+            ecosystem_type = DataCSVUpload.row_value(
+                row, ECOSYSTEM_TYPE_2
+            )
+        record.ecosystem_type = ecosystem_type
 
         # -- Additional data
         record.additional_data = json.dumps(row)
