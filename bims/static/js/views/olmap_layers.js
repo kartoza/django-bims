@@ -836,7 +836,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                     'layerName': layer['layerTitle'],
                                     'properties': properties,
                                     'layerAttr': result['layer_attr'],
-                                    'layerId': result['layer_id']
+                                    'layerId': result['layer_id'],
+                                    'document': result['document'],
+                                    'documentTitle': result['document_title']
                                 };
                             },
                         }));
@@ -936,7 +938,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             $.each(featuresInfo, function (key_feature, feature) {
                 let layerAttr = feature['layerAttr'];
                 let layerName = feature['layerName'];
+                let document = feature['document'];
+                let documentTitle = feature['documentTitle'] ? feature['documentTitle'] : 'document';
                 let contentId = `info-${key_feature.replace(':', '-')}`;
+                if (document) {
+                    let downloadDoc = $(`<br/><a href="${document}" class="btn btn-xs secondary-accent-background" download>Download ${documentTitle}</a>`);
+                    $(`#${contentId}`).prepend(downloadDoc);
+                }
                 if (layerAttr) {
                     let downloadButton = $('<button class="btn btn-xs btn-primary">Download data</button>');
                     downloadButton.click(function () {

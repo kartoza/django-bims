@@ -188,6 +188,17 @@ html, body, .map, .map-wrapper, #map-container {
     width: auto;
 }
 
+.secondary-accent-background {
+    color: white;
+    background: rgb(var(--secondary-accent-color));;
+}
+
+.secondary-accent-background:hover {
+    color: white;
+    background: rgba(var(--secondary-accent-color), 0.8);;
+}
+
+
 .zoom-control {
     font-size: 11pt;
     padding: 7px 0;
