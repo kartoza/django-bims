@@ -250,6 +250,9 @@ class OccurrenceProcessor(object):
         # -- Ecosystem type
         ecosystem_type = DataCSVUpload.row_value(
             record, ECOSYSTEM_TYPE)
+        if not ecosystem_type:
+            ecosystem_type = DataCSVUpload.row_value(
+                record, ECOSYSTEM_TYPE_2)
 
         location_type, status = LocationType.objects.get_or_create(
             name='PointObservation',
@@ -809,8 +812,13 @@ class OccurrenceProcessor(object):
             record.module_group = self.module_group
 
         # -- Ecosystem type
-        record.ecosystem_type = DataCSVUpload.row_value(
+        ecosystem_type = DataCSVUpload.row_value(
             row, ECOSYSTEM_TYPE)
+        if not ecosystem_type:
+            ecosystem_type = DataCSVUpload.row_value(
+                row, ECOSYSTEM_TYPE_2
+            )
+        record.ecosystem_type = ecosystem_type
 
         # -- Additional data
         record.additional_data = json.dumps(row)
