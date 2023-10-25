@@ -334,19 +334,19 @@ class OccurrenceProcessor(object):
             try:
                 location_site, status = (
                     LocationSite.objects.get_or_create(
-                        location_type=location_type,
                         geometry_point=record_point,
                         ecosystem_type=ecosystem_type
                     )
                 )
             except LocationSite.MultipleObjectsReturned:
                 location_site = LocationSite.objects.filter(
-                    location_type=location_type,
                     geometry_point=record_point,
                     ecosystem_type=ecosystem_type
                 ).first()
         if not location_site.name and location_site_name:
             location_site.name = location_site_name
+        if not location_site.location_type:
+            location_site.location_type = location_type
         if not location_site.legacy_site_code and legacy_site_code:
             location_site.legacy_site_code = legacy_site_code
         if not location_site.site_description and site_description:
