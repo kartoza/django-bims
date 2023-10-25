@@ -164,19 +164,33 @@ class OccurrenceProcessor(object):
         # Raise value error if date string is not in a valid format
         sampling_date = None
         date_string = DataCSVUpload.row_value(row, SAMPLING_DATE)
-        try:
-            sampling_date = datetime.strptime(
-                date_string, '%Y/%m/%d')
-        except ValueError:
-            sampling_date = datetime.strptime(
-                date_string, '%m/%d/%Y')
-        finally:
-            if not sampling_date:
-                self.handle_error(
-                    row=row,
-                    message='Incorrect date format'
-                )
-            return sampling_date
+        if not date_string:
+            date_string = DataCSVUpload.row_value(row, SAMPLING_DATE_2)
+        if '-' in date_string:
+            try:
+                sampling_date = datetime.strptime(
+                    date_string, '%Y-%m-%d')
+            finally:
+                if not sampling_date:
+                    self.handle_error(
+                        row=row,
+                        message='Incorrect date format'
+                    )
+                return sampling_date
+        else:
+            try:
+                sampling_date = datetime.strptime(
+                    date_string, '%Y/%m/%d')
+            except ValueError:
+                sampling_date = datetime.strptime(
+                    date_string, '%m/%d/%Y')
+            finally:
+                if not sampling_date:
+                    self.handle_error(
+                        row=row,
+                        message='Incorrect date format'
+                    )
+                return sampling_date
 
     def process_survey(self, record, location_site, sampling_date, collector):
         """Process survey data"""
@@ -541,6 +555,9 @@ class OccurrenceProcessor(object):
         collectors = create_users_from_string(
             DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER))
         if not collectors:
+            collectors = create_users_from_string(
+                DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER_2))
+        if not collectors:
             self.handle_error(
                 row=row,
                 message='Missing collector/owner'
@@ -622,7 +639,7 @@ class OccurrenceProcessor(object):
                 row, SAMPLING_EFFORT_VALUE):
             sampling_effort += DataCSVUpload.row_value(
                 row,
-                SAMPLING_EFFORT_VALUE) + ' '
+                SAMPLING_EFFORT_VALUE)
         optional_data['sampling_effort'] = sampling_effort
 
         sampling_effort_measure = DataCSVUpload.row_value(row, SAMPLING_EFFORT)

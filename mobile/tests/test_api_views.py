@@ -19,7 +19,6 @@ from bims.tests.model_factories import (
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.survey import Survey
 from bims.models.record_type import RecordType
-from bims.models.site_setting import SiteSetting
 from bims.models.abundance_type import AbundanceType
 
 

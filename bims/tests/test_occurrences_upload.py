@@ -1,16 +1,47 @@
 import os
 import mock
-from django.test import TestCase
+import json
+from django.test import TestCase, override_settings
+from django.core.files import File
 from bims.scripts.collections_upload_source_reference import (
     process_source_reference
 )
 from bims.tests.model_factories import (
     DocumentF,
-    UserF
+    UserF,
+    UploadSessionF,
+    TaxonomyF,
+    TaxonGroupF,
 )
+from bims.models import UploadSession, BiologicalCollectionRecord
+from bims.scripts.occurrences_upload import (
+    OccurrencesCSVUpload
+)
+
+from bims.models import SiteSetting
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
+
+
+def mocked_location_context_data(url):
+    class MockResponse:
+        def __init__(self, json_data, status_code):
+            self.json_data = json_data
+            self.status_code = status_code
+
+        def json(self):
+            return self.json_data
+
+    response_file = 'geocontext_data.json'
+    response_path = os.path.join(
+        test_data_directory, response_file)
+    if os.path.exists(response_path):
+        response_data = open(response_path)
+        json_data = response_data.read()
+        response_data.close()
+        return MockResponse(json.loads(json_data), 200)
+    return ''
 
 
 def mocked_doi_loader(
@@ -122,3 +153,46 @@ class TestCollectionUpload(TestCase):
         self.assertIsNotNone(
             source_reference
         )
+
+    @override_settings(GEOCONTEXT_URL="test.gecontext.com")
+    @mock.patch('requests.get', mock.Mock(
+        side_effect=mocked_location_context_data))
+    @mock.patch.object(SiteSetting, 'default_data_source', new_callable=mock.PropertyMock)
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    def test_csv_upload(self, mock_finish, mock_default_data_source):
+        mock_finish.return_value = None
+        mock_default_data_source.return_value = "fbis"
+
+        taxonomy_1 = TaxonomyF.create(
+            canonical_name='Achnanthes eutrophila',
+            rank='SPECIES',
+            taxonomic_status='ACCEPTED'
+        )
+
+        taxon_group = TaxonGroupF.create(
+            name='test',
+            taxonomies=(taxonomy_1,)
+        )
+
+        with open(os.path.join(
+            test_data_directory, 'csv_upload_test.csv'
+        ), 'rb') as file:
+            upload_session = UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(file),
+                module_group=taxon_group
+            )
+
+        saved_instance = UploadSession.objects.get(pk=upload_session.pk)
+
+        self.assertTrue(saved_instance.process_file)
+
+        data_upload = OccurrencesCSVUpload()
+        data_upload.upload_session = saved_instance
+        data_upload.start()
+
+        bio = BiologicalCollectionRecord.objects.filter(
+            uuid='b660c31d4fab4ab7806f48f97c46559d'
+        )
+        self.assertTrue(bio.exists())
+        self.assertEqual(bio.first().sampling_effort_link.name, 'Time(min)')

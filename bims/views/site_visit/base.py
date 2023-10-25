@@ -214,8 +214,11 @@ class SiteVisitBaseView(View):
             abundance_types,
             many=True
         ).data
+        taxon_group_name = ''
+        if self.taxon_group():
+            taxon_group_name = self.taxon_group().name
         sampling_effort_measures = SamplingEffortMeasure.objects.filter(
-            Q(specific_module__name=self.taxon_group().name) |
+            Q(specific_module__name=taxon_group_name) |
             Q(specific_module__isnull=True)
         )
         context['sampling_effort_measures'] = SamplingEffortMeasureSerializer(
