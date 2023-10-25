@@ -62,6 +62,20 @@ class NonBiodiversityLayer(OrderedModel):
                   'to filter csv_file.'
     )
 
+    document = models.FileField(
+        upload_to='non_biodiversity_layer_document',
+        null=True,
+        blank=True,
+        help_text='File to be displayed as an attachment in the attribute popup.'
+    )
+
+    document_title = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        help_text='Title for the attached document. Displayed on the download button.'
+    )
+
     enable_styles_selection = models.BooleanField(
         default=False,
         verbose_name='Enable styles selection',

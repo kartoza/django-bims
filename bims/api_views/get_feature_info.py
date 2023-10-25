@@ -35,12 +35,16 @@ class GetFeatureInfo(APIView):
             return Response({
                 'feature_data': response.text,
                 'layer_attr': layer.layer_csv_attribute if layer else None,
-                'layer_id': layer.id if layer else None
+                'layer_id': layer.id if layer else None,
+                'document': layer.document.url if layer and layer.document else None,
+                'document_title': layer.document_title if layer else None
             })
         except (HTTPError, KeyError, ConnectionError) as e:
             print(e)
             return Response({
                 'feature_data': '',
                 'layer_attr': None,
-                'layer_id': None
+                'layer_id': None,
+                'document': None,
+                'document_title': None
             })
