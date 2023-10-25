@@ -42,7 +42,8 @@ from bims.models import (
     source_reference_post_save_handler,
     SourceReferenceDatabase,
     AbundanceType,
-    SourceReferenceDocument
+    SourceReferenceDocument,
+    SamplingEffortMeasure
 )
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
@@ -899,9 +900,32 @@ class Command(BaseCommand):
                     sampling_effort = ''
                     if SAMPLING_EFFORT_VALUE in record and self.row_value(record, SAMPLING_EFFORT_VALUE):
                         sampling_effort += self.row_value(record, SAMPLING_EFFORT_VALUE) + ' '
-                    if self.row_value(record, SAMPLING_EFFORT):
-                        sampling_effort += self.row_value(record, SAMPLING_EFFORT)
                     optional_records['sampling_effort'] = sampling_effort
+
+                    sampling_effort_measure = self.row_value(record, SAMPLING_EFFORT)
+                    if 'min' in sampling_effort_measure:
+                        sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                            name='Time(min)'
+                        )
+                    elif (
+                            'area' in sampling_effort_measure or
+                            'm2' in sampling_effort_measure or
+                            'meter' in sampling_effort_measure or
+                            'metre' in sampling_effort_measure
+                    ):
+                        sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                            name='Area(m2)'
+                        )
+                    elif 'replicates' in sampling_effort_measure:
+                        sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                            name='Replicates'
+                        )
+                    else:
+                        sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                            name=sampling_effort_measure
+                        )
+                    if sampling_effort_measure:
+                        optional_records['sampling_effort_link'] = sampling_effort_measure
 
                     # -- Processing biotope
                     # Broad biotope

@@ -41,6 +41,7 @@ from bims.models import (
     WetlandIndicatorStatus,
     RecordType,
     AbundanceType,
+    SamplingEffortMeasure,
     location_context_post_save_handler
 )
 from bims.utils.user import create_users_from_string
@@ -163,19 +164,33 @@ class OccurrenceProcessor(object):
         # Raise value error if date string is not in a valid format
         sampling_date = None
         date_string = DataCSVUpload.row_value(row, SAMPLING_DATE)
-        try:
-            sampling_date = datetime.strptime(
-                date_string, '%Y/%m/%d')
-        except ValueError:
-            sampling_date = datetime.strptime(
-                date_string, '%m/%d/%Y')
-        finally:
-            if not sampling_date:
-                self.handle_error(
-                    row=row,
-                    message='Incorrect date format'
-                )
-            return sampling_date
+        if not date_string:
+            date_string = DataCSVUpload.row_value(row, SAMPLING_DATE_2)
+        if '-' in date_string:
+            try:
+                sampling_date = datetime.strptime(
+                    date_string, '%Y-%m-%d')
+            finally:
+                if not sampling_date:
+                    self.handle_error(
+                        row=row,
+                        message='Incorrect date format'
+                    )
+                return sampling_date
+        else:
+            try:
+                sampling_date = datetime.strptime(
+                    date_string, '%Y/%m/%d')
+            except ValueError:
+                sampling_date = datetime.strptime(
+                    date_string, '%m/%d/%Y')
+            finally:
+                if not sampling_date:
+                    self.handle_error(
+                        row=row,
+                        message='Incorrect date format'
+                    )
+                return sampling_date
 
     def process_survey(self, record, location_site, sampling_date, collector):
         """Process survey data"""
@@ -540,6 +555,9 @@ class OccurrenceProcessor(object):
         collectors = create_users_from_string(
             DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER))
         if not collectors:
+            collectors = create_users_from_string(
+                DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER_2))
+        if not collectors:
             self.handle_error(
                 row=row,
                 message='Missing collector/owner'
@@ -621,10 +639,34 @@ class OccurrenceProcessor(object):
                 row, SAMPLING_EFFORT_VALUE):
             sampling_effort += DataCSVUpload.row_value(
                 row,
-                SAMPLING_EFFORT_VALUE) + ' '
-        if DataCSVUpload.row_value(row, SAMPLING_EFFORT):
-            sampling_effort += DataCSVUpload.row_value(row, SAMPLING_EFFORT)
+                SAMPLING_EFFORT_VALUE)
         optional_data['sampling_effort'] = sampling_effort
+
+        sampling_effort_measure = DataCSVUpload.row_value(row, SAMPLING_EFFORT)
+        if 'min' in sampling_effort_measure.lower():
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name='Time(min)'
+            )
+        elif (
+                'area' in sampling_effort_measure.lower() or
+                'm2' in sampling_effort_measure.lower() or
+                'meter' in sampling_effort_measure.lower() or
+                'metre' in sampling_effort_measure.lower()
+        ):
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name='Area(m2)'
+            )
+        elif 'replicates' in sampling_effort_measure.lower():
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name='Replicates'
+            )
+        else:
+            sampling_effort_measure, _ = SamplingEffortMeasure.objects.get_or_create(
+                name=sampling_effort_measure
+            )
+
+        if sampling_effort_measure:
+            optional_data['sampling_effort_link'] = sampling_effort_measure
 
         # -- Optional data - Processing biotope
         # Broad biotope

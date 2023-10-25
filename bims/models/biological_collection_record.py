@@ -221,6 +221,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         default=''
     )
 
+    sampling_effort_link = models.ForeignKey(
+        'bims.SamplingEffortMeasure',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     reference = models.CharField(
         max_length=300,
         blank=True,

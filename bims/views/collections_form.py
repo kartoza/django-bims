@@ -10,7 +10,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.contrib.gis.geos import Point
 from django.utils.decorators import method_decorator
-from django.db.models import F
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.contrib.gis.measure import Distance
@@ -32,13 +32,17 @@ from bims.models import (
     BaseMapLayer, COLLECTION_RECORD_KEY,
     Hydroperiod,
     WetlandIndicatorStatus,
-    AbundanceType
+    AbundanceType,
+    SamplingEffortMeasure
 )
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.views.mixin.session_form.mixin import SessionFormMixin
 from bims.models.algae_data import AlgaeData
 from bims.models.record_type import RecordType
 from bims.serializers.abundance_type import AbundanceTypeSerializer
+from bims.serializers.sampling_effort_measure import (
+    SamplingEffortMeasureSerializer
+)
 
 logger = logging.getLogger('bims')
 
@@ -101,10 +105,17 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         name__iexact=abundance_type
     ).first()
 
-    sampling_effort = '{effort} {type}'.format(
-        effort=post_data.get('sampling_effort', ''),
-        type=post_data.get('sampling_effort_type', '')
+    sampling_effort = (
+        post_data.get('sampling_effort', '')
     ).strip()
+
+    sampling_effort_measure = (
+        post_data.get('sampling_effort_type', None)
+    )
+    if sampling_effort_measure:
+        sampling_effort_measure = SamplingEffortMeasure.objects.filter(
+            name__iexact=sampling_effort_measure
+        ).first()
 
     collection_date = parse(date_string)
 
@@ -287,6 +298,7 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
                         reference=reference,
                         reference_category=reference_category,
                         sampling_effort=sampling_effort,
+                        sampling_effort_link=sampling_effort_measure,
                         abundance_type=abundance_type,
                         survey=self.survey,
                         record_type=record_type,
@@ -413,6 +425,15 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             )
         context['abundance_types'] = AbundanceTypeSerializer(
             abundance_types,
+            many=True
+        ).data
+
+        sampling_effort_measures = SamplingEffortMeasure.objects.filter(
+            Q(specific_module__name=self.taxon_group_name) |
+            Q(specific_module__isnull=True)
+        )
+        context['sampling_effort_measures'] = SamplingEffortMeasureSerializer(
+            sampling_effort_measures,
             many=True
         ).data
 

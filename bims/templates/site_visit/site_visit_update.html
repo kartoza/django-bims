@@ -287,12 +287,9 @@
                             <select class="form-control"
                                     name="sampling_effort_type">
                                 <option value=""> Not specified</option>
-                                <option value="min" {% if sampling_effort_unit == 'min' %} selected {% endif %}> Time (min)</option>
-                                <option value="square_metre" {% if sampling_effort_unit == 'square_metre' %} selected {% endif %}> Area (m&sup2;)
-                                </option>
-                                {% if taxon_group.name == 'Algae' %}
-                                    <option value="replicates" {% if sampling_effort_unit == 'replicates' %} selected {% endif %}> Replicates </option>
-                                {% endif %}
+                                {% for sampling_effort_measure in sampling_effort_measures %}
+                                    <option value="{{ sampling_effort_measure.name }}" {% if sampling_effort_unit == sampling_effort_measure.name %}selected{% endif %}>{{ sampling_effort_measure.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-8">
