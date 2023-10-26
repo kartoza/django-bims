@@ -18,6 +18,7 @@ class SamplingEffortMeasureSerializer(serializers.ModelSerializer):
     class Meta:
         model = SamplingEffortMeasure
         fields = [
+            'id',
             'name',
             'specific_module'
         ]

@@ -138,7 +138,7 @@ class SiteVisitBaseView(View):
                 sampling_effort_measure_str = ''
                 if sampling_effort_measure:
                     sampling_effort_measure_str = (
-                        sampling_effort_measure.name
+                        sampling_effort_measure.id
                     )
                 sampling_effort_arr = sampling_effort_str.split(' ')
                 return (

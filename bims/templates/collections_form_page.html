@@ -261,7 +261,7 @@
                                     name="sampling_effort_type">
                                 <option value=""> Not specified</option>
                                 {% for sampling_effort_measure in sampling_effort_measures %}
-                                    <option value="{{ sampling_effort_measure.name }}">{{ sampling_effort_measure.name }}</option>
+                                    <option value="{{ sampling_effort_measure.id }}">{{ sampling_effort_measure.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>

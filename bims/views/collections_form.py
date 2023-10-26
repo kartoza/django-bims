@@ -113,10 +113,19 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     sampling_effort_measure = (
         post_data.get('sampling_effort_type', None)
     )
+
+    sampling_effort_link = None
     if sampling_effort_measure:
-        sampling_effort_measure = SamplingEffortMeasure.objects.filter(
-            name__iexact=sampling_effort_measure
+        sampling_effort_link = SamplingEffortMeasure.objects.filter(
+            id=sampling_effort_measure
         ).first()
+        if not sampling_effort_link:
+            sampling_effort_link = SamplingEffortMeasure.objects.filter(
+                name__iexact=sampling_effort_measure
+            ).first()
+
+    if sampling_effort_link:
+        sampling_effort_measure = sampling_effort_link
 
     collection_date = parse(date_string)
 

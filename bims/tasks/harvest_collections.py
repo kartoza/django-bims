@@ -42,7 +42,8 @@ def harvest_collections(session_id):
         import_gbif_occurrences(
             taxonomy=taxon,
             log_file_path=harvest_session.log_file.path,
-            session_id=session_id
+            session_id=session_id,
+            taxon_group=harvest_session.module_group
         )
 
     harvest_session.status = 'Finished'

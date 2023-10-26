@@ -152,10 +152,18 @@ class SiteVisitUpdateView(
             abundance_type = None
 
         sampling_effort_measure = form.data.get('sampling_effort_type', None)
+        sampling_effort_link = None
         if sampling_effort_measure:
-            sampling_effort_measure = SamplingEffortMeasure.objects.filter(
-                name=sampling_effort_measure
+            sampling_effort_link = SamplingEffortMeasure.objects.filter(
+                id=sampling_effort_measure
             ).first()
+            if not sampling_effort_link:
+                sampling_effort_link = SamplingEffortMeasure.objects.filter(
+                    name__iexact=sampling_effort_measure
+                ).first()
+
+        if sampling_effort_link:
+            sampling_effort_measure = sampling_effort_link
 
         if collection_id_list:
             self.collection_records = BiologicalCollectionRecord.objects.filter(

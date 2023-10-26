@@ -1,4 +1,5 @@
 from django.http.response import Http404
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +8,9 @@ from rest_framework.views import APIView
 from bims.models import Biotope, TaxonGroup
 from bims.models.sampling_method import SamplingMethod
 from bims.models.hydroperiod import Hydroperiod
+from bims.models.sampling_effort_measure import (
+    SamplingEffortMeasure
+)
 
 
 class AllChoicesApi(APIView):
@@ -38,6 +42,13 @@ class AllChoicesApi(APIView):
             Hydroperiod.objects.all().values_list('name', flat=True)
         )
 
+        sampling_effort_measure = list(SamplingEffortMeasure.objects.filter(
+            Q(specific_module__isnull=True) |
+            Q(specific_module_id=taxon_group.id)
+        ).exclude(name='').values(
+            'id', 'name'
+        ))
+
         return Response({
             'broad_biotope': Biotope.objects.broad_biotope_list(
                 taxon_group),
@@ -47,6 +58,7 @@ class AllChoicesApi(APIView):
                 taxon_group
             ),
             'sampling_method': sampling_method_list,
+            'sampling_effort_measure': sampling_effort_measure,
             'hydroperiod': [{
                 'id': hydroperiod,
                 'name': hydroperiod
