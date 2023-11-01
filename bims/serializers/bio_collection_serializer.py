@@ -946,23 +946,29 @@ class BioCollectionOneRowSerializer(
                         cache_key,
                         taxon_attribute_name
                     )
-                    if not taxon_attribute_data:
-                        if (
-                                taxon_attribute_name in
-                                instance.taxonomy.additional_data
-                        ):
-                            taxon_attribute_data = (
-                                instance.taxonomy.additional_data
-                                [taxon_attribute_name]
+                    try:
+                        if not taxon_attribute_data:
+                            if (
+                                    taxon_attribute_name in
+                                    instance.taxonomy.additional_data
+                            ):
+                                taxon_attribute_data = (
+                                    instance.taxonomy.additional_data
+                                    [taxon_attribute_name]
+                                )
+                            self.set_context_cache(
+                                cache_key,
+                                taxon_attribute_name,
+                                taxon_attribute_data
                             )
-                        else:
-                            result[key_title] = '-'
-                        self.set_context_cache(
-                            cache_key,
-                            taxon_attribute_name,
-                            taxon_attribute_data
-                        )
-                    result[key_title] = taxon_attribute_data
+                    except (TypeError, KeyError):
+                        pass
+
+                    result[key_title] = (
+                        taxon_attribute_data
+                        if taxon_attribute_data
+                        else '-'
+                    )
 
         # For gbif
         if instance.source_collection == 'gbif':
