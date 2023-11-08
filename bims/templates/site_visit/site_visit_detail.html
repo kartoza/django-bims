@@ -226,7 +226,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="hydroperiod" id="hydroperiod" disabled>
-                        <option value=""> Not specified</option>
+                        <option value=""> Unspecified</option>
                         {% for hydroperiod_tuple in hydroperiod_choices %}
                             <option value="{{ hydroperiod_tuple }}" {% if hydroperiod_tuple == hydroperiod %} selected {% endif %}>{{ hydroperiod_tuple }}</option>
                         {% endfor %}
@@ -239,7 +239,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="wetland_indicator_status" id="wetland_indicator_status" disabled>
-                        <option value=""> Not specified</option>
+                        <option value=""> Unspecified</option>
                         {% for wetland_indicator_status_choice in wetland_indicator_status_choices %}
                             <option value="{{ wetland_indicator_status_choice }}" {% if wetland_indicator_status_choice == wetland_indicator_status %} selected {% endif %}>{{ wetland_indicator_status_choice }}</option>
                         {% endfor %}
@@ -254,7 +254,7 @@
             <div class="col-sm-10">
                 <select class="form-control"
                         name="biotope" id="broad-biotope" disabled>
-                    <option value=""> Not specified</option>
+                    <option value=""> Unspecified</option>
                     {% for broad_biotope in broad_biotope_list %}
                         <option value="{{ broad_biotope.id }}" {% if broad_biotope.id == biotope.id %} selected {% endif %}> {{ broad_biotope.name }} </option>
                     {% endfor %}
@@ -268,7 +268,7 @@
             <div class="col-sm-10">
                 <select class="form-control"
                         name="specific_biotope" id="specific-biotope" disabled>
-                    <option value=""> Not specified</option>
+                    <option value=""> Unspecified</option>
                     {% for biotope in specific_biotope_list %}
                         <option value="{{ biotope.id }}" {% if biotope.id == specific_biotope.id %} selected {% endif %}> {{ biotope.name }} </option>
                     {% endfor %}
@@ -281,7 +281,7 @@
             <div class="col-sm-10">
                 <select class="form-control"
                         name="substratum" id="substratum" disabled>
-                    <option value=""> Not specified</option>
+                    <option value=""> Unspecified</option>
                     {% for biotope in substratum_list %}
                         <option value="{{ biotope.id }}" {% if biotope.id == substratum.id %} selected {% endif %}> {{ biotope.name }} </option>
                     {% endfor %}
@@ -295,7 +295,7 @@
             <div class="col-sm-10">
                 <select class="form-control"
                         name="sampling_method" disabled>
-                    <option value=""> Not specified</option>
+                    <option value=""> Unspecified</option>
                     {% for sampling_method_val in sampling_method_list %}
                         <option value="{{ sampling_method_val.id }}" {% if sampling_method_val.id == sampling_method.id %} selected {% endif %}> {{ sampling_method_val.sampling_method }} </option>
                     {% endfor %}
@@ -311,7 +311,7 @@
                     <div class="col-4">
                         <select class="form-control"
                                 name="sampling_effort_type" disabled>
-                            <option value=""> Not specified</option>
+                            <option value=""> Unspecified</option>
                             {% for sampling_effort_measure in sampling_effort_measures %}
                                 <option value="{{ sampling_effort_measure.id }}" {% if sampling_effort_unit == sampling_effort_measure.id %}selected{% endif %}>{{ sampling_effort_measure.name }}</option>
                             {% endfor %}
@@ -334,7 +334,7 @@
                    class="col-sm-2 col-form-label col-form-label">Record type</label>
             <div class="col-sm-10">
                 <select class="form-control" name="record_type" disabled>
-                    <option value=""> Not specified</option>
+                    <option value=""> Unspecified</option>
                     {% for record_type in record_types %}
                         <option value="{{ record_type }}"  {% if record_type == record_type_val %} selected {% endif %}> {{ record_type }}</option>
                     {% endfor %}
@@ -349,7 +349,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="curation_process" disabled>
-                        <option value=""> Not specified
+                        <option value=""> Unspecified
                         </option>
                         <option value="Acid cleaned (diatoms)" {% if 'Acid cleaned' in algae_data.curation_process %}selected{% endif %}>
                             Acid cleaned (diatoms)
@@ -466,7 +466,7 @@
     <div id="sampling-method-container" style="display: none;">
         <select class="form-control"
                 name="{{ taxon.taxon_id }}-sampling-method">
-            <option value=""> Not specified</option>
+            <option value=""> Unspecified</option>
             {% for sampling_method in sampling_method_list %}
                 <option value="{{ sampling_method.id }}">
                     {{ sampling_method.sampling_method }} </option>
@@ -481,7 +481,7 @@
         <select class="form-control pull-right"
                 name="{{ taxon.taxon_id }}-sampling-effort-type"
                 style="width: 200px">
-            <option value=""> Not specified</option>
+            <option value=""> Unspecified</option>
             <option value="min"> Time (min)</option>
             <option value="meter"> Area (m)</option>
         </select>

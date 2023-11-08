@@ -92,7 +92,7 @@
                     <div class="col-sm-8">
                         <select class="form-control"
                                 name="survey_data_{{ survey_data.pk }}">
-                            <option value=""> Not specified</option>
+                            <option value=""> Unspecified</option>
                             {% for survey_option in survey_data.option_set %}
                                 <option value="{{ survey_option.pk }}" {% if survey_option.selected %}selected{% endif %}> {{ survey_option.option }} </option>
                             {% endfor %}
