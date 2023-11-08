@@ -174,7 +174,7 @@
                     <div class="col-sm-10">
                         <select class="form-control"
                                 name="hydroperiod" id="hydroperiod">
-                            <option value=""> Not specified</option>
+                            <option value=""> Unspecified</option>
                             {% for hydroperiod in hydroperiod_choices %}
                                 <option value="{{ hydroperiod }}">{{ hydroperiod }}</option>
                             {% endfor %}
@@ -187,7 +187,7 @@
                     <div class="col-sm-10">
                         <select class="form-control"
                                 name="wetland_indicator_status" id="wetland_indicator_status">
-                            <option value=""> Not specified</option>
+                            <option value=""> Unspecified</option>
                             {% for wetland_indicator_status in wetland_indicator_status_choices %}
                                 <option value="{{ wetland_indicator_status }}">{{ wetland_indicator_status }}</option>
                             {% endfor %}
@@ -202,7 +202,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="biotope" id="broad-biotope">
-                        <option value=""> Not specified</option>
+                        <option value=""> Unspecified</option>
                         {% for biotope in broad_biotope_list %}
                             <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
                         {% endfor %}
@@ -216,7 +216,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="specific_biotope" id="specific-biotope">
-                        <option value=""> Not specified</option>
+                        <option value=""> Unspecified</option>
                         {% for biotope in specific_biotope_list %}
                             <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
                         {% endfor %}
@@ -229,7 +229,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="substratum" id="substratum">
-                        <option value=""> Not specified</option>
+                        <option value=""> Unspecified</option>
                         {% for biotope in substratum_list %}
                             <option value="{{ biotope.id }}"> {{ biotope.name }} </option>
                         {% endfor %}
@@ -243,7 +243,7 @@
                 <div class="col-sm-10">
                     <select class="form-control"
                             name="sampling_method">
-                        <option value=""> Not specified</option>
+                        <option value=""> Unspecified</option>
                         {% for sampling_method in sampling_method_list %}
                             <option value="{{ sampling_method.id }}"> {{ sampling_method.sampling_method }} </option>
                         {% endfor %}
@@ -259,7 +259,7 @@
                         <div class="col-4">
                             <select class="form-control"
                                     name="sampling_effort_type">
-                                <option value=""> Not specified</option>
+                                <option value=""> Unspecified</option>
                                 {% for sampling_effort_measure in sampling_effort_measures %}
                                     <option value="{{ sampling_effort_measure.id }}">{{ sampling_effort_measure.name }}</option>
                                 {% endfor %}
@@ -280,7 +280,7 @@
                        class="col-sm-2 col-form-label col-form-label">Record type</label>
                 <div class="col-sm-10">
                      <select class="form-control" name="record_type">
-                         <option value=""> Not specified</option>
+                         <option value=""> Unspecified</option>
                          {% for record_type in record_types %}
                              <option value="{{ record_type }}"> {{ record_type }}</option>
                          {% endfor %}
@@ -296,7 +296,7 @@
                     <div class="col-sm-10">
                         <select class="form-control"
                                 name="curation_process">
-                            <option value=""> Not specified
+                            <option value=""> Unspecified
                             </option>
                             <option value="Acid cleaned (diatoms)">
                                 Acid cleaned (diatoms)
@@ -466,7 +466,7 @@
     <div id="sampling-method-container" style="display: none;">
         <select class="form-control"
                 name="{{ taxon.taxon_id }}-sampling-method">
-            <option value=""> Not specified</option>
+            <option value=""> Unspecified</option>
             {% for sampling_method in sampling_method_list %}
                 <option value="{{ sampling_method.id }}">
                     {{ sampling_method.sampling_method }} </option>
@@ -481,7 +481,7 @@
         <select class="form-control pull-right"
                 name="{{ taxon.taxon_id }}-sampling-effort-type"
                 style="width: 200px">
-            <option value=""> Not specified</option>
+            <option value=""> Unspecified</option>
             <option value="min"> Time (min)</option>
             <option value="meter"> Area (m)</option>
         </select>
