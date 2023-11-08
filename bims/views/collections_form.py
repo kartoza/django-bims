@@ -123,6 +123,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
             sampling_effort_link = SamplingEffortMeasure.objects.filter(
                 name__iexact=sampling_effort_measure
             ).first()
+    else:
+        sampling_effort_measure = None
 
     if sampling_effort_link:
         sampling_effort_measure = sampling_effort_link
