@@ -12,9 +12,6 @@ from bims.models.basemap_layer import BaseMapLayer
 from bims.models.taxonomy import TaxonImage
 from bims.models.record_type import RecordType
 from bims.models.hydroperiod import Hydroperiod
-from bims.models.wetland_indicator_status import (
-    WetlandIndicatorStatus
-)
 from bims.models.abundance_type import AbundanceType
 from bims.models.sampling_effort_measure import SamplingEffortMeasure
 from bims.serializers.abundance_type import AbundanceTypeSerializer
@@ -228,9 +225,6 @@ class SiteVisitBaseView(View):
 
         context['hydroperiod_choices'] = list(
             Hydroperiod.objects.all().values_list('name', flat=True)
-        )
-        context['wetland_indicator_status_choices'] = list(
-            WetlandIndicatorStatus.objects.all().values_list('name', flat=True)
         )
         context['hydroperiod'] = self.hydroperiod()
         context['wetland_indicator_status'] = (
