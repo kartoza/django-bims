@@ -454,9 +454,6 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context['hydroperiod_choices'] = list(
             Hydroperiod.objects.all().values_list('name', flat=True)
         )
-        context['wetland_indicator_status_choices'] = list(
-            WetlandIndicatorStatus.objects.all().values_list('name', flat=True)
-        )
         context['record_types'] = list(
             RecordType.objects.filter(
                 is_hidden_in_form=False
