@@ -31,7 +31,7 @@ from bims.enums.ecosystem_type import (
 LOGGER = logging.getLogger(__name__)
 
 
-class LocationSite(DocumentLinksMixin, AbstractValidation):
+class LocationSite(AbstractValidation):
     """Location Site model."""
 
     __original_centroid = None
@@ -463,6 +463,8 @@ class LocationSite(DocumentLinksMixin, AbstractValidation):
 
     def __init__(self, *args, **kwargs):
         super(LocationSite, self).__init__(*args, **kwargs)
+        if not self.id:
+            return
         self.__original_centroid = self.get_centroid()
         self.__original_refined_geomorphological = (
             self.refined_geomorphological
