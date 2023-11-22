@@ -128,6 +128,7 @@ class FindTaxon(APIView):
     stored_local = 'storedLocal'
     validated = 'validated'
     taxon_group_ids = 'taxonGroupIds'
+    status = 'status'
 
     def get(self, request, *args):
         taxon_list = []
@@ -181,6 +182,7 @@ class FindTaxon(APIView):
             taxa_id = ''
             validated = False
             taxon_group_ids = []
+            status = gbif['status']
             if taxa.exists():
                 taxon = taxa.first()
                 taxa_id = taxon.id
@@ -188,6 +190,7 @@ class FindTaxon(APIView):
                 taxon_group_ids = taxon.taxongroup_set.all().values_list(
                     'id', flat=True
                 )
+                status = taxon.taxonomic_status
             try:
                 canonicalName = gbif['canonicalName']
             except KeyError:
@@ -201,7 +204,8 @@ class FindTaxon(APIView):
                 self.source: 'gbif',
                 self.stored_local: taxa.exists(),
                 self.validated: validated,
-                self.taxon_group_ids: taxon_group_ids
+                self.taxon_group_ids: taxon_group_ids,
+                self.status: status
             })
 
         if not taxon_list:
@@ -220,7 +224,8 @@ class FindTaxon(APIView):
                         self.stored_local: True,
                         self.taxa_id: taxon.id,
                         self.validated: taxon.validated,
-                        self.taxon_group_ids: []
+                        self.taxon_group_ids: [],
+                        self.status: taxon.taxonomic_status
                     })
 
         return Response(taxon_list)

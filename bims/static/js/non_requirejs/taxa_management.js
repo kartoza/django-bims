@@ -230,7 +230,7 @@ $findTaxonButton.click(function () {
 
     // Show response list
     $.ajax({
-        url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&status=accepted&status=synonym&taxonGroupId=${selectedTaxonGroup}`,
+        url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&taxonGroupId=${selectedTaxonGroup}`,
         type: 'get',
         dataType: 'json',
         success: function (data) {
@@ -537,6 +537,7 @@ function populateFindTaxonTable(table, data) {
         let stored = value['storedLocal'];
         let validated = value['validated'];
         let taxonGroupIds = value['taxonGroupIds'];
+        let status = value['status'];
 
         if (source === 'gbif') {
             source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
@@ -565,6 +566,7 @@ function populateFindTaxonTable(table, data) {
                     <td>${canonicalName}</td>
                     <td>${rank}</td>
                     <td>${source}</td>
+                    <td>${status}</td>
                     <td>${stored}</td>
                     <td>${action}</td>
                 </tr>`);
