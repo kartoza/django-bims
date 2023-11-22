@@ -175,6 +175,10 @@
             margin-top: 15px;
             margin-bottom: 5px;
         }
+
+        .modal-lg {
+            max-width: 1000px;
+        }
     </style>
     <script>
         const sourceCollection = {{ source_collections | safe }};
@@ -449,6 +453,7 @@
                                     <th scope="col">Canonical Name</th>
                                     <th scope="col">Rank</th>
                                     <th scope="col">Source</th>
+                                    <th scope="col">Status</th>
                                     <th scope="col">Stored</th>
                                     <th scope="col">Action</th>
                                 </tr>
