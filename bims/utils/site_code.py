@@ -174,10 +174,12 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
         catchment_key=quaternary_geocontext_key
     )
 
-    if quaternary_catchment_area_key in catchments:
-        wetland_site_code += catchments[quaternary_catchment_area_key]
-
-    wetland_site_code += '-'
+    try:
+        if quaternary_catchment_area_key in catchments:
+            wetland_site_code += catchments[quaternary_catchment_area_key]
+        wetland_site_code += '-'
+    except TypeError:
+        pass
 
     if wetland_data and 'name' in wetland_data and wetland_data['name']:
         wetland_site_code += wetland_data['name'][:4]
