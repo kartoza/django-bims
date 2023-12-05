@@ -151,7 +151,7 @@
             </div>
             <div class="form-group row even-row">
                 <label for="date"
-                       class="col-sm-2 col-form-label col-form-label required-text">Owner</label>
+                       class="col-sm-2 col-form-label required-text">Owner</label>
                 <div class="col-sm-10">
                     <input type="text" class="form-control form-control-sm"
                            onClick="this.setSelectionRange(0, this.value.length)"
@@ -165,6 +165,18 @@
                     </div>
                     <input type="hidden" name="owner_id" id="owner_id"
                            value="{{ user.id }}">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="embargo-end-date"
+                       class="col-sm-2 col-form-label">End Embargo Period</label>
+                <div class="col-sm-10">
+                    <input type="text" name="end_embargo_date"
+                           id="embargo-end-date"
+                           class="form-control form-control-sm">
+                    <small class="form-text text-muted">
+                        If set, the data will become available after the end of the embargo period.
+                    </small>
                 </div>
             </div>
             {% if location_site.ecosystem_type == 'Wetland' %}

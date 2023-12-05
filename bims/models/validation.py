@@ -59,6 +59,15 @@ class AbstractValidation(models.Model):
         blank=True
     )
 
+    end_embargo_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text=(
+            'The date when the embargo on the data expires. '
+            'After this date, the data will become public.'
+        )
+    )
+
     class Meta:
         abstract = True
 

@@ -332,12 +332,23 @@ $(function () {
     $("#date").datepicker({
         changeMonth: true,
         changeYear: true,
+        dateFormat: 'dd/mm/yy',
         onSelect: function (dateText) {
             let $target = $(this);
             if ($target.val()) {
                 $target.removeClass('error');
                 $target.next().hide();
             }
+        }
+    });
+
+    $("#embargo-end-date").datepicker({
+        changeMonth: true,
+        changeYear: true,
+        minDate: 0,
+        dateFormat: 'dd/mm/yy',
+        onSelect: function (dateText) {
+            let $target = $(this);
         }
     });
 

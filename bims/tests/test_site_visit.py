@@ -134,7 +134,8 @@ class TestSiteVisitView(TestCase):
             'owner_id': self.owner.id,
             'collector_id': self.collector.id,
             'site': self.survey.site.id,
-            'date': '2021-07-09'
+            'date': '2021-07-09',
+            'end_embargo_date': '2022-09-09'
         }
         self.client.post(
             '/site-visit/update/1/',
@@ -144,6 +145,7 @@ class TestSiteVisitView(TestCase):
             survey=self.survey
         )
         self.assertEqual(bio.count(), 2)
+        self.assertEqual(str(bio[0].end_embargo_date), '2022-09-09')
 
     def test_SiteVisitView_update_anonymous_access(self):
         self.client.login(

@@ -1,6 +1,7 @@
 import time
 import uuid
 from datetime import datetime as libdatetime
+from dateutil.parser import parse
 
 from django.contrib.auth import get_user_model
 
@@ -102,12 +103,19 @@ class SiteVisitUpdateView(
         collector_id = form.data.get('collector_id', None)
         hydroperiod = form.data.get('hydroperiod', None)
         abundance_type = form.data.get('abundance_type', None)
+        end_embargo_date = form.data.get('end_embargo_date', None)
         wetland_indicator_status = form.data.get('wetland_indicator_status', None)
         owner = None
         collector_user = None
         record_type_str = self._form_data(
             form, 'record_type', ''
         )
+
+        if end_embargo_date:
+            end_embargo_date = parse(
+                timestr=end_embargo_date, dayfirst=True)
+        else:
+            end_embargo_date = None
 
         if hydroperiod:
             hydroperiod = Hydroperiod.objects.get(
@@ -195,7 +203,8 @@ class SiteVisitUpdateView(
                 hydroperiod=hydroperiod,
                 wetland_indicator_status=wetland_indicator_status,
                 record_type=record_type,
-                sampling_effort_link=sampling_effort_measure
+                sampling_effort_link=sampling_effort_measure,
+                end_embargo_date=end_embargo_date
             )
 
             # Remove deleted collection records
@@ -256,7 +265,8 @@ class SiteVisitUpdateView(
                                 survey=self.object,
                                 record_type=record_type,
                                 hydroperiod=hydroperiod,
-                                wetland_indicator_status=wetland_indicator_status
+                                wetland_indicator_status=wetland_indicator_status,
+                                end_embargo_date=end_embargo_date
                             )
                         )
                         if status:
@@ -290,6 +300,8 @@ class SiteVisitUpdateView(
             self.object.collector_user = (
                 self.collection_records.first().collector_user
             )
+
+        self.object.end_embargo_date = end_embargo_date
 
         # -- Algae data
         curation_process = form.data.get('curation_process', None)
