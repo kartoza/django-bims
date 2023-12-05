@@ -1,6 +1,8 @@
 import os
 import mock
 import json
+
+from django.db.models import Q
 from django.test import TestCase, override_settings
 from django.core.files import File
 from bims.scripts.collections_upload_source_reference import (
@@ -11,7 +13,7 @@ from bims.tests.model_factories import (
     UserF,
     UploadSessionF,
     TaxonomyF,
-    TaxonGroupF,
+    TaxonGroupF, BiologicalCollectionRecordF,
 )
 from bims.models import UploadSession, BiologicalCollectionRecord
 from bims.scripts.occurrences_upload import (
@@ -174,6 +176,15 @@ class TestCollectionUpload(TestCase):
             taxonomies=(taxonomy_1,)
         )
 
+        BiologicalCollectionRecordF.create(
+            taxonomy=taxonomy_1,
+            module_group=taxon_group,
+            uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9'
+        )
+        self.assertTrue(BiologicalCollectionRecord.objects.filter(
+            uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9'
+        ).exists())
+
         with open(os.path.join(
             test_data_directory, 'csv_upload_test.csv'
         ), 'rb') as file:
@@ -192,7 +203,36 @@ class TestCollectionUpload(TestCase):
         data_upload.start()
 
         bio = BiologicalCollectionRecord.objects.filter(
-            uuid='b660c31d4fab4ab7806f48f97c46559d'
+            Q(uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9') |
+            Q(uuid='5a08bfe10e9b4e0ebf305b50156d35a9')
         )
         self.assertTrue(bio.exists())
         self.assertEqual(bio.first().sampling_effort_link.name, 'Time(min)')
+        self.assertEqual(BiologicalCollectionRecord.objects.filter(
+            Q(uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9') |
+            Q(uuid='5a08bfe10e9b4e0ebf305b50156d35a9')
+        ).count(), 1)
+
+        with open(os.path.join(
+                test_data_directory, 'csv_upload_test_2.csv'
+        ), 'rb') as file:
+            upload_session_2 = UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(file),
+                module_group=taxon_group
+            )
+
+        saved_instance = UploadSession.objects.get(pk=upload_session_2.pk)
+
+        self.assertTrue(saved_instance.process_file)
+
+        data_upload = OccurrencesCSVUpload()
+        data_upload.upload_session = saved_instance
+        data_upload.start()
+
+        bio = BiologicalCollectionRecord.objects.filter(
+            Q(uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9') |
+            Q(uuid='5a08bfe10e9b4e0ebf305b50156d35a9')
+        )
+        self.assertEqual(bio.count(), 1)
+        self.assertEqual(bio.first().site.legacy_river_name, 'User River Name 2')
