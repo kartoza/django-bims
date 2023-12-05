@@ -513,8 +513,8 @@ class OccurrenceProcessor(object):
         uuid_value = ''
         if DataCSVUpload.row_value(row, UUID):
             try:
-                uuid_value = uuid.UUID(
-                    DataCSVUpload.row_value(row, UUID)[0:36]).hex
+                uuid.UUID(DataCSVUpload.row_value(row, UUID)[0:36])
+                uuid_value = DataCSVUpload.row_value(row, UUID)
             except ValueError:
                 self.handle_error(
                     row=row,
