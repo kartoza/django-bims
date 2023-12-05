@@ -338,17 +338,16 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         except KeyError:
             continue
 
-    if end_embargo_date:
-        Survey.objects.filter(
-            id=self.survey.id
-        ).update(
-            end_embargo_date=end_embargo_date
-        )
-        BiologicalCollectionRecord.objects.filter(
-            id__in=collection_record_ids
-        ).update(
-            end_embargo_date=end_embargo_date
-        )
+    Survey.objects.filter(
+        id=self.survey.id
+    ).update(
+        end_embargo_date=end_embargo_date
+    )
+    BiologicalCollectionRecord.objects.filter(
+        id__in=collection_record_ids
+    ).update(
+        end_embargo_date=end_embargo_date
+    )
 
     return self.survey
 
