@@ -53,6 +53,7 @@ RIVER_CATCHMENT_ORDER = [
 
 def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     date_string = post_data.get('date', None)
+    end_embargo_date = post_data.get('end_embargo_date', None)
     owner_id = post_data.get('owner_id', '').strip()
     biotope_id = post_data.get('biotope', None)
     hydroperiod = post_data.get('hydroperiod', None)
@@ -130,6 +131,12 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         sampling_effort_measure = sampling_effort_link
 
     collection_date = parse(date_string)
+
+    if end_embargo_date:
+        end_embargo_date = parse(
+            timestr=end_embargo_date, dayfirst=True)
+    else:
+        end_embargo_date = None
 
     # Create or get location site
     site_name = post_data.get('site_name', '')
@@ -331,6 +338,17 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         except KeyError:
             continue
 
+    Survey.objects.filter(
+        id=self.survey.id
+    ).update(
+        end_embargo_date=end_embargo_date
+    )
+    BiologicalCollectionRecord.objects.filter(
+        id__in=collection_record_ids
+    ).update(
+        end_embargo_date=end_embargo_date
+    )
+
     return self.survey
 
 
@@ -415,7 +433,6 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 )
             )
         return taxa_list
-
 
     def get_context_data(self, **kwargs):
         context = super(CollectionFormView, self).get_context_data(**kwargs)

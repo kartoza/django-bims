@@ -1,5 +1,6 @@
 from django import template
 from django.urls import reverse_lazy
+from datetime import datetime
 
 
 register = template.Library()
@@ -23,3 +24,8 @@ def can_validate_site_visit(context):
 @register.simple_tag(takes_context=True)
 def unvalidated_site_visits_url(context):
     return get_unvalidated_site_visits_url(context['request'].user)
+
+
+@register.filter(name='is_past')
+def is_past(date):
+    return date <= datetime.now().date()

@@ -1,3 +1,4 @@
+import datetime
 import json
 import urllib.parse
 import operator
@@ -598,6 +599,11 @@ class CollectionSearch(object):
             bio_filtered = True
 
         bio = bio.filter(**filters)
+
+        bio = bio.filter(
+            Q(end_embargo_date__lte=datetime.date.today()) |
+            Q(end_embargo_date__isnull=True)
+        )
 
         # Filter collection record with SASS Accreditation status
         validated_values = self.parse_request_json('validated')

@@ -1,5 +1,7 @@
 {% extends 'main_base.html' %}
+{% load site_visit_extras %}
 {% load static %}
+{% load site_visit_extras %}
 {% block subtitle %}
     {{ taxon_group.name }} Form
 {% endblock %}
@@ -82,6 +84,18 @@
                 </form>
             </div>
         {% endif %}
+        <div style="float: right; font-size: 1.2em; margin-left: 5px;">
+            {% if object.end_embargo_date and not object.end_embargo_date|is_past %}
+                <span class="badge badge-warning">
+                    <i class="fa fa-lock" aria-hidden="true"></i> Private
+                </span>
+            {% else %}
+                <span class="badge badge-info">
+                    <i class="fa fa-globe" aria-hidden="true"></i> Public
+                </span>
+            {% endif %}
+        </div>
+
         <div style="float: right; font-size: 1.2em">{{ object.validation_status | safe }}</div>
         <div class="alert alert-danger" role="alert"
              style="display: none;">
@@ -179,7 +193,7 @@
                    class="col-sm-2 col-form-label col-form-label">Date</label>
             <div class="col-sm-10">
                 <input type="text" name="date"
-                       class="form-control form-control-sm" value="{{ object.date|date:'Y-m-d'}}"
+                       class="form-control form-control-sm" value="{{ object.date|date:'d/m/Y'}}"
                        id="date" placeholder="" disabled>
             </div>
         </div>
@@ -199,6 +213,16 @@
                 <input type="text" class="form-control form-control-sm"
                        id="collector" placeholder="" name="owner"
                        value="{% if collector_string %}{{ collector_string }}{% elif collector.get_full_name %}{{ collector.get_full_name }}{% else %}{{ collector.username }}{% endif %}"
+                       disabled>
+            </div>
+        </div>
+        <div class="form-group row even-row">
+            <label for="date"
+                   class="col-sm-2 col-form-label col-form-label">End Embargo Date</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control form-control-sm"
+                       id="end_embargo_date" placeholder="" name="end_embargo_date"
+                       value="{{ object.end_embargo_date|date:'d/m/Y'}}"
                        disabled>
             </div>
         </div>
