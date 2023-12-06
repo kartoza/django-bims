@@ -182,6 +182,7 @@ class DataCSVUpload(object):
             row_value = row[key]
             row_value = row_value.replace('\xa0', ' ')
             row_value = row_value.replace('\xc2', '')
+            row_value = row_value.replace('\xca', '')
             row_value = row_value.replace('\\xa0', '')
             row_value = row_value.strip()
             row_value = re.sub(' +', ' ', row_value)
