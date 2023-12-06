@@ -1,6 +1,6 @@
 # coding=utf-8
 import json
-from django.http.response import HttpResponse
+from django.http.response import HttpResponse, Http404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models.boundary import Boundary

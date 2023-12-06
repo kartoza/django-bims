@@ -4,10 +4,13 @@ import sys
 from django.views import View
 from django.shortcuts import render
 from django.db.models import signals
-from django.http import JsonResponse
-from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
+from django.http import JsonResponse, Http404
+from django.contrib.gis.geos import GEOSGeometry, Polygon, MultiPolygon
+from django.views.decorators.csrf import csrf_exempt
+from bims.models.user_boundary import UserBoundary
+
 from bims.forms.shapefile_upload import ShapefileUploadForm
 from bims.models.shapefile import Shapefile
 from bims.models.shapefile_upload_session import ShapefileUploadSession
@@ -354,3 +357,61 @@ def process_shapefiles(request,
         'message': response_message
     }
     return JsonResponse(data)
+
+
+@csrf_exempt
+def process_user_boundary_geojson(request):
+    if request.method != 'POST':
+        return JsonResponse({
+            'message': 'Only POST requests are allowed'
+        }, status=405)
+
+    try:
+        geojson_data = json.loads(
+            request.POST.get('geojson', '{}'))
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'message': 'Invalid JSON'}, status=400)
+
+    if not geojson_data.get('features'):
+        raise Http404(
+            'No features found in GeoJSON')
+
+    boundary_name = request.POST.get('name')
+    geometries = []
+
+    for feature in geojson_data['features']:
+        geometry = GEOSGeometry(json.dumps(feature['geometry']))
+
+        if not isinstance(geometry, (Polygon, MultiPolygon)):
+            return JsonResponse(
+                {'message': 'Only polygon and multipolygon allowed'
+                 }, status=400)
+
+        if not boundary_name:
+            boundary_name = feature.get(
+                'properties', {}
+            ).get('name', boundary_name)
+
+        geometries.append(geometry)
+
+    if not geometries:
+        return JsonResponse({
+            'message': 'No valid geometries found'
+        }, status=400)
+
+    # Combine geometries into a single MultiPolygon if there are multiple geometries
+    geometry = MultiPolygon(geometries) if len(geometries) > 1 else geometries[0]
+
+    user_boundary, created = UserBoundary.objects.get_or_create(
+        user=request.user,
+        name=boundary_name,
+        defaults={'geometry': geometry}
+    )
+
+    response_message = (
+        'User boundary added'
+        if created else
+        'User boundary already exists'
+    )
+    return JsonResponse({'message': response_message})
