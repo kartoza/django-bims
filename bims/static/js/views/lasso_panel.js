@@ -1,5 +1,6 @@
 define(['shared', 'backbone', 'underscore', 'jqueryUi',
-    'jquery', 'ol'], function (Shared, Backbone, _, jqueryUi, $, ol) {
+    'jquery', 'ol',
+    'views/user_boundary',], function (Shared, Backbone, _, jqueryUi, $, ol, UserBoundaryView) {
     return Backbone.View.extend({
         template: _.template($('#lasso-control-panel-template').html()),
         isEmpty: true,
@@ -12,12 +13,15 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         polygonExist: false,
         maxSites: 10,
         minSites: 2,
+        userBoundaryView: null,
         events: {
             'click .polygonal-lasso-tool': 'drawPolygon',
             'click .clear-lasso': 'clearLasso',
+            'click .save-lasso': 'saveLasso',
             'click .update-search': 'updateSearch',
             'click .merge-sites': 'mergeSitesModal',
-            'click #merge-site-btn': 'mergeSites'
+            'click #merge-site-btn': 'mergeSites',
+            'click #save-polygon-btn': 'savePolygon'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -48,6 +52,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 self.polygonExist = true;
                 self.$el.find('.update-search').removeClass('disabled');
                 self.$el.find('.clear-lasso').removeClass('disabled');
+                self.$el.find('.save-lasso').removeClass('disabled');
                 Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false, false);
                 Shared.Dispatcher.trigger('map:setPolygonDrawn', polygonExtent);
             });
@@ -61,6 +66,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             if (isSuperUser) {
                 this.$el.find('.merge-sites').show();
             }
+            this.userBoundaryView = new UserBoundaryView({
+                map: this.map
+            });
+            this.$el.append(this.userBoundaryView.render().$el);
             return this;
         },
         getPolygonCoordinates: function () {
@@ -75,11 +84,13 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             if (this.polygonExist) {
                 this.$el.find('.update-search').removeClass('disabled');
                 this.$el.find('.clear-lasso').removeClass('disabled');
+                this.$el.find('.save-lasso').removeClass('disabled');
             } else {
                 if (!Shared.CurrentState.SEARCH) {
                     this.$el.find('.update-search').addClass('disabled');
                 }
                 this.$el.find('.clear-lasso').addClass('disabled');
+                this.$el.find('.save-lasso').addClass('disabled');
             }
             this.displayed = true;
         },
@@ -119,8 +130,22 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 this.$el.find('.update-search').addClass('disabled');
             }
             this.$el.find('.clear-lasso').addClass('disabled');
+            this.$el.find('.save-lasso').addClass('disabled');
             this.stopDrawing();
             Shared.Dispatcher.trigger('map:setPolygonDrawn', null);
+        },
+        saveLasso: function (evt) {
+            if (evt) {
+                let div = $(evt.target);
+                if (div.hasClass('disabled')) {
+                    return;
+                }
+            }
+
+            const features = this.source.getFeatures();
+            const geojsonFormat = new ol.format.GeoJSON();
+            const geojsonStr = geojsonFormat.writeFeatures(features);
+            this.userBoundaryView.showSaveModal(geojsonStr);
         },
         drawPolygonFromJSON: function (jsonCoordinates) {
             if (this.polygonExist) {

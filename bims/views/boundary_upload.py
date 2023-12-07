@@ -401,12 +401,14 @@ def process_user_boundary_geojson(request):
         }, status=400)
 
     # Combine geometries into a single MultiPolygon if there are multiple geometries
-    geometry = MultiPolygon(geometries) if len(geometries) > 1 else geometries[0]
+    geometry = MultiPolygon(geometries)
 
     user_boundary, created = UserBoundary.objects.get_or_create(
-        user=request.user,
+        user_id=request.user.id,
         name=boundary_name,
-        defaults={'geometry': geometry}
+        defaults={
+            'geometry': geometry
+        }
     )
 
     response_message = (

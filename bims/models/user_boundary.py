@@ -3,6 +3,7 @@
 """
 from django.conf import settings
 from django.contrib.gis.db import models
+from django.utils.timezone import now
 
 
 class UserBoundary(models.Model):
@@ -20,6 +21,10 @@ class UserBoundary(models.Model):
     geometry = models.MultiPolygonField(
         blank=False,
         null=False
+    )
+
+    upload_date = models.DateTimeField(
+        default=now
     )
 
     def __str__(self):
