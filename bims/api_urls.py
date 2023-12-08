@@ -53,7 +53,12 @@ from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.api_views.send_notification_to_validator import \
     SendNotificationValidation
 from bims.views.locate import filter_farm_ids_view, get_farm_view
-from bims.api_views.user_boundary import UserBoundaryList
+from bims.api_views.user_boundary import (
+    UserBoundaryList,
+    UserBoundaryDetailList,
+    UserBoundaryDetail,
+    DeleteUserBoundary
+)
 from bims.api_views.documents import DocumentList
 from bims.api_views.module_summary import ModuleSummary
 from bims.api_views.endemism import EndemismList
@@ -150,7 +155,15 @@ urlpatterns = [
     re_path(r'^list-boundary/$',
         BoundaryList.as_view(), name='list-boundary'),
     re_path(r'^list-user-boundary/$',
-        UserBoundaryList.as_view(), name='list-user-boundary'),
+        UserBoundaryDetailList.as_view(), name='list-user-boundary'),
+    re_path(r'^delete-user-boundary/(?P<id>[\w-]+)/$',
+        DeleteUserBoundary.as_view(), name='delete_user_boundary'),
+    re_path(r'^user-boundaries/$',
+        UserBoundaryList.as_view(),
+        name='list_user_boundary'),
+    re_path(r'^user-boundary/(?P<id>[\w-]+)/$',
+        UserBoundaryDetail.as_view(),
+        name='detail_user_boundary'),
     re_path(r'^list-collector/$',
         CollectorList.as_view(), name='list-collector'),
     re_path(r'^list-dst/$',

@@ -25,10 +25,11 @@ from bims.views.activate_user import activate_user
 from bims.views.csv_upload import CsvUploadView
 from bims.views.taxa_upload import TaxaUploadView
 from bims.views.collections_upload import CollectionsUploadView
-from bims.views.shapefile_upload import (
+from bims.views.boundary_upload import (
     ShapefileUploadView,
     process_shapefiles,
-    process_user_boundary_shapefiles
+    process_user_boundary_shapefiles,
+    process_user_boundary_geojson,
 )
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
@@ -107,6 +108,9 @@ urlpatterns = [
     re_path(r'^process_user_boundary_shapefiles/$',
         process_user_boundary_shapefiles,
         name='process_user_boundary_shapefiles'),
+    re_path(r'^process_user_boundary_geojson/$',
+            process_user_boundary_geojson,
+            name='process_user_boundary_geojson'),
     re_path(r'^links/$', LinksCategoryView.as_view(), name='link_list'),
     re_path(r'^activate-user/(?P<username>[\w-]+)/$',
         activate_user, name='activate-user'),

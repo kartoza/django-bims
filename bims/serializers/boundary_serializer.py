@@ -91,7 +91,7 @@ class BoundaryGeojsonSerializer(GeoFeatureModelSerializer):
         return obj.geometry
 
 
-class UserBondarySerializer(GeoFeatureModelSerializer):
+class UserDetailBoundarySerializer(GeoFeatureModelSerializer):
     geometry = GeometrySerializerMethodField()
 
     class Meta:

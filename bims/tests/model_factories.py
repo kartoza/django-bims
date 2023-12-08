@@ -10,7 +10,7 @@ from bims.models.source_reference import SourceReferenceDocument
 
 from bims.models.upload_session import UploadSession
 from django.conf import settings
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, GEOSGeometry
 from django.utils import timezone
 from django.db.models import signals
 from django.contrib.auth.models import Permission, Group
@@ -44,7 +44,8 @@ from bims.models import (
     ChemicalRecord,
     SiteImage,
     WaterTemperature,
-    WaterTemperatureThreshold
+    WaterTemperatureThreshold,
+    UserBoundary
 )
 from sass.models import River
 
@@ -469,3 +470,14 @@ class RiverF(factory.django.DjangoModelFactory):
         model = River
 
     name = factory.Sequence(lambda n: u'river %s' % n)
+
+
+class UserBoundaryF(factory.django.DjangoModelFactory):
+    """
+    User boundary factory
+    """
+    class Meta:
+        model = UserBoundary
+
+    name = factory.Sequence(lambda n: u'name %s' % n)
+    geometry = GEOSGeometry('MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0), (10 10, 14 10, 14 14, 10 14, 10 10)))')

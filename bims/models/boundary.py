@@ -4,6 +4,7 @@
 
 import json
 from django.contrib.gis.db import models
+from django.conf import settings
 from bims.models.boundary_type import BoundaryType
 
 
@@ -19,9 +20,12 @@ class Boundary(models.Model):
         default="EMPTY"
     )
     type = models.ForeignKey(
-        BoundaryType, on_delete=models.CASCADE
+        BoundaryType,
+        on_delete=models.CASCADE
     )
-    geometry = models.MultiPolygonField(blank=True, null=True)
+    geometry = models.MultiPolygonField(
+        blank=True,
+        null=True)
     centroid = models.PointField(
         null=True,
         blank=True,

@@ -55,6 +55,7 @@ INSTALLED_APPS += (
     'allauth.account',
     'rolepermissions',
     'rest_framework',
+    'rest_framework_gis',
     'celery',
     'pipeline',
     'modelsdoc',

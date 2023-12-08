@@ -527,6 +527,14 @@
                 <li class="update-search disabled">
                     <i class="fa fa-search-plus" aria-hidden="true"></i> Update Search
                 </li>
+                {% if user.is_authenticated %}
+                <li class="save-lasso disabled">
+                    <i class="fa fa-upload" aria-hidden="true"></i>&nbsp; Save Polygon
+                </li>
+                <li class="load-lasso">
+                    <i class="fa fa-download" aria-hidden="true"></i>&nbsp; Load Saved Polygon
+                </li>
+                {% endif %}
                 <li class="clear-lasso disabled">
                     <i class="fa fa-eraser" aria-hidden="true"></i> Clear Polygon
                 </li>
@@ -534,6 +542,65 @@
                     <i class="fa fa-compress" aria-hidden="true"></i> Merge Sites <br/><span class="text-muted" style="font-size: 0.8em; padding-left: 1.4em;">Min Sites = 2, Max Sites = 10</span>
                 </li>
             </ul>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="user-boundary-template">
+    <div class="modal fade" id="user-boundary-load-modal" tabindex="-1" role="dialog"
+         aria-labelledby="${modalId}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="${modalId}Label">Load Polygon</h5>
+                </div>
+                <div class="modal-body" style="max-height: 300px; overflow-y: auto">
+                    Fetching data...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-danger btn-action" id="delete-polygon-btn" disabled>
+                        Delete
+                    </button>
+                    <button type="button" class="btn btn-primary btn-action" id="load-polygon-btn" disabled>
+                        Load
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="user-boundary-save-modal" tabindex="-1" role="dialog"
+         aria-labelledby="${modalId}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="${modalId}Label">Save Polygon</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="boundary-name">Boundary Name</label>
+                        <input type="text" class="form-control"
+                               id="user-boundary-name" placeholder="Boundary Name">
+                    </div>
+                    <div class="alert alert-success" role="alert" style="display: none">
+                    </div>
+                    <div class="alert alert-warning" role="alert" style="display: none">
+                    </div>
+                    <div class="alert alert-danger" role="alert" style="display: none">
+                        Unable to save the polygon. Please try again later.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="save-polygon-btn">
+                        Save
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </script>
