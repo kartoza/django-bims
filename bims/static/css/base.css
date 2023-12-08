@@ -61,6 +61,11 @@ h6 {
   box-shadow: inset 0 0 0 99999px rgba(128,128,128,0.4) !important;
 }
 
+.list-group-item.active {
+    background-color: var(--main-accent-color);
+    border-color: var(--main-accent-color);
+}
+
 #mainNav {
   border-bottom: 1px solid rgba(33, 37, 41, 0.1);
   background-color: transparent;

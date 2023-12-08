@@ -527,12 +527,14 @@
                 <li class="update-search disabled">
                     <i class="fa fa-search-plus" aria-hidden="true"></i> Update Search
                 </li>
+                {% if user.is_authenticated %}
                 <li class="save-lasso disabled">
                     <i class="fa fa-upload" aria-hidden="true"></i>&nbsp; Save Polygon
                 </li>
                 <li class="load-lasso">
                     <i class="fa fa-download" aria-hidden="true"></i>&nbsp; Load Saved Polygon
                 </li>
+                {% endif %}
                 <li class="clear-lasso disabled">
                     <i class="fa fa-eraser" aria-hidden="true"></i> Clear Polygon
                 </li>

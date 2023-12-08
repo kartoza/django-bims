@@ -359,7 +359,6 @@ def process_shapefiles(request,
     return JsonResponse(data)
 
 
-@csrf_exempt
 def process_user_boundary_geojson(request):
     if request.method != 'POST':
         return JsonResponse({
@@ -417,4 +416,3 @@ def process_user_boundary_geojson(request):
         'User boundary already exists'
     )
     return JsonResponse({'message': response_message})
-

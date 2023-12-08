@@ -30,6 +30,8 @@ class UserBoundaryList(LoginRequiredMixin, APIView):
 
         user_boundaries = UserBoundary.objects.filter(
             user=request.user
+        ).order_by(
+            '-upload_date'
         )
         return Response(
             UserBoundarySerializer(

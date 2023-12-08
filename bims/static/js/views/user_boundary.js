@@ -33,6 +33,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             $.ajax({
                 type: 'POST',
                 url: '/process_user_boundary_geojson/',
+                headers: {"X-CSRFToken": csrfmiddlewaretoken},
                 data: {
                     'geojson': this.geojson,
                     'name': boundaryNameInput.val()
@@ -79,6 +80,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             $.ajax({
                 type: 'GET',
                 url: '/api/user-boundaries/',
+                headers: {"X-CSRFToken": csrfmiddlewaretoken},
             }).done(function (result) {
                 $modalBody.empty();
                 if (result && Array.isArray(result) && result.length > 0) {
@@ -113,6 +115,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             $.ajax({
                 type: 'GET',
                 url: `/api/user-boundary/${this.selectedSavedPolygon}/`,
+                headers: {"X-CSRFToken": csrfmiddlewaretoken},
             }).done(function (result) {
                 console.log(result)
                 $modal.find('button').prop('disabled', false);
