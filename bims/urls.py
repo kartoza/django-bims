@@ -29,7 +29,7 @@ from bims.views.boundary_upload import (
     ShapefileUploadView,
     process_shapefiles,
     process_user_boundary_shapefiles,
-    process_user_boundary_geojson
+    process_user_boundary_geojson,
 )
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView

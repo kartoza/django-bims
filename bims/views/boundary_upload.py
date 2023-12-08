@@ -417,3 +417,4 @@ def process_user_boundary_geojson(request):
         'User boundary already exists'
     )
     return JsonResponse({'message': response_message})
+

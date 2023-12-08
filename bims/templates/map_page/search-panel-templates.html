@@ -530,6 +530,9 @@
                 <li class="save-lasso disabled">
                     <i class="fa fa-upload" aria-hidden="true"></i>&nbsp; Save Polygon
                 </li>
+                <li class="load-lasso">
+                    <i class="fa fa-download" aria-hidden="true"></i>&nbsp; Load Saved Polygon
+                </li>
                 <li class="clear-lasso disabled">
                     <i class="fa fa-eraser" aria-hidden="true"></i> Clear Polygon
                 </li>
@@ -542,6 +545,30 @@
 </script>
 
 <script type="text/html" id="user-boundary-template">
+    <div class="modal fade" id="user-boundary-load-modal" tabindex="-1" role="dialog"
+         aria-labelledby="${modalId}Label" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="${modalId}Label">Load Polygon</h5>
+                </div>
+                <div class="modal-body" style="max-height: 300px; overflow-y: auto">
+                    Fetching data...
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Close
+                    </button>
+                    <button type="button" class="btn btn-danger btn-action" id="delete-polygon-btn" disabled>
+                        Delete
+                    </button>
+                    <button type="button" class="btn btn-primary btn-action" id="load-polygon-btn" disabled>
+                        Load
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="user-boundary-save-modal" tabindex="-1" role="dialog"
          aria-labelledby="${modalId}Label" aria-hidden="true">
         <div class="modal-dialog" role="document">
