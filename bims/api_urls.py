@@ -157,7 +157,7 @@ urlpatterns = [
     re_path(r'^list-user-boundary/$',
         UserBoundaryDetailList.as_view(), name='list-user-boundary'),
     re_path(r'^delete-user-boundary/(?P<id>[\w-]+)/$',
-        DeleteUserBoundary.as_view(), name='delete-user-boundary'),
+        DeleteUserBoundary.as_view(), name='delete_user_boundary'),
     re_path(r'^user-boundaries/$',
         UserBoundaryList.as_view(),
         name='list_user_boundary'),

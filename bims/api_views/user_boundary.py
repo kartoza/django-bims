@@ -47,7 +47,8 @@ class UserBoundaryDetail(LoginRequiredMixin, APIView):
             raise Http404('Missing id')
         user_boundary = get_object_or_404(
             UserBoundary,
-            pk=user_boundary_id
+            pk=user_boundary_id,
+            user_id=request.user.id
         )
         return Response(
             UserDetailBoundarySerializer(user_boundary).data)
