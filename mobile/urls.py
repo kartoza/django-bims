@@ -1,11 +1,10 @@
 from django.urls import re_path, path
 
-from rest_framework.authtoken.views import obtain_auth_token
-
 from mobile.api_views.abiotic_list import AbioticList
 from mobile.api_views.add_sass import AddSASS
 from mobile.api_views.choices import AllChoicesApi
 from mobile.api_views.location_site import NearestLocationSites
+from mobile.api_views.obtain_auth_token import CustomObtainAuthToken
 from mobile.api_views.sass_taxa import SassTaxaListApi
 from mobile.api_views.taxa import AllTaxa
 from mobile.api_views.add_site_visit import AddSiteVisit
@@ -27,7 +26,7 @@ urlpatterns = [
         AllTaxa.as_view(),
         name='all-taxa'),
     re_path(r'^api-token-auth/',
-        obtain_auth_token,
+        CustomObtainAuthToken.as_view(),
         name='api_token_auth'),
     re_path(r'^choices/',
         AllChoicesApi.as_view(),
