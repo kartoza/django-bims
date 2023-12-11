@@ -356,8 +356,10 @@ let addMarkerToMap = (lat, lon, zoomToMap = true) => {
     }
     if (allowToEdit) {
         document.getElementById('update-site-code').disabled = false;
-        document.getElementById('fetch-geomorphological-zone').disabled = false;
-        document.getElementById('fetch-river-name').disabled = false;
+        try {
+            document.getElementById('fetch-geomorphological-zone').disabled = false;
+            document.getElementById('fetch-river-name').disabled = false;
+        } catch (e) {}
     }
 };
 
