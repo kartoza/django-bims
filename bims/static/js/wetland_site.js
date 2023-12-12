@@ -2,8 +2,11 @@ let wetlandData = null;
 let wmsSource = null;
 let wmsLayer = null;
 let wmsLayerName = 'kartoza:nwm6_beta_v3_20230714';
+let currentCoordinate = null;
 
 let wetlandSiteCodeButton =  $('#wetland-site-code');
+let fetchWetlandNameButton = $('#fetch-wetland-name');
+let fetchHydrogeomorphicBtn = $('#fetch-hydrogeomorphic-type')
 
 if (window.wetlandData) {
   wetlandData = window.wetlandData;
@@ -26,6 +29,12 @@ updateCoordinate = function (zoomToMap = true) {
 const getFeature = (layerSource, coordinates, renderResult) => {
   let _coordinates = ol.proj.transform(coordinates, 'EPSG:3857', 'EPSG:4326');
 
+  $('#map-loading').css('display', 'flex');
+  $('#update-coordinate').attr('disabled', true);
+  wetlandSiteCodeButton.attr('disabled', true);
+  fetchWetlandNameButton.attr('disabled', true);
+  fetchHydrogeomorphicBtn.attr('disabled', true);
+
   return new Promise((resolve, reject) => {
     $.ajax({
       type: 'POST',
@@ -35,6 +44,13 @@ const getFeature = (layerSource, coordinates, renderResult) => {
       },
       timeout: 5000,
       success: function (result) {
+
+        $('#map-loading').hide();
+        $('#update-coordinate').attr('disabled', false);
+        fetchWetlandNameButton.attr('disabled', false);
+        fetchHydrogeomorphicBtn.attr('disabled', false);
+        wetlandSiteCodeButton.attr('disabled', false);
+
         const data = result['feature_data'];
         let objectData = {};
         if (data.constructor === Object) {
@@ -43,7 +59,6 @@ const getFeature = (layerSource, coordinates, renderResult) => {
           try {
             objectData = JSON.parse(data);
           } catch (e) {
-            console.log(e);
             reject(e);
             return;
           }
@@ -53,14 +68,9 @@ const getFeature = (layerSource, coordinates, renderResult) => {
           const feature = features[0];
           const bbox = feature['bbox'];
 
-          map.getView().fit(bbox, {size: map.getSize()});
+          // map.getView().fit(bbox, {size: map.getSize()});
           if (renderResult) {
-
-            $('#fetch-river-name').attr('disabled', false);
-            $('#fetch-geomorphological-zone').attr('disabled', false);
             $('#wetland-site-code').attr('disabled', false);
-
-            $('#site_code').val('');
 
             let olFeature = new ol.format.GeoJSON().readFeatures(feature);
 
@@ -82,8 +92,6 @@ const getFeature = (layerSource, coordinates, renderResult) => {
             // vectorLayer.getSource().addFeatures(olFeature);
             wetlandData = feature['properties'];
             $('#additional-data').val(JSON.stringify(wetlandData));
-            $('#river_name').val(wetlandData['name'] ? wetlandData['name'] : '');
-            $('#hydrogeomorphic_type').val(wetlandData['hgm_type'] ? wetlandData['hgm_type'] : '');
           }
         }
         resolve(features);
@@ -98,8 +106,7 @@ const getFeature = (layerSource, coordinates, renderResult) => {
 
 let mapClicked = (coordinate) => {
   if (!wmsLayer) return;
-
-  let view = map.getView();
+  currentCoordinate = coordinate;
 
   let _coordinates = ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326');
   moveMarkerOnTheMap(_coordinates[1], _coordinates[0], false);
@@ -109,6 +116,14 @@ let mapClicked = (coordinate) => {
   $('#latitude').val(_coordinates[1]);
   $('#longitude').val(_coordinates[0]);
 
+  fetchWetlandNameButton.attr('disabled', false);
+  fetchHydrogeomorphicBtn.attr('disabled', false);
+}
+
+let fetchWetlandData = () => {
+  if (!currentCoordinate) return;
+  let coordinate = currentCoordinate;
+  let view = map.getView();
   let layerSource = wmsLayer.getSource().getGetFeatureInfoUrl(
       coordinate,
       view.getResolution(),
@@ -117,34 +132,7 @@ let mapClicked = (coordinate) => {
   );
   layerSource += '&QUERY_LAYERS=' + wmsLayerName;
   const zoomLevel = map.getView().getZoom();
-  $('#map-loading').css('display', 'flex');
-  $('#update-coordinate').attr('disabled', true);
-  getFeature(layerSource, coordinate,zoomLevel > 10).then(function(features) {
-    if (features.length > 0 && zoomLevel <= 10) {
-      let bbox = features[0]['bbox'];
-      let centroidX = (bbox[0] + bbox[2]) / 2;
-      let centroidY = (bbox[1] + bbox[3]) / 2;
-      let point = [centroidX, centroidY];
-
-      layerSource = wmsLayer.getSource().getGetFeatureInfoUrl(
-          point,
-          view.getResolution(),
-          view.getProjection(),
-          {'INFO_FORMAT': 'application/json'}
-      );
-      layerSource += '&QUERY_LAYERS=' + wmsLayerName;
-      getFeature(layerSource, coordinate, true).then(function (f) {
-        $('#map-loading').hide();
-        $('#update-coordinate').attr('disabled', false);
-      })
-    } else {
-      $('#map-loading').hide();
-      $('#update-coordinate').attr('disabled', false);
-    }
-  }).catch(function(error) {
-    $('#map-loading').hide();
-    // handle any errors
-  });
+  return getFeature(layerSource, coordinate,true)
 }
 
 let mapReady = (map) => {
@@ -208,3 +196,26 @@ wetlandSiteCodeButton.click(function () {
     wetlandSiteCodeButton.html('Generate site code');
   });
 });
+
+fetchWetlandNameButton.click(function () {
+  fetchWetlandData().then((features) => {
+    try {
+      $('#river_name').val(features[0]['properties']['name']);
+    } catch (e) {
+      $('#river_name').val('');
+    }
+    if (!$('#river_name').val()) {
+      alert('Please add User Wetland Name.')
+    }
+  })
+})
+
+fetchHydrogeomorphicBtn.click(function () {
+  fetchWetlandData().then((features) => {
+    try {
+      $('#hydrogeomorphic_type').val(features[0]['properties']['hgm_type']);
+    } catch (e) {
+      $('#hydrogeomorphic_type').val('');
+    }
+  })
+})
