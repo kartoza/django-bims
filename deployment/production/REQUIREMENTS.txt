@@ -1,4 +1,4 @@
-Django==4.1.10
+Django==4.2.8
 psycopg2-binary==2.8.5
 django-braces==1.14.0
 django-model-utils==4.0.0
@@ -55,7 +55,6 @@ sorl-thumbnail==12.9.0
 svglib==1.0.0
 simplejson==3.17.0
 django-extensions==3.2.3
-wagtail==4.2.4
 service-identity==18.1.0
 geopy==2.0.0
 python-dwca-reader==0.15.0
