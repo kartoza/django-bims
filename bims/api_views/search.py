@@ -401,23 +401,6 @@ class CollectionSearch(object):
                 **query_dict
             )
 
-    def get_all_taxa_children(self, taxa):
-        """
-        Get all children from taxa
-        :param taxa: QuerySet of taxa
-        :return: list all children ids
-        """
-        query = {}
-        parent = ''
-        or_condition = Q()
-        query['id__in'] = taxa.values_list('id')
-        for i in range(6):  # species to class
-            parent += 'parent__'
-            query[parent + 'in'] = taxa
-        for key, value in query.items():
-            or_condition |= Q(**{key: value})
-        return Taxonomy.objects.filter(or_condition)
-
     def process_search(self):
         """
         Do the search process.
