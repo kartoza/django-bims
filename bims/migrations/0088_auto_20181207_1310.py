@@ -21,6 +21,4 @@ class Migration(migrations.Migration):
         ('bims', '0087_merge_20181206_0607'),
     ]
 
-    operations = [
-        migrations.RunPython(rename_reference_category_consulting_report)
-    ]
+    operations = []

@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
         ),
 
         # insert value to unit
-        migrations.RunPython(insert_value_to_unit_foreign_key),
+        # migrations.RunPython(insert_value_to_unit_foreign_key),
 
         # remove chem_unit field
         migrations.RemoveField(

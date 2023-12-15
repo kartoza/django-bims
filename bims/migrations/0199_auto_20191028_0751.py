@@ -49,5 +49,5 @@ class Migration(migrations.Migration):
             name='name',
             field=models.CharField(max_length=200),
         ),
-        migrations.RunPython(migrate_location_context_group),
+        # migrations.RunPython(migrate_location_context_group),
     ]

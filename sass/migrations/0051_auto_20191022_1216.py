@@ -34,5 +34,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(merge_site_visit_chem_to_chemical_record),
+        # migrations.RunPython(merge_site_visit_chem_to_chemical_record),
     ]

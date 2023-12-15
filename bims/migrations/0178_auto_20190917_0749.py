@@ -24,5 +24,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_biologicalcollectionrecord_charfield),
+        # migrations.RunPython(migrate_biologicalcollectionrecord_charfield),
     ]
