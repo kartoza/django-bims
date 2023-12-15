@@ -72,7 +72,6 @@ INSTALLED_APPS += (
 )
 
 INSTALLED_APPS += (
-    'modelcluster',
     'taggit',
 )
 INSTALLED_APPS = (
