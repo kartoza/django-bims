@@ -170,7 +170,11 @@ class ModuleSummary(APIView):
         ).count()
 
         counts = (
-            BiologicalCollectionRecord.objects.all().aggregate(
+            BiologicalCollectionRecord.objects.filter(
+                module_group__in=TaxonGroup.objects.filter(
+                    site=self.request.site
+                )
+            ).aggregate(
                 total_occurrences=Count('id')),
             Taxonomy.objects.all().aggregate(total_taxa=Count('id')),
             get_user_model().objects.filter(
@@ -187,6 +191,7 @@ class ModuleSummary(APIView):
     def get(self, request, *args):
         response_data = dict()
         taxon_groups = TaxonGroup.objects.filter(
+            site=request.site,
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         ).order_by('display_order')
         response_data['general_summary'] = self.general_summary_data()

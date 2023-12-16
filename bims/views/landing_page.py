@@ -40,7 +40,9 @@ class HeaderSerializer(serializers.ModelSerializer):
 
 def landing_page_view(request, *args, **kwargs):
     context = {}
-    custom_theme = CustomTheme.objects.filter(is_enabled=True)
+    custom_theme = CustomTheme.objects.filter(
+        is_enabled=True,
+        site=request.site)
     if custom_theme.exists():
         custom_theme = custom_theme[0]
         carousel_headers = custom_theme.carousels.all()
