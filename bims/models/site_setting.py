@@ -1,6 +1,6 @@
-import json
 from django.db import models
 from django.db.models import JSONField
+from django.dispatch import receiver
 from preferences.models import Preferences
 
 
@@ -255,17 +255,22 @@ class SiteSetting(Preferences):
         )
     )
 
-    def save(self, *args, **kwargs):
-        max_allowed = 10
-        attempt = 0
-        is_dictionary = False
 
-        while not is_dictionary and attempt < max_allowed:
-            if not self.map_default_filters:
-                break
-            if isinstance(self.map_default_filters, list):
-                is_dictionary = True
-            else:
-                self.map_default_filters = json.loads(self.map_default_filters)
-                attempt += 1
-        super(SiteSetting, self).save(*args, **kwargs)
+@receiver(models.signals.m2m_changed)
+def site_cleanup(sender, action, instance, **kwargs):
+    """
+    Make sure there is only a single preferences object per site.
+    So remove sites from pre-existing preferences objects.
+    """
+    if action == 'post_add':
+        if isinstance(instance, Preferences) \
+                and hasattr(instance.__class__, 'objects'):
+            site_conflicts = instance.__class__.objects.filter(
+                sites__in=instance.sites.all()
+            ).only('id').distinct()
+
+            for conflict in site_conflicts:
+                if conflict.id != instance.id:
+                    for site in instance.sites.all():
+                        conflict.sites.remove(site)
+
