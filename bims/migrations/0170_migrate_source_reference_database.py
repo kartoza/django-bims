@@ -41,5 +41,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_source_reference_database),
+        # migrations.RunPython(migrate_source_reference_database),
     ]

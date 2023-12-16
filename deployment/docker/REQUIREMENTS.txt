@@ -55,7 +55,6 @@ sorl-thumbnail==12.9.0
 svglib==1.0.0
 simplejson==3.17.0
 django-extensions==3.2.3
-wagtail==4.2.4
 service-identity==18.1.0
 geopy==2.0.0
 python-dwca-reader==0.15.0
@@ -88,3 +87,6 @@ celery==5.2.6
 pycurl==7.45.2
 django-forms-bootstrap==3.1.0
 importlib-metadata==4.11.4
+django-taggit==3.1.0
+django-treebeard==4.7
+django-filter==23.5

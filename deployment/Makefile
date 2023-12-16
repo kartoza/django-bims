@@ -6,7 +6,7 @@ dev:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in dev mode"
 	@echo "------------------------------------------------------------------"
-	@docker-compose ${ARGS} up -d dev worker
+	@docker-compose ${ARGS} up -d dev worker flower
 
 dev-test:
 	@echo
@@ -18,7 +18,7 @@ dev-test:
 
 down:
 	# Synonymous with kill rm
-	@docker-compose  ${ARGS} down
+	@docker compose --profile dev ${ARGS} down
 
 rm-only: kill
 	@echo

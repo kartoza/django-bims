@@ -31,6 +31,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_empty_taxa_origin, reverse_code=migrations.RunPython.noop),
+        # migrations.RunPython(update_empty_taxa_origin, reverse_code=migrations.RunPython.noop),
     ]
 

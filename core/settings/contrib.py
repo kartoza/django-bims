@@ -71,26 +71,12 @@ INSTALLED_APPS += (
     'django_forms_bootstrap'
 )
 
-# Wagtail configurations
 INSTALLED_APPS += (
-    'modelcluster',
     'taggit',
 )
 INSTALLED_APPS = (
-    'wagtail.contrib.forms',
-    'wagtail.contrib.redirects',
-    'wagtail.embeds',
-    'wagtail.sites',
-    'wagtail.users',
-    'wagtail.snippets',
-    'wagtail.documents',
-    'wagtail.images',
-    'wagtail.search',
-    'wagtail.admin',
-    'wagtail.core',
     'rest_framework.authtoken',
 ) + INSTALLED_APPS
-WAGTAIL_SITE_NAME = 'BIMS Wagtail'
 
 if os.environ.get('RAVEN_CONFIG_DSN'):
     INSTALLED_APPS += ('raven.contrib.django.raven_compat',)
@@ -183,9 +169,7 @@ STATICFILES_DIRS = [
 ]
 
 MIDDLEWARE += (
-    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
-    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
 
 TESTING = sys.argv[1:2] == ['test']
@@ -274,7 +258,6 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.LocationContextGroup',
     'bims.SearchProcess',
     'flatpages.FlatPage',
-    'wagtailcore.ReferenceIndex',
     'td_biblio.author'
 ]
 

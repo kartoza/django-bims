@@ -24,7 +24,7 @@ TIME_ZONE = 'Africa/Johannesburg'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-SITE_ID = 1
+SITE_ID = 2
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -84,3 +84,5 @@ ROOT_URLCONF = 'core.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'core.wsgi.application'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

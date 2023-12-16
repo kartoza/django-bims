@@ -51,3 +51,9 @@ CELERY_RESULT_BACKEND_PATH = os.getenv(
 if not os.path.exists(CELERY_RESULT_BACKEND_PATH):
     os.makedirs(CELERY_RESULT_BACKEND_PATH)
 CELERY_RESULT_BACKEND = 'file:///%s' % CELERY_RESULT_BACKEND_PATH
+
+DATABASE_ALIAS_FROM_DOMAIN = ast.literal_eval(
+    os.getenv(
+        'DATABASE_ALIAS_FROM_DOMAIN',
+        '{"dev.bims.orb.local": "test2"}')
+)

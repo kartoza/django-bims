@@ -28,5 +28,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(link_record_type),
+        # migrations.RunPython(link_record_type),
     ]

@@ -4,10 +4,6 @@ from django.contrib.sites.shortcuts import get_current_site
 from preferences import preferences
 from rest_framework import serializers
 
-
-from wagtail.core.models import Site
-from wagtail.views import serve
-
 from bims_theme.models import CarouselHeader
 from bims_theme.models.theme import CustomTheme
 
@@ -43,21 +39,10 @@ class HeaderSerializer(serializers.ModelSerializer):
 
 
 def landing_page_view(request, *args, **kwargs):
-    request_uri = request.get_host().split(':')
-    request_host = request_uri[0]
-    request_port = 80
-    current_site = get_current_site(request)
-    if len(request_uri) > 1:
-        request_port = request_uri[1]
-    wagtail_site = Site.objects.filter(
-        hostname=request_host,
-        port=request_port
-    )
-    if wagtail_site.exists() and request.get_host() != current_site.domain:
-        return serve(request, '/')
-
     context = {}
-    custom_theme = CustomTheme.objects.filter(is_enabled=True)
+    custom_theme = CustomTheme.objects.filter(
+        is_enabled=True,
+        site=request.site)
     if custom_theme.exists():
         custom_theme = custom_theme[0]
         carousel_headers = custom_theme.carousels.all()

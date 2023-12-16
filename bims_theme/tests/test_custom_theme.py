@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.sites.models import Site
 from bims_theme.tests.model_factories import (
     CustomThemeF
 )
@@ -51,8 +52,10 @@ class TestCustomTheme(TestCase):
     def test_site_with_custom_theme(self):
         """Test if site is updated with custom theme"""
         main_accent_color = '#12FF21'
+        site = Site.objects.first()
         CustomThemeF.create(
-            main_accent_color=main_accent_color
+            main_accent_color=main_accent_color,
+            site=site
         )
         response = self.client.get(
             '/'

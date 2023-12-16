@@ -85,7 +85,6 @@ from bims.views.profile import ProfileView, moderator_contacted
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
-from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
 from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
@@ -277,7 +276,6 @@ urlpatterns = [
 urlpatterns += [  # '',
     re_path(r'^api/',
         include('bims.api_urls')),
-    re_path(r'^wagtail-api/v2/', api_router.urls),
 ]
 
 

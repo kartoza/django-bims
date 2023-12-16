@@ -593,6 +593,7 @@ MIDDLEWARE = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'bims.middleware.SetSiteMiddleware',
     # 'geonode.base.middleware.MaintenanceMiddleware',
     # 'geonode.base.middleware.ReadOnlyMiddleware',   # a Middleware enabling Read Only mode of Geonode
 )

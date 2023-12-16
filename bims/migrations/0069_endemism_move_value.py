@@ -29,5 +29,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(move_endemism_value),
     ]

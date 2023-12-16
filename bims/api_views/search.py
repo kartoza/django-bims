@@ -11,6 +11,7 @@ from bims.models.chemical_record import ChemicalRecord
 
 from bims.models.water_temperature import WaterTemperature
 from django.db.models import Q, Count, F, Value, Case, When, IntegerField
+from django.contrib.sites.models import Site
 from django.db.models.functions import Concat
 from django.db.models.query import QuerySet
 from django.contrib.gis.db.models import Union, Extent
@@ -29,7 +30,8 @@ from bims.models import (
     Endemism,
     LIST_SOURCE_REFERENCES,
     LocationSite,
-    Survey
+    Survey,
+    TaxonGroup
 )
 from bims.tasks.search import search_task
 from sass.models import (
@@ -111,9 +113,17 @@ class CollectionSearch(object):
     collection_records = None
     filtered_taxa_records = None
     sass_only = False
+    site = None
+    taxon_groups = TaxonGroup.objects.all()
 
-    def __init__(self, parameters):
+    def __init__(self, parameters, current_site=None):
         self.parameters = parameters
+        site = current_site
+        if not site:
+            site = Site.objects.first()
+            taxon_groups = TaxonGroup.objects.filter(
+                site=site
+            )
         super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):
@@ -400,23 +410,6 @@ class CollectionSearch(object):
             self.filtered_taxa_records = self.filtered_taxa_records.filter(
                 **query_dict
             )
-
-    def get_all_taxa_children(self, taxa):
-        """
-        Get all children from taxa
-        :param taxa: QuerySet of taxa
-        :return: list all children ids
-        """
-        query = {}
-        parent = ''
-        or_condition = Q()
-        query['id__in'] = taxa.values_list('id')
-        for i in range(6):  # species to class
-            parent += 'parent__'
-            query[parent + 'in'] = taxa
-        for key, value in query.items():
-            or_condition |= Q(**{key: value})
-        return Taxonomy.objects.filter(or_condition)
 
     def process_search(self):
         """

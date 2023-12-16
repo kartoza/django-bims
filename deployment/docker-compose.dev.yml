@@ -50,6 +50,19 @@ x-common-django:
     - ./media:/home/web/media:rw
 
 services:
+
+  flower:
+    image: mher/flower
+    container_name: bims_dev_flower
+    command: celery --broker=amqp://rabbitmq:5672// flower
+    environment:
+      - FLOWER_PORT=${FLOWER_PORT:-5555}
+      - FLOWER_BASIC_AUTH=${FLOWER_USERNAME:-username}:${FLOWER_PASSWORD:-password}
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      - rabbitmq
+
   cache:
     container_name: bims_dev_cache
     image: memcached
@@ -81,6 +94,8 @@ services:
     container_name: bims_dev_geoserver
     image: kartoza/geoserver:2.19.0
     restart: unless-stopped
+    profiles:
+      - dev
     environment:
       HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
       HTTP_PORT: ${GEOSERVER_PORT:-63305}
@@ -132,8 +147,16 @@ services:
       - db
       - rabbitmq
       - worker
+      - smtp
     ports:
       # for django test server
       - "63302:8080"
       # for ssh
       - "63303:22"
+
+  smtp:
+    image: catatnight/postfix
+    container_name: postfix
+    environment:
+      - maildomain=kartoza.com
+      - smtp_user=noreply:docker

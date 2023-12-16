@@ -40,12 +40,9 @@ from bims.models.location_context_filter import *  # noqa
 from bims.models.location_context_filter_group_order import *  # noqa
 from bims.models.location_context_group import *  # noqa
 from bims.models.algae_data import *  # noqa
-from bims.models.blog import *  # noqa
 from bims.models.upload_session import *  # noqa
 from bims.models.dashboard_configuration import *  # noqa
 from bims.models.harvest_session import *  # noqa
-from bims.models.manual_page import *  # noqa
-from bims.models.content_page import *  # noqa
 from bims.models.download_request import *  # noqa
 from bims.models.basemap_layer import *  # noqa
 from bims.models.request_log import *  # noqa

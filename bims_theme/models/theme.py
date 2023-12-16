@@ -7,12 +7,21 @@ from django.dispatch import receiver
 from colorfield.fields import ColorField
 from bims_theme.models.carousel_header import CarouselHeader
 from bims_theme.models.partner import Partner
+from django.contrib.sites.models import Site
 
 
 THEME_CACHE_KEY = 'bims_theme'
 
 
 class CustomTheme(models.Model):
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this taxon group is associated with."
+    )
     name = models.CharField(
         max_length=100,
         help_text='Will not appear anywhere'
@@ -183,7 +192,11 @@ class CustomTheme(models.Model):
 @receiver(post_save, sender=CustomTheme)
 def disable_other(sender, instance, **kwargs):
     if instance.is_enabled:
-        CustomTheme.objects.exclude(pk=instance.pk).update(is_enabled=False)
+        CustomTheme.objects.filter(
+            site=instance.site,
+        ).exclude(
+            pk=instance.pk,
+        ).update(is_enabled=False)
 
 
 # Invalidate the cached theme if a partner or a theme is updated.
@@ -194,4 +207,9 @@ def disable_other(sender, instance, **kwargs):
 @receiver(post_save, sender=CarouselHeader)
 @receiver(post_delete, sender=CarouselHeader)
 def invalidate_cache(sender, instance, **kwargs):
-    cache.delete(THEME_CACHE_KEY)
+    instance_site = None
+    if isinstance(instance, (CarouselHeader, Partner)):
+        custom_theme = instance.customtheme_set.first()
+        instance_site = custom_theme.site if custom_theme else None
+    site_name = str(instance_site) if instance_site else ''
+    cache.delete(THEME_CACHE_KEY + site_name)

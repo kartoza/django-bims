@@ -57,5 +57,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(link_abundance_type),
+        # migrations.RunPython(link_abundance_type),
     ]

@@ -3,6 +3,8 @@
 
 """
 from django.contrib.gis.db import models
+from django.contrib.sites.models import Site
+
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
@@ -65,6 +67,15 @@ class TaxonGroup(models.Model):
         null=True,
         blank=True,
         default=''
+    )
+
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this taxon group is associated with."
     )
 
     class Meta:
