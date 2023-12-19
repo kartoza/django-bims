@@ -34,12 +34,12 @@
                 {% else %}
                     <div class="carousel-item" style="height: auto">
                 {% endif %}
-                        <div class="carousel-item-content"
-                             style="align-items: center; display: flex; flex-direction: column">
+                        <div class="carousel-item-content d-flex align-items-center justify-content-center"
+                             style="min-height: 450px; align-items: center;">
                             <div class="site-image"
                                  style="height: auto;">
                                 {% if image.image|is_portrait %}
-                                    {% thumbnail image.image "x500" crop="center" as thumb %}
+                                    {% thumbnail image.image "x450" crop="center" as thumb %}
                                         <a href="/uploaded/{{ image.image }}"
                                            target="_blank"><img src="{{ thumb.url }}"
                                                                 height="{{ thumb.height }}"
