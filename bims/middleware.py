@@ -3,6 +3,7 @@ import logging
 import warnings
 
 import django
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.contrib.sites.models import Site
 from django.utils.encoding import smart_str
@@ -179,9 +180,13 @@ class SetSiteMiddleware:
     def __call__(self, request):
         host = request.get_host().split(':')[0]  # Remove port if present
         try:
-            request.site = Site.objects.get(domain=host)
+            current_site = Site.objects.get(domain=host)
         except Site.DoesNotExist:
-            request.site = Site.objects.first()
+            current_site = Site.objects.get(id=settings.DEFAULT_SITE_ID)
+
+        request.current_site = current_site
+        request.site = current_site
+        settings.SITE_ID = current_site.id
 
         response = self.get_response(request)
         return response

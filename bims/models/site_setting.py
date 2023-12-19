@@ -1,6 +1,6 @@
-import json
 from django.db import models
 from django.db.models import JSONField
+from django.dispatch import receiver
 from preferences.models import Preferences
 
 
@@ -254,18 +254,3 @@ class SiteSetting(Preferences):
             'If not provided, the pesticide dashboard will be unavailable.'
         )
     )
-
-    def save(self, *args, **kwargs):
-        max_allowed = 10
-        attempt = 0
-        is_dictionary = False
-
-        while not is_dictionary and attempt < max_allowed:
-            if not self.map_default_filters:
-                break
-            if isinstance(self.map_default_filters, list):
-                is_dictionary = True
-            else:
-                self.map_default_filters = json.loads(self.map_default_filters)
-                attempt += 1
-        super(SiteSetting, self).save(*args, **kwargs)
