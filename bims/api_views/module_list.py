@@ -1,4 +1,5 @@
 # coding=utf-8
+from django.contrib.sites.models import Site
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from sorl.thumbnail import get_thumbnail
@@ -11,9 +12,11 @@ class ModuleList(APIView):
 
     def get(self, request, *args):
         taxon_group_list = []
+        site = Site.objects.get_current()
         taxon_groups = TaxonGroup.objects.filter(
-                    category=TaxonomicGroupCategory.SPECIES_MODULE.name
-                )
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            site=site
+        )
         for _module in taxon_groups:
             try:
                 logo = get_thumbnail(

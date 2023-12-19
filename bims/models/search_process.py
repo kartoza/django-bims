@@ -6,6 +6,8 @@ import os
 import json
 import errno
 from datetime import date
+
+from django.contrib.sites.models import Site
 from django.db import connection, DatabaseError
 from django.db.utils import ProgrammingError
 from django.conf import settings
@@ -56,6 +58,14 @@ class SearchProcess(models.Model):
     search_raw_query = models.TextField(
         null=True,
         blank=True
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this record is associated with."
     )
 
     def save(self, *args, **kwargs):

@@ -95,3 +95,22 @@ def download_gbif_ids(path_file, request, send_email=False, user_id=None):
     logger.info(
         'Csv %s is already being processed by another worker',
         path_file)
+
+
+@shared_task(
+    name='bims.tasks.assign_site_to_uncategorized_records',
+    queue='update')
+def assign_site_to_uncategorized_records(module_group_id, site_id):
+    """
+    Asynchronously assigns a site to all biological collection records
+    that belong to a specific module group but don't yet have a site assigned.
+    """
+    from bims.models.biological_collection_record import (
+        BiologicalCollectionRecord
+    )
+    BiologicalCollectionRecord.objects.filter(
+        module_group_id=module_group_id,
+        source_site__isnull=True
+    ).update(
+        source_site_id=site_id
+    )

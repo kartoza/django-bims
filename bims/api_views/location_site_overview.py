@@ -2,6 +2,8 @@ import hashlib
 import json
 from collections import OrderedDict
 
+from django.contrib.sites.models import Site
+
 from bims.models.search_process import SITES_SUMMARY, SEARCH_PROCESSING
 
 from bims.models.water_temperature import WaterTemperature
@@ -54,7 +56,8 @@ class LocationSiteOverviewData(object):
         biodiversity_data = OrderedDict()
 
         groups = TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            site_id=Site.objects.get_current().id
         ).order_by('display_order')
 
         for group in groups:

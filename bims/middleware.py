@@ -182,7 +182,7 @@ class SetSiteMiddleware:
         try:
             current_site = Site.objects.get(domain=host)
         except Site.DoesNotExist:
-            current_site = Site.objects.get(id=settings.DEFAULT_SITE_ID)
+            current_site = Site.objects.get(id=settings.SITE_ID)
 
         request.current_site = current_site
         request.site = current_site

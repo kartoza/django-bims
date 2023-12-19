@@ -5,18 +5,21 @@ from django.conf import settings
 from bims.models.search_process import SearchProcess
 
 
-def get_or_create_search_process(search_type, query, process_id=None):
+def get_or_create_search_process(
+        search_type, query, process_id=None, site=None):
     """
     Get or create search process
     :param search_type: Search process type
     :param query: Search query (optional)
     :param process_id: Generated process id
+    :param site: Current site
     :return: search_process model, created status
     """
     created = False
     fields = {}
     search_processes = SearchProcess.objects.filter(
-        category=search_type
+        category=search_type,
+        site=site
     )
     if query:
         search_processes = search_processes.filter(
@@ -31,6 +34,8 @@ def get_or_create_search_process(search_type, query, process_id=None):
             process_id=process_id
         )
         fields['process_id'] = process_id
+
+    fields['site'] = site
 
     if search_processes.count() > 1:
         # Check finished
