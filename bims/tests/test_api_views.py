@@ -263,6 +263,19 @@ class TestApiView(TestCase):
 
     def test_get_autocomplete(self):
         view = autocomplete
+        TaxonGroupF.create(
+            name='algae',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(self.taxonomy_1,),
+            chart_data='division'
+        )
+
+        TaxonGroupF.create(
+            name='fish',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(self.taxonomy_2,),
+            chart_data='conservation status'
+        )
         request = self.factory.get(
             '%s/?q=aves' % reverse('autocomplete-search'))
         response = view(request)
@@ -285,7 +298,7 @@ class TestApiView(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         new_site = LocationSite.objects.get(pk=new_site.pk)
         self.assertEqual(new_site.ready_for_validation, True)
-        
+
     def test_get_taxon_images(self):
         taxon = TaxonomyF.create(
             scientific_name=u'Golden fish',

@@ -4,8 +4,12 @@
 """
 from django.contrib.gis.db import models
 from django.contrib.sites.models import Site
+from django.dispatch import receiver
 
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.tasks.collection_record import (
+    assign_site_to_uncategorized_records
+)
 
 
 class TaxonGroup(models.Model):
@@ -86,3 +90,16 @@ class TaxonGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@receiver(models.signals.post_save)
+def taxon_group_post_save(sender, instance, created, **kwargs):
+    if not issubclass(sender, TaxonGroup):
+        return
+
+    if not instance.site:
+        return
+
+    assign_site_to_uncategorized_records.delay(
+        instance.id, instance.site_id
+    )

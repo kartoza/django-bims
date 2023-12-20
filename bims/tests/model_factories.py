@@ -2,6 +2,8 @@
 import factory
 import random
 
+from django.contrib.sites.models import Site
+
 from bims.models.sampling_method import SamplingMethod
 
 from bims.models.chem import Chem, Unit
@@ -265,6 +267,7 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: u'Name %s' % n)
+    site = Site.objects.get_current()
 
     @factory.post_generation
     def taxonomies(self, create, extracted, **kwargs):
@@ -299,6 +302,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     taxonomy = factory.SubFactory(TaxonomyF)
     survey = factory.SubFactory(SurveyF)
     validated = True
+    source_site = Site.objects.get_current()
 
 
 class UnitF(factory.django.DjangoModelFactory):

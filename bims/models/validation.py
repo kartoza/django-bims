@@ -68,6 +68,15 @@ class AbstractValidation(models.Model):
         )
     )
 
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this record is associated with."
+    )
+
     class Meta:
         abstract = True
 

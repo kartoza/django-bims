@@ -1,5 +1,7 @@
 import logging
 
+from django.contrib.sites.models import Site
+
 from celery import shared_task
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,11 @@ def search_task(parameters, search_process_id, background=True):
         search_process = SearchProcess.objects.get(id=search_process_id)
     except SearchProcess.DoesNotExist:
         return
+
+    if search_process.site:
+        parameters['current_site_id'] = search_process.site.id
+    else:
+        parameters['current_site_id'] = Site.objects.get_current().id
 
     if parameters['module'] == 'water_temperature':
         search = WaterTemperatureModule(parameters)

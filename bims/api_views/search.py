@@ -56,7 +56,8 @@ class CollectionSearchAPIView(BimsApiView):
         search_uri = request.build_absolute_uri()
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
-            query=search_uri
+            query=search_uri,
+            site=Site.objects.get_current()
         )
 
         if self.is_cached():
@@ -115,6 +116,7 @@ class CollectionSearch(object):
     sass_only = False
     site = None
     taxon_groups = TaxonGroup.objects.all()
+    current_site = None
 
     def __init__(self, parameters, current_site=None):
         self.parameters = parameters
@@ -422,8 +424,15 @@ class CollectionSearch(object):
 
         if self.is_sass_records_only():
             collection_record_model = SiteVisitTaxon
+
         rank = self.get_request_data('rank')
         bio = None
+        collection_records_by_site = collection_record_model.objects.filter(
+            source_site_id=self.parameters.get(
+                'current_site_id',
+                Site.objects.get_current().id)
+        )
+
         if rank:
             taxa_list = []
             taxa_children_exist = True
@@ -441,8 +450,8 @@ class CollectionSearch(object):
                 'id__in': taxa_list,
                 'biologicalcollectionrecord__isnull': False
             })
-        elif self.search_query and bio is None:
-            bio = collection_record_model.objects.filter(
+        elif self.search_query:
+            bio = collection_records_by_site.filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
                 Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
                   self.search_query) |
@@ -450,28 +459,28 @@ class CollectionSearch(object):
                   self.search_query)
             )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     original_species_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__scientific_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     site__site_code__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     site__legacy_river_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     site__river__name__icontains=self.search_query
                 )
             if not bio.exists():
                 # Search by vernacular names
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )

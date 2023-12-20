@@ -1,3 +1,4 @@
+from django.contrib.sites.models import Site
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
@@ -172,7 +173,7 @@ class ModuleSummary(APIView):
         counts = (
             BiologicalCollectionRecord.objects.filter(
                 module_group__in=TaxonGroup.objects.filter(
-                    site=self.request.site
+                    site_id=Site.objects.get_current().id
                 )
             ).aggregate(
                 total_occurrences=Count('id')),
@@ -191,7 +192,7 @@ class ModuleSummary(APIView):
     def get(self, request, *args):
         response_data = dict()
         taxon_groups = TaxonGroup.objects.filter(
-            site=request.site,
+            site=Site.objects.get_current(),
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         ).order_by('display_order')
         response_data['general_summary'] = self.general_summary_data()
