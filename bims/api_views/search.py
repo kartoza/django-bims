@@ -426,8 +426,8 @@ class CollectionSearch(object):
             collection_record_model = SiteVisitTaxon
 
         rank = self.get_request_data('rank')
-
-        bio = collection_record_model.objects.filter(
+        bio = None
+        collection_records_by_site = collection_record_model.objects.filter(
             source_site_id=self.parameters.get(
                 'current_site_id',
                 Site.objects.get_current().id)
@@ -451,7 +451,7 @@ class CollectionSearch(object):
                 'biologicalcollectionrecord__isnull': False
             })
         elif self.search_query:
-            bio = bio.filter(
+            bio = collection_records_by_site.filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
                 Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
                   self.search_query) |
@@ -459,28 +459,28 @@ class CollectionSearch(object):
                   self.search_query)
             )
             if not bio.exists():
-                bio = bio.filter(
+                bio = collection_records_by_site.filter(
                     original_species_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = bio.filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__scientific_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = bio.filter(
+                bio = collection_records_by_site.filter(
                     site__site_code__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = bio.filter(
+                bio = collection_records_by_site.filter(
                     site__legacy_river_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = bio.filter(
+                bio = collection_records_by_site.filter(
                     site__river__name__icontains=self.search_query
                 )
             if not bio.exists():
                 # Search by vernacular names
-                bio = bio.filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
