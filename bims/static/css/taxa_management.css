@@ -180,6 +180,7 @@ ul li {
 
 .taxa-table tbody {
     display: block;
+    overflow-x: hidden;
     overflow-y: auto; /* Scrollable tbody */
     max-height: calc(100vh - 325px);
     max-height: -o-calc(100vh - 325px); /* opera */

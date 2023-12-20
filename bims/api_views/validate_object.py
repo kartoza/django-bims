@@ -82,7 +82,7 @@ class ValidateSite(UserPassesTestMixin, LoginRequiredMixin, APIView):
 class ValidateTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
 
     def test_func(self):
-        return self.request.user.has_perm('bims.can_validate_taxon')
+        return self.request.user.has_perm('bims.change_taxonomy')
 
     def handle_no_permission(self):
         messages.error(self.request, 'You don\'t have permission '
@@ -95,7 +95,7 @@ class ValidateTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
             taxon = Taxonomy.objects.get(pk=pk)
             taxon.validate(False)
             return JsonResponse({'status': 'success'})
-        except LocationSite.DoesNotExist:
+        except Taxonomy.DoesNotExist:
             return HttpResponse(
                 'Object Does Not Exist',
                 status=status.HTTP_400_BAD_REQUEST

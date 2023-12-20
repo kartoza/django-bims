@@ -172,9 +172,10 @@ class AbstractValidation(models.Model):
             msg_data
         )
 
-        send_mail(
-            subject=subject_email,
-            message=msg_plain,
-            from_email=settings.SERVER_EMAIL,
-            recipient_list=[self.owner.email]
-        )
+        if self.owner:
+            send_mail(
+                subject=subject_email,
+                message=msg_plain,
+                from_email=settings.SERVER_EMAIL,
+                recipient_list=[self.owner.email]
+            )

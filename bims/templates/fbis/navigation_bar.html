@@ -130,9 +130,14 @@
                         <a class="p-2 dropdown-toggle" data-toggle="dropdown" href="#">Administration
                         </a>
                         <ul class="dropdown-menu" style="width: 250px; z-index: 9999">
+                            <li class="dropdown-menu-item" ><a href="/taxa-management/">Taxon Management</a></li>
                             <li class="dropdown-menu-item"><a href="/admin/">Admin Page</a></li>
                         </ul>
                     </li>
+                {% else %}
+                    <ul class="dropdown-menu" style="width: 250px; z-index: 9999">>
+                        <li class="dropdown-menu-item" ><a href="/taxa-management/">Taxon Management</a></li>
+                    </ul>
                 {% endif %}
                 {% if preferences.SiteSetting.default_data_source == 'fbis' %}
                 <li class="dropdown dropdown-admin">

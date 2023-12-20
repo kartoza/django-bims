@@ -14,14 +14,10 @@ from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
 class TaxaManagementView(
-    UserPassesTestMixin,
     LoginRequiredMixin,
     TemplateView):
 
     template_name = 'taxa_management.html'
-
-    def test_func(self):
-        return self.request.user.has_perm('bims.can_upload_taxa')
 
     def get_context_data(self, **kwargs):
         context = super(TaxaManagementView, self).get_context_data(

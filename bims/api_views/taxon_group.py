@@ -72,7 +72,7 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
 
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):
     def test_func(self):
-        return self.request.user.has_perm('bims.can_update_taxon_group')
+        return self.request.user.has_perm('bims.change_taxongroup')
 
 
 class UpdateTaxonGroupOrder(TaxaUpdateMixin):
