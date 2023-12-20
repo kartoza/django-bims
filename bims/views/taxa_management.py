@@ -1,6 +1,7 @@
 # coding=utf-8
 """Taxa management view
 """
+from django.contrib.sites.models import Site
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from bims.models.taxon_group import TaxonGroup
@@ -28,7 +29,8 @@ class TaxaManagementView(
         )
         context['taxa_groups'] = TaxonGroupSerializer(
             TaxonGroup.objects.filter(
-                category='SPECIES_MODULE'
+                category='SPECIES_MODULE',
+                site=Site.objects.get_current()
             ).order_by('display_order'), many=True).data
         context['source_collections'] = list(
             BiologicalCollectionRecord.objects.all().values_list(
