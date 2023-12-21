@@ -110,8 +110,7 @@ class RejectTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
         taxon_pk = self.request.GET.get('pk', None)
         if not taxon_pk:
             return False
-        taxon = Taxonomy.objects.get(pk=taxon_pk)
-        return taxon
+        return self.request.user.has_perm('bims.change_taxonomy')
 
     def get(self, request):
         object_pk = request.GET.get('pk', None)
@@ -141,7 +140,7 @@ class RejectTaxon(UserPassesTestMixin, LoginRequiredMixin, APIView):
                 taxon.biologicalcollectionrecord_set.all().delete()
                 taxon.delete()
             return JsonResponse({'status': 'success'})
-        except LocationSite.DoesNotExist:
+        except Taxonomy.DoesNotExist:
             return HttpResponse(
                 'Object Does Not Exist',
                 status=status.HTTP_400_BAD_REQUEST

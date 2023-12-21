@@ -390,9 +390,6 @@ class Taxonomy(AbstractValidation):
 @receiver(models.signals.pre_save, sender=Taxonomy)
 def taxonomy_pre_save_handler(sender, instance, **kwargs):
     """Get iucn status before save."""
-    if instance.rank == TaxonomicRank.CLASS.name:
-        generate_permission(instance.scientific_name)
-
     if instance.is_species and not instance.iucn_status:
         iucn_status = get_iucn_status(
             species_name=instance.canonical_name,

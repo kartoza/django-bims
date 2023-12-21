@@ -49,29 +49,31 @@ const popupCenter = ({url, title, w, h}) => {
 }
 
 // ----- Bind element to events ----- //
-$sortable.sortable({
-    stop: function (event, ui) {
-        let $li = $(event.target).find('li');
-        let ids = [];
-        $.each($li, function (index, element) {
-            ids.push($(element).data('id'));
-        });
-        $sortable.sortable("disable");
-        showLoading();
-        $.ajax({
-            url: taxonGroupUpdateOrderUrl,
-            headers: {"X-CSRFToken": csrfToken},
-            type: 'POST',
-            data: {
-                'taxonGroups': JSON.stringify(ids)
-            },
-            success: function (response) {
-                hideLoading();
-                $sortable.sortable("enable");
-            }
-        });
-    }
-});
+if (userCanEditTaxonGroup) {
+    $sortable.sortable({
+        stop: function (event, ui) {
+            let $li = $(event.target).find('li');
+            let ids = [];
+            $.each($li, function (index, element) {
+                ids.push($(element).data('id'));
+            });
+            $sortable.sortable("disable");
+            showLoading();
+            $.ajax({
+                url: taxonGroupUpdateOrderUrl,
+                headers: {"X-CSRFToken": csrfToken},
+                type: 'POST',
+                data: {
+                    'taxonGroups': JSON.stringify(ids)
+                },
+                success: function (response) {
+                    hideLoading();
+                    $sortable.sortable("enable");
+                }
+            });
+        }
+    });
+}
 
 $searchButton.click(function (e) {
     if (!taxaListCurrentUrl) {
@@ -431,10 +433,10 @@ const getTaxaList = (url) => {
                 let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
                 name += `<br/><span style="font-size: 9pt">${data['scientific_name']}</span><br/>`;
                 if (data['common_name']) {
-                    name += ` <span class="badge badge-info">${data['common_name']}</span>`
+                    name += ` <span class="badge badge-info">${data['common_name']}</span><br/>`
                 }
                 if (data['gbif_key'] || data['iucn_redlist_id']) {
-                    name += '<br/><div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
+                    name += '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
                 }
                 if (data['gbif_key']) {
                     name += ` <a href="https://www.gbif.org/species/${data['gbif_key']}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
@@ -446,15 +448,17 @@ const getTaxaList = (url) => {
                     name += '<br/><span class="badge badge-secondary">Unvalidated</span></a>';
                 }
                 let $rowAction = $('.row-action').clone(true, true);
-                $rowAction.removeClass('row-action');
-                if (!data['validated']) {
-                    $rowAction.find('.btn-validated-container').hide();
-                    $rowAction.find('.btn-unvalidated-container').show();
-                } else {
-                    $rowAction.find('.btn-validated-container').show();
-                    $rowAction.find('.btn-unvalidated-container').hide();
+                if (userCanEditTaxon) {
+                    $rowAction.removeClass('row-action');
+                    if (!data['validated']) {
+                        $rowAction.find('.btn-validated-container').hide();
+                        $rowAction.find('.btn-unvalidated-container').show();
+                    } else {
+                        $rowAction.find('.btn-validated-container').show();
+                        $rowAction.find('.btn-unvalidated-container').hide();
+                    }
+                    $rowAction.show();
                 }
-                $rowAction.show();
                 let $row = $(`<tr class="taxa-row" data-id="${data['id']}"></tr>`);
                 $taxaList.append($row);
                 $row.append(`<td>${name}</td>`);
@@ -464,14 +468,17 @@ const getTaxaList = (url) => {
                 $row.append(`<td>${data['endemism_name']}</td>`);
                 $row.append(`<td>${data['total_records']}&nbsp;<a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a></td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
-                let $tdAction = $(`<td></td>`);
-                $row.append($tdAction);
-                $tdAction.append($rowAction);
-                $rowAction.find('.edit-taxon').click((event) => {
-                    event.preventDefault();
-                    popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
-                    return false;
-                });
+
+                if (userCanEditTaxon) {
+                    let $tdAction = $(`<td style="width: 170px;"></td>`);
+                    $row.append($tdAction);
+                    $tdAction.append($rowAction);
+                    $rowAction.find('.edit-taxon').click((event) => {
+                        event.preventDefault();
+                        popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
+                        return false;
+                    });
+                }
             });
             if (response['next'] == null && response['previous'] == null) {
                 $pagination.hide();

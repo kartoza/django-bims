@@ -1,6 +1,7 @@
 # coding=utf-8
 """Taxa management view
 """
+from django.contrib.sites.models import Site
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from bims.models.taxon_group import TaxonGroup
@@ -13,14 +14,10 @@ from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
 class TaxaManagementView(
-    UserPassesTestMixin,
     LoginRequiredMixin,
     TemplateView):
 
     template_name = 'taxa_management.html'
-
-    def test_func(self):
-        return self.request.user.has_perm('bims.can_upload_taxa')
 
     def get_context_data(self, **kwargs):
         context = super(TaxaManagementView, self).get_context_data(
@@ -28,7 +25,8 @@ class TaxaManagementView(
         )
         context['taxa_groups'] = TaxonGroupSerializer(
             TaxonGroup.objects.filter(
-                category='SPECIES_MODULE'
+                category='SPECIES_MODULE',
+                site=Site.objects.get_current()
             ).order_by('display_order'), many=True).data
         context['source_collections'] = list(
             BiologicalCollectionRecord.objects.all().values_list(
