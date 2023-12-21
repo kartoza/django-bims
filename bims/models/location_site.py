@@ -9,6 +9,7 @@ from abc import ABC
 import requests
 import json
 
+from bims.tasks.location_site import update_location_context
 from bims.models.validation import AbstractValidation
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
@@ -474,13 +475,16 @@ class LocationSite(AbstractValidation):
             return
 
 
+def update_location_site_context(location_site_id):
+    update_location_context.delay(location_site_id)
+
+
 @receiver(models.signals.post_save, sender=LocationSite)
 @prevent_recursion
 def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Post save location site
     """
-    from bims.tasks.location_site import update_location_context
     if (
             not isinstance(sender, LocationSite) and
             not sender.__name__ == 'LocationSite'
@@ -521,8 +525,7 @@ def location_site_post_save_handler(sender, instance, **kwargs):
         except LocationContext.MultipleObjectsReturned:
             pass
 
-    # Update location context in background
-    update_location_context.delay(instance.id)
+    update_location_site_context(location_site_id=instance.id)
 
 
 def generate_site_code(
