@@ -34,7 +34,6 @@ def mocked_gbif_data(url):
         return MockResponse(json.loads(json_data), 200)
     return ''
 
-
 def mocked_request_protocol_error(url):
     raise ProtocolError('Connection broken')
 
@@ -48,6 +47,7 @@ def mocked_request_http_error(url):
     raise e
 
 
+@mock.patch('bims.models.location_site.update_location_site_context')
 class TestHarvestGbif(TestCase):
     def setUp(self) -> None:
         self.taxonomy = TaxonomyF.create(
@@ -62,7 +62,7 @@ class TestHarvestGbif(TestCase):
 
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
-    def test_harvest_gbif(self):
+    def test_harvest_gbif(self, mock_update_location_context):
         status = import_gbif_occurrences(self.taxonomy)
         self.assertEqual(status, 'Finish')
         self.assertEqual(
@@ -80,10 +80,11 @@ class TestHarvestGbif(TestCase):
                 validated=True
             ).exists()
         )
+        mock_update_location_context.assert_called()
 
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
-    def test_harvest_gbif_multiple_objects_returned(self):
+    def test_harvest_gbif_multiple_objects_returned(self, mock_update_location_context):
         BiologicalCollectionRecordF.create(
             upstream_id="2563631087",
             taxonomy=self.taxonomy,
@@ -102,16 +103,17 @@ class TestHarvestGbif(TestCase):
                                               'Information Facility (GBIF)'
             ).count(), 5
         )
+        mock_update_location_context.assert_called()
 
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_request_http_error
     ))
-    def test_harvest_gbif_http_error(self):
+    def test_harvest_gbif_http_error(self, mock_update_location_context):
         status = import_gbif_occurrences(self.taxonomy)
         self.assertEqual(status, 'error message')
 
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_request_protocol_error))
-    def test_harvest_gbif_protocol_error(self):
+    def test_harvest_gbif_protocol_error(self, mock_update_location_context):
         status = import_gbif_occurrences(self.taxonomy)
         self.assertEqual(status, 'Connection broken')

@@ -105,12 +105,15 @@ class OccurrenceProcessor(object):
             sender=LocationContextFilterGroupOrder
         )
 
+    def update_location_site_context(self):
+        update_location_context.delay(
+            location_site_id=','.join(self.site_ids),
+            generate_site_code=True
+        )
+
     def finish_process(self):
         if self.site_ids and self.fetch_location_context:
-            update_location_context.delay(
-                location_site_id=','.join(self.site_ids),
-                generate_site_code=True
-            )
+            self.update_location_site_context()
 
         generate_spatial_scale_filter()
         # Update source reference filter

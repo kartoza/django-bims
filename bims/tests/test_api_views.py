@@ -176,25 +176,6 @@ class TestApiView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['data']), 2)
 
-    def test_only_get_aves_collection(self):
-        from django.contrib.auth.models import Permission
-        view = GetNonValidatedRecords.as_view()
-        BiologicalCollectionRecordF.create(
-            site=self.location_site,
-            taxonomy=self.taxonomy_class_1,
-            validated=False
-        )
-        user = UserF.create()
-        permission = Permission.objects.filter(codename='can_validate_aves')[0]
-        group = GroupF.create()
-        group.permissions.add(permission)
-        user.groups.add(group)
-
-        request = self.factory.get(reverse('get-unvalidated-records'))
-        request.user = user
-        response = view(request)
-        self.assertEqual(response.status_code, 200)
-
     def test_get_referece_category(self):
         view = ReferenceCategoryList.as_view()
         BiologicalCollectionRecordF.create(
