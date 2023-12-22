@@ -1,5 +1,7 @@
 # coding=utf-8
 """Test Taxon Group."""
+from django.contrib.auth.models import Permission, Group
+from django.contrib.sites.models import Site
 from django.test import TestCase
 from bims.api_views.taxon_group import (
     update_taxon_group_orders,
@@ -13,6 +15,7 @@ from bims.tests.model_factories import (
 )
 from bims.models.taxon_group import TaxonGroup
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 class TestTaxonGroup(TestCase):
@@ -99,3 +102,87 @@ class TestTaxonGroup(TestCase):
                 module_group=taxon_group_1
             ).exists()
         )
+
+    def test_add_taxon_group_level_2(self):
+        taxon_group = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.LEVEL_2_GROUP.name,
+            site=Site.objects.get_current()
+        )
+        self.assertTrue(
+            Permission.objects.filter(
+                name=taxon_group.permission_name
+            ).exists()
+        )
+        self.assertTrue(
+            Group.objects.filter(
+                name=taxon_group.group_name
+            ).exists()
+        )
+        self.assertTrue(str(taxon_group), f'{taxon_group.name} - {taxon_group.category}')
+
+    def test_add_taxon_group_level_3(self):
+        ancestor_taxon_group = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.LEVEL_1_GROUP.name,
+            site=Site.objects.get_current()
+        )
+        parent_taxon_group = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.LEVEL_2_GROUP.name,
+            site=Site.objects.get_current(),
+            parent=ancestor_taxon_group
+        )
+        taxon_group = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.LEVEL_3_GROUP.name,
+            site=Site.objects.get_current(),
+            parent=parent_taxon_group
+        )
+        child_permission = Permission.objects.filter(
+            name=taxon_group.permission_name
+        ).first()
+        parent_permission = Permission.objects.filter(
+            name=parent_taxon_group.permission_name
+        )
+        parent_group = Group.objects.filter(
+            name=parent_taxon_group.group_name
+        ).first()
+        self.assertIsNotNone(parent_permission)
+        self.assertTrue(
+            Group.objects.filter(
+                name=taxon_group.group_name
+            ).exists()
+        )
+        self.assertTrue(
+            parent_group.permissions.filter(
+                id__in=[child_permission.id]
+            ).exists()
+        )
+
+    def test_add_taxon_group_level_3_without_site(self):
+        taxon_group = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.LEVEL_3_GROUP.name,
+            site=None
+        )
+        self.assertFalse(
+            Permission.objects.filter(
+                name=taxon_group.permission_name
+            ).exists()
+        )
+
+    def test_update_taxon_group(self):
+        taxon_group = TaxonGroupF.create(
+            name='test1',
+            category=TaxonomicGroupCategory.LEVEL_3_GROUP.name,
+            site=Site.objects.get_current()
+        )
+        self.assertTrue(
+            'test1' in Permission.objects.filter(
+                name=taxon_group.permission_name
+            ).first().name
+        )
+        taxon_group.name = 'test2'
+        taxon_group.save()
+        self.assertFalse(
+            'test1' in Permission.objects.filter(
+                name=taxon_group.permission_name
+            ).first().name
+        )
+

@@ -1,40 +1,39 @@
+import logging
 from django.contrib.auth.models import Permission
 
+logger = logging.getLogger(__name__)
 
-def generate_permission(class_name):
+
+def generate_permission(
+        permission_name,
+        default_permission='can_validate_data'):
     # Generate permission based on taxon class
-    if not class_name:
+    if not permission_name:
         return None
 
-    print('Generate permission for %s' % class_name)
+    logger.info('Generate permission for %s' % permission_name)
     default_permission = Permission.objects.filter(
-            codename='can_validate_data'
+            codename=default_permission
     )
     if not default_permission:
         return None
 
-    permission_codename = 'can_validate_%s' % (
-        class_name.lower().replace(' ', '_')
-    )
-    permission_name = 'Can validate %s' % (
-        class_name
-    )
+    permission_codename = permission_name.lower().replace(' ', '_')
 
     if Permission.objects.filter(
         name=permission_name,
         codename=permission_codename,
     ).exists():
-        print('Permission already exists')
-        return None
+        logger.error('Permission already exists')
+        return Permission.objects.filter(
+            name=permission_name,
+            codename=permission_codename
+        ).first()
 
     permission = default_permission[0]
     permission.pk = None
-    permission.codename = 'can_validate_%s' % (
-        class_name.lower().replace(' ', '_')
-    )
-    permission.name = 'Can validate %s' % (
-        class_name
-    )
-    print('New permission added : %s' % permission_codename)
+    permission.codename = permission_name.lower().replace(' ', '_')
+    permission.name = permission_name
+    logger.info('New permission added : %s' % permission_codename)
     permission.save()
     return permission
