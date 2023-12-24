@@ -1,6 +1,7 @@
 import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import Http404
+from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models import (
@@ -158,6 +159,8 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         module_logo = self.request.FILES.get('module_logo', None)
         module_id = self.request.POST.get('module_id', None)
         extra_attributes = self.request.POST.getlist('extra_attribute', [])
+        new_expert_ids = self.request.POST.getlist('taxon-group-experts')
+
         if not module_id:
             raise Http404('Missing required parameter')
         try:
@@ -187,4 +190,8 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
                     pass
 
         taxon_group.save()
+
+        new_expert_ids = [int(expert_id) for expert_id in new_expert_ids]
+        taxon_group.experts.set(new_expert_ids)
+
         return Response('Updated')

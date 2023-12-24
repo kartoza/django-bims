@@ -13,9 +13,11 @@ from bims.tests.model_factories import (
     TaxonomyF,
     BiologicalCollectionRecordF
 )
-from bims.models.taxon_group import TaxonGroup
+from bims.models.taxon_group import (
+    TaxonGroup, TAXON_GROUP_LEVEL_1,
+    TAXON_GROUP_LEVEL_3, TAXON_GROUP_LEVEL_2
+)
 from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
 class TestTaxonGroup(TestCase):
@@ -105,7 +107,7 @@ class TestTaxonGroup(TestCase):
 
     def test_add_taxon_group_level_2(self):
         taxon_group = TaxonGroupF.create(
-            category=TaxonomicGroupCategory.LEVEL_2_GROUP.name,
+            level=TAXON_GROUP_LEVEL_2,
             site=Site.objects.get_current()
         )
         self.assertTrue(
@@ -118,20 +120,20 @@ class TestTaxonGroup(TestCase):
                 name=taxon_group.group_name
             ).exists()
         )
-        self.assertTrue(str(taxon_group), f'{taxon_group.name} - {taxon_group.category}')
+        self.assertTrue(str(taxon_group), f'{taxon_group.name} - {taxon_group.level}')
 
     def test_add_taxon_group_level_3(self):
         ancestor_taxon_group = TaxonGroupF.create(
-            category=TaxonomicGroupCategory.LEVEL_1_GROUP.name,
+            level=TAXON_GROUP_LEVEL_1,
             site=Site.objects.get_current()
         )
         parent_taxon_group = TaxonGroupF.create(
-            category=TaxonomicGroupCategory.LEVEL_2_GROUP.name,
+            level=TAXON_GROUP_LEVEL_2,
             site=Site.objects.get_current(),
             parent=ancestor_taxon_group
         )
         taxon_group = TaxonGroupF.create(
-            category=TaxonomicGroupCategory.LEVEL_3_GROUP.name,
+            level=TAXON_GROUP_LEVEL_3,
             site=Site.objects.get_current(),
             parent=parent_taxon_group
         )
@@ -158,7 +160,7 @@ class TestTaxonGroup(TestCase):
 
     def test_add_taxon_group_level_3_without_site(self):
         taxon_group = TaxonGroupF.create(
-            category=TaxonomicGroupCategory.LEVEL_3_GROUP.name,
+            level=TAXON_GROUP_LEVEL_3,
             site=None
         )
         self.assertFalse(
@@ -170,7 +172,7 @@ class TestTaxonGroup(TestCase):
     def test_update_taxon_group(self):
         taxon_group = TaxonGroupF.create(
             name='test1',
-            category=TaxonomicGroupCategory.LEVEL_3_GROUP.name,
+            level=TAXON_GROUP_LEVEL_3,
             site=Site.objects.get_current()
         )
         self.assertTrue(

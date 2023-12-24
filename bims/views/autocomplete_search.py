@@ -168,7 +168,8 @@ def user_autocomplete(request):
             results.append({
                 'id': r.id,
                 'first_name': r.first_name,
-                'last_name': r.last_name
+                'last_name': r.last_name,
+                'email': r.email
             })
         data = json.dumps(results)
     mime_type = 'application/json'

@@ -17,14 +17,3 @@ class TaxonomicGroupCategory(Enum):
 
     # Division group
     DIVISION_GROUP = 'Division Group'
-
-    # For FADATim
-
-    # Organism
-    LEVEL_1_GROUP = 'Level 1'
-
-    # Regions and/or ecosystem type
-    LEVEL_2_GROUP = 'Level 2'
-
-    # Country
-    LEVEL_3_GROUP = 'Level 3'

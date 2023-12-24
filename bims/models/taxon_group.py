@@ -2,6 +2,7 @@
 """Taxon group model definition.
 
 """
+from django.conf import settings
 from django.contrib.auth.models import Permission, Group
 from django.contrib.gis.db import models
 from django.contrib.sites.models import Site
@@ -15,6 +16,11 @@ from bims.permissions.generate_permission import generate_permission
 from bims.utils.decorator import prevent_recursion
 
 
+TAXON_GROUP_LEVEL_1 = 'level_1'
+TAXON_GROUP_LEVEL_2 = 'level_2'
+TAXON_GROUP_LEVEL_3 = 'level_3'
+
+
 class TaxonGroup(models.Model):
 
     CHART_CHOICES = (
@@ -23,6 +29,12 @@ class TaxonGroup(models.Model):
         ('sass', 'SASS'),
         ('origin', 'Origin'),
         ('endemism', 'Endemism'),
+    )
+
+    LEVEL_CHOICES = (
+        (TAXON_GROUP_LEVEL_1, 'Level 1: Organism'),
+        (TAXON_GROUP_LEVEL_2, 'Level 2: Regions and/or ecosystem type'),
+        (TAXON_GROUP_LEVEL_3, 'Level 3: Country'),
     )
 
     name = models.CharField(
@@ -85,12 +97,26 @@ class TaxonGroup(models.Model):
         help_text="The site this taxon group is associated with."
     )
 
+    level = models.CharField(
+        help_text='Level of the taxon group',
+        max_length=100,
+        choices=LEVEL_CHOICES,
+        null=True,
+        blank=True
+    )
+
     parent = models.ForeignKey(
         verbose_name='Parent',
         to='self',
         on_delete=models.CASCADE,
         null=True,
         blank=True
+    )
+
+    experts = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -100,17 +126,20 @@ class TaxonGroup(models.Model):
         )
 
     def __str__(self):
-        return f'{self.name} - {self.category}'
+        return f'{self.name} - {self.level}'
 
     @property
     def permission_name(self):
-        return f'Can validate {self.name} - {self.category}'
+        return f'Can validate {self.name} - {self.level}'
 
     @property
     def group_name(self):
-        taxon_group_categories = dict(
-            (rank.name, rank.value) for rank in TaxonomicGroupCategory)
-        return f'{taxon_group_categories[self.category]} : {self.name}'
+        levels = dict(TaxonGroup.LEVEL_CHOICES)
+        if self.level and self.level in levels:
+            level = levels[self.level]
+        else:
+            level = ''
+        return f'{level} : {self.name}'
 
     @property
     def permission_codename(self):
@@ -129,7 +158,7 @@ def taxon_group_pre_save(sender, instance: TaxonGroup, **kwargs):
         if current_instance:
             if (
                 current_instance.name != instance.name or
-                    current_instance.category != instance.category
+                    current_instance.level != instance.level
             ):
                 old_permission_codename = (
                     current_instance.permission_codename
@@ -144,12 +173,13 @@ def taxon_group_pre_save(sender, instance: TaxonGroup, **kwargs):
                     name=new_permission_name,
                     codename=new_permission_codename
                 )
-                old_group_name = current_instance.group_name
-                Group.objects.filter(
-                    name=old_group_name
-                ).update(
-                    name=instance.group_name
-                )
+                if instance.level:
+                    old_group_name = current_instance.group_name
+                    Group.objects.filter(
+                        name=old_group_name
+                    ).update(
+                        name=instance.group_name
+                    )
 
 
 def add_permission_to_parent(taxon_group: TaxonGroup, permission: Permission):
@@ -175,10 +205,10 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
         instance.id, instance.site_id
     )
 
-    if instance.category in (
-        TaxonomicGroupCategory.LEVEL_1_GROUP.name,
-        TaxonomicGroupCategory.LEVEL_2_GROUP.name,
-        TaxonomicGroupCategory.LEVEL_3_GROUP.name
+    if instance.level in (
+        TAXON_GROUP_LEVEL_1,
+        TAXON_GROUP_LEVEL_2,
+        TAXON_GROUP_LEVEL_3
     ):
         permission = generate_permission(
             instance.permission_name,

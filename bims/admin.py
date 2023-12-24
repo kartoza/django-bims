@@ -1017,6 +1017,10 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     list_filter = (
         'category',
     )
+    filter_horizontal = (
+        'taxonomies',
+        'experts'
+    )
 
 
 class TaxonomyAdmin(admin.ModelAdmin):

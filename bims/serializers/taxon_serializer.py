@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from bims.models import Taxonomy, BiologicalCollectionRecord
 from bims.models.iucn_status import IUCNStatus
@@ -165,9 +166,23 @@ class TaxonSimpleSerializer(serializers.ModelSerializer):
             'scientific_name', 'cons_status']
 
 
+class TaxonGroupExpertSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    def get_full_name(self, obj: get_user_model()):
+        if obj.first_name and obj.last_name:
+            return f'{obj.first_name} {obj.last_name}'
+        return obj.username
+
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username', 'full_name', 'email']
+
+
 class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
     taxa_count = serializers.SerializerMethodField()
+    experts = serializers.SerializerMethodField()
 
     def get_taxa_count(self, obj: TaxonGroup):
         return obj.taxonomies.all().count()
@@ -177,7 +192,13 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             obj.taxonextraattribute_set.all().values_list('name', flat=True)
         )
 
+    def get_experts(self, obj: TaxonGroup):
+        return TaxonGroupExpertSerializer(
+            obj.experts.all(),
+            many=True
+        ).data
+
     class Meta:
         model = TaxonGroup
         fields = ['id', 'name', 'category', 'logo', 'extra_attributes',
-                  'taxa_count']
+                  'taxa_count', 'experts']
