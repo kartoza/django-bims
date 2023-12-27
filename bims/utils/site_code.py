@@ -182,8 +182,8 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
         pass
 
     if wetland_data and 'name' in wetland_data and wetland_data['name']:
-        wetland_site_code += wetland_data['name'][:4]
+        wetland_site_code += wetland_data['name'].replace(' ', '')[:4]
     elif user_wetland_name:
-        wetland_site_code += user_wetland_name[:4]
+        wetland_site_code += user_wetland_name.replace(' ', '')[:4]
 
     return wetland_site_code
