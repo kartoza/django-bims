@@ -307,6 +307,7 @@
                 role="dialog"
                 aria-labelledby="myModalLabel" aria-hidden="true">
             <form action="#" id="delete-form" data-site-visit-id="">
+                {% csrf_token %}
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -422,11 +423,16 @@
             let form = $(this);
             e.preventDefault();
             let deleteUrl = $(e.currentTarget).data('delete-url');
+            let csrfToken = $('#delete-form input[name=csrfmiddlewaretoken]').val();
+
             if (deleteUrl) {
                 $('#confirm-delete-btn').prop('disabled', true).html('Deleting...');
                 $.ajax({
                     url: deleteUrl,
                     type: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
                     success: function (response) {
                         window.location.reload();
                     }

@@ -1,6 +1,5 @@
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 
 from bims.models.location_site import LocationSite
 
@@ -14,6 +13,7 @@ from django.views.generic.detail import DetailView
 from bims.views.site_visit.base import SiteVisitBaseView
 from bims.models.survey import Survey
 from bims.models.basemap_layer import BaseMapLayer
+from bims.models.chemical_record import ChemicalRecord
 
 
 class SiteVisitDetailView(SiteVisitBaseView, DetailView):
@@ -45,7 +45,6 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
         return Survey.objects.filter(
                 id=site_visit_id, ).exists()
 
-    @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super(SiteVisitDeleteView, self).dispatch(request, *args, **kwargs)
 
@@ -59,6 +58,7 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
         if len(surveys) == 1:
             LocationSite.objects.get(pk=site_visit.site.id).delete()
         BiologicalCollectionRecord.objects.filter(survey=site_visit).delete()
+        ChemicalRecord.objects.filter(survey=site_visit).delete()
         Survey.objects.filter(id=site_visit.id).delete()
         messages.success(
             request,
@@ -66,5 +66,8 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
             extra_tags='delete_site_visit'
         )
         redirect_url = '/site-visit/list/'
+        next_url = request.POST.get('next', None)
+        if next_url:
+            redirect_url = next_url
 
         return HttpResponseRedirect(redirect_url)
