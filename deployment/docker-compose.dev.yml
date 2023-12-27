@@ -77,6 +77,21 @@ services:
     ports:
       - "6543:5432"
 
+  db-restore:
+    image: kartoza/postgis:15-3.3
+    profiles:
+      - dev
+    volumes:
+      - ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+      - ./restore-db.sh:/restore-db.sh
+      - ./revoke.sql:/revoke.sql
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_USER: ${POSTGRES_USER:-docker}
+      POSTGRES_PASS: ${POSTGRES_PASS:-docker}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
+
   geoserver:
     container_name: bims_dev_geoserver
     image: kartoza/geoserver:2.19.0
