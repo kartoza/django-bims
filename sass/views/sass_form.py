@@ -830,6 +830,11 @@ class SassDeleteView(UserPassesTestMixin, View):
         if site_visit_taxon.exists():
             survey = site_visit_taxon.first().survey
         if survey:
+            chemical_records = ChemicalRecord.objects.filter(
+                survey=survey
+            )
+            if chemical_records.exists():
+                chemical_records.delete()
             survey.delete()
         site_visit_taxon.delete()
         site_visit.delete()
