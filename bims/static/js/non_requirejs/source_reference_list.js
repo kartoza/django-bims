@@ -47,6 +47,22 @@ $('.delete-records').click(function (e) {
     let r = confirm(
         `Are you sure you want to remove ${totalRecords} records and ${totalPhysico} 
         Physico-chemical data associated with this source reference?`);
+    if (r) {
+        document.getElementById('loading-animation').style.display = 'flex';
+        console.log('called');
+        $.ajax({
+            url: `/api/delete-records-by-source-reference-id/${referenceId}/`,
+            type: 'POST',
+            headers: {"X-CSRFToken": csrfToken},
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                alert('Error: ' + errorThrown);
+                document.getElementById('loading-animation').style.display = 'none';
+            }
+        });
+    }
 
 })
 

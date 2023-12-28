@@ -29,4 +29,7 @@ class DecisionSupportTool(models.Model):
     )
 
     def __str__(self):
-        return f'{self.name} - {self.biological_collection_record.uuid}'
+        try:
+            return f'{self.name} - {self.biological_collection_record.uuid}'
+        except Exception as e:
+            return f'{self.name}'

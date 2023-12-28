@@ -8,45 +8,16 @@
 {% block pre-head %}
     <link rel="stylesheet"
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
-    <style>
-        .card {
-            margin-bottom: 10px;
-        }
-
-        .custom-control-label {
-            max-width: 80%;
-        }
-
-        .reference-filter-title {
-            margin-bottom: 0 !important;
-            font-weight: bold;
-        }
-        .badge-occurrences {
-            font-size: 9pt;
-            padding-left: 10px;
-            padding-right: 10px;
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-        .badge-zero {
-            background-color: #b8b8b8;
-        }
-        .reference-type-label {
-            text-transform: uppercase;
-            font-weight: 300;
-            font-size: 10pt;
-        }
-        .active.active:hover {
-            color: white;
-        }
-        .input-group-append:hover {
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet"
+          href="{% static "css/source_reference_list.css" %}">
 {% endblock %}
 
 {% block body_content %}
     <!-- Page Header -->
+    <div id="loading-animation" class="loading-container">
+        <!-- Here, you can use an image or any animation you like -->
+        <div class="loader"></div>
+    </div>
     <div class="body-container container">
         <div class="dashboard-title">
             <h2>Explore Source References&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
@@ -152,13 +123,15 @@
                                      <div class="float-right">
                                         <a href="#" class="badge badge-danger badge-occurrences delete-reference" data-reference-id="{{ source_reference.id }}">Delete source reference</a>&nbsp;
                                     </div>
+                                    {% if source_reference.occurrences > 0 or source_reference.chemical_records > 0 %}
                                     <div class="float-right">
-                                        <a href="#" class="badge badge-danger badge-occurrences delete-records"
+                                        <a href="#" class="badge badge-warning badge-occurrences delete-records"
                                            data-reference-id="{{ source_reference.id }}"
                                            data-total-physico-chemical-data="{{ source_reference.chemical_records }}"
                                            data-total-records="{{ source_reference.occurrences }}"
                                         >Delete records</a>&nbsp;
                                     </div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -185,6 +158,9 @@
     <script>
         const csrfToken = '{{ csrf_token }}';
         const authorIds = [];
+        window.onload = function() {
+            document.getElementById('loading-animation').style.display = 'none';
+        };
     </script>
     <script src="{% static "js/non_requirejs/source_reference_list.js" %}"></script>
 {% endblock %}
