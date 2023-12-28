@@ -59,6 +59,10 @@ from bims.models.location_context_filter_group_order import (
 from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.collection_record import download_gbif_ids
 from bims.enums.ecosystem_type import ECOSYSTEM_WETLAND
+from bims.api_views.location_site_dashboard import (
+    PER_YEAR_FREQUENCY,
+    PER_MONTH_FREQUENCY
+)
 
 
 class LocationSiteList(APIView):
@@ -173,6 +177,9 @@ class LocationSitesSummary(APIView):
         collection_results = search.process_search()
         site_id = filters['siteId']
 
+        # Indicates whether to show occurrence data per year (y) or per month (m)
+        data_frequency = filters.get('d', PER_YEAR_FREQUENCY)
+
         self.iucn_category = dict(
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
 
@@ -180,8 +187,13 @@ class LocationSitesSummary(APIView):
             (x, y) for x, y in Taxonomy.CATEGORY_CHOICES
         )
 
-        taxa_occurrence = self.site_taxa_occurrences_per_year(
-            collection_results)
+        if data_frequency == PER_MONTH_FREQUENCY:
+            taxa_occurrence = self.site_taxa_occurrences_per_date(
+                collection_results
+            )
+        else:
+            taxa_occurrence = self.site_taxa_occurrences_per_year(
+                collection_results)
 
         category_summary = collection_results.exclude(
             taxonomy__origin=''
@@ -401,6 +413,27 @@ class LocationSitesSummary(APIView):
         result['occurrences_line_chart']['keys'] = list(
             taxa_occurrence_data.values_list('year', flat=True))
         result['occurrences_line_chart']['title'] = 'Occurrences'
+        return result
+
+    def site_taxa_occurrences_per_date(self, collection_results):
+        """
+        Get occurrence data for charts based on the date sampled
+        :param collection_results: collection record queryset
+        :return: dict of taxa occurrence data for line graph
+        """
+        taxa_occurrence_data = collection_results.values('collection_date').annotate(
+            count=Count('collection_date')
+        ).order_by('collection_date')
+        result = dict()
+        result['occurrences_line_chart'] = {
+            'values': [],
+            'keys': [],
+            'title': 'Occurrences per Date Sampled'
+        }
+        for data in taxa_occurrence_data:
+            formatted_date = data['collection_date'].strftime('%Y-%m-%d')
+            result['occurrences_line_chart']['keys'].append(formatted_date)
+            result['occurrences_line_chart']['values'].append(data['count'])
         return result
 
     def get_biodiversity_data(self, collection_results):
