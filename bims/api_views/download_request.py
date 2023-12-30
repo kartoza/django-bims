@@ -1,5 +1,8 @@
 from preferences import preferences
 import ast
+
+from rest_framework import status
+
 from bims.download.csv_download import send_new_csv_notification
 from bims.models.taxonomy import Taxonomy
 
@@ -30,6 +33,11 @@ class DownloadRequestApi(APIView):
         input, creates the download request, and sends a notification email if
         successful.
         """
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'User needs to be logged in first'},
+                status=status.HTTP_401_UNAUTHORIZED)
+
         resource_name = request.POST.get('resource_name')
         resource_type = request.POST.get('resource_type')
         purpose = request.POST.get('purpose')

@@ -51,6 +51,7 @@ define([
             cutoutPercentage: 0,
             maintainAspectRatio: true,
         },
+        dashboardData: null,
         csvDownloadGbifIdsUrl: '/api/gbif-ids/download/',
         events: {
             'click .close-dashboard': 'closeDashboard',
@@ -64,7 +65,8 @@ define([
             'click .download-chart-image': 'downloadChartImage',
             'click #chem-graph-export': 'downloadChemGraphs',
             'click .btn-html-img': 'convertToPNG',
-            'click .download-gbif-ids' : 'downloadGBIfIds'
+            'click .download-gbif-ids' : 'downloadGBIfIds',
+            'change .dashboard-data-frequency': 'frequencyChanged'
         },
         initialize: function (options) {
             _.bindAll(this, 'render');
@@ -115,6 +117,21 @@ define([
             });
 
             return this;
+        },
+        frequencyChanged: function (e) {
+            let $target = $(e.target);
+            let newParam = 'd=' + $target.val();
+            let url = new URL(this.currentFiltersUrl, window.location.origin);
+            let searchParams = new URLSearchParams(url.search);
+            if (searchParams.has('d')) {
+                searchParams.set('d', $target.val());
+            } else {
+                searchParams.append('d', $target.val());
+            }
+            url.search = searchParams.toString();
+            this.currentFiltersUrl = url.search;
+            this.loadingDashboard.show();
+            this.fetchData(url.search.replace('?', ''));
         },
         renderMap: function (data, target = 'locationsite-map') {
             let self = this;
@@ -225,6 +242,7 @@ define([
                     }
 
                     self.currentModule = data['modules'].join();
+                    self.dashboardData = data;
 
                     // Check dashboard configuration
                     let $dashboardWrapper = self.$el.find('.dashboard-wrapper');
@@ -538,6 +556,7 @@ define([
                 self.loadingDashboard.show();
                 Shared.Router.clearSearch();
             });
+            this.$el.find('.dashboard-data-frequency').val('y');
         },
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
@@ -887,6 +906,7 @@ define([
             let width = chartContainer.width();
             width += 150; // padding
             let loadingChart = chartContainer.find('.chart-loading');
+            loadingChart.show();
             baseUrl += this.currentFiltersUrl;
             baseUrl += '&width=' + width;
             baseUrl += '&base_64=1';
@@ -913,6 +933,7 @@ define([
             let baseUrl = '/api/location-sites-occurrences-chart-data/';
             let canvasContainer = container.find('.canvas-container');
             let chartCanvas = container.find('canvas')[0];
+            canvasContainer.find('canvas').hide();
 
             this.fetchChartData(
                 container,
@@ -980,6 +1001,7 @@ define([
             let baseUrl = '/api/location-sites-taxa-chart-data/';
             let chartCanvas = container.find('canvas')[0];
             let canvasContainer = container.find('.canvas-container');
+            canvasContainer.find('canvas').hide();
 
             this.fetchChartData(
                 container,
@@ -1003,6 +1025,7 @@ define([
             }
             let baseUrl = '/api/location-sites-cons-chart-data/';
             let canvasContainer = container.find('.canvas-container');
+            canvasContainer.find('canvas').hide();
 
             this.fetchChartData(
                 container,
@@ -1039,6 +1062,7 @@ define([
             let baseUrl = '/api/location-sites-endemism-chart-data/';
             let chartCanvas = container.find('canvas')[0];
             let chartContainer = container.find('.canvas-container');
+            chartContainer.find('canvas').hide();
 
             this.fetchChartData(
                 container,

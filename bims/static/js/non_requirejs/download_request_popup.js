@@ -36,8 +36,14 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
         callback(data['download_request_id']);
         $downloadPopup.modal('hide');
         $submitDownloadPopup.prop('disabled', false);
-      }, error: function () {
-        alert('Error submitting download request');
+      }, error: function (jqXHR, textStatus, errorThrown) {
+        let errorMessage = "Error submitting download request.";
+        if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+          errorMessage += " " + jqXHR.responseJSON.error;
+        } else if (textStatus) {
+          errorMessage += " " + textStatus;
+        }
+        alert(errorMessage);
         $downloadPopup.modal('hide');
         $submitDownloadPopup.prop('disabled', false);
       }
