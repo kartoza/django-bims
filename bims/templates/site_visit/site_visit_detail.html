@@ -26,6 +26,12 @@
         const taxonGroupId = '{{ taxon_group.id }}';
         const bingKey = '{{ bing_key }}';
         const chemicalCollectionRecordCount = '{{ object.chemical_collection_record.all.count }}';
+        window.onload = function() {
+            let nextUrlInput = document.getElementById('next-url');
+            if (nextUrlInput) {
+                nextUrlInput.value = document.referrer;
+            }
+        }
     </script>
     <style>
         .btn-normal {
@@ -63,6 +69,8 @@
                  role="dialog"
                  aria-labelledby="myModalLabel" aria-hidden="true">
                 <form method="POST" action="/site-visit/delete/{{ object.id }}/">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" id="next-url">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">

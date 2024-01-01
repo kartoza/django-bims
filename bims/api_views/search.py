@@ -896,7 +896,8 @@ class CollectionSearch(object):
             sites_without_occurrences = LocationSite.objects.exclude(
                 id__in=sites.values('site_id')
             ).filter(
-                site_code__icontains=self.search_query
+                site_code__icontains=self.search_query,
+                ecosystem_type__in=self.ecosystem_type
             ).extra(
                 select={
                     'name': 'site_code'

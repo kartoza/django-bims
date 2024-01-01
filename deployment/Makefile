@@ -49,3 +49,19 @@ reset-search-results:
 	@docker-compose exec dev python /home/web/django_project/manage.py clear_search_results
 	@docker-compose ${ARGS} restart worker
 	@docker-compose ${ARGS} restart cache
+
+
+dbrestore:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Stopping the database service"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} stop db
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Starting the database restoration process"
+	@echo "------------------------------------------------------------------"
+	@docker-compose ${ARGS} up -d db-restore
+	@docker-compose ${ARGS} exec db-restore /restore-db.sh
+	@docker-compose ${ARGS }stop db-restore
+	@docker-compose ${ARGS} up -d db

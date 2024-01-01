@@ -277,6 +277,17 @@ class OccurrenceProcessor(object):
         if not legacy_river_name:
             legacy_river_name = DataCSVUpload.row_value(
                 record, ORIGINAL_RIVER_NAME)
+
+        user_river_or_wetland_name = DataCSVUpload.row_value(
+            record, USER_RIVER_OR_WETLAND_NAME
+        )
+
+        if user_river_or_wetland_name:
+            if ecosystem_type.lower() == 'wetland':
+                user_wetland_name = user_river_or_wetland_name
+            else:
+                legacy_river_name = user_river_or_wetland_name
+
         longitude = DataCSVUpload.row_value(record, LONGITUDE)
         latitude = DataCSVUpload.row_value(record, LATITUDE)
         if not longitude or not latitude:
@@ -369,7 +380,9 @@ class OccurrenceProcessor(object):
             site_code, catchments_data = generate_site_code(
                 location_site,
                 lat=location_site.latitude,
-                lon=location_site.longitude
+                lon=location_site.longitude,
+                ecosystem_type=location_site.ecosystem_type,
+                wetland_name=user_wetland_name
             )
             location_site.site_code = site_code
         location_site.save()

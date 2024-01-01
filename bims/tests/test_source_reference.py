@@ -3,19 +3,31 @@
 import logging
 
 from django.test import TestCase
+from django.urls import reverse
+from django.db.models.signals import post_save
+from rest_framework import status
+from rest_framework.test import APIClient
 
 from bims.models import BiologicalCollectionRecord
-from bims.models.source_reference import SourceReference, \
-    merge_source_references, SourceReferenceDatabase, SourceReferenceDocument
+from bims.models.source_reference import (
+    SourceReference,
+    merge_source_references, SourceReferenceDatabase,
+    SourceReferenceDocument, source_reference_post_save_handler,
+    SourceReferenceBibliography
+)
 from bims.tests.model_factories import (
     SourceReferenceF,
     SourceReferenceBibliographyF,
     SourceReferenceDatabaseF,
     SourceReferenceDocumentF,
     DatabaseRecordF,
-    BiologicalCollectionRecordF, UserF
+    BiologicalCollectionRecordF, UserF,
+    ChemicalRecordF,
+    LocationSite,
 )
+from bims.models.location_site import location_site_post_save_handler
 from geonode.documents.models import Document
+from bims.models.chemical_record import ChemicalRecord
 from td_biblio.tests.model_factories import (
     JournalF,
     EntryF
@@ -224,3 +236,77 @@ class TestSourceReferences(TestCase):
                 id=document.id
             ).exists()
         )
+
+
+class TestRemoveRecordsBySourceReference(TestCase):
+
+    def setUp(self):
+        post_save.disconnect(receiver=location_site_post_save_handler, sender=LocationSite)
+        post_save.disconnect(receiver=source_reference_post_save_handler, sender=SourceReferenceBibliography)
+
+        self.superuser = UserF.create(is_superuser=True)
+        self.user = UserF.create()
+
+        self.client = APIClient()
+
+        self.source_reference = SourceReferenceBibliographyF.create(
+            source_name="Test Reference")
+        self.bio_record = BiologicalCollectionRecordF.create(
+            source_reference=self.source_reference
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=self.source_reference
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=self.source_reference
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=self.source_reference
+        )
+        BiologicalCollectionRecordF.create(
+            source_reference=self.source_reference
+        )
+        self.chem_record = ChemicalRecordF.create(
+            source_reference=self.source_reference
+        )
+
+        self.url = reverse(
+            'delete-records-by-source-reference-id',
+            kwargs={'source_reference_id': self.source_reference.pk})
+
+    def tearDown(self):
+        post_save.connect(receiver=location_site_post_save_handler, sender=LocationSite)
+        post_save.connect(receiver=source_reference_post_save_handler, sender=SourceReferenceBibliography)
+
+    def test_superuser_access(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_delete_functionality(self):
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.post(self.url)
+        self.assertFalse(BiologicalCollectionRecord.objects.filter(source_reference=self.source_reference).exists())
+        self.assertFalse(ChemicalRecord.objects.filter(source_reference=self.source_reference).exists())
+
+    def test_no_records_found(self):
+        source = SourceReferenceBibliography.objects.create(source_name="Another Reference")
+        another_url = reverse('delete-records-by-source-reference-id',
+                              kwargs={'source_reference_id': source.id})
+        self.client.force_authenticate(user=self.superuser)
+        response = self.client.post(another_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('No BiologicalCollectionRecord found for the given reference ID.', response.data['message'])
+        self.assertIn('No ChemicalRecord found for the given reference ID.', response.data['message'])
+
+    def test_missing_or_invalid_id(self):
+        # Test the response when source_reference_id is missing or invalid
+        self.client.force_authenticate(user=self.superuser)
+        invalid_url = reverse('delete-records-by-source-reference-id', kwargs={'source_reference_id': 0})
+        response = self.client.post(invalid_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
