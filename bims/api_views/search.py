@@ -602,9 +602,14 @@ class CollectionSearch(object):
 
         bio = bio.filter(**filters)
 
+        requester_id = self.parameters.get('requester', None)
+
         bio = bio.filter(
-            Q(end_embargo_date__lte=datetime.date.today()) |
-            Q(end_embargo_date__isnull=True)
+            Q(owner_id=requester_id) |
+            Q(
+                Q(end_embargo_date__lte=datetime.date.today()) |
+                Q(end_embargo_date__isnull=True)
+            )
         )
 
         # Filter collection record with SASS Accreditation status
