@@ -1,5 +1,7 @@
 import json
 import ast
+
+from django.contrib.sites.models import Site
 from django.views.generic.list import ListView
 from django.db.models import Count
 from django.contrib.auth import get_user_model
@@ -44,10 +46,12 @@ class SiteVisitListView(ListView):
             del search_filters['o']
 
         # Base queryset
-        qs = super(SiteVisitListView, self).get_queryset()
+        qs = super(SiteVisitListView, self).get_queryset().filter(
+            biological_collection_record__source_site=Site.objects.get_current()
+        ).distinct()
 
         if search_filters:
-            search = CollectionSearch(search_filters)
+            search = CollectionSearch(search_filters, current_site=Site.objects.get_current())
 
             if 'site_code' in search_filters:
                 if search_filters['site_code']:
@@ -75,13 +79,15 @@ class SiteVisitListView(ListView):
                 del search_filters['validated']
 
             if search_filters:
-                search = CollectionSearch(search_filters)
+                search = CollectionSearch(search_filters, current_site=Site.objects.get_current())
                 self.collection_results = search.process_search()
                 qs = qs.filter(
                     id__in=self.collection_results.values('survey')
                 )
         else:
-            self.collection_results = BiologicalCollectionRecord.objects.all()
+            self.collection_results = BiologicalCollectionRecord.objects.filter(
+                source_site=Site.objects.get_current()
+            )
 
         qs = qs.annotate(
             total=Count('biological_collection_record'),
