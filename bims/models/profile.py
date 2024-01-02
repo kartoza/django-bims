@@ -46,7 +46,7 @@ class Profile(models.Model):
         null=True,
     )
     data = JSONField(
-        default='',
+        default=dict,
         null=True,
         blank=True,
     )

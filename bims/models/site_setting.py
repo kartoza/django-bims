@@ -19,7 +19,9 @@ class SiteSetting(Preferences):
     )
 
     map_default_filters = JSONField(
-        default=[],
+        default=dict,
+        null=True,
+        blank=True,
         help_text='Which filters are selected by default, '
                   'the format must be as follows : '
                   '[{"filter_key": "sourceCollection", '
