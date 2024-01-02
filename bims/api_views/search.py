@@ -52,7 +52,7 @@ class CollectionSearchAPIView(BimsApiView):
     """
 
     def get(self, request):
-        parameters = request.GET
+        parameters = request.GET.dict()
         search_uri = request.build_absolute_uri()
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
@@ -485,7 +485,7 @@ class CollectionSearch(object):
                     self.search_query
                 )
         if bio is None:
-            bio = collection_record_model.objects.all()
+            bio = collection_records_by_site
         else:
             bio_filtered = True
 

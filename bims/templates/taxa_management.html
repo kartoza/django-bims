@@ -33,7 +33,10 @@
              style="filter: brightness(104%) contrast(97%);"
              alt="Loading view">
     </div>
-    <div class="nav-space" style="height: 51px;"></div>
+    {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+    {% else %}
+        <div class="nav-space" style="height: 51px;"></div>
+    {% endif %}
     <div class="list-form container-fluid">
         <div class="row" style="height: 100%">
             <div class="col-3 side-panel">
