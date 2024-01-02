@@ -57,7 +57,8 @@ class CollectionSearchAPIView(BimsApiView):
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
-            site=Site.objects.get_current()
+            site=Site.objects.get_current(),
+            requester=request.user
         )
 
         if self.is_cached():
@@ -78,8 +79,11 @@ class CollectionSearchAPIView(BimsApiView):
         # Create process id
         data_for_process_id = dict()
         data_for_process_id['search_uri'] = search_uri
+        data_for_process_id['requester_id'] = request.user.id if not request.user.is_anonymous else 0
         data_for_process_id['collections_total'] = (
-            BiologicalCollectionRecord.objects.all().count()
+            BiologicalCollectionRecord.objects.filter(
+                source_site=Site.objects.get_current()
+            ).count()
         )
         # Generate unique process id by search uri and total of collections
         process_id = hashlib.sha256(
@@ -339,7 +343,7 @@ class CollectionSearch(object):
                 )
             return ecosystem_types
         else:
-            return None
+            return []
 
     @property
     def spatial_filter(self):

@@ -67,6 +67,13 @@ class SearchProcess(models.Model):
         verbose_name="Associated Site",
         help_text="The site this record is associated with."
     )
+    requester = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        related_name='requester',
+        blank=True,
+        null=True,
+    )
 
     def save(self, *args, **kwargs):
         super(SearchProcess, self).save(*args, **kwargs)

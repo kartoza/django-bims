@@ -32,6 +32,9 @@ def search_task(parameters, search_process_id, background=True):
     else:
         parameters['current_site_id'] = Site.objects.get_current().id
 
+    if search_process.requester and 'requester' not in parameters:
+        parameters['requester'] = search_process.requester.id
+
     if parameters['module'] == 'water_temperature':
         search = WaterTemperatureModule(parameters)
     elif parameters['module'] == 'physico_chemistry':
