@@ -109,8 +109,7 @@ def assign_site_to_uncategorized_records(module_group_id, site_id):
         BiologicalCollectionRecord
     )
     BiologicalCollectionRecord.objects.filter(
-        module_group_id=module_group_id,
-        source_site__isnull=True
+        module_group_id=module_group_id
     ).update(
         source_site_id=site_id
     )

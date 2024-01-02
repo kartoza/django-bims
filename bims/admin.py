@@ -433,7 +433,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'abundance_number',
         'biotope',
         'record_type',
-        'sampling_method'
+        'sampling_method',
+        'source_site'
     )
     raw_id_fields = (
         'site',
@@ -449,7 +450,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'taxonomy__origin',
         'record_type__name',
         'sampling_method',
-        'ecosystem_type'
+        'ecosystem_type',
+        'source_site'
     )
     search_fields = (
         'taxonomy__scientific_name',
