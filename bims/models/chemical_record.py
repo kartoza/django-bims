@@ -70,10 +70,15 @@ class ChemicalRecord(models.Model):
 
     def __str__(self):
         site = self.location_site
-        if not site and self.survey:
-            site = self.survey.site
+        location_site_identifier = ''
+        try:
+            if not site and self.survey:
+                site = self.survey.site
+            location_site_identifier = site.location_site_identifier
+        except Survey.DoesNotExist:
+            pass
         return '{site} - {value} - {date}'.format(
-            site=site.location_site_identifier,
+            site=location_site_identifier,
             value=self.value,
             date=self.date
         )

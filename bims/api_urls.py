@@ -1,4 +1,6 @@
 from django.urls import re_path, include, path
+
+from bims.api_views.reference import DeleteRecordsByReferenceId
 # from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
     BoundaryList,
@@ -320,8 +322,10 @@ urlpatterns = [
         ),
     re_path(r'^gbif-ids/download/$',
         GbifIdsDownloader.as_view()),
-
     path('download-layer-data/<int:layer_id>/<str:query_filter>/',
         DownloadLayerData.as_view(),
-        name='download-layer-data')
+        name='download-layer-data'),
+    path('delete-records-by-source-reference-id/<int:source_reference_id>/',
+         DeleteRecordsByReferenceId.as_view(),
+         name='delete-records-by-source-reference-id')
 ]

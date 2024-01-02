@@ -8,45 +8,16 @@
 {% block pre-head %}
     <link rel="stylesheet"
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
-    <style>
-        .card {
-            margin-bottom: 10px;
-        }
-
-        .custom-control-label {
-            max-width: 80%;
-        }
-
-        .reference-filter-title {
-            margin-bottom: 0 !important;
-            font-weight: bold;
-        }
-        .badge-occurrences {
-            font-size: 9pt;
-            padding-left: 10px;
-            padding-right: 10px;
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-        .badge-zero {
-            background-color: #b8b8b8;
-        }
-        .reference-type-label {
-            text-transform: uppercase;
-            font-weight: 300;
-            font-size: 10pt;
-        }
-        .active.active:hover {
-            color: white;
-        }
-        .input-group-append:hover {
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet"
+          href="{% static "css/source_reference_list.css" %}">
 {% endblock %}
 
 {% block body_content %}
     <!-- Page Header -->
+    <div id="loading-animation" class="loading-container">
+        <!-- Here, you can use an image or any animation you like -->
+        <div class="loader"></div>
+    </div>
     <div class="body-container container">
         <div class="dashboard-title">
             <h2>Explore Source References&nbsp;<span class="vertical-separator"></span>{{ page_obj.paginator.count }} Result{% if page_obj.paginator.count > 1 %}s{% endif %}</h2>
@@ -150,8 +121,17 @@
                                         <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>
                                     </div>
                                      <div class="float-right">
-                                        <a href="#" class="badge badge-danger badge-occurrences delete-reference" data-reference-id="{{ source_reference.id }}">Delete</a>&nbsp;
+                                        <a href="#" class="badge badge-danger badge-occurrences delete-reference" data-reference-id="{{ source_reference.id }}">Delete source reference</a>&nbsp;
                                     </div>
+                                    {% if source_reference.occurrences > 0 or source_reference.chemical_records > 0 %}
+                                    <div class="float-right">
+                                        <a href="#" class="badge badge-warning badge-occurrences delete-records"
+                                           data-reference-id="{{ source_reference.id }}"
+                                           data-total-physico-chemical-data="{{ source_reference.chemical_records }}"
+                                           data-total-records="{{ source_reference.occurrences }}"
+                                        >Delete records</a>&nbsp;
+                                    </div>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -176,58 +156,11 @@
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/multi_author_select.js" %}"></script>
     <script>
-
         const csrfToken = '{{ csrf_token }}';
         const authorIds = [];
-
-        $('.copy-document-id').click(function (e) {
-          let documentId = window.location.origin + '/documents/' + $(e.target).data('document-id');
-          /* Copy the text inside the text field */
-          navigator.clipboard.writeText(documentId);
-          /* Alert the copied text */
-          alert("Copied the text: " + documentId);
-        })
-
-        $('.custom-control-input').change(function (e) {
-            let $parent = $(e.target).parent().parent();
-            let filterName = $parent.data('filter');
-            let checkedVals = $parent.find(':checkbox:checked').map(function () {
-                return this.value;
-            }).get();
-            insertParam(filterName, checkedVals);
-        })
-
-        $('.input-group-append').click(function (e) {
-            let value =  $('#search-input').val();
-            insertParam('q', value);
-        })
-
-        $('.delete-reference').click(function (e) {
-            e.preventDefault();
-            const referenceId = $(e.target).data('reference-id');
-            let r = confirm("Are you sure you want to remove this reference?");
-            if (r === true) {
-                $.ajax({
-                    url: "/delete-source-reference/",
-                    headers: {"X-CSRFToken": csrfToken},
-                    type: 'POST',
-                    data: {
-                        'reference_id': referenceId
-                    },
-                    success: function (res) {
-                        location.reload();
-                    }
-                });
-            }
-        })
-
-        $('.apply-author-filter').click(function(e) {
-            const $target = $(e.target).parent();
-            const authorIds = $target.find('.author_result').map(function () {
-                return $(this).data("author-id");
-            }).get();
-            insertParam('collectors', authorIds.join(','))
-        })
-
+        window.onload = function() {
+            document.getElementById('loading-animation').style.display = 'none';
+        };
     </script>
+    <script src="{% static "js/non_requirejs/source_reference_list.js" %}"></script>
 {% endblock %}

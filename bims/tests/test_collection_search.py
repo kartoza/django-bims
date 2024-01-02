@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from dateutil.relativedelta import relativedelta
 from django.test import TestCase
 from django.contrib.sites.models import Site
 from bims.tests.model_factories import (
@@ -5,7 +8,7 @@ from bims.tests.model_factories import (
     TaxonomyF,
     LocationSiteF,
     RiverF,
-    VernacularNameF
+    VernacularNameF, UserF
 )
 from bims.api_views.search import CollectionSearch
 
@@ -103,4 +106,41 @@ class TestCollectionSearch(TestCase):
         self.assertGreater(
             collection_results.count(),
             0
+        )
+
+    def test_search_embargo_data(self):
+        _user = UserF.create(is_superuser=True)
+        BiologicalCollectionRecordF.create(
+            original_species_name='test99',
+            taxonomy=self.taxa,
+            source_site=Site.objects.get_current(),
+            site=self.site,
+            end_embargo_date=datetime.now() + relativedelta(months=1),
+            owner=_user
+        )
+        BiologicalCollectionRecordF.create(
+            original_species_name='test99',
+            taxonomy=self.taxa,
+            source_site=Site.objects.get_current(),
+            site=self.site,
+            end_embargo_date=datetime.now()
+        )
+        filters = {
+            'search': 'test99',
+            'requester': _user.id
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+        self.assertEqual(
+            collection_results.count(),
+            2
+        )
+        filters = {
+            'search': 'test99',
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+        self.assertEqual(
+            collection_results.count(),
+            1
         )
