@@ -1,3 +1,5 @@
+let autocompletePlaceholder = typeof userAutocompletePlaceholder !== 'undefined' ? userAutocompletePlaceholder : 'Search for an author';
+
 function formatAuthor(author) {
     if (author.loading) {
         return author.text;
@@ -43,7 +45,7 @@ let authorSelect = $('.owner-auto-complete').select2({
         },
         cache: true
     },
-    placeholder: 'Search for an author',
+    placeholder: autocompletePlaceholder,
     minimumInputLength: 3,
     templateResult: formatAuthor,
     templateSelection: formatAuthorSelection

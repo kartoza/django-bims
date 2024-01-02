@@ -304,6 +304,27 @@ removeExtraAttribute = (event) => {
     $(event.target).parent().remove();
 }
 
+function findExpertsByTaxonGroupId(parentId) {
+    let experts = [];
+    taxaGroups.forEach(item => {
+        if (item.id === parentId && item.experts.length > 0) {
+            experts = experts.concat(item.experts);
+        }
+    });
+    return experts;
+}
+
+function addExpertsToSelect(experts) {
+    let expertIds = [];
+    experts.forEach(expert => {
+        let newOption = new Option(expert.full_name, expert.id, false, false);
+        authorSelect.append(newOption);
+        expertIds.push(expert.id);
+    });
+    authorSelect.val(expertIds);
+    authorSelect.trigger('change');
+}
+
 $updateLogoBtn.click((event) => {
     event.preventDefault();
     const _maxTries = 10;
@@ -313,6 +334,7 @@ $updateLogoBtn.click((event) => {
         _element = _element.parent();
         _currentTry += 1;
     }
+    const moduleId = _element.data('id');
     const moduleName = _element.find('.taxon-group-title').html().trim();
     const extraAttributesContainer = $('#editModuleModal').find('.extra-attribute-field');
     let extraAttributes = _element.find('.taxon-group-title').data('extra-attributes');
@@ -327,14 +349,27 @@ $updateLogoBtn.click((event) => {
             extraAttributesContainer.append(exAtEl);
         }
     }
-    $('#edit-module-img-container').html(
-        `<img style="max-width: 100%" src=${_element.find('img').attr('src')}>`
-    )
+    let imgElement = _element.find('img');
+
+    if (imgElement.length > 0 && imgElement.attr('src')) {
+        $('#edit-module-img-container').html(
+            `<img style="max-width: 100%" src="${imgElement.attr('src')}">`
+        );
+    } else {
+        $('#edit-module-img-container').html('');
+    }
     $('#edit-module-name').val(moduleName);
     $('#edit-module-id').val(_element.data('id'));
     $('#editModuleModal').modal({
         keyboard: false
     })
+
+    // Experts
+    authorSelect.empty();
+    authorSelect.val(null).trigger('change');
+    let experts = findExpertsByTaxonGroupId(moduleId);
+    addExpertsToSelect(experts);
+
     return false;
 });
 
@@ -375,6 +410,12 @@ $('#moduleRemoveForm').on('submit', function (e) {
 $('#moduleEditForm').on('submit', function (e) {
     e.preventDefault();
     let formData = new FormData(this);
+    formData.delete('taxon-group-experts');
+
+    $('.owner-auto-complete').select2('data').forEach(function(item) {
+        formData.append('taxon-group-experts', item.id);
+    });
+
     let url = '/api/update-taxon-group/';
     $(e.target).find('.btn-submit').prop('disabled', true);
     $(e.target).find('.loading-btn').show();
@@ -885,4 +926,3 @@ $(document).ready(function () {
 
 
 hideLoading();
-
