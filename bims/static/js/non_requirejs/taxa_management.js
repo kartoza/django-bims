@@ -519,6 +519,28 @@ const getTaxaList = (url) => {
                         popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
                         return false;
                     });
+                    $rowAction.find('.add-tag').click((event) => {
+                        $('#addTagModal').modal({
+                            keyboard: false
+                        });
+                        $('#addTagModal').find('.save-tag').data('taxonomy-id', data['id']);
+                        let tagsString = data['tag_list'];
+                        let tagsArray = tagsString.split(',');
+                        let formattedTags = tagsArray.map(function(tag) {
+                            return { id: tag, text: tag, name: tag};
+                        });
+                        const tagAutoComplete = $('#tag-auto-complete');
+                        const tagIds = []
+                        tagAutoComplete.empty();
+                        tagAutoComplete.val(null).trigger('change');
+                        tagsArray.forEach(tag => {
+                            let newOption = new Option(tag, tag, false, false);
+                            tagAutoComplete.append(newOption);
+                            tagIds.push(tag);
+                        });
+                        tagAutoComplete.val(tagIds);
+                        tagAutoComplete.trigger('change');
+                    });
                 }
             });
             if (response['next'] == null && response['previous'] == null) {

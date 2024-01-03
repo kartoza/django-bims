@@ -5,9 +5,13 @@ import logging
 from django.http import Http404
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
+from rest_framework.generics import UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from taggit.models import Tag
+
 from bims.models.taxonomy import Taxonomy
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
@@ -16,6 +20,7 @@ from bims.models.biological_collection_record import (
 from bims.models import TaxonGroup, VernacularName
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
+from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 
 logger = logging.getLogger('bims')
 
@@ -451,3 +456,24 @@ class TaxaList(LoginRequiredMixin, APIView):
         else:
             serializer = TaxonSerializer(taxon_list, many=True)
         return Response(serializer.data)
+
+
+class TaxonTagAutocompleteAPIView(APIView):
+    def get(self, request, format=None):
+        query = request.query_params.get('q', '')
+        taxonomy_tags = Tag.objects.filter(
+            taxonomy__isnull=False,
+            name__icontains=query
+        ).distinct()[:10]
+        serializer = TagSerializer(taxonomy_tags, many=True)
+        return Response(serializer.data)
+
+
+class AddTagAPIView(UpdateAPIView):
+    queryset = Taxonomy.objects.all()
+    serializer_class = TaxonomyTagUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        taxonomy_id = self.kwargs.get('pk')
+        return Taxonomy.objects.get(pk=taxonomy_id)

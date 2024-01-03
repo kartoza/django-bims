@@ -1044,7 +1044,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'legacy_canonical_name',
         'iucn_status',
         'validated',
-        'verified'
+        'verified',
+        'tag_list'
     )
 
     list_filter = (
@@ -1133,6 +1134,12 @@ class TaxonomyAdmin(admin.ModelAdmin):
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('tags')
+
+    def tag_list(self, obj):
+        return u", ".join(o.name for o in obj.tags.all())
 
 
 class VernacularNameAdmin(admin.ModelAdmin):

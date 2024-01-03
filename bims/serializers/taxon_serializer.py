@@ -21,6 +21,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     common_name = serializers.SerializerMethodField()
     total_records = serializers.SerializerMethodField()
     accepted_taxonomy_name = serializers.SerializerMethodField()
+    tag_list = serializers.SerializerMethodField()
 
     def get_accepted_taxonomy_name(self, obj):
         if obj.accepted_taxonomy:
@@ -39,6 +40,9 @@ class TaxonSerializer(serializers.ModelSerializer):
             return ''
         else:
             return vernacular_names[0]
+
+    def get_tag_list(self, obj):
+        return u", ".join(o.name for o in obj.tags.all())
 
     def get_origin_name(self, obj):
         try:
