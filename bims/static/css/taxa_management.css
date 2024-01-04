@@ -204,3 +204,10 @@ ul li {
 .taxon-group-experts-container .select2-container {
     width: 100% !important;
 }
+
+.btn-validated-container .btn{
+    width: 40px;
+    min-width: auto;
+    padding-left: 10px;
+    padding-right: 10px;
+}

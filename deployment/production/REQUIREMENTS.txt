@@ -87,6 +87,6 @@ celery==5.2.6
 pycurl==7.45.2
 django-forms-bootstrap==3.1.0
 importlib-metadata==4.11.4
-django-taggit==3.1.0
+django-taggit==5.0.1
 django-treebeard==4.7
 django-filter==23.5

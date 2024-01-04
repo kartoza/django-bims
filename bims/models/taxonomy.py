@@ -5,6 +5,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from rest_framework import serializers
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from taggit.managers import TaggableManager
+from taggit.models import Tag
 
 from bims.models.validation import AbstractValidation
 from django.db import models
@@ -63,6 +68,9 @@ class Taxonomy(AbstractValidation):
         ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
         ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
     }
+    tags = TaggableManager(
+        blank=True,
+    )
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',

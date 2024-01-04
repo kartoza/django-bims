@@ -24,7 +24,8 @@ from bims.api_views.taxon import (
     TaxonDetail,
     FindTaxon,
     AddNewTaxon,
-    TaxaList
+    TaxaList,
+    TaxonTagAutocompleteAPIView, AddTagAPIView
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -327,5 +328,11 @@ urlpatterns = [
         name='download-layer-data'),
     path('delete-records-by-source-reference-id/<int:source_reference_id>/',
          DeleteRecordsByReferenceId.as_view(),
-         name='delete-records-by-source-reference-id')
+         name='delete-records-by-source-reference-id'),
+    re_path(r'^taxon-tag-autocomplete/$',
+            TaxonTagAutocompleteAPIView.as_view(),
+            name='taxon-tag-autocomplete'),
+    path('taxonomy/<int:pk>/add-tag/',
+         AddTagAPIView.as_view(),
+         name='add-tag-taxon'),
 ]

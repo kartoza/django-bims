@@ -509,15 +509,45 @@ const getTaxaList = (url) => {
                 $row.append(`<td>${data['endemism_name']}</td>`);
                 $row.append(`<td>${data['total_records']}&nbsp;<a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a></td>`);
                 $row.append(`<td>${data['import_date']}</td>`);
+                $row.append(
+                    `<td style="width: 120px;">${data['tag_list'].split(',').map(function (tag) {
+                        return `<span class="badge badge-info">${tag}</span>`
+                    }).join('')}</td>`
+                );
 
                 if (userCanEditTaxon) {
-                    let $tdAction = $(`<td style="width: 170px;"></td>`);
+                    let $tdAction = $(`<td style="width: 85px;"></td>`);
                     $row.append($tdAction);
                     $tdAction.append($rowAction);
                     $rowAction.find('.edit-taxon').click((event) => {
                         event.preventDefault();
                         popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
                         return false;
+                    });
+                    $rowAction.find('.add-tag').click((event) => {
+                        $('#addTagModal').modal({
+                            keyboard: false
+                        });
+                        $('#addTagModal').find('.save-tag').data('taxonomy-id', data['id']);
+                        let tagsString = data['tag_list'];
+                        let tagsArray = tagsString.split(',').filter(n => n);
+                        let formattedTags = tagsArray.map(function(tag) {
+                            return { id: tag, text: tag, name: tag};
+                        });
+                        const tagAutoComplete = $('#taxa-tag-auto-complete');
+                        tagAutoComplete.empty();
+                        tagAutoComplete.val(null).trigger('change');
+                        if (tagsArray.length > 0) {
+                            const tagIds = []
+                            tagsArray.forEach(tag => {
+                                let newOption = new Option(
+                                    tag, tag, false, false);
+                                tagAutoComplete.append(newOption);
+                                tagIds.push(tag);
+                            });
+                            tagAutoComplete.val(tagIds);
+                            tagAutoComplete.trigger('change');
+                        }
                     });
                 }
             });
@@ -543,7 +573,7 @@ const getTaxaList = (url) => {
                     paginationPrev.off('click');
                     paginationPrev.click(() => {
                         const urlParams = new URLSearchParams(new URL(response['previous']).search);
-                        insertParam('page', urlParams.get('page'), false);
+                        insertParam('page', urlParams.get('page') ? urlParams.get('page') : 1, false);
                     })
                 } else {
                     paginationPrev.hide();
@@ -746,6 +776,9 @@ $applyFiltersBtn.click(function () {
     const validated = $('#validated').find(":selected").val();
     urlParams = insertParam('validated', validated, true, false, urlParams);
 
+    const tags = $('#tag-filters').val();
+    urlParams = insertParam('tags', tags, true, false, urlParams);
+
     document.location.search = urlParams;
 })
 
@@ -788,6 +821,9 @@ $(document).ready(function () {
     let url = ''
     let taxonName = ''
 
+    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-toggle="popover"]').popover();
+
     if (!urlParams.get('selected')) {
         selectedTaxonGroup = $($('#sortable').children()[0]).data('id');
         if (selectedTaxonGroup) {
@@ -808,11 +844,10 @@ $(document).ready(function () {
             url: '/species-autocomplete/',
             dataType: 'json',
             data: function (params) {
-                let query = {
+                return {
                     term: params.term,
                     taxonGroupId: urlParams.get('selected')
                 }
-                return query;
             },
             processResults: function (data) {
                 return {
@@ -867,6 +902,26 @@ $(document).ready(function () {
         filterSelected['origins'] = originsArray;
         totalAllFilters += originsArray.length;
         url += `&origins=${urlParams.get('origins')}`;
+    }
+    if (urlParams.get('tags')) {
+        const tagsArray = urlParams.get('tags').split(',');
+        const tagAutoComplete = $('#tag-filters');
+        tagAutoComplete.empty();
+        tagAutoComplete.val(null).trigger('change');
+        if (tagsArray.length > 0) {
+            const tagIds = []
+            tagsArray.forEach(tag => {
+                let newOption = new Option(
+                    tag, tag, false, false);
+                tagAutoComplete.append(newOption);
+                tagIds.push(tag);
+            });
+            tagAutoComplete.val(tagIds);
+            tagAutoComplete.trigger('change');
+        }
+        filterSelected['tags'] = tagsArray;
+        totalAllFilters += tagsArray.length;
+        url += `&tags=${urlParams.get('tags')}`;
     }
     if (urlParams.get('endemism')) {
         const endemismArray = urlParams.get('endemism').split(',');
