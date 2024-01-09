@@ -40,7 +40,7 @@
     "exifr": "^6.0.0",
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.2",
-    "follow-redirects": "^1.14.8",
+    "follow-redirects": "^1.15.4",
     "gl-matrix": "^2.3.2",
     "history": "^4.7.2",
     "immutability-helper": "^2.0.0",
