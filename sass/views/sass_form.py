@@ -270,6 +270,11 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.source_collection = self.source_collection
                 # Set correct owner
                 site_visit_taxon.owner = site_visit.owner
+                end_embargo_date = post_dictionary.get('end_embargo_date', None)
+                if end_embargo_date:
+                    site_visit_taxon.end_embargo_date = libdatetime.strptime(
+                        end_embargo_date, '%d/%m/%Y'
+                    )
 
                 if created:
                     clear_finished_search_process()
@@ -690,6 +695,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             if site_visit_taxon.exists():
                 source_reference = site_visit_taxon[0].source_reference
                 context['source_reference'] = source_reference
+                context['end_embargo_date'] = site_visit_taxon.first().end_embargo_date
         else:
             owner = self.request.user
 
@@ -764,6 +770,20 @@ class SassReadFormView(SassFormView):
     read_only = True
 
     def test_func(self):
+        sass_id = self.kwargs.get('sass_id', None)
+        if not sass_id:
+            return True
+        site_visit_taxon = SiteVisitTaxon.objects.filter(
+            site_visit_id=sass_id)
+        if site_visit_taxon.filter(
+            end_embargo_date__gt=libdatetime.now()
+        ).exists():
+            if self.request.user.is_anonymous:
+                return False
+            return site_visit_taxon.filter(
+                end_embargo_date__gt=libdatetime.now(),
+                owner_id=self.request.user.id
+            ).exists()
         return True
 
     def get(self, request, *args, **kwargs):
