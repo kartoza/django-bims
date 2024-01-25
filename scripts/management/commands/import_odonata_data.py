@@ -50,6 +50,13 @@ class Command(BaseCommand):
             default=10,
             help='How many data should be retrieved'
         )
+        parser.add_argument(
+            '-md',
+            '--module-name',
+            dest='module_name',
+            default='Odonate Adults',
+            help='Module Name'
+        )
 
     def handle(self, *args, **options):
         self.api_token = options.get('token', '')
@@ -69,7 +76,7 @@ class Command(BaseCommand):
             module_name=self.module_name,
             base_api_url=self.base_api_url,
             source_name=self.source_name,
-            taxon_group_module='Odonate Adults')
+            taxon_group_module=options.get('module_name'))
         harvester.harvest(
             start_index=start_index,
             limit=limit,

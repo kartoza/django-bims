@@ -38,6 +38,13 @@ class Command(BaseCommand):
             default='0',
             help='Start index'
         )
+        parser.add_argument(
+            '-m',
+            '--module-name',
+            dest='module_name',
+            default='Odonate Adults',
+            help='Module name'
+        )
 
     def handle(self, *args, **options):
         api_token = options.get('token', '')
@@ -75,5 +82,6 @@ class Command(BaseCommand):
             call_command('import_odonata_data',
                          start_index=start_index,
                          limit=limit,
+                         module_name=options.get('module_name'),
                          token=api_token)
             start_index += limit
