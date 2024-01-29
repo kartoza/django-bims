@@ -1,23 +1,41 @@
 name: Build and Push Docker Image
 
-on: 
-  push: 
+on:
+  push:
     branches:
-      - 'main'
+      - main
+    tags:
+      - '*'
 
 jobs:
-  build:	
-    name: Build and Push Docker Django BIMS Image	
-    runs-on: ubuntu-20.04	
-    steps:	
-    - uses: actions/checkout@master	
-    - name: Build and Publish the Docker Django Bims Image	
-      uses: elgohr/Publish-Docker-Github-Action@v5	
-      with:	
+  build-and-push-latest:
+    if: github.ref == 'refs/heads/main'
+    name: Build and Push Docker Image with Latest Tag
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Build and Publish the Docker Image as Latest
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
         name: kartoza/kbims_uwsgi:latest
         context: .
         dockerfile: deployment/docker/Dockerfile
-        username: ${{ secrets.DOCKER_USERNAME }}	
-        password: ${{ secrets.DOCKER_PASSWORD }}	
-        buildargs: BIMS_TAG=main
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        buildoptions: "--target prod"
+
+  build-and-push-tag:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Build and Push Docker Image with Tag Name
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@master
+    - name: Build and Publish the Docker Image with Tag Name
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+        name: kartoza/kbims_uwsgi:${{ github.ref_name }}
+        context: .
+        dockerfile: deployment/docker/Dockerfile
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
         buildoptions: "--target prod"
