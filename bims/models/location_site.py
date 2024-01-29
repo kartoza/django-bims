@@ -531,7 +531,8 @@ def generate_site_code(
     from bims.utils.site_code import (
         fbis_catchment_generator,
         rbis_catchment_generator,
-        wetland_catchment
+        wetland_catchment,
+        open_waterbody_catchment
     )
     from preferences import preferences
     site_code = ''
@@ -546,6 +547,10 @@ def generate_site_code(
                 'wetlid' in location_site.additional_data
             ) else {}
             catchment_site_code = wetland_catchment(lat, lon, wetland_data, wetland_name)
+        elif ecosystem_type.lower() == 'open waterbody':
+            catchment_site_code = open_waterbody_catchment(
+                lat, lon, river_name
+            )
         else:
             catchment_site_code, catchments_data = fbis_catchment_generator(
                 location_site=location_site,

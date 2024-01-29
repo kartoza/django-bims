@@ -40,12 +40,23 @@ let validator = $('#site-form').validate({
                 return false;
             }
             // Check length
-            if (siteCode.length !== 12) {
-                showSiteCodeError();
-                return false;
+            if (ecosystemType == 'River') {
+                if (siteCode.length !== 12) {
+                    showSiteCodeError();
+                    return false;
+                }
+            } else {
+                if (siteCode.length !== 15) {
+                    alert(siteCode.length)
+                    showSiteCodeError();
+                    return false;
+                }
             }
             // Check regex
             let regex = /(\w{6})-(\w{5})/g;
+            if (ecosystemType == 'Open waterbody') {
+                regex = /(\w{4})-(\w{4})-(\w{5})/g;
+            }
             let regexResult = regex.test(siteCode);
             if (!regexResult) {
                 showSiteCodeError();
@@ -186,7 +197,7 @@ const updateSiteCode = (e) => {
     document.getElementById('update-site-code').disabled = true;
     button.html('Generating...');
     siteCodeInput.prop('disabled', true);
-    let url = '/api/get-site-code/?user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude;
+    let url = '/api/get-site-code/?ecosystem_type=' + ecosystemType  + '&user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude;
     if (siteId) {
         url += '&site_id=' + siteId
     }

@@ -92,7 +92,7 @@ def handle_location_site_post_data(
     )
     river_name = post_data.get('river_name', None)
     user_river_name = post_data.get('user_river_name', '')
-    if not river_name:
+    if not river_name and ecosystem_type.lower() == 'river':
         river_name = user_river_name
 
     site_code = post_data.get('site_code', None)
