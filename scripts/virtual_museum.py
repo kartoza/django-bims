@@ -253,9 +253,9 @@ class VirtualMuseumHarvester(object):
                 try:
                     month = row.data['month']
                     day = row.data['day']
-                    if month == '0':
+                    if month == '0' or not month:
                         month = '01'
-                    if day == '0':
+                    if day == '0' or not day:
                         day = '01'
 
                     taxon_rank = row.data['taxonRank']
