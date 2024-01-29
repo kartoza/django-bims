@@ -95,7 +95,7 @@ define([
                 'decision-support-tool-container'
             ]
             if (value === 'occurrence') {
-                $('#module-info').html('Occurrence')
+                $('#module-info').html('Occurrence - Biodiversity module')
                 $('.occurrence-sort').show();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
