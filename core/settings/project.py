@@ -107,3 +107,5 @@ WEBPACK_LOADER = {
         'STATS_FILE': absolute_path('bims', 'webpack-stats.json'),
     }
 }
+
+CITES_TOKEN_API = os.environ.get('CITES_TOKEN_API', '')
