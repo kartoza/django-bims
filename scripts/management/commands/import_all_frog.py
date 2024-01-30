@@ -6,7 +6,7 @@ from django.core.management import call_command
 
 class Command(BaseCommand):
     """
-    Import all odonata data
+    Import all frog data
     """
 
     def add_arguments(self, parser):
@@ -37,6 +37,13 @@ class Command(BaseCommand):
             dest='start_index',
             default='0',
             help='Start index'
+        )
+        parser.add_argument(
+            '-m',
+            '--module-name',
+            dest='module_name',
+            default='Anura',
+            help='Module name'
         )
 
     def handle(self, *args, **options):
@@ -71,9 +78,18 @@ class Command(BaseCommand):
                 f"Fetching {start_index},{limit} of {total_records} - "
                 f"{datetime.today()}\n"
             )
-            print(log_text)
+            self.log_message(log_text)
             call_command('import_frog_vm_data',
                          start_index=start_index,
                          limit=limit,
+                         module_name=options.get('module_name'),
                          token=api_token)
             start_index += limit
+
+    def log_message(self, message):
+        """
+        Log a message to the console and a file.
+        """
+        print(message)
+        with open('import_all_frog_log.txt', 'a') as the_file:
+            the_file.write(message + '\n')

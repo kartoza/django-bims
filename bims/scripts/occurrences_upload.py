@@ -518,10 +518,6 @@ class OccurrenceProcessor(object):
 
     def process_data(self, row):
         optional_data = {}
-        # -- Location site
-        location_site = self.location_site(row)
-        if not location_site:
-            return
 
         # -- UUID
         # If no uuid provided then it will be generated after collection record
@@ -568,6 +564,11 @@ class OccurrenceProcessor(object):
         # -- Processing Taxonomy
         taxonomy = self.taxonomy(row)
         if not taxonomy:
+            return
+
+        # -- Location site
+        location_site = self.location_site(row)
+        if not location_site:
             return
 
         # -- Processing collectors

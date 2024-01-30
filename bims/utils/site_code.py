@@ -187,3 +187,35 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
         wetland_site_code += user_wetland_name.replace(' ', '')[:4]
 
     return wetland_site_code
+
+
+def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
+    """
+    Generates a catchment code for a given open waterbody based on location and data.
+
+    :param user_open_waterbody_name: Open waterbody name from user
+    :param lat: Latitude of the location site
+    :param lon: Longitude of the location site
+    :return: The generated catchment code, e.g. L112-NAME
+    """
+    site_code = ''
+    quaternary_catchment_area_key = 'quaternary_catchment_area'
+    quaternary_geocontext_key = 'quaternary_catchment_group'
+
+    catchments, catchments_data = _get_catchments_data(
+        lat=lat,
+        lon=lon,
+        catchment_key=quaternary_geocontext_key
+    )
+
+    try:
+        if quaternary_catchment_area_key in catchments:
+            site_code += catchments[quaternary_catchment_area_key]
+        site_code += '-'
+    except TypeError:
+        pass
+
+    if user_open_waterbody_name:
+        site_code += user_open_waterbody_name.replace(' ', '')[:4]
+
+    return site_code

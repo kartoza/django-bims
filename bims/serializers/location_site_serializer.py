@@ -53,7 +53,6 @@ class LocationSiteSerializer(serializers.ModelSerializer):
             'ecosystem_type',
             'wetland_name',
             'user_wetland_name',
-            'ecosystem_type'
         ]
 
 
