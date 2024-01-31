@@ -1,12 +1,16 @@
 # coding: utf-8
 import requests
+import logging
 import urllib
 import simplejson
 from requests.exceptions import HTTPError
 from pygbif import species
+from pygbif.occurrences import search
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
+
+logger = logging.getLogger(__name__)
 
 RANK_KEYS = [
     'kingdom',
@@ -421,3 +425,74 @@ def gbif_name_suggest(**kwargs):
     if synonym_data:
         return synonym_data
     return other_data
+
+
+ACCEPTED_TAXON_KEY = 'acceptedTaxonKey'
+
+
+def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_key=None, max_limit=100):
+    """
+    Searches for species within a specific area defined by a boundary, filtered by taxonomic keys.
+
+    Parameters:
+    boundary_id (int): The ID of the boundary within which to search for species.
+    class_key (int, optional): The taxonomic class key for filtering species.
+    phylum_key (int, optional): The taxonomic phylum key for filtering species.
+    kingdom_key (int, optional): The taxonomic kingdom key for filtering species.
+    max_limit (int, optional): The maximum number of species to be fetched.
+
+    Returns:
+    list: A list of species found within the area, filtered by the provided taxonomic keys.
+    """
+    from bims.models.boundary import Boundary
+
+    # Fetch the most recent boundary and its geometry
+    try:
+        boundary = Boundary.objects.get(id=boundary_id)
+        geometry = boundary.geometry
+        if not geometry:
+            raise ValueError("No geometry found for the boundary.")
+    except Boundary.DoesNotExist:
+        logger.error(f"Boundary with ID {boundary_id} does not exist.")
+        return []
+    except Exception as e:
+        logger.error(f"Error fetching boundary: {e}")
+        return []
+
+    species_keys = []
+    species_found = []
+
+    def fetch_occurrences_by_area(offset=0):
+        logger.info(f"Fetching occurrences data, offset: {offset}")
+        try:
+            occurrences_data = search(
+                geometry=str(geometry.ogr),
+                offset=offset,
+                classKey=class_key,
+                phylumKey=phylum_key,
+                kingdomKey=kingdom_key
+            )
+        except Exception as e:
+            logger.error(f"Error fetching occurrences data: {e}")
+            return
+
+        for occurrence in occurrences_data['results']:
+            taxon_key = occurrence.get(ACCEPTED_TAXON_KEY)
+            if taxon_key and taxon_key not in species_keys:
+                species_keys.append(taxon_key)
+
+        if not occurrences_data['endOfRecords'] and offset < max_limit:
+            fetch_occurrences_by_area(offset + occurrences_data['limit'])
+
+    fetch_occurrences_by_area()
+
+    logger.info(f"Species found: {len(species_keys)}")
+
+    for species_key in species_keys:
+        try:
+            species_data = get_species(species_key)
+            species_found.append(species_data)
+        except Exception as e:
+            logger.error(f"Error fetching data for species key {species_key}: {e}")
+
+    return species_found
