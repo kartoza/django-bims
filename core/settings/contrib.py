@@ -8,7 +8,6 @@ from .base import *  # noqa
 from .legacy_geonode_settings import *
 from core.settings.celery_settings import *  # noqa
 import os
-import raven
 try:
     from .secret import IUCN_API_KEY  # noqa
 except ImportError:
@@ -92,15 +91,12 @@ INSTALLED_APPS = (
 ) + INSTALLED_APPS
 WAGTAIL_SITE_NAME = 'BIMS Wagtail'
 
-if os.environ.get('RAVEN_CONFIG_DSN'):
-    INSTALLED_APPS += ('raven.contrib.django.raven_compat',)
-    RAVEN_CONFIG = {
-        'dsn': os.environ.get('RAVEN_CONFIG_DSN'),
-    }
-    if os.environ.get('GIT_PATH'):
-        RAVEN_CONFIG['release'] = (
-            raven.fetch_git_sha(os.environ.get('GIT_PATH'))
-        )
+if os.environ.get('SENTRY_KEY'):
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=os.environ.get('SENTRY_KEY'),
+        traces_sample_rate=1.0,
+    )
 
 # workaround to get flatpages picked up in installed apps.
 INSTALLED_APPS += (
