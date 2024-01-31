@@ -1787,6 +1787,12 @@ class SamplingEffortMeasureAdmin(OrderedModelAdmin):
     ordering = ('order',)
 
 
+class HarvestSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        'start_time', 'status', 'harvester',
+        'finished', 'canceled', 'is_fetching_species')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1835,7 +1841,7 @@ admin.site.register(GeocontextSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(UploadSession, UploadSessionAdmin)
-admin.site.register(HarvestSession)
+admin.site.register(HarvestSession, HarvestSessionAdmin)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
 admin.site.register(DownloadRequestPurpose, DownloadRequestPurposeAdmin)

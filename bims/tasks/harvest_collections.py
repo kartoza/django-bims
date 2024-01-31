@@ -1,6 +1,7 @@
 # coding=utf-8
 from celery import shared_task
 
+
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
 def harvest_collections(session_id):
     from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
@@ -31,6 +32,7 @@ def harvest_collections(session_id):
     for taxon in taxonomies:
         if HarvestSession.objects.get(id=session_id).canceled:
             print('Canceled')
+            connect_bims_signals()
             return
         harvest_session.status = 'Fetching gbif data for {c} ({i}/{t})'.format(
             c=taxon.canonical_name,
@@ -51,4 +53,3 @@ def harvest_collections(session_id):
     harvest_session.save()
 
     connect_bims_signals()
-

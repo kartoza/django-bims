@@ -1,4 +1,6 @@
 # coding: utf-8
+from typing import TextIO
+
 import requests
 import logging
 import urllib
@@ -430,7 +432,13 @@ def gbif_name_suggest(**kwargs):
 ACCEPTED_TAXON_KEY = 'acceptedTaxonKey'
 
 
-def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_key=None, max_limit=100):
+def find_species_by_area(
+        boundary_id,
+        class_key=None,
+        phylum_key=None,
+        kingdom_key=None,
+        max_limit=100,
+        log_file: TextIO = None):
     """
     Searches for species within a specific area defined by a boundary, filtered by taxonomic keys.
 
@@ -445,6 +453,11 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
     list: A list of species found within the area, filtered by the provided taxonomic keys.
     """
     from bims.models.boundary import Boundary
+
+    def log_info(message: str):
+        logger.info(message)
+        if log_file:
+            log_file.write('{}\n'.format(message))
 
     # Fetch the most recent boundary and its geometry
     try:
@@ -463,7 +476,7 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
     species_found = []
 
     def fetch_occurrences_by_area(offset=0):
-        logger.info(f"Fetching occurrences data, offset: {offset}")
+        log_info(f"Fetching occurrences data, offset: {offset}")
         try:
             occurrences_data = search(
                 geometry=str(geometry.ogr),
@@ -473,7 +486,7 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
                 kingdomKey=kingdom_key
             )
         except Exception as e:
-            logger.error(f"Error fetching occurrences data: {e}")
+            log_info(f"Error fetching occurrences data: {e}")
             return
 
         for occurrence in occurrences_data['results']:
@@ -486,13 +499,14 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
 
     fetch_occurrences_by_area()
 
-    logger.info(f"Species found: {len(species_keys)}")
+    log_info(f"Species found: {len(species_keys)}")
 
     for species_key in species_keys:
         try:
             species_data = get_species(species_key)
             species_found.append(species_data)
+            log_info('Processing {}'.format(species_data))
         except Exception as e:
-            logger.error(f"Error fetching data for species key {species_key}: {e}")
+            log_info(f"Error fetching data for species key {species_key}: {e}")
 
     return species_found

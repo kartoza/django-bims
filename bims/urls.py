@@ -92,6 +92,7 @@ from bims.views.water_temperature import WaterTemperatureView, \
 from bims.views.download_taxa_template import download_taxa_template
 from bims.views.physico_chemical import PhysicoChemicalView, \
     PhysicoChemicalSiteView
+from bims.views.harvest_gbif_species import HarvestGbifSpeciesView
 
 urlpatterns = [
     re_path(r'^$', landing_page_view, name='landing-page'),
@@ -205,6 +206,7 @@ urlpatterns = [
         name='upload-physico-chemical'),
     re_path(r'^harvest-collections/$', HarvestCollectionView.as_view(),
         name='harvest-collections'),
+    path('harvest-species/', HarvestGbifSpeciesView.as_view(), name='harvest-gbif-species'),
     re_path(r'^source-references/$', SourceReferenceListView.as_view(),
         name='source-references'),
     re_path(r'^delete-source-reference/$', DeleteSourceReferenceView.as_view(),
