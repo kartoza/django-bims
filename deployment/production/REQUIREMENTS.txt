@@ -55,7 +55,7 @@ sorl-thumbnail==12.9.0
 svglib==1.0.0
 simplejson==3.17.0
 django-extensions==3.2.3
-wagtail==4.2.4
+wagtail==5.0.5
 service-identity==18.1.0
 geopy==2.0.0
 python-dwca-reader==0.15.0
