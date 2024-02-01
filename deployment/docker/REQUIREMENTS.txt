@@ -90,3 +90,4 @@ importlib-metadata==4.11.4
 django-taggit==5.0.1
 django-treebeard==4.7
 django-filter==23.5
+sentry-sdk==1.40.0
