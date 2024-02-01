@@ -194,6 +194,7 @@ def fetch_all_species_from_gbif(
     fetch_children=False,
     fetch_vernacular_names=False,
     use_name_lookup=True,
+    log_file_path=None,
     **classifier):
     """
     Get species detail and all lower rank species
@@ -206,8 +207,14 @@ def fetch_all_species_from_gbif(
     :param use_name_lookup: use name_lookup to search species
     :return:
     """
+    def log_info(message: str):
+        logger.info(message)
+        if log_file_path:
+            with open(log_file_path, 'a') as log_file:
+                log_file.write('{}\n'.format(message))
+
     if gbif_key:
-        logger.info('Get species {gbif_key}'.format(
+        log_info('Get species {gbif_key}'.format(
             gbif_key=gbif_key
         ))
         species_data = None
@@ -229,7 +236,7 @@ def fetch_all_species_from_gbif(
         if not species_data:
             species_data = get_species(gbif_key)
     else:
-        logger.info('Fetching {species} - {rank}'.format(
+        log_info('Fetching {species} - {rank}'.format(
             species=species,
             rank=taxonomic_rank,
         ))
@@ -247,7 +254,7 @@ def fetch_all_species_from_gbif(
 
     # if species not found then return nothing
     if not species_data:
-        logger.error('Species not found')
+        log_info('Species not found')
         return None
 
     legacy_name = species
@@ -290,7 +297,7 @@ def fetch_all_species_from_gbif(
         return None
     taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names)
     if not taxonomy:
-        logger.error('Taxonomy not updated/created')
+        log_info('Taxonomy not updated/created')
         return None
     species_key = taxonomy.gbif_key
     scientific_name = taxonomy.scientific_name
@@ -304,7 +311,7 @@ def fetch_all_species_from_gbif(
             parent_taxonomy = None
             if 'parentKey' in species_data:
                 parent_key = species_data['parentKey']
-                logger.info('Get parent with parentKey : %s' % parent_key)
+                log_info('Get parent with parentKey : %s' % parent_key)
                 parent_taxonomy = fetch_all_species_from_gbif(
                     gbif_key=parent_key,
                     parent=None,
@@ -344,7 +351,7 @@ def fetch_all_species_from_gbif(
         return taxonomy
 
     if species_key and scientific_name:
-        logger.info('Get children from : {}'.format(species_key))
+        log_info('Get children from : {}'.format(species_key))
         children = get_children(species_key)
         if not children:
             return taxonomy

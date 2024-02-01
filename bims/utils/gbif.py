@@ -1,4 +1,6 @@
 # coding: utf-8
+from typing import TextIO
+
 import requests
 import logging
 import urllib
@@ -9,6 +11,7 @@ from pygbif.occurrences import search
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
+from bims.models.harvest_session import HarvestSession
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +142,7 @@ def find_species(
                 else:
                     rank_key = 'key'
                 key_found = (
-                    'nubKey' in result or rank_key in result)
+                        'nubKey' in result or rank_key in result)
                 if key_found and 'taxonomicStatus' in result:
                     taxon_name = ''
                     if 'canonicalName' in result:
@@ -430,7 +433,14 @@ def gbif_name_suggest(**kwargs):
 ACCEPTED_TAXON_KEY = 'acceptedTaxonKey'
 
 
-def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_key=None, max_limit=100):
+def find_species_by_area(
+        boundary_id,
+        class_key=None,
+        phylum_key=None,
+        kingdom_key=None,
+        max_limit=100,
+        harvest_session: HarvestSession = None
+):
     """
     Searches for species within a specific area defined by a boundary, filtered by taxonomic keys.
 
@@ -445,6 +455,30 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
     list: A list of species found within the area, filtered by the provided taxonomic keys.
     """
     from bims.models.boundary import Boundary
+    from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+
+    taxon_group = None
+    log_file_path = None
+
+    if harvest_session:
+        taxon_group = harvest_session.module_group
+        log_file_path = (
+            harvest_session.log_file.path
+            if harvest_session.log_file else None
+        )
+
+    def log_info(message: str):
+        logger.info(message)
+        if log_file_path:
+            with open(log_file_path, 'a') as log_file:
+                log_file.write('{}\n'.format(message))
+
+    def is_canceled():
+        if harvest_session:
+            return HarvestSession.objects.get(
+                id=harvest_session.id
+            ).canceled
+        return False
 
     # Fetch the most recent boundary and its geometry
     try:
@@ -463,7 +497,7 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
     species_found = []
 
     def fetch_occurrences_by_area(offset=0):
-        logger.info(f"Fetching occurrences data, offset: {offset}")
+        log_info(f"Fetching occurrences data, offset: {offset}")
         try:
             occurrences_data = search(
                 geometry=str(geometry.ogr),
@@ -473,7 +507,7 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
                 kingdomKey=kingdom_key
             )
         except Exception as e:
-            logger.error(f"Error fetching occurrences data: {e}")
+            log_info(f"Error fetching occurrences data: {e}")
             return
 
         for occurrence in occurrences_data['results']:
@@ -481,18 +515,31 @@ def find_species_by_area(boundary_id, class_key=None, phylum_key=None, kingdom_k
             if taxon_key and taxon_key not in species_keys:
                 species_keys.append(taxon_key)
 
-        if not occurrences_data['endOfRecords'] and offset < max_limit:
+        if not occurrences_data['endOfRecords'] and offset < max_limit and not is_canceled():
             fetch_occurrences_by_area(offset + occurrences_data['limit'])
 
     fetch_occurrences_by_area()
 
-    logger.info(f"Species found: {len(species_keys)}")
+    log_info(f"Species found: {len(species_keys)}")
 
     for species_key in species_keys:
+        if is_canceled():
+            return species_found
         try:
-            species_data = get_species(species_key)
-            species_found.append(species_data)
+            log_info('Processing {}'.format(species_key))
+            taxonomy = fetch_all_species_from_gbif(
+                gbif_key=species_key,
+                fetch_children=False,
+                log_file_path=log_file_path
+            )
+            if taxonomy:
+                log_info("Species added/updated : {}".format(
+                    taxonomy.scientific_name
+                ))
+                species_found.append(taxonomy)
+                if taxon_group:
+                    taxon_group.taxonomies.add(taxonomy)
         except Exception as e:
-            logger.error(f"Error fetching data for species key {species_key}: {e}")
+            log_info(f"Error fetching data for species key {species_key}: {e}")
 
     return species_found

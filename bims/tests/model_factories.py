@@ -47,7 +47,8 @@ from bims.models import (
     SiteImage,
     WaterTemperature,
     WaterTemperatureThreshold,
-    UserBoundary
+    UserBoundary,
+    HarvestSession
 )
 from sass.models import River
 
@@ -485,3 +486,13 @@ class UserBoundaryF(factory.django.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: u'name %s' % n)
     geometry = GEOSGeometry('MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0), (10 10, 14 10, 14 14, 10 14, 10 10)))')
+
+
+class HarvestSessionF(factory.django.DjangoModelFactory):
+    """
+    Harvest session factory
+    """
+    class Meta:
+        model = HarvestSession
+
+    module_group = factory.SubFactory(TaxonGroupF)

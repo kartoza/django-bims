@@ -119,6 +119,15 @@ class TaxonGroup(models.Model):
         null=True,
     )
 
+    gbif_parent_species = models.ForeignKey(
+        'bims.Taxonomy',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='taxon_groups',
+        help_text='Used to fetch species from GBIF'
+    )
+
     class Meta:
         ordering = ('display_order',)
         permissions = (

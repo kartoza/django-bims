@@ -54,6 +54,18 @@ class HarvestSession(models.Model):
         null=True
     )
 
+    is_fetching_species = models.BooleanField(
+        default=False,
+        help_text='Flag indicating whether it is only fetching species'
+    )
+
+    boundary = models.ForeignKey(
+        'bims.Boundary',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     status = models.TextField(
         null=True,
         blank=True
