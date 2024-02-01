@@ -5,6 +5,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.contrib.sites.models import Site
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.views.generic import TemplateView
@@ -29,15 +30,19 @@ class HarvestGbifSpeciesView(
         ctx = super(
             HarvestGbifSpeciesView, self).get_context_data(**kwargs)
 
+        current_site = Site.objects.get_current()
+
         ctx['boundaries'] = Boundary.objects.filter(
             geometry__isnull=False
         )
         ctx['taxa_groups'] = TaxonGroup.objects.filter(
-            category='SPECIES_MODULE'
+            category='SPECIES_MODULE',
+            site_id=current_site.id
         ).order_by('display_order')
 
         harvest_sessions = HarvestSession.objects.filter(
             harvester=self.request.user,
+            module_group__site__id=current_site.id,
             finished=False,
             canceled=False,
             log_file__isnull=False,
@@ -64,7 +69,8 @@ class HarvestGbifSpeciesView(
         ctx['finished_sessions'] = HarvestSession.objects.filter(
             Q(finished=True) | Q(canceled=True),
             harvester=self.request.user,
-            is_fetching_species=True
+            is_fetching_species=True,
+            module_group__site__id=current_site.id,
         ).order_by(
             '-start_time'
         )

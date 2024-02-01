@@ -8,6 +8,8 @@ def harvest_gbif_species(session_id):
     from bims.utils.logger import log
     from bims.models import HarvestSession
     from bims.utils.gbif import find_species_by_area
+    from bims.enums import TaxonomicRank
+
     try:
         harvest_session = (
             HarvestSession.objects.get(id=session_id)
@@ -22,15 +24,24 @@ def harvest_gbif_species(session_id):
     harvest_session.save()
 
     with open(harvest_session.log_file.path, 'a') as log_file:
-        log_file.write('Fetching species in area {}...\n'.format(
+        log_file.write('Fetching species in area {}\n'.format(
             harvest_session.boundary.name
         ))
 
-        species = find_species_by_area(
-            harvest_session.boundary_id,
-            max_limit=100,
-            log_file=log_file
-        )
+    parent_species = harvest_session.module_group.gbif_parent_species
+    params = {}
+
+    if parent_species and parent_species.gbif_key:
+        if parent_species.rank == TaxonomicRank.CLASS.name:
+            params['class_key'] = parent_species.gbif_key
+        elif parent_species.rank == TaxonomicRank.PHYLUM.name:
+            params['phylum_key'] = parent_species.gbif_key
+
+    taxa = find_species_by_area(
+        harvest_session.boundary_id,
+        harvest_session=harvest_session,
+        **params
+    )
 
     harvest_session.status = 'Finished'
     harvest_session.finished = True
