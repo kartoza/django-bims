@@ -19,6 +19,7 @@ let $rejectTaxonBtn = $('.reject-taxon');
 let $taxonGroupCard = $('.ui-state-default');
 let $findTaxonButton = $('#find-taxon-button');
 let $updateLogoBtn = $('.update-logo-btn');
+let $addNewModuleBtn = $('.add-new-module');
 let $removeAllBtn = $('.remove-all-btn');
 let $clearSearchBtn = $('#clear-search-button');
 let $sortBtn = $('.sort-button');
@@ -314,6 +315,11 @@ function findExpertsByTaxonGroupId(parentId) {
     return experts;
 }
 
+function findGbifTaxonomyByTaxonGroupId(parentId) {
+    const item = taxaGroups.find(item => item.id === parentId && item.gbif_parent_species);
+    return item ? JSON.parse(item.gbif_parent_species) : null;
+}
+
 function addExpertsToSelect(experts) {
     let expertIds = [];
     experts.forEach(expert => {
@@ -325,8 +331,32 @@ function addExpertsToSelect(experts) {
     authorSelect.trigger('change');
 }
 
+$addNewModuleBtn.click((event) => {
+    // Change modal title
+    $('#moduleModalLabel').text('Add Module');
+
+    $('.gbif-species-container').hide();
+
+    // Clear existing values in input fields
+    $('#edit-module-id').val('');
+    $('#edit-module-name').val('');
+    $("#inputLogo").val(''); // Clear file input for logo
+    $('.extra-attribute-field').empty(); // Remove any dynamically added extra attribute fields
+    $('.taxon-group-experts-container select').val(null).trigger('change'); // Clear and reset select2 or similar multi-select inputs
+
+    // Clear any existing images inside the image container
+    $('#edit-module-img-container').empty();
+
+    $('#editModuleModal').modal({
+        keyboard: false
+    })
+})
+
 $updateLogoBtn.click((event) => {
     event.preventDefault();
+    event.stopPropagation();
+    $('#moduleModalLabel').text('Edit Module');
+    $('.gbif-species-container').show();
     const _maxTries = 10;
     let _element = $(event.target);
     let _currentTry = 1
@@ -369,6 +399,22 @@ $updateLogoBtn.click((event) => {
     authorSelect.val(null).trigger('change');
     let experts = findExpertsByTaxonGroupId(moduleId);
     addExpertsToSelect(experts);
+
+    // GBIF Species
+    let taxaAutoComplete = $('#edit-module-taxa-autocomplete');
+    taxaAutoComplete.empty();
+    taxaAutoComplete.val(null).trigger('change');
+    let gbifSpecies = findGbifTaxonomyByTaxonGroupId(moduleId);
+    if (gbifSpecies) {
+        let option = new Option(`${gbifSpecies['canonical_name']} (${gbifSpecies['rank']})`, gbifSpecies.id, true, true);
+        taxaAutoComplete.append(option).trigger('change');
+        taxaAutoComplete.trigger({
+            type: 'select2:select',
+            params: {
+                data: data
+            }
+        });
+    }
 
     return false;
 });
@@ -838,6 +884,31 @@ $(document).ready(function () {
         $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
         url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
     }
+
+    $('#edit-module-taxa-autocomplete').select2({
+        dropdownParent: $("#editModuleModal"),
+        ajax: {
+            url: '/species-autocomplete/',
+            dataType: 'json',
+            data: function (params) {
+                return {
+                    term: params.term,
+                    taxonGroupId: urlParams.get('selected')
+                }
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                }
+            },
+            cache: true
+        },
+        placeholder: 'Search for a Taxonomy',
+        minimumInputLength: 3,
+        templateResult: formatTaxa,
+        templateSelection: formatTaxaSelection,
+        theme: "classic"
+    });
 
     $('#taxa-auto-complete').select2({
         ajax: {
