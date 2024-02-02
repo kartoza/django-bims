@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - multi-tenant
     tags:
       - '*'
 
@@ -39,3 +40,20 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         buildoptions: "--target prod"
+
+  build-and-push-multi-tenant:
+    if: github.ref == 'refs/heads/multi-tenant'
+    name: Build and Push Docker Image with Multi-Tenant Tag
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@master
+      - name: Build and Publish the Docker Image as Multi-Tenant
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: kartoza/kbims_uwsgi:multi-tenant
+          context: .
+          dockerfile: deployment/docker/Dockerfile
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          buildoptions: "--target prod"
+
