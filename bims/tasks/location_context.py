@@ -7,7 +7,6 @@ from celery import shared_task
 from collections import OrderedDict
 
 from django.conf import settings
-from django.core.cache import cache
 from django.db.models import F
 from django.utils.text import slugify
 
@@ -15,6 +14,7 @@ from bims.utils.celery import single_instance_task
 
 logger = logging.getLogger(__name__)
 SPATIAL_SCALE_FILTER_FILE = 'spatial_scale_filter.txt'
+SPATIAL_SCALE_FILTER_DIR = 'spatial_scale'
 
 
 SPATIAL_FILTER_GROUPS = OrderedDict([
@@ -131,15 +131,27 @@ def generate_spatial_scale_filter_if_empty():
 @shared_task(
     name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
 @single_instance_task(60 * 10)
-def generate_spatial_scale_filter():
+def generate_spatial_scale_filter(current_site_id=None):
+    from django.contrib.sites.models import Site
     from bims.models import (
         LocationContext, LocationContextFilter, LocationContextFilterGroupOrder
     )
+    if not current_site_id:
+        sites = Site.objects.all()
+        for site in sites:
+            generate_spatial_scale_filter(site.id)
+        return
+
     spatial_tree = []
-    location_context_filters = LocationContextFilter.objects.all(
-    ).order_by(
+    location_context_filters = LocationContextFilter.objects.all()
+    if current_site_id:
+        location_context_filters = location_context_filters.filter(
+            locationcontextfiltergrouporder__site_id=current_site_id
+        ).distinct()
+    location_context_filters = location_context_filters.order_by(
         'display_order',
     )
+
     for location_context_filter in location_context_filters:
         spatial_tree_data = {
             'name': location_context_filter.title,
@@ -158,7 +170,8 @@ def generate_spatial_scale_filter():
                 LocationContextFilterGroupOrder.objects.filter(
                     filter_id=location_context_filter.id,
                     group_id=group.id,
-                    is_hidden_in_spatial_filter=False
+                    is_hidden_in_spatial_filter=False,
+                    site_id=current_site_id
                 ).first()
             )
 
@@ -206,9 +219,21 @@ def generate_spatial_scale_filter():
             spatial_tree_data
         )
 
-    if spatial_tree:
-        file_path = os.path.join(
+    if spatial_tree and current_site_id:
+        spatial_dir = os.path.join(
             settings.MEDIA_ROOT,
+            SPATIAL_SCALE_FILTER_DIR,
+        )
+        if not os.path.exists(spatial_dir):
+            os.mkdir(spatial_dir)
+        file_dir = os.path.join(
+            spatial_dir,
+            str(current_site_id)
+        )
+        if not os.path.exists(file_dir):
+            os.mkdir(file_dir)
+        file_path = os.path.join(
+            file_dir,
             SPATIAL_SCALE_FILTER_FILE
         )
         with open(file_path, 'w') as file_handle:
@@ -216,8 +241,12 @@ def generate_spatial_scale_filter():
 
 
 def get_spatial_scale_filter():
+    from django.contrib.sites.models import Site
+    current_site = Site.objects.get_current()
     file_path = os.path.join(
         settings.MEDIA_ROOT,
+        SPATIAL_SCALE_FILTER_DIR,
+        str(current_site.id),
         SPATIAL_SCALE_FILTER_FILE
     )
     if not os.path.exists(file_path):
