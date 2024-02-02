@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from bims.models import Taxonomy, BiologicalCollectionRecord
@@ -187,6 +189,14 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
     taxa_count = serializers.SerializerMethodField()
     experts = serializers.SerializerMethodField()
+    gbif_parent_species = serializers.SerializerMethodField()
+
+    def get_gbif_parent_species(self, obj: TaxonGroup):
+        if obj.gbif_parent_species:
+            return json.dumps(TaxonSerializer(
+                obj.gbif_parent_species
+            ).data)
+        return ''
 
     def get_taxa_count(self, obj: TaxonGroup):
         return obj.taxonomies.all().count()
@@ -204,5 +214,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TaxonGroup
-        fields = ['id', 'name', 'category', 'logo', 'extra_attributes',
+        fields = ['id',
+                  'gbif_parent_species',
+                  'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'experts']
