@@ -9,11 +9,22 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
     <style>
         #log-container {
             background-color: black !important;
             color: white !important;
             font-size: 10pt;
+        }
+        body {
+            background-image: none;
+        }
+        #boundary-map {
+            width: 100%;
+            max-height: 500px;
+            height: 300px;
+            padding-bottom: 15px;
         }
     </style>
 
@@ -45,35 +56,35 @@
                     <div class="form-group row">
                         <label for="inputPassword"
                                class="col-sm-2 col-form-label"><b>Boundary</b></label>
-                        <div class="col-sm-8">
+                        <div class="col-sm-10">
                             <select class="form-control" name="boundary"
                                     id="boundary">
+                                <option value="" disabled selected>Choose a boundary</option>
                                 {% for boundary in boundaries %}
                                     <option value="{{ boundary.id }}"> {{ boundary.name }} </option>
                                 {% endfor %}
                             </select>
+                            <div id="boundary-map"></div>
                         </div>
                     </div>
 
                     <div class="form-group row">
                         <label for="inputPassword"
                                class="col-sm-2 col-form-label"><b>Taxon Group</b></label>
-                        <div class="col-sm-8">
+                        <div class="col-sm-10">
                             <select class="form-control" name="taxon_group"
                                     id="taxon-group">
+                                <option value="" disabled selected>Choose a taxon group</option>
                                 {% for taxon_group in taxa_groups %}
-                                    <option value="{{ taxon_group.id }}"> {{ taxon_group.name }} </option>
+                                    <option value="{{ taxon_group.id }}"> {{ taxon_group.name }} ({{ taxon_group.gbif_parent_species.canonical_name }}) </option>
                                 {% endfor %}
                             </select>
                             <a href="/taxa-management" class="text-muted" style="position: absolute; font-size: 10pt">Link to taxa management</a>
                         </div>
-                        <button type="button" class="btn btn-primary col-sm-2" data-toggle="modal" data-target="#taxonGroupModal">
-                            Add new
-                        </button>
                     </div>
                     <div class="help-block-space"></div>
 
-                    <button class="btn btn-primary" type="submit">Start harvesting</button>
+                    <button class="btn btn-primary" type="submit" disabled id="harvesting-btn">Start harvesting</button>
 
 
                     {% endif %}
@@ -210,6 +221,7 @@
 {% block foot %}
 
     <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script type="text/javascript">
@@ -241,6 +253,71 @@
         }
 
         $(function () {
+            let map = new ol.Map({
+                target: 'boundary-map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM()
+                    })
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([0, 0]),
+                    zoom: 2
+                })
+            });
+            function updateMapForBoundaries(boundaryIds) {
+                $.ajax({
+                    url: `/api/boundary/geojson?ids=${JSON.stringify(boundaryIds)}`, // Updated to use the new API
+                    method: 'GET',
+                    success: function(data) {
+                        var features = new ol.format.GeoJSON().readFeatures(data, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857'
+                        });
+
+                        // Clear existing layers except for base OSM layer
+                        map.getLayers().getArray().slice(1).forEach(layer => map.removeLayer(layer));
+
+                        // Create and add new vector layer with the boundaries
+                        var vectorSource = new ol.source.Vector({
+                            features: features
+                        });
+                        var vectorLayer = new ol.layer.Vector({
+                            source: vectorSource
+                        });
+                        map.addLayer(vectorLayer);
+
+                        // Fit view to the combined extents of the boundaries
+                        map.getView().fit(vectorSource.getExtent(), {
+                            padding: [50, 50, 50, 50], // Adjust view padding as needed
+                            duration: 1000 // Animation duration
+                        });
+                    },
+                    error: function(error) {
+                        console.error('Error fetching boundary data:', error);
+                    }
+                });
+            }
+
+            // Handle boundary select change
+            $('#boundary').change(function() {
+                let selectedBoundaryId = $(this).val();
+                let taxonGroupId = $('#taxon-group').val();
+                if (selectedBoundaryId) {
+                    updateMapForBoundaries([selectedBoundaryId]);
+                }
+                console.log(taxonGroupId, selectedBoundaryId)
+                if (taxonGroupId && selectedBoundaryId) {
+                    $('#harvesting-btn').attr('disabled', false);
+                }
+            });
+            $('#taxon-group').change(function () {
+                let taxonGroupId = $(this).val();
+                let selectedBoundaryId = $('#boundary').val();
+                if (taxonGroupId && selectedBoundaryId) {
+                    $('#harvesting-btn').attr('disabled', false);
+                }
+            })
             let textarea = document.getElementById('log-container');
             if (textarea) {
                 textarea.scrollTop = textarea.scrollHeight;
