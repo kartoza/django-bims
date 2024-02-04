@@ -51,7 +51,8 @@ def import_gbif_occurrences(
     origin='',
     log_file_path=None,
     session_id=None,
-    taxon_group=None) -> str:
+    taxon_group=None,
+    site_id=None) -> str:
     """
     Import gbif occurrences based on taxonomy gbif key,
     data stored to biological_collection_record table
@@ -301,6 +302,7 @@ def import_gbif_occurrences(
         collection_record.institution_id = institution_code
         collection_record.reference = reference
         collection_record.module_group = taxon_group
+        collection_record.source_site_id = site_id
         if habitat:
             collection_record.collection_habitat = habitat.lower()
         if origin:

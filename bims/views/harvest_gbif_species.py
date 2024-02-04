@@ -116,7 +116,8 @@ class HarvestGbifSpeciesView(
             module_group_id=taxon_group_id,
             category='gbif',
             boundary_id=boundary_id,
-            is_fetching_species=True
+            is_fetching_species=True,
+            source_site_id=Site.objects.get_current().id
         )
         log_file_folder = os.path.join(
             settings.MEDIA_ROOT, 'harvest-species-session-log'

@@ -45,7 +45,8 @@ def harvest_collections(session_id):
             taxonomy=taxon,
             log_file_path=harvest_session.log_file.path,
             session_id=session_id,
-            taxon_group=harvest_session.module_group
+            taxon_group=harvest_session.module_group,
+            site_id=harvest_session.source_site_id
         )
 
     harvest_session.status = 'Finished'
