@@ -896,7 +896,8 @@ class NonBiodiversityLayerAdmin(OrderedModelAdmin):
         'name',
         'wms_url',
         'wms_layer_name',
-        'move_up_down_links')
+        'source_site',
+        'move_up_down_links',)
     list_filter = ('wms_url',)
     ordering = ('order',)
 
