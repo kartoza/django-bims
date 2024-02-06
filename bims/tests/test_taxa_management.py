@@ -37,6 +37,7 @@ class TaxaManagementTest(TestCase):
             category='SPECIES_MODULE',
             name='test',
             taxonomies=(self.taxonomy_1, self.taxonomy_2),
+            experts=(self.user,)
         )
 
     def test_redirect_if_not_logged_in(self):
@@ -53,11 +54,12 @@ class TaxaManagementTest(TestCase):
 
     def test_context_data(self):
         self.client.login(username='testuser', password='password')
-        resp = self.client.get(reverse('taxa-management'))
+        resp = self.client.get(reverse('taxa-management'), {'selected': self.taxon_group.id})
 
         self.assertIn('taxa_groups', resp.context)
         self.assertIn('source_collections', resp.context)
         self.assertIn('taxon_rank', resp.context)
+        self.assertIn('is_expert', resp.context)
         self.assertGreater(
             len(resp.context_data['taxa_groups']),
             0

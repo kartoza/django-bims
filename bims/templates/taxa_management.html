@@ -199,7 +199,7 @@
                     <!-- Download button -->
                     <div class="float-right download-button-container"
                          style="margin-top: -47px; display: none">
-                        {% if perms.bims.add_taxonomy %}
+                        {% if perms.bims.add_taxonomy or is_expert %}
                         <button id="add-taxon-btn"
                                 class="btn btn-outline-success" data-toggle="modal"
                                 data-target="#addNewTaxonModal">Add a taxon
