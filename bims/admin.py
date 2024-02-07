@@ -39,6 +39,7 @@ from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
 from ckeditor.widgets import CKEditorWidget
+from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from bims.models import (
     LocationType,
@@ -106,7 +107,8 @@ from bims.models import (
     Hydroperiod,
     WetlandIndicatorStatus,
     AbundanceType,
-    SamplingEffortMeasure
+    SamplingEffortMeasure,
+    TaxonGroupTaxonomy
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1007,7 +1009,18 @@ class TaxonomyAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
+class TaxonGroupTaxonomyInline(TabularInlinePaginated):
+    model = TaxonGroupTaxonomy
+    extra = 1
+    raw_id_fields = ('taxonomy',)
+    per_page = 20
+
+
 class TaxonGroupAdmin(admin.ModelAdmin):
+    inlines = [
+        TaxonGroupTaxonomyInline,
+    ]
+    list_per_page = 20
     list_display = (
         'name',
         'singular_name',
@@ -1794,6 +1807,17 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         'finished', 'canceled', 'is_fetching_species')
 
 
+class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'taxonomy',
+    )
+    list_display = (
+        'taxongroup',
+        'taxonomy',
+        'is_validated'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1901,4 +1925,8 @@ admin.site.register(
 admin.site.register(
     SamplingEffortMeasure,
     SamplingEffortMeasureAdmin
+)
+admin.site.register(
+    TaxonGroupTaxonomy,
+    TaxonGroupTaxonomyAdmin
 )

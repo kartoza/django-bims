@@ -1,15 +1,10 @@
 import json
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from rest_framework import serializers
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from taggit.managers import TaggableManager
-from taggit.models import Tag
 
 from bims.models.validation import AbstractValidation
 from django.db import models
@@ -21,7 +16,6 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
 from bims.models.endemism import Endemism
 from bims.utils.iucn import get_iucn_status
-from bims.permissions.generate_permission import generate_permission
 from bims.models.vernacular_name import VernacularName
 from bims.models.notification import (
     get_recipients_for_notification,
