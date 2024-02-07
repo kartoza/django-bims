@@ -44,7 +44,6 @@
                     {% for taxa_group in taxa_groups %}
                         {% include "_taxongroup_item.html" with taxon_group=taxa_group %}
                     {% endfor %}
-
                 </ul>
                 {% if user.is_superuser %}
                     <div style="width: 100%; text-align: center">

@@ -268,7 +268,7 @@ $removeAllBtn.click((event) => {
         _element = _element.parent();
         _currentTry += 1;
     }
-    currentRemoveModuleName = _element.find('.taxon-group-title').html().trim();
+    currentRemoveModuleName = _element.find('.taxon-group-name').html().trim();
     $removeModuleName.val('');
     $('#remove-module-btn').attr('data-module-id', _element.data('id'));
     $('#removeModuleModal').modal({
@@ -387,7 +387,7 @@ $updateLogoBtn.click((event) => {
     const moduleId = _element.data('id');
     $('#editModuleModal').data('module', moduleId);
 
-    const moduleName = _element.find('.taxon-group-title').html().trim();
+    const moduleName = _element.find('.taxon-group-name').html().trim();
     const extraAttributesContainer = $('#editModuleModal').find('.extra-attribute-field');
     let extraAttributes = _element.find('.taxon-group-title').data('extra-attributes');
     extraAttributesContainer.html('')

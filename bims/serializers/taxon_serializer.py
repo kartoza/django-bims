@@ -191,6 +191,8 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     experts = serializers.SerializerMethodField()
     gbif_parent_species = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
+    validated_count = serializers.SerializerMethodField()
+    unvalidated_count = serializers.SerializerMethodField()
 
     def get_children(self, obj: TaxonGroup):
         children = TaxonGroup.objects.filter(parent=obj)
@@ -220,6 +222,32 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         collect_taxonomy_ids(obj)
         return len(unique_taxonomy_ids)
 
+    def get_unvalidated_count(self, obj: TaxonGroup):
+        unique_taxonomy_ids = set()
+
+        def collect_taxonomy_ids(taxon_group):
+            for taxonomy in taxon_group.taxonomies.filter(validated=False):
+                unique_taxonomy_ids.add(taxonomy.id)
+            for child in TaxonGroup.objects.filter(
+                    parent=taxon_group):
+                collect_taxonomy_ids(child)
+
+        collect_taxonomy_ids(obj)
+        return len(unique_taxonomy_ids)
+
+    def get_validated_count(self, obj: TaxonGroup):
+        unique_taxonomy_ids = set()
+
+        def collect_taxonomy_ids(taxon_group):
+            for taxonomy in taxon_group.taxonomies.filter(validated=True):
+                unique_taxonomy_ids.add(taxonomy.id)
+            for child in TaxonGroup.objects.filter(
+                    parent=taxon_group):
+                collect_taxonomy_ids(child)
+
+        collect_taxonomy_ids(obj)
+        return len(unique_taxonomy_ids)
+
     def get_extra_attributes(self, obj):
         return list(
             obj.taxonextraattribute_set.all().values_list('name', flat=True)
@@ -236,4 +264,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         fields = ['id',
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
-                  'taxa_count', 'experts', 'children']
+                  'taxa_count', 'unvalidated_count', 'validated_count',
+                  'experts', 'children']

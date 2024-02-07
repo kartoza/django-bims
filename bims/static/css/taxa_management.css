@@ -70,7 +70,14 @@ ul.pagination li.current a {
 }
 
 .taxon-group-title {
-    font-size: 1.5em;
+    display: flex;
+    font-size: 1.3em;
+}
+
+.update-logo-btn {
+    font-size: 10pt;
+    padding: 0 5px;
+    margin-left: 5px;
 }
 
 ul li {
@@ -208,4 +215,18 @@ ul li {
     min-width: auto;
     padding-left: 10px;
     padding-right: 10px;
+}
+
+.img-container img {
+    width: 100%;
+    padding-left: 10px;
+}
+
+.taxon-group-badge {
+    margin-top: 2px;
+    background: #dedede;
+    font-size: 10pt;
+    padding: 2px 5px;
+    width: fit-content;
+    margin-right: 3px;
 }
