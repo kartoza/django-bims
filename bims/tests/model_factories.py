@@ -271,6 +271,17 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
     site = Site.objects.get_current()
 
     @factory.post_generation
+    def experts(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for expert in extracted:
+                self.experts.add(expert)
+
+    @factory.post_generation
     def taxonomies(self, create, extracted, **kwargs):
         if not create:
             # Simple build, do nothing.
