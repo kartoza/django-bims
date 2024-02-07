@@ -23,8 +23,10 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         site = get_current_site(self.request)
         taxa_groups_query = TaxonGroup.objects.filter(
-            category='SPECIES_MODULE', site=site).order_by('display_order')
-        context['taxa_groups'] = TaxonGroupSerializer(taxa_groups_query, many=True).data
+            category='SPECIES_MODULE',
+            site=site).order_by('display_order')
+        context['taxa_groups'] = TaxonGroupSerializer(
+            taxa_groups_query, many=True).data
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
         context['source_collections'] = list(
             BiologicalCollectionRecord.objects.values_list(
