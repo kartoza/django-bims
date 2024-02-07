@@ -179,7 +179,8 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
             taxon_group = TaxonGroup()
 
         taxon_group.site = Site.objects.get_current()
-        taxon_group.category = TaxonomicGroupCategory.SPECIES_MODULE.name
+        if not taxon_group.parent:
+            taxon_group.category = TaxonomicGroupCategory.SPECIES_MODULE.name
 
         if module_name:
             taxon_group.name = module_name

@@ -303,6 +303,17 @@ class TaxaList(LoginRequiredMixin, APIView):
     pagination_class = TaxaPagination
 
     @staticmethod
+    def get_descendant_group_ids(taxon_group):
+        """Recursively collect all descendant group IDs"""
+        group_ids = [taxon_group.id]
+        child_groups = TaxonGroup.objects.filter(
+            parent=taxon_group)
+        for child in child_groups:
+            group_ids.extend(TaxaList.get_descendant_group_ids(
+                child))
+        return group_ids
+
+    @staticmethod
     def get_taxa_by_parameters(request):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
@@ -333,7 +344,13 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
         except TaxonGroup.DoesNotExist:
             raise Http404('Taxon group does not exist')
-        taxon_list = taxon_group.taxonomies.all()
+
+        taxon_group_ids = TaxaList.get_descendant_group_ids(
+            taxon_group)
+        taxon_list = Taxonomy.objects.filter(
+            taxongroup__id__in=taxon_group_ids
+        ).distinct().order_by('canonical_name')
+
         if parent_ids:
             parents = taxon_list.filter(id__in=parent_ids)
             if parents.exists():

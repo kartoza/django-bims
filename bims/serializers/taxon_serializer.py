@@ -190,6 +190,17 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     taxa_count = serializers.SerializerMethodField()
     experts = serializers.SerializerMethodField()
     gbif_parent_species = serializers.SerializerMethodField()
+    children = serializers.SerializerMethodField()
+    validated_count = serializers.SerializerMethodField()
+    unvalidated_count = serializers.SerializerMethodField()
+
+    def get_children(self, obj: TaxonGroup):
+        children = TaxonGroup.objects.filter(parent=obj)
+        if children.exists():
+            return TaxonGroupSerializer(
+                children, many=True, context=self.context
+            ).data
+        return []
 
     def get_gbif_parent_species(self, obj: TaxonGroup):
         if obj.gbif_parent_species:
@@ -199,7 +210,43 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         return ''
 
     def get_taxa_count(self, obj: TaxonGroup):
-        return obj.taxonomies.all().count()
+        unique_taxonomy_ids = set()
+
+        def collect_taxonomy_ids(taxon_group):
+            for taxonomy in taxon_group.taxonomies.all():
+                unique_taxonomy_ids.add(taxonomy.id)
+            for child in TaxonGroup.objects.filter(
+                    parent=taxon_group):
+                collect_taxonomy_ids(child)
+
+        collect_taxonomy_ids(obj)
+        return len(unique_taxonomy_ids)
+
+    def get_unvalidated_count(self, obj: TaxonGroup):
+        unique_taxonomy_ids = set()
+
+        def collect_taxonomy_ids(taxon_group):
+            for taxonomy in taxon_group.taxonomies.filter(validated=False):
+                unique_taxonomy_ids.add(taxonomy.id)
+            for child in TaxonGroup.objects.filter(
+                    parent=taxon_group):
+                collect_taxonomy_ids(child)
+
+        collect_taxonomy_ids(obj)
+        return len(unique_taxonomy_ids)
+
+    def get_validated_count(self, obj: TaxonGroup):
+        unique_taxonomy_ids = set()
+
+        def collect_taxonomy_ids(taxon_group):
+            for taxonomy in taxon_group.taxonomies.filter(validated=True):
+                unique_taxonomy_ids.add(taxonomy.id)
+            for child in TaxonGroup.objects.filter(
+                    parent=taxon_group):
+                collect_taxonomy_ids(child)
+
+        collect_taxonomy_ids(obj)
+        return len(unique_taxonomy_ids)
 
     def get_extra_attributes(self, obj):
         return list(
@@ -217,4 +264,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         fields = ['id',
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
-                  'taxa_count', 'experts']
+                  'taxa_count', 'unvalidated_count', 'validated_count',
+                  'experts', 'children']

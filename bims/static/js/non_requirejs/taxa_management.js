@@ -268,7 +268,7 @@ $removeAllBtn.click((event) => {
         _element = _element.parent();
         _currentTry += 1;
     }
-    currentRemoveModuleName = _element.find('.taxon-group-title').html().trim();
+    currentRemoveModuleName = _element.find('.taxon-group-name').html().trim();
     $removeModuleName.val('');
     $('#remove-module-btn').attr('data-module-id', _element.data('id'));
     $('#removeModuleModal').modal({
@@ -305,19 +305,39 @@ removeExtraAttribute = (event) => {
     $(event.target).parent().remove();
 }
 
-function findExpertsByTaxonGroupId(parentId) {
+function findExpertsByTaxonGroupId(parentId, taxonGroups) {
     let experts = [];
-    taxaGroups.forEach(item => {
+    taxonGroups.forEach(item => {
+        if (item.children.length > 0) {
+            experts = findExpertsByTaxonGroupId(parentId, item.children);
+        }
         if (item.id === parentId && item.experts.length > 0) {
-            experts = experts.concat(item.experts);
+            experts = item.experts;
+        }
+        if (experts.length > 0) {
+            return true;
         }
     });
     return experts;
 }
 
-function findGbifTaxonomyByTaxonGroupId(parentId) {
-    const item = taxaGroups.find(item => item.id === parentId && item.gbif_parent_species);
-    return item ? JSON.parse(item.gbif_parent_species) : null;
+function findGbifTaxonomyByTaxonGroupId(parentId, groups) {
+    let item = groups.find(item => item.id === parentId && item.gbif_parent_species);
+    if (item) {
+        item = JSON.parse(item.gbif_parent_species)
+    }
+    if (!item) {
+        for (let i = 0; i < groups.length; i++) {
+            let group = groups[i];
+            if (group.children.length > 0) {
+                item = findGbifTaxonomyByTaxonGroupId(parentId, group.children)
+            }
+            if (item) {
+                break;
+            }
+        }
+    }
+    return item ? item : null;
 }
 
 function addExpertsToSelect(experts) {
@@ -360,12 +380,14 @@ $updateLogoBtn.click((event) => {
     const _maxTries = 10;
     let _element = $(event.target);
     let _currentTry = 1
-    while (!_element.hasClass('ui-sortable-handle') && _currentTry < _maxTries) {
+    while (!_element.data('id') && _currentTry < _maxTries) {
         _element = _element.parent();
         _currentTry += 1;
     }
     const moduleId = _element.data('id');
-    const moduleName = _element.find('.taxon-group-title').html().trim();
+    $('#editModuleModal').data('module', moduleId);
+
+    const moduleName = _element.find('.taxon-group-name').html().trim();
     const extraAttributesContainer = $('#editModuleModal').find('.extra-attribute-field');
     let extraAttributes = _element.find('.taxon-group-title').data('extra-attributes');
     extraAttributesContainer.html('')
@@ -397,14 +419,14 @@ $updateLogoBtn.click((event) => {
     // Experts
     authorSelect.empty();
     authorSelect.val(null).trigger('change');
-    let experts = findExpertsByTaxonGroupId(moduleId);
+    let experts = findExpertsByTaxonGroupId(moduleId, taxaGroups);
     addExpertsToSelect(experts);
 
     // GBIF Species
     let taxaAutoComplete = $('#edit-module-taxa-autocomplete');
     taxaAutoComplete.empty();
     taxaAutoComplete.val(null).trigger('change');
-    let gbifSpecies = findGbifTaxonomyByTaxonGroupId(moduleId);
+    let gbifSpecies = findGbifTaxonomyByTaxonGroupId(moduleId, taxaGroups);
     if (gbifSpecies) {
         let option = new Option(`${gbifSpecies['canonical_name']} (${gbifSpecies['rank']})`, gbifSpecies.id, true, true);
         taxaAutoComplete.append(option).trigger('change');
@@ -415,7 +437,6 @@ $updateLogoBtn.click((event) => {
             }
         });
     }
-
     return false;
 });
 
@@ -893,7 +914,7 @@ $(document).ready(function () {
             data: function (params) {
                 return {
                     term: params.term,
-                    taxonGroupId: urlParams.get('selected')
+                    taxonGroupId: $('#editModuleModal').data('module')
                 }
             },
             processResults: function (data) {
