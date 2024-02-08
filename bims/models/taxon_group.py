@@ -64,7 +64,8 @@ class TaxonGroup(models.Model):
 
     taxonomies = models.ManyToManyField(
         'bims.Taxonomy',
-        blank=True
+        blank=True,
+        through='bims.TaxonGroupTaxonomy',
     )
 
     source_collection = models.CharField(

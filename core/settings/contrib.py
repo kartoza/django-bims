@@ -40,7 +40,8 @@ INSTALLED_APPS = (
     'colorfield',
     'polymorphic',
     'webpack_loader',
-    'ckeditor_uploader'
+    'ckeditor_uploader',
+    'django_admin_inline_paginator'
 ) + INSTALLED_APPS
 
 # Grapelli settings
