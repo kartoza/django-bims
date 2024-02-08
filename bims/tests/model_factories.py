@@ -48,7 +48,8 @@ from bims.models import (
     WaterTemperature,
     WaterTemperatureThreshold,
     UserBoundary,
-    HarvestSession
+    HarvestSession,
+    TaxonomyUpdateProposal
 )
 from sass.models import River
 
@@ -291,6 +292,17 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
             # A list of groups were passed in, use them
             for taxonomy in extracted:
                 self.taxonomies.add(taxonomy)
+
+
+class TaxonomyUpdateProposalF(TaxonomyF):
+    """
+    Taxonomy update proposal
+    """
+    class Meta:
+        model = TaxonomyUpdateProposal
+
+    taxon_group = factory.SubFactory(TaxonGroupF)
+    original_taxonomy = factory.SubFactory(TaxonomyF)
 
 
 @factory.django.mute_signals(signals.post_save)
