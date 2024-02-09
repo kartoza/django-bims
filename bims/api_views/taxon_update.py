@@ -71,3 +71,44 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                 'proposal_id': proposal.pk
             },
             status=status.HTTP_202_ACCEPTED)
+
+
+class ApproveTaxonProposal(UserPassesTestMixin, APIView):
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+        taxonomy_update_proposal = get_object_or_404(
+            TaxonomyUpdateProposal,
+            pk=self.kwargs.get('taxonomy_update_proposal_id')
+        )
+        if not taxonomy_update_proposal.taxon_group:
+            return Response({
+                'message': 'Missing taxon group'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        taxon_group = taxonomy_update_proposal.taxon_group
+
+        # Check parent taxon group, if exists, then only expert of
+        # parent taxon group can approve the changes
+        if taxon_group.parent:
+            return taxon_group.parent.experts.filter(
+                id=self.request.user.id
+            )
+
+        return taxon_group.experts.filter(
+            id=self.request.user.id
+        )
+
+    def put(self, request, taxonomy_update_proposal_id):
+        taxonomy_update_proposal = get_object_or_404(
+            TaxonomyUpdateProposal,
+            pk=self.kwargs.get('taxonomy_update_proposal_id')
+        )
+        taxonomy_update_proposal.approve()
+        return Response(
+            {
+                'message': 'Taxonomy update proposal approved successfully',
+                'proposal_id': taxonomy_update_proposal.pk
+            },
+            status=status.HTTP_202_ACCEPTED)
+

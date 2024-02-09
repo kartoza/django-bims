@@ -3,6 +3,7 @@ from django.test import TestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+from bims.models.taxonomy import Taxonomy
 from bims.tests.model_factories import (
     TaxonomyF,
     TaxonGroupF,
@@ -12,7 +13,7 @@ from bims.tests.model_factories import (
 User = get_user_model()
 
 
-class UpdateTaxonTest(TestCase):
+class ApproveTaxonProposalTest(TestCase):
     def setUp(self):
         self.expert_user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.normal_user = User.objects.create_user('normal_user',
@@ -32,77 +33,58 @@ class UpdateTaxonTest(TestCase):
             experts=(self.expert_user,)
         )
 
-    def test_expert_propose_update_taxon(self):
-        self.client.login(username='testuser', password='password')
-
-        url = reverse('update-taxon',
-                      kwargs={
-                          'taxon_id': self.taxonomy.pk,
-                          'taxon_group_id': self.taxon_group.pk
-                      })
-
-        data = {
-            'scientific_name': 'Updated Test Name',
-            'canonical_name': 'Updated Test Canonical Name',
-        }
-
-        response = self.client.put(url, data, content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-        self.assertTrue(TaxonomyUpdateProposal.objects.exists())
-
-        proposal = TaxonomyUpdateProposal.objects.first()
-        self.assertEqual(proposal.scientific_name, 'Updated Test Name')
-        self.assertEqual(proposal.canonical_name, 'Updated Test Canonical Name')
-        self.assertEqual(proposal.status, 'pending')
-        self.assertEqual(proposal.original_taxonomy, self.taxonomy)
-
-        self.client.logout()
-
-    def test_non_expert_propose_taxon_update(self):
-        self.client.login(username='normal_user', password='password')
-
-        url = reverse('update-taxon',
-                      kwargs={
-                          'taxon_id': self.taxonomy.pk,
-                          'taxon_group_id': self.taxon_group.pk
-                      })
-
-        response = self.client.put(url, {}, content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.client.logout()
-
-    def test_superuser_propose_taxon_update(self):
+    def test_superuser_approve_update_taxon(self):
         self.client.login(username='superuser', password='password')
-
-        url = reverse('update-taxon',
-                      kwargs={
-                          'taxon_id': self.taxonomy.pk,
-                          'taxon_group_id': self.taxon_group.pk
-                      })
-
-        response = self.client.put(url, {}, content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        self.client.logout()
-
-    def test_propose_taxon_update_in_pending(self):
-        TaxonomyUpdateProposalF.create(
+        taxonomy_update_proposal = TaxonomyUpdateProposalF.create(
+            scientific_name='Updated Test Name',
+            canonical_name='Updated Test Canonical Name',
             original_taxonomy=self.taxonomy,
-            taxon_group=self.taxon_group,
-            status='pending'
+            taxon_group=self.taxon_group
         )
-        self.client.login(username='superuser', password='password')
 
-        url = reverse('update-taxon',
+        url = reverse('approve-taxon-proposal',
                       kwargs={
-                          'taxon_id': self.taxonomy.pk,
-                          'taxon_group_id': self.taxon_group.pk
+                          'taxonomy_update_proposal_id': taxonomy_update_proposal.pk,
                       })
 
         response = self.client.put(url, {}, content_type='application/json')
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        updated_taxonomy = Taxonomy.objects.get(
+            id=self.taxonomy.id
+        )
+        self.assertEqual(updated_taxonomy.scientific_name, 'Updated Test Name')
+        self.assertEqual(updated_taxonomy.canonical_name, 'Updated Test Canonical Name')
+
+        self.client.logout()
+
+    def test_parent_expert_approve_update_taxon(self):
+        self.child_taxon_group = TaxonGroupF.create(
+            name='Test Group',
+            parent=self.taxon_group,
+            experts=(self.normal_user, )
+        )
+        taxonomy_update_proposal = TaxonomyUpdateProposalF.create(
+            scientific_name='Updated Test Name',
+            canonical_name='Updated Test Canonical Name',
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.child_taxon_group
+        )
+        self.client.login(username='testuser', password='password')
+        url = reverse('approve-taxon-proposal',
+                      kwargs={
+                          'taxonomy_update_proposal_id': taxonomy_update_proposal.pk,
+                      })
+
+        response = self.client.put(url, {}, content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        updated_taxonomy = Taxonomy.objects.get(
+            id=self.taxonomy.id
+        )
+        self.assertEqual(updated_taxonomy.scientific_name, 'Updated Test Name')
+        self.assertEqual(updated_taxonomy.canonical_name, 'Updated Test Canonical Name')
+
         self.client.logout()
