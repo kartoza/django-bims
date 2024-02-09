@@ -8,7 +8,8 @@ from rest_framework.views import APIView
 
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxonomy_update_proposal import (
-    TaxonomyUpdateProposal
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateReviewer
 )
 from bims.models.taxon_group import TaxonGroup
 
@@ -104,11 +105,10 @@ class ApproveTaxonProposal(UserPassesTestMixin, APIView):
             TaxonomyUpdateProposal,
             pk=self.kwargs.get('taxonomy_update_proposal_id')
         )
-        taxonomy_update_proposal.approve()
+        taxonomy_update_proposal.approve(self.request.user)
         return Response(
             {
                 'message': 'Taxonomy update proposal approved successfully',
                 'proposal_id': taxonomy_update_proposal.pk
             },
             status=status.HTTP_202_ACCEPTED)
-

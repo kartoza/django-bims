@@ -56,6 +56,12 @@ class ApproveTaxonProposalTest(TestCase):
         )
         self.assertEqual(updated_taxonomy.scientific_name, 'Updated Test Name')
         self.assertEqual(updated_taxonomy.canonical_name, 'Updated Test Canonical Name')
+        self.assertTrue(
+            TaxonomyUpdateProposal.objects.filter(
+                id=taxonomy_update_proposal.id,
+                reviewers__in=[self.superuser],
+            ).exists()
+        )
 
         self.client.logout()
 

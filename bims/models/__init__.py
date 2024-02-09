@@ -61,4 +61,7 @@ from bims.models.wetland_indicator_status import WetlandIndicatorStatus
 from bims.models.abundance_type import AbundanceType
 from bims.models.sampling_effort_measure import SamplingEffortMeasure
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
-from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+from bims.models.taxonomy_update_proposal import (
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateReviewer
+)
