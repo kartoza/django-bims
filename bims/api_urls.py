@@ -1,6 +1,6 @@
 from django.urls import re_path, path
 
-from bims.api_views.taxon_update import UpdateTaxon, ApproveTaxonProposal
+from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
 from bims.api_views.reference import DeleteRecordsByReferenceId
 # from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
@@ -257,9 +257,9 @@ urlpatterns = [
     re_path(r'^update-taxon/(?P<taxon_id>[0-9]+)/(?P<taxon_group_id>[0-9]+)/$',
         UpdateTaxon.as_view(),
         name='update-taxon'),
-    re_path(r'^approve-taxon/(?P<taxonomy_update_proposal_id>[0-9]+)/$',
-        ApproveTaxonProposal.as_view(),
-        name='approve-taxon-proposal'),
+    re_path(r'^review-taxon/(?P<taxonomy_update_proposal_id>[0-9]+)/$',
+        ReviewTaxonProposal.as_view(),
+        name='review-taxon-proposal'),
     re_path(r'^update-taxon-group-order/$',
         UpdateTaxonGroupOrder.as_view(),
         name='update-taxon-group-order'),

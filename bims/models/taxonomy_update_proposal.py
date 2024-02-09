@@ -42,30 +42,48 @@ class TaxonomyUpdateProposal(Taxonomy):
     class Meta:
         db_table = 'taxonomy_update_proposal'
 
+    def reject_data(self, reviewer: settings.AUTH_USER_MODEL, comments: str = ''):
+        if self.status == 'pending':
+            self.status = 'rejected'
+            TaxonomyUpdateReviewer.objects.update_or_create(
+                taxonomy_update_proposal=self,
+                reviewer=reviewer,
+                status='rejected',
+                comments=comments
+            )
+            self.save()
+
     def approve(self, reviewer: settings.AUTH_USER_MODEL):
         """
         Apply the proposed changes to the associated Taxonomy instance
         and update its status to 'approved'.
         """
         if self.status == 'pending':
-            TaxonomyUpdateReviewer.objects.create(
+            TaxonomyUpdateReviewer.objects.update_or_create(
                 taxonomy_update_proposal=self,
                 reviewer=reviewer,
                 status='approved'
             )
-            fields_to_update = [
-                'scientific_name',
-                'canonical_name',
-                'legacy_canonical_name',
-                'rank',
-                'taxonomic_status',
-                'parent']
-            for field in fields_to_update:
-                setattr(
-                    self.original_taxonomy, field, getattr(self, field))
-            self.original_taxonomy.save()
-            self.status = 'approved'
-            self.save()
+            top_level_taxon_group = self.taxon_group.get_top_level_parent()
+
+            # Only top level experts can approve data
+            if top_level_taxon_group.experts.filter(
+                id=reviewer.id
+            ).exists() or reviewer.is_superuser:
+                fields_to_update = [
+                    'scientific_name',
+                    'canonical_name',
+                    'legacy_canonical_name',
+                    'rank',
+                    'taxonomic_status',
+                    'parent']
+                for field in fields_to_update:
+                    setattr(
+                        self.original_taxonomy,
+                        field, getattr(self, field))
+                self.original_taxonomy.save()
+                self.status = 'approved'
+                self.save()
 
 
 class TaxonomyUpdateReviewer(models.Model):
