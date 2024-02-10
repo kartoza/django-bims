@@ -431,10 +431,14 @@ class CollectionSearch(object):
 
         rank = self.get_request_data('rank')
         bio = None
+        current_site_id = self.parameters.get(
+            'current_site_id',
+            Site.objects.get_current().id
+        )
+
         collection_records_by_site = collection_record_model.objects.filter(
-            source_site_id=self.parameters.get(
-                'current_site_id',
-                Site.objects.get_current().id)
+            Q(source_site_id=current_site_id) |
+            Q(additional_observation_sites=current_site_id)
         )
 
         if rank:
