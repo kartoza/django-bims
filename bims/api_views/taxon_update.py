@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import transaction
+from django.http import JsonResponse
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -61,8 +62,10 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                 original_taxonomy=taxon,
                 taxon_group=taxon_group,
                 status='pending',
-                scientific_name=data.get('scientific_name', taxon.scientific_name),
-                canonical_name=data.get('canonical_name', taxon.canonical_name)
+                scientific_name=data.get(
+                    'scientific_name', taxon.scientific_name),
+                canonical_name=data.get(
+                    'canonical_name', taxon.canonical_name)
             )
 
         return Response(
@@ -71,3 +74,77 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                 'proposal_id': proposal.pk
             },
             status=status.HTTP_202_ACCEPTED)
+
+
+class ReviewTaxonProposal(UserPassesTestMixin, APIView):
+    """
+    A view class for reviewing taxonomy update proposals, allowing for approval or rejection.
+    """
+
+    def test_func(self) -> bool:
+        """
+        Determines if the user has permission to review the taxonomy update proposal.
+        Superusers can review any proposal,
+        while other users must be experts of the taxon group.
+
+        Returns:
+            bool: True if the user has permission, False otherwise.
+        """
+        user = self.request.user
+        if user.is_superuser:
+            return True
+
+        proposal_id = self.kwargs.get('taxonomy_update_proposal_id')
+        proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
+
+        if not proposal.taxon_group:
+            return False
+
+        taxon_group = proposal.taxon_group
+        experts = taxon_group.get_all_experts()
+        return user in experts
+
+    def handle_proposal(self, request, proposal_id, action) -> JsonResponse:
+        """
+        Handles the approval or rejection of a taxonomy update
+        proposal based on the specified action.
+
+        Parameters:
+            request (HttpRequest): The request object.
+            proposal_id (int): The ID of the taxonomy update proposal.
+            action (str): The action to perform ('approve' or 'reject').
+
+        Returns:
+            JsonResponse: A response with the outcome message and HTTP status.
+        """
+        proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
+        if action == 'approve':
+            proposal.approve(request.user)
+            message = 'Taxonomy update proposal approved successfully'
+        else:
+            comments = request.data.get('comments', '')
+            proposal.reject_data(request.user, comments)
+            message = 'Taxonomy update proposal rejected successfully'
+        return JsonResponse(
+            {'message': message},
+            status=status.HTTP_202_ACCEPTED)
+
+    def put(self, request, taxonomy_update_proposal_id) -> JsonResponse:
+        """
+        Handles PUT requests to update the status of a taxonomy update proposal.
+
+        Parameters:
+            request (HttpRequest): The request object.
+            taxonomy_update_proposal_id (int): The ID of the taxonomy update proposal.
+
+        Returns:
+            JsonResponse: A response with the outcome message and HTTP status.
+        """
+        new_status = request.data.get('action')
+        if new_status not in ['approve', 'reject']:
+            return JsonResponse(
+                {'message': 'Invalid status'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        return self.handle_proposal(
+            request, taxonomy_update_proposal_id, new_status)

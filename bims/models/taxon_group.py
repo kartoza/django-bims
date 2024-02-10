@@ -138,6 +138,39 @@ class TaxonGroup(models.Model):
     def __str__(self):
         return f'{self.name} - {self.level}'
 
+    def get_top_level_parent(self):
+        """
+        Recursively finds the top-level parent of the current taxon group.
+
+        If the current taxon group is a top-level group (has no parent),
+        it returns itself.
+
+        :return: TaxonGroup: The top-level parent taxon group.
+        """
+        if not self.parent:
+            return self
+        else:
+            return self.parent.get_top_level_parent()
+
+    def get_all_experts(self) -> set:
+        """
+        Recursively collects all unique experts from the current
+        TaxonGroup and its entire ancestry.
+
+        :return: A set of unique expert objects associated with the
+            TaxonGroup and its ancestors.
+        """
+        all_experts = set()
+
+        def collect_experts(current_taxon_group):
+            all_experts.update(current_taxon_group.experts.all())
+
+            if current_taxon_group.parent:
+                collect_experts(current_taxon_group.parent)
+
+        collect_experts(self)
+        return all_experts
+
     @property
     def permission_name(self):
         return f'Can validate {self.name} - {self.level}'
