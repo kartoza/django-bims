@@ -9,8 +9,7 @@ from rest_framework.views import APIView
 
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxonomy_update_proposal import (
-    TaxonomyUpdateProposal,
-    TaxonomyUpdateReviewer
+    TaxonomyUpdateProposal
 )
 from bims.models.taxon_group import TaxonGroup
 

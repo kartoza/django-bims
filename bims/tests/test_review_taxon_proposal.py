@@ -2,7 +2,10 @@ from django.urls import reverse
 from django.test import TestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+from bims.models.taxonomy_update_proposal import (
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateReviewer
+)
 from bims.models.taxonomy import Taxonomy
 from bims.tests.model_factories import (
     TaxonomyF,
@@ -13,7 +16,7 @@ from bims.tests.model_factories import (
 User = get_user_model()
 
 
-class ApproveTaxonProposalTest(TestCase):
+class ReviewTaxonProposalTest(TestCase):
     def setUp(self):
         self.expert_user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.normal_user = User.objects.create_user('normal_user',
@@ -131,4 +134,34 @@ class ApproveTaxonProposalTest(TestCase):
         self.assertEqual(updated_taxonomy.scientific_name, 'Updated Test Name')
         self.assertEqual(updated_taxonomy.canonical_name, 'Updated Test Canonical Name')
 
+        self.client.logout()
+
+    def test_expert_reject_taxon(self):
+        taxonomy_update_proposal = TaxonomyUpdateProposalF.create(
+            scientific_name='Updated Test Name',
+            canonical_name='Updated Test Canonical Name',
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.taxon_group
+        )
+        self.client.login(username='testuser', password='password')
+        url = reverse('review-taxon-proposal',
+                      kwargs={
+                          'taxonomy_update_proposal_id': taxonomy_update_proposal.pk
+                      })
+
+        response = self.client.put(url, {
+            'action': 'reject',
+            'comments': 'test'
+        }, content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertTrue(TaxonomyUpdateProposal.objects.filter(
+            status='rejected',
+            id=taxonomy_update_proposal.id,
+        ).exists())
+        self.assertTrue(TaxonomyUpdateReviewer.objects.filter(
+            taxonomy_update_proposal=taxonomy_update_proposal,
+            reviewer__username='testuser',
+            comments='test'
+        ).exists())
         self.client.logout()
