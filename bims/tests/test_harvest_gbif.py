@@ -8,7 +8,8 @@ from urllib3.exceptions import ProtocolError
 from bims.models import Survey
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
-    TaxonomyF, BiologicalCollectionRecord
+    TaxonomyF, BiologicalCollectionRecord,
+    SiteF
 )
 from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
 
@@ -63,14 +64,16 @@ class TestHarvestGbif(TestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
     def test_harvest_gbif(self, mock_update_location_context):
-        status = import_gbif_occurrences(self.taxonomy)
+        site = SiteF.create()
+        status = import_gbif_occurrences(self.taxonomy, site_id=site.id)
         self.assertEqual(status, 'Finish')
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username='GBIF',
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
-                                              'Information Facility (GBIF)'
+                                              'Information Facility (GBIF)',
+                source_site_id=site.id
             ).count(), 5
         )
         self.assertTrue(
@@ -80,6 +83,18 @@ class TestHarvestGbif(TestCase):
                 validated=True
             ).exists()
         )
+        new_site = SiteF.create()
+        import_gbif_occurrences(self.taxonomy, site_id=new_site.id)
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                owner__username='GBIF',
+                taxonomy=self.taxonomy,
+                source_reference__source_name='Global Biodiversity '
+                                              'Information Facility (GBIF)',
+                additional_observation_sites=new_site.id
+            ).count(), 5
+        )
+
         mock_update_location_context.assert_called()
 
     @mock.patch('requests.get', mock.Mock(

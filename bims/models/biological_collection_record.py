@@ -5,6 +5,7 @@
 import json
 import uuid
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
@@ -180,6 +181,19 @@ class BiologicalCollectionRecord(AbstractValidation):
                   'collector values from GBIF and other third party sources',
         verbose_name='collector or observer',
     )
+
+    additional_observation_sites = models.ManyToManyField(
+        to=Site,
+        related_name='additional_observation_sites',
+        blank=True,
+        help_text="List of sites where this biological occurrence has also been observed. "
+                  "This attribute allows for recording multiple observation locations beyond "
+                  "the primary source site. For instance, if an occurrence is recorded at the "
+                  "main location 'FBIS' and is also observed at 'SanParks', "
+                  "this field facilitates linking the occurrence to 'SanParks' as "
+                  "an additional observation site."
+    )
+
     notes = models.TextField(
         blank=True,
         default='',
