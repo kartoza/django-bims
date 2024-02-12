@@ -61,9 +61,7 @@ class LocationTypeF(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LocationType
-        django_get_or_create = ('id', )
 
-    id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'Test location type %s' % n)
     description = u'Only for testing'
     allowed_geometry = 'POINT'
@@ -77,9 +75,7 @@ class LocationSiteF(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LocationSite
-        django_get_or_create = ('id', )
 
-    id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'Site name %s' % n)
     location_type = factory.SubFactory(LocationTypeF)
     geometry_point = Point(
@@ -519,3 +515,15 @@ class HarvestSessionF(factory.django.DjangoModelFactory):
         model = HarvestSession
 
     module_group = factory.SubFactory(TaxonGroupF)
+
+
+class SiteF(factory.django.DjangoModelFactory):
+    """
+    Django Site model factory
+    """
+    class Meta:
+        model = Site
+
+    name = factory.Sequence(lambda n: u'name %s' % n)
+    domain = factory.Sequence(lambda n: u'domain %s' % n)
+

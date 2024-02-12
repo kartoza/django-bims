@@ -136,7 +136,6 @@ def import_gbif_occurrences(
         source=database_record
     )
 
-
     for result in json_result['results']:
         # Prevent pulling FBIS data back down from GBIF
         if 'projectId' in result and result['projectId'].lower() == 'fbis':
@@ -302,7 +301,13 @@ def import_gbif_occurrences(
         collection_record.institution_id = institution_code
         collection_record.reference = reference
         collection_record.module_group = taxon_group
-        collection_record.source_site_id = site_id
+
+        if site_id:
+            if not collection_record.source_site:
+                collection_record.source_site_id = site_id
+            else:
+                collection_record.additional_observation_sites.add(site_id)
+
         if habitat:
             collection_record.collection_habitat = habitat.lower()
         if origin:
