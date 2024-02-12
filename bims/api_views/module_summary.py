@@ -46,7 +46,9 @@ class ModuleSummary(APIView):
         """
         summary = {}
         collections = BiologicalCollectionRecord.objects.filter(
-            module_group=taxon_group)
+            source_site=Site.objects.get_current(),
+            taxonomy__taxongrouptaxonomy__taxongroup=taxon_group
+        )
 
         # Check the chart data type and add corresponding summary data
         if taxon_group.chart_data == 'division':
@@ -164,25 +166,37 @@ class ModuleSummary(APIView):
         Returns:
             dict: A dictionary containing the calculated summary metrics.
         """
-        upload_counts = Survey.objects.exclude(
+        upload_counts = Survey.objects.filter(
+            source_site=Site.objects.get_current()
+        ).exclude(
             Q(owner__username__icontains='gbif') |
             Q(owner__username__icontains='admin') |
             Q(owner__username__icontains='map_vm')
         ).count()
 
+        current_site = Site.objects.get_current()
+
+        taxon_group_ids = list(TaxonGroup.objects.filter(
+            Q(site_id=current_site.id) |
+            Q(additional_sites=current_site)
+        ).values_list('id', flat=True))
+
         counts = (
             BiologicalCollectionRecord.objects.filter(
-                module_group__in=TaxonGroup.objects.filter(
-                    site_id=Site.objects.get_current().id
-                )
+                source_site=current_site,
+                taxonomy__taxongrouptaxonomy__taxongroup__in=taxon_group_ids
             ).aggregate(
                 total_occurrences=Count('id')),
-            Taxonomy.objects.all().aggregate(total_taxa=Count('id')),
+            Taxonomy.objects.filter(
+                taxongrouptaxonomy__taxongroup__id__in=taxon_group_ids
+            ).aggregate(total_taxa=Count('id')),
             get_user_model().objects.filter(
-                last_login__isnull=False
+                last_login__isnull=False,
+                bims_profile__signup_source_site=Site.objects.get_current()
             ).aggregate(total_users=Count('id')),
             {'total_uploads': upload_counts},
             DownloadRequest.objects.filter(
+                source_site=Site.objects.get_current(),
                 request_category__icontains='occurrence')
             .aggregate(total_downloads=Count('id'))
         )

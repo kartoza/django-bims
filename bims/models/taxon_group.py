@@ -98,6 +98,13 @@ class TaxonGroup(models.Model):
         help_text="The site this taxon group is associated with."
     )
 
+    additional_sites = models.ManyToManyField(
+        to=Site,
+        related_name='additional_sites',
+        blank=True,
+        help_text="A list of additional sites associated with this taxon group."
+    )
+
     level = models.CharField(
         help_text='Level of the taxon group',
         max_length=100,

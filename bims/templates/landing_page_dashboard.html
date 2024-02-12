@@ -165,6 +165,7 @@
     if (showModuleSummaries) {
         $.get('/api/module-summary').then(
             function (data) {
+                console.log(data);
                 $('.module-loading').hide();
                 const $container = $('.summary-data');
                 const $generalSummary = $('.general-summary');

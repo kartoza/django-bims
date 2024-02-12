@@ -3,6 +3,8 @@
 
 """
 from datetime import datetime
+
+from django.contrib.sites.models import Site
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -35,6 +37,12 @@ class DownloadRequestPurpose(models.Model):
     order = models.IntegerField(
         null=False,
         blank=False
+    )
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     def __str__(self):
@@ -136,6 +144,12 @@ class DownloadRequest(models.Model):
     )
     progress = models.CharField(
         max_length=255,
+        null=True,
+        blank=True
+    )
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
