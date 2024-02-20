@@ -2,14 +2,13 @@
 """
 core.settings.base
 """
-# Django settings for projecta project.
+# Django settings for bims project.
 
 from .utils import absolute_path  # noqa
 
 ADMINS = (
     ('Dimas Ciputra', 'dimas@kartoza.com'),
     ('Tim Sutton', 'tim@kartoza.com'),
-    ('Christian Christellis', 'christian@kartoza.com'),
 )
 
 MANAGERS = ADMINS

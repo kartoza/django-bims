@@ -6,6 +6,7 @@ import ast
 from datetime import datetime
 
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.db.models import Case, When
 
@@ -307,7 +308,8 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                 uploader=request.user,
                 process_file=water_file,
                 uploaded_at=datetime.now(),
-                category=CATEGORY
+                category=CATEGORY,
+                source_site=Site.objects.get_current()
             )
 
             return JsonResponse({

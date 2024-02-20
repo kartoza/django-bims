@@ -63,6 +63,7 @@ class OccurrenceProcessor(object):
 
     site_ids = []
     module_group = None
+    source_site = None
     # Whether the script should also fetch location context after ingesting
     # collection data
     fetch_location_context = True
@@ -842,6 +843,13 @@ class OccurrenceProcessor(object):
         record.additional_data = json.dumps(row)
         record.validated = True
 
+        # -- Assigning source site
+        if not record.source_site and self.source_site:
+            record.source_site = self.source_site
+        elif record.source_site and self.source_site:
+            record.additional_observation_sites.add(
+                self.source_site.id)
+
         record.save()
 
         if not str(record.site.id) in self.site_ids:
@@ -863,6 +871,7 @@ class OccurrencesCSVUpload(DataCSVUpload, OccurrenceProcessor):
 
     def process_row(self, row):
         self.module_group = self.upload_session.module_group
+        self.source_site = self.upload_session.source_site
         self.process_data(row)
 
     def handle_error(self, row, message):
