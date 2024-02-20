@@ -40,6 +40,16 @@
             <h3>Upload Layer</h3>
             <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
             </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.extra_tags == 'layer_upload' %}
+                        <div class="alert alert-{% if 'success' in message.tags %}success{% else %}danger{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
             <div class="modal-body">
             <form action="{{ request.path }}" method="post" id="gbif-harvest-form" novalidate enctype="multipart/form-data">
                 {% csrf_token %}
@@ -55,7 +65,7 @@
                             <b>Layer Name</b>
                         </label>
                         <div class="col-sm-10">
-                            <input class="form-control" type="text"/>
+                            <input name="name" class="form-control" type="text"/>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -64,7 +74,7 @@
                             <b>Type</b>
                         </label>
                         <div class="col-sm-10">
-                            <select name="upload-type" class="form-control">
+                            <select name="boundary_type_name" class="form-control">
                                 <option value="boundary">Boundary</option>
                             </select>
                         </div>
@@ -75,12 +85,12 @@
                             <b>File</b>
                         </label>
                         <div class="col-sm-10">
-                            <input class="form-control" type="file"/>
+                            <input class="form-control" type="file" name="geojson_file" accept="application/geo+json,application/json"/>
                         </div>
                     </div>
                     <div class="help-block-space"></div>
 
-                    <button class="btn btn-primary" type="submit" disabled id="harvesting-btn">Submit</button>
+                    <button class="btn btn-primary" type="submit" id="harvesting-btn">Submit</button>
 
 
                     {% endif %}
@@ -173,118 +183,6 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script type="text/javascript">
-
-        const updateUrl = "/api/harvest-status/";
-        const harvestSessionInProgress = {% if upload_session %}true{% else %}false{% endif %};
-        const harvestSessionId = {% if upload_session %}{{ upload_session.id }}{% else %}0{% endif %};
-        let currentSessionId = 0;
-
-        const updateProgress = (id, $elm) => {
-            setTimeout(function () {
-                $.get(updateUrl + id).then(
-                    (response) => {
-                        if (!response['finished']) {
-                            let currentProgress = response['status'];
-                            $elm.find('.progress-text').html(currentProgress);
-                            let logContainer = $('#log-container');
-                            logContainer.html(response['log'])
-                            if(logContainer.length) {
-                                logContainer.scrollTop(logContainer[0].scrollHeight - logContainer.height());
-                            }
-                            updateProgress(id, $elm);
-                        } else {
-                            location.reload();
-                        }
-                    }
-                )
-            }, 1000);
-        }
-
-        $(function () {
-            let map = new ol.Map({
-                target: 'boundary-map',
-                layers: [
-                    new ol.layer.Tile({
-                        source: new ol.source.OSM()
-                    })
-                ],
-                view: new ol.View({
-                    center: ol.proj.fromLonLat([0, 0]),
-                    zoom: 2
-                })
-            });
-            function updateMapForBoundaries(boundaryIds) {
-                $.ajax({
-                    url: `/api/boundary/geojson?ids=${JSON.stringify(boundaryIds)}`, // Updated to use the new API
-                    method: 'GET',
-                    success: function(data) {
-                        var features = new ol.format.GeoJSON().readFeatures(data, {
-                            dataProjection: 'EPSG:4326',
-                            featureProjection: 'EPSG:3857'
-                        });
-
-                        // Clear existing layers except for base OSM layer
-                        map.getLayers().getArray().slice(1).forEach(layer => map.removeLayer(layer));
-
-                        // Create and add new vector layer with the boundaries
-                        var vectorSource = new ol.source.Vector({
-                            features: features
-                        });
-                        var vectorLayer = new ol.layer.Vector({
-                            source: vectorSource
-                        });
-                        map.addLayer(vectorLayer);
-
-                        // Fit view to the combined extents of the boundaries
-                        map.getView().fit(vectorSource.getExtent(), {
-                            padding: [50, 50, 50, 50], // Adjust view padding as needed
-                            duration: 1000 // Animation duration
-                        });
-                    },
-                    error: function(error) {
-                        console.error('Error fetching boundary data:', error);
-                    }
-                });
-            }
-
-            // Handle boundary select change
-            $('#boundary').change(function() {
-                let selectedBoundaryId = $(this).val();
-                let taxonGroupId = $('#taxon-group').val();
-                if (selectedBoundaryId) {
-                    updateMapForBoundaries([selectedBoundaryId]);
-                }
-                console.log(taxonGroupId, selectedBoundaryId)
-                if (taxonGroupId && selectedBoundaryId) {
-                    $('#harvesting-btn').attr('disabled', false);
-                }
-            });
-            $('#taxon-group').change(function () {
-                let taxonGroupId = $(this).val();
-                let selectedBoundaryId = $('#boundary').val();
-                if (taxonGroupId && selectedBoundaryId) {
-                    $('#harvesting-btn').attr('disabled', false);
-                }
-            })
-            let textarea = document.getElementById('log-container');
-            if (textarea) {
-                textarea.scrollTop = textarea.scrollHeight;
-            }
-            if (harvestSessionInProgress) {
-                updateProgress(harvestSessionId, $('.upload-progress-container'));
-            }
-
-            $('#cancel-session').click(function () {
-                let $form = $("#gbif-harvest-form");
-                $form.append(`<input type="hidden" name="cancel" value="True"/>`);
-                $form.append(`<input type="hidden" name="canceled_session_id" value="${currentSessionId}"/>`);
-                $form.submit();
-            });
-            $('#cancelModal').on('shown.bs.modal', function (event) {
-                 let triggerElement = $(event.relatedTarget);
-                 currentSessionId = triggerElement.data('id');
-            });
-        });
 
     </script>
 

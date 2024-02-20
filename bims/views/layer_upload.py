@@ -1,13 +1,15 @@
 import json
 
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.views.generic import TemplateView
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, Http404
 
 from bims.models.boundary import Boundary, BoundaryType
 
 
-class LayerUploadView(TemplateView):
+class LayerUploadView(LoginRequiredMixin, TemplateView):
     template_name = 'upload_layer.html'
 
     def post(self, request, *args, **kwargs):
@@ -16,9 +18,7 @@ class LayerUploadView(TemplateView):
         boundary_type_name = request.POST.get('boundary_type_name', '')
 
         if not geojson_file or not boundary_type_name:
-            return JsonResponse({
-                'error': 'No file uploaded'
-            }, status=400)
+            raise Http404()
 
         try:
             geojson_data = json.load(geojson_file)
@@ -41,15 +41,14 @@ class LayerUploadView(TemplateView):
                 centroid=centroid
             )
             boundary.save()
-
-            return JsonResponse(
-                {'message': 'Layer successfully uploaded and saved.'},
-                status=201)
+            messages.success(self.request,
+                             'Layer successfully uploaded and saved.',
+                             extra_tags='layer_upload')
         except ValueError as e:
-            return JsonResponse(
-                {'error': f'Invalid GeoJSON geometry: {str(e)}'},
-                status=400)
+            messages.error(self.request, f'Invalid GeoJSON geometry: {str(e)}',
+                           extra_tags='layer_upload')
         except Exception as e:
-            return JsonResponse(
-                {'error': f'An unexpected error occurred: {str(e)}'},
-                status=500)
+            messages.error(self.request, f'An unexpected error occurred: {str(e)}',
+                           extra_tags='layer_upload')
+
+        return HttpResponseRedirect(request.path_info)
