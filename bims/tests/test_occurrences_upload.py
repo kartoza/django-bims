@@ -2,6 +2,7 @@ import os
 import mock
 import json
 
+from django.contrib.sites.models import Site
 from django.db.models import Q
 from django.test import TestCase, override_settings
 from django.core.files import File
@@ -13,7 +14,7 @@ from bims.tests.model_factories import (
     UserF,
     UploadSessionF,
     TaxonomyF,
-    TaxonGroupF, BiologicalCollectionRecordF,
+    TaxonGroupF, BiologicalCollectionRecordF, SiteF,
 )
 from bims.models import UploadSession, BiologicalCollectionRecord
 from bims.scripts.occurrences_upload import (
@@ -186,13 +187,16 @@ class TestCollectionUpload(TestCase):
             uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9'
         ).exists())
 
+        current_site = SiteF.create()
+
         with open(os.path.join(
             test_data_directory, 'csv_upload_test.csv'
         ), 'rb') as file:
             upload_session = UploadSessionF.create(
                 uploader=self.owner,
                 process_file=File(file),
-                module_group=taxon_group
+                module_group=taxon_group,
+                source_site=current_site
             )
 
         saved_instance = UploadSession.objects.get(pk=upload_session.pk)
@@ -213,6 +217,11 @@ class TestCollectionUpload(TestCase):
             Q(uuid='5a08bfe1-0e9b-4e0e-bf30-5b50156d35a9') |
             Q(uuid='5a08bfe10e9b4e0ebf305b50156d35a9')
         ).count(), 1)
+        self.assertTrue(
+            bio.first().source_site, current_site
+        )
+
+        new_site = SiteF.create()
 
         with open(os.path.join(
                 test_data_directory, 'csv_upload_test_2.csv'
@@ -220,7 +229,8 @@ class TestCollectionUpload(TestCase):
             upload_session_2 = UploadSessionF.create(
                 uploader=self.owner,
                 process_file=File(file),
-                module_group=taxon_group
+                module_group=taxon_group,
+                source_site=new_site
             )
 
         saved_instance = UploadSession.objects.get(pk=upload_session_2.pk)
@@ -237,4 +247,13 @@ class TestCollectionUpload(TestCase):
         )
         self.assertEqual(bio.count(), 1)
         self.assertEqual(bio.first().site.legacy_river_name, 'User River Name 2')
+        self.assertNotEqual(
+            bio.first().source_site,
+            new_site
+        )
+        self.assertTrue(
+            bio.first().additional_observation_sites.filter(
+                id=new_site.id
+            ).exists()
+        )
 
