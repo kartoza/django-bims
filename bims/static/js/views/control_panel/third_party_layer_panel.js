@@ -9,7 +9,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         miniSASSSelected: false,
         inWARDSelected: false,
         fetchingInWARDSData: false,
+        fetchingMiniSASS: false,
         inWARDSStationsUrl: "/bims_proxy/https://inwards.award.org.za/app_json/wq_stations.php",
+        // miniSASSUrl: "/bims_proxy/https://minisass.org/monitor/observations/",
+        miniSASSUrl: "/static/response.json",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
@@ -39,6 +42,22 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 image: image
             });
         },
+        miniSASSStyleFunction: function (feature) {
+            let properties = feature.getProperties();
+            let color = 'gray';
+            if (properties['color']) {
+                color = properties['color'];
+            } else {
+                color = '#1dc6c0';
+            }
+            let image = new ol.style.Circle({
+                radius: 5,
+                fill: new ol.style.Fill({color: color})
+            });
+            return new ol.style.Style({
+                image: image
+            });
+        },
         addInWARDSLayer: function () {
             this.inWARDSLayer = new ol.layer.Vector({
                 source: null,
@@ -48,40 +67,60 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             this.map.addLayer(this.inWARDSLayer);
         },
         addMiniSASSLayer: function () {
-            let options = {
-                url: '/bims_proxy/http://minisass.org/geoserver/wms',
-                params: {
-                    name: 'MiniSASS',
-                    layers: 'miniSASS:minisass_observations',
-                    format: 'image/png',
-                    getFeatureFormat: 'text/html'
-                }
-            };
-            this.miniSASSLayer = new ol.layer.Tile({
-                source: new ol.source.TileWMS(options)
+            this.miniSASSLayer = new ol.layer.Vector({
+                source: null,
+                style: this.miniSASSStyleFunction
             });
             this.miniSASSLayer.setVisible(false);
             this.map.addLayer(this.miniSASSLayer);
-            Shared.Dispatcher.trigger(
-                'layers:renderLegend',
-                options['params']['layers'],
-                options['params']['name'],
-                options['url'],
-                options['params']['layers'],
-                false
-            );
         },
         toggleMiniSASSLayer: function (e) {
+            let self = this;
             this.miniSASSSelected = $(e.target).is(":checked");
             if (this.miniSASSSelected) {
                 this.miniSASSLayer.setVisible(true);
                 // Move layer to top
                 this.map.removeLayer(this.miniSASSLayer);
                 this.map.getLayers().insertAt(this.map.getLayers().getLength(), this.miniSASSLayer);
-                let mapLegend = $('#map-legend');
-                mapLegend.find(`[data-name='${this.miniSASSLayer.getSource().getParams()['layers']}']`).show();
-                if (!mapLegend.is('visible')) {
-                    Shared.Dispatcher.trigger('map:showMapLegends');
+                // let mapLegend = $('#map-legend');
+                // mapLegend.find(`[data-name='${this.miniSASSLayer.getSource().getParams()['layers']}']`).show();
+                // if (!mapLegend.is('visible')) {
+                //     Shared.Dispatcher.trigger('map:showMapLegends');
+                // }
+                // Show fetching message
+                if (!this.fetchingMiniSASS) {
+                    let fetchingMessage = $('<span class="fetching" style="font-size: 10pt; font-style: italic"> (fetching)</span>');
+                    $(e.target).parent().find('.label').append(fetchingMessage);
+
+                    $.ajax({
+                        type: 'GET',
+                        url: this.miniSASSUrl,
+                        // headers: {
+                        //     "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzA4NDU5MjQwLCJpYXQiOjE3MDg0NTU2NDAsImp0aSI6ImM1MmM5OGNmZGE5YTQ2NTlhYTJjMmMxMTYzYjU4YjRhIiwidXNlcl9pZCI6MTA3OTR9.1cT8ikXaE2ktdk7tgE0yGJP6PhVTO20hfF9cT2Uuzxk"
+                        // },
+                        success: function (data) {
+                            let geojson = {
+                                "type": "FeatureCollection",
+                                "features": []
+                            }
+                            for(let observation of data){
+                                let coordinate = [parseFloat(observation.longitude), parseFloat(observation.latitude)];
+                                let properties = observation;
+                                delete properties.longitude;
+                                delete properties.latitude;
+                                let feature = {"type": "Feature", "geometry": {"type": "Point", "coordinates": coordinate}, "properties": properties}
+                                geojson.features.push(feature);
+                            }
+                            let source = new ol.source.Vector({
+                                features: (
+                                    new ol.format.GeoJSON({featureProjection: 'EPSG:3857'})
+                                ).readFeatures(geojson, {featureProjection: 'EPSG:3857'})
+                            });
+                            self.miniSASSLayer.setSource(source);
+                            $(e.target).parent().find('.fetching').remove();
+                        }
+                    })
+                    this.fetchingMiniSASS = true;
                 }
             } else {
                 this.miniSASSLayer.setVisible(false);
