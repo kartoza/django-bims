@@ -166,6 +166,7 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         extra_attributes = self.request.POST.getlist('extra_attribute', [])
         new_expert_ids = self.request.POST.getlist('taxon-group-experts')
         gbif_species = self.request.POST.get('gbif-species', None)
+        parent_taxon_id = self.request.POST.get('parent-taxon', None)
 
         if module_id:
             # Update existing module
@@ -203,6 +204,17 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
                     )
                 except TaxonExtraAttribute.MultipleObjectsReturned:
                     pass
+
+        if parent_taxon_id:
+            try:
+                parent_taxon_group = TaxonGroup.objects.get(
+                    id=parent_taxon_id
+                )
+                taxon_group.parent = parent_taxon_group
+            except TaxonGroup.DoesNotExist:
+                pass
+        else:
+            taxon_group.parent = None
 
         taxon_group.save()
 

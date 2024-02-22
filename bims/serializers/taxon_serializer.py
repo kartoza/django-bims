@@ -262,6 +262,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaxonGroup
         fields = ['id',
+                  'parent',
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',
