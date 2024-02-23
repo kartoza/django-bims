@@ -38,21 +38,15 @@ export const addNewTaxon = (() => {
                 headers: {"X-CSRFToken": csrfToken},
                 data: postData,
                 success: function (response) {
-                    $('#addNewTaxonModal').modal('toggle');
-                    loading.hide();
-                    $('#add-taxon-input').val('');
-                    getTaxaList(taxaListCurrentUrl);
+                    insertParam('validated', 'False', false, true);
                 }
             });
             return
         }
-
-        let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
         $('#addNewTaxonModal').modal('toggle');
         loading.hide();
-        showLoading();
         $.ajax({
-            url: addTaxaToTaxonGroupUrl,
+            url: '/api/add-taxa-to-taxon-group/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'POST',
             data: {
@@ -60,8 +54,7 @@ export const addNewTaxon = (() => {
                 'taxonGroupId': selectedTaxonGroup,
             },
             success: function (response) {
-                $taxonGroupCard.html(response['taxonomy_count']);
-                getTaxaList(taxaListCurrentUrl);
+                insertParam('validated', 'False', false, true);
             }
         });
     }
