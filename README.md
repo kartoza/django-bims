@@ -1,3 +1,6 @@
+![Staging Tag](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lgkgh/889dd6c34a68d9461b1fd8cdb56b8a21/raw/bims_multitenant_build-tag.json)
+![Staging Status](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lgkgh/889dd6c34a68d9461b1fd8cdb56b8a21/raw/bims_multitenant_build-status.json)
+
 ## Welcome
 
 Welcome to the Biodiversity Information Management System (BIMS) Source Code Repository
@@ -17,7 +20,7 @@ See a running instance at https://freshwaterbiodiversity.org/
 
 ## Project Activity
 
-|Test Badge| 
+|Test Badge|
 
 |Build Badge|
 
@@ -29,23 +32,23 @@ running on the host. HealthyRivers is a django app so it will help if you have
 some knowledge of running a django site.
 
     git clone git://github.com/kartoza/django-bims.git
-    
+
     make build
-    
+
     make permissions
-    
+
     make web
-    
+
     # Wait a few seconds for the DB to start before to do the next command
-    
+
     make migrate
-    
+
     make collectstatic
 
     # Finally we can rebuild our search indexes if needed
 
     make rebuildindex
-    
+
 
 So as to create your admin account:
 ```
@@ -82,7 +85,7 @@ Thank you to the individual contributors who have helped to build BIMS:
 * Fanevanjanahary: faneva@kartoza.com
 * Anita Hapsari: anita@kartoza.com
 
-.. |Test Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/test.yml/badge.svg 
+.. |Test Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/test.yml/badge.svg
 .. |Build Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/dockerimage.yml/badge.svg
 .. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
 .. _docker: http://docker.com
