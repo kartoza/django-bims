@@ -29,6 +29,28 @@ export const taxaSidebar = (() => {
         }
         return item ? item : null;
     }
+    function findSelectedParent(taxonGroups, childId) {
+        let result = null;
+
+        function search(items) {
+            for (let item of items) {
+                if (item.children && item.children.some(child => child.id === childId)) {
+                    result = { ...item };
+                    delete result.children;
+                    return true;
+                }
+                if (item.children && item.children.length > 0) {
+                    if (search(item.children)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        search(taxonGroups);
+        return result;
+    }
 
     function findExpertsByTaxonGroupId(parentId, taxonGroups) {
         let experts = [];
@@ -151,11 +173,27 @@ export const taxaSidebar = (() => {
             taxaAutoComplete.append(option).trigger('change');
             taxaAutoComplete.trigger({
                 type: 'select2:select',
-                params: {
-                    data: data
-                }
             });
         }
+
+        // Parent taxa group selection
+        const selectedParent = findSelectedParent(
+            taxaGroups, moduleId
+        )
+        const filteredTaxaGroups = taxaGroups.filter(
+            taxon => parseInt(taxon.id) !== parseInt(moduleId));
+        let selectHTML = $(
+            '<select class="form-control" name="parent-taxon" id="parent-taxon-select"></select>');
+        selectHTML.append($('<option>').val('').text('Select a Parent Taxon'));
+        filteredTaxaGroups.forEach(function(taxon) {
+            let option = $('<option>').val(taxon.id).text(taxon.name);
+            selectHTML.append(option);
+        });
+        if (selectedParent) {
+            selectHTML.val(selectedParent.id).change()
+        }
+        $('#parent-taxon-module-container').html(selectHTML);
+
         return false;
     }
 
