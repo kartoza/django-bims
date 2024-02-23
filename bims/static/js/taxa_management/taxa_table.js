@@ -300,17 +300,20 @@ export const taxaTable = (() => {
         let r = confirm("Are you sure you want to validate this taxon?");
         if (r === true) {
             $.ajax({
-                url: approveUrl,
+                url: approveUrl + id + '/' + selectedTaxonGroup + '/',
+                headers: {"X-CSRFToken": csrfToken},
+                type: 'PUT',
                 data: {
-                    'pk': id
+                    'action': 'approve'
                 },
                 success: function () {
                     alert('Taxon is successfully validated.');
                     location.reload()
                 },
-                error: function () {
+                error: function (e) {
                     alert('Something is wrong, please try again.');
-                    location.reload()
+                    console.log(e)
+                    // location.reload()
                 }
             })
         }

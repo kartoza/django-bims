@@ -20,7 +20,7 @@
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
         const rejectUrl = '{% url "reject-taxon" %}';
-        const approveUrl = '{% url "validate-taxon" %}';
+        const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
         const taxaGroups = {{ taxa_groups_json | safe }};
     </script>
