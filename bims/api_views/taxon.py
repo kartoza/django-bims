@@ -360,6 +360,7 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_group)
         taxon_list = Taxonomy.objects.filter(
             taxongroup__id__in=taxon_group_ids,
+            taxongrouptaxonomy__is_rejected=False,
         ).distinct().order_by('canonical_name')
 
         if parent_ids:
@@ -399,11 +400,11 @@ class TaxaList(LoginRequiredMixin, APIView):
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
                     taxon_list = taxon_list.exclude(
-                        taxongrouptaxonomy__is_validated=True
+                        taxongrouptaxonomy__is_validated=True,
                     )
                 else:
                     taxon_list = taxon_list.filter(
-                        taxongrouptaxonomy__is_validated=True
+                        taxongrouptaxonomy__is_validated=True,
                     )
             except ValueError:
                 pass

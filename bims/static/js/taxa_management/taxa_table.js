@@ -339,10 +339,12 @@ export const taxaTable = (() => {
         const id = modal.data('id');
         const rejectionMessage = modal.find('.rejection-message').val();
         $.ajax({
-            url: rejectUrl,
+            url: rejectUrl + id + '/' + selectedTaxonGroup + '/',
+            headers: {"X-CSRFToken": csrfToken},
+            type: 'PUT',
             data: {
-                'pk': id,
-                'rejection_message': rejectionMessage
+                'action': 'reject',
+                'comments': rejectionMessage
             },
             success: function () {
                 alert('Taxon is successfully rejected.');

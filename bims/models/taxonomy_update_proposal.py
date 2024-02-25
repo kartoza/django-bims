@@ -53,6 +53,13 @@ class TaxonomyUpdateProposal(Taxonomy):
                 comments=comments
             )
             self.save()
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=self.taxon_group,
+                taxonomy=self.original_taxonomy,
+            ).update(
+                is_validated=False,
+                is_rejected=True
+            )
 
     def approve(self, reviewer: settings.AUTH_USER_MODEL):
         """
