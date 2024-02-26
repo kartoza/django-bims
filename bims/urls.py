@@ -274,7 +274,8 @@ urlpatterns = [
         moderator_contacted,
         name='moderator_contacted'),
     path('ckeditor/', include('ckeditor_uploader.urls')),
-    path('upload-layer/', LayerUploadView.as_view(),
+    path('upload-layer/',
+         LayerUploadView.as_view(),
          name='layer-upload-view'),
 ]
 

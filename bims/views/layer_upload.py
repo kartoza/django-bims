@@ -2,7 +2,7 @@ import json
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
 
@@ -17,6 +17,13 @@ class LayerUploadView(LoginRequiredMixin, TemplateView):
         name = request.POST.get('name')
         boundary_type_name = request.POST.get('boundary_type_name', '')
 
+        if Boundary.objects.filter(name=name).exists():
+            message = (f"The layer name '{name}' is already in use. "
+                       f"Please choose a different name "
+                       "and try uploading again.")
+            messages.error(self.request, message, extra_tags='layer_upload')
+            return HttpResponseRedirect(request.path_info)
+
         if not geojson_file or not boundary_type_name:
             raise Http404()
 
@@ -27,7 +34,7 @@ class LayerUploadView(LoginRequiredMixin, TemplateView):
                     json.dumps(feature['geometry'])) for feature in geojson_data.get('features', [])
             ]
             multi_polygon = MultiPolygon(
-                [geom for geom in geometries if isinstance(geom, (MultiPolygon, GEOSGeometry))])
+                [geom for geom in geometries if isinstance(geom, (Polygon, GEOSGeometry))])
 
             centroid = multi_polygon.centroid if multi_polygon else None
             boundary_type, _ = BoundaryType.objects.get_or_create(
@@ -38,7 +45,8 @@ class LayerUploadView(LoginRequiredMixin, TemplateView):
                 name=name,
                 type=boundary_type,
                 geometry=multi_polygon,
-                centroid=centroid
+                centroid=centroid,
+                owner=self.request.user
             )
             boundary.save()
             messages.success(self.request,
