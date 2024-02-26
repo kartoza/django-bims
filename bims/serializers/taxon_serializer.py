@@ -1,11 +1,13 @@
 import json
 
 from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
 from rest_framework import serializers
 from bims.models import Taxonomy, BiologicalCollectionRecord
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.utils.gbif import get_vernacular_names
+from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -24,6 +26,17 @@ class TaxonSerializer(serializers.ModelSerializer):
     total_records = serializers.SerializerMethodField()
     accepted_taxonomy_name = serializers.SerializerMethodField()
     tag_list = serializers.SerializerMethodField()
+    validated = serializers.SerializerMethodField()
+
+    def get_validated(self, obj: Taxonomy):
+        taxon_group_id = self.context.get('taxon_group_id', None)
+        if taxon_group_id:
+            return TaxonGroupTaxonomy.objects.filter(
+                taxongroup=taxon_group_id,
+                taxonomy=obj,
+                is_validated=True
+            ).exists()
+        return obj.validated
 
     def get_accepted_taxonomy_name(self, obj):
         if obj.accepted_taxonomy:
@@ -32,12 +45,13 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_total_records(self, obj):
         return BiologicalCollectionRecord.objects.filter(
-            taxonomy=obj
+            taxonomy=obj,
+            source_site=Site.objects.get_current()
         ).count()
 
     def get_common_name(self, obj):
-
-        vernacular_names = list(obj.vernacular_names.filter(language='eng').values_list('name', flat=True))
+        vernacular_names = list(
+            obj.vernacular_names.filter(language='eng').values_list('name', flat=True))
         if len(vernacular_names) == 0:
             return ''
         else:
@@ -61,17 +75,20 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_record_type(self, obj):
         return 'bio'
 
-    def get_taxon_group(self, obj):
-        taxon_module = BiologicalCollectionRecord.objects.filter(
-            taxonomy=obj.id,
-        ).values_list('module_group', flat=True)
-        if taxon_module.exists():
-            module = TaxonGroup.objects.filter(id__in=taxon_module)
-            if module.exists():
-                return {
-                    'logo': module[len(module) - 1].logo.name,
-                    'name': module[len(module) - 1].name
-                }
+    def get_taxon_group(self, obj: Taxonomy):
+        taxon_group_id = self.context.get('taxon_group_id', None)
+        if taxon_group_id:
+            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            return {
+                'logo': taxon_group.logo.name,
+                'name': taxon_group.name
+            }
+        taxon_module = obj.taxongroup_set.first()
+        if taxon_module:
+            return {
+                'logo': taxon_module.logo.name,
+                'name': taxon_module.name
+            }
         return {}
 
     def get_iucn_status_sensitive(self, obj):
@@ -226,10 +243,13 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         unique_taxonomy_ids = set()
 
         def collect_taxonomy_ids(taxon_group):
-            for taxonomy in taxon_group.taxonomies.filter(validated=False):
-                unique_taxonomy_ids.add(taxonomy.id)
-            for child in TaxonGroup.objects.filter(
-                    parent=taxon_group):
+            taxonomies = taxon_group.taxonomies.filter(
+                taxongrouptaxonomy__is_validated=False
+            ).values_list('id', flat=True)
+            unique_taxonomy_ids.update(taxonomies)
+            children = TaxonGroup.objects.filter(
+                parent=taxon_group)
+            for child in children:
                 collect_taxonomy_ids(child)
 
         collect_taxonomy_ids(obj)
@@ -239,10 +259,13 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         unique_taxonomy_ids = set()
 
         def collect_taxonomy_ids(taxon_group):
-            for taxonomy in taxon_group.taxonomies.filter(validated=True):
-                unique_taxonomy_ids.add(taxonomy.id)
-            for child in TaxonGroup.objects.filter(
-                    parent=taxon_group):
+            taxonomies = taxon_group.taxonomies.filter(
+                taxongrouptaxonomy__is_validated=True
+            ).values_list('id', flat=True)
+            unique_taxonomy_ids.update(taxonomies)
+            children = TaxonGroup.objects.filter(
+                parent=taxon_group)
+            for child in children:
                 collect_taxonomy_ids(child)
 
         collect_taxonomy_ids(obj)

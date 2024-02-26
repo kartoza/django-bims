@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from bims.models.taxonomy import Taxonomy
+from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
 
 class TaxonomyUpdateProposal(Taxonomy):
@@ -52,6 +53,13 @@ class TaxonomyUpdateProposal(Taxonomy):
                 comments=comments
             )
             self.save()
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=self.taxon_group,
+                taxonomy=self.original_taxonomy,
+            ).update(
+                is_validated=False,
+                is_rejected=True
+            )
 
     def approve(self, reviewer: settings.AUTH_USER_MODEL):
         """
@@ -84,6 +92,13 @@ class TaxonomyUpdateProposal(Taxonomy):
                 self.original_taxonomy.save()
                 self.status = 'approved'
                 self.save()
+
+                TaxonGroupTaxonomy.objects.filter(
+                    taxongroup=self.taxon_group,
+                    taxonomy=self.original_taxonomy,
+                ).update(
+                    is_validated=True
+                )
 
 
 class TaxonomyUpdateReviewer(models.Model):
