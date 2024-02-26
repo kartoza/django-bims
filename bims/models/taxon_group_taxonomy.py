@@ -17,6 +17,10 @@ class TaxonGroupTaxonomy(models.Model):
         default=False
     )
 
+    is_rejected = models.BooleanField(
+        default=False
+    )
+
     endemism = models.ForeignKey(
         'bims.Endemism',
         models.SET_NULL,

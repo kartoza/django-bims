@@ -19,8 +19,8 @@
         const sourceCollection = {{ source_collections | safe }};
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
-        const rejectUrl = '{% url "reject-taxon" %}';
-        const approveUrl = '{% url "validate-taxon" %}';
+        const rejectUrl = '/api/review-taxon/';
+        const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
         const taxaGroups = {{ taxa_groups_json | safe }};
     </script>
@@ -248,20 +248,27 @@
                 <div class="row-action" style="display: none">
                     <td>
                         <div class="btn-validated-container">
-                            <button class="btn btn-action btn-danger remove-taxon-from-group" data-toggle="tooltip" data-placement="bottom" title="Remove from group">
+                            <button class="btn btn-action btn-danger remove-taxon-from-group"
+                                    data-toggle="tooltip" data-placement="bottom" title="Remove from group">
                                 <i class="fa fa-chain-broken" aria-hidden="true"></i>
                             </button>
-                            <a href="" class="btn btn-action btn-warning edit-taxon" data-toggle="tooltip" data-placement="bottom" title="Edit">
+                            <a href="" class="btn btn-action btn-warning edit-taxon"
+                               data-toggle="tooltip" data-placement="bottom" title="Edit">
                                 <i class="fa fa-pencil" aria-hidden="true"></i>
                             </a>
-                            <button class="btn btn-action btn-info add-tag" data-toggle="tooltip" data-placement="bottom" title="Manage tags">
+                            <button class="btn btn-action btn-info add-tag"
+                                    data-toggle="tooltip" data-placement="bottom" title="Manage tags">
                                 <i class="fa fa-tags" aria-hidden="true"></i>
                             </button>
                         </div>
                         <div class="btn-unvalidated-container">
-                            <a href="" class="btn btn-action btn-warning validate-taxon" style="width: 100%; padding: 0; margin-top: 5px">Validate
+                            <a href=""
+                               class="btn btn-action btn-warning validate-taxon"
+                               style="width: 100%; padding: 0; margin-top: 5px">Approve
                             </a>
-                            <a href="" class="btn btn-action btn-warning reject-taxon" style="width: 100%; padding: 0;  margin-top: 5px">Reject
+                            <a href=""
+                               class="btn btn-action btn-warning reject-taxon"
+                               style="width: 100%; padding: 0;  margin-top: 5px">Reject
                             </a>
                         </div>
                     </td>
@@ -450,6 +457,12 @@
                             </div>
                         </div>
                         <div class="form-group gbif-species-container">
+                            <label for="recipient-name" class="col-form-label">Parent</label>
+                            <div id="parent-taxon-module-container">
+
+                            </div>
+                        </div>
+                        <div class="form-group gbif-species-container">
                             <label for="recipient-name" class="col-form-label">GBIF Taxonomy</label>
                             <div class="taxon-group-experts-container">
                                 <select name="gbif-species" class="form-control" id="edit-module-taxa-autocomplete">
@@ -571,6 +584,6 @@
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/helpers.js" %}"></script>
     <script src="{% static "js/non_requirejs/multi_author_select.js" %}"></script>
-    <script src="{% static "js/non_requirejs/taxa_management.js" %}"></script>
+    <script type="module" src="{% static "js/taxa_management/taxa_management.js" %}"></script>
     <script src="{% static "js/non_requirejs/tag_select.js" %}"></script>
 {% endblock %}

@@ -2,6 +2,7 @@
 import ast
 import logging
 
+from django.db import transaction
 from django.http import Http404
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,6 +22,7 @@ from bims.models import TaxonGroup, VernacularName
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
+from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 
 logger = logging.getLogger('bims')
 
@@ -290,6 +292,15 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.parent = family
                 taxonomy.save()
 
+        with transaction.atomic():
+            TaxonomyUpdateProposal.objects.get_or_create(
+                original_taxonomy=taxonomy,
+                taxon_group=taxon_group,
+                status='pending',
+                scientific_name=taxonomy.scientific_name,
+                canonical_name=taxonomy.canonical_name
+            )
+
         return Response(response)
 
 
@@ -348,7 +359,8 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_group_ids = TaxaList.get_descendant_group_ids(
             taxon_group)
         taxon_list = Taxonomy.objects.filter(
-            taxongroup__id__in=taxon_group_ids
+            taxongroup__id__in=taxon_group_ids,
+            taxongrouptaxonomy__is_rejected=False,
         ).distinct().order_by('canonical_name')
 
         if parent_ids:
@@ -388,11 +400,11 @@ class TaxaList(LoginRequiredMixin, APIView):
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
                     taxon_list = taxon_list.exclude(
-                        validated=True
+                        taxongrouptaxonomy__is_validated=True,
                     )
                 else:
                     taxon_list = taxon_list.filter(
-                        validated=True
+                        taxongrouptaxonomy__is_validated=True,
                     )
             except ValueError:
                 pass
@@ -475,7 +487,9 @@ class TaxaList(LoginRequiredMixin, APIView):
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(
-                TaxonSerializer(page, many=True).data)
+                TaxonSerializer(page, many=True, context={
+                    'taxon_group_id': request.GET.get('taxonGroup', None)
+                }).data)
         else:
             serializer = TaxonSerializer(taxon_list, many=True)
         return Response(serializer.data)

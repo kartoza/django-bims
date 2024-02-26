@@ -108,7 +108,8 @@ from bims.models import (
     WetlandIndicatorStatus,
     AbundanceType,
     SamplingEffortMeasure,
-    TaxonGroupTaxonomy
+    TaxonGroupTaxonomy,
+    TaxonomyUpdateProposal
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1929,4 +1930,7 @@ admin.site.register(
 admin.site.register(
     TaxonGroupTaxonomy,
     TaxonGroupTaxonomyAdmin
+)
+admin.site.register(
+    TaxonomyUpdateProposal
 )

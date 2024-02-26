@@ -4,6 +4,8 @@
 
 import ast
 from datetime import datetime
+
+from django.contrib.sites.models import Site
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
@@ -15,7 +17,10 @@ from bims.models.taxon_group import TaxonGroup
 
 
 class DataUploadView(
-    UserPassesTestMixin, LoginRequiredMixin, TemplateView):
+    UserPassesTestMixin,
+    LoginRequiredMixin,
+    TemplateView
+):
     """Generic data upload view."""
     template_name = ''
     upload_task = None
@@ -87,7 +92,8 @@ class DataUploadView(
             process_file=csv_file,
             uploaded_at=datetime.now(),
             module_group_id=taxon_group_id,
-            category=self.category
+            category=self.category,
+            source_site=Site.objects.get_current()
         )
         if self.upload_task:
             self.upload_task.delay(upload_session.id)

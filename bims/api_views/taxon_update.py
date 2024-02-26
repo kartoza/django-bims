@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -94,13 +94,24 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
         if user.is_superuser:
             return True
 
-        proposal_id = self.kwargs.get('taxonomy_update_proposal_id')
-        proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
+        proposal_id = self.kwargs.get('taxonomy_update_proposal_id', None)
+        if proposal_id:
+            proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
+            if not proposal.taxon_group:
+                return False
+            taxon_group = proposal.taxon_group
+        else:
+            taxon_id = self.kwargs.get('taxon_id')
+            taxon_group_id = self.kwargs.get('taxon_group_id')
+            proposal, _ = TaxonomyUpdateProposal.objects.update_or_create(
+                original_taxonomy_id=taxon_id,
+                taxon_group_id=taxon_group_id,
+                defaults={
+                    'status': 'pending'
+                }
+            )
+            taxon_group = proposal.taxon_group
 
-        if not proposal.taxon_group:
-            return False
-
-        taxon_group = proposal.taxon_group
         experts = taxon_group.get_all_experts()
         return user in experts
 
@@ -129,14 +140,47 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
             {'message': message},
             status=status.HTTP_202_ACCEPTED)
 
-    def put(self, request, taxonomy_update_proposal_id) -> JsonResponse:
+    def handle_taxon_review(self, request, taxon_id, taxon_group_id, action) -> JsonResponse:
+        """
+        Handles the approval or rejection of a taxonomy update
+        proposal based on the specified action.
+
+        Parameters:
+            request (HttpRequest): The request object.
+            taxon_id (int): The ID of the taxon
+            taxon_group_id (int,): The ID of the taxon group
+            action (str): The action to perform ('approve' or 'reject').
+
+        Returns:
+            JsonResponse: A response with the outcome message and HTTP status.
+        """
+        try:
+            proposal = TaxonomyUpdateProposal.objects.get(
+                original_taxonomy_id=taxon_id,
+                taxon_group_id=taxon_group_id
+            )
+        except TaxonomyUpdateProposal.DoesNotExist:
+            raise Http404()
+        if action == 'approve':
+            proposal.approve(request.user)
+            message = 'Taxonomy update proposal approved successfully'
+        else:
+            comments = request.data.get('comments', '')
+            proposal.reject_data(request.user, comments)
+            message = 'Taxonomy update proposal rejected successfully'
+        return JsonResponse(
+            {'message': message},
+            status=status.HTTP_202_ACCEPTED)
+
+    def put(self, request, taxonomy_update_proposal_id=None, taxon_id=None, taxon_group_id=None) -> JsonResponse:
         """
         Handles PUT requests to update the status of a taxonomy update proposal.
 
         Parameters:
             request (HttpRequest): The request object.
             taxonomy_update_proposal_id (int): The ID of the taxonomy update proposal.
-
+            taxon_id (int, optional): The ID of the taxon, if provided.
+            taxon_group_id (int, optional): The ID of the taxon group, if provided.
         Returns:
             JsonResponse: A response with the outcome message and HTTP status.
         """
@@ -146,5 +190,14 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
                 {'message': 'Invalid status'},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        return self.handle_proposal(
-            request, taxonomy_update_proposal_id, new_status)
+        if taxon_id is not None and taxon_group_id is not None:
+            # Process the review for the specific taxon and taxon group
+            # You might need to add a new method or logic here to handle this case
+            return self.handle_taxon_review(
+                request, taxon_id, taxon_group_id, new_status
+            )
+        else:
+            # Process the proposal review as before
+            return self.handle_proposal(
+                request, taxonomy_update_proposal_id, new_status
+            )

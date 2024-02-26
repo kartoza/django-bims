@@ -21,7 +21,7 @@ DATABASES = {
         'USER': os.environ.get('DATABASE_USERNAME'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
         'HOST': os.environ.get('DATABASE_HOST'),
-        'PORT': 5432,
+        'PORT': int(os.environ.get('DATABASE_PORT', 5432)),
         'TEST_NAME': 'unittests',
     }
 }
@@ -33,7 +33,7 @@ if os.getenv('DEFAULT_BACKEND_DATASTORE'):
         'USER': os.environ.get('GEONODE_GEODATABASE_USERNAME'),
         'PASSWORD': os.environ.get('GEONODE_GEODATABASE_PASSWORD'),
         'HOST': os.environ.get('GEONODE_GEODATABASE_HOST'),
-        'PORT': 5432
+        'PORT': int(os.environ.get('GEONODE_GEODATABASE_HOST', 5432))
     }
 
 # See fig.yml file for postfix container definition
