@@ -36,6 +36,12 @@ class Boundary(models.Model):
         null=True,
         blank=True
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+    )
 
     def __str__(self):
         return u'%s - %s' % (

@@ -93,6 +93,7 @@ from bims.views.download_taxa_template import download_taxa_template
 from bims.views.physico_chemical import PhysicoChemicalView, \
     PhysicoChemicalSiteView
 from bims.views.harvest_gbif_species import HarvestGbifSpeciesView
+from bims.views.layer_upload import LayerUploadView
 
 urlpatterns = [
     re_path(r'^$', landing_page_view, name='landing-page'),
@@ -273,6 +274,9 @@ urlpatterns = [
         moderator_contacted,
         name='moderator_contacted'),
     path('ckeditor/', include('ckeditor_uploader.urls')),
+    path('upload-layer/',
+         LayerUploadView.as_view(),
+         name='layer-upload-view'),
 ]
 
 # Api urls
