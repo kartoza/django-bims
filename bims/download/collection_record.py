@@ -1,8 +1,10 @@
 import logging
 import csv
 import os
+import pathlib
 import time
 import gc
+import pandas as pd
 
 from bims.models.download_request import DownloadRequest
 
@@ -67,8 +69,9 @@ def write_to_csv(headers: list,
 def download_collection_records(
         path_file,
         request,
+        format,
         send_email=False,
-        user_id=None
+        user_id=None,
 ):
     from django.contrib.auth import get_user_model
     from bims.serializers.bio_collection_serializer import (
@@ -191,6 +194,22 @@ def download_collection_records(
             round(time.time() - start, 2)
         )
     )
+
+    if format == 'excel':
+        dataframe = pd.read_csv(path_file)
+        path = pathlib.Path(path_file)
+        path_file = path.with_suffix('.xlsx')
+        logger.debug(
+            'excel file: {}'.format(path_file)
+        )
+
+        with pd.ExcelWriter(path_file, engine='openpyxl', mode='w') \
+                as writer:
+            dataframe.to_excel(
+                writer,
+                sheet_name='records',
+                index=False
+            )
 
     if send_email and user_id:
         UserModel = get_user_model()

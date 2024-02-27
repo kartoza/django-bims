@@ -38,7 +38,7 @@ def update_cluster(ids=None):
 
 @shared_task(name='bims.tasks.download_collection_record_task', queue='update')
 def download_collection_record_task(
-        path_file, request, send_email=False, user_id=None):
+        path_file, request, download_format, send_email=False, user_id=None):
     from bims.utils.celery import memcache_lock
     from bims.download.collection_record import download_collection_records
 
@@ -52,14 +52,14 @@ def download_collection_record_task(
         with memcache_lock(lock_id, oid) as acquired:
             if acquired:
                 return download_collection_records(
-                    path_file, request, send_email, user_id
+                    path_file, request, download_format, send_email, user_id
                 )
         logger.info(
             'Csv %s is already being processed by another worker',
             path_file)
     else:
         return download_collection_records(
-            path_file, request, send_email, user_id
+            path_file, request, download_format, send_email, user_id
         )
 
     logger.info(
