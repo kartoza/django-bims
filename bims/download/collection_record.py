@@ -199,6 +199,7 @@ def download_collection_records(
         dataframe = pd.read_csv(path_file)
         path = pathlib.Path(path_file)
         path_file = path.with_suffix('.xlsx')
+        os.remove(path)
         logger.debug(
             'excel file: {}'.format(path_file)
         )
