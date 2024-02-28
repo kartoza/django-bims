@@ -1,5 +1,10 @@
 function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true) {
   const $downloadPopup = $('#download-popup');
+  if(resource_type === 'CSV'){
+    $downloadPopup.find('#data-format').show()
+  } else {
+    $downloadPopup.find('#data-format').hide()
+  }
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
   $('#download-notes').val('');
@@ -15,6 +20,9 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
 
   $submitDownloadPopup.on('click', function () {
     $submitDownloadPopup.prop('disabled', true);
+    if (resource_type === 'CSV') {
+      resource_type = $('#download-format').val()
+    }
     let postData = {
       purpose: $downloadPurpose.val(),
       dashboard_url: window.location.href,
@@ -24,7 +32,7 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
       survey_id: survey_id,
       taxon_id: taxon_id,
       notes: $('#download-notes').val(),
-      auto_approved: auto_approved ? 'True' : 'False'
+      auto_approved: auto_approved ? 'True' : 'False',
     };
 
     $.ajax({

@@ -123,11 +123,14 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         'keyboard': false,
                         'backdrop': 'static'
                     });
+                    const format  = $('#download-format').val()
+
                     let url = self.csvDownloadsUrl;
                     if (!url.includes('?')) {
                         url += '?';
                     }
-                    url += '&downloadRequestId=' + downloadRequestId
+                    url += '&downloadRequestId=' + downloadRequestId + '&downloadFormat='+format
+                    console.log(url)
                     $.get({
                         url: url,
                         dataType: 'json',

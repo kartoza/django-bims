@@ -17,7 +17,7 @@ from bims.download.csv_download import (
 def validate_file_extension(value):
     import os
     ext = os.path.splitext(value.name)[1]
-    valid_extensions = ['.csv']
+    valid_extensions = ['.csv', '.xlsx', '.xls']
     if ext not in valid_extensions:
         raise ValidationError('File not supported!')
 
@@ -59,12 +59,13 @@ class DownloadRequest(models.Model):
     TABLE = 'TABLE'
     IMAGE = 'IMAGE'
     XLS = 'XLS'
+
     RESOURCE_TYPE_CHOICES = [
         (CSV, 'Csv'),
         (XLS, 'Xls'),
         (CHART, 'Chart'),
         (TABLE, 'Table'),
-        (IMAGE, 'Image')
+        (IMAGE, 'Image'),
     ]
 
     requester = models.ForeignKey(
