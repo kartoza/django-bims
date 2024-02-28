@@ -11,8 +11,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         fetchingInWARDSData: false,
         fetchingMiniSASS: false,
         inWARDSStationsUrl: "/bims_proxy/https://inwards.award.org.za/app_json/wq_stations.php",
-        // miniSASSUrl: "/bims_proxy/https://minisass.org/monitor/observations/",
-        miniSASSUrl: "/static/response.json",
+        miniSASSUrl: "/bims_proxy/https://minisass.sta.do.kartoza.com/monitor/observations/",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
@@ -82,11 +81,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 // Move layer to top
                 this.map.removeLayer(this.miniSASSLayer);
                 this.map.getLayers().insertAt(this.map.getLayers().getLength(), this.miniSASSLayer);
-                // let mapLegend = $('#map-legend');
-                // mapLegend.find(`[data-name='${this.miniSASSLayer.getSource().getParams()['layers']}']`).show();
-                // if (!mapLegend.is('visible')) {
-                //     Shared.Dispatcher.trigger('map:showMapLegends');
-                // }
+
                 // Show fetching message
                 if (!this.fetchingMiniSASS) {
                     let fetchingMessage = $('<span class="fetching" style="font-size: 10pt; font-style: italic"> (fetching)</span>');
@@ -95,9 +90,6 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                     $.ajax({
                         type: 'GET',
                         url: this.miniSASSUrl,
-                        // headers: {
-                        //     "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzA4NDU5MjQwLCJpYXQiOjE3MDg0NTU2NDAsImp0aSI6ImM1MmM5OGNmZGE5YTQ2NTlhYTJjMmMxMTYzYjU4YjRhIiwidXNlcl9pZCI6MTA3OTR9.1cT8ikXaE2ktdk7tgE0yGJP6PhVTO20hfF9cT2Uuzxk"
-                        // },
                         success: function (data) {
                             let geojson = {
                                 "type": "FeatureCollection",
@@ -124,7 +116,6 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 }
             } else {
                 this.miniSASSLayer.setVisible(false);
-                $('#map-legend').find(`[data-name='${this.miniSASSLayer.getSource().getParams()['layers']}']`).hide();
             }
         },
         toggleInward: function (e) {
