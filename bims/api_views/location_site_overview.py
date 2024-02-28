@@ -45,19 +45,26 @@ class LocationSiteOverviewData(object):
     PHYSICO_CHEMICAL_EXIST = 'physico_chemical_exist'
 
     search_filters = None
+    current_site = None
     is_sass_exist = False
 
     def biodiversity_data(self):
         if not self.search_filters:
             return {}
-        search = CollectionSearch(self.search_filters)
+
+        if not self.current_site:
+            self.current_site = Site.objects.get_current()
+
+        search = CollectionSearch(
+            self.search_filters,
+            current_site=self.current_site)
         collection_results = search.process_search()
 
         biodiversity_data = OrderedDict()
 
         groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            site_id=Site.objects.get_current().id
+            site=self.current_site
         ).order_by('display_order')
 
         for group in groups:
@@ -171,7 +178,8 @@ class MultiLocationSitesBackgroundOverview(BimsApiView):
 
         search_process, created = get_or_create_search_process(
             search_type=SITES_SUMMARY,
-            query=search_uri
+            query=search_uri,
+            site=Site.objects.get_current()
         )
         results = search_process.get_file_if_exits()
         if results:

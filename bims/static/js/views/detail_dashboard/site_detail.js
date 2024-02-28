@@ -754,8 +754,7 @@ define([
                     if (!url.includes('?')) {
                         url += '?';
                     }
-                    const format  = $('#download-format').val()
-                    url += '&downloadRequestId=' + downloadRequestId + '&downloadFormat=' + format
+                    url += '&downloadRequestId=' + downloadRequestId
                     $.get({
                         url: url,
                         dataType: 'json',

@@ -39,7 +39,6 @@ class CsvDownload(APIView):
         filename = self.get_hashed_name(request)
         folder = settings.PROCESSED_CSV_PATH
         download_request_id = self.request.GET.get('downloadRequestId', '')
-        download_format = self.request.GET.get('downloadFormat', '')
 
         if not os.path.exists(os.path.join(settings.MEDIA_ROOT, folder)):
             os.mkdir(os.path.join(settings.MEDIA_ROOT, folder))
@@ -85,7 +84,6 @@ class CsvDownload(APIView):
             download_collection_record_task.delay(
                 path_file,
                 self.request.GET,
-                download_format,
                 send_email=True,
                 user_id=self.request.user.id
             )

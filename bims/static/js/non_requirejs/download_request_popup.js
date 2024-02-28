@@ -2,6 +2,8 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
   const $downloadPopup = $('#download-popup');
   if(resource_type === 'CSV'){
     $downloadPopup.find('#data-format').show()
+  } else {
+    $downloadPopup.find('#data-format').hide()
   }
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
@@ -9,7 +11,6 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
 
   const $submitDownloadPopup = $downloadPopup.find('.submit-download');
   const $downloadPurpose = $('#download-purpose');
-  const $dataFormat = $('#download-format')
   const url = '/api/download-request/';
 
   let urlParams = new URLSearchParams(window.location.href.replace('/taxon', '/&taxon'))
@@ -19,10 +20,13 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
 
   $submitDownloadPopup.on('click', function () {
     $submitDownloadPopup.prop('disabled', true);
+    if (resource_type === 'CSV') {
+      resource_type = $('#download-format').val()
+    }
     let postData = {
       purpose: $downloadPurpose.val(),
       dashboard_url: window.location.href,
-      resource_type: $dataFormat.val(),
+      resource_type: resource_type,
       resource_name: resource_name,
       site_id: site_id,
       survey_id: survey_id,
