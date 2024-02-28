@@ -93,3 +93,5 @@ django-filter==23.5
 sentry-sdk==1.40.0
 
 django-admin-inline-paginator==0.4.0
+pandas==2.2.1
+openpyxl==3.1.2

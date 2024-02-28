@@ -10,8 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from bims.tasks.email_csv import send_csv_via_email
 from bims.download.csv_download import (
-    send_rejection_csv,
-    send_new_csv_notification
+    send_rejection_csv
 )
 
 
@@ -59,8 +58,10 @@ class DownloadRequest(models.Model):
     CHART = 'CHART'
     TABLE = 'TABLE'
     IMAGE = 'IMAGE'
+    XLS = 'XLS'
     RESOURCE_TYPE_CHOICES = [
         (CSV, 'Csv'),
+        (XLS, 'Xls'),
         (CHART, 'Chart'),
         (TABLE, 'Table'),
         (IMAGE, 'Image')
@@ -183,7 +184,8 @@ class DownloadRequest(models.Model):
 
         if (
             not self.requester or
-            self.resource_type != DownloadRequest.CSV
+            self.resource_type != DownloadRequest.CSV or
+            self.resource_type != DownloadRequest.XLS
         ):
             super(DownloadRequest, self).save(*args, **kwargs)
             return
