@@ -211,5 +211,7 @@ def invalidate_cache(sender, instance, **kwargs):
     if isinstance(instance, (CarouselHeader, Partner)):
         custom_theme = instance.customtheme_set.first()
         instance_site = custom_theme.site if custom_theme else None
+    elif isinstance(instance, CustomTheme):
+        instance_site = instance.site
     site_name = str(instance_site) if instance_site else ''
     cache.delete(THEME_CACHE_KEY + site_name)
