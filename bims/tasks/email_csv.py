@@ -9,7 +9,7 @@ from celery import shared_task
 def send_csv_via_email(
         user_id,
         csv_file,
-        file_name = 'OccurrenceData',
+        file_name='OccurrenceData',
         approved=False,
         download_request_id=None):
     """
@@ -31,6 +31,10 @@ def send_csv_via_email(
 
     user = get_user_model().objects.get(id=user_id)
 
+    download_request = None
+    extension = 'csv'
+    download_file_path = csv_file
+
     if not approved and download_request_id:
         try:
             download_request = DownloadRequest.objects.get(
@@ -43,6 +47,15 @@ def send_csv_via_email(
             pass
 
     email_template = 'csv_download/csv_created'
+    if download_request and download_request.resource_type == DownloadRequest.XLS:
+        import pandas as pd
+        df = pd.read_csv(csv_file, encoding='ISO-8859-1', on_bad_lines='warn')
+        excel_file_path = os.path.splitext(csv_file)[0] + '.xlsx'
+        df.to_excel(excel_file_path, index=False)
+        extension = 'xlsx'
+        download_file_path = excel_file_path
+        email_template = 'excel_download/excel_created'
+
     ctx = {
         'username': user.username,
         'current_site': Site.objects.get_current(),
@@ -66,7 +79,7 @@ def send_csv_via_email(
         os.mkdir(zip_folder)
     zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        zf.write(csv_file, '{}.csv'.format(file_name))
+        zf.write(download_file_path, f'{file_name}.{extension}')
         if preferences.SiteSetting.readme_download:
             zf.write(
                 preferences.SiteSetting.readme_download.path,

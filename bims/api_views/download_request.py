@@ -1,3 +1,4 @@
+from django.contrib.sites.models import Site
 from preferences import preferences
 import ast
 
@@ -88,7 +89,8 @@ class DownloadRequestApi(APIView):
             dashboard_url=dashboard_url,
             location_site=location_site,
             taxon=taxon,
-            notes=notes
+            notes=notes,
+            source_site=Site.objects.get_current()
         )
 
         if not approval_needed or auto_approved:

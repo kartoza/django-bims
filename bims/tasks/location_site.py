@@ -45,6 +45,7 @@ def location_sites_overview(
 
             overview_data = LocationSiteOverviewData()
             overview_data.search_filters = search_parameters
+            overview_data.current_site = search_process.site
             results = dict()
             results[LocationSiteOverviewData.BIODIVERSITY_DATA] = (
                 overview_data.biodiversity_data()

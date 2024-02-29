@@ -112,7 +112,9 @@ def download_collection_records(
     download_request = get_download_request(download_request_id)
 
     site_results = None
-    search = CollectionSearch(filters)
+    search = CollectionSearch(
+        filters,
+        current_site=download_request.source_site)
     collection_results = search.process_search()
     total_records = collection_results.count()
 

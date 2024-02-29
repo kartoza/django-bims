@@ -124,6 +124,7 @@ class CollectionSearch(object):
 
     def __init__(self, parameters, current_site=None):
         self.parameters = parameters
+        self.current_site = current_site
         site = current_site
         if not site:
             site = Site.objects.first()
@@ -433,7 +434,7 @@ class CollectionSearch(object):
         bio = None
         current_site_id = self.parameters.get(
             'current_site_id',
-            Site.objects.get_current().id
+            self.current_site.id if self.current_site else Site.objects.get_current().id
         )
 
         collection_records_by_site = collection_record_model.objects.filter(
