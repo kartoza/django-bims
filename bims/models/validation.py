@@ -4,9 +4,10 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.contrib.sites.models import Site
 from django.urls import reverse
+from bims.models.confidence_score import DataConfidenceScore
 
 
-class AbstractValidation(models.Model):
+class AbstractValidation(DataConfidenceScore):
     """Simple Abstract Validation model
     """
     EMAIL_REJECTION_SUBJECT = 'Your data has been rejected'
