@@ -894,15 +894,22 @@ class BaseMapLayerAdmin(OrderedModelAdmin):
 
 
 class NonBiodiversityLayerAdmin(OrderedModelAdmin):
+    filter_horizontal = ('additional_sites',)
     list_display = (
         'order',
         'name',
         'wms_url',
         'wms_layer_name',
         'source_site',
+        'display_additional_sites',
         'move_up_down_links',)
     list_filter = ('wms_url',)
     ordering = ('order',)
+
+    def display_additional_sites(self, obj):
+        """A method to display additional sites in list_display."""
+        return ", ".join([site.name for site in obj.additional_sites.all()])
+    display_additional_sites.short_description = "Additional Sites"
 
 
 # flatpage ckeditor integration
