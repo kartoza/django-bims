@@ -440,8 +440,9 @@ def find_species_by_area(
         class_key=None,
         phylum_key=None,
         kingdom_key=None,
-        max_limit=100,
-        harvest_session: HarvestSession = None
+        max_limit=100000,
+        harvest_session: HarvestSession = None,
+        validated=True
 ):
     """
     Searches for species within a specific area defined by a boundary, filtered by taxonomic keys.
@@ -452,11 +453,13 @@ def find_species_by_area(
     phylum_key (int, optional): The taxonomic phylum key for filtering species.
     kingdom_key (int, optional): The taxonomic kingdom key for filtering species.
     max_limit (int, optional): The maximum number of species to be fetched.
+    validated (bool, optional): Automatically validated the species
 
     Returns:
     list: A list of species found within the area, filtered by the provided taxonomic keys.
     """
     from bims.models.boundary import Boundary
+    from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
     from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 
     taxon_group = None
@@ -507,30 +510,36 @@ def find_species_by_area(
         logger.error(f"Error fetching boundary: {e}")
         return []
 
-    species_keys = []
+    species_keys = set()
     species_found = []
 
-    def fetch_occurrences_by_area(offset=0):
-        log_info(f"Fetching occurrences data, offset: {offset}")
-        try:
-            occurrences_data = search(
-                geometry=geometry_str,
-                offset=offset,
-                classKey=class_key,
-                phylumKey=phylum_key,
-                kingdomKey=kingdom_key
-            )
-        except Exception as e:
-            log_info(f"Error fetching occurrences data: {e}")
-            return
+    def fetch_occurrences_by_area():
+        offset = 0
+        while True:
+            if is_canceled():
+                break
+            log_info(f"Fetching occurrences data, offset: {offset}")
+            try:
+                occurrences_data = search(
+                    geometry=geometry_str,
+                    offset=offset,
+                    classKey=class_key,
+                    phylumKey=phylum_key,
+                    kingdomKey=kingdom_key
+                )
+            except Exception as e:
+                log_info(f"Error fetching occurrences data: {e}")
+                break
 
-        for occurrence in occurrences_data['results']:
-            taxon_key = occurrence.get(ACCEPTED_TAXON_KEY)
-            if taxon_key and taxon_key not in species_keys:
-                species_keys.append(taxon_key)
+            new_keys = {
+                occurrence.get(ACCEPTED_TAXON_KEY) for occurrence in occurrences_data['results']}
+            species_keys.update(new_keys)
 
-        if not occurrences_data['endOfRecords'] and offset < max_limit and not is_canceled():
-            fetch_occurrences_by_area(offset + occurrences_data['limit'])
+            log_info(f"Species found so far: {len(species_keys)}")
+            if occurrences_data['endOfRecords'] or len(species_keys) >= max_limit or is_canceled():
+                break
+
+            offset += occurrences_data['limit']
 
     fetch_occurrences_by_area()
 
@@ -552,7 +561,14 @@ def find_species_by_area(
                 ))
                 species_found.append(taxonomy)
                 if taxon_group:
-                    taxon_group.taxonomies.add(taxonomy)
+                    taxon_group_taxonomy, created = (
+                        TaxonGroupTaxonomy.objects.get_or_create(
+                            taxongroup=taxon_group,
+                            taxonomy=taxonomy,
+                        )
+                    )
+                    taxon_group_taxonomy.is_validated = validated
+                    taxon_group_taxonomy.save()
         except Exception as e:
             log_info(f"Error fetching data for species key {species_key}: {e}")
 
