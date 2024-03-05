@@ -401,10 +401,12 @@ class TaxaList(LoginRequiredMixin, APIView):
                 if not validated:
                     taxon_list = taxon_list.exclude(
                         taxongrouptaxonomy__is_validated=True,
+                        taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
                 else:
                     taxon_list = taxon_list.filter(
                         taxongrouptaxonomy__is_validated=True,
+                        taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
             except ValueError:
                 pass
