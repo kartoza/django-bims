@@ -440,7 +440,7 @@ def find_species_by_area(
         class_key=None,
         phylum_key=None,
         kingdom_key=None,
-        max_limit=100000,
+        max_limit=999999,
         harvest_session: HarvestSession = None,
         validated=True
 ):
@@ -536,7 +536,7 @@ def find_species_by_area(
             species_keys.update(new_keys)
 
             log_info(f"Species found so far: {len(species_keys)}")
-            if occurrences_data['endOfRecords'] or len(species_keys) >= max_limit or is_canceled():
+            if occurrences_data['endOfRecords'] or offset >= max_limit or is_canceled():
                 break
 
             offset += occurrences_data['limit']
