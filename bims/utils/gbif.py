@@ -1,10 +1,12 @@
 # coding: utf-8
+import json
 from typing import TextIO
 
 import requests
 import logging
 import urllib
 import simplejson
+from django.contrib.gis.geos import GEOSGeometry
 from requests.exceptions import HTTPError
 from pygbif import species
 from pygbif.occurrences import search
@@ -480,12 +482,24 @@ def find_species_by_area(
             ).canceled
         return False
 
+    def round_coordinates(coords):
+        if isinstance(coords[0], list):
+            return [round_coordinates(sub_coords) for sub_coords in coords]
+        else:
+            return [round(coord, 4) for coord in coords]
+
     # Fetch the most recent boundary and its geometry
+    geometry_str = ''
     try:
         boundary = Boundary.objects.get(id=boundary_id)
         geometry = boundary.geometry
         if not geometry:
             raise ValueError("No geometry found for the boundary.")
+        geojson = json.loads(geometry.geojson)
+        geojson['coordinates'] = round_coordinates(geojson['coordinates'])
+        geometry_rounded = GEOSGeometry(json.dumps(geojson))
+        geometry_str = str(geometry_rounded.ogr)
+
     except Boundary.DoesNotExist:
         logger.error(f"Boundary with ID {boundary_id} does not exist.")
         return []
@@ -500,7 +514,7 @@ def find_species_by_area(
         log_info(f"Fetching occurrences data, offset: {offset}")
         try:
             occurrences_data = search(
-                geometry=str(geometry.ogr),
+                geometry=geometry_str,
                 offset=offset,
                 classKey=class_key,
                 phylumKey=phylum_key,

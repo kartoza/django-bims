@@ -34,7 +34,7 @@ class HarvestGbifSpeciesView(
 
         ctx['boundaries'] = Boundary.objects.filter(
             geometry__isnull=False
-        )
+        ).order_by('-id')
         ctx['taxa_groups'] = TaxonGroup.objects.filter(
             category='SPECIES_MODULE',
             site_id=current_site.id
