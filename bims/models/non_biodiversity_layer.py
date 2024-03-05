@@ -88,8 +88,15 @@ class NonBiodiversityLayer(OrderedModel):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        verbose_name="Associated Site",
-        help_text="The site this record is associated with."
+        verbose_name="Source Site",
+        help_text="The site this record is first associated with."
+    )
+
+    additional_sites = models.ManyToManyField(
+        to=Site,
+        related_name='non_bio_layer_additional_sites',
+        blank=True,
+        help_text='Additional sites where this layer will be displayed.'
     )
 
     # noinspection PyClassicStyleClass

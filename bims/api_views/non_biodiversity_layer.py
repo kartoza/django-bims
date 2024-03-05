@@ -3,6 +3,7 @@ import csv
 import re
 
 from django.contrib.sites.models import Site
+from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,7 +23,8 @@ class NonBiodiversityLayerList(APIView):
         return Response(
             NonBiodiversityLayerSerializer(
                 NonBiodiversityLayer.objects.filter(
-                    source_site=Site.objects.get_current()
+                    Q(source_site=Site.objects.get_current()) |
+                    Q(additional_sites__in=[Site.objects.get_current().id])
                 ).order_by('order'),
                 many=True).data
         )
