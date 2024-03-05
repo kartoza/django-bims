@@ -33,8 +33,16 @@ class LayerUploadView(LoginRequiredMixin, TemplateView):
                 GEOSGeometry(
                     json.dumps(feature['geometry'])) for feature in geojson_data.get('features', [])
             ]
-            multi_polygon = MultiPolygon(
-                [geom for geom in geometries if isinstance(geom, (Polygon, GEOSGeometry))])
+            polygons = []
+            for geom in geometries:
+                if isinstance(geom, Polygon):
+                    polygons.append(geom)
+                elif isinstance(geom, MultiPolygon):
+                    for poly in geom:
+                        if isinstance(poly, Polygon):
+                            polygons.append(poly)
+
+            multi_polygon = MultiPolygon(polygons)
 
             centroid = multi_polygon.centroid if multi_polygon else None
             boundary_type, _ = BoundaryType.objects.get_or_create(
