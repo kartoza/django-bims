@@ -440,7 +440,7 @@ def find_species_by_area(
         class_key=None,
         phylum_key=None,
         kingdom_key=None,
-        max_limit=100,
+        max_limit=None,
         harvest_session: HarvestSession = None,
         validated=True
 ):

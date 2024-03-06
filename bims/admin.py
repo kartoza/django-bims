@@ -4,6 +4,7 @@ from datetime import timedelta
 from datetime import date
 import json
 
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django.http import HttpResponse
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
@@ -38,7 +39,6 @@ from geonode.people.admin import ProfileAdmin
 from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
-from ckeditor.widgets import CKEditorWidget
 from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from bims.models import (
@@ -915,7 +915,7 @@ class NonBiodiversityLayerAdmin(OrderedModelAdmin):
 # flatpage ckeditor integration
 class FlatPageCustomAdmin(FlatPageAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': CKEditorWidget}
+        models.TextField: {'widget': CKEditorUploadingWidget}
     }
 
 
