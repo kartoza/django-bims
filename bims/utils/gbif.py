@@ -440,7 +440,7 @@ def find_species_by_area(
         class_key=None,
         phylum_key=None,
         kingdom_key=None,
-        max_limit=None,
+        max_limit=100,
         harvest_session: HarvestSession = None,
         validated=True
 ):
@@ -460,8 +460,10 @@ def find_species_by_area(
     """
     from bims.models.boundary import Boundary
     from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+    from bims.models.taxon_group import TaxonGroup
     from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 
+    add_parent = True
     taxon_group = None
     log_file_path = None
 
@@ -490,6 +492,20 @@ def find_species_by_area(
             return [round_coordinates(sub_coords) for sub_coords in coords]
         else:
             return [round(coord, 4) for coord in coords]
+
+    def add_parent_to_group(taxon: Taxonomy, group: TaxonGroup):
+        if taxon.parent:
+            _taxon_group_taxonomy, _ = (
+                TaxonGroupTaxonomy.objects.get_or_create(
+                    taxongroup=group,
+                    taxonomy=taxon,
+                )
+            )
+            _taxon_group_taxonomy.is_validated = validated
+            _taxon_group_taxonomy.save()
+            add_parent_to_group(taxon.parent, group)
+        else:
+            return
 
     # Fetch the most recent boundary and its geometry
     geometry_str = ''
@@ -579,6 +595,11 @@ def find_species_by_area(
                     )
                     taxon_group_taxonomy.is_validated = validated
                     taxon_group_taxonomy.save()
+
+                    if add_parent:
+                        add_parent_to_group(
+                            taxonomy, taxon_group
+                        )
         except Exception as e:
             log_info(f"Error fetching data for species key {species_key}: {e}")
 
