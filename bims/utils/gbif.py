@@ -440,7 +440,7 @@ def find_species_by_area(
         class_key=None,
         phylum_key=None,
         kingdom_key=None,
-        max_limit=999999,
+        max_limit=None,
         harvest_session: HarvestSession = None,
         validated=True
 ):
@@ -518,7 +518,6 @@ def find_species_by_area(
         while True:
             if is_canceled():
                 break
-            log_info(f"Fetching occurrences data, offset: {offset}")
             try:
                 occurrences_data = search(
                     geometry=geometry_str,
@@ -535,8 +534,18 @@ def find_species_by_area(
                 occurrence.get(ACCEPTED_TAXON_KEY) for occurrence in occurrences_data['results']}
             species_keys.update(new_keys)
 
+            _max_limit = max_limit
+
+            if not _max_limit:
+                if 'count' in occurrences_data:
+                    _max_limit = occurrences_data['count']
+                else:
+                    _max_limit = 99999
+
+            log_info(f"Fetching occurrences data: {offset + occurrences_data['limit']}/{_max_limit}")
+
             log_info(f"Species found so far: {len(species_keys)}")
-            if occurrences_data['endOfRecords'] or offset >= max_limit or is_canceled():
+            if occurrences_data['endOfRecords'] or offset >= _max_limit or is_canceled():
                 break
 
             offset += occurrences_data['limit']
@@ -553,7 +562,8 @@ def find_species_by_area(
             taxonomy = fetch_all_species_from_gbif(
                 gbif_key=species_key,
                 fetch_children=False,
-                log_file_path=log_file_path
+                log_file_path=log_file_path,
+                fetch_vernacular_names=True
             )
             if taxonomy:
                 log_info("Species added/updated : {}".format(
