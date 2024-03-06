@@ -489,14 +489,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             let $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
 
-                if (siteCodeGeneratorMethod === 'fbis') {
-                    if (selected) {
-                        this.renderSitesLegend();
-                    } else {
-                        this.hideSitesLegend();
-                    }
-                    $legendElement = this.getLegendElement(layerName);
+                if (selected) {
+                    this.renderSitesLegend();
+                } else {
+                    this.hideSitesLegend();
                 }
+                $legendElement = this.getLegendElement(layerName);
                 if (reloadXHR) {
                     Shared.Dispatcher.trigger('map:reloadXHR');
                 }
