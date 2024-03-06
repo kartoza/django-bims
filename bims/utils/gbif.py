@@ -1,5 +1,6 @@
 # coding: utf-8
 import json
+import asyncio
 from typing import TextIO
 
 import requests
@@ -14,6 +15,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
 from bims.models.harvest_session import HarvestSession
+from bims.models.boundary import Boundary
 
 logger = logging.getLogger(__name__)
 
@@ -548,7 +550,41 @@ def find_species_by_area(
 
             new_keys = {
                 occurrence.get(ACCEPTED_TAXON_KEY) for occurrence in occurrences_data['results']}
+            new_species_keys = new_keys - species_keys
             species_keys.update(new_keys)
+
+            for species_key in new_species_keys:
+                if is_canceled():
+                    return species_found
+                try:
+                    log_info('Processing {}'.format(species_key))
+                    taxonomy = fetch_all_species_from_gbif(
+                        gbif_key=species_key,
+                        fetch_children=False,
+                        log_file_path=log_file_path,
+                        fetch_vernacular_names=True
+                    )
+                    if taxonomy:
+                        log_info("Species added/updated : {}".format(
+                            taxonomy.scientific_name
+                        ))
+                        species_found.append(taxonomy)
+                        if taxon_group:
+                            taxon_group_taxonomy, created = (
+                                TaxonGroupTaxonomy.objects.get_or_create(
+                                    taxongroup=taxon_group,
+                                    taxonomy=taxonomy,
+                                )
+                            )
+                            taxon_group_taxonomy.is_validated = validated
+                            taxon_group_taxonomy.save()
+
+                            if add_parent:
+                                add_parent_to_group(
+                                    taxonomy, taxon_group
+                                )
+                except Exception as e:
+                    log_info(f"Error fetching data for species key {species_key}: {e}")
 
             _max_limit = max_limit
 
@@ -570,37 +606,5 @@ def find_species_by_area(
 
     log_info(f"Species found: {len(species_keys)}")
 
-    for species_key in species_keys:
-        if is_canceled():
-            return species_found
-        try:
-            log_info('Processing {}'.format(species_key))
-            taxonomy = fetch_all_species_from_gbif(
-                gbif_key=species_key,
-                fetch_children=False,
-                log_file_path=log_file_path,
-                fetch_vernacular_names=True
-            )
-            if taxonomy:
-                log_info("Species added/updated : {}".format(
-                    taxonomy.scientific_name
-                ))
-                species_found.append(taxonomy)
-                if taxon_group:
-                    taxon_group_taxonomy, created = (
-                        TaxonGroupTaxonomy.objects.get_or_create(
-                            taxongroup=taxon_group,
-                            taxonomy=taxonomy,
-                        )
-                    )
-                    taxon_group_taxonomy.is_validated = validated
-                    taxon_group_taxonomy.save()
-
-                    if add_parent:
-                        add_parent_to_group(
-                            taxonomy, taxon_group
-                        )
-        except Exception as e:
-            log_info(f"Error fetching data for species key {species_key}: {e}")
 
     return species_found
