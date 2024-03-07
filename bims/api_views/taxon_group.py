@@ -2,12 +2,13 @@ import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.models import Site
 from django.http import Http404
-from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
-    TaxonExtraAttribute, TaxonomicGroupCategory
+    TaxonExtraAttribute, TaxonomicGroupCategory,
+    TaxonomyUpdateProposal
 )
 
 
@@ -66,10 +67,18 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
     except TaxonGroup.DoesNotExist:
         return
     for taxonomy in taxa:
+        if not taxon_group.taxonomies.filter(
+            id=taxonomy.id
+        ).exists():
+            with transaction.atomic():
+                TaxonomyUpdateProposal.objects.get_or_create(
+                    original_taxonomy=taxonomy,
+                    taxon_group=taxon_group,
+                    status='pending',
+                    scientific_name=taxonomy.scientific_name,
+                    canonical_name=taxonomy.canonical_name
+                )
         taxon_group.taxonomies.add(taxonomy)
-        BiologicalCollectionRecord.objects.filter(
-            taxonomy=taxonomy
-        ).update(module_group=taxon_group)
 
 
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):
