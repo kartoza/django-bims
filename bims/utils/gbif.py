@@ -7,7 +7,7 @@ import requests
 import logging
 import urllib
 import simplejson
-from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from requests.exceptions import HTTPError
 from pygbif import species
 from pygbif.occurrences import search
@@ -469,6 +469,9 @@ def find_species_by_area(
     taxon_group = None
     log_file_path = None
 
+    species_keys = set()
+    species_found = []
+
     if harvest_session:
         taxon_group = harvest_session.module_group
         log_file_path = (
@@ -509,36 +512,14 @@ def find_species_by_area(
         else:
             return
 
-    # Fetch the most recent boundary and its geometry
-    geometry_str = ''
-    try:
-        boundary = Boundary.objects.get(id=boundary_id)
-        geometry = boundary.geometry
-        if not geometry:
-            raise ValueError("No geometry found for the boundary.")
-        geojson = json.loads(geometry.geojson)
-        geojson['coordinates'] = round_coordinates(geojson['coordinates'])
-        geometry_rounded = GEOSGeometry(json.dumps(geojson))
-        geometry_str = str(geometry_rounded.ogr)
-
-    except Boundary.DoesNotExist:
-        logger.error(f"Boundary with ID {boundary_id} does not exist.")
-        return []
-    except Exception as e:
-        logger.error(f"Error fetching boundary: {e}")
-        return []
-
-    species_keys = set()
-    species_found = []
-
-    def fetch_occurrences_by_area():
+    def fetch_occurrences_by_area(geometry_string):
         offset = 0
         while True:
             if is_canceled():
                 break
             try:
                 occurrences_data = search(
-                    geometry=geometry_str,
+                    geometry=geometry_string,
                     offset=offset,
                     classKey=class_key,
                     phylumKey=phylum_key,
@@ -602,9 +583,37 @@ def find_species_by_area(
 
             offset += occurrences_data['limit']
 
-    fetch_occurrences_by_area()
+    try:
+        boundary = Boundary.objects.get(id=boundary_id)
+        geometry = boundary.geometry
+        extracted_polygons = []
+        if not geometry:
+            raise ValueError("No geometry found for the boundary.")
+
+        if isinstance(geometry, MultiPolygon):
+            for geom in geometry:
+                extracted_polygons.append(geom)
+        else:
+            extracted_polygons.append(geometry)
+
+        log_info('Found {} area'.format(len(extracted_polygons)))
+
+        for polygon in extracted_polygons:
+            if is_canceled():
+                return
+            geojson = json.loads(polygon.geojson)
+            geojson['coordinates'] = round_coordinates(geojson['coordinates'])
+            geometry_rounded = GEOSGeometry(json.dumps(geojson))
+            geometry_str = str(geometry_rounded.ogr)
+            fetch_occurrences_by_area(geometry_str)
+
+    except Boundary.DoesNotExist:
+        logger.error(f"Boundary with ID {boundary_id} does not exist.")
+        return []
+    except Exception as e:
+        logger.error(f"Error fetching boundary: {e}")
+        return []
 
     log_info(f"Species found: {len(species_keys)}")
-
 
     return species_found
