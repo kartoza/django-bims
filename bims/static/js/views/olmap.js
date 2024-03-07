@@ -301,8 +301,10 @@ define([
                             try {
                                 objectData = JSON.parse(data);
                             } catch (e) {
+                                objectData = {
+                                    'features': []
+                                };
                                 console.log(e)
-                                return
                             }
                         }
                         let features = objectData['features'];
