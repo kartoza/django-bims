@@ -509,77 +509,80 @@ def find_species_by_area(
             return
 
     def fetch_occurrences_by_area(geometry_string):
-        offset = 0
+        facet_offset = 0
+
         while True:
             if is_canceled():
                 break
             try:
-                params = {}
-                rank_key = f"{parent_species.rank.lower()}Key"
-                params[rank_key] = parent_species.gbif_key
+                params = {
+                    f"{parent_species.rank.lower()}Key": parent_species.gbif_key,
+                    'facet': 'acceptedTaxonKey',
+                    'facetLimit': 100,
+                    'facetMinCount': 1,
+                    'facetOffset': facet_offset,
+                    'geometry': geometry_string,
+                    'limit': 0,
+                }
 
-                occurrences_data = search(
-                    geometry=geometry_string,
-                    offset=offset,
-                    **params
-                )
+                occurrences_data = search(**params)
+                log_info(occurrences_data)
             except Exception as e:
                 log_info(f"Error fetching occurrences data: {e}")
                 break
 
-            new_keys = {
-                occurrence.get(ACCEPTED_TAXON_KEY) for occurrence in occurrences_data['results']}
-            new_species_keys = new_keys - species_keys
-            species_keys.update(new_keys)
+            if 'facets' in occurrences_data and len(occurrences_data['facets']) > 0:
+                for facet in occurrences_data['facets']:
+                    if facet['field'].upper() == "ACCEPTED_TAXON_KEY":
+                        new_keys = {int(count['name']) for count in facet['counts']}
+                        new_species_keys = new_keys - species_keys
+                        species_keys.update(new_keys)
 
-            for species_key in new_species_keys:
-                if is_canceled():
-                    return species_found
-                try:
-                    log_info('Processing {}'.format(species_key))
-                    taxonomy = fetch_all_species_from_gbif(
-                        gbif_key=species_key,
-                        fetch_children=False,
-                        log_file_path=log_file_path,
-                        fetch_vernacular_names=True
-                    )
-                    if taxonomy:
-                        log_info("Species added/updated : {}".format(
-                            taxonomy.scientific_name
-                        ))
-                        species_found.append(taxonomy)
-                        if taxon_group:
-                            taxon_group_taxonomy, created = (
-                                TaxonGroupTaxonomy.objects.get_or_create(
-                                    taxongroup=taxon_group,
-                                    taxonomy=taxonomy,
+                        for species_key in new_species_keys:
+                            if is_canceled():
+                                return species_found
+                            try:
+                                log_info('Processing {}'.format(species_key))
+                                taxonomy = fetch_all_species_from_gbif(
+                                    gbif_key=species_key,
+                                    fetch_children=False,
+                                    log_file_path=log_file_path,
+                                    fetch_vernacular_names=True
                                 )
-                            )
-                            taxon_group_taxonomy.is_validated = validated
-                            taxon_group_taxonomy.save()
+                                if taxonomy:
+                                    log_info("Species added/updated: {}".format(taxonomy.scientific_name))
+                                    species_found.append(taxonomy)
+                                    if taxon_group:
+                                        taxon_group_taxonomy, created = (
+                                            TaxonGroupTaxonomy.objects.get_or_create(
+                                                taxongroup=taxon_group,
+                                                taxonomy=taxonomy,
+                                            )
+                                        )
+                                        taxon_group_taxonomy.is_validated = validated
+                                        taxon_group_taxonomy.save()
 
-                            if add_parent:
-                                add_parent_to_group(
-                                    taxonomy, taxon_group
-                                )
-                except Exception as e:
-                    log_info(f"Error fetching data for species key {species_key}: {e}")
+                                        if add_parent:
+                                            add_parent_to_group(
+                                                taxonomy, taxon_group
+                                            )
+                            except Exception as e:
+                                log_info(f"Error fetching data for species key {species_key}: {e}")
 
-            _max_limit = max_limit
-
-            if not _max_limit:
-                if 'count' in occurrences_data:
-                    _max_limit = occurrences_data['count']
-                else:
-                    _max_limit = 99999
-
-            log_info(f"Fetching occurrences data: {offset + occurrences_data['limit']}/{_max_limit}")
-
-            log_info(f"Species found so far: {len(species_keys)}")
-            if occurrences_data['endOfRecords'] or offset >= _max_limit or is_canceled():
+            else:
+                # If facets or counts are empty, we've reached the end
                 break
 
-            offset += occurrences_data['limit']
+            log_info(f"Species found so far: {len(species_keys)}")
+
+            # Adjust facetOffset by the number of counts returned, not by the limit
+            counts_returned = sum(
+                len(facet.get('counts', [])) for facet in occurrences_data.get('facets', []))
+            if counts_returned == 0 or is_canceled():
+                break
+            facet_offset += counts_returned
+
+        return species_found
 
     try:
         boundary = Boundary.objects.get(id=boundary_id)
@@ -595,7 +598,7 @@ def find_species_by_area(
             extracted_polygons.append(geometry)
 
         log_info('Found {} area'.format(len(extracted_polygons)))
-
+        area = 1
         for polygon in extracted_polygons:
             if is_canceled():
                 return
@@ -603,6 +606,12 @@ def find_species_by_area(
             geojson['coordinates'] = round_coordinates(geojson['coordinates'])
             geometry_rounded = GEOSGeometry(json.dumps(geojson))
             geometry_str = str(geometry_rounded.ogr)
+            log_info(geometry_str)
+            log_info('Area {area}/{total_area}'.format(
+                area=area,
+                total_area=len(extracted_polygons))
+            )
+            area += 1
             fetch_occurrences_by_area(geometry_str)
 
     except Boundary.DoesNotExist:
