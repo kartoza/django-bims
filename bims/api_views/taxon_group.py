@@ -76,7 +76,11 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
                     taxon_group=taxon_group,
                     status='pending',
                     scientific_name=taxonomy.scientific_name,
-                    canonical_name=taxonomy.canonical_name
+                    canonical_name=taxonomy.canonical_name,
+                    rank=taxonomy.rank,
+                    parent=taxonomy.parent,
+                    taxonomic_status=taxonomy.taxonomic_status,
+                    legacy_canonical_name=taxonomy.legacy_canonical_name
                 )
         taxon_group.taxonomies.add(taxonomy)
 

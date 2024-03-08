@@ -439,9 +439,7 @@ ACCEPTED_TAXON_KEY = 'acceptedTaxonKey'
 
 def find_species_by_area(
         boundary_id,
-        class_key=None,
-        phylum_key=None,
-        kingdom_key=None,
+        parent_species: Taxonomy,
         max_limit=None,
         harvest_session: HarvestSession = None,
         validated=True
@@ -451,9 +449,7 @@ def find_species_by_area(
 
     Parameters:
     boundary_id (int): The ID of the boundary within which to search for species.
-    class_key (int, optional): The taxonomic class key for filtering species.
-    phylum_key (int, optional): The taxonomic phylum key for filtering species.
-    kingdom_key (int, optional): The taxonomic kingdom key for filtering species.
+    parent_species (int, required): The taxon for filtering species.
     max_limit (int, optional): The maximum number of species to be fetched.
     validated (bool, optional): Automatically validated the species
 
@@ -518,12 +514,14 @@ def find_species_by_area(
             if is_canceled():
                 break
             try:
+                params = {}
+                rank_key = f"{parent_species.rank.lower()}Key"
+                params[rank_key] = parent_species.gbif_key
+
                 occurrences_data = search(
                     geometry=geometry_string,
                     offset=offset,
-                    classKey=class_key,
-                    phylumKey=phylum_key,
-                    kingdomKey=kingdom_key
+                    **params
                 )
             except Exception as e:
                 log_info(f"Error fetching occurrences data: {e}")

@@ -178,7 +178,7 @@ class FindTaxon(APIView):
         gbif_response = suggest_search(query_dict)
 
         for gbif in gbif_response:
-            if 'key' not in gbif or 'phylumKey' not in gbif:
+            if 'key' not in gbif:
                 continue
             if phylum_keys and gbif['phylumKey'] not in phylum_keys:
                 continue
@@ -298,7 +298,11 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxon_group=taxon_group,
                 status='pending',
                 scientific_name=taxonomy.scientific_name,
-                canonical_name=taxonomy.canonical_name
+                canonical_name=taxonomy.canonical_name,
+                rank=taxonomy.rank,
+                parent=taxonomy.parent,
+                taxonomic_status=taxonomy.taxonomic_status,
+                legacy_canonical_name=taxonomy.legacy_canonical_name
             )
 
         return Response(response)
@@ -399,8 +403,8 @@ class TaxaList(LoginRequiredMixin, APIView):
             try:
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
-                    taxon_list = taxon_list.exclude(
-                        taxongrouptaxonomy__is_validated=True,
+                    taxon_list = taxon_list.filter(
+                        taxongrouptaxonomy__is_validated=False,
                         taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
                 else:

@@ -16,17 +16,21 @@ from bims.models import TaxonGroup
 class TestGBIFUtil(TestCase):
     """ Tests Fish Form View.
     """
+    def setUp(self):
+        self.taxon = TaxonomyF.create()
 
     def test_geometry_not_found(self):
         boundary = BoundaryF.create()
         species = find_species_by_area(
-            boundary.id
+            boundary.id,
+            parent_species=self.taxon
         )
         self.assertEqual(species, [])
 
     def test_boundary_not_found(self):
         species = find_species_by_area(
-            9999
+            9999,
+            parent_species=self.taxon
         )
         self.assertEqual(species, [])
 
@@ -48,7 +52,8 @@ class TestGBIFUtil(TestCase):
             taxon_1,
             taxon_2
         ]
-        species = find_species_by_area(boundary.id, max_limit=1, harvest_session=harvest_session)
+        species = find_species_by_area(boundary.id, max_limit=1, harvest_session=harvest_session,
+                                       parent_species=self.taxon)
 
         # Assertions
         self.assertEqual(len(species), 2)
@@ -68,7 +73,8 @@ class TestGBIFUtil(TestCase):
         )
         mock_search.side_effect = Exception("General Error")
 
-        species = find_species_by_area(boundary.id)
+        species = find_species_by_area(boundary.id,
+                                       parent_species=self.taxon)
         self.assertEqual(species, [])
 
     @patch('bims.utils.gbif.search')
@@ -83,7 +89,8 @@ class TestGBIFUtil(TestCase):
             'limit': 2
         }
         mock_get_species.side_effect = Exception("General Error")
-        species = find_species_by_area(boundary.id)
+        species = find_species_by_area(boundary.id,
+                                       parent_species=self.taxon)
 
         self.assertEqual(species, [])
 
@@ -107,9 +114,13 @@ class TestGBIFUtil(TestCase):
         harvest_session = HarvestSessionF.create(
             canceled=True
         )
-        species = find_species_by_area(boundary.id, max_limit=1, harvest_session=harvest_session)
+        species = find_species_by_area(
+            boundary.id, max_limit=1,
+            harvest_session=harvest_session,
+            parent_species=self.taxon)
+
         self.assertEqual(
             species,
-            []
+            None
         )
 

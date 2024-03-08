@@ -29,18 +29,11 @@ def harvest_gbif_species(session_id):
         ))
 
     parent_species = harvest_session.module_group.gbif_parent_species
-    params = {}
-
-    if parent_species and parent_species.gbif_key:
-        if parent_species.rank == TaxonomicRank.CLASS.name:
-            params['class_key'] = parent_species.gbif_key
-        elif parent_species.rank == TaxonomicRank.PHYLUM.name:
-            params['phylum_key'] = parent_species.gbif_key
 
     taxa = find_species_by_area(
         harvest_session.boundary_id,
         harvest_session=harvest_session,
-        **params
+        parent_species=parent_species,
     )
 
     harvest_session.status = 'Finished'
