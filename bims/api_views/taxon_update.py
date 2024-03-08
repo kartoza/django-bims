@@ -159,6 +159,13 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
                 original_taxonomy_id=taxon_id,
                 taxon_group_id=taxon_group_id
             )
+        except TaxonomyUpdateProposal.MultipleObjectsReturned:
+            proposals = TaxonomyUpdateProposal.objects.filter(
+                original_taxonomy_id=taxon_id,
+                taxon_group_id=taxon_group_id
+            )
+            proposal = proposals.first()
+            proposals.exclude(id=proposal.id).delete()
         except TaxonomyUpdateProposal.DoesNotExist:
             raise Http404()
         if action == 'approve':
