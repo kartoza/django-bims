@@ -523,8 +523,18 @@ def find_species_by_area(
                     'facetOffset': facet_offset,
                     'geometry': geometry_string,
                     'limit': 0,
-                    'iucnRedListCategory': ['LC', 'NE', 'NT', 'VU', 'DD', 'EN', 'CR'],
-                    'hasCoordinate': True
+                    'hasCoordinate': True,
+                    'hasGeoSpatialIssue': False,
+                    'basisOfRecord': [
+                        'HUMAN_OBSERVATION',
+                        'MACHINE_OBSERVATION',
+                        'MATERIAL_SAMPLE',
+                        'LITERATURE',
+                        'MATERIAL_CITATION',
+                        'OCCURRENCE',
+                        'LIVING_SPECIMEN',
+                        'OBSERVATION'
+                    ]
                 }
 
                 occurrences_data = search(**params)
