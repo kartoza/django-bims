@@ -218,6 +218,7 @@ def fetch_all_species_from_gbif(
             gbif_key=gbif_key
         ))
         species_data = None
+        taxon = None
 
         try:
             taxon = Taxonomy.objects.get(gbif_key=gbif_key)
@@ -233,8 +234,12 @@ def fetch_all_species_from_gbif(
         except Taxonomy.DoesNotExist:
             pass
 
-        if not species_data:
-            species_data = get_species(gbif_key)
+        gbif_data = get_species(gbif_key)
+        if gbif_data:
+            if taxon:
+                taxon.gbif_data = gbif_data
+                taxon.save()
+            species_data = gbif_data
     else:
         log_info('Fetching {species} - {rank}'.format(
             species=species,
@@ -306,7 +311,10 @@ def fetch_all_species_from_gbif(
         taxonomy.parent = parent
         taxonomy.save()
     else:
-        if not taxonomy.parent:
+        fetch_parent = not taxonomy.parent
+        if taxonomy.parent and species_data and 'parentKey' in species_data:
+            fetch_parent = taxonomy.parent.gbif_key != species_data['parentKey']
+        if fetch_parent:
             # Get parent
             parent_taxonomy = None
             if 'parentKey' in species_data:
