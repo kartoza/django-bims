@@ -9,6 +9,8 @@ from bims.models.location_context import LocationContext
 from bims.utils.logger import log
 from preferences import preferences
 
+from bims.models.geocontext_setting import GeocontextSetting
+
 
 def array_to_dict(array, key_name='key'):
     dictionary = {}
@@ -108,16 +110,29 @@ def get_location_context_data(
     """
     # Get location context data from GeoContext
 
-    if not group_keys:
-        group_keys = preferences.GeocontextSetting.geocontext_keys.split(',')
-    else:
-        if not isinstance(group_keys, list):
-            group_keys = group_keys.split(',')
-
     if site_id:
         location_sites = LocationSite.objects.filter(id__in=site_id.split(','))
     else:
         location_sites = LocationSite.objects.all()
+
+    if not group_keys:
+        organisation_sites = set(location_sites.values_list(
+            'additional_observation_sites', flat=True))
+        organisation_sites.update(
+            location_sites.values_list('source_site', flat=True)
+        )
+        geocontext_settings = GeocontextSetting.objects.filter(
+            sites__in=list(organisation_sites)
+        )
+        group_keys = set()
+        for value in geocontext_settings:
+            if value.geocontext_keys:
+                group_keys.update(
+                    value.geocontext_keys.split(','))
+        group_keys = list(group_keys)
+    else:
+        if not isinstance(group_keys, list):
+            group_keys = group_keys.split(',')
 
     if only_empty:
         location_sites = location_sites.exclude(

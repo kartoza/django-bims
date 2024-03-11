@@ -2,6 +2,7 @@ import uuid
 import json
 import logging
 
+from django.contrib.sites.models import Site
 from preferences import preferences
 
 from bims.scripts.collection_csv_keys import *  # noqa
@@ -109,7 +110,8 @@ class OccurrenceProcessor(object):
     def update_location_site_context(self):
         update_location_context.delay(
             location_site_id=','.join(self.site_ids),
-            generate_site_code=True
+            generate_site_code=True,
+            current_site_id=Site.objects.get_current().id
         )
 
     def finish_process(self):

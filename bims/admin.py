@@ -5,6 +5,7 @@ from datetime import date
 import json
 
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
+from django.contrib.sites.models import Site
 from django.http import HttpResponse
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
@@ -289,7 +290,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         generate_spatial_scale_filter = queryset.count() <= 1
         for location_site in queryset:
             update_location_context_task.delay(
-                location_site.id, False, generate_spatial_scale_filter)
+                location_site.id,
+                False,
+                generate_spatial_scale_filter,
+                current_site_id=Site.objects.get_current().id)
         full_message = (
             'Updating location context for {} sites in background'.format(
                 queryset.count()

@@ -242,6 +242,17 @@ class SiteSetting(Preferences):
         help_text='The key of the boundary data form GeoContext'
     )
 
+    site_boundary = models.ForeignKey(
+        'bims.Boundary',
+        blank=True,
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text=(
+            'Boundary used for checking if the site is '
+            'within the correct boundary'
+        )
+    )
+
     copyright_text = models.CharField(
         max_length=200,
         blank=True,
