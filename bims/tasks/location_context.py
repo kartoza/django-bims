@@ -250,7 +250,7 @@ def get_spatial_scale_filter():
         SPATIAL_SCALE_FILTER_FILE
     )
     if not os.path.exists(file_path):
-        generate_spatial_scale_filter()
+        generate_spatial_scale_filter(current_site.id)
     with open(file_path, 'r') as file_handler:
         filter_data = file_handler.read()
     if filter_data:

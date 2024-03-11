@@ -121,7 +121,11 @@
                     <h5>Current process : </h5>
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">Module group {{ upload_session.module_group.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                            <h5 class="card-title">Module group {{ upload_session.module_group.name }}</h5> <div style="float: right; margin-top: -40px">
+                                {% if upload_session.module_group.logo %}
+                                <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                {% endif %}
+                            </div>
                             <p>Start time {{ upload_session.start_time }}</p>
                             <p class="card-text">Status : <span class="progress-text">{% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</span></p>
                             <div class="log">
@@ -140,7 +144,11 @@
                     {% for upload_session in finished_sessions %}
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title"><a href="{{ upload_session.log_file.url }}" class="btn btn-warning">Download logs</a></h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <h5 class="card-title"><a href="{{ upload_session.log_file.url }}" class="btn btn-warning">Download logs</a></h5> <div style="float: right; margin-top: -40px">
+                                    {% if upload_session.module_group.logo %}
+                                        <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                    {% endif %}
+                                </div>
                                 <p>Started at {{ upload_session.start_time }}</p>
                                 {% if upload_session.canceled %}
                                     <p style="color:red">Canceled</p>

@@ -9,7 +9,7 @@ from urllib3.exceptions import ProtocolError
 from bims.models.source_reference import DatabaseRecord
 
 from bims.models.location_site import generate_site_code
-from dateutil.parser import parse
+from dateutil.parser import parse, ParserError
 from requests.exceptions import HTTPError
 from preferences import preferences
 from django.contrib.gis.geos import Point
@@ -21,9 +21,9 @@ from bims.models import (
     LocationType,
     BiologicalCollectionRecord,
     collection_post_save_handler,
-    HarvestSession, SourceReferenceDatabase
+    HarvestSession, SourceReferenceDatabase,
+    Boundary
 )
-from bims.utils.get_key import get_key
 
 logger = logging.getLogger('bims')
 
@@ -166,6 +166,14 @@ def import_gbif_occurrences(
         reference = result.get(REFERENCE_KEY, '')
         species = result.get(SPECIES_KEY, None)
 
+        if event_date:
+            try:
+                collection_date = parse(event_date)
+            except ParserError:
+                logger.error(
+                    f'Date is not in the correct format')
+                continue
+
         site_point = Point(longitude, latitude, srid=4326)
 
         # Check nearest site based on site point and coordinate uncertainty
@@ -184,52 +192,24 @@ def import_gbif_occurrences(
             ))
 
             # Check if site is in the correct border
-            boundary_key = preferences.SiteSetting.boundary_key
-            if boundary_key:
-                url = (
-                    '{base_url}/api/v2/query?registry=service&key={key}&'
-                    'x={lon}&y={lat}&outformat=json'
-                ).format(
-                    base_url=get_key('GEOCONTEXT_URL'),
-                    key=boundary_key,
-                    lon=longitude,
-                    lat=latitude
-                )
-                try:
-                    response = requests.get(url)
-                    if response.status_code != 200:
-                        log_file.write(
-                            '{0},{1} :'
-                            ' The site is not within a valid border,'
-                            ' skip -- \n'.format(
-                                longitude, latitude
-                            )
+            site_boundary = preferences.SiteSetting.site_boundary
+            if site_boundary:
+                is_within_boundary = Boundary.objects.filter(
+                    id=site_boundary.id,
+                    geometry__contains=site_point,
+                ).exists()
+                if not is_within_boundary:
+                    log_file.write(
+                        '{0},{1} :'
+                        ' The site is not within a valid border,'
+                        ' skip -- \n'.format(
+                            longitude, latitude
                         )
-                        logger.info(
-                            f'The site is not within a valid border.'
-                        )
-                        continue
-                    else:
-                        response_json = json.loads(response.content)
-                        if response_json['value']:
-                            logger.info(
-                                f"Site is in {response_json['value']}"
-                            )
-                        else:
-                            logger.info(
-                                f'The site is not within a valid border.'
-                            )
-                            log_file.write(
-                                '{0},{1} :'
-                                ' The site is not within a valid border,'
-                                ' skip -- \n'.format(
-                                    longitude, latitude
-                                )
-                            )
-                            continue
-                except Exception as e:  # noqa
+                    )
                     logger.info(
-                        f'Unable to check boundary data from geocontext')
+                        f'The site is not within a valid border.'
+                    )
+                    continue
 
             location_type, status = LocationType.objects.get_or_create(
                 name='PointObservation',
