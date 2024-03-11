@@ -64,17 +64,34 @@ def location_sites_overview(
 def update_location_context(
         location_site_id,
         generate_site_code=False,
-        generate_filter=True):
+        generate_filter=True,
+        current_site_id=None):
     from bims.models import LocationSite
     from bims.utils.location_context import get_location_context_data
     from bims.models.location_context_group import LocationContextGroup
     from bims.models.location_context_filter_group_order import (
         location_context_post_save_handler
     )
+    from bims.models.geocontext_setting import GeocontextSetting
+
+    group_keys = None
+    if current_site_id:
+        group_keys_array = list(GeocontextSetting.objects.filter(
+            sites__in=[current_site_id]
+        ).values_list(
+            'geocontext_keys',
+            flat=True
+        ))
+        group_keys = (
+            ','.join(
+                str(group_key) for group_key in group_keys_array
+            )
+        )
 
     if isinstance(location_site_id, str):
         if ',' in location_site_id:
             get_location_context_data(
+                group_keys=group_keys,
                 site_id=str(location_site_id),
                 only_empty=False,
                 should_generate_site_code=generate_site_code
@@ -93,10 +110,17 @@ def update_location_context(
         )
 
     get_location_context_data(
+        group_keys=group_keys,
         site_id=str(location_site_id),
         only_empty=False,
         should_generate_site_code=generate_site_code
     )
+
+    if not generate_filter:
+        signals.post_save.connect(
+            location_context_post_save_handler,
+            sender=LocationContextGroup
+        )
 
 
 @shared_task(name='bims.tasks.update_site_code', queue='geocontext')

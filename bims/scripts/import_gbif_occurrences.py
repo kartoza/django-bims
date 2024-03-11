@@ -221,6 +221,7 @@ def import_gbif_occurrences(
                 location_type=location_type,
                 site_description=locality[:300]
             )
+
             if not location_site.site_code:
                 site_code, catchments_data = generate_site_code(
                     location_site,
@@ -229,6 +230,13 @@ def import_gbif_occurrences(
                 )
                 location_site.site_code = site_code
                 location_site.save()
+
+        if site_id:
+            if not location_site.source_site:
+                location_site.source_site_id = site_id
+            else:
+                location_site.additional_observation_sites.add(site_id)
+            location_site.save()
 
         try:
             collection_record = BiologicalCollectionRecord.objects.get(
@@ -316,7 +324,8 @@ def import_gbif_occurrences(
             habitat=habitat,
             origin=origin,
             log_file_path=log_file_path,
-            session_id=session_id
+            session_id=session_id,
+            site_id=site_id
         )
 
     return 'Finish'
