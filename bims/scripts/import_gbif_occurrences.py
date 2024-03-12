@@ -84,6 +84,7 @@ def import_gbif_occurrences(
     api_url += '&hasCoordinate=true'
     # We don't need data with geospatial issue
     api_url += '&hasGeospatialIssue=false'
+    api_url += '&basisOfRecord=HUMAN_OBSERVATION'
     # Only fetch from Specific country
     for country_code in preferences.SiteSetting.base_country_code.split(','):
         api_url += '&country={}'.format(country_code.upper())

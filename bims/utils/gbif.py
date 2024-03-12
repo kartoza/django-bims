@@ -527,13 +527,6 @@ def find_species_by_area(
                     'hasGeoSpatialIssue': False,
                     'basisOfRecord': [
                         'HUMAN_OBSERVATION',
-                        'MACHINE_OBSERVATION',
-                        'MATERIAL_SAMPLE',
-                        'LITERATURE',
-                        'MATERIAL_CITATION',
-                        'OCCURRENCE',
-                        'LIVING_SPECIMEN',
-                        'OBSERVATION'
                     ]
                 }
 
