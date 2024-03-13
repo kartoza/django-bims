@@ -550,11 +550,22 @@ def generate_site_code(
         wetland_catchment,
         open_waterbody_catchment
     )
+    from bims.models.site_setting import SiteSetting
     from preferences import preferences
     site_code = ''
     catchment_site_code = ''
     catchments_data = {}
-    catchment_generator_method = preferences.SiteSetting.site_code_generator
+    catchment_generator_method = ''
+
+    if location_site and location_site.source_site:
+        site_setting = SiteSetting.objects.filter(
+            sites__in=[location_site.source_site.id]
+        ).first()
+        if site_setting:
+            catchment_generator_method = site_setting.site_code_generator
+    if not catchment_generator_method:
+        catchment_generator_method = preferences.SiteSetting.site_code_generator
+
     if catchment_generator_method == 'fbis':
         if ecosystem_type.lower() == 'wetland':
             wetland_data = location_site.additional_data if (
