@@ -42,86 +42,68 @@ SPECIES_KEY = 'species'
 MODIFIED_DATE_KEY = 'modified'
 LIMIT = 20
 
+# Constants for better readability and maintainability
+API_BASE_URL = 'http://api.gbif.org/v1/occurrence/search'
+DEFAULT_LIMIT = 300
+LOG_TEMPLATE = '---------------------------------------------------\nFetching: {}\n'
+MISSING_KEY_ERROR = 'Missing taxon GBIF key'
 
-def import_gbif_occurrences(
-    taxonomy,
-    offset=0,
-    owner=None,
-    habitat=None,
-    origin='',
-    log_file_path=None,
-    session_id=None,
-    taxon_group=None,
-    site_id=None) -> str:
+
+def build_api_url(taxonomy_gbif_key, offset, base_country_codes):
     """
-    Import gbif occurrences based on taxonomy gbif key,
-    data stored to biological_collection_record table
-    :param taxonomy: Taxonomy object
-    :param offset: response data offset, default is 0
-    :param owner: owner of record in the bims
-    :param habitat: habitat of species, default to None
-    :param origin: origin of species, default to None
-    :param log_file_path: Path of log file of the current process,
-        if provided then write the log to this file
-    :param session_id: Id of the harvest session
+    Construct the API URL with query parameters.
     """
-    log_file = None
+    country_params = '&'.join([f'country={code.upper()}' for code in base_country_codes.split(',')])
+    return (
+        f"{API_BASE_URL}?"
+        f"taxonKey={taxonomy_gbif_key}&"
+        f"offset={offset}&"
+        f"hasCoordinate=true&"
+        f"hasGeospatialIssue=false&"
+        f"basisOfRecord=HUMAN_OBSERVATION&limit={DEFAULT_LIMIT}&{country_params}"
+    )
+
+
+def log_to_file_or_logger(log_file_path, message, is_error=False):
+    """
+    Log messages to either a file or the logger.
+    """
     if log_file_path:
-        log_file = open(log_file_path, 'a')
-        log_file.write('---------------------------------------------------\n')
-        log_file.write('Fetching : {}\n'.format(taxonomy.canonical_name))
+        with open(log_file_path, 'a') as log_file:
+            log_file.write('{}'.format(message))
+    if is_error:
+        logger.error(message)
+    else:
+        logger.info(message)
 
-    if not taxonomy.gbif_key:
-        if log_file:
-            log_file.write('Missing taxon gbif key\n')
-        else:
-            logger.error('Missing taxon gbif key')
-        return 'Missing taxon gbif key'
-    api_url = 'http://api.gbif.org/v1/occurrence/search?'
-    api_url += 'taxonKey={}'.format(taxonomy.gbif_key)
-    api_url += '&offset={}'.format(offset)
-    # We need data with coordinate to create a site
-    api_url += '&hasCoordinate=true'
-    # We don't need data with geospatial issue
-    api_url += '&hasGeospatialIssue=false'
-    api_url += '&basisOfRecord=HUMAN_OBSERVATION'
-    # Only fetch from Specific country
-    for country_code in preferences.SiteSetting.base_country_code.split(','):
-        api_url += '&country={}'.format(country_code.upper())
 
-    if log_file:
-        log_file.write('URL : {}\n'.format(api_url))
-
+def fetch_gbif_data(api_url):
+    """
+    Fetch data from GBIF API and handle errors.
+    """
     try:
         response = requests.get(api_url)
-        json_result = response.json()
-        data_count = json_result['count']
-    except (
-            HTTPError, simplejson.errors.JSONDecodeError,
-            ProtocolError) as e:
-        if hasattr(e, 'message'):
-            error_message = e.message
-        else:
-            error_message = str(e)
-        if log_file:
-            log_file.write(error_message)
-        else:
-            logger.error(error_message)
-        return error_message
+        response.raise_for_status()  # This will raise an HTTPError for bad responses
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        error_message = str(e)
+        return {'error': error_message}
 
-    if log_file:
-        log_file.write(
-            '-- Total occurrences {total} - offset {offset} : \n'.format(
-                offset=offset,
-                total=data_count
-            )
-        )
-    else:
-        logger.info('-- Total occurrences {total} - offset {offset} : '.format(
-            offset=offset,
-            total=data_count
-        ))
 
+def process_gbif_response(json_result,
+                          session_id,
+                          taxon_group,
+                          taxonomy,
+                          site_id,
+                          habitat,
+                          origin,
+                          log_file=None):
+    """
+    Process GBIF API response.
+    """
+    if 'error' in json_result:
+        log_to_file_or_logger(log_file, json_result['error'], is_error=True)
+        return json_result['error'], 0
     source_collection = 'gbif'
     gbif_owner, _ = Profile.objects.get_or_create(
         username='GBIF',
@@ -143,19 +125,17 @@ def import_gbif_occurrences(
             continue
         if session_id:
             if HarvestSession.objects.get(id=session_id).canceled:
-                if log_file:
-                    log_file.write('Cancelled')
-                else:
-                    logger.info('Cancelled')
-                if log_file:
-                    log_file.close()
+                log_to_file_or_logger(
+                    log_file,
+                    'Cancelled'
+                )
 
                 # reconnect post save handler
                 models.signals.post_save.connect(
                     collection_post_save_handler,
                     sender=BiologicalCollectionRecord
                 )
-                return 'Harvest session canceled'
+                return 'Harvest session canceled', 0
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
         longitude = result.get(LON_KEY)
         latitude = result.get(LAT_KEY)
@@ -186,6 +166,14 @@ def import_gbif_occurrences(
         if location_sites.exists():
             # Get first site
             location_site = location_sites[0]
+
+            if site_id:
+                if not location_site.source_site:
+                    location_site.source_site_id = site_id
+                else:
+                    if location_site.source_site_id != site_id:
+                        location_site.additional_observation_sites.add(site_id)
+                location_site.save()
         else:
             # Create a new site
             locality = result.get(LOCALITY_KEY, result.get(
@@ -200,15 +188,13 @@ def import_gbif_occurrences(
                     geometry__contains=site_point,
                 ).exists()
                 if not is_within_boundary:
-                    log_file.write(
+                    log_to_file_or_logger(
+                        log_file,
                         '{0},{1} :'
                         ' The site is not within a valid border,'
                         ' skip -- \n'.format(
                             longitude, latitude
                         )
-                    )
-                    logger.info(
-                        f'The site is not within a valid border.'
                     )
                     continue
 
@@ -223,6 +209,10 @@ def import_gbif_occurrences(
                 site_description=locality[:300]
             )
 
+            if site_id:
+                location_site.source_site_id = site_id
+                location_site.save()
+
             if not location_site.site_code:
                 site_code, catchments_data = generate_site_code(
                     location_site,
@@ -232,28 +222,17 @@ def import_gbif_occurrences(
                 location_site.site_code = site_code
                 location_site.save()
 
-        if site_id:
-            if not location_site.source_site:
-                location_site.source_site_id = site_id
-            else:
-                location_site.additional_observation_sites.add(site_id)
-            location_site.save()
 
         try:
             collection_record = BiologicalCollectionRecord.objects.get(
                 upstream_id=upstream_id
             )
-            if log_file:
-                log_file.write(
-                    '--- Update existing '
-                    'collection record with upstream ID : {}\n'.
-                    format(upstream_id)
-                )
-            else:
-                logger.info(
-                    '--- Update existing collection record with'
-                    ' upstream ID : {}'.
-                    format(upstream_id))
+            log_to_file_or_logger(
+                log_file,
+                '--- Update existing '
+                'collection record with upstream ID : {}\n'.
+                format(upstream_id)
+            )
         except BiologicalCollectionRecord.MultipleObjectsReturned:
             collection_records = BiologicalCollectionRecord.objects.filter(
                 upstream_id=upstream_id
@@ -261,15 +240,11 @@ def import_gbif_occurrences(
             collection_record = collection_records.last()
             collection_records.exclude(id=collection_record.id).delete()
         except BiologicalCollectionRecord.DoesNotExist:
-            if log_file:
-                log_file.write(
-                    '--- Collection record created with upstream ID : {}\n'.
-                    format(upstream_id)
-                )
-            else:
-                logger.info(
-                    '--- Collection record created with upstream ID : {}'.
-                    format(upstream_id))
+            log_to_file_or_logger(
+                log_file,
+                '--- Collection record created with upstream ID : {}\n'.
+                format(upstream_id),
+            )
             collection_record = BiologicalCollectionRecord.objects.create(
                 upstream_id=upstream_id,
                 site=location_site,
@@ -314,19 +289,64 @@ def import_gbif_occurrences(
         collection_record.additional_data = additional_data
         collection_record.save()
 
-    if log_file:
-        log_file.close()
+    log_to_file_or_logger(log_file,
+                          f"-- Total occurrences {json_result['count']} - "
+                          f"offset {json_result.get('offset', 0)} : ")
+    return None, json_result['count']
 
-    if data_count > (offset + LIMIT):
-        # Import more occurrences
-        import_gbif_occurrences(
-            taxonomy=taxonomy,
-            offset=offset + LIMIT,
-            habitat=habitat,
-            origin=origin,
-            log_file_path=log_file_path,
-            session_id=session_id,
-            site_id=site_id
+
+def import_gbif_occurrences(
+        taxonomy,
+        offset=0,
+        owner=None,
+        habitat=None,
+        origin='',
+        log_file_path=None,
+        session_id=None,
+        taxon_group=None,
+        site_id=None):
+    """
+    Import GBIF occurrences based on taxonomy GBIF key, without using recursion.
+    """
+    if not taxonomy.gbif_key:
+        logger.error(MISSING_KEY_ERROR)
+        return MISSING_KEY_ERROR
+
+    base_country_codes = preferences.SiteSetting.base_country_code
+    try:
+        log_to_file_or_logger(
+            log_file_path,
+            LOG_TEMPLATE.format(taxonomy.canonical_name)
         )
 
+        while True:
+            api_url = build_api_url(taxonomy.gbif_key, offset, base_country_codes)
+            log_to_file_or_logger(
+                log_file_path,
+                f'URL: {api_url}'
+            )
+
+            json_result = fetch_gbif_data(api_url)
+            if 'error' in json_result:
+                return json_result
+
+            error, data_count = process_gbif_response(
+                json_result,
+                session_id,
+                taxon_group,
+                taxonomy,
+                site_id,
+                habitat,
+                origin,
+                log_file_path
+            )
+            if error:
+                return error
+
+            if data_count <= (offset + DEFAULT_LIMIT):
+                break
+
+            offset += DEFAULT_LIMIT
+    except Exception:  # noqa
+        return ''
     return 'Finish'
