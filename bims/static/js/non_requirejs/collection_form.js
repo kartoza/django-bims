@@ -424,6 +424,20 @@ $(function () {
         let $collectionIdList = $('#collection-id-list');
         $collectionIdList.val(collectionIdList.join());
 
+        // Fix date
+        let originalDate = $('#date').val();
+        if (originalDate) {
+            let parts = originalDate.split('/');
+            let newDate = parts[1] + '/' + parts[0] + '/' + parts[2];
+            $('#date').val(newDate);
+        }
+        let embargoDate = $('#embargo-end-date').val();
+        if (embargoDate) {
+            let embargoParts = embargoDate.split('/');
+            let newEmbargoDate = embargoParts[1] + '/' + embargoParts[0] + '/' + embargoParts[2];
+            $('#embargo-end-date').val(newEmbargoDate);
+        }
+
         form.submit();
     });
 
