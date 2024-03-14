@@ -1816,7 +1816,32 @@ class SamplingEffortMeasureAdmin(OrderedModelAdmin):
 class HarvestSessionAdmin(admin.ModelAdmin):
     list_display = (
         'start_time', 'status', 'harvester',
+        'module_group',
         'finished', 'canceled', 'is_fetching_species')
+
+    actions = [
+        'resume_harvest',
+    ]
+
+    def resume_harvest(self, request, queryset):
+        from bims.tasks.harvest_collections import (
+            harvest_collections
+        )
+        if len(queryset) > 1:
+            message = 'You can only resume one session'
+            self.message_user(request, message, level=messages.ERROR)
+            return
+
+        queryset.first().canceled = False
+        queryset.first().save()
+
+        full_message = 'Resumed'
+        harvest_collections.delay(
+            queryset.first().id,
+            True
+        )
+
+        self.message_user(request, full_message)
 
 
 class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
