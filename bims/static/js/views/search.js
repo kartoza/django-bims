@@ -95,7 +95,6 @@ define([
                 'decision-support-tool-container'
             ]
             if (value === 'occurrence') {
-                $('#module-info').html('Occurrence - Biodiversity module')
                 $('.occurrence-sort').show();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
@@ -103,11 +102,6 @@ define([
                     }
                 }
             } else {
-                if (value === 'water_temperature') {
-                    $('#module-info').html('Water Temperature (time series)')
-                } else {
-                    $('#module-info').html('Physico-chemistry')
-                }
                 $('.occurrence-sort').hide();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {

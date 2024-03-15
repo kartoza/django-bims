@@ -216,8 +216,30 @@ class RiskChart {
             });
         }
     }
+    renderOverviewTable(){
+        const url = '/api/location-sites-summary/?siteId='+siteId
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (result) {
+                let siteDetailsWrapper = $('#species-ssdd-site-details');
+                const siteDetailsData = result['site_details']
+                siteDetailsWrapper.html('');
+                const container =  _.template($('#site-details-container').html());
+                $.each(siteDetailsData, (key, data) => {
+                    const containerHtml = container({
+                        title: key,
+                        detailsData: data
+                    })
+                    siteDetailsWrapper.append(containerHtml);
+                })
+            }
+        })
+
+    }
 }
 
 const pesticideTable = new RiskChart('container', pesticideRisk, coordinates);
 pesticideTable.createDashboardMap();
 pesticideTable.generatesTable();
+pesticideTable.renderOverviewTable()
