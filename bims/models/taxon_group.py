@@ -7,6 +7,8 @@ from django.contrib.auth.models import Permission, Group
 from django.contrib.gis.db import models
 from django.contrib.sites.models import Site
 from django.dispatch import receiver
+from django.test import RequestFactory
+from django.urls import reverse
 
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.tasks.collection_record import (
@@ -248,10 +250,10 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
     from bims.utils.cache import clear_cache_by_tag
     from bims.api_views.module_summary import MODULE_SUMMARY_TAG
 
-    clear_cache_by_tag(MODULE_SUMMARY_TAG)
-
     if not issubclass(sender, TaxonGroup):
         return
+
+    clear_cache_by_tag(MODULE_SUMMARY_TAG)
 
     if not instance.site:
         return

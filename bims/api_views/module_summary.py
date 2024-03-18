@@ -3,7 +3,7 @@ from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
-from django.db.models import Count, F, Case, When, Value, Q
+from django.db.models import Count, F, Case, When, Value, Q, Subquery
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
@@ -47,12 +47,16 @@ class ModuleSummary(APIView):
         Returns:
             dict: Dictionary containing summary data.
         """
+
         summary = {}
         current_site = Site.objects.get_current()
+
+        taxonomies_subquery = taxon_group.taxonomies.values_list('id', flat=True)
+
         collections = BiologicalCollectionRecord.objects.filter(
             Q(source_site=current_site) | Q(additional_observation_sites=current_site),
-            taxonomy__taxongrouptaxonomy__taxongroup=taxon_group
-        ).distinct()
+            taxonomy__in=Subquery(taxonomies_subquery)
+        )
 
         # Check the chart data type and add corresponding summary data
         if taxon_group.chart_data == 'division':
