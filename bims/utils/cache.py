@@ -1,5 +1,7 @@
 import json
 from functools import wraps
+
+from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.http import HttpResponse
 import hashlib
@@ -26,7 +28,7 @@ def cache_page_with_tag(timeout, tag):
         @wraps(func)
         def _wrapped_view(request, *args, **kwargs):
             cache_key = hashlib.sha256(request.get_full_path().encode('utf-8')).hexdigest()
-            tag_key = f"response_tag:{tag}:{cache_key}"
+            tag_key = f"response_tag:{tag}:{cache_key}:{Site.objects.get_current().id}"
 
             cached_response = cache.get(tag_key)
             if cached_response:
