@@ -1049,6 +1049,9 @@ class TaxonGroupAdmin(admin.ModelAdmin):
         'taxonomies',
         'experts'
     )
+    raw_id_fields = (
+        'gbif_parent_species',
+    )
 
 
 class TaxonomyAdmin(admin.ModelAdmin):

@@ -245,6 +245,11 @@ def add_permission_to_parent(taxon_group: TaxonGroup, permission: Permission):
 @receiver(models.signals.post_save)
 @prevent_recursion
 def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
+    from bims.utils.cache import clear_cache_by_tag
+    from bims.api_views.module_summary import MODULE_SUMMARY_TAG
+
+    clear_cache_by_tag(MODULE_SUMMARY_TAG)
+
     if not issubclass(sender, TaxonGroup):
         return
 

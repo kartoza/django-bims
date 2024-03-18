@@ -1,4 +1,5 @@
 from django.contrib.sites.models import Site
+from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
@@ -7,7 +8,6 @@ from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
     IUCNStatus,
-    UploadSession,
     DownloadRequest,
     Survey
 )
@@ -15,6 +15,9 @@ from bims.models.taxonomy import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
+from bims.utils.cache import cache_page_with_tag
+
+MODULE_SUMMARY_TAG = 'module_summary_tag'
 
 
 def get_species_group(species):
@@ -45,10 +48,11 @@ class ModuleSummary(APIView):
             dict: Dictionary containing summary data.
         """
         summary = {}
+        current_site = Site.objects.get_current()
         collections = BiologicalCollectionRecord.objects.filter(
-            source_site=Site.objects.get_current(),
+            Q(source_site=current_site) | Q(additional_observation_sites=current_site),
             taxonomy__taxongrouptaxonomy__taxongroup=taxon_group
-        )
+        ).distinct()
 
         # Check the chart data type and add corresponding summary data
         if taxon_group.chart_data == 'division':
@@ -142,7 +146,7 @@ class ModuleSummary(APIView):
         Returns conservation status summary data from the provided collections
         """
         summary_temp = dict(
-            collections.exclude(taxonomy__origin__exact='').annotate(
+            collections.annotate(
                 value=Case(When(taxonomy__iucn_status__isnull=False,
                                 then=F('taxonomy__iucn_status__category')),
                            default=Value('Not evaluated'))
@@ -183,7 +187,7 @@ class ModuleSummary(APIView):
 
         counts = (
             BiologicalCollectionRecord.objects.filter(
-                source_site=current_site,
+                Q(source_site=current_site) | Q(additional_observation_sites=current_site),
                 taxonomy__taxongrouptaxonomy__taxongroup__in=taxon_group_ids
             ).aggregate(
                 total_occurrences=Count('id')),
@@ -203,7 +207,9 @@ class ModuleSummary(APIView):
 
         return {key: value for d in counts for key, value in d.items()}
 
-    def get(self, request, *args):
+    @method_decorator(
+        cache_page_with_tag(3600, MODULE_SUMMARY_TAG))
+    def get(self, request, *args, **kwargs):
         response_data = dict()
         taxon_groups = TaxonGroup.objects.filter(
             site=Site.objects.get_current(),
