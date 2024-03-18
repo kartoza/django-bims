@@ -2,6 +2,8 @@
 """Settings for when running under docker in development mode."""
 from .dev import *  # noqa
 
+from .utils import extract_replicas
+
 ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
 
@@ -31,14 +33,16 @@ DATABASES = {
     }
 }
 
-if os.getenv('DEFAULT_BACKEND_DATASTORE'):
-    DATABASES[os.getenv('DEFAULT_BACKEND_DATASTORE')] = {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'geonode_data',
-        'USER': 'docker',
-        'PASSWORD': 'docker',
-        'HOST': 'db',
-        'PORT': 5432
+REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
+REPLICAS = extract_replicas(REPLICA_ENV_VAR)
+for index, replica in enumerate(REPLICAS, start=1):
+    DATABASES[f'replica_{index}'] = {
+        'ENGINE': os.getenv('DB_ENGINE', 'django.contrib.gis.db.backends.postgis'),
+        'NAME': replica['NAME'],
+        'USER': replica['USER'],
+        'PASSWORD': replica['PASSWORD'],
+        'HOST': replica['HOST'],
+        'PORT': replica['PORT'],
     }
 
 CACHES = {

@@ -1777,7 +1777,7 @@ class ClimateDataAdmin(admin.ModelAdmin):
 
 
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'get_users')
+    list_display = ('name', 'description', 'get_users', 'site')
 
     def get_users(self, obj):
         return ", ".join([user.username for user in obj.users.all()])

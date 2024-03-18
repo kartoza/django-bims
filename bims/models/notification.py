@@ -1,5 +1,6 @@
 from typing import List
 
+from django.contrib.sites.models import Site
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -38,6 +39,12 @@ class Notification(models.Model):
         related_name='notifications',
         blank=False
     )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     @property
     def user_emails(self):
@@ -47,7 +54,10 @@ class Notification(models.Model):
         return self.name
 
 
-def get_recipients_for_notification(notification_name: str) -> List[str]:
+def get_recipients_for_notification(
+        notification_name: str,
+        site: Site = None
+) -> List[str]:
     """
     Fetches the recipient emails for a given notification type.
 
@@ -57,16 +67,33 @@ def get_recipients_for_notification(notification_name: str) -> List[str]:
     Args:
     - notification_name (str): The name of the notification type to
         fetch recipients for.
+    - site (Site, optional): The current site instance. Defaults to the current site.
 
     Returns:
     - List[str]: A list of email addresses.
     """
+    if site is None:
+        site = Site.objects.get_current()
+
     try:
-        recipients = Notification.objects.get(name=notification_name).user_emails
+        # Attempt to find the notification for the specified site
+        recipients = Notification.objects.get(
+            name=notification_name,
+            site=site
+        ).user_emails
     except Notification.DoesNotExist:
-        recipients = list(
-            get_user_model().objects.filter(
-                is_superuser=True
-            ).values_list('email', flat=True)
-        )
+        # If not found, attempt to find a site-agnostic notification
+        notification = Notification.objects.filter(
+            name=notification_name,
+            site__isnull=True
+        ).first()
+        if notification:
+            recipients = notification.user_emails
+        else:
+            # If still not found, return superuser emails
+            recipients = list(
+                get_user_model().objects.filter(
+                    is_superuser=True
+                ).values_list('email', flat=True)
+            )
     return recipients
