@@ -85,3 +85,7 @@ ROOT_URLCONF = 'core.urls'
 WSGI_APPLICATION = 'core.wsgi.application'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+DATABASE_ROUTERS = [
+    'bims.utils.router.PrimaryReplicaRouter',
+]
