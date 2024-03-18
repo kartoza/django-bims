@@ -1,3 +1,5 @@
+from django.db.models import ForeignKey
+from django.apps import apps
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission
@@ -23,29 +25,28 @@ class MergeSites(APIView):
     permission_classes = (IsSuperUser, )
 
     @staticmethod
-    def update_sites(Model, site_identifier, primary_site, secondary_sites):
+    def update_sites(primary_site, secondary_sites):
         """
-        Query and then update the location site
-        :param Model: Model to be updated
-        :param site_identifier: The location_site field name in the Model
-        :param primary_site: The one that becomes the site
-        :param secondary_sites: Sites that will be merged to primary
-        :return: Total records updated
+        Automatically finds models with a ForeignKey to LocationSite and updates them.
+        :param primary_site: The site that remains after the merge.
+        :param secondary_sites: List of sites to be merged into the primary site.
+        :return: A dictionary with counts of updated records for each model.
         """
-        secondary_sites_query = {
-            f'{site_identifier}__in': secondary_sites
-        }
-        primary_site_query = {
-            f'{site_identifier}': primary_site
-        }
-        merged_data = Model.objects.filter(
-            **secondary_sites_query
-        )
-        merged_data_count = merged_data.count()
-        merged_data.update(
-            **primary_site_query
-        )
-        return merged_data_count
+        updated_counts = {}
+        models = apps.get_models()
+
+        for model in models:
+            for field in model._meta.get_fields():
+                if isinstance(field, ForeignKey) and field.related_model == LocationSite:
+                    site_identifier = field.name
+                    secondary_sites_query = {f'{site_identifier}__in': secondary_sites}
+                    primary_site_query = {f'{site_identifier}': primary_site}
+                    merged_data = model.objects.filter(**secondary_sites_query)
+                    count = merged_data.update(**primary_site_query)
+                    if count > 0:
+                        updated_counts[model._meta.label] = count
+
+        return updated_counts
 
     def put(self, request, *args):
         primary_site_id = request.data.get('primary_site', None)
@@ -87,54 +88,11 @@ class MergeSites(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Update collection records
-        collection_records_count = self.update_sites(
-            BiologicalCollectionRecord,
-            'site',
-            location_site,
-            merged_sites
-        )
-
-        # Update chemical records
-        chemical_records_count = self.update_sites(
-            ChemicalRecord,
-            'location_site',
-            location_site,
-            merged_sites
-        )
-
-        # Update survey
-        surveys_count = self.update_sites(
-            Survey,
-            'site',
-            location_site,
-            merged_sites
-        )
-
-        # Update site image
-        site_images_count = self.update_sites(
-            SiteImage,
-            'site',
-            location_site,
-            merged_sites
-        )
-
-        # Update SASS site visit
-        sass_site_visits_count = self.update_sites(
-            SiteVisit,
-            'location_site',
-            location_site,
-            merged_sites
-        )
+        update_results = self.update_sites(location_site, list(merged_sites))
 
         sites_removed = merged_sites.count()
         merged_sites.delete()
 
-        return Response({
-            'records_updated': collection_records_count,
-            'chemical_records_updated': chemical_records_count,
-            'surveys_updated': surveys_count,
-            'site_images_updated': site_images_count,
-            'sass_site_visits_updated': sass_site_visits_count,
-            'sites_removed': sites_removed
-        }, status=status.HTTP_200_OK)
+        update_results['sites_removed'] = sites_removed
+
+        return Response(update_results, status=status.HTTP_200_OK)
