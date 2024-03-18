@@ -1,10 +1,13 @@
 import logging
+from datetime import datetime
 
 import factory
 from django.db.models import signals
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
+
+from bims.models.water_temperature import WaterTemperature
 from sass.tests.model_factories import (
     SiteVisit,
     SiteVisitF
@@ -19,6 +22,7 @@ from bims.tests.model_factories import (
     SiteImageF,
     UserF,
     SiteImage,
+    WaterTemperatureF
 )
 from bims.api_views.merge_sites import MergeSites
 
@@ -136,15 +140,28 @@ class TestApiMergeSites(TestCase):
         BiologicalCollectionRecordF.create(
             site=secondary_site_2
         )
+        wt = WaterTemperatureF.create(
+            date_time=datetime.strptime('10/10/24', '%m/%d/%y'),
+            is_daily=True,
+            value=12,
+            maximum=10,
+            minimum=11,
+            location_site=secondary_site_1
+        )
         total_records_updated = MergeSites.update_sites(
-            BiologicalCollectionRecord,
-            'site',
             self.location_site,
-            LocationSite.objects.filter(
+            list(LocationSite.objects.filter(
                 id__in=[secondary_site_1.id, secondary_site_2.id]
-            )
+            ))
+        )
+        wt = WaterTemperature.objects.get(id=wt.id)
+        self.assertEqual(
+            wt.location_site.id,
+            self.location_site.id
         )
         self.assertEqual(
-            total_records_updated,
+            total_records_updated[
+                'bims.BiologicalCollectionRecord'
+            ],
             2
         )
