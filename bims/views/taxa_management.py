@@ -2,8 +2,10 @@
 """Taxa management view
 """
 import json
+import time
 
 from django.contrib.sites.shortcuts import get_current_site
+from django.db.models import Q
 from django.http import Http404
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -30,7 +32,9 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             taxa_groups_query, many=True).data
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
         context['source_collections'] = list(
-            BiologicalCollectionRecord.objects.values_list(
+            BiologicalCollectionRecord.objects.filter(
+                Q(source_site=site) | Q(additional_observation_sites=site)
+            ).values_list(
                 'source_collection', flat=True).distinct()
         )
         context['taxon_rank'] = [
