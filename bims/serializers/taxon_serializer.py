@@ -230,8 +230,10 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         unique_taxonomy_ids = set()
 
         def collect_taxonomy_ids(taxon_group):
-            for taxonomy in taxon_group.taxonomies.all():
-                unique_taxonomy_ids.add(taxonomy.id)
+            ids = TaxonGroupTaxonomy.objects.filter(
+                taxongroup=taxon_group
+            ).values_list('id', flat=True)
+            unique_taxonomy_ids.update(ids)
             for child in TaxonGroup.objects.filter(
                     parent=taxon_group):
                 collect_taxonomy_ids(child)
