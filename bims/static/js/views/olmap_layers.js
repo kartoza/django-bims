@@ -488,11 +488,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             let $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
-
-                if (selected) {
-                    this.renderSitesLegend();
-                } else {
-                    this.hideSitesLegend();
+                if (siteCodeGeneratorMethod === 'fbis') {
+                    if (selected) {
+                        this.renderSitesLegend();
+                    } else {
+                        this.hideSitesLegend();
+                    }
                 }
                 $legendElement = this.getLegendElement(layerName);
                 if (reloadXHR) {
@@ -506,12 +507,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         const layer = this.layers[layerName];
                         const source = layer.layer.getSource();
                         const params = layer.layer.getSource().getParams();
+                        const layers = params.layers || params.LAYERS;
+                        const name = params.name || params.NAME;
                         // Draw legend
                         this.renderLegend(
                             layerName,
-                            params.name,
+                            name,
                             source.getUrls()[0],
-                            params.layers,
+                            layers,
                             false,
                             params.STYLES
                         );
@@ -560,6 +563,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 "[data-name='" + layerName + "']");
         },
         renderLegend: function (id, name, url, layer, visibleDefault, style='') {
+            if (typeof name === 'undefined') {
+                name = id;
+            }
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
             if (url.indexOf('.qgs') != -1) {
                 scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
