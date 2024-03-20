@@ -437,6 +437,13 @@ def gbif_name_suggest(**kwargs):
 ACCEPTED_TAXON_KEY = 'acceptedTaxonKey'
 
 
+def round_coordinates(coords):
+    if isinstance(coords[0], list):
+        return [round_coordinates(sub_coords) for sub_coords in coords]
+    else:
+        return [round(coord, 4) for coord in coords]
+
+
 def find_species_by_area(
         boundary_id,
         parent_species: Taxonomy,
@@ -487,12 +494,6 @@ def find_species_by_area(
                 id=harvest_session.id
             ).canceled
         return False
-
-    def round_coordinates(coords):
-        if isinstance(coords[0], list):
-            return [round_coordinates(sub_coords) for sub_coords in coords]
-        else:
-            return [round(coord, 4) for coord in coords]
 
     def add_parent_to_group(taxon: Taxonomy, group: TaxonGroup):
         if taxon.parent:
