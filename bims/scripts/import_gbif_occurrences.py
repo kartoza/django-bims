@@ -4,6 +4,7 @@ import requests
 import logging
 import datetime
 import simplejson
+from django.contrib.gis.geos import MultiPolygon
 from urllib3.exceptions import ProtocolError
 
 from bims.models.source_reference import DatabaseRecord
@@ -12,7 +13,7 @@ from bims.models.location_site import generate_site_code
 from dateutil.parser import parse, ParserError
 from requests.exceptions import HTTPError
 from preferences import preferences
-from django.contrib.gis.geos import Point
+from django.contrib.gis.geos import Point, GEOSGeometry
 from django.contrib.gis.db import models
 from django.contrib.gis.measure import D
 from geonode.people.models import Profile
@@ -24,6 +25,8 @@ from bims.models import (
     HarvestSession, SourceReferenceDatabase,
     Boundary
 )
+from bims.utils.gbif import round_coordinates
+from bims.models.site_setting import SiteSetting
 
 logger = logging.getLogger('bims')
 
@@ -49,18 +52,28 @@ LOG_TEMPLATE = '---------------------------------------------------\nFetching: {
 MISSING_KEY_ERROR = 'Missing taxon GBIF key'
 
 
-def build_api_url(taxonomy_gbif_key, offset, base_country_codes):
+def build_api_url(taxonomy_gbif_key, offset, base_country_codes, boundary_str=''):
     """
     Construct the API URL with query parameters.
     """
-    country_params = '&'.join([f'country={code.upper()}' for code in base_country_codes.split(',')])
+    country_params = '&' + (
+        '&'.join([f'country={code.upper()}' for code in base_country_codes.split(',')])
+    )
+    boundary_params = ''
+
+    if boundary_str:
+        boundary_params = f'&geometry={boundary_str}'
+        country_params = ''
+
     return (
         f"{API_BASE_URL}?"
         f"taxonKey={taxonomy_gbif_key}&"
         f"offset={offset}&"
         f"hasCoordinate=true&"
         f"hasGeospatialIssue=false&"
-        f"basisOfRecord=HUMAN_OBSERVATION&limit={DEFAULT_LIMIT}&{country_params}"
+        f"basisOfRecord=HUMAN_OBSERVATION&limit={DEFAULT_LIMIT}"
+        f"{country_params}"
+        f"{boundary_params}"
     )
 
 
@@ -291,7 +304,7 @@ def process_gbif_response(json_result,
 
     log_to_file_or_logger(log_file,
                           f"-- Total occurrences {json_result['count']} - "
-                          f"offset {json_result.get('offset', 0)} : ")
+                          f"offset {json_result.get('offset', 0)} : \n")
     return None, json_result['count']
 
 
@@ -304,7 +317,8 @@ def import_gbif_occurrences(
         log_file_path=None,
         session_id=None,
         taxon_group=None,
-        site_id=None):
+        site_id=None,
+        area_index=1):
     """
     Import GBIF occurrences based on taxonomy GBIF key, without using recursion.
     """
@@ -313,22 +327,37 @@ def import_gbif_occurrences(
         return MISSING_KEY_ERROR
 
     base_country_codes = preferences.SiteSetting.base_country_code
-    try:
-        log_to_file_or_logger(
-            log_file_path,
-            LOG_TEMPLATE.format(taxonomy.canonical_name)
-        )
+    site_boundary = preferences.SiteSetting.site_boundary
+    if site_id:
+        site_boundary = SiteSetting.objects.filter(
+            sites=site_id
+        ).first().site_boundary
 
+    extracted_polygons = []
+    area = area_index
+
+    def fetch_and_process_gbif_data(
+            data_offset,
+            country_codes,
+            geom_str=''
+    ):
         while True:
-            api_url = build_api_url(taxonomy.gbif_key, offset, base_country_codes)
+            api_url = build_api_url(
+                taxonomy.gbif_key, data_offset,
+                country_codes, geom_str)
             log_to_file_or_logger(
                 log_file_path,
-                f'URL: {api_url}'
+                f'URL: {api_url}\n'
             )
 
             json_result = fetch_gbif_data(api_url)
             if 'error' in json_result:
-                return json_result
+                log_to_file_or_logger(
+                    log_file_path,
+                    message=f"{json_result['error']}\n",
+                    is_error=True
+                )
+                break
 
             error, data_count = process_gbif_response(
                 json_result,
@@ -341,12 +370,59 @@ def import_gbif_occurrences(
                 log_file_path
             )
             if error:
-                return error
-
-            if data_count <= (offset + DEFAULT_LIMIT):
+                log_to_file_or_logger(
+                    log_file_path,
+                    message=f'{error}\n',
+                    is_error=True
+                )
                 break
+            if data_count <= (data_offset + DEFAULT_LIMIT):
+                break
+            data_offset += DEFAULT_LIMIT
 
-            offset += DEFAULT_LIMIT
+    if site_boundary:
+        try:
+            boundary = Boundary.objects.get(id=site_boundary.id)
+            geometry = boundary.geometry
+            if not geometry:
+                raise ValueError("No geometry found for the boundary.")
+
+            if isinstance(geometry, MultiPolygon):
+                for geom in geometry:
+                    extracted_polygons.append(geom)
+            else:
+                extracted_polygons.append(geometry)
+        except Exception as e:
+            log_to_file_or_logger(
+                log_file_path,
+                message=f"Error fetching boundary: {e}",
+                is_error=True
+            )
+
+    try:
+        log_to_file_or_logger(
+            log_file_path,
+            LOG_TEMPLATE.format(taxonomy.canonical_name)
+        )
+        if site_boundary:
+            for polygon in extracted_polygons[area_index-1:]:
+                if HarvestSession.objects.get(id=session_id).canceled:
+                    return
+                geojson = json.loads(polygon.geojson)
+                geojson['coordinates'] = round_coordinates(
+                    geojson['coordinates'])
+                geometry_rounded = GEOSGeometry(json.dumps(geojson))
+                geometry_str = str(geometry_rounded.ogr)
+                log_to_file_or_logger(
+                    log_file_path,
+                    message='Area=({area}/{total_area})\n'.format(
+                        area=area,
+                        total_area=len(extracted_polygons))
+                )
+                area += 1
+                fetch_and_process_gbif_data(offset, base_country_codes, geometry_str)
+        else:
+            fetch_and_process_gbif_data(offset, base_country_codes)
     except Exception:  # noqa
         return ''
     return 'Finish'

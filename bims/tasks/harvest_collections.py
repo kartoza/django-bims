@@ -3,9 +3,9 @@ from celery import shared_task
 import re
 
 
-def find_last_offset(filepath) -> int:
+def find_last_index(pattern_str, filepath) -> int:
     # Pattern to match the URL and extract the offset
-    pattern = re.compile(r'offset=(\d+)&')
+    pattern = re.compile(pattern_str)
 
     # Open the file
     with open(filepath, 'rb') as f:
@@ -60,14 +60,22 @@ def harvest_collections(session_id, resume=False):
     )
     index = 1
     offset = 0
+    area_index = 1
 
     if resume and harvest_session.status:
         match = re.search(r'\((\d+)/', harvest_session.status)
         # Extract the number if found
         index = int(match.group(1)) if match else 1
-        offset = find_last_offset(
+        offset = find_last_index(
+            r'&offset=(\d+)',
             harvest_session.log_file.path
         )
+        area_index = find_last_index(
+            r'Area=\((\d+)/(\d+)\)',
+            harvest_session.log_file.path
+        )
+        if area_index == 0:
+            area_index = 1
 
     if resume and harvest_session.canceled:
         harvest_session.canceled = False
@@ -93,9 +101,11 @@ def harvest_collections(session_id, resume=False):
             session_id=session_id,
             taxon_group=harvest_session.module_group,
             site_id=harvest_session.source_site_id,
-            offset=offset
+            offset=offset,
+            area_index=area_index
         )
         offset = 0
+        area_index = 1
 
     harvest_session.status = 'Finished'
     harvest_session.finished = True
