@@ -423,6 +423,28 @@ class PermissionAdmin(admin.ModelAdmin):
 class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
     date_hierarchy = 'collection_date'
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        if request.user.is_staff:
+            if not hasattr(
+                request.user,
+                'bims_profile'
+            ):
+                return qs.none()
+            profile = request.user.bims_profile
+            if profile.signup_source_site:
+                source_site = (
+                    profile.signup_source_site
+                )
+                return qs.filter(
+                    Q(source_site=source_site) |
+                    Q(additional_observation_sites=source_site)
+                )
+            return qs
+        return qs
+
     class Media:
         css = {
             'all': ('admin/custom-admin.css',)
