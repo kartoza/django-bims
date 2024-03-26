@@ -3,6 +3,8 @@
 
 """
 from django.contrib.gis.db import models
+from django.dispatch import receiver
+
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 
 
@@ -75,3 +77,14 @@ class TaxonGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+@receiver(models.signals.post_save)
+def taxon_group_post_save_handler(sender, instance, created, **kwargs):
+    if not issubclass(sender, TaxonGroup):
+        return
+
+    from bims.api_views.module_summary import ModuleSummary
+    module_summary_api = ModuleSummary()
+    module_summary_api.call_summary_data_in_background()
+

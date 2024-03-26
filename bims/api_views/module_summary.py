@@ -1,3 +1,4 @@
+import threading
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
@@ -6,12 +7,12 @@ from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
     IUCNStatus,
-    UploadSession,
     DownloadRequest,
     Survey
 )
 from bims.models.taxonomy import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
 
@@ -184,15 +185,31 @@ class ModuleSummary(APIView):
 
         return {key: value for d in counts for key, value in d.items()}
 
-    def get(self, request, *args):
-        response_data = dict()
+    def summary_data(self):
+        module_summary = dict()
         taxon_groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         ).order_by('display_order')
-        response_data['general_summary'] = self.general_summary_data()
+        module_summary['general_summary'] = self.general_summary_data()
         for taxon_group in taxon_groups:
             taxon_group_name = taxon_group.name
-            response_data[taxon_group_name] = (
+            module_summary[taxon_group_name] = (
                 self.module_summary_data(taxon_group)
             )
-        return Response(response_data)
+        set_cache(
+            LANDING_PAGE_MODULE_SUMMARY_CACHE,
+            module_summary
+        )
+        return module_summary
+
+    def call_summary_data_in_background(self):
+        background_thread = threading.Thread(
+            target=self.summary_data)
+        background_thread.start()
+
+    def get(self, request, *args):
+        cached_data = get_cache(LANDING_PAGE_MODULE_SUMMARY_CACHE)
+        if cached_data:
+            return Response(cached_data)
+        summary_data = self.summary_data()
+        return Response(summary_data)
