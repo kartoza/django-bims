@@ -124,8 +124,12 @@ LAYER_NAMES = {
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter_if_empty():
     from bims.tasks.source_reference import generate_source_reference_filter
+    from bims.api_views.module_summary import ModuleSummary
     get_spatial_scale_filter()
     generate_source_reference_filter()
+
+    module_summary_api = ModuleSummary()
+    module_summary_api.call_summary_data_in_background()
 
 
 @shared_task(
