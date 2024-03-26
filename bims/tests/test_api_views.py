@@ -247,7 +247,8 @@ class TestApiView(TestCase):
             site=self.location_site,
             module_group=taxon_group_1
         )
-
+        module_summary = ModuleSummary()
+        module_summary.summary_data()
         request = self.factory.get(reverse('module-summary'))
         response = view(request)
         self.assertGreater(
@@ -285,7 +286,7 @@ class TestApiView(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         new_site = LocationSite.objects.get(pk=new_site.pk)
         self.assertEqual(new_site.ready_for_validation, True)
-        
+
     def test_get_taxon_images(self):
         taxon = TaxonomyF.create(
             scientific_name=u'Golden fish',
