@@ -18,7 +18,8 @@ from bims.tests.model_factories import (
     GroupF,
     LocationSiteF,
     TaxonomyF,
-    TaxonGroupF, TaxonImageF
+    TaxonGroupF, TaxonImageF,
+    SiteF
 )
 from bims.api_views.location_site import (
     LocationSiteDetail,
@@ -35,7 +36,7 @@ from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 logger = logging.getLogger('bims')
 
@@ -46,7 +47,6 @@ class TestApiView(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.location_site = LocationSiteF.create(
-            pk=1,
             location_context_document='""'
         )
 
@@ -98,7 +98,7 @@ class TestApiView(TestCase):
 
     def test_get_location_by_id(self):
         view = LocationSiteDetail.as_view()
-        pk = '1'
+        pk = str(self.location_site.id)
         request = self.factory.get('/api/location-site-detail/?siteId=' + pk)
         response = view(request)
         self.assertTrue(
@@ -190,6 +190,7 @@ class TestApiView(TestCase):
 
     def test_get_module_summary(self):
         view = ModuleSummary.as_view()
+        source_site = SiteF.create()
         taxon_class_1 = TaxonomyF.create(
             scientific_name='Aves',
             rank=TaxonomicRank.CLASS.name,
@@ -204,43 +205,48 @@ class TestApiView(TestCase):
         taxon_group_1 = TaxonGroupF.create(
             name='algae',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies=(taxon_class_1,),
-            chart_data='division'
+            taxonomies=(taxon_species_1,),
+            chart_data='division',
+            site=source_site
         )
 
         taxon_group_2 = TaxonGroupF.create(
             name='fish',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies=(taxon_class_1,),
-            chart_data='conservation status'
+            taxonomies=(taxon_species_1,),
+            chart_data='conservation status',
+            site=source_site
         )
 
-        BiologicalCollectionRecordF.create(
+        bio1 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
             validated=True,
             site=self.location_site,
-            module_group=taxon_group_2
+            source_site=source_site
         )
 
-        BiologicalCollectionRecordF.create(
+        bio2 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
             validated=True,
             site=self.location_site,
-            module_group=taxon_group_1
+            source_site=source_site
         )
 
-        request = self.factory.get(reverse('module-summary'))
-        response = view(request)
-        self.assertGreater(
-            response.data['general_summary']['total_occurrences'],
-            1
-        )
-        self.assertGreater(
-            response.data['general_summary']['total_taxa'],
-            1
-        )
-        self.assertTrue(len(response.data['fish']) > 0)
-        self.assertEqual(len(response.data['algae']['division']), 1)
+        module_summary = ModuleSummary()
+        module_summary.summary_data(source_site)
+        with override_settings(SITE_ID=source_site.id):
+            request = self.factory.get(reverse('module-summary'))
+            response = view(request)
+            self.assertGreater(
+                response.data['general_summary']['total_occurrences'],
+                1
+            )
+            self.assertGreater(
+                response.data['general_summary']['total_taxa'],
+                1
+            )
+            self.assertTrue(len(response.data['fish']) > 0)
+            self.assertEqual(len(response.data['algae']['division']), 1)
 
     def test_get_autocomplete(self):
         view = autocomplete

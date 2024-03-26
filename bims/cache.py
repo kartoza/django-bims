@@ -2,6 +2,8 @@ from django.db import models
 from django.core.cache import cache
 from django.db.models.query import QuerySet
 
+LANDING_PAGE_MODULE_SUMMARY_CACHE = 'LANDING_PAGE_MODULE_SUMMARY_CACHE'
+
 
 def instance_cache_key(instance):
     opts = instance._meta
@@ -31,3 +33,15 @@ class CacheQuerySet(QuerySet):
 class CacheManager(models.Manager):
     def get_queryset(self):
         return CacheQuerySet(self.model)
+
+
+def get_cache(key, default_value=None):
+    return cache.get(key, default_value)
+
+
+def delete_cache(key):
+    return cache.delete(key)
+
+
+def set_cache(key, value):
+    cache.set(key, value)

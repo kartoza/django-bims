@@ -7,8 +7,6 @@ from django.contrib.auth.models import Permission, Group
 from django.contrib.gis.db import models
 from django.contrib.sites.models import Site
 from django.dispatch import receiver
-from django.test import RequestFactory
-from django.urls import reverse
 
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.tasks.collection_record import (
@@ -247,13 +245,18 @@ def add_permission_to_parent(taxon_group: TaxonGroup, permission: Permission):
 @receiver(models.signals.post_save)
 @prevent_recursion
 def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
-    from bims.utils.cache import clear_cache_by_tag
-    from bims.api_views.module_summary import MODULE_SUMMARY_TAG
+
+    from bims.api_views.module_summary import ModuleSummary
 
     if not issubclass(sender, TaxonGroup):
         return
 
-    clear_cache_by_tag(MODULE_SUMMARY_TAG)
+    all_sites = Site.objects.all()
+    for site in all_sites:
+        module_summary_api = ModuleSummary()
+        module_summary_api.call_summary_data_in_background(
+            site
+        )
 
     if not instance.site:
         return

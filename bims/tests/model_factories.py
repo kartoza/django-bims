@@ -49,7 +49,8 @@ from bims.models import (
     WaterTemperatureThreshold,
     UserBoundary,
     HarvestSession,
-    TaxonomyUpdateProposal
+    TaxonomyUpdateProposal,
+    TaxonGroupTaxonomy
 )
 from sass.models import River
 
@@ -256,6 +257,12 @@ class VernacularNameF(factory.django.DjangoModelFactory):
     source = factory.Sequence(lambda n: u'source name %s' % n)
 
 
+class TaxonGroupTaxonomyF(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = TaxonGroupTaxonomy
+
+
 class TaxonGroupF(factory.django.DjangoModelFactory):
     """
     Taxon group factory
@@ -287,7 +294,10 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
         if extracted:
             # A list of groups were passed in, use them
             for taxonomy in extracted:
-                self.taxonomies.add(taxonomy)
+                TaxonGroupTaxonomyF.create(
+                    taxonomy=taxonomy,
+                    taxongroup=self
+                )
 
 
 class TaxonomyUpdateProposalF(TaxonomyF):
@@ -524,6 +534,7 @@ class SiteF(factory.django.DjangoModelFactory):
     class Meta:
         model = Site
 
+    id = factory.Sequence(lambda n: n + 1000)
     name = factory.Sequence(lambda n: u'name %s' % n)
     domain = factory.Sequence(lambda n: u'domain %s' % n)
 

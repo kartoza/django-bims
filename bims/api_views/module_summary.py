@@ -1,5 +1,5 @@
 from django.contrib.sites.models import Site
-from django.utils.decorators import method_decorator
+import threading
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
@@ -13,11 +13,9 @@ from bims.models import (
 )
 from bims.models.taxonomy import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
-from bims.utils.cache import cache_page_with_tag
-
-MODULE_SUMMARY_TAG = 'module_summary_tag'
 
 
 def get_species_group(species):
@@ -37,19 +35,21 @@ class ModuleSummary(APIView):
     Summary for species module
     """
 
-    def module_summary_data(self, taxon_group):
+    def module_summary_data(self, taxon_group, current_site=None):
         """
         Returns summary data for a module based on the given taxon group.
 
         Args:
             taxon_group (Taxon): Taxon group object.
+            current_site (Site): Current site
 
         Returns:
             dict: Dictionary containing summary data.
         """
+        if not current_site:
+            current_site = Site.objects.get_current()
 
         summary = {}
-        current_site = Site.objects.get_current()
 
         taxonomies_subquery = taxon_group.taxonomies.values_list('id', flat=True)
 
@@ -165,7 +165,7 @@ class ModuleSummary(APIView):
                 updated_summary[iucn_category[key]] = summary_temp[key]
         return updated_summary
 
-    def general_summary_data(self):
+    def general_summary_data(self, current_site=None):
         """
         This function calculates a summary of key metrics
         including total occurrences, total taxa,
@@ -174,15 +174,15 @@ class ModuleSummary(APIView):
         Returns:
             dict: A dictionary containing the calculated summary metrics.
         """
+        if not current_site:
+            current_site = Site.objects.get_current()
         upload_counts = Survey.objects.filter(
-            source_site=Site.objects.get_current()
+            source_site=current_site
         ).exclude(
             Q(owner__username__icontains='gbif') |
             Q(owner__username__icontains='admin') |
             Q(owner__username__icontains='map_vm')
         ).count()
-
-        current_site = Site.objects.get_current()
 
         taxon_group_ids = list(TaxonGroup.objects.filter(
             Q(site_id=current_site.id) |
@@ -211,18 +211,46 @@ class ModuleSummary(APIView):
 
         return {key: value for d in counts for key, value in d.items()}
 
-    @method_decorator(
-        cache_page_with_tag(3600, MODULE_SUMMARY_TAG))
-    def get(self, request, *args, **kwargs):
-        response_data = dict()
+    def _cache_key(self, site=None):
+        if not site:
+            site = Site.objects.get_current()
+        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}{site.id}'
+
+    def summary_data(self, site=None):
+        if not site:
+            site = Site.objects.get_current()
+        module_summary = dict()
         taxon_groups = TaxonGroup.objects.filter(
-            site=Site.objects.get_current(),
+            site=site,
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         ).order_by('display_order')
-        response_data['general_summary'] = self.general_summary_data()
+        module_summary['general_summary'] = self.general_summary_data(
+            current_site=site
+        )
         for taxon_group in taxon_groups:
             taxon_group_name = taxon_group.name
-            response_data[taxon_group_name] = (
-                self.module_summary_data(taxon_group)
+            module_summary[taxon_group_name] = (
+                self.module_summary_data(
+                    taxon_group,
+                    current_site=site
+                )
             )
-        return Response(response_data)
+        set_cache(
+            self._cache_key(site),
+            module_summary
+        )
+        return module_summary
+
+    def call_summary_data_in_background(self, site=Site.objects.get_current()):
+        background_thread = threading.Thread(
+            target=self.summary_data,
+            args=(site,)
+        )
+        background_thread.start()
+
+    def get(self, request, *args):
+        cached_data = get_cache(self._cache_key())
+        if cached_data:
+            return Response(cached_data)
+        summary_data = self.summary_data()
+        return Response(summary_data)
