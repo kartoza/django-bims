@@ -122,11 +122,14 @@ def get_location_context_data(
         )
 
     if not group_keys:
-        organisation_sites = set(location_sites.values_list(
-            'additional_observation_sites', flat=True))
-        organisation_sites.update(
-            location_sites.values_list('source_site', flat=True)
-        )
+        if site:
+            organisation_sites = [site]
+        else:
+            organisation_sites = set(location_sites.values_list(
+                'additional_observation_sites', flat=True))
+            organisation_sites.update(
+                location_sites.values_list('source_site', flat=True)
+            )
         geocontext_settings = GeocontextSetting.objects.filter(
             sites__in=list(organisation_sites)
         )
