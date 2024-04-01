@@ -63,6 +63,7 @@ from bims.api_views.location_site_dashboard import (
     PER_YEAR_FREQUENCY,
     PER_MONTH_FREQUENCY
 )
+from bims.utils.location_site import overview_site_detail
 
 
 class LocationSiteList(APIView):
@@ -208,7 +209,7 @@ class LocationSitesSummary(APIView):
         is_sass_exists = False
 
         if site_id:
-            site_details = self.get_site_details(site_id)
+            site_details = overview_site_detail(site_id)
             site_details['Species and Occurences'] = (
                 self.get_number_of_records_and_taxa(collection_results))
         else:
@@ -557,103 +558,6 @@ class LocationSitesSummary(APIView):
         )
 
         return summary
-
-    def get_site_details(self, site_id):
-        # get single site detailed dashboard overview data
-        try:
-            location_site = LocationSite.objects.get(id=site_id)
-        except LocationSite.DoesNotExist:
-            return {}
-        location_context = LocationContext.objects.filter(site=location_site)
-        site_river = '-'
-        if location_site.river:
-            site_river = location_site.river.name
-        overview = dict()
-        overview['{} Site Code'.format(
-            preferences.SiteSetting.default_site_name
-        )] = location_site.site_code
-        overview['User Site Code'] = location_site.legacy_site_code
-        overview['Site coordinates'] = (
-            'Longitude: {long}, Latitude: {lat}'.format(
-                long=self.parse_string(location_site.longitude),
-                lat=self.parse_string(location_site.latitude)
-            )
-        )
-        if location_site.site_description:
-            overview['Site description'] = self.parse_string(
-                location_site.site_description
-            )
-        else:
-            overview['Site description'] = self.parse_string(
-                location_site.name
-            )
-
-        result = dict()
-        result['Overview'] = overview
-
-        if preferences.SiteSetting.site_code_generator == 'fbis':
-            river_and_geo = OrderedDict()
-            river_and_geo['Ecosystem Type'] = (
-                location_site.ecosystem_type if location_site.ecosystem_type else 'Unspecified'
-            )
-            river_and_geo['River'] = site_river
-            river_and_geo[
-                'User River Name'] = (
-                location_site.legacy_river_name if location_site.legacy_river_name else '-'
-            )
-            river_and_geo['Geomorphological zone'] = (
-                location_context.value_from_key(
-                    'geo_class_recoded')
-            )
-            refined_geomorphological = '-'
-            if location_site.refined_geomorphological:
-                refined_geomorphological = (
-                    location_site.refined_geomorphological
-                )
-            river_and_geo['User Geomorphological zone'] = (
-                refined_geomorphological
-            )
-            river_and_geo['Wetland Name (NWM6)'] = (
-                location_site.wetland_name if location_site.wetland_name else '-'
-            )
-            river_and_geo['User Wetland Name'] = (
-                location_site.user_wetland_name if location_site.user_wetland_name else '-'
-            )
-            river_and_geo['Hydrogeomorphic Type (NWM6)'] = (
-                location_site.hydrogeomorphic_type if location_site.hydrogeomorphic_type else '-'
-            )
-            river_and_geo['User Hydrogeomorphic Type'] = (
-                location_site.user_hydrogeomorphic_type if location_site.user_hydrogeomorphic_type else '-'
-            )
-
-            wetland_area = ''
-            if location_site.ecosystem_type == ECOSYSTEM_WETLAND and location_site.additional_data:
-                wetland_area = location_site.additional_data.get('area_ha', '')
-
-            river_and_geo['Wetland area (hectares)'] = (
-                wetland_area if wetland_area else '-'
-            )
-
-            result['Ecosystem Characteristics'] = river_and_geo
-
-        # Location context group data
-        location_context_filters = (
-            LocationContextFilterGroupOrder.objects.filter(
-                show_in_dashboard=True
-            ).order_by('group_display_order')
-        )
-
-        for context_filter in location_context_filters:
-            title = context_filter.filter.title
-            if title not in result:
-                result[title] = {}
-            result[title][context_filter.group.name] = (
-                location_context.value_from_key(
-                    context_filter.group.key
-                )
-            )
-
-        return result
 
     def parse_string(self, string_in):
         if not string_in:

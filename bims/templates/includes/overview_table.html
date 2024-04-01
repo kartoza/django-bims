@@ -8,47 +8,12 @@
     </div>
     <table class="summary-table table" style="margin-bottom: 0">
         <tbody>
-        <tr>
-            <th class="title-row" colspan="2">Site Details</th>
-        </tr>
-        <tr>
-            <th>{{ preferences.SiteSetting.default_site_name }} Site Code</th>
-            <td>{% if site_code %}{{ site_code }}{% elif location_site %}{{ location_site.site_code }}{% endif %}</td>
-        </tr>
-        <tr>
-            <th>User Site Code</th>
-            <td>{% if user_site_code %}{{ user_site_code }}{% elif location_site %}{{ location_site.legacy_site_code }}{% endif %}</td>
-        </tr>
-        <tr>
-            <th>Site coordinates</th>
-            <td>{% if coord %}{{ coord.0 }}, {{ coord.1 }}{% elif location_site %}{{ location_site.get_centroid.x }}, {{ location_site.get_centroid.y }}{% endif %}</td>
-        </tr>
-        <tr>
-            <th>Site description</th>
-            <td>{{ site_description }}</td>
-        </tr>
-        {% if preferences.SiteSetting.default_data_source == 'fbis' %}
-        <tr>
-            <th class="title-row" colspan="2">River and
-                Geomorphological Zone
-            </th>
-        </tr>
-        <tr>
-            <th>User River Name</th>
-            <td>{{ user_river_name }}</td>
-        </tr>
-        <tr>
-            <th>River</th>
-            <td>{{ river }}</td>
-        </tr>
-        {% endif %}
         </tbody>
     </table>
 </div>
 
 <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
 <script>
-
     function renderLocationContextTable() {
         let $table = $('.summary-table tbody');
         let tableData = {
@@ -69,60 +34,76 @@
             'Freshwater Ecoregion': '-',
             'Province': '-',
         };
-        try {
-            tableData['Geomorphological zone'] = geomorphologicalGroup['geo_class_recoded'];
-            tableData['SA Ecoregion Level 1'] = riverEcoregionGroup['eco_region_1'];
-            tableData['SA Ecoregion Level 2'] = riverEcoregionGroup['eco_region_2'];
-            tableData['Sub Water Management Area'] = waterManagementAreaGroup['sub_wmas'];
-            tableData['Water Management Area'] = waterManagementAreaGroup['water_management_area'];
-            if (waterManagementAreaGroup['river_management_unit']) {
-                tableData['River Management Unit'] = waterManagementAreaGroup['river_management_unit'];
-            }
-        } catch (e) {
-        }
-
-        let freshwaterEcoregionValue = '-';
-        if (freshwaterEcoregion.hasOwnProperty('feow_hydrosheds')) {
-            if (freshwaterEcoregion['feow_hydrosheds'] !== 'None') {
-                freshwaterEcoregionValue = freshwaterEcoregion['feow_hydrosheds'];
-            }
-        }
-        tableData['Freshwater Ecoregion'] = freshwaterEcoregionValue;
-
-        if (originalGeomorphologicalZone) {
-            tableData['Geomorphological zone'] = originalGeomorphologicalZone;
-        }
-
-        if (politicalBoundary) {
-            try {
-                if (politicalBoundary['combination_saprovince_sadc_boundary'])
-                    tableData['Province'] = politicalBoundary['combination_saprovince_sadc_boundary'];
-            } catch (e) {
-            }
-        }
-
-        if (riverCatchments) {
-            try {
-                tableData['Primary Catchment'] = riverCatchments['primary_catchment_area'];
-                tableData['Secondary Catchment'] = riverCatchments['secondary_catchment_area'];
-                tableData['Tertiary Catchment'] = riverCatchments['tertiary_catchment_area'];
-                tableData['Quaternary Catchment'] = riverCatchments['quaternary_catchment_area'];
-            } catch (e) {
-            }
-        }
-
-        $.each(tableData, function (key, value) {
-            if (value === 'title') {
+        if (siteDetailsData) {
+            tableData = siteDetailsData;
+            $.each(tableData, function (key, value) {
                 $table.append('<tr>\n' +
                     '<th class="title-row" colspan="2"> ' + key + ' </th>' +
                     '</tr>');
-            } else {
-                $table.append('<tr>\n' +
-                    '<th> ' + key + ' </th>' +
-                    '<td>' + value + '</td>\n' +
-                    '</tr>');
+                $.each(value, function (rowKey, rowValue) {
+                    $table.append('<tr>\n' +
+                       '<th> ' + rowKey + ' </th>' +
+                       '<td>' + rowValue + '</td>\n' +
+                       '</tr>');
+                })
+            });
+        } else {
+            try {
+                tableData['Geomorphological zone'] = geomorphologicalGroup['geo_class_recoded'];
+                tableData['SA Ecoregion Level 1'] = riverEcoregionGroup['eco_region_1'];
+                tableData['SA Ecoregion Level 2'] = riverEcoregionGroup['eco_region_2'];
+                tableData['Sub Water Management Area'] = waterManagementAreaGroup['sub_wmas'];
+                tableData['Water Management Area'] = waterManagementAreaGroup['water_management_area'];
+                if (waterManagementAreaGroup['river_management_unit']) {
+                    tableData['River Management Unit'] = waterManagementAreaGroup['river_management_unit'];
+                }
+            } catch (e) {
             }
-        });
+
+            let freshwaterEcoregionValue = '-';
+            if (freshwaterEcoregion.hasOwnProperty('feow_hydrosheds')) {
+                if (freshwaterEcoregion['feow_hydrosheds'] !== 'None') {
+                    freshwaterEcoregionValue = freshwaterEcoregion['feow_hydrosheds'];
+                }
+            }
+            tableData['Freshwater Ecoregion'] = freshwaterEcoregionValue;
+
+            if (originalGeomorphologicalZone) {
+                tableData['Geomorphological zone'] = originalGeomorphologicalZone;
+            }
+
+            if (politicalBoundary) {
+                try {
+                    if (politicalBoundary['combination_saprovince_sadc_boundary'])
+                        tableData['Province'] = politicalBoundary['combination_saprovince_sadc_boundary'];
+                } catch (e) {
+                }
+            }
+
+            if (riverCatchments) {
+                try {
+                    tableData['Primary Catchment'] = riverCatchments['primary_catchment_area'];
+                    tableData['Secondary Catchment'] = riverCatchments['secondary_catchment_area'];
+                    tableData['Tertiary Catchment'] = riverCatchments['tertiary_catchment_area'];
+                    tableData['Quaternary Catchment'] = riverCatchments['quaternary_catchment_area'];
+                } catch (e) {
+                }
+            }
+
+            $.each(tableData, function (key, value) {
+                if (value === 'title') {
+                    $table.append('<tr>\n' +
+                        '<th class="title-row" colspan="2"> ' + key + ' </th>' +
+                        '</tr>');
+                } else {
+                    $table.append('<tr>\n' +
+                        '<th> ' + key + ' </th>' +
+                        '<td>' + value + '</td>\n' +
+                        '</tr>');
+                }
+            });
+        }
+
     }
 
     {% if preferences.SiteSetting.default_data_source == 'fbis' %}
