@@ -36,6 +36,7 @@ from bims.models import (
 from bims.views.autocomplete_search import is_ajax
 
 from bims.views.mixin.session_form import SessionFormMixin
+from bims.utils.location_site import overview_site_detail
 
 logger = logging.getLogger('bims')
 
@@ -567,42 +568,8 @@ class WaterTemperatureSiteView(TemplateView):
                 'source_reference').source_references()
         )
         context['source_references'] = json.dumps(source_references)
-
-        context['river_catchments'] = json.dumps(
-            self.location_context.values_from_group(
-                'river_catchment_areas_group'
-        ))
-        context['wma'] = (
-            json.dumps(self.location_context.values_from_group(
-                'water_management_area'
-            ))
-        )
-        context['geomorphological_group'] = (
-            json.dumps(self.location_context.values_from_group(
-                'geomorphological_group'
-            ))
-        )
-        context['river_ecoregion_group'] = (
-            json.dumps(self.location_context.values_from_group(
-                'river_ecoregion_group'
-            ))
-        )
-        context['freshwater_ecoregion_of_the_world'] = (
-            json.dumps(self.location_context.values_from_group(
-                'freshwater_ecoregion_of_the_world'
-            ))
-        )
-        context['political_boundary'] = (
-            json.dumps(self.location_context.values_from_group(
-                'province'
-            ))
-        )
-        refined_geomorphological = '-'
-        if self.location_site.refined_geomorphological:
-            refined_geomorphological = (
-                self.location_site.refined_geomorphological
-            )
-        context['refined_geomorphological'] = refined_geomorphological
+        context['site_details'] = json.dumps(
+            overview_site_detail(self.location_site.id))
 
         return context
 

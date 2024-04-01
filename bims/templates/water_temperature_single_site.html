@@ -36,6 +36,8 @@
         const useCombinedGeo = {% if use_combined_geo %}true{% else %}false{% endif %};
         const availableYears = {{ years }};
         let csrfToken = '{{ csrf_token }}';
+
+        siteDetailsData = {{ site_details | safe }};
     </script>
     <style>
 
