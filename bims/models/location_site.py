@@ -522,7 +522,10 @@ def location_site_post_save_handler(sender, instance, **kwargs):
             pass
 
     # Update location context in background
-    update_location_context.delay(instance.id)
+    async_result = update_location_context.delay(instance.id)
+    if not instance.site_description:
+        instance.site_description = async_result.id
+        instance.save()
 
 
 def generate_site_code(

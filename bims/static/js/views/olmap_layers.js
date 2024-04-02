@@ -20,6 +20,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         administrativeOrder: 0,
         layerSelector: null,
         legends: {},
+        wetlandLayer: 'kartoza:nwm6_beta_v3_20230714',
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -760,7 +761,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             lon = parseFloat(lon);
             lat = parseFloat(lat);
-            const coordinate = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+            const coordinate = ol.proj.transform(
+                [lon, lat], 'EPSG:4326', 'EPSG:3857');
 
             if (Shared.GetFeatureRequested) {
                 Shared.GetFeatureRequested = false;
@@ -952,6 +954,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         that.downloadFilteredLayerData(feature['properties'][layerAttr], feature['layerId'], layerName, $(this));
                     });
                     $(`#${contentId}`).prepend(downloadButton);
+                }
+                if (key_feature === that.wetlandLayer) {
+                    $(`#${contentId}`).prepend('<div class="btn">Dashboard</div>')
                 }
             });
 
