@@ -108,6 +108,8 @@ from bims.api_views.decision_support_tool import DecisionSupportToolView, \
 from bims.api_views.download_request import (
     DownloadRequestApi
 )
+from bims.api_views.wetland_data import WetlandDataApiView
+
 
 urlpatterns = [
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -327,5 +329,8 @@ urlpatterns = [
         name='download-layer-data'),
     path('delete-records-by-source-reference-id/<int:source_reference_id>/',
          DeleteRecordsByReferenceId.as_view(),
-         name='delete-records-by-source-reference-id')
+         name='delete-records-by-source-reference-id'),
+    path('wetland-data/<str:lat>/<str:lon>/',
+         WetlandDataApiView.as_view(),
+         name='wetland-data')
 ]
