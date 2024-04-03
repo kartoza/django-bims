@@ -2745,6 +2745,24 @@ div:hover::-webkit-scrollbar {
     align-self: center;
 }
 
+.side-panel-table .row {
+    font-size: 0.75rem;
+    line-height: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.side-panel-table .row .value-column {
+    color: #3D647D;
+    text-align: right;
+    align-self: center;
+    line-height: 2.3em;
+}
+
+.side-panel-table .row .caption-column {
+    color: #4a4a4a;
+    text-align: left;
+    align-self: center;
+}
 .fbis-button-small a {
     color: inherit;
 }
@@ -2925,4 +2943,10 @@ div:hover::-webkit-scrollbar {
 
 .ol-attribution {
     margin-bottom: 45px;
+}
+
+.wetland-dashboard-status {
+    padding: 5px;
+    background-color: rgba(var(--secondary-accent-color), 1);
+    color: white;
 }

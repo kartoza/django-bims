@@ -666,7 +666,6 @@ define([
 
                 var ready = self.numInFlightTiles <= 15 && numHeldTiles === 0;
                 if (self.mapIsReady !== ready) {
-                    console.log(self.numInFlightTiles, numHeldTiles, ready)
                     self.mapIsReady = ready;
                 }
             });
