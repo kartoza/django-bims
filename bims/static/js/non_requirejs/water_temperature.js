@@ -208,7 +208,30 @@ $(function () {
         changeMonth: true,
         changeYear: true,
         dateFormat: 'yy-mm-dd',
-        yearRange: `${availableYears[0]}:${availableYears.at(-1)}`
+        beforeShow: function(input, inst) {
+            setTimeout(function() {
+                let yearSelector = $(".ui-datepicker-year");
+                let currentYear = yearSelector.val();
+                yearSelector.find("option").each(function() {
+                    if (!availableYears.includes(parseInt($(this).val()))) {
+                        $(this).remove();
+                    }
+                });
+                if (!availableYears.includes(parseInt(currentYear))) {
+                    yearSelector.val(availableYears[0]);
+                }
+            }, 0);
+        },
+        onChangeMonthYear: function(year, month, inst) {
+            setTimeout(function() {
+                let yearSelector = $(".ui-datepicker-year");
+                yearSelector.find("option").each(function() {
+                    if (!availableYears.includes(parseInt($(this).val()))) {
+                        $(this).remove();
+                    }
+                });
+            }, 0);
+        }
     });
 
     $('#update-date').click(() => {
