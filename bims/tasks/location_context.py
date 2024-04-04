@@ -119,7 +119,8 @@ LAYER_NAMES = {
 
 @shared_task(
     name='bims.tasks.generate_filters',
-    queue='geocontext'
+    queue='geocontext',
+    ignore_result=True
 )
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter_if_empty():
@@ -133,7 +134,9 @@ def generate_spatial_scale_filter_if_empty():
 
 
 @shared_task(
-    name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
+    name='bims.tasks.generate_spatial_scale_filter',
+    queue='geocontext',
+    ignore_result=True)
 @single_instance_task(60 * 10)
 def generate_spatial_scale_filter():
     from bims.models import (
