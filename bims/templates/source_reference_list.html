@@ -79,7 +79,7 @@
 
             </div>
             <div class="col-lg-9 col-md-8 col-xs-12">
-                {% if perms.bims.change_sourcereference %}
+                {% if user.is_authenticated %}
                     <a href="/add-source-reference/" class="btn btn-info" style="margin-bottom: 10px"><i class="fa fa-plus"></i>&nbsp Add Source Reference</a>
                 {% endif %}
                 {% for source_reference in object_list %}
