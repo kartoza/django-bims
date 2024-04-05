@@ -936,14 +936,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         if (self.currentWetlandRequestId !== requestId) {
                             return;
                         }
+                        Shared.Dispatcher.trigger('sidePanel:toggleLoading', false);
                         let $detailWrapper = $('<div style="padding-left: 0;"></div>');
+
+                        if (data.hasOwnProperty('message')) {
+                            if (data['message'] === 'layer not found') {
+                                $detailWrapper.html('<div>Wetland data not found</div>')
+                                return;
+                            }
+                        }
+
                         let siteDetailsTemplate = _.template($('#wetland-side-panel-dashboard').html());
                         $detailWrapper.html(siteDetailsTemplate(data));
 
                         $detailWrapper.find('.search-results-total').click(self.hideAll);
                         $detailWrapper.find('.search-results-total').click();
 
-                        Shared.Dispatcher.trigger('sidePanel:toggleLoading', false);
                         Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', 'Wetland Dashboard');
                         Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
 
