@@ -47,7 +47,6 @@ let validator = $('#site-form').validate({
                 }
             } else {
                 if (siteCode.length !== 15) {
-                    alert(siteCode.length)
                     showSiteCodeError();
                     return false;
                 }
@@ -147,6 +146,22 @@ $(function () {
         });
         map.addLayer(riverLayer);
     }
+
+    let biodiversityLayersOptions = {
+        url: geoserverPublicUrl + 'wms',
+        params: {
+            LAYERS: locationSiteGeoserverLayer,
+            FORMAT: 'image/png8',
+            viewparams: 'where:' + defaultWMSSiteParameters
+        },
+        ratio: 1,
+        serverType: 'geoserver'
+    };
+    let biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
+    let biodiversityTileLayer = new ol.layer.Tile({
+        source: biodiversitySource
+    });
+    map.addLayer(biodiversityTileLayer);
 
     map.on('click', mapOnClicked);
 
