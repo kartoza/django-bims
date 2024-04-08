@@ -47,7 +47,7 @@ def overview_site_detail(site_id: int):
         )
 
     result = dict()
-    result['Overview'] = overview
+    result['Site details'] = overview
 
     if preferences.SiteSetting.site_code_generator == 'fbis':
         river_and_geo = OrderedDict()
