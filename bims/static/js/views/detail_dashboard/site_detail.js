@@ -233,10 +233,11 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     if (data.hasOwnProperty('status')) {
-                        if (data['status'] === 'processing') {
+                        let status = data['status'].toLowerCase()
+                        if (status === 'processing' || status === 'started' || status === 'progress') {
                             setTimeout(function () {
                                 self.fetchData(parameters);
-                            }, 2000);
+                            }, 1000);
                             return false;
                         }
                     }
