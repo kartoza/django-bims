@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def location_sites_overview(
         search_parameters=None,
         search_process_id=None
-    ):
+):
     from bims.utils.celery import memcache_lock
     from bims.api_views.location_site_overview import (
         LocationSiteOverviewData
