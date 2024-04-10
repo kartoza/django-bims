@@ -14,6 +14,7 @@ from bims.tasks.clean_data import *  # noqa
 from bims.tasks.email_csv import *  # noqa
 from bims.tasks.taxa import *  # noqa
 from bims.tasks.harvest_gbif_species import *  # noqa
+from bims.tasks.location_site_summary import *  # noqa
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')

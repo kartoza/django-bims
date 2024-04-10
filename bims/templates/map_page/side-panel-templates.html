@@ -1,7 +1,6 @@
 <script type='text/html' id='side-panel-template'>
     <div class="right-panel">
         <div class="row side-panel side-panel-info">
-
             <div class="right-panel-loading">
                 <img src="/static/loading-fbis.gif"/>
             </div>
@@ -337,4 +336,39 @@
         <p class="group-title"><%= name %></p>
         <a class="group-description"><%= value %></a>
     </div>
+</script>
+
+<script type="text/template" id="wetland-side-panel-dashboard">
+    <% if (task_status.state == 'PROGRESS' || task_status.state == 'STARTED' || task_status.state == 'PENDING') { %>
+        <div class="wetland-dashboard-status">
+            <img src="/static/img/small-loading.svg" width="20"
+                 alt="Loading view">
+            Gathering overview, data will be updated automatically...
+        </div>
+    <% } %>
+    <div class="search-results-wrapper">
+        <div class="search-results-total" data-visibility="false">
+            <span class="search-result-title"> Overview </span> <i class="fa pull-right filter-icon-arrow fa-angle-up"></i></div><div style="">
+        <div>
+            <div>
+                <div class="container-fluid side-panel-table">
+                    <% _.each(site_details, function(detailsData, title) { %>
+                    <div class="site-details-container row">
+                        <div class="col-12 sub-title site-details-header"><%= title %></div>
+                        <div class="col-12 site-details-content">
+                            <% _.each(detailsData, function(value, key) { %>
+                                <% if (!key.includes('Site Code') && !key.includes('River') && !key.includes('Site description') && !key.includes('User')) { %>
+                                <div class="row">
+                                    <div class="col-6"><%= key %> </div>
+                                    <div class="col-6"><%= value %> </div>
+                                </div>
+                                <% } %>
+                            <% }); %>
+                        </div>
+                    </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+    </div></div>
 </script>

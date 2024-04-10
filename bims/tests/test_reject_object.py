@@ -1,9 +1,10 @@
+from django.db.models import signals
 from django.test import TestCase
 import mock
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from bims.models import LocationSite
+from bims.models import LocationSite, location_site_post_save_handler
 from bims.tests.model_factories import LocationSiteF, UserF
 
 
@@ -12,6 +13,9 @@ class TestRejectLocationSite(TestCase):
 
     def setUp(self):
         self.location_site = LocationSiteF.create()
+        signals.post_save.disconnect(
+            location_site_post_save_handler,
+            sender=LocationSite)
 
     def test_reject_location_site(self, mock_update_location_site_context):
         client = APIClient()
@@ -45,10 +49,7 @@ class TestRejectLocationSite(TestCase):
         site = LocationSite.objects.get(pk=site.id)
         self.assertEqual(site.rejected, True)
 
-
-
-
-
-
-
-
+    def tearDown(self):
+        signals.post_save.connect(
+            receiver=location_site_post_save_handler,
+            sender=LocationSite)

@@ -4,7 +4,7 @@ from celery import shared_task
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='bims.tasks.clean_data', queue='update')
+@shared_task(name='bims.tasks.clean_data', queue='update', ignore_result=True)
 def clean_data():
     from bims.models.water_temperature import WaterTemperature
     from bims.models.endemism import Endemism

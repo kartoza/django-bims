@@ -15,6 +15,7 @@ from bims.models import Chem, LocationSite, BaseMapLayer, ChemicalRecord, \
 from bims.templatetags import get_unvalidated_site_visits_url
 from bims.utils.get_key import get_key
 from sass.enums.chem_unit import ChemUnit
+from bims.utils.location_site import overview_site_detail
 
 
 class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
@@ -256,6 +257,7 @@ class PhysicoChemicalSiteView(TemplateView):
         ctx['site_image'] = SiteImage.objects.filter(
             site=self.location_site
         ).order_by('date')
+        ctx['site_details'] = json.dumps(overview_site_detail(self.location_site.id))
         ctx['river_catchments'] = json.dumps(
             self.location_context.values_from_group(
                 'river_catchment_areas_group'
