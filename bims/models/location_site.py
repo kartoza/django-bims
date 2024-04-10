@@ -489,7 +489,8 @@ class LocationSite(AbstractValidation):
 
 
 def update_location_site_context(location_site_id):
-    update_location_context.delay(location_site_id)
+    async_result = update_location_context.delay(location_site_id)
+    return async_result
 
 
 @receiver(models.signals.post_save, sender=LocationSite)
@@ -538,8 +539,10 @@ def location_site_post_save_handler(sender, instance, **kwargs):
         except LocationContext.MultipleObjectsReturned:
             pass
 
-    update_location_site_context(location_site_id=instance.id)
-
+    async_result = update_location_site_context(location_site_id=instance.id)
+    if not instance.site_description:
+        instance.site_description = async_result.id
+        instance.save()
 
 def generate_site_code(
         location_site=None, lat=None, lon=None, river_name='', ecosystem_type='', wetland_name=''):

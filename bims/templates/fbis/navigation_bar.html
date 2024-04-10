@@ -83,6 +83,9 @@
             {% endif %}
             <a class="p-2" href="/contact">Contact</a>
             <a class="p-2" href="/pages/help">Help</a>
+            {% if user.is_authenticated and not user.is_superuser %}
+                <a class="p-2" href="/source-references/">Source References</a>
+            {% endif %}
             <span class="p-2"></span>
             {% if not user.is_authenticated %}
                 <a class="nav-login-button" href="/accounts/login">LOG IN</a>

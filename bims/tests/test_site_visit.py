@@ -1,12 +1,16 @@
 import json
 import logging
+import threading
+import time
+from unittest.mock import patch
 
-from django.test import TestCase
-from bims.models import LocationSite
+from django.db.models.signals import post_save
+from django.test import TransactionTestCase, TestCase
+from bims.models import LocationSite, location_site_post_save_handler
 from bims.tests.model_factories import (
     SurveyF, UserF, Survey,
     BiologicalCollectionRecordF, BiologicalCollectionRecord, LocationSiteF,
-    TaxonomyF
+    TaxonomyF, ChemicalRecordF
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -245,43 +249,82 @@ class TestSiteVisitView(TestCase):
         ).exists())
         self.assertTrue(Survey.objects.get(id=self.survey.id).validated)
 
+
+class TestSiteVisitDelete(TransactionTestCase):
+    def setUp(self):
+        post_save.disconnect(receiver=location_site_post_save_handler, sender=LocationSite)
+        self.collector = UserF.create()
+        self.owner = UserF.create()
+        self.anonymous = UserF.create()
+        self.superuser = UserF.create(
+            is_superuser=True
+        )
+        self.survey = SurveyF.create(
+            id=1,
+            collector_user=self.collector,
+            owner=self.owner
+        )
+
     def test_SiteVisitView_delete(self):
         # Delete site visit
         location_site = LocationSiteF.create()
 
-        survey = SurveyF.create(
-            id=2,
+        survey_1 = SurveyF.create(
+            collector_user=self.collector,
+            owner=self.owner,
+            site=location_site
+        )
+
+        survey_2 = SurveyF.create(
             collector_user=self.collector,
             owner=self.owner,
             site=location_site
         )
 
         bio = BiologicalCollectionRecordF.create(
-            survey=survey
+            survey=survey_1
         )
 
         res = self.client.login(
             username=self.superuser.username,
             password='password'
         )
+
+        ChemicalRecordF.create(
+            location_site=location_site
+        )
+
         post_data = {}
-        self.client.post(
-            '/site-visit/delete/{}/'.format(
-                survey.id
-            ),
-            post_data,
-            follow=True
-        )
 
-        self.assertFalse(
-            Survey.objects.filter(id=survey.id).exists()
-        )
+        original_thread_start = threading.Thread.start
 
-        self.assertFalse(
-            BiologicalCollectionRecord.objects.filter(
-                survey_id=survey.id).exists()
-        )
+        def mock_start(self, *args, **kwargs):
+            original_thread_start(self, *args, **kwargs)
+            self.join()
 
-        self.assertFalse(
-            LocationSite.objects.filter(id=location_site.id).exists()
-        )
+        with patch.object(threading.Thread, 'start', new=mock_start):
+            self.client.post(
+                '/site-visit/delete/{}/'.format(
+                    survey_1.id
+                ),
+                post_data,
+                follow=True
+            )
+
+            self.assertFalse(
+                Survey.objects.filter(id=survey_1.id).exists()
+            )
+
+            self.assertFalse(
+                BiologicalCollectionRecord.objects.filter(
+                    survey_id=survey_1.id).exists()
+            )
+
+            self.assertTrue(
+                LocationSite.objects.filter(
+                    id=location_site.id).exists()
+            )
+
+    def tearDown(self):
+        post_save.connect(receiver=location_site_post_save_handler, sender=LocationSite)
+

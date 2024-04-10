@@ -1,5 +1,5 @@
 Django==4.2.8
-psycopg2==2.9.9
+psycopg2-binary==2.8.5
 django-braces==1.14.0
 django-model-utils==4.0.0
 django-role-permissions==2.2.1
@@ -82,7 +82,7 @@ pika==1.2.0
 
 MarkupSafe==1.1.1
 pygbif==0.6.0
-celery==5.2.6
+
 pycurl==7.45.2
 django-forms-bootstrap==3.1.0
 importlib-metadata==4.11.4
@@ -94,3 +94,5 @@ sentry-sdk==1.40.0
 django-admin-inline-paginator==0.4.0
 pandas==2.2.1
 openpyxl==3.1.2
+celery==5.3.6
+django-celery-results==2.5.1

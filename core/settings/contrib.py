@@ -41,7 +41,8 @@ INSTALLED_APPS = (
     'polymorphic',
     'webpack_loader',
     'ckeditor_uploader',
-    'django_admin_inline_paginator'
+    'django_admin_inline_paginator',
+    'django_celery_results'
 ) + INSTALLED_APPS
 
 # Grapelli settings
@@ -431,6 +432,7 @@ CELERY_TASK_QUEUES += (
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TRACK_STARTED = True
 TASK_TRACK_STARTED = True
+CELERY_IGNORE_RESULT = False
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
@@ -447,3 +449,4 @@ CKEDITOR_UPLOAD_PATH = 'ckeditor/'
 
 
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+CELERY_RESULT_BACKEND = 'django-db'

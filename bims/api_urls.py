@@ -110,6 +110,8 @@ from bims.api_views.decision_support_tool import DecisionSupportToolView, \
 from bims.api_views.download_request import (
     DownloadRequestApi
 )
+from bims.api_views.wetland_data import WetlandDataApiView
+
 
 urlpatterns = [
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -343,4 +345,7 @@ urlpatterns = [
     path('taxonomy/<int:pk>/add-tag/',
          AddTagAPIView.as_view(),
          name='add-tag-taxon'),
+    path('wetland-data/<str:lat>/<str:lon>/',
+         WetlandDataApiView.as_view(),
+         name='wetland-data')
 ]

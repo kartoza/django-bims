@@ -33,6 +33,7 @@
       const waterManagementAreaGroup = {% if wma %}{{ wma | safe }}{% else %}[]{% endif %};
       const refinedGeomorphologicalZone = '{{ refined_geomorphological }}';
       const originalGeomorphologicalZone = '{{ original_geomorphological }}';
+      siteDetailsData = {{ site_details | safe }};
       const useCombinedGeo = {% if use_combined_geo %}true{% else %}
         false{% endif %};
       const chemicalRecords = {{ chemical_records | safe }};
