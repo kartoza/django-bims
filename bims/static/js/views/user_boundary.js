@@ -107,7 +107,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 }
             });
         },
-        loadPolygon: function () {
+        loadPolygon: function (fitToExtent = true) {
             let $modal = $('#' + this.loadModalName);
             $modal.find('button').prop('disabled', true);
             let self = this;
@@ -117,10 +117,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 url: `/api/user-boundary/${this.selectedSavedPolygon}/`,
                 headers: {"X-CSRFToken": csrfmiddlewaretoken},
             }).done(function (result) {
-                console.log(result)
                 $modal.find('button').prop('disabled', false);
                 $modal.modal('hide');
-                self.parent.drawGeojson(result);
+                self.parent.drawGeojson(result, fitToExtent);
             });
         },
         deletePolygon: function () {

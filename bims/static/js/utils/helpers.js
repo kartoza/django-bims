@@ -7,3 +7,11 @@ function getById(id) {
 function addEvent(element, eventType, callback) {
     element.addEventListener(eventType, callback);
 }
+
+function setItem(key, value) {
+    localStorage.setItem(key, value);
+}
+
+function getItem(key) {
+    localStorage.getItem(key);
+}

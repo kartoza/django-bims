@@ -1,8 +1,16 @@
-function dashboardClose(e) {
+function dashboardClose(e, storageKey = '') {
     let button = $(e.target);
     if (!button.hasClass('dashboard-close')) {
         button = button.parent();
     }
+    if (storageKey) {
+        let lastMap = localStorage.getItem(storageKey);
+        if (lastMap) {
+            window.location.href = lastMap;
+            return
+        }
+    }
+    console.log('test')
     let closeDestination = button.data('destination');
     let previousUrl = window.document.referrer;
     if (closeDestination) {
@@ -36,9 +44,15 @@ function dashboardClose(e) {
 }
 
 $(function () {
-   $('.dashboard-close').click(dashboardClose);
+   $('.dashboard-close').click((e) => dashboardClose(e, ''));
 });
 
 $(function () {
-   $('.site-form-close').click(dashboardClose);
+   $('.site-form-close').click((e) => dashboardClose(e, ''));
 });
+
+$(function () {
+    $('.upload-form-close').click((e) => dashboardClose(e, 'last-map-upload'));
+});
+
+

@@ -13,7 +13,7 @@
     font-family: 'Open Sans', sans-serif;
 }
 
-.site-form-close {
+.site-form-close, .dashboard-close-button {
     float: right;
     font-size: 20pt;
     background-color: var(--main-accent-color);
@@ -23,7 +23,7 @@
     margin-bottom: 5px;
 }
 
-.site-form-close:hover {
+.site-form-close:hover, .dashboard-close-button:hover {
     cursor: pointer;
     color: var(--main-accent-color);
     background-color: #ffffff;

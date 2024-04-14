@@ -988,7 +988,11 @@ define([
             // Polygon
             if (allFilters.hasOwnProperty('polygon')) {
                 filterParameters['polygon'] = allFilters['polygon'];
-                self.lassoPanel.drawPolygonFromJSON(allFilters['polygon']);
+                if(allFilters['polygon'].includes(',')) {
+                    self.lassoPanel.drawPolygonFromJSON(allFilters['polygon']);
+                } else {
+                    self.lassoPanel.loadPolygonById(allFilters['polygon']);
+                }
             }
 
             if (allFilters.hasOwnProperty('ecologicalCategory')) {

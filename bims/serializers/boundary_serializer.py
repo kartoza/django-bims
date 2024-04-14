@@ -1,4 +1,6 @@
 import json
+
+from django.contrib.gis.geos import GEOSGeometry
 from rest_framework import serializers
 from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
@@ -91,13 +93,35 @@ class BoundaryGeojsonSerializer(GeoFeatureModelSerializer):
         return obj.geometry
 
 
+def check_crs(obj: UserBoundary):
+    """
+    Simple check whether geometry is 4326 or 3857
+    """
+    if isinstance(obj.geometry, GEOSGeometry):
+        minx, miny, maxx, maxy = obj.geometry.extent
+        if (
+                -180 <= minx <= 180 and
+                -180 <= maxx <= 180 and
+                -90 <= miny <= 90 and
+                -90 <= maxy <= 90
+        ):
+            return 'EPSG:4326'
+        else:
+            return 'EPSG:3857'
+    return None
+
+
 class UserDetailBoundarySerializer(GeoFeatureModelSerializer):
     geometry = GeometrySerializerMethodField()
+    crs = serializers.SerializerMethodField()
 
     class Meta:
         model = UserBoundary
         geo_field = 'geometry'
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'crs']
 
     def get_geometry(self, obj):
         return obj.geometry
+
+    def get_crs(self, obj: UserBoundary):
+        return check_crs(obj)
