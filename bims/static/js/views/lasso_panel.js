@@ -8,6 +8,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         source: null,
         polygonDraw: null,
         polygonCoordinates: null,
+        layerId: null,
         searchResultCollection: null,
         displayed: false,
         polygonExist: false,
@@ -17,6 +18,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         events: {
             'click .polygonal-lasso-tool': 'drawPolygon',
             'click .clear-lasso': 'clearLasso',
+            'click .upload-polygon': 'uploadPolygon',
             'click .save-lasso': 'saveLasso',
             'click .load-lasso': 'loadLasso',
             'click .update-search': 'updateSearch',
@@ -74,6 +76,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             return this;
         },
         getPolygonCoordinates: function () {
+            if (this.layerId) {
+                return this.layerId;
+            }
             if (this.polygonCoordinates) {
                 return JSON.stringify(this.polygonCoordinates);
             }
@@ -122,6 +127,7 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             Shared.Dispatcher.trigger('map:toggleMapInteraction', false);
         },
         clearLayers: function () {
+            this.layerId = null;
             this.map.removeLayer(this.layer);
             this.source.clear();
             this.polygonCoordinates = null;
@@ -164,11 +170,28 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             }
             this.userBoundaryView.showLoadModal();
         },
-        drawGeojson: function (geojsonObject) {
+        loadPolygonById: function (id) {
+            this.userBoundaryView.selectedSavedPolygon = id;
+            this.userBoundaryView.loadPolygon(false);
+        },
+        drawGeojson: function (geojsonObject, fitToExtent = true) {
             this.clearLayers();
             let self = this;
 
-            const features = new ol.format.GeoJSON().readFeatures(geojsonObject);
+            let properties = geojsonObject['properties'];
+            let csr = properties['crs']
+            let features = null;
+            this.layerId = geojsonObject['id']
+
+            if (csr !== 'EPSG:3857') {
+                features = new ol.format.GeoJSON().readFeatures(geojsonObject, {
+                    dataProjection: csr,
+                    featureProjection: 'EPSG:3857'
+                });
+            } else {
+                features = new ol.format.GeoJSON().readFeatures(geojsonObject);
+            }
+
             this.map.removeLayer(this.layer);
             this.map.addLayer(this.layer);
             this.source.addFeatures(features);
@@ -176,33 +199,26 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             if (features.length > 0) {
                 this.polygonExist = true;
                 let feature = features[0]
-                let transformedCoordinates = []
                 let polygonExtent = feature.getGeometry().getExtent()
-                let geometry = feature.getGeometry();
-                if (geometry.getType() === 'MultiPolygon') {
-                    let polygons = geometry.getCoordinates();
-                    for (let polygon of polygons) {
-                        let transformedPolygon = [];
-                        for (let ring of polygon) {
-                            let transformedRing = ring.map(coord =>
-                                ol.proj.transform(coord, 'EPSG:3857', 'EPSG:4326')
-                            );
-                            transformedPolygon.push(transformedRing);
-                        }
-                        transformedCoordinates.push(transformedPolygon);
-                    }
-                    transformedCoordinates = transformedCoordinates[0][0]
-                } else {
-                }
-                self.polygonCoordinates = transformedCoordinates;
                 self.$el.find('.update-search').removeClass('disabled');
                 self.$el.find('.clear-lasso').removeClass('disabled');
-                self.$el.find('.save-lasso').removeClass('disabled');
-                Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false, false);
-                Shared.Dispatcher.trigger('map:setPolygonDrawn', polygonExtent);
+                if (!this.layerId) {
+                    self.$el.find('.save-lasso').removeClass('disabled');
+                }
+                if (fitToExtent) {
+                    Shared.Dispatcher.trigger('map:zoomToExtent', polygonExtent, false, false);
+                    Shared.Dispatcher.trigger('map:setPolygonDrawn', polygonExtent);
+                }
             } else {
                 this.polygonExist = false;
             }
+        },
+        uploadPolygon: function () {
+            localStorage.removeItem('last-map-upload')
+            localStorage.setItem('last-map-upload', window.location.href);
+            setTimeout(function () {
+                location.href = '/upload-polygon';
+            }, 100);
         },
         drawPolygonFromJSON: function (jsonCoordinates) {
             if (this.polygonExist) {

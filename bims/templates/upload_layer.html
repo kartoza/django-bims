@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block subtitle %}
-    Upload Layer
+    Upload {{ title }}
 {% endblock %}
 
 {% block head %}
@@ -33,12 +33,16 @@
 {% block body_content %}
 
     <div class="loading">Loading&#8230;</div>
-    <div class="container">
-        <div class="jumbotron csv-uploader-wrapper">
+    <div class="body-form container">
 
-            <div class="help-block-space"></div>
-            <h3>Upload Layer</h3>
-            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+
+            <div class="dashboard-title">
+                <h2>
+                    Upload {{ title }}
+                    <div class="upload-form-close dashboard-close-button">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </div>
+                </h2>
             </div>
 
             {% if messages %}
@@ -51,32 +55,26 @@
                 {% endfor %}
             {% endif %}
             <div class="modal-body">
+            <div class="alert alert-warning alert-block" style="margin-bottom: 20px; padding: 15px; padding-bottom: 0">
+                Please review the following requirements before uploading your file:
+                <ul>
+                    <li>The file must have a <code>.json</code> or <code>.geojson</code> extension.</li>
+                    <li>The maximum file size allowed is 1MB.</li>
+                    <li>Ensure the file's coordinate system uses the EPSG:4326 projection.</li>
+                </ul>
+            </div>
+
             <form action="{{ request.path }}" method="post" id="gbif-harvest-form" novalidate enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="help-block">
                     <div class="help-block-space"></div>
-
-                    {% if not upload_session %}
-
-                    <div class="help-block-space"></div>
                     <div class="form-group row">
                         <label for="inputLayerName"
                                class="col-sm-2 col-form-label">
-                            <b>Layer Name</b>
+                            <b>Name</b>
                         </label>
                         <div class="col-sm-10">
                             <input name="name" class="form-control" type="text" id="layer-name"/>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="inputLayerName"
-                               class="col-sm-2 col-form-label">
-                            <b>Type</b>
-                        </label>
-                        <div class="col-sm-10">
-                            <select name="boundary_type_name" class="form-control">
-                                <option value="boundary">Boundary</option>
-                            </select>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -95,7 +93,6 @@
                     <div class="help-block-space"></div>
 
                     <button class="btn btn-primary" type="submit" id="submit-btn" disabled>Submit</button>
-                    {% endif %}
                 </div>
             </form>
 
@@ -147,34 +144,8 @@
             {% endif %}
 
             </div>
-        </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog"
-         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLongTitle">Cancel session</h5>
-                    <button type="button" class="close" data-dismiss="modal"
-                            aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to cancel this session ?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary"
-                            data-dismiss="modal">Close
-                    </button>
-                    <button type="button" class="btn btn-danger" id="cancel-session">Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
 {% endblock %}
 
@@ -184,6 +155,8 @@
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/utils/helpers.js' %}"></script>
     <script type="module" src="{% static "js/upload-layer.js" %}"></script>
+    <script type="module" src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
 
 {% endblock %}

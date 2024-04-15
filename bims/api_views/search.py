@@ -15,10 +15,11 @@ from django.contrib.sites.models import Site
 from django.db.models.functions import Concat
 from django.db.models.query import QuerySet
 from django.contrib.gis.db.models import Union, Extent
-from django.contrib.gis.geos import Polygon
+from django.contrib.gis.geos import Polygon, GEOSGeometry
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 
+from bims.serializers.boundary_serializer import check_crs
 from geonode.people.models import Profile
 from bims.models import (
     BiologicalCollectionRecord,
@@ -308,8 +309,24 @@ class CollectionSearch(object):
     @property
     def polygon(self):
         try:
-            polygon_coordinates = self.parse_request_json('polygon')
-            return Polygon(polygon_coordinates)
+            layer_param = self.parse_request_json('polygon')
+            if isinstance(layer_param, int):
+                try:
+                    user_boundary = UserBoundary.objects.get(
+                        id=layer_param
+                    )
+                    crs = check_crs(user_boundary)
+                    if '3857' in crs:
+                        geometry = GEOSGeometry(
+                            str(user_boundary.geometry).replace(
+                                '4326',  '3857'))
+                        geometry.transform(4326)
+                    else:
+                        geometry = user_boundary.geometry
+                    return geometry
+                except UserBoundary.DoesNotExist:
+                    return None
+            return Polygon(layer_param)
         except TypeError:
             return None
 
@@ -738,18 +755,20 @@ class CollectionSearch(object):
             bio_filtered = True
 
         if self.get_request_data('polygon'):
-            if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
-                    geometry_point__within=self.polygon
-                )
-                bio = bio.filter(
-                    site__in=filtered_location_sites
-                )
-                bio_filtered = True
-            else:
-                filtered_location_sites = filtered_location_sites.filter(
-                    geometry_point__within=self.polygon
-                )
+            polygon = self.polygon
+            if polygon:
+                if not isinstance(filtered_location_sites, QuerySet):
+                    filtered_location_sites = LocationSite.objects.filter(
+                        geometry_point__within=polygon
+                    )
+                    bio = bio.filter(
+                        site__in=filtered_location_sites
+                    )
+                    bio_filtered = True
+                else:
+                    filtered_location_sites = filtered_location_sites.filter(
+                        geometry_point__within=polygon
+                    )
 
         if self.abiotic_data:
             if not isinstance(filtered_location_sites, QuerySet):
