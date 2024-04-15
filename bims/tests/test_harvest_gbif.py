@@ -2,6 +2,7 @@ import json
 import os
 import mock
 import requests
+from requests.exceptions import HTTPError
 from django.test import TestCase
 from urllib3.exceptions import ProtocolError
 
@@ -25,6 +26,10 @@ def mocked_gbif_data(url):
         def json(self):
             return self.json_data
 
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise HTTPError(f'Status code was: {self.status_code}', response=self)
+
     response_file = 'gbif_occurrences.json'
     response_path = os.path.join(
         test_data_directory, response_file)
@@ -40,10 +45,10 @@ def mocked_request_protocol_error(url):
 
 
 def mocked_request_http_error(url):
-    e = requests.HTTPError('error')
+    e = requests.HTTPError('error message')
     e.response = mock.MagicMock()
     e.response.status_code = 404
-    e.response.content = 'Error Code'
+    e.response.content = b'Error Code'
     e.message = 'error message'
     raise e
 

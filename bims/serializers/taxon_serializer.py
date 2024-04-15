@@ -1,4 +1,5 @@
 import json
+from collections.abc import Iterable
 
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
@@ -33,11 +34,12 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Cache for re-used objects to minimize DB hits
-        self.taxonomy_proposals = {
-            obj.original_taxonomy_id: obj for obj in TaxonomyUpdateProposal.objects.filter(
-                original_taxonomy__in=[obj.id for obj in self.instance], status='pending'
-            )}
+        self.taxonomy_proposals = {}
+        if isinstance(self.instance, Iterable):
+            self.taxonomy_proposals = {
+                obj.original_taxonomy_id: obj for obj in TaxonomyUpdateProposal.objects.filter(
+                    original_taxonomy__in=[obj.id for obj in self.instance], status='pending'
+                )}
 
     def get_pending_proposal(self, obj):
         return self.taxonomy_proposals.get(obj.id)

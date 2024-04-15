@@ -5,6 +5,7 @@ import os
 from bims.tests.model_factories import (
     Boundary
 )
+from django.contrib.messages import get_messages
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -17,7 +18,11 @@ class TestLayerUpload(TestCase):
     Tests layer upload view
     """
     def setUp(self):
-        self.user = User.objects.create_user('testuser', 'test@example.com', 'password')
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='password',
+            is_superuser=True)
         self.client = Client()
 
     def test_upload_valid_geojson(self):
@@ -28,9 +33,8 @@ class TestLayerUpload(TestCase):
             response = self.client.post(reverse('layer-upload-view'),
                                         {
                                             'geojson_file': geojson,
-                                            'name': 'boundary1',
-                                            'boundary_type_name': 'test'})
-        self.assertEqual(response.status_code, 201)
-        self.assertIn('message', response.json())
-        self.assertEqual('Layer successfully uploaded and saved.', response.json()['message'])
+                                            'name': 'boundary1'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual('Layer successfully uploaded and saved.',
+                         str(list(get_messages(response.wsgi_request))[0]))
         self.assertTrue(Boundary.objects.filter(name='boundary1').exists())
