@@ -3,7 +3,7 @@ import json
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from rest_framework import serializers
-from bims.models import Taxonomy, BiologicalCollectionRecord
+from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.utils.gbif import get_vernacular_names
@@ -27,6 +27,53 @@ class TaxonSerializer(serializers.ModelSerializer):
     accepted_taxonomy_name = serializers.SerializerMethodField()
     tag_list = serializers.SerializerMethodField()
     validated = serializers.SerializerMethodField()
+    scientific_name = serializers.SerializerMethodField()
+    canonical_name = serializers.SerializerMethodField()
+    rank = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Cache for re-used objects to minimize DB hits
+        self.taxonomy_proposals = {
+            obj.original_taxonomy_id: obj for obj in TaxonomyUpdateProposal.objects.filter(
+                original_taxonomy__in=[obj.id for obj in self.instance], status='pending'
+            )}
+
+    def get_pending_proposal(self, obj):
+        return self.taxonomy_proposals.get(obj.id)
+
+    def get_proposed_or_current(self, obj, field, original_value=''):
+        proposal = self.get_pending_proposal(obj)
+        if not original_value:
+            original_value = getattr(obj, field)
+        return (
+            f"{original_value} → "
+            f"{getattr(proposal, field)}"
+            if proposal and original_value != getattr(proposal, field)
+            else original_value
+        )
+
+    def get_origin_name(self, obj):
+        try:
+            origin_name = dict(Taxonomy.CATEGORY_CHOICES)[obj.origin]
+        except Exception:  # noqa
+            origin_name = 'Unknown'
+        proposal = self.get_pending_proposal(obj)
+        if proposal:
+            return (
+                f"{origin_name} → "
+                f"{dict(Taxonomy.CATEGORY_CHOICES)[getattr(proposal, 'origin')]}"
+            )
+        return origin_name
+
+    def get_scientific_name(self, obj):
+        return self.get_proposed_or_current(obj, 'scientific_name')
+
+    def get_canonical_name(self, obj):
+        return self.get_proposed_or_current(obj, 'canonical_name')
+
+    def get_rank(self, obj):
+        return self.get_proposed_or_current(obj, 'rank')
 
     def get_validated(self, obj: Taxonomy):
         taxon_group_id = self.context.get('taxon_group_id', None)
@@ -59,12 +106,6 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
-
-    def get_origin_name(self, obj):
-        try:
-            return dict(Taxonomy.CATEGORY_CHOICES)[obj.origin]
-        except Exception:  # noqa
-            return 'Unknown'
 
     def get_endemism_name(self, obj):
         try:

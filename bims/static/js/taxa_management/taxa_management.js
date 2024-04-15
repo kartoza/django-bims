@@ -7,6 +7,7 @@ export const taxaManagement = (() => {
     const fullUrl = new URL(window.location.href);
     const urlParams = fullUrl.searchParams;
     const $loadingOverlay = $('.loading');
+    const $saveTaxonBtn = $('#saveTaxon');
 
     let taxaUrlList = '';
     let $sortable = $('#sortable');
@@ -37,6 +38,8 @@ export const taxaManagement = (() => {
         taxaTable.init(getTaxaList, selectedTaxonGroup)
         addNewTaxon.init(selectedTaxonGroup)
 
+        $saveTaxonBtn.on('click', handleSubmitEditTaxon)
+
         if (userCanEditTaxonGroup) {
             $sortable.sortable({
                 stop: function (event, ui) {
@@ -66,6 +69,32 @@ export const taxaManagement = (() => {
         $('#download-csv').on('click', handleDownloadCsv)
     }
 
+    function handleSubmitEditTaxon(event) {
+        event.preventDefault();
+        $saveTaxonBtn.html('Processing...')
+        $saveTaxonBtn.attr('disabled', true)
+        const $form = $('#editTaxonForm');
+        let formData = $form.serialize();
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'PUT',
+            data: formData,
+            headers: {"X-CSRFToken": csrfToken},
+            success: function(response) {
+                console.log('Success:', response);
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+                alert('Failed to update taxon: ' + error);
+            },
+            complete: function() {
+                $saveTaxonBtn.html('Save Changes');
+                $saveTaxonBtn.removeAttr('disabled');
+            }
+        });
+    }
+
     function handleDownloadCsv(e) {
         const $target = $(e.target);
         const targetHtml = $target.html();
@@ -83,6 +112,36 @@ export const taxaManagement = (() => {
                 alert(_downloadMessage);
             })
             .catch(() => alert('Cannot download the file'));
+    }
+
+    const onEditTaxonFormChanged = (elm, value = '') => {
+        elm.on('change', function (e) {
+            $saveTaxonBtn.attr('disabled', false);
+        })
+    }
+
+    const editTaxonClicked = (data) => {
+        const template = _.template($('#editTaxonForm').html());
+        data['taxon_group_id'] = selectedTaxonGroup;
+        const form = template(data);
+        const modal = $('#editTaxonModal');
+
+        modal.find('.modal-body').html(form);
+
+        modal.find('#rank-options').val(data['rank'])
+        modal.find('#cons-status-options').val(data['iucn_status_name'])
+        modal.find('#origin-options').val(data['origin'])
+        modal.find('#endemism-options').val(data['endemism_name'])
+
+        onEditTaxonFormChanged(modal.find('#rank-options'));
+        onEditTaxonFormChanged(modal.find('#cons-status-options'));
+        onEditTaxonFormChanged(modal.find('#origin-options'));
+        onEditTaxonFormChanged(modal.find('#endemism-options'));
+        onEditTaxonFormChanged(modal.find('#scientific_name'));
+        onEditTaxonFormChanged(modal.find('#canonical_name'));
+
+        $saveTaxonBtn.attr('disabled', true);
+        modal.modal('show');
     }
 
     const popupCenter = ({url, title, w, h}) => {
@@ -191,7 +250,7 @@ export const taxaManagement = (() => {
                         $tdAction.append($rowAction);
                         $rowAction.find('.edit-taxon').click((event) => {
                             event.preventDefault();
-                            popupCenter({url: `/admin/bims/taxonomy/${data['id']}/change/?_popup=1`, title: 'xtf', w: 900, h: 500});
+                            editTaxonClicked(data);
                             return false;
                         });
                         $rowAction.find('.add-tag').click((event) => {
