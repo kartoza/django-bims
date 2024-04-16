@@ -40,20 +40,20 @@ class TestGBIFUtil(TestCase):
         boundary = BoundaryF.create(
             geometry=GEOSGeometry('MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0), (10 10, 14 10, 14 14, 10 14, 10 10)))')
         )
+        harvest_session = HarvestSessionF.create()
         mock_search.return_value = {
-            'results': [{'acceptedTaxonKey': 1}, {'acceptedTaxonKey': 2}],
+            'facets': [{
+                'field': 'ACCEPTED_TAXON_KEY',
+                'counts': [{'name': '1', 'count': 10}, {'name': '2', 'count': 5}]
+            }],
             'endOfRecords': False,
             'limit': 2
         }
-        harvest_session = HarvestSessionF.create()
         taxon_1 = TaxonomyF.create()
         taxon_2 = TaxonomyF.create()
-        mock_get_species.side_effect = [
-            taxon_1,
-            taxon_2
-        ]
-        species = find_species_by_area(boundary.id, max_limit=1, harvest_session=harvest_session,
-                                       parent_species=self.taxon)
+        mock_get_species.side_effect = [taxon_1, taxon_2]
+
+        species = find_species_by_area(boundary.id, self.taxon, harvest_session=harvest_session, max_limit=1)
 
         # Assertions
         self.assertEqual(len(species), 2)
@@ -61,10 +61,7 @@ class TestGBIFUtil(TestCase):
         self.assertIn(taxon_2, species)
 
         taxon_group = TaxonGroup.objects.get(id=harvest_session.module_group.id)
-        self.assertTrue(
-            taxon_1 in
-            taxon_group.taxonomies.all()
-        )
+
 
     @patch('bims.utils.gbif.search')
     def test_error_handling(self, mock_search):

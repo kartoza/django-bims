@@ -1880,6 +1880,23 @@ class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'original_taxonomy',
+        'accepted_taxonomy',
+        'parent',
+        'owner',
+        'collector_user',
+        'analyst'
+    )
+    list_display = (
+        'original_taxonomy',
+        'scientific_name',
+        'canonical_name',
+        'status'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -1993,5 +2010,6 @@ admin.site.register(
     TaxonGroupTaxonomyAdmin
 )
 admin.site.register(
-    TaxonomyUpdateProposal
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateProposalAdmin
 )

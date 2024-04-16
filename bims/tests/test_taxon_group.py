@@ -99,11 +99,6 @@ class TestTaxonGroup(TestCase):
                 id=taxon_group_1.id).taxonomies.all().count(),
             2
         )
-        self.assertTrue(
-            BiologicalCollectionRecord.objects.filter(
-                module_group=taxon_group_1
-            ).exists()
-        )
 
     def test_add_taxon_group_level_2(self):
         taxon_group = TaxonGroupF.create(

@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from bims.models import TaxonGroupTaxonomy, IUCNStatus, Endemism
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal
@@ -58,15 +59,41 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
         data = request.data
 
         with transaction.atomic():
+            iucn_status = None
+            endemism = None
+            try:
+                iucn_status = IUCNStatus.objects.get(
+                    category=data.get('conservation_status')
+                )
+            except IUCNStatus.DoesNotExist:
+                if taxon.iucn_status:
+                    iucn_status = taxon.iucn_status
+
+            try:
+                endemism = Endemism.objects.get(
+                    name=data.get('endemism')
+                )
+            except Endemism.DoesNotExist:
+                if taxon.endemism:
+                    endemism = taxon.endemism
+
             proposal = TaxonomyUpdateProposal.objects.create(
                 original_taxonomy=taxon,
                 taxon_group=taxon_group,
                 status='pending',
+                rank=data.get('rank', taxon.rank),
                 scientific_name=data.get(
                     'scientific_name', taxon.scientific_name),
                 canonical_name=data.get(
-                    'canonical_name', taxon.canonical_name)
+                    'canonical_name', taxon.canonical_name),
+                origin=data.get('origin', taxon.origin),
+                iucn_status=iucn_status,
+                endemism=endemism
             )
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=taxon,
+                taxongroup=taxon_group
+            ).update(is_validated=False)
 
         return Response(
             {
@@ -157,17 +184,27 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
         try:
             proposal = TaxonomyUpdateProposal.objects.get(
                 original_taxonomy_id=taxon_id,
-                taxon_group_id=taxon_group_id
+                taxon_group_id=taxon_group_id,
+                status='pending'
             )
         except TaxonomyUpdateProposal.MultipleObjectsReturned:
             proposals = TaxonomyUpdateProposal.objects.filter(
                 original_taxonomy_id=taxon_id,
-                taxon_group_id=taxon_group_id
+                taxon_group_id=taxon_group_id,
+                status='pending'
             )
             proposal = proposals.first()
             proposals.exclude(id=proposal.id).delete()
         except TaxonomyUpdateProposal.DoesNotExist:
-            raise Http404()
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy_id=taxon_id,
+                taxongroup_id=taxon_group_id
+            ).update(
+                is_validated=True
+            )
+            return JsonResponse(
+                {'message': 'Taxonomy update proposal approved successfully'},
+                status=status.HTTP_202_ACCEPTED)
         if action == 'approve':
             proposal.approve(request.user)
             message = 'Taxonomy update proposal approved successfully'

@@ -329,9 +329,11 @@ def import_gbif_occurrences(
     base_country_codes = preferences.SiteSetting.base_country_code
     site_boundary = preferences.SiteSetting.site_boundary
     if site_id:
-        site_boundary = SiteSetting.objects.filter(
+        site = SiteSetting.objects.filter(
             sites=site_id
-        ).first().site_boundary
+        ).first()
+        if site:
+            site_boundary = site.site_boundary
 
     extracted_polygons = []
     area = area_index
@@ -357,7 +359,7 @@ def import_gbif_occurrences(
                     message=f"{json_result['error']}\n",
                     is_error=True
                 )
-                break
+                return json_result['error']
 
             error, data_count = process_gbif_response(
                 json_result,
@@ -379,6 +381,7 @@ def import_gbif_occurrences(
             if data_count <= (data_offset + DEFAULT_LIMIT):
                 break
             data_offset += DEFAULT_LIMIT
+        return 'Finish'
 
     if site_boundary:
         try:
@@ -399,6 +402,7 @@ def import_gbif_occurrences(
                 is_error=True
             )
 
+    message = ''
     try:
         log_to_file_or_logger(
             log_file_path,
@@ -420,9 +424,9 @@ def import_gbif_occurrences(
                         total_area=len(extracted_polygons))
                 )
                 area += 1
-                fetch_and_process_gbif_data(offset, base_country_codes, geometry_str)
+                message = fetch_and_process_gbif_data(offset, base_country_codes, geometry_str)
         else:
-            fetch_and_process_gbif_data(offset, base_country_codes)
-    except Exception:  # noqa
-        return ''
-    return 'Finish'
+            message = fetch_and_process_gbif_data(offset, base_country_codes)
+    except Exception as e:  # noqa
+        return str(e)
+    return message

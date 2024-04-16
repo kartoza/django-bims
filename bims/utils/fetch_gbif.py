@@ -54,6 +54,8 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
                 )
             logger.info('----- {} -----'.format(str(taxon)))
             for link in links:
+                if link == 'taxongrouptaxonomy_set':
+                    continue
                 try:
                     objects = getattr(taxon, link).all()
                     if objects.count() > 0:

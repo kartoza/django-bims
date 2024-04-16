@@ -57,8 +57,7 @@ class TaxonomyUpdateProposal(Taxonomy):
                 taxongroup=self.taxon_group,
                 taxonomy=self.original_taxonomy,
             ).update(
-                is_validated=False,
-                is_rejected=True
+                is_validated=True
             )
 
     def approve(self, reviewer: settings.AUTH_USER_MODEL):
@@ -83,6 +82,9 @@ class TaxonomyUpdateProposal(Taxonomy):
                 'legacy_canonical_name',
                 'rank',
                 'taxonomic_status',
+                'endemism',
+                'iucn_status',
+                'origin',
                 'parent']
             for field in fields_to_update:
                 setattr(
