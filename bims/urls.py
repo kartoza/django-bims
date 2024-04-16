@@ -34,7 +34,7 @@ from bims.views.boundary_upload import (
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.download_csv_taxa_list import (
-    download_csv_taxa_list
+    download_csv_taxa_list, DownloadPdfTaxaList
 )
 from bims.views.autocomplete_search import (
     autocomplete,
@@ -129,6 +129,9 @@ urlpatterns = [
     re_path(r'^download-csv-taxa-list/$',
         download_csv_taxa_list,
         name='taxa-list-download'),
+    re_path(r'^download-pdf-taxa-list/$',
+            DownloadPdfTaxaList.as_view(),
+            name='taxa-list-pdf-download'),
     re_path(r'^autocomplete/$', autocomplete, name='autocomplete-search'),
     re_path(r'^user-autocomplete/$',
         user_autocomplete,
