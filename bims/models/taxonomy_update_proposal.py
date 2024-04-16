@@ -84,8 +84,7 @@ class TaxonomyUpdateProposal(Taxonomy):
                 'taxonomic_status',
                 'endemism',
                 'iucn_status',
-                'origin',
-                'parent']
+                'origin']
             for field in fields_to_update:
                 setattr(
                     self.original_taxonomy,

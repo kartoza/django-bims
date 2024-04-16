@@ -51,7 +51,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         return (
             f"{original_value} → "
             f"{getattr(proposal, field)}"
-            if proposal and original_value != getattr(proposal, field)
+            if proposal and original_value != str(getattr(proposal, field))
             else original_value
         )
 
@@ -62,10 +62,14 @@ class TaxonSerializer(serializers.ModelSerializer):
             origin_name = 'Unknown'
         proposal = self.get_pending_proposal(obj)
         if proposal:
-            return (
-                f"{origin_name} → "
-                f"{dict(Taxonomy.CATEGORY_CHOICES)[getattr(proposal, 'origin')]}"
+            proposal_value = (
+                dict(Taxonomy.CATEGORY_CHOICES)[getattr(proposal, 'origin')]
             )
+            if proposal_value != origin_name:
+                return (
+                    f"{origin_name} → "
+                    f"{proposal_value}"
+                )
         return origin_name
 
     def get_iucn_status_full_name(self, obj):
@@ -80,10 +84,14 @@ class TaxonSerializer(serializers.ModelSerializer):
             iucn_status = 'Not evaluated'
         proposal = self.get_pending_proposal(obj)
         if proposal:
-            return (
-                f"{iucn_status} → "
-                f"{dict(IUCNStatus.CATEGORY_CHOICES)[str(getattr(proposal, 'iucn_status'))]}"
+            proposal_value = (
+                dict(IUCNStatus.CATEGORY_CHOICES)[str(getattr(proposal, 'iucn_status'))]
             )
+            if proposal_value != iucn_status:
+                return (
+                    f"{iucn_status} → "
+                    f"{proposal_value}"
+                )
         return iucn_status
 
     def get_scientific_name(self, obj):
