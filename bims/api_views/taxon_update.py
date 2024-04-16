@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.models import TaxonGroupTaxonomy
+from bims.models import TaxonGroupTaxonomy, IUCNStatus, Endemism
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal
@@ -59,6 +59,24 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
         data = request.data
 
         with transaction.atomic():
+            iucn_status = None
+            endemism = None
+            try:
+                iucn_status = IUCNStatus.objects.get(
+                    category=data.get('conservation_status')
+                )
+            except IUCNStatus.DoesNotExist:
+                if taxon.iucn_status:
+                    iucn_status = taxon.iucn_status
+
+            try:
+                endemism = Endemism.objects.get(
+                    name=data.get('endemism')
+                )
+            except Endemism.DoesNotExist:
+                if taxon.endemism:
+                    endemism = taxon.endemism
+
             proposal = TaxonomyUpdateProposal.objects.create(
                 original_taxonomy=taxon,
                 taxon_group=taxon_group,
@@ -69,6 +87,8 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                 canonical_name=data.get(
                     'canonical_name', taxon.canonical_name),
                 origin=data.get('origin', taxon.origin),
+                iucn_status=iucn_status,
+                endemism=endemism
             )
             TaxonGroupTaxonomy.objects.filter(
                 taxonomy=taxon,

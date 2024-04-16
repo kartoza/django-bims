@@ -47,7 +47,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_proposed_or_current(self, obj, field, original_value=''):
         proposal = self.get_pending_proposal(obj)
         if not original_value:
-            original_value = getattr(obj, field)
+            original_value = str(getattr(obj, field))
         return (
             f"{original_value} → "
             f"{getattr(proposal, field)}"
@@ -68,8 +68,33 @@ class TaxonSerializer(serializers.ModelSerializer):
             )
         return origin_name
 
+    def get_iucn_status_full_name(self, obj):
+        if obj.iucn_status:
+            try:
+                iucn_status = (
+                    dict(IUCNStatus.CATEGORY_CHOICES)[obj.iucn_status.category]
+                )
+            except KeyError:
+                iucn_status = 'Not evaluated'
+        else:
+            iucn_status = 'Not evaluated'
+        proposal = self.get_pending_proposal(obj)
+        if proposal:
+            return (
+                f"{iucn_status} → "
+                f"{dict(IUCNStatus.CATEGORY_CHOICES)[str(getattr(proposal, 'iucn_status'))]}"
+            )
+        return iucn_status
+
     def get_scientific_name(self, obj):
         return self.get_proposed_or_current(obj, 'scientific_name')
+
+    def get_endemism_name(self, obj):
+        try:
+            return self.get_proposed_or_current(
+                obj, 'endemism')
+        except AttributeError:
+            return '-'
 
     def get_canonical_name(self, obj):
         return self.get_proposed_or_current(obj, 'canonical_name')
@@ -109,12 +134,6 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
 
-    def get_endemism_name(self, obj):
-        try:
-            return obj.endemism.name
-        except AttributeError:
-            return '-'
-
     def get_record_type(self, obj):
         return 'bio'
 
@@ -145,15 +164,6 @@ class TaxonSerializer(serializers.ModelSerializer):
             return obj.iucn_status.category
         else:
             return 'NE'
-
-    def get_iucn_status_full_name(self, obj):
-        if obj.iucn_status:
-            for value in IUCNStatus.CATEGORY_CHOICES:
-                if value[0] == obj.iucn_status.category:
-                    return value[1]
-            return 'Not evaluated'
-        else:
-            return 'Not evaluated'
 
     def get_iucn_status_colour(self, obj):
         if obj.iucn_status:

@@ -82,6 +82,8 @@ class TaxonomyUpdateProposal(Taxonomy):
                 'legacy_canonical_name',
                 'rank',
                 'taxonomic_status',
+                'endemism',
+                'iucn_status',
                 'origin',
                 'parent']
             for field in fields_to_update:
