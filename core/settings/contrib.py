@@ -251,13 +251,15 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'people.Profile',
     'bims.Pageview',
     'bims.Visitor',
-    'bims.Taxonomy',
     'bims.LocationContext',
     'bims.LocationContextGroup',
     'bims.SearchProcess',
     'flatpages.FlatPage',
-    'td_biblio.author'
+    'td_biblio.author',
+    'django_celery_results.TaskResult'
 ]
+
+DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
