@@ -80,11 +80,6 @@ ul.pagination li.current a {
     margin-left: 5px;
 }
 
-ul li {
-    display: inline-block;
-    vertical-align: top;
-}
-
 .selected {
     border-color: #179f90;
     background-color: #179f9026 !important;
