@@ -178,10 +178,16 @@
                                 class="btn btn-outline-success" data-toggle="modal"
                                 data-target="#addNewTaxonModal">Add a taxon
                         </button>
-                        <button class="btn btn-outline-success" id="download-csv"><i
-                                class="fa fa-download" aria-hidden="true"></i>&nbsp;Download
-                            as csv
-                        </button>
+                        <div class="btn-group">
+                            <a class="btn dropdown-toggle btn-outline-success" data-toggle="dropdown" href="#">
+                                <i class="fa fa-download" aria-hidden="true"></i>&nbsp;Download
+                                <span class="caret"></span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#" id="download-csv">CSV Taxa List</a>
+                                <a class="dropdown-item disabled" href="#" id="download-pdf">PDF Report</a>
+                            </div>
+                        </div>
                         {% endif %}
                     </div>
                     <div class="taxa-table">

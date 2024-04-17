@@ -204,7 +204,12 @@ export const taxaTable = (() => {
             url += `&cons_status=${urlParams.get('cons_status')}`;
         }
         if (urlParams.get('validated')) {
+            const validatedValue = urlParams.get('validated');
             url += `&validated=${urlParams.get('validated')}`;
+            if (validatedValue === 'False') {
+                filterSelected['validated'] = urlParams.get('validated');
+                totalAllFilters += 1;
+            }
         }
         if (urlParams.get('parent')) {
             const parentArray = urlParams.get('parent').split(',');

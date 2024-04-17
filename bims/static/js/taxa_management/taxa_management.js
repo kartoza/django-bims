@@ -96,22 +96,21 @@ export const taxaManagement = (() => {
     }
 
     function handleDownloadCsv(e) {
+
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
-        const _downloadMessage = 'Your data download is underway. ' +
-            'This may take some time. ' +
-            'You will be notified by email when your download is ready. ' +
-            'Thank you for your patience.';
-        $target.prop('disabled', true);
-        $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
-        fetch(taxaUrlList.replace('/api/taxa-list/', '/download-csv-taxa-list/'))
-            .then((resp) => {
-                $target.prop('disabled', false);
-                $target.html(targetHtml);
-                alert(_downloadMessage);
-            })
-            .catch(() => alert('Cannot download the file'));
+        showDownloadPopup('REPORT', 'Taxa List', function () {
+            $target.prop('disabled', true);
+            $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
+            fetch(taxaUrlList.replace('/api/taxa-list/', '/download-csv-taxa-list/'))
+                .then((resp) => {
+                    $target.prop('disabled', false);
+                    $target.html(targetHtml);
+                    alert(downloadRequestMessage);
+                })
+                .catch(() => alert('Cannot download the file'));
+        })
     }
 
     const onEditTaxonFormChanged = (elm, value = '') => {
