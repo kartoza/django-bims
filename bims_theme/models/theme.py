@@ -180,6 +180,11 @@ class CustomTheme(models.Model):
         default='',
         help_text='To be displayed in the footer'
     )
+    auth_background = models.ImageField(
+        blank=True,
+        null=True,
+        help_text='Background image for login/logout page.'
+    )
 
     class Meta:
         ordering = ("date", )

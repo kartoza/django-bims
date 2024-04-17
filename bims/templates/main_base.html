@@ -30,6 +30,7 @@
             --main-button-text-color: {% if custom_theme.main_button_text_color %}{{ custom_theme.main_button_text_color }}{% else %}#fff{% endif %};
             --navbar-bg-color: {% if custom_theme.navbar_background_color %}{{ custom_theme.navbar_background_color }}{% else %}#343a40{% endif %};
             --navbar-txt-color: {% if custom_theme.navbar_text_color %}{{ custom_theme.navbar_text_color }}{% else %}#fff{% endif %};
+            --auth-background: url({% if custom_theme.auth_background %}{{ MEDIA_URL }}/{{ custom_theme.auth_background }}{% else %}/static/img/Login_Background.jpg{% endif %});
         }
     </style>
 
