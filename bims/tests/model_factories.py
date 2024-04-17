@@ -436,6 +436,15 @@ class SourceReferenceBibliographyF(factory.django.DjangoModelFactory):
 
     source = factory.SubFactory(EntryFactory)
 
+    @factory.post_generation
+    def active_sites(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for active_site in extracted:
+                self.active_sites.add(active_site)
+
 
 class DatabaseRecordF(factory.django.DjangoModelFactory):
     class Meta:
@@ -461,6 +470,15 @@ class SourceReferenceDocumentF(factory.django.DjangoModelFactory):
         model = SourceReferenceDocument
 
     source = factory.SubFactory(DocumentF)
+
+    @factory.post_generation
+    def active_sites(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for active_site in extracted:
+                self.active_sites.add(active_site)
 
 
 class TaxonImageF(factory.django.DjangoModelFactory):

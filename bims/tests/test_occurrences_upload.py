@@ -70,6 +70,7 @@ class TestCollectionUpload(TestCase):
         self.owner = UserF.create(
             first_name='dimas'
         )
+        self.source_site = SiteF.create()
 
     def test_reference_missing_author(self):
         # Missing author
@@ -110,6 +111,9 @@ class TestCollectionUpload(TestCase):
         self.assertEqual(
             source_reference.title,
             self.reference_title
+        )
+        self.assertIsNotNone(
+            source_reference.active_sites.first()
         )
 
     def test_reference_bibliography_not_created(self):

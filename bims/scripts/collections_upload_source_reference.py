@@ -1,5 +1,8 @@
 import requests
 from datetime import date
+
+from django.contrib.sites.models import Site
+
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
 from geonode.documents.models import Document
@@ -279,6 +282,9 @@ def process_source_reference(
 
     if reference and source_reference:
         source_reference.source_name = reference
+        source_reference.active_sites.add(
+            Site.objects.get_current()
+        )
         source_reference.save()
     elif reference and not source_reference:
         return 'Reference {} is not created'.format(
