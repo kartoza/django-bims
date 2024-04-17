@@ -85,13 +85,6 @@ class BimsDocumentAuthorship(models.Model):
 @prevent_recursion
 def bims_document_post_save_handler(sender, instance, **kwargs):
     from bims.tasks.source_reference import (
-        generate_source_reference_filter,
-        SOURCE_REFERENCE_FILTER_FILE
+        generate_source_reference_filter
     )
-    import os
-    from django.conf import settings
-    file_path = os.path.join(
-        settings.MEDIA_ROOT,
-        SOURCE_REFERENCE_FILTER_FILE
-    )
-    generate_source_reference_filter.delay(file_path)
+    generate_source_reference_filter.delay()
