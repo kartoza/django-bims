@@ -185,6 +185,24 @@ class CustomTheme(models.Model):
         null=True,
         help_text='Background image for login/logout page.'
     )
+    hide_site_visit = models.BooleanField(
+        default=False,
+        help_text='Hide site visit in the landing page'
+    )
+    location_site_name = models.CharField(
+        default='Site',
+        help_text=(
+            'The name of the location site as it will appear in the dashboard, '
+            'on landing pages, and in other user interfaces.'
+        )
+    )
+    location_site_name_plural = models.CharField(
+        default='Sites',
+        help_text=(
+            'The plural form of the location site name for use '
+            'when referring to multiple sites.'
+        )
+    )
 
     class Meta:
         ordering = ("date", )

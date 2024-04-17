@@ -113,8 +113,10 @@
         if (moduleData.hasOwnProperty('total_site')) {
             totalSite += moduleData['total_site'];
         }
-        if (moduleData.hasOwnProperty('total_site_visit')) {
-            totalSiteVisit += moduleData['total_site_visit'];
+        if (!hideSiteVisits) {
+            if (moduleData.hasOwnProperty('total_site_visit')) {
+                totalSiteVisit += moduleData['total_site_visit'];
+            }
         }
         if (moduleData.hasOwnProperty('total_sass')) {
             totalSass += moduleData['total_sass'];
@@ -129,11 +131,13 @@
             `<p class="module-info" style="margin-bottom: 0; font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalRecords)}</span> Records</p>`
         )
         $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> Sites</p>`
+            `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> ${locationSiteNamePlural}</p>`
         )
-        $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
-        )
+        if (!hideSiteVisits) {
+            $moduleInfoContainer.append(
+                `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
+            )
+        }
         if (totalSass > 0) {
             $moduleInfoContainer.append(
                 `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`

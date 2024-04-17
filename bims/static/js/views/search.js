@@ -280,20 +280,16 @@ define([
                 url: listReferenceAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    if (data.length === 0) {
-                        $('.study-reference-wrapper').hide();
-                    } else {
-                        var selected;
-                        for (var i = 0; i < data.length; i++) {
-                            if ($.inArray(data[i]['id'] + '', self.initialSelectedStudyReference) > -1) {
-                                selected = 'selected';
-                            } else {
-                                selected = '';
-                            }
-                            if (data[i]) {
-                                $('#filter-study-reference').append(`
-                                    <option value="${data[i]['id']}" ${selected}>${data[i]['reference']}</option>`);
-                            }
+                    var selected;
+                    for (var i = 0; i < data.length; i++) {
+                        if ($.inArray(data[i]['id'] + '', self.initialSelectedStudyReference) > -1) {
+                            selected = 'selected';
+                        } else {
+                            selected = '';
+                        }
+                        if (data[i]) {
+                            $('#filter-study-reference').append(`
+                                <option value="${data[i]['id']}" ${selected}>${data[i]['reference']}</option>`);
                         }
                     }
                     self.filtersReady['study-reference'] = true;

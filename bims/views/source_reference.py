@@ -230,7 +230,7 @@ class DeleteSourceReferenceView(UserPassesTestMixin, View):
 class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
     template_name = 'edit_source_reference.html'
     model = SourceReference
-    fields = '__all__'
+    fields = ['note', 'source_name']
 
     def test_func(self):
         if self.request.user.is_anonymous:

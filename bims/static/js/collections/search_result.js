@@ -205,7 +205,7 @@ define([
             let $searchResultsWrapper = $('<div></div>');
             $searchResultsWrapper.append(
                 '<div class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="true"> SITES ' +
+                `<div class="search-results-total" data-visibility="true"> ${locationSiteNamePlural.toUpperCase()} ` +
                 '(<span id="site-list-number"></span>) ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i> <span class="site-detail-dashboard-button-wrapper"></span></div>' +
                 '<div id="site-list" class="search-results-section"></div>' +
