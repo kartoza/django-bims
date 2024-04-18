@@ -1,7 +1,7 @@
 body {
    padding-top: 70px;
    padding-bottom : 140px;
-   background-image: url('../img/Login_Background.jpg');
+   background-image: var(--auth-background);
 }
 
 .csv-uploader-wrapper {

@@ -731,6 +731,8 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
                 self.object = source_reference
                 processed = True
 
+        self.object.active_sites.add(Site.objects.get_current())
+
         if not processed:
             return self.form_invalid(form)
 
