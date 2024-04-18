@@ -99,8 +99,11 @@ class Survey(AbstractValidation):
 
     @property
     def data_name(self):
-        if not self.site:
-            return self.id
+        try:
+            if not self.site:
+                return self.id
+        except LocationSite.DoesNotExist:
+            return '-'
         site = (
             self.site.name if not self.site.site_code else
             self.site.site_code)
