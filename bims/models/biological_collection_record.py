@@ -350,6 +350,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         'bims.Survey',
         related_name='biological_collection_record',
         null=True,
+        blank=True,
         on_delete=models.SET_NULL
     )
 
@@ -445,7 +446,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         if not self.original_species_name:
             self.original_species_name = self.taxonomy.canonical_name
 
-        if not self.survey:
+        if not self.survey and self.collection_date:
             try:
                 survey, _ = Survey.objects.get_or_create(
                     site=self.site,
@@ -461,16 +462,16 @@ class BiologicalCollectionRecord(AbstractValidation):
                     owner=self.owner
                 )[0]
             self.survey = survey
-        if (
-            'gbif' in self.source_collection.lower()
-            and not self.survey.validated
-        ):
-            self.survey.validated = True
-            self.survey.save()
+            if (
+                'gbif' in self.source_collection.lower()
+                and not self.survey.validated
+            ):
+                self.survey.validated = True
+                self.survey.save()
 
-        if not self.survey.owner and self.owner:
-            self.survey.owner = self.owner
-            self.survey.save()
+            if not self.survey.owner and self.owner:
+                self.survey.owner = self.owner
+                self.survey.save()
 
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 

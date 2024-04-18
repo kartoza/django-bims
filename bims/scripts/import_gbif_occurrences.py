@@ -159,6 +159,7 @@ def process_gbif_response(json_result,
         institution_code = result.get(INSTITUTION_CODE_KEY, source_collection)
         reference = result.get(REFERENCE_KEY, '')
         species = result.get(SPECIES_KEY, None)
+        collection_date = None
 
         if event_date:
             try:
@@ -263,12 +264,9 @@ def process_gbif_response(json_result,
                 site=location_site,
                 taxonomy=taxonomy,
                 source_collection=source_collection,
-                source_reference=source_reference
+                source_reference=source_reference,
+                collection_date=collection_date
             )
-        if event_date:
-            collection_record.collection_date = parse(event_date)
-        else:
-            pass
         collection_record.taxonomy = taxonomy
         collection_record.owner = gbif_owner
         collection_record.source_reference = source_reference
