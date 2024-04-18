@@ -60,6 +60,9 @@
         const downloadRequestMessage = '{{ download_request_message }}';
         const mainAccentColor = '{% if custom_theme.main_accent_color %}{{ custom_theme.main_accent_color }}{% else %}#18A090{% endif %}';
         const secondaryAccentColor = '{% if custom_theme.secondary_accent_color %}{{ custom_theme.secondary_accent_color }}{% else %}#ffc107{% endif %}';
+        const hideSiteVisits = '{% if custom_theme.hide_site_visit %}{{ custom_theme.hide_site_visit }}{% else %}false{% endif %}';
+        const locationSiteName = '{% if custom_theme.location_site_name %}{{ custom_theme.location_site_name }}{% else %}Site{% endif %}';
+        const locationSiteNamePlural = '{% if custom_theme.location_site_name_plural %}{{ custom_theme.location_site_name_plural }}{% else %}Sites{% endif %}';
         const bingMapKey = '{{ BING_MAP_KEY }}';
         let siteDetailsData = null;
     </script>
