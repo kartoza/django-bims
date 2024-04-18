@@ -2,6 +2,7 @@ import json
 from django.contrib.gis.geos import GEOSGeometry
 from datetime import datetime
 import pytz
+from django.contrib.sites.models import Site
 from django.db import IntegrityError
 from preferences import preferences
 
@@ -325,6 +326,7 @@ class LocationSiteFormView(TemplateView):
         else:
             context['fullname'] = self.request.user.username
         context['taxon_group'] = TaxonGroup.objects.filter(
+            Q(site_id=Site.objects.get_current()) | Q(additional_sites=Site.objects.get_current()),
             category='SPECIES_MODULE'
         ).distinct()
         context['user_id'] = self.request.user.id
