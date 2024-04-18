@@ -1,13 +1,14 @@
 import logging
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.sites.models import Site
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect
-from django.db.models import Count
+from django.db.models import Count, Q, F
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.source_reference import (
     DatabaseRecord,
@@ -41,11 +42,14 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
     def get_context_data(self, **kwargs):
         context = super(SourceReferenceView, self).get_context_data(**kwargs)
         context.update(self.additional_context)
+        current_site = Site.objects.get_current()
         additional_context_data = {}
 
         source_reference_document = (
             Document.objects.filter(
-                id__in=SourceReferenceDocument.objects.values('source'))
+                id__in=SourceReferenceDocument.objects.filter(
+                    active_sites=current_site,
+                ).values('source'))
         )
 
         if 'records' in context:
@@ -72,7 +76,9 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
                 additional_context_data['note'] = (
                     self.collection_record.source_reference.note
                 )
-        all_unpublished = SourceReference.objects.exclude(
+        all_unpublished = SourceReference.objects.filter(
+            active_sites=current_site
+        ).exclude(
             polymorphic_ctype__in=[ContentType.objects.get_for_model(
                 SourceReferenceDatabase
             ), ContentType.objects.get_for_model(
@@ -82,19 +88,20 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
             )]
         )
 
-        list_unpublished = list(BiologicalCollectionRecord.objects.filter(
-            source_reference__in=all_unpublished
-        ).values('source_reference').annotate(
-            total_reference=Count('source_reference')
-        ).values('source_reference__note', 'source_reference__id',
-                 'total_reference').order_by(
-            'total_reference'
-        ).order_by('source_reference__note'))
+        list_unpublished = list(
+            all_unpublished.annotate(
+                source_reference__note=F('note'),
+                source_reference__id=F('id')).values(
+                    'source_reference__note',
+                    'source_reference__id')
+        )
 
         context.update({
             'documents': source_reference_document,
             'database': DatabaseRecordSerializer(
-                DatabaseRecord.objects.all(), many=True).data,
+                DatabaseRecord.objects.filter(
+                    sourcereferencedatabase__active_sites=current_site
+                ), many=True).data,
             'ALLOWED_DOC_TYPES': ','.join(
                 ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES]),
             'additional_context_data': additional_context_data

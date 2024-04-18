@@ -10,7 +10,6 @@ function dashboardClose(e, storageKey = '') {
             return
         }
     }
-    console.log('test')
     let closeDestination = button.data('destination');
     let previousUrl = window.document.referrer;
     if (closeDestination) {
@@ -32,7 +31,7 @@ function dashboardClose(e, storageKey = '') {
     }
     if (previousUrl === '') {
         try {
-            window.location.href = 'map/#site/siteIdOpen=' + siteId;
+            window.location.href = '/map/#site/siteIdOpen=' + siteId;
         } catch (e) {
             window.location.href = '/map/';
         }

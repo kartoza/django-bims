@@ -427,21 +427,6 @@ $('#owner').autocomplete({
     }
 });
 
-$('.site-form-close').click(function () {
-    let page_before = window.document.referrer;
-    if (page_before === '') {
-        if (siteId) {
-            window.location.href = 'map/#site/siteIdOpen=' + siteId;
-        } else {
-            window.location.href = 'map/';
-        }
-    } else if (page_before.indexOf('source-reference-form') > -1) {
-        window.history.go(-2);
-    } else {
-        window.history.back();
-    }
-});
-
 $('.delete-image-btn').click(function () {
     let imageId = $('#siteImageCarousel .carousel-item.active').data('id');
     $('#id_site_image_delete').val(imageId);
