@@ -1,6 +1,5 @@
 # coding=utf-8
 from celery import shared_task
-from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django_tenants.utils import tenant_context, get_tenant_model, get_tenant
 
@@ -10,6 +9,7 @@ def generate_source_reference_filter_by_site(tenant_id=None):
         for tenant in get_tenant_model().objects.all():
             with tenant_context(tenant):
                 generate_source_reference_filter_by_site(tenant.id)
+        return
 
     tenant = get_tenant_model().objects.get(id=tenant_id)
     from bims.models.source_reference import (

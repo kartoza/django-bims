@@ -268,8 +268,14 @@ def migrate_context(source_site, new_tenant_schema):
     location_context_group = LocationContextGroup.objects.filter(
         id__in=location_context.values('group_id')
     ).distinct()
+    location_filter = LocationContextFilter.objects.filter(site=source_site)
+    group_order = LocationContextFilterGroupOrder.objects.filter(
+        filter__in=location_filter
+    )
     _migrate(LocationContextGroup, location_context_group, new_tenant_schema)
     _migrate(LocationContext, location_context, new_tenant_schema)
+    _migrate(LocationContextFilter, location_filter, new_tenant_schema)
+    _migrate(LocationContextFilter, group_order, new_tenant_schema)
 
 
 class Command(BaseCommand):
