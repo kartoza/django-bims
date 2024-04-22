@@ -2,22 +2,20 @@
 from celery import shared_task
 from django.contrib.sites.models import Site
 from django.core.cache import cache
+from django_tenants.utils import tenant_context, get_tenant_model, get_tenant
 
 
-def generate_source_reference_filter_by_site(site_id=None):
-    if not site_id:
-        all_sites = Site.objects.all()
-        for site in all_sites:
-            generate_source_reference_filter_by_site(
-                site_id=site.id
-            )
-        return
+def generate_source_reference_filter_by_site(tenant_id=None):
+    if not tenant_id:
+        for tenant in get_tenant_model().objects.all():
+            with tenant_context(tenant):
+                generate_source_reference_filter_by_site(tenant.id)
+
+    tenant = get_tenant_model().objects.get(id=tenant_id)
     from bims.models.source_reference import (
         SourceReference
     )
-    references = SourceReference.objects.filter(
-        active_sites=site_id
-    ).distinct('id')
+    references = SourceReference.objects.all()
     results = []
     reference_source_list = []
     for reference in references:
@@ -44,7 +42,7 @@ def generate_source_reference_filter_by_site(site_id=None):
             }
         )
 
-    cache_key = f'source_reference_filter_{site_id}'
+    cache_key = f'source_reference_filter_{tenant}'
     cache.set(cache_key, results, timeout=None)
 
 
@@ -52,17 +50,16 @@ def generate_source_reference_filter_by_site(site_id=None):
     name='bims.tasks.generate_source_reference_filter',
     queue='update')
 def generate_source_reference_filter(
-        current_site_id=None):
-    generate_source_reference_filter_by_site(current_site_id)
+        tenant_id=None):
+    generate_source_reference_filter_by_site(tenant_id)
 
 
-def get_source_reference_filter():
-    current_site = Site.objects.get_current()
-    cache_key = f'source_reference_filter_{current_site.id}'
+def get_source_reference_filter(request):
+    cache_key = f'source_reference_filter_{get_tenant(request)}'
     filter_data = cache.get(cache_key)
 
     if filter_data is None:
-        generate_source_reference_filter(current_site.id)
+        generate_source_reference_filter(get_tenant(request).id)
         filter_data = cache.get(cache_key)
 
     return filter_data if filter_data else []
