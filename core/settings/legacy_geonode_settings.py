@@ -365,67 +365,13 @@ GEONODE_INTERNAL_APPS = (
 )
 
 # Uncomment the following line to enable contrib apps
-GEONODE_APPS = GEONODE_CORE_APPS + GEONODE_INTERNAL_APPS
-
-INSTALLED_APPS = (
-
-    # Boostrap admin theme
-    # 'django_admin_bootstrapped.bootstrap3',
-    # 'django_admin_bootstrapped',
-
-    # Apps bundled with Django
-    'modeltranslation',
-    'dal',
-    'dal_select2',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.admin',
-    'django.contrib.sitemaps',
-    'django.contrib.staticfiles',
-    'django.contrib.messages',
-    'django.contrib.humanize',
-    'django.contrib.gis',
-
-    # Utility
-    'dj_pagination',
-    'taggit',
-    'treebeard',
-    # 'leaflet',
-    # 'bootstrap3_datetime',
-    'django_filters',
-    'mptt',
-
-    # Theme
-    # 'django_forms_bootstrap',
-
-    # Social
-    # 'avatar',
-    # 'dialogos',
-    # 'pinax.ratings',
-    'polymorphic',
-    'guardian',
-    'oauth2_provider',
-    'corsheaders',
-    'invitations',
-
-    # login with external providers
-    'allauth',
-    'allauth.account',
-     # 'allauth.socialaccount',
-
-    # GeoNode
-    # 'geonode',
-)
+# GEONODE_APPS = GEONODE_CORE_APPS + GEONODE_INTERNAL_APPS
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
 OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL = "oauth2_provider.AccessToken"
 OAUTH2_PROVIDER_ID_TOKEN_MODEL = "oauth2_provider.IDToken"
 OAUTH2_PROVIDER_GRANT_MODEL = "oauth2_provider.Grant"
 OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL = "oauth2_provider.RefreshToken"
-
-INSTALLED_APPS += GEONODE_APPS
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
@@ -580,6 +526,7 @@ TEMPLATES = [
 ]
 
 MIDDLEWARE = (
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -627,11 +574,6 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
-
-if 'announcements' in INSTALLED_APPS:
-    AUTHENTICATION_BACKENDS += (
-        'announcements.auth_backends.AnnouncementPermissionsBackend',
-    )
 
 # 1 day expiration time by default
 ACCESS_TOKEN_EXPIRE_SECONDS = int(os.getenv('ACCESS_TOKEN_EXPIRE_SECONDS', '86400'))
@@ -897,8 +839,6 @@ SKIP_PERMS_FILTER = ast.literal_eval(os.getenv('SKIP_PERMS_FILTER', 'False'))
 # Update facet counts from Haystack
 HAYSTACK_FACET_COUNTS = ast.literal_eval(os.getenv('HAYSTACK_FACET_COUNTS', 'True'))
 if HAYSTACK_SEARCH:
-    if 'haystack' not in INSTALLED_APPS:
-        INSTALLED_APPS += ('haystack', )
     HAYSTACK_CONNECTIONS = {
         'default': {
             'ENGINE': 'haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine',
@@ -948,27 +888,10 @@ API_LIMIT_PER_PAGE = int(os.getenv('API_LIMIT_PER_PAGE', '200'))
 API_INCLUDE_REGIONS_COUNT = ast.literal_eval(
     os.getenv('API_INCLUDE_REGIONS_COUNT', 'False'))
 
-# Settings for CREATE_LAYER plugin
-CREATE_LAYER = ast.literal_eval(os.getenv('CREATE_LAYER', 'False'))
-
-if CREATE_LAYER:
-    if 'geonode.geoserver.createlayer' not in INSTALLED_APPS:
-        INSTALLED_APPS += ('geonode.geoserver.createlayer',)
-
-# Settings for FAVORITE plugin
-# FAVORITE_ENABLED = ast.literal_eval(os.getenv('FAVORITE_ENABLED', 'True'))
-#
-# if FAVORITE_ENABLED:
-#     if 'geonode.favorite' not in INSTALLED_APPS:
-#         INSTALLED_APPS += ('geonode.favorite',)
-
-
 # Settings for RECAPTCHA plugin
 RECAPTCHA_ENABLED = ast.literal_eval(os.environ.get('RECAPTCHA_ENABLED', 'False'))
 
 if RECAPTCHA_ENABLED:
-    if 'captcha' not in INSTALLED_APPS:
-        INSTALLED_APPS += ('captcha',)
     ACCOUNT_SIGNUP_FORM_CLASS = os.getenv("ACCOUNT_SIGNUP_FORM_CLASS",
                                           'geonode.people.forms.AllauthReCaptchaSignupForm')
     """

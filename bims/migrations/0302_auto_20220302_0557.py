@@ -23,5 +23,4 @@ class Migration(migrations.Migration):
                 ('biological_collection_record', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='bims.BiologicalCollectionRecord')),
             ],
         ),
-        migrations.RunPython(add_default_location_site_view)
     ]

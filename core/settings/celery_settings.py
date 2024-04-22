@@ -1,7 +1,7 @@
 CELERY_BEAT_SCHEDULE = {
     'generate_filters': {
-        'task': 'bims.tasks.generate_filters',
-        'schedule': 300,
+        'task': 'bims.tasks.generate_filters_in_all_schemas',
+        'schedule': 30,
         'options': {
             'expires': 14,
             'retry': False,

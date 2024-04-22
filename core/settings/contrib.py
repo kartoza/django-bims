@@ -34,50 +34,105 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-# Django grappelli need to be added before django.contrib.admin
-INSTALLED_APPS = (
+# Grapelli settings
+GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
+
+SHARED_APPS = (
     'grappelli',
+    'django_tenants',
+    'tenants',
+
     'colorfield',
     'polymorphic',
     'webpack_loader',
     'ckeditor_uploader',
     'django_admin_inline_paginator',
-    'django_celery_results'
-) + INSTALLED_APPS
+    'django_celery_results',
 
-# Grapelli settings
-GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
+    # Apps bundled with Django
+    'modeltranslation',
+    'dal',
+    'dal_select2',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
+    'django.contrib.staticfiles',
+    'django.contrib.messages',
+    'django.contrib.humanize',
+    'django.contrib.gis',
+    'django.contrib.flatpages',
 
-INSTALLED_APPS += (
-    # AppConfig Hook to fix issue from geonode
+    # Utility
+    'dj_pagination',
+    'taggit',
+    'treebeard',
+    'django_filters',
+    'mptt',
+
+    'guardian',
+    'oauth2_provider',
+    'corsheaders',
+    'invitations',
+
     'core.config_hook',
-    'bims.signals',
-    'allauth',
-    'allauth.account',
     'rolepermissions',
     'rest_framework',
     'rest_framework_gis',
+    'rest_framework.authtoken',
     'celery',
     'pipeline',
     'modelsdoc',
     'contactus',
-    # 'django_prometheus',
+
     'crispy_forms',
-    'sass',
     'rangefilter',
     'preferences',
     'sorl.thumbnail',
     'ckeditor',
     'django_json_widget',
-    'django_forms_bootstrap'
+    'django_forms_bootstrap',
 )
 
-INSTALLED_APPS += (
-    'taggit',
+TENANT_APPS = (
+    'allauth',
+    'allauth.account',
+    'django.contrib.auth',
+    'django.contrib.admin',
+    # tenant-specific apps
+    'geonode.people',
+    'geonode.base',
+    'geonode.groups',
+    'geonode.documents',
+    'bims',
+    'bims.signals',
+    'sass',
+    'td_biblio',
+    'scripts',
+    'bims_theme',
+    'mobile',
+    'pesticide'
 )
-INSTALLED_APPS = (
-    'rest_framework.authtoken',
-) + INSTALLED_APPS
+
+TESTING = sys.argv[1:2] == ['test']
+if not TESTING and not on_travis:
+    TENANT_APPS += (
+        'easyaudit',
+    )
+    MIDDLEWARE += (
+        'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
+    )
+
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "tenants.Client"
+TENANT_DOMAIN_MODEL = "tenants.Domain"
+
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_FORMS = {
+    'signup': 'bims.forms.CustomSignupForm',
+}
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 if os.environ.get('SENTRY_KEY'):
     import sentry_sdk
@@ -87,10 +142,6 @@ if os.environ.get('SENTRY_KEY'):
     )
 
 # workaround to get flatpages picked up in installed apps.
-INSTALLED_APPS += (
-    'django.contrib.flatpages',
-    'django.contrib.sites',
-)
 
 # Set templates
 try:
@@ -170,14 +221,6 @@ MIDDLEWARE += (
     'bims.middleware.VisitorTrackingMiddleware',
 )
 
-TESTING = sys.argv[1:2] == ['test']
-if not TESTING and not on_travis:
-    INSTALLED_APPS += (
-        'easyaudit',
-    )
-    MIDDLEWARE += (
-        'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
-    )
 # for middleware in MIDDLEWARE_CLASSES:
 #     if middleware not in MIDDLEWARE:
 #         MIDDLEWARE += (middleware,)
@@ -199,31 +242,6 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 LOGIN_REDIRECT_URL = "/"
 
-AUTH_WITH_EMAIL_ONLY = ast.literal_eval(os.environ.get(
-        'AUTH_WITH_EMAIL_ONLY', 'True'))
-
-if AUTH_WITH_EMAIL_ONLY:
-    ACCOUNT_USERNAME_REQUIRED = False
-    ACCOUNT_FORMS = {
-        'signup': 'bims.forms.CustomSignupForm',
-    }
-    ACCOUNT_AUTHENTICATION_METHOD = 'email'
-else:
-    INSTALLED_APPS += (
-        'allauth.socialaccount',
-        'allauth.socialaccount.providers.google',
-        'allauth.socialaccount.providers.github',
-    )
-
-
-INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
-# ROLEPERMISSIONS_MODULE = 'roles.settings.roles'
-
-# Remove pinax notifications from installed apps
-if 'pinax.notifications' in INSTALLED_APPS:
-    INSTALLED_APPS = list(INSTALLED_APPS)
-    INSTALLED_APPS.remove('pinax.notifications')
-    INSTALLED_APPS = tuple(INSTALLED_APPS)
 
 IUCN_API_URL = 'http://apiv3.iucnredlist.org/api/v3'
 

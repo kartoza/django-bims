@@ -26,8 +26,8 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         site = get_current_site(self.request)
         taxa_groups_query = TaxonGroup.objects.filter(
             category='SPECIES_MODULE',
-            parent__isnull=True,
-            site=site).order_by('display_order')
+            parent__isnull=True
+        ).order_by('display_order')
         context['taxa_groups'] = TaxonGroupSerializer(
             taxa_groups_query, many=True).data
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])

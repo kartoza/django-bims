@@ -11,7 +11,6 @@ from bims.models.chemical_record import ChemicalRecord
 
 from bims.models.water_temperature import WaterTemperature
 from django.db.models import Q, Count, F, Value, Case, When, IntegerField
-from django.contrib.sites.models import Site
 from django.db.models.functions import Concat
 from django.db.models.query import QuerySet
 from django.contrib.gis.db.models import Union, Extent
@@ -58,7 +57,6 @@ class CollectionSearchAPIView(BimsApiView):
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
-            site=Site.objects.get_current(),
             requester=request.user
         )
 
@@ -82,9 +80,7 @@ class CollectionSearchAPIView(BimsApiView):
         data_for_process_id['search_uri'] = search_uri
         data_for_process_id['requester_id'] = request.user.id if not request.user.is_anonymous else 0
         data_for_process_id['collections_total'] = (
-            BiologicalCollectionRecord.objects.filter(
-                source_site=Site.objects.get_current()
-            ).count()
+            BiologicalCollectionRecord.objects.all().count()
         )
         # Generate unique process id by search uri and total of collections
         process_id = hashlib.sha256(
@@ -126,12 +122,6 @@ class CollectionSearch(object):
     def __init__(self, parameters, current_site=None):
         self.parameters = parameters
         self.current_site = current_site
-        site = current_site
-        if not site:
-            site = Site.objects.first()
-            taxon_groups = TaxonGroup.objects.filter(
-                site=site
-            )
         super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):
@@ -449,15 +439,8 @@ class CollectionSearch(object):
 
         rank = self.get_request_data('rank')
         bio = None
-        current_site_id = self.parameters.get(
-            'current_site_id',
-            self.current_site.id if self.current_site else Site.objects.get_current().id
-        )
 
-        collection_records_by_site = collection_record_model.objects.filter(
-            Q(source_site_id=current_site_id) |
-            Q(additional_observation_sites=current_site_id)
-        )
+        collection_records_by_site = collection_record_model.objects.all()
 
         if rank:
             taxa_list = []
