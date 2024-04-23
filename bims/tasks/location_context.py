@@ -121,17 +121,14 @@ LAYER_NAMES = {
     queue='geocontext',
     ignore_result=True
 )
-def generate_filters():
+def generate_filters(tenant_id=None):
     from bims.tasks.source_reference import generate_source_reference_filter
     from bims.api_views.module_summary import ModuleSummary
-    from django.contrib.sites.models import Site
-    generate_spatial_scale_filter()
-    generate_source_reference_filter()
+    generate_spatial_scale_filter(tenant_id)
+    generate_source_reference_filter(tenant_id)
 
-    all_sites = Site.objects.all()
-    for site in all_sites:
-        module_summary_api = ModuleSummary()
-        module_summary_api.call_summary_data_in_background(site)
+    module_summary_api = ModuleSummary()
+    module_summary_api.call_summary_data_in_background()
 
 
 @shared_task(
@@ -144,7 +141,7 @@ def generate_filters_in_all_schemas():
 
     for tenant in get_tenant_model().objects.exclude(schema_name='public'):
         with tenant_context(tenant):
-            generate_filters.delay()
+            generate_filters.delay(tenant.id)
 
 
 @shared_task(

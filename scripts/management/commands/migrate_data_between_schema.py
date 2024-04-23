@@ -5,6 +5,7 @@ from django.core.serializers import serialize, deserialize
 from django.contrib.auth import get_user_model
 from bims.models import *
 from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
+from bims_theme.models import *
 from sass.models import *
 
 UserModel = get_user_model()
@@ -278,6 +279,48 @@ def migrate_context(source_site, new_tenant_schema):
     _migrate(LocationContextFilter, group_order, new_tenant_schema)
 
 
+def migrate_theme(source_site, new_tenant_schema):
+    custom_theme = CustomTheme.objects.filter(
+        site=source_site
+    )
+    partners = Partner.objects.filter(
+        customtheme__in=custom_theme
+    )
+    landing_page_sections = LandingPageSection.objects.filter(
+        customtheme__in=custom_theme
+    )
+    landing_page_section_content = LandingPageSectionContent.objects.filter(
+        landingpagesection__in=landing_page_sections
+    )
+    _migrate(
+        CustomTheme,
+        custom_theme,
+        new_tenant_schema
+    )
+    _migrate(
+        Partner,
+        partners,
+        new_tenant_schema
+    )
+    _migrate(
+        LandingPageSection,
+        landing_page_sections,
+        new_tenant_schema
+    )
+    _migrate(
+        LandingPageSectionContent,
+        landing_page_section_content,
+        new_tenant_schema
+    )
+    _migrate(
+        NonBiodiversityLayer,
+        NonBiodiversityLayer.objects.filter(
+            Q(source_site=source_site) | Q(additional_sites=source_site)
+        ),
+        new_tenant_schema
+    )
+
+
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
@@ -317,6 +360,11 @@ class Command(BaseCommand):
             )
         if migrate == 'context':
             migrate_context(
+                source_site,
+                new_tenant
+            )
+        if migrate == 'theme':
+            migrate_theme(
                 source_site,
                 new_tenant
             )
