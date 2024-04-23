@@ -18,7 +18,7 @@ ADMINS = (
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': os.environ.get('DATABASE_NAME'),
         'USER': os.environ.get('DATABASE_USERNAME'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
@@ -27,6 +27,8 @@ DATABASES = {
         'TEST_NAME': 'unittests',
     }
 }
+
+ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
 
 REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
 REPLICAS = extract_replicas(REPLICA_ENV_VAR)
