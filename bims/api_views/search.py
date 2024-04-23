@@ -784,6 +784,10 @@ class CollectionSearch(object):
                     Q(id__in=water_temperature) |
                     Q(site_code__icontains=self.search_query)
                 )
+                if self.ecosystem_type:
+                    location_sites_filter = location_sites_filter.filter(
+                        ecosystem_type__in=self.ecosystem_type
+                    )
             self.location_sites_raw_query = location_sites_filter.annotate(
                 site_id=F('id')).values(
                 'site_id',
