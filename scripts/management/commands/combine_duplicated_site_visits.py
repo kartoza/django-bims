@@ -23,9 +23,20 @@ class Command(BaseCommand):
             dest='fix_survey_date',
             default='False',
         )
+        parser.add_argument(
+            '-sc',
+            '--schema',
+            dest='schema',
+            default='public',
+        )
 
     def handle(self, *args, **options):
         site_id = options.get('site_id', None)
+        schema = options.get('schema', None)
+
+        if schema:
+            connection.set_schema(schema)
+
         fix_survey_date = ast.literal_eval(options.get('fix_survey_date', 'False'))
         if site_id:
             Site.objects.get(id=site_id)

@@ -10,11 +10,13 @@ from sass.models import *
 
 UserModel = get_user_model()
 
+MAX_INDEX = 1000
+
 
 def _migrate(model, data, new_tenant_schema, ignore=None, index=0):
     connection.set_schema('public')
     data_count = data.count()
-    end_index = index + 1000 if data_count > index + 1000 else data_count
+    end_index = index + MAX_INDEX if data_count > index + MAX_INDEX else data_count
     serialized_data = serialize('json', data[index: end_index])
 
     connection.set_schema(new_tenant_schema)
@@ -31,9 +33,9 @@ def _migrate(model, data, new_tenant_schema, ignore=None, index=0):
                 model_object.save()
             except Exception as e:
                 print(f'Error : {e}')
-    if data_count > index + 1000:
+    if data_count > index + MAX_INDEX:
         _migrate(
-            model, data, new_tenant_schema, ignore, index + 1000
+            model, data, new_tenant_schema, ignore, index + MAX_INDEX
         )
 
 
@@ -130,89 +132,23 @@ def migrate_location_sites(source_site, new_tenant_schema):
 
 def migrate_taxonomies(source_site, new_tenant_schema):
     connection.set_schema('public')
-    with transaction.atomic():
-        taxon_groups = TaxonGroup.objects.filter(
-            site_id=source_site
-        )
-        taxonomies = Taxonomy.objects.all().order_by('id')
-        iucn_status = IUCNStatus.objects.filter(
-            id__in=list(taxonomies.values_list('iucn_status_id', flat=True))
-        )
-        data = {
-            'taxon_groups': serialize(
-                'json',
-                taxon_groups
-            ),
-            'iucn_status': serialize(
-                'json',
-                iucn_status
-            ),
-            'taxonomies': serialize(
-                'json',
-                taxonomies
-            ),
-            'endemism': serialize(
-                'json',
-                Endemism.objects.filter(
-                    id__in=list(taxonomies.values_list('endemism_id', flat=True).distinct())
-                )
-            ),
-            'taxon_group_taxonomies': serialize(
-                'json',
-                TaxonGroupTaxonomy.objects.filter(
-                    taxongroup__in=taxon_groups
-                )
-            )
-        }
-        taxon_groups = list(deserialize('json', data['taxon_groups']))
-        print(len(taxon_groups))
-        print(len(taxonomies))
+    taxon_groups = TaxonGroup.objects.filter(
+        site_id=source_site
+    )
+    taxonomies = Taxonomy.objects.all().order_by('id')
+    iucn_status = IUCNStatus.objects.filter(
+        id__in=list(taxonomies.values_list('iucn_status_id', flat=True))
+    )
 
-        connection.set_schema(new_tenant_schema)
-
-        for obj in deserialize('json', data['taxon_groups']):
-            taxon_group = obj.object
-            if not TaxonGroup.objects.filter(
-                name=taxon_group.name
-            ).exists():
-                taxon_group.save()
-
-        for obj in deserialize('json', data['iucn_status']):
-            iucn = obj.object
-            if not IUCNStatus.objects.filter(
-                id=iucn.id
-            ).exists():
-                iucn.save()
-
-        for obj in deserialize('json', data['endemism']):
-            endemism = obj.object
-            if not Endemism.objects.filter(
-                id=endemism.id
-            ).exists():
-                endemism.save()
-
-        print('Migrating taxonomies...')
-        for obj in deserialize('json', data['taxonomies']):
-            taxon = obj.object
-            print(f'Taxon {taxon.scientific_name}')
-            if not Taxonomy.objects.filter(
-                id=taxon.id
-            ).exists():
-                if taxon.owner_id:
-                    taxon.owner = None
-                if taxon.collector_user_id:
-                    taxon.collector_user = None
-                taxon.save()
-
-        print('Migrating taxon group taxonomies...')
-        for obj in deserialize('json', data['taxon_group_taxonomies']):
-            tgt = obj.object
-            if not TaxonGroupTaxonomy.objects.filter(
-                id=tgt.id
-            ).exists():
-                tgt.save()
-
-        print(taxon_groups[0])
+    _migrate(TaxonGroup, taxon_groups, new_tenant_schema)
+    _migrate(IUCNStatus, iucn_status, new_tenant_schema)
+    _migrate(Endemism, Endemism.objects.filter(
+        id__in=list(taxonomies.values_list('endemism_id', flat=True).distinct())
+    ), new_tenant_schema)
+    _migrate(Taxonomy, taxonomies, new_tenant_schema, 'owner_id')
+    _migrate(TaxonGroupTaxonomy, TaxonGroupTaxonomy.objects.filter(
+        taxongroup__in=taxon_groups
+    ), new_tenant_schema)
 
 
 def migrate_survey(source_site, new_tenant_schema):
