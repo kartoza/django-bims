@@ -21,8 +21,8 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'gis',
+        'ENGINE': 'django_tenants.postgresql_backend',
+        'NAME': 'app',
         'USER': 'docker',
         'PASSWORD': 'docker',
         'HOST': 'db',
@@ -32,6 +32,8 @@ DATABASES = {
         },
     }
 }
+
+ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
 
 REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
 REPLICAS = extract_replicas(REPLICA_ENV_VAR)
@@ -49,5 +51,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': 'cache:11211',
+        'KEY_FUNCTION': 'django_tenants.cache.make_key',
+        'REVERSE_KEY_FUNCTION': 'django_tenants.cache.reverse_key',
     }
 }

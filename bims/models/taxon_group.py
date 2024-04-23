@@ -251,12 +251,8 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
     if not issubclass(sender, TaxonGroup):
         return
 
-    all_sites = Site.objects.all()
-    for site in all_sites:
-        module_summary_api = ModuleSummary()
-        module_summary_api.call_summary_data_in_background(
-            site
-        )
+    module_summary_api = ModuleSummary()
+    module_summary_api.call_summary_data_in_background()
 
     if not instance.site:
         return

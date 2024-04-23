@@ -22,7 +22,6 @@ from django.utils import timezone
 
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
-from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup

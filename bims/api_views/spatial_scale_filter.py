@@ -8,7 +8,7 @@ class SpatialScaleFilterList(APIView):
     """API for listing all spatial scale filter"""
 
     def get(self, request, *args):
-        spatial_scale_filter = get_spatial_scale_filter()
+        spatial_scale_filter = get_spatial_scale_filter(request)
         if not spatial_scale_filter:
             groups = []
         else:

@@ -26,5 +26,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(clear_all_postgres_view)
+        # migrations.RunPython(clear_all_postgres_view)
     ]

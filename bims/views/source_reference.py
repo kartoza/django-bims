@@ -83,9 +83,7 @@ class SourceReferenceList(View):
         Add GET requests filters
         """
         filters = dict()
-        qs = SourceReference.objects.filter(
-            active_sites=Site.objects.get_current()
-        )
+        qs = SourceReference.objects.all()
 
         if self.collectors:
             qs = qs.filter(
