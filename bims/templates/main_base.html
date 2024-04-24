@@ -52,6 +52,7 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', '{{ GOOGLE_ANALYTIC_KEY }}');
+        const tenant = '{{ request.tenant }}'
         const isSiteNoticeAvailable = {% if preferences.SiteSetting.site_notice %}true{% else %}false{% endif %};
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const reportUrl = '{% url "bug-report" %}';

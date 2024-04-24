@@ -898,7 +898,7 @@ define([
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
-                viewparams: 'where:"' + query + '"'
+                viewparams: 'where:' + tenant + '."' + query + '"'
             };
             this.layers.biodiversitySource.updateParams(newParams);
         },
