@@ -46,12 +46,10 @@ class SiteVisitListView(ListView):
             del search_filters['o']
 
         # Base queryset
-        qs = super(SiteVisitListView, self).get_queryset().filter(
-            biological_collection_record__source_site=Site.objects.get_current()
-        ).distinct()
+        qs = super(SiteVisitListView, self).get_queryset().all()
 
         if search_filters:
-            search = CollectionSearch(search_filters, current_site=Site.objects.get_current())
+            search = CollectionSearch(search_filters)
 
             if 'site_code' in search_filters:
                 if search_filters['site_code']:
@@ -79,7 +77,7 @@ class SiteVisitListView(ListView):
                 del search_filters['validated']
 
             if search_filters:
-                search = CollectionSearch(search_filters, current_site=Site.objects.get_current())
+                search = CollectionSearch(search_filters)
                 self.collection_results = search.process_search()
                 qs = qs.filter(
                     id__in=self.collection_results.values('survey')

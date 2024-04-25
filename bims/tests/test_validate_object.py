@@ -3,6 +3,8 @@ import mock
 
 from django.db.models import signals
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework.test import APIClient
 from rest_framework import status
 from bims.models import LocationSite, location_site_post_save_handler
@@ -12,36 +14,36 @@ logger = logging.getLogger('bims')
 
 
 @mock.patch('bims.models.location_site.update_location_site_context')
-class TestValidateLocationSite(TestCase):
+class TestValidateLocationSite(FastTenantTestCase):
 
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         self.location_site = LocationSiteF.create()
         signals.post_save.disconnect(
             location_site_post_save_handler,
             sender=LocationSite)
 
     def test_validate_location_site(self, mock_update_location_site_context):
-        client = APIClient()
         api_url = '/api/validate-location-site/'
         # Cannot merge sites without log in as superuser
-        res = client.get(api_url, {})
+        res = self.client.get(api_url, {})
         self.assertTrue(
             res.status_code == status.HTTP_302_FOUND
         )
 
         user = UserF.create(is_superuser=True)
-        client.login(
+        self.client.login(
             username=user.username,
             password='password'
         )
 
-        res = client.get(api_url, {})
+        res = self.client.get(api_url, {})
         self.assertTrue(
             res.status_code == status.HTTP_403_FORBIDDEN
         )
 
         site = LocationSiteF.create()
-        res = client.get(api_url, {
+        res = self.client.get(api_url, {
             'pk': site.id
         })
         self.assertTrue(

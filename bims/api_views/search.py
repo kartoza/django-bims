@@ -117,11 +117,9 @@ class CollectionSearch(object):
     sass_only = False
     site = None
     taxon_groups = TaxonGroup.objects.all()
-    current_site = None
 
-    def __init__(self, parameters, current_site=None):
+    def __init__(self, parameters):
         self.parameters = parameters
-        self.current_site = current_site
         super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):

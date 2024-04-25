@@ -1,9 +1,10 @@
 import json
 import os
 
-from django.test import TestCase
 from django.shortcuts import reverse
 from django.db.models import signals
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.tests.model_factories import (
     LocationSiteF,
@@ -18,7 +19,7 @@ test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
 
 
-class TestLocationSiteFormView(TestCase):
+class TestLocationSiteFormView(FastTenantTestCase):
     """
     Tests location site form.
     """
@@ -27,6 +28,7 @@ class TestLocationSiteFormView(TestCase):
         """
         Sets up before each test
         """
+        self.client = TenantClient(self.tenant)
         post_data_path = os.path.join(
             test_data_directory, 'site_form_post_data.json')
         post_data_file = open(post_data_path)

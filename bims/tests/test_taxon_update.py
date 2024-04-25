@@ -1,5 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
@@ -12,8 +14,9 @@ from bims.tests.model_factories import (
 User = get_user_model()
 
 
-class UpdateTaxonTest(TestCase):
+class UpdateTaxonTest(FastTenantTestCase):
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         self.expert_user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.normal_user = User.objects.create_user('normal_user',
                                                     'normal_user@example.com', 'password')

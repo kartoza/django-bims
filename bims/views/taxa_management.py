@@ -32,9 +32,7 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             taxa_groups_query, many=True).data
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
         context['source_collections'] = list(
-            BiologicalCollectionRecord.objects.filter(
-                Q(source_site=site) | Q(additional_observation_sites=site)
-            ).values_list(
+            BiologicalCollectionRecord.objects.all().values_list(
                 'source_collection', flat=True).distinct()
         )
         context['taxon_rank'] = [

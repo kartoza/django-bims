@@ -54,12 +54,14 @@ def generate_source_reference_filter(
     generate_source_reference_filter_by_site(tenant_id)
 
 
-def get_source_reference_filter(request):
-    cache_key = f'source_reference_filter_{get_tenant(request)}'
+def get_source_reference_filter(request, tenant=None):
+    if request and not tenant:
+        tenant = get_tenant(request)
+    cache_key = f'source_reference_filter_{tenant}'
     filter_data = cache.get(cache_key)
 
     if filter_data is None:
-        generate_source_reference_filter(get_tenant(request).id)
+        generate_source_reference_filter(tenant.id)
         filter_data = cache.get(cache_key)
 
     return filter_data if filter_data else []

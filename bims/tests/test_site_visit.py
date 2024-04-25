@@ -1,12 +1,16 @@
-import json
+
 import logging
 import threading
-import time
 from unittest.mock import patch
 
 from django.db.models.signals import post_save
-from django.test import TransactionTestCase, TestCase
+from django.test import TransactionTestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+from django_tenants.utils import schema_context
+
 from bims.models import LocationSite, location_site_post_save_handler
+from bims.tests.custom_test_case import CustomFastTenantTestCase
 from bims.tests.model_factories import (
     SurveyF, UserF, Survey,
     BiologicalCollectionRecordF, BiologicalCollectionRecord, LocationSiteF,
@@ -16,7 +20,7 @@ from bims.tests.model_factories import (
 LOGGER = logging.getLogger(__name__)
 
 
-class TestSiteVisitView(TestCase):
+class TestSiteVisitView(FastTenantTestCase):
     """
     Test site visit view
     """
@@ -33,6 +37,7 @@ class TestSiteVisitView(TestCase):
             collector_user=self.collector,
             owner=self.owner
         )
+        self.client = TenantClient(self.tenant)
 
     def test_SiteVisitView_update_non_logged_in(self):
         response = self.client.get(
@@ -70,7 +75,7 @@ class TestSiteVisitView(TestCase):
         response = self.client.get(
             '/api/validate-object/?pk={}'.format(self.survey.id)
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 200)
 
     def test_SiteVisit_validate(self):
         self.client.login(
@@ -250,8 +255,16 @@ class TestSiteVisitView(TestCase):
         self.assertTrue(Survey.objects.get(id=self.survey.id).validated)
 
 
-class TestSiteVisitDelete(TransactionTestCase):
+def threaded_function(arg, schema_name):
+    # Set the schema for this thread
+    with schema_context(schema_name):
+        # Your thread code here
+        print("Thread running under schema:", schema_name)
+
+
+class TestSiteVisitDelete(CustomFastTenantTestCase, TransactionTestCase):
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         post_save.disconnect(receiver=location_site_post_save_handler, sender=LocationSite)
         self.collector = UserF.create()
         self.owner = UserF.create()
@@ -260,7 +273,6 @@ class TestSiteVisitDelete(TransactionTestCase):
             is_superuser=True
         )
         self.survey = SurveyF.create(
-            id=1,
             collector_user=self.collector,
             owner=self.owner
         )

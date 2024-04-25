@@ -13,6 +13,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.views.generic.detail import DetailView
 
+from django_tenants.utils import get_tenant, get_tenant_model, schema_context
+
 from bims.utils.search_process import clear_finished_search_process
 from bims.views.site_visit.base import SiteVisitBaseView
 from bims.models.survey import Survey
@@ -53,25 +55,27 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
     def dispatch(self, request, *args, **kwargs):
         return super(SiteVisitDeleteView, self).dispatch(request, *args, **kwargs)
 
-    def run_in_background(self, site_visit_id: int):
-        survey = Survey.objects.get(id=site_visit_id)
-        surveys = Survey.objects.filter(site=survey.site)
-        BiologicalCollectionRecord.objects.filter(survey=survey).delete()
-        ChemicalRecord.objects.filter(survey=survey).delete()
-        Survey.objects.filter(id=survey.id).delete()
+    def run_in_background(self, site_visit_id: int, tenant_id: int):
+        tenant = get_tenant_model().objects.get(id=tenant_id)
+        with schema_context(tenant.schema_name):
+            survey = Survey.objects.get(id=site_visit_id)
+            surveys = Survey.objects.filter(site=survey.site)
+            BiologicalCollectionRecord.objects.filter(survey=survey).delete()
+            ChemicalRecord.objects.filter(survey=survey).delete()
+            Survey.objects.filter(id=survey.id).delete()
 
-        if len(surveys) == 1:
-            location_site = LocationSite.objects.get(pk=survey.site.id)
-            if not ChemicalRecord.objects.filter(
-                location_site=location_site
-            ).exists() and not WaterTemperature.objects.filter(
-                location_site=location_site
-            ).exists():
-                LocationSite.objects.filter(
-                    id=location_site.id
-                ).delete()
+            if len(surveys) == 1:
+                location_site = LocationSite.objects.get(pk=survey.site.id)
+                if not ChemicalRecord.objects.filter(
+                    location_site=location_site
+                ).exists() and not WaterTemperature.objects.filter(
+                    location_site=location_site
+                ).exists():
+                    LocationSite.objects.filter(
+                        id=location_site.id
+                    ).delete()
 
-        clear_finished_search_process()
+            clear_finished_search_process()
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -83,7 +87,7 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
 
         background_thread = threading.Thread(
             target=self.run_in_background,
-            args=(self.site_visit.id,)
+            args=(self.site_visit.id, get_tenant(request).id)
         )
         background_thread.start()
 

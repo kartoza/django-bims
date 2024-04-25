@@ -10,7 +10,6 @@ from bims.models import Survey
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF, BiologicalCollectionRecord,
-    SiteF
 )
 from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
 
@@ -69,16 +68,14 @@ class TestHarvestGbif(TestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
     def test_harvest_gbif(self, mock_update_location_context):
-        site = SiteF.create()
-        status = import_gbif_occurrences(self.taxonomy, site_id=site.id)
+        status = import_gbif_occurrences(self.taxonomy)
         self.assertEqual(status, 'Finish')
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username='GBIF',
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
-                                              'Information Facility (GBIF)',
-                source_site_id=site.id
+                                              'Information Facility (GBIF)'
             ).count(), 5
         )
         self.assertTrue(
@@ -88,15 +85,13 @@ class TestHarvestGbif(TestCase):
                 validated=True
             ).exists()
         )
-        new_site = SiteF.create()
-        import_gbif_occurrences(self.taxonomy, site_id=new_site.id)
+        import_gbif_occurrences(self.taxonomy)
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username='GBIF',
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
-                                              'Information Facility (GBIF)',
-                additional_observation_sites=new_site.id
+                                              'Information Facility (GBIF)'
             ).count(), 5
         )
 

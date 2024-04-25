@@ -292,8 +292,7 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             update_location_context_task.delay(
                 location_site.id,
                 False,
-                generate_spatial_scale_filter,
-                current_site_id=Site.objects.get_current().id)
+                generate_spatial_scale_filter)
         full_message = (
             'Updating location context for {} sites in background'.format(
                 queryset.count()

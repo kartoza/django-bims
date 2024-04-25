@@ -2,15 +2,28 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
+from django.db.models import signals
+
 from sass.enums.chem_unit import ChemUnit
 
 
 def init_unit(apps, schema_editor):
     """ Initialize table Unit"""
+    try:
+        from easyaudit.signals.model_signals import post_save
+        signals.post_save.disconnect(post_save, dispatch_uid='easy_audit_signals_post_save')
+    except RuntimeError:
+        pass
     Unit = apps.get_model('bims', 'Unit')
+
     for unit in ChemUnit:
         obj = Unit(unit_name=unit.name, unit=unit.value)
         obj.save()
+    try:
+        from easyaudit.signals.model_signals import post_save
+        signals.post_save.connect(post_save, dispatch_uid='easy_audit_signals_post_save')
+    except RuntimeError:
+        pass
 
 
 def insert_value_to_unit_foreign_key(apps, schema_editor):

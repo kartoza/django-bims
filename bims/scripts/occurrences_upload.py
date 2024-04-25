@@ -110,8 +110,7 @@ class OccurrenceProcessor(object):
     def update_location_site_context(self):
         update_location_context.delay(
             location_site_id=','.join(self.site_ids),
-            generate_site_code=True,
-            current_site_id=Site.objects.get_current().id
+            generate_site_code=True
         )
 
     def finish_process(self):

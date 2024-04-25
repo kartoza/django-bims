@@ -3,6 +3,8 @@ import logging
 
 import factory
 from django.db.models import signals
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
@@ -41,7 +43,7 @@ from django.test import TestCase, override_settings
 logger = logging.getLogger('bims')
 
 
-class TestApiView(TestCase):
+class TestApiView(FastTenantTestCase):
     """Test Location site API """
 
     def setUp(self):
@@ -233,7 +235,7 @@ class TestApiView(TestCase):
         )
 
         module_summary = ModuleSummary()
-        module_summary.summary_data(source_site)
+        module_summary.summary_data()
         with override_settings(SITE_ID=source_site.id):
             request = self.factory.get(reverse('module-summary'))
             response = view(request)
@@ -273,7 +275,7 @@ class TestApiView(TestCase):
 
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def test_send_notification_to_validator(self):
-        client = APIClient()
+        client = TenantClient(self.tenant)
         user = UserF.create(is_superuser=True)
         client.login(
             username=user.username,

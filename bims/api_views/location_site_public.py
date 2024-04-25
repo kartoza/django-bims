@@ -79,7 +79,7 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
                 self.ERROR_MESSAGE: 'Site not found'
             }
 
-        search = CollectionSearch(filters, current_site=self.request.site)
+        search = CollectionSearch(filters)
         collection_results = search.process_search()
 
         self.iucn_category = dict(
