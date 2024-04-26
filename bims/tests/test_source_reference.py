@@ -38,7 +38,7 @@ from td_biblio.tests.model_factories import (
 logger = logging.getLogger('bims')
 
 
-class TestSourceReferences(TestCase):
+class TestSourceReferences(FastTenantTestCase):
     """ Tests CURD Profile.
     """
 
@@ -64,6 +64,7 @@ class TestSourceReferences(TestCase):
 
         # setup biological record
         self.record = BiologicalCollectionRecordF()
+        self.client = TenantClient(self.tenant)
 
     def test_source_reference_create(self):
         """

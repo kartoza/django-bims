@@ -1,9 +1,13 @@
 # coding=utf-8
 """Tests for models."""
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.contrib.gis.geos import LineString
 from django.core.exceptions import ValidationError
 from django.db.models import signals
+
+from bims.models import GeocontextSetting
 from bims.tests.model_factories import (
     LocationTypeF,
     LocationSiteF,
@@ -167,10 +171,32 @@ class TestLocationSiteCRUD(TestCase):
 
         self.assertTrue(model.location_type.name == 'custom type')
 
-    def test_LocationSite_update(self):
+    @patch('requests.get')
+    def test_LocationSite_update(self, mock_get):
         """
         Tests location site model update
         """
+        mock_response = mock_get.return_value
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "key": "test",
+            "name": "Test",
+            "description": "",
+            "group_type": "text",
+            "services": [
+                {
+                    "key": "test",
+                    "value": "test",
+                    "name": "Test",
+                    "description": "",
+                    "query_type": "WMS"
+                }
+            ]
+        }
+
+        GeocontextSetting.objects.create(
+            geocontext_keys='test'
+        )
         location_type = LocationTypeF.create(
                 name=u'custom type',
         )

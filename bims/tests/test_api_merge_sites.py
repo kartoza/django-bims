@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 
@@ -83,9 +84,8 @@ class TestApiMergeSites(FastTenantTestCase):
         SiteVisitF.create(
             location_site=secondary_site_2
         )
-
         # Cannot merge sites without providing the site ids
-        res = client.put(api_url, {})
+        res = client.put(api_url, {}, content_type='application/json')
         self.assertEqual(
             res.status_code,
             status.HTTP_400_BAD_REQUEST
@@ -95,7 +95,7 @@ class TestApiMergeSites(FastTenantTestCase):
         res = client.put(api_url, {
             PRIMARY_SITE: '99',
             MERGED_SITES: '2,2'
-        })
+        }, content_type='application/json')
         self.assertTrue(
             res.status_code == status.HTTP_400_BAD_REQUEST
         )
@@ -104,7 +104,7 @@ class TestApiMergeSites(FastTenantTestCase):
             PRIMARY_SITE: str(self.location_site.id),
             MERGED_SITES: f'{str(secondary_site_1.id)},'
                           f'{str(secondary_site_2.id)}'
-        })
+        }, content_type='application/json')
         self.assertTrue(
             res.status_code == status.HTTP_200_OK
         )

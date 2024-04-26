@@ -469,9 +469,9 @@ class BiologicalCollectionRecord(AbstractValidation):
                 self.survey.validated = True
                 self.survey.save()
 
-            if not self.survey.owner and self.owner:
-                self.survey.owner = self.owner
-                self.survey.save()
+        if not self.survey.owner and self.owner:
+            self.survey.owner = self.owner
+            self.survey.save()
 
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 

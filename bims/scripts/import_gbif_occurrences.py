@@ -252,10 +252,10 @@ def process_gbif_response(json_result,
                 taxonomy=taxonomy,
                 source_collection=source_collection,
                 source_reference=source_reference,
-                collection_date=collection_date
+                collection_date=collection_date,
+                owner=gbif_owner
             )
         collection_record.taxonomy = taxonomy
-        collection_record.owner = gbif_owner
         collection_record.source_reference = source_reference
         collection_record.original_species_name = species
         collection_record.collector = collector

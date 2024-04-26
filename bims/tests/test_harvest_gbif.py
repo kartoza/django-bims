@@ -2,6 +2,7 @@ import json
 import os
 import mock
 import requests
+from django_tenants.test.cases import FastTenantTestCase
 from requests.exceptions import HTTPError
 from django.test import TestCase
 from urllib3.exceptions import ProtocolError
@@ -53,7 +54,7 @@ def mocked_request_http_error(url):
 
 
 @mock.patch('bims.models.location_site.update_location_site_context')
-class TestHarvestGbif(TestCase):
+class TestHarvestGbif(FastTenantTestCase):
     def setUp(self) -> None:
         self.taxonomy = TaxonomyF.create(
             gbif_key=1
@@ -76,14 +77,14 @@ class TestHarvestGbif(TestCase):
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
                                               'Information Facility (GBIF)'
-            ).count(), 5
+            ).count(), 6
         )
-        self.assertTrue(
+        self.assertEqual(
             Survey.objects.filter(
                 owner__username='GBIF',
                 biological_collection_record__taxonomy=self.taxonomy,
                 validated=True
-            ).exists()
+            ).distinct().count(), 5
         )
         import_gbif_occurrences(self.taxonomy)
         self.assertEqual(
@@ -92,7 +93,7 @@ class TestHarvestGbif(TestCase):
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
                                               'Information Facility (GBIF)'
-            ).count(), 5
+            ).count(), 6
         )
 
         mock_update_location_context.assert_called()
