@@ -88,6 +88,4 @@ class Migration(migrations.Migration):
         ('bims', '0364_alter_bimsdocument_authors_and_more'),
     ]
 
-    operations = [
-        migrations.RunPython(link_sampling_effort_measure),
-    ]
+    operations = []

@@ -1,6 +1,8 @@
 from django.db.models import signals
 from django.test import TestCase
 import mock
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -9,7 +11,7 @@ from bims.tests.model_factories import LocationSiteF, UserF
 
 
 @mock.patch('bims.models.location_site.update_location_site_context')
-class TestRejectLocationSite(TestCase):
+class TestRejectLocationSite(FastTenantTestCase):
 
     def setUp(self):
         self.location_site = LocationSiteF.create()
@@ -18,7 +20,7 @@ class TestRejectLocationSite(TestCase):
             sender=LocationSite)
 
     def test_reject_location_site(self, mock_update_location_site_context):
-        client = APIClient()
+        client = TenantClient(self.tenant)
         api_url = '/api/reject-location-site/'
 
         # Cannot merge sites without log in as superuser

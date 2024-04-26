@@ -45,7 +45,6 @@ def location_sites_overview(
 
             overview_data = LocationSiteOverviewData()
             overview_data.search_filters = search_parameters
-            overview_data.current_site = search_process.site
             results = dict()
             results[LocationSiteOverviewData.BIODIVERSITY_DATA] = (
                 overview_data.biodiversity_data()
@@ -65,29 +64,14 @@ def update_location_context(
         self,
         location_site_id,
         generate_site_code=False,
-        generate_filter=True,
-        current_site_id=None):
+        generate_filter=True):
     from bims.models import LocationSite, location_site_post_save_handler
     from bims.utils.location_context import get_location_context_data
     from bims.models.location_context_group import LocationContextGroup
     from bims.models.location_context_filter_group_order import (
         location_context_post_save_handler
     )
-    from bims.models.geocontext_setting import GeocontextSetting
-
     group_keys = None
-    if current_site_id:
-        group_keys_array = list(GeocontextSetting.objects.filter(
-            sites__in=[current_site_id]
-        ).values_list(
-            'geocontext_keys',
-            flat=True
-        ))
-        group_keys = (
-            ','.join(
-                str(group_key) for group_key in group_keys_array
-            )
-        )
 
     self.update_state(state='STARTED', meta={'process': 'Checking location site'})
 
@@ -130,13 +114,12 @@ def update_location_context(
         location_site_post_save_handler,
         sender=LocationSite
     )
-    return 'Finished updating location context'
-
     if not generate_filter:
         signals.post_save.connect(
             location_context_post_save_handler,
             sender=LocationContextGroup
         )
+    return 'Finished updating location context'
 
 
 @shared_task(name='bims.tasks.update_site_code', queue='geocontext')

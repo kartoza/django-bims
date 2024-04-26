@@ -70,16 +70,12 @@ SHARED_APPS = (
     'django_filters',
     'mptt',
 
-    'guardian',
-    'oauth2_provider',
     'corsheaders',
-    'invitations',
 
     'core.config_hook',
     'rolepermissions',
     'rest_framework',
     'rest_framework_gis',
-    'rest_framework.authtoken',
     'celery',
     'pipeline',
     'modelsdoc',
@@ -92,9 +88,7 @@ SHARED_APPS = (
     'ckeditor',
     'django_json_widget',
     'django_forms_bootstrap',
-)
 
-TENANT_APPS = (
     'allauth',
     'allauth.account',
     'django.contrib.auth',
@@ -104,6 +98,11 @@ TENANT_APPS = (
     'geonode.base',
     'geonode.groups',
     'geonode.documents',
+
+    'invitations',
+    'guardian',
+    'oauth2_provider',
+    'rest_framework.authtoken',
     'bims',
     'bims.signals',
     'sass',
@@ -111,11 +110,41 @@ TENANT_APPS = (
     'scripts',
     'bims_theme',
     'mobile',
-    'pesticide'
+    'pesticide',
+)
+
+TENANT_APPS = (
+    'rest_framework',
+    'rest_framework_gis',
+    'allauth',
+    'allauth.account',
+    'django.contrib.auth',
+    'django.contrib.admin',
+    # tenant-specific apps
+    'geonode.people',
+    'geonode.base',
+    'geonode.groups',
+    'geonode.documents',
+
+    'invitations',
+    'guardian',
+    'oauth2_provider',
+    'rest_framework.authtoken',
+    'bims',
+    'bims.signals',
+    'sass',
+    'td_biblio',
+    'scripts',
+    'bims_theme',
+    'mobile',
+    'pesticide',
 )
 
 TESTING = sys.argv[1:2] == ['test']
 if not TESTING and not on_travis:
+    SHARED_APPS += (
+        'easyaudit',
+    )
     TENANT_APPS += (
         'easyaudit',
     )

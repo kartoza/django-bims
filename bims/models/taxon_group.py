@@ -9,9 +9,6 @@ from django.contrib.sites.models import Site
 from django.dispatch import receiver
 
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.tasks.collection_record import (
-    assign_site_to_uncategorized_records
-)
 from bims.permissions.generate_permission import generate_permission
 from bims.utils.decorator import prevent_recursion
 
@@ -256,10 +253,6 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
 
     if not instance.site:
         return
-
-    assign_site_to_uncategorized_records.delay(
-        instance.id, instance.site_id
-    )
 
     if instance.level in (
         TAXON_GROUP_LEVEL_1,

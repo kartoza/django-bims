@@ -107,7 +107,6 @@ def process_gbif_response(json_result,
                           session_id,
                           taxon_group,
                           taxonomy,
-                          site_id,
                           habitat,
                           origin,
                           log_file=None):
@@ -180,14 +179,6 @@ def process_gbif_response(json_result,
         if location_sites.exists():
             # Get first site
             location_site = location_sites[0]
-
-            if site_id:
-                if not location_site.source_site:
-                    location_site.source_site_id = site_id
-                else:
-                    if location_site.source_site_id != site_id:
-                        location_site.additional_observation_sites.add(site_id)
-                location_site.save()
         else:
             # Create a new site
             locality = result.get(LOCALITY_KEY, result.get(
@@ -222,10 +213,6 @@ def process_gbif_response(json_result,
                 location_type=location_type,
                 site_description=locality[:300]
             )
-
-            if site_id:
-                location_site.source_site_id = site_id
-                location_site.save()
 
             if not location_site.site_code:
                 site_code, catchments_data = generate_site_code(
@@ -265,10 +252,10 @@ def process_gbif_response(json_result,
                 taxonomy=taxonomy,
                 source_collection=source_collection,
                 source_reference=source_reference,
-                collection_date=collection_date
+                collection_date=collection_date,
+                owner=gbif_owner
             )
         collection_record.taxonomy = taxonomy
-        collection_record.owner = gbif_owner
         collection_record.source_reference = source_reference
         collection_record.original_species_name = species
         collection_record.collector = collector
@@ -276,12 +263,6 @@ def process_gbif_response(json_result,
         collection_record.institution_id = institution_code
         collection_record.reference = reference
         collection_record.module_group = taxon_group
-
-        if site_id:
-            if not collection_record.source_site:
-                collection_record.source_site_id = site_id
-            else:
-                collection_record.additional_observation_sites.add(site_id)
 
         if habitat:
             collection_record.collection_habitat = habitat.lower()
@@ -315,7 +296,6 @@ def import_gbif_occurrences(
         log_file_path=None,
         session_id=None,
         taxon_group=None,
-        site_id=None,
         area_index=1):
     """
     Import GBIF occurrences based on taxonomy GBIF key, without using recursion.
@@ -326,13 +306,6 @@ def import_gbif_occurrences(
 
     base_country_codes = preferences.SiteSetting.base_country_code
     site_boundary = preferences.SiteSetting.site_boundary
-    if site_id:
-        site = SiteSetting.objects.filter(
-            sites=site_id
-        ).first()
-        if site:
-            site_boundary = site.site_boundary
-
     extracted_polygons = []
     area = area_index
 
@@ -364,7 +337,6 @@ def import_gbif_occurrences(
                 session_id,
                 taxon_group,
                 taxonomy,
-                site_id,
                 habitat,
                 origin,
                 log_file_path

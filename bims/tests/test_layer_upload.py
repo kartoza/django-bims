@@ -2,6 +2,10 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
 from django.urls import reverse
 import os
+
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+
 from bims.tests.model_factories import (
     Boundary
 )
@@ -13,7 +17,7 @@ test_data_directory = os.path.join(
 User = get_user_model()
 
 
-class TestLayerUpload(TestCase):
+class TestLayerUpload(FastTenantTestCase):
     """
     Tests layer upload view
     """
@@ -23,7 +27,7 @@ class TestLayerUpload(TestCase):
             email='test@example.com',
             password='password',
             is_superuser=True)
-        self.client = Client()
+        self.client = TenantClient(self.tenant)
 
     def test_upload_valid_geojson(self):
         # Path to a valid GeoJSON file

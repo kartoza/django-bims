@@ -42,12 +42,6 @@ class Command(BaseCommand):
             default='False',
             help='Generate site code')
 
-        parser.add_argument(
-            '-os',
-            '--organisation-site',
-            dest='organisation_site',
-            default='')
-
     def handle(self, *args, **options):
         from bims.models.location_context_filter_group_order import (
             location_context_post_save_handler
@@ -62,16 +56,9 @@ class Command(BaseCommand):
             options.get('site_code')
         )
 
-        organisation_site = options.get('organisation_site', None)
-        if organisation_site:
-            organisation_site = int(organisation_site)
-        else:
-            organisation_site = None
-
         get_location_context_data(
             group_keys=options.get('groups', None),
             site_id=options.get('site_id', None),
             only_empty=options.get('only_empty', False),
-            should_generate_site_code=generate_site_code,
-            site=organisation_site
+            should_generate_site_code=generate_site_code
         )

@@ -5,7 +5,7 @@ from rest_framework.views import APIView, Response
 from bims.models.location_site import LocationSite, generate_site_code
 
 
-class GetSiteCode(LoginRequiredMixin, APIView):
+class GetSiteCode(APIView):
 
     def get(self, request):
         from bims.location_site.river import fetch_river_name

@@ -1,11 +1,12 @@
+import json
 import logging
 from datetime import datetime
 
 import factory
 from django.db.models import signals
-from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from bims.models.water_temperature import WaterTemperature
 from sass.tests.model_factories import (
@@ -32,13 +33,13 @@ PRIMARY_SITE = 'primary_site'
 MERGED_SITES = 'merged_sites'
 
 
-class TestApiMergeSites(TestCase):
+class TestApiMergeSites(FastTenantTestCase):
     def setUp(self):
         self.location_site = LocationSiteF.create()
 
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def test_merge_sites(self):
-        client = APIClient()
+        client = TenantClient(self.tenant)
         api_url = '/api/merge-sites/'
 
         # Cannot merge sites without log in as superuser
@@ -83,18 +84,18 @@ class TestApiMergeSites(TestCase):
         SiteVisitF.create(
             location_site=secondary_site_2
         )
-
         # Cannot merge sites without providing the site ids
-        res = client.put(api_url, {})
-        self.assertTrue(
-            res.status_code == status.HTTP_400_BAD_REQUEST
+        res = client.put(api_url, {}, content_type='application/json')
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_400_BAD_REQUEST
         )
 
         # Cannot find primary site based on the id
         res = client.put(api_url, {
             PRIMARY_SITE: '99',
             MERGED_SITES: '2,2'
-        })
+        }, content_type='application/json')
         self.assertTrue(
             res.status_code == status.HTTP_400_BAD_REQUEST
         )
@@ -103,7 +104,7 @@ class TestApiMergeSites(TestCase):
             PRIMARY_SITE: str(self.location_site.id),
             MERGED_SITES: f'{str(secondary_site_1.id)},'
                           f'{str(secondary_site_2.id)}'
-        })
+        }, content_type='application/json')
         self.assertTrue(
             res.status_code == status.HTTP_200_OK
         )

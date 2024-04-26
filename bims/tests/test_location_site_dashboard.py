@@ -1,5 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     LocationSiteF,
@@ -9,7 +12,7 @@ from bims.tests.model_factories import (
 )
 
 
-class TestLocationSiteDashboard(TestCase):
+class TestLocationSiteDashboard(FastTenantTestCase):
     """
     Tests location site dashboard
     """
@@ -53,6 +56,7 @@ class TestLocationSiteDashboard(TestCase):
             collection_date='2001-10-10',
             taxonomy=taxa_2
         )
+        self.client = TenantClient(self.tenant)
 
     def test_occurrences_chart_data_by_year(self):
         url = reverse('location-sites-occurrences-chart-data')

@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.tests.model_factories import (
     UserF,
@@ -8,10 +10,10 @@ from bims.tests.model_factories import (
 from bims.models import BiologicalCollectionRecord
 
 
-class TestCollectionRecordView(TestCase):
+class TestCollectionRecordView(FastTenantTestCase):
 
     def setUp(self):
-        pass
+        self.client = TenantClient(self.tenant)
 
     def test_common_user_delete_collection_record(self):
         """Test common user deleting collection record"""

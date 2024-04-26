@@ -45,26 +45,20 @@ class LocationSiteOverviewData(object):
     PHYSICO_CHEMICAL_EXIST = 'physico_chemical_exist'
 
     search_filters = None
-    current_site = None
     is_sass_exist = False
 
     def biodiversity_data(self):
         if not self.search_filters:
             return {}
 
-        if not self.current_site:
-            self.current_site = Site.objects.get_current()
-
         search = CollectionSearch(
-            self.search_filters,
-            current_site=self.current_site)
+            self.search_filters)
         collection_results = search.process_search()
 
         biodiversity_data = OrderedDict()
 
         groups = TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            site=self.current_site
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
         ).order_by('display_order')
 
         for group in groups:

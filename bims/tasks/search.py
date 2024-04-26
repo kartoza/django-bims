@@ -27,11 +27,6 @@ def search_task(parameters, search_process_id, background=True):
     except SearchProcess.DoesNotExist:
         return
 
-    if search_process.site:
-        parameters['current_site_id'] = search_process.site.id
-    else:
-        parameters['current_site_id'] = Site.objects.get_current().id
-
     if search_process.requester and 'requester' not in parameters:
         parameters['requester'] = search_process.requester.id
 

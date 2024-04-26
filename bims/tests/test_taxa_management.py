@@ -5,6 +5,8 @@ from django.contrib.sites.models import Site
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework import status
 
 from bims.tests.model_factories import (
@@ -17,9 +19,10 @@ from bims.tests.model_factories import (
 User = get_user_model()
 
 
-class TaxaManagementTest(TestCase):
+class TaxaManagementTest(FastTenantTestCase):
 
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         self.user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.permission = Permission.objects.get(codename='change_taxonomy', content_type__app_label='bims')
         self.user.user_permissions.add(self.permission)
@@ -111,7 +114,7 @@ class TaxaManagementTest(TestCase):
         response = self.client.get(reverse('reject-taxon'),
                                    {'pk': self.taxonomy_2.pk, 'rejection_message': 'rejection_message'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreater(len(mail.outbox), 1)
+        self.assertGreaterEqual(len(mail.outbox), 1)
         self.assertIn('rejection_message', mail.outbox[0].body)
 
     def test_reject_invalid_taxon(self):

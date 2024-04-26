@@ -2,10 +2,13 @@
 """Tests for models."""
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+
 from bims.tests.model_factories import ProfileF, UserF
 
 
-class TestProfile(TestCase):
+class TestProfile(FastTenantTestCase):
     """ Tests CURD Profile.
     """
 
@@ -13,7 +16,7 @@ class TestProfile(TestCase):
         """
         Sets up before each test
         """
-        pass
+        self.client = TenantClient(self.tenant)
 
     def test_profile_create(self):
         """

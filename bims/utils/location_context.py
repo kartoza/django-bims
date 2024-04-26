@@ -96,8 +96,7 @@ def get_location_context_data(
         group_keys=None,
         site_id=None,
         only_empty=False,
-        should_generate_site_code=False,
-        site=None):
+        should_generate_site_code=False):
     """
     Get the location context for specific site or all sites
     :param group_keys: Group keys used to fetch geocontext data
@@ -116,29 +115,13 @@ def get_location_context_data(
     else:
         location_sites = LocationSite.objects.all()
 
-    if site:
-        location_sites = location_sites.filter(
-            Q(source_site=site) | Q(additional_observation_sites=site)
-        )
 
     if not group_keys:
-        if site:
-            organisation_sites = [site]
+        geocontext_setting = GeocontextSetting.objects.first()
+        if geocontext_setting.geocontext_keys:
+            group_keys = geocontext_setting.geocontext_keys.split(',')
         else:
-            organisation_sites = set(location_sites.values_list(
-                'additional_observation_sites', flat=True))
-            organisation_sites.update(
-                location_sites.values_list('source_site', flat=True)
-            )
-        geocontext_settings = GeocontextSetting.objects.filter(
-            sites__in=list(organisation_sites)
-        )
-        group_keys = set()
-        for value in geocontext_settings:
-            if value.geocontext_keys:
-                group_keys.update(
-                    value.geocontext_keys.split(','))
-        group_keys = list(group_keys)
+            group_keys = []
     else:
         if not isinstance(group_keys, list):
             group_keys = group_keys.split(',')

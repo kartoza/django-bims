@@ -2,6 +2,7 @@ import json
 import os
 import mock
 import requests
+from django_tenants.test.cases import FastTenantTestCase
 from requests.exceptions import HTTPError
 from django.test import TestCase
 from urllib3.exceptions import ProtocolError
@@ -10,7 +11,6 @@ from bims.models import Survey
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF, BiologicalCollectionRecord,
-    SiteF
 )
 from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
 
@@ -54,7 +54,7 @@ def mocked_request_http_error(url):
 
 
 @mock.patch('bims.models.location_site.update_location_site_context')
-class TestHarvestGbif(TestCase):
+class TestHarvestGbif(FastTenantTestCase):
     def setUp(self) -> None:
         self.taxonomy = TaxonomyF.create(
             gbif_key=1
@@ -69,35 +69,31 @@ class TestHarvestGbif(TestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
     def test_harvest_gbif(self, mock_update_location_context):
-        site = SiteF.create()
-        status = import_gbif_occurrences(self.taxonomy, site_id=site.id)
+        status = import_gbif_occurrences(self.taxonomy)
         self.assertEqual(status, 'Finish')
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username='GBIF',
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
-                                              'Information Facility (GBIF)',
-                source_site_id=site.id
-            ).count(), 5
+                                              'Information Facility (GBIF)'
+            ).count(), 6
         )
-        self.assertTrue(
+        self.assertEqual(
             Survey.objects.filter(
                 owner__username='GBIF',
                 biological_collection_record__taxonomy=self.taxonomy,
                 validated=True
-            ).exists()
+            ).distinct().count(), 5
         )
-        new_site = SiteF.create()
-        import_gbif_occurrences(self.taxonomy, site_id=new_site.id)
+        import_gbif_occurrences(self.taxonomy)
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username='GBIF',
                 taxonomy=self.taxonomy,
                 source_reference__source_name='Global Biodiversity '
-                                              'Information Facility (GBIF)',
-                additional_observation_sites=new_site.id
-            ).count(), 5
+                                              'Information Facility (GBIF)'
+            ).count(), 6
         )
 
         mock_update_location_context.assert_called()

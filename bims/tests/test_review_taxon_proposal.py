@@ -1,5 +1,7 @@
 from django.urls import reverse
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from bims.models.taxonomy_update_proposal import (
@@ -16,12 +18,13 @@ from bims.tests.model_factories import (
 User = get_user_model()
 
 
-class ReviewTaxonProposalTest(TestCase):
+class ReviewTaxonProposalTest(FastTenantTestCase):
     def setUp(self):
         self.expert_user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.normal_user = User.objects.create_user('normal_user',
                                                     'normal_user@example.com', 'password')
         self.user_2 = User.objects.create_user('user_2', 'user_2@example.com', 'password')
+        self.client = TenantClient(self.tenant)
         self.superuser = User.objects.create_user(
             username='superuser',
             email='superuser@example.com',

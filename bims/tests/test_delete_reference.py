@@ -2,6 +2,9 @@
 
 from django.test import TestCase, Client
 from allauth.utils import get_user_model
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+
 from bims.factories import (
     EntryFactory,
 )
@@ -14,7 +17,7 @@ from bims.tests.model_factories import (
 )
 
 
-class TestEditReference(TestCase):
+class TestEditReference(FastTenantTestCase):
     """ Tests Edit reference view
     """
 
@@ -36,7 +39,7 @@ class TestEditReference(TestCase):
             username='@.test2')
         non_staff_user.set_password('psst')
         non_staff_user.save()
-        self.client = Client()
+        self.client = TenantClient(self.tenant)
         entry = EntryFactory.create(
             title='Test'
         )

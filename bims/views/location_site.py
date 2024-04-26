@@ -4,6 +4,8 @@ from datetime import datetime
 import pytz
 from django.contrib.sites.models import Site
 from django.db import IntegrityError
+from django_tenants.test.client import TenantClient
+from django_tenants.utils import get_tenant
 from preferences import preferences
 
 from bims.models.taxon_group import TaxonGroup
@@ -356,9 +358,10 @@ class LocationSiteFormView(TemplateView):
             extra_tags='location_site_form'
         )
 
-        client = APIClient()
+        client = TenantClient(get_tenant(self.request))
         api_url = '/api/send-email-validation/'
-        res = client.get(api_url, {'pk': location_site.pk, 'model': 'Site'})
+        res = client.get(api_url,
+                         {'pk': location_site.pk, 'model': 'Site'})
 
         return HttpResponseRedirect(
             '{url}?id={id}'.format(
