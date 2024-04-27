@@ -217,7 +217,9 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
             raise Http404
 
     def get(self, request):
-        self.search_filters = request.GET
+        self.search_filters = dict(request.GET)
+        if not request.user.is_anonymous:
+            self.search_filters['requester'] = request.user.id
         response_data = dict()
         response_data[self.BIODIVERSITY_DATA] = self.biodiversity_data()
         response_data[self.SASS_EXIST] = self.is_sass_exist

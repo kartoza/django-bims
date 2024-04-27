@@ -473,6 +473,15 @@ class BiologicalCollectionRecord(AbstractValidation):
             self.survey.owner = self.owner
             self.survey.save()
 
+        if self.end_embargo_date:
+            location_site = self.site
+            other_surveys = Survey.objects.filter(
+                site=self.site
+            ).exclude(id=self.survey.id)
+            if not other_surveys.exists() and not location_site.end_embargo_date:
+                location_site.end_embargo_date = self.end_embargo_date
+                location_site.save()
+
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 
     def get_children(self):

@@ -25,6 +25,31 @@ SEARCH_FINISHED = 'finished'
 SEARCH_FAILED = 'failed'
 
 
+def format_search_result_raw_query(raw_query):
+    if not raw_query:
+        return
+    formatted_params = ()
+    params = raw_query[1]
+    for param in params:
+        formatted_param = param
+        if (
+                isinstance(param, str) or
+                isinstance(param, int) or
+                isinstance(param, date) or
+                param == 'BioBaseData'
+        ):
+            formatted_param = '\'' + str(param) + '\''
+        elif isinstance(param, list):
+            formatted_param = str(param)
+            formatted_param = formatted_param.replace('[u\'', '\'{"')
+            formatted_param = formatted_param.replace('\',', '",')
+            formatted_param = formatted_param.replace(' u\'', ' "')
+            formatted_param = formatted_param.replace('\']', '"}\'')
+        formatted_params += (formatted_param, )
+    query_string = raw_query[0] % formatted_params
+    return query_string
+
+
 class SearchProcess(models.Model):
     """Search process model
     """
@@ -79,27 +104,9 @@ class SearchProcess(models.Model):
         super(SearchProcess, self).save(*args, **kwargs)
 
     def set_search_raw_query(self, raw_query):
-        if not raw_query:
+        query_string = format_search_result_raw_query(raw_query)
+        if not query_string:
             return
-        formatted_params = ()
-        params = raw_query[1]
-        for param in params:
-            formatted_param = param
-            if (
-                    isinstance(param, str) or
-                    isinstance(param, int) or
-                    isinstance(param, date) or
-                    param == 'BioBaseData'
-            ):
-                formatted_param = '\'' + str(param) + '\''
-            elif isinstance(param, list):
-                formatted_param = str(param)
-                formatted_param = formatted_param.replace('[u\'', '\'{"')
-                formatted_param = formatted_param.replace('\',', '",')
-                formatted_param = formatted_param.replace(' u\'', ' "')
-                formatted_param = formatted_param.replace('\']', '"}\'')
-            formatted_params += (formatted_param, )
-        query_string = raw_query[0] % formatted_params
         self.search_raw_query = query_string
         self.save()
 
