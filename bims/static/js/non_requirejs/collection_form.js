@@ -434,7 +434,7 @@ $(function () {
         let embargoDate = $('#embargo-end-date').val();
         if (embargoDate) {
             let embargoParts = embargoDate.split('/');
-            let newEmbargoDate = embargoParts[1] + '/' + embargoParts[0] + '/' + embargoParts[2];
+            let newEmbargoDate = embargoParts[0] + '/' + embargoParts[1] + '/' + embargoParts[2];
             $('#embargo-end-date').val(newEmbargoDate);
         }
 
