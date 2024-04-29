@@ -1,11 +1,14 @@
 import datetime
 import json
+import time
 import urllib.parse
 import operator
 import hashlib
 import ast
 import logging
 from functools import reduce
+
+from preferences import preferences
 
 from bims.models.chemical_record import ChemicalRecord
 
@@ -117,6 +120,7 @@ class CollectionSearch(object):
     sass_only = False
     site = None
     taxon_groups = TaxonGroup.objects.all()
+    start_time = None
 
     def __init__(self, parameters):
         self.parameters = parameters
@@ -428,6 +432,7 @@ class CollectionSearch(object):
         Do the search process.
         :return: search results
         """
+        self.start_time = time.time()
         collection_record_model = BiologicalCollectionRecord
         filtered_location_sites = None
         bio_filtered = False
@@ -681,7 +686,7 @@ class CollectionSearch(object):
             bio = bio.filter(reference_category_filter)
             bio_filtered = True
 
-        if self.parameters.get('ecosystemType'):
+        if preferences.SiteSetting.enable_ecosystem_type and self.parameters.get('ecosystemType'):
             ecosystem_types = self.ecosystem_type
             if ecosystem_types:
                 if not isinstance(filtered_location_sites, QuerySet):
@@ -759,7 +764,10 @@ class CollectionSearch(object):
                 survey__chemical_collection_record__isnull=False
             )
 
-        if isinstance(filtered_location_sites, QuerySet):
+        if (
+            isinstance(filtered_location_sites, QuerySet) and
+            filtered_location_sites.count() > 0
+        ):
             bio = bio.filter(
                 site__in=filtered_location_sites
             ).select_related()
@@ -800,7 +808,16 @@ class CollectionSearch(object):
                     Q(id__in=water_temperature) |
                     Q(site_code__icontains=self.search_query)
                 )
-                if self.ecosystem_type:
+
+                location_sites_filter = location_sites_filter.filter(
+                    Q(owner_id=requester_id) |
+                    Q(
+                        Q(end_embargo_date__lte=datetime.date.today()) |
+                        Q(end_embargo_date__isnull=True)
+                    )
+                )
+
+                if preferences.SiteSetting.enable_ecosystem_type and self.ecosystem_type:
                     location_sites_filter = location_sites_filter.filter(
                         ecosystem_type__in=self.ecosystem_type
                     )
@@ -814,6 +831,11 @@ class CollectionSearch(object):
 
         if not self.location_sites_raw_query and self.search_query:
             self.location_sites_raw_query = LocationSite.objects.filter(
+                Q(owner_id=requester_id) |
+                Q(
+                    Q(end_embargo_date__lte=datetime.date.today()) |
+                    Q(end_embargo_date__isnull=True)
+                ),
                 site_code__icontains=self.search_query
             ).annotate(site_id=F('id')).values(
                 'site_id',
@@ -975,6 +997,7 @@ class CollectionSearch(object):
             })
 
         return {
+            'duration': time.time() - self.start_time if self.start_time else 0,
             'total_records': self.collection_records.count(),
             'total_sites': (
                 sites.count() + (thermal_sites.count() if thermal_sites else 0) +

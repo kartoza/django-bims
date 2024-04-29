@@ -102,25 +102,25 @@ class LocationSitesSummary(APIView):
 
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
-            query=search_uri
+            query=search_uri,
+            requester=self.request.user
         )
 
-        if created:
-            if use_cached:
-                async_result = generate_location_site_summary.delay(
+        if not use_cached:
+            return Response(
+                generate_location_site_summary(
                     filters,
                     search_process.id
                 )
-                search_process.process_id = async_result.id
-                search_process.save()
-            else:
-                return Response(
-                    generate_location_site_summary(
-                        None,
-                        filters,
-                        search_process.id
-                    )
-                )
+            )
+
+        if created:
+            async_result = generate_location_site_summary.delay(
+                filters,
+                search_process.id
+            )
+            search_process.process_id = async_result.id
+            search_process.save()
         else:
             if search_process.file_path:
                 if os.path.exists(search_process.file_path):

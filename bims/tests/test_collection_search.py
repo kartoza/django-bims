@@ -2,7 +2,10 @@ from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
 from django.test import TestCase
+from django.db import connection
 from django.contrib.sites.models import Site
+
+from bims.models import format_search_result_raw_query
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF,
@@ -32,6 +35,11 @@ class TestCollectionSearch(TestCase):
         )
         self.site = LocationSiteF.create(
             site_code='TEST123',
+            legacy_river_name='legacy_river_name',
+            river=self.river
+        )
+        self.site2 = LocationSiteF.create(
+            site_code='TEST124',
             legacy_river_name='legacy_river_name',
             river=self.river
         )
@@ -122,7 +130,7 @@ class TestCollectionSearch(TestCase):
             original_species_name='test99',
             taxonomy=self.taxa,
             source_site=Site.objects.get_current(),
-            site=self.site,
+            site=self.site2,
             end_embargo_date=datetime.now()
         )
         filters = {
@@ -131,6 +139,14 @@ class TestCollectionSearch(TestCase):
         }
         search = CollectionSearch(filters)
         collection_results = search.process_search()
+        with connection.cursor() as cursor:
+            raw_query = format_search_result_raw_query(search.location_sites_raw_query)
+            cursor.execute(raw_query)
+            result = cursor.fetchall()
+            self.assertEqual(
+                len(result),
+                2
+            )
         self.assertEqual(
             collection_results.count(),
             2
@@ -144,3 +160,11 @@ class TestCollectionSearch(TestCase):
             collection_results.count(),
             1
         )
+        with connection.cursor() as cursor:
+            raw_query = format_search_result_raw_query(search.location_sites_raw_query)
+            cursor.execute(raw_query)
+            result = cursor.fetchall()
+            self.assertEqual(
+                len(result),
+                1
+            )

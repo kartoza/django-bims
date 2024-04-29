@@ -267,3 +267,7 @@ class SiteSetting(Preferences):
             'If not provided, the pesticide dashboard will be unavailable.'
         )
     )
+
+    enable_ecosystem_type = models.BooleanField(
+        default=False
+    )

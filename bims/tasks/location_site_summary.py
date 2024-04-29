@@ -1,7 +1,7 @@
 import json
 import time
 
-from celery import shared_task
+from celery import shared_task, current_task
 from django.db.models import Q, F, Count, Case, When, Value
 from django.db.models.functions import Coalesce, ExtractYear
 from sorl.thumbnail import get_thumbnail
@@ -42,13 +42,17 @@ def generate_location_site_summary(
     from bims.utils.location_site import overview_site_detail
     from bims.utils.search_process import create_search_process_file
 
-    if self:
+    called_directly = current_task.request.called_directly
+    if not called_directly:
         self.update_state(
             state='PROGRESS',
             meta={'process': 'Generating location site summary'})
 
     search_process = SearchProcess.objects.get(id=search_process_id)
     times = {}
+    filters = dict(filters)
+    if search_process.requester:
+        filters['requester'] = search_process.requester.id
     search = CollectionSearch(filters)
 
     start_time = time.time()
@@ -477,7 +481,7 @@ def generate_location_site_summary(
         'times': times
     }
 
-    if self:
+    if not called_directly:
         self.update_state(state='SUCCESS')
 
     create_search_process_file(
