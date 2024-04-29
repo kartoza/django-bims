@@ -1,0 +1,4 @@
+﻿Taxon Rank,Kingdom,Phylum,Class,Order,Family,Genus,Species,SubSpecies,Taxon,Accepted Taxon,Taxonomic status,Scientific name and authority,Common Name,Origin,Endemism,Conservation status global,Conservation status national
+Class,Animalia,Annelida,Oligochaeta,,,,,,Oligochaeta,,accepted,Oligochaeta,Earthworm,Native,Unknown,Not evaluated,
+Family,Animalia,Arthropoda,Insecta,Trichoptera,Ecnomidae,,,,Ecnomidae,,accepted,Ecnomidae,trattnattsländor,Unknown,Unknown,Not evaluated,
+Family,Animalia,Arthropoda,Insecta,Trichoptera,Ecnomidae2,,,,Ecnomidae2,Ecnomidae,synonym,Ecnomidae2,"test1,test2,test3",Unknown,Unknown,Not evaluated,

@@ -204,6 +204,9 @@ export const taxaManagement = (() => {
                     if (data['common_name']) {
                         name += ` <span class="badge badge-info">${data['common_name']}</span><br/>`
                     }
+                    if (data['taxonomic_status'] && data['taxonomic_status'].toLowerCase() === 'synonym') {
+                        name += ` <span class="badge badge-info">Synonym</span><br/>`
+                    }
                     if (data['gbif_key'] || data['iucn_redlist_id']) {
                         name += '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
                     }
