@@ -12,7 +12,7 @@ from bims.models import (
     IUCNStatus,
     IUCN_CATEGORIES,
     VernacularName,
-    ORIGIN_CATEGORIES
+    ORIGIN_CATEGORIES, TaxonGroupTaxonomy
 )
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names
@@ -76,19 +76,25 @@ class TaxaProcessor(object):
         common_name_value = DataCSVUpload.row_value(row, COMMON_NAME)
         if not common_name_value:
             return None
-        try:
-            vernacular_name, _ = VernacularName.objects.get_or_create(
-                name=common_name_value,
-                language='en',
-                is_upload=True
-            )
-        except VernacularName.MultipleObjectsReturned:
-            vernacular_name = VernacularName.objects.filter(
-                name=common_name_value,
-                language='en',
-                is_upload=True
-            )[0]
-        return vernacular_name
+
+        vernacular_names = []
+        common_names = common_name_value.split(',')
+        for common_name in common_names:
+            common_name = common_name.strip()
+            try:
+                vernacular_name, _ = VernacularName.objects.get_or_create(
+                    name=common_name,
+                    language='en',
+                    is_upload=True
+                )
+            except VernacularName.MultipleObjectsReturned:
+                vernacular_name = VernacularName.objects.filter(
+                    name=common_name,
+                    language='en',
+                    is_upload=True
+                )[0]
+            vernacular_names.append(vernacular_name)
+        return vernacular_names
 
     def origin(self, row):
         """Processing origin"""
@@ -228,10 +234,15 @@ class TaxaProcessor(object):
                     taxon.save()
         return taxon
 
+    def synonym_key(self, field_key):
+        return f'{SYNONYM} {field_key}'
+
     def process_data(self, row, taxon_group: TaxonGroup):
         """Processing row of the csv files"""
         taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
+        accepted_taxon = None
+
         try:
             on_gbif = DataCSVUpload.row_value(row, ON_GBIF) != 'No'
         except Exception:  # noqa
@@ -243,6 +254,28 @@ class TaxaProcessor(object):
             )
             return
 
+        if 'synonym' in taxonomic_status.lower().strip():
+            accepted_taxon_val = DataCSVUpload.row_value(
+                row, ACCEPTED_TAXON
+            )
+            accepted_taxon_err = ''
+            if not accepted_taxon_val:
+                accepted_taxon_err = 'Synonym missing accepted taxon'
+            else:
+                accepted_taxon = Taxonomy.objects.filter(
+                    canonical_name__iexact=accepted_taxon_val
+                ).first()
+                if not accepted_taxon:
+                    accepted_taxon_err = (
+                        'The accepted taxon is not in the system yet'
+                    )
+
+            if accepted_taxon_err:
+                self.handle_error(
+                    row=row,
+                    message=accepted_taxon_err
+                )
+                return
 
         if SCIENTIFIC_NAME in row:
             scientific_name = (DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
@@ -409,7 +442,8 @@ class TaxaProcessor(object):
                 # -- Common name
                 if common_name:
                     taxonomy.vernacular_names.clear()
-                    taxonomy.vernacular_names.add(common_name)
+                    for _common_name in common_name:
+                        taxonomy.vernacular_names.add(_common_name)
                 else:
                     if (
                         not taxonomy.vernacular_names.exists() and
@@ -428,10 +462,22 @@ class TaxaProcessor(object):
                 if taxonomy.canonical_name != taxon_name:
                     taxonomy.canonical_name = taxon_name
 
-                if not taxonomy.taxonomic_status and taxonomic_status:
+                if taxonomic_status:
                     taxonomy.taxonomic_status = taxonomic_status
-                    
+
+                if accepted_taxon:
+                    taxonomy.accepted_taxonomy = accepted_taxon
+
                 taxonomy.validated = True
+
+                TaxonGroupTaxonomy.objects.update_or_create(
+                    taxongroup=taxon_group,
+                    taxonomy=taxonomy,
+                    defaults={
+                        'validated': True
+                    }
+                )
+
                 taxonomy.save()
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa

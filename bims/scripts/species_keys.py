@@ -27,6 +27,8 @@ ORIGIN = 'Origin'
 TAXON_RANK = 'Taxon Rank'
 TAXONOMIC_STATUS = 'Taxonomic status'
 VARIETY = 'Variety'
+SYNONYM = 'Synonym'
+ACCEPTED_TAXON = 'Accepted Taxon'
 
 TAXON_RANKS = [
     KINGDOM,
