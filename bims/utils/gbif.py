@@ -584,7 +584,7 @@ def find_species_by_area(
             # Adjust facetOffset by the number of counts returned, not by the limit
             counts_returned = sum(
                 len(facet.get('counts', [])) for facet in occurrences_data.get('facets', []))
-            if counts_returned == 0 or is_canceled() or counts_returned > max_limit:
+            if counts_returned == 0 or is_canceled():
                 break
             facet_offset += counts_returned
 

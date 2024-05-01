@@ -34,6 +34,10 @@ export const taxaManagement = (() => {
             selectedTaxonGroup = urlParams.get('selected');
         }
 
+        if (typeof selectedTaxonGroup === 'undefined') {
+            loading.hide();
+        }
+
         taxaSidebar.init(selectedTaxonGroup)
         taxaTable.init(getTaxaList, selectedTaxonGroup)
         addNewTaxon.init(selectedTaxonGroup)
