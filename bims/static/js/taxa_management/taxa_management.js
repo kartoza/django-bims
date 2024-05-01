@@ -205,7 +205,7 @@ export const taxaManagement = (() => {
                         name += ` <span class="badge badge-info">${data['common_name']}</span><br/>`
                     }
                     if (data['taxonomic_status'] && data['taxonomic_status'].toLowerCase() === 'synonym') {
-                        name += ` <span class="badge badge-info">Synonym</span><br/>`
+                        name += ` <span class="badge badge-info">Synonym</span>`
                     }
                     if (data['gbif_key'] || data['iucn_redlist_id']) {
                         name += '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
@@ -216,8 +216,11 @@ export const taxaManagement = (() => {
                     if (data['iucn_redlist_id']) {
                         name += ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data['iucn_redlist_id']}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
                     }
+                    if (data['gbif_key'] || data['iucn_redlist_id']) {
+                        name += '<br/>';
+                    }
                     if (!data['validated']) {
-                        name += '<br/><span class="badge badge-secondary">Unvalidated</span></a>';
+                        name += '<span class="badge badge-secondary">Unvalidated</span></a>';
                     }
                     let $rowAction = $('.row-action').clone(true, true);
                     if (userCanEditTaxon) {

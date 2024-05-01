@@ -114,6 +114,23 @@ export const taxaSidebar = (() => {
         insertParam('selected', selectedTaxonGroup);
     }
 
+    function allTaxaGroups(groups) {
+        let allGroups = [];
+        for (let taxaGroup of groups) {
+            if (taxaGroup.children && taxaGroup.children.length > 0) {
+                allGroups.push(...allTaxaGroups(taxaGroup.children))
+            }
+            allGroups.push(taxaGroup)
+        }
+        return allGroups
+    }
+
+    function filterTaxaGroups(taxaGroups, moduleId) {
+        let clone = JSON.parse(JSON.stringify(taxaGroups))
+        return allTaxaGroups(clone).filter(
+            taxon => parseInt(taxon.id) !== parseInt(moduleId));
+    }
+
     function handleUpdateTaxonGroupSelected(event) {
         event.preventDefault();
         event.stopPropagation();
@@ -180,8 +197,9 @@ export const taxaSidebar = (() => {
         const selectedParent = findSelectedParent(
             taxaGroups, moduleId
         )
-        const filteredTaxaGroups = taxaGroups.filter(
-            taxon => parseInt(taxon.id) !== parseInt(moduleId));
+        const filteredTaxaGroups = filterTaxaGroups(taxaGroups, moduleId)
+
+        console.log(filteredTaxaGroups)
         let selectHTML = $(
             '<select class="form-control" name="parent-taxon" id="parent-taxon-select"></select>');
         selectHTML.append($('<option>').val('').text('Select a Parent Taxon'));

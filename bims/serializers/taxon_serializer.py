@@ -119,9 +119,22 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_validated(self, obj: Taxonomy):
         taxon_group_id = self.context.get('taxon_group_id', None)
+        taxon_group_ids = self.context.get('taxon_group_ids', [])
+        if len(taxon_group_ids) == 0 and taxon_group_id:
+            taxon_group_ids.append(int(taxon_group_id))
+            if TaxonGroup.objects.filter(
+                parent__id=taxon_group_id
+            ).exists():
+                taxon_group_children = TaxonGroup.objects.get(
+                    id=taxon_group_id
+                ).get_all_children()
+                for children in taxon_group_children:
+                    if children.id not in taxon_group_ids:
+                        taxon_group_ids.append(children.id)
+                self.context['taxon_group_ids'] = taxon_group_ids
         if taxon_group_id:
             return TaxonGroupTaxonomy.objects.filter(
-                taxongroup=taxon_group_id,
+                taxongroup__in=taxon_group_ids,
                 taxonomy=obj,
                 is_validated=True
             ).exists()

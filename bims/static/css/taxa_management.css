@@ -45,6 +45,10 @@ ul.pagination li.current a {
     width: 100%;
 }
 
+#sortable ul {
+    list-style-type: none;
+}
+
 #sortable li {
     margin: 3px 3px 3px 0;
     padding: 10px;
