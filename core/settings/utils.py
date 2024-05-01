@@ -55,7 +55,7 @@ def extract_replicas(replica_env_var):
             host_port, name = host_port_name.rsplit("/", 1)
             host, port = host_port.rsplit(":", 1)
             replicas.append({
-                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'ENGINE': 'django_tenants.postgresql_backend',
                 'USER': user,
                 'PASSWORD': password,
                 'HOST': host,

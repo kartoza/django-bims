@@ -13,7 +13,7 @@ from bims.models.user_boundary import UserBoundary
 class LayerUploadView(TemplateView):
     template_name = 'upload_layer.html'
     layer_type_name = ''
-    max_upload_size = 1048576  # 1MB in bytes
+    max_upload_size = 5242880  # 5MB in bytes
 
     def is_exist(self, name: str):
         return False
