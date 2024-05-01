@@ -48,7 +48,6 @@ class TestTaxaUpload(FastTenantTestCase):
         taxa_csv_upload.upload_session = self.upload_session
         taxa_csv_upload.start('utf-8-sig')
 
-        self.assertTrue(True)
         self.assertTrue(
             Taxonomy.objects.filter(
                 canonical_name__icontains='Ecnomidae2',
@@ -61,4 +60,35 @@ class TestTaxaUpload(FastTenantTestCase):
                 name='test1',
                 taxonomy__canonical_name__icontains='Ecnomidae2'
             )
+        )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_taxa_upload_variety_and_forma(self, mock_fetch_all_species_from_gbif, mock_finish):
+        mock_finish.return_value = None
+        mock_fetch_all_species_from_gbif.return_value = self.taxonomy
+
+        with open(os.path.join(
+                test_data_directory, 'variety_forma_example.csv'
+        ), 'rb') as file:
+            upload_session = UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(file),
+                module_group=self.taxon_group
+            )
+
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                rank='VARIETY'
+            ).exists()
+        )
+
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                rank='FORMA'
+            ).exists()
         )

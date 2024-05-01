@@ -21,6 +21,7 @@ class TaxonomicRank(Enum):
     INFRAORDER = 'Infra Order'
     SUBFAMILY = 'Sub Family'
     VARIETY = 'Variety'
+    FORMA = 'Forma'
 
     @staticmethod
     def hierarchy():

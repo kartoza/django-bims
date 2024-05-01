@@ -27,6 +27,7 @@ ORIGIN = 'Origin'
 TAXON_RANK = 'Taxon Rank'
 TAXONOMIC_STATUS = 'Taxonomic status'
 VARIETY = 'Variety'
+FORMA = 'Forma'
 SYNONYM = 'Synonym'
 ACCEPTED_TAXON = 'Accepted Taxon'
 
@@ -43,7 +44,8 @@ TAXON_RANKS = [
     GENUS,
     SPECIES,
     SUBSPECIES,
-    VARIETY
+    VARIETY,
+    FORMA
 ]
 ALL_TAXON_RANKS = [
     'KINGDOM',
@@ -58,7 +60,8 @@ ALL_TAXON_RANKS = [
     'GENUS',
     'SPECIES',
     'SUBSPECIES',
-    'VARIETY'
+    'VARIETY',
+    'FORMA'
 ]
 PARENT_RANKS = {
     'KINGDOM': None,
@@ -74,6 +77,7 @@ PARENT_RANKS = {
     'SPECIES': GENUS,
     'SUBSPECIES': SPECIES,
     'VARIETY': SPECIES,
+    'FORMA': SPECIES
 }
 
 def parent_rank(current_rank):
