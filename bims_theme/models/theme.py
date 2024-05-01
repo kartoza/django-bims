@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django.db import models
+from django.db import models, connection
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -215,9 +215,7 @@ class CustomTheme(models.Model):
 @receiver(post_save, sender=CustomTheme)
 def disable_other(sender, instance, **kwargs):
     if instance.is_enabled:
-        CustomTheme.objects.filter(
-            site=instance.site,
-        ).exclude(
+        CustomTheme.objects.exclude(
             pk=instance.pk,
         ).update(is_enabled=False)
 
@@ -230,11 +228,6 @@ def disable_other(sender, instance, **kwargs):
 @receiver(post_save, sender=CarouselHeader)
 @receiver(post_delete, sender=CarouselHeader)
 def invalidate_cache(sender, instance, **kwargs):
-    instance_site = None
-    if isinstance(instance, (CarouselHeader, Partner)):
-        custom_theme = instance.customtheme_set.first()
-        instance_site = custom_theme.site if custom_theme else None
-    elif isinstance(instance, CustomTheme):
-        instance_site = instance.site
-    site_name = str(instance_site) if instance_site else ''
-    cache.delete(THEME_CACHE_KEY + site_name)
+    tenant = connection.tenant
+    tenant_name = str(tenant.name)
+    cache.delete(THEME_CACHE_KEY + tenant_name)
