@@ -2,7 +2,6 @@
 """Configuration for production server"""
 # noinspection PyUnresolvedReferences
 from .prod import *  # noqa
-import ast
 import os
 import ast
 
@@ -44,7 +43,7 @@ for index, replica in enumerate(REPLICAS, start=1):
 
 # See fig.yml file for postfix container definition
 #
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'bims.resend_email_backend.ResendBackend'
 # Host for sending e-mail.
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp')
 # Port for sending e-mail.

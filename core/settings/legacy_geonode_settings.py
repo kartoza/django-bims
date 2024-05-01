@@ -23,9 +23,8 @@ import os
 import re
 import ast
 import sys
-from datetime import timedelta
 from distutils.util import strtobool  # noqa
-from urllib.parse import urlparse, urlunparse, urljoin
+from urllib.parse import urlparse, urljoin
 
 import django
 import dj_database_url
@@ -64,7 +63,7 @@ EMAIL_ENABLE = ast.literal_eval(os.getenv('EMAIL_ENABLE', 'False'))
 
 if EMAIL_ENABLE:
     EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND',
-                              default='django.core.mail.backends.smtp.EmailBackend')
+                              default='bims.resend_email_backend.ResendBackend')
     EMAIL_HOST = os.getenv('DJANGO_EMAIL_HOST', 'localhost')
     EMAIL_PORT = os.getenv('DJANGO_EMAIL_PORT', 25)
     EMAIL_HOST_USER = os.getenv('DJANGO_EMAIL_HOST_USER', '')
@@ -74,7 +73,7 @@ if EMAIL_ENABLE:
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'GeoNode <no-reply@geonode.org>')
 else:
     EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND',
-                              default='django.core.mail.backends.console.EmailBackend')
+                              default='bims.resend_email_backend.ResendBackend')
 
 # Make this unique, and don't share it with anybody.
 _DEFAULT_SECRET_KEY = 'myv-y4#7j-d*p-__@j#*3z@!y24fz8%^z2v6atuy4bo9vqr1_a'
