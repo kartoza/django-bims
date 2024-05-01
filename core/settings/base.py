@@ -88,4 +88,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
+    'bims.utils.router.PrimaryReplicaRouter'
 )

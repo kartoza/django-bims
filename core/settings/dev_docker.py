@@ -39,7 +39,7 @@ REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
 REPLICAS = extract_replicas(REPLICA_ENV_VAR)
 for index, replica in enumerate(REPLICAS, start=1):
     DATABASES[f'replica_{index}'] = {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.contrib.gis.db.backends.postgis'),
+        'ENGINE': os.getenv('DB_ENGINE', 'django_tenants.postgresql_backend'),
         'NAME': replica['NAME'],
         'USER': replica['USER'],
         'PASSWORD': replica['PASSWORD'],
