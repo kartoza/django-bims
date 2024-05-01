@@ -175,6 +175,14 @@ class TaxonGroup(models.Model):
         collect_experts(self)
         return all_experts
 
+    def get_all_children(self):
+        def get_children(parent):
+            children = list(TaxonGroup.objects.filter(parent=parent))
+            for child in children:
+                children.extend(get_children(child))
+            return children
+        return get_children(self)
+
     @property
     def permission_name(self):
         return f'Can validate {self.name} - {self.level}'
