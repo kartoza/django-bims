@@ -1,6 +1,5 @@
 from django.db import models
 from django.db.models import JSONField
-from django.dispatch import receiver
 from preferences.models import Preferences
 
 
@@ -270,4 +269,15 @@ class SiteSetting(Preferences):
 
     enable_ecosystem_type = models.BooleanField(
         default=False
+    )
+
+    resend_api_key = models.CharField(
+        max_length=128,
+        default='',
+        blank=True,
+    )
+
+    default_from_email = models.EmailField(
+        default='',
+        blank=True
     )
