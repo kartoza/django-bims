@@ -359,9 +359,14 @@ class LocationSiteFormView(TemplateView):
         )
 
         client = TenantClient(get_tenant(self.request))
+        http_host = self.request.META.get("HTTP_HOST")
+
         api_url = '/api/send-email-validation/'
-        res = client.get(api_url,
-                         {'pk': location_site.pk, 'model': 'Site'})
+        res = client.get(
+            api_url,
+            {'pk': location_site.pk, 'model': 'Site'},
+            HTTP_HOST=http_host
+        )
 
         return HttpResponseRedirect(
             '{url}?id={id}'.format(

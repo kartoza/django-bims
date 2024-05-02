@@ -1,6 +1,5 @@
 import logging
 
-from django.contrib.sites.models import Site
 
 from celery import shared_task
 
@@ -25,6 +24,7 @@ def search_task(parameters, search_process_id, background=True):
     try:
         search_process = SearchProcess.objects.get(id=search_process_id)
     except SearchProcess.DoesNotExist:
+        print('search process does not exist')
         return
 
     if search_process.requester and 'requester' not in parameters:
