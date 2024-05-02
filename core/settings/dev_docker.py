@@ -30,6 +30,7 @@ DATABASES = {
         'TEST': {
             'NAME': 'gis_test'
         },
+        'DATABASE': 'default'
     }
 }
 
@@ -45,6 +46,7 @@ for index, replica in enumerate(REPLICAS, start=1):
         'PASSWORD': replica['PASSWORD'],
         'HOST': replica['HOST'],
         'PORT': replica['PORT'],
+        'DATABASE': f'replica_{index}'
     }
 
 CACHES = {
