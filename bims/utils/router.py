@@ -34,6 +34,10 @@ def extra_set_tenant_stuff(wrapper_class, tenant):
         tenant_replica_connection = connections["replica_1"]
     except Exception:  # noqa
         return
+    try:
+        database_name = wrapper_class.settings_dict["DATABASE"]
+    except Exception:
+        return
     if (
             wrapper_class.settings_dict["DATABASE"] == "default"
             and tenant_replica_connection.schema_name != tenant.schema_name
