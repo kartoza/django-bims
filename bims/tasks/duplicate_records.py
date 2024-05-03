@@ -3,6 +3,8 @@ import os
 import logging
 from celery import shared_task
 
+from bims.utils.domain import get_current_domain
+
 logger = logging.getLogger('bims')
 
 
@@ -63,7 +65,7 @@ def download_duplicated_records_to_csv(path_file, user_email):
                 'File is ready to download:\n'
                 'http://{site}{path}\n\n'
                 'Sincerely,\nBIMS Team.'.format(
-                    site=Site.objects.get_current().domain,
+                    site=get_current_domain(),
                     path=os.path.join(
                         settings.MEDIA_URL,
                         settings.PROCESSED_CSV_PATH,

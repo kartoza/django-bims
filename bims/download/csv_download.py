@@ -9,6 +9,7 @@ from django.http import HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
 from django.contrib.sites.models import Site
+from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.tasks.collection_record import download_collection_record_task
@@ -16,6 +17,7 @@ from bims.tasks.email_csv import send_csv_via_email
 from bims.models.notification import (
     get_recipients_for_notification, DOWNLOAD_REQUEST
 )
+from bims.utils.domain import get_current_domain
 
 
 class CsvDownload(APIView):
@@ -107,7 +109,7 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
     )
     ctx = {
         'username': user.username,
-        'current_site': Site.objects.get_current(),
+        'current_site': get_current_domain(),
         'date_request': date_request
     }
     subject = render_to_string(
@@ -144,7 +146,7 @@ def send_rejection_csv(user, rejection_message = ''):
     email_template = 'csv_download/csv_rejected'
     ctx = {
         'username': user.username,
-        'current_site': Site.objects.get_current(),
+        'current_site': get_current_domain(),
         'rejection_message': rejection_message
     }
     subject = render_to_string(

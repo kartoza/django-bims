@@ -111,6 +111,7 @@ from bims.api_views.download_request import (
     DownloadRequestApi
 )
 from bims.api_views.wetland_data import WetlandDataApiView
+from bims.api_views.email_csv import TestSendEmail
 
 
 urlpatterns = [
@@ -347,5 +348,8 @@ urlpatterns = [
          name='add-tag-taxon'),
     path('wetland-data/<str:lat>/<str:lon>/',
          WetlandDataApiView.as_view(),
-         name='wetland-data')
+         name='wetland-data'),
+    path('test-email/',
+         TestSendEmail.as_view(),
+         name='test-email')
 ]
