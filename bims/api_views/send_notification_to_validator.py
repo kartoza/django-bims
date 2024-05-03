@@ -15,10 +15,11 @@ from bims.models.notification import (
     SITE_VALIDATION
 )
 from bims.tasks.send_notification import send_mail_notification
+from bims.utils.domain import get_current_domain
 
 
-def send_notification_validation(pk, model = None, request = None):
-    site = Site.objects.get_current().domain
+def send_notification_validation(pk, model=None, request=None):
+    site = get_current_domain()
     validator_emails = get_recipients_for_notification(
         SITE_VISIT_VALIDATION
     )

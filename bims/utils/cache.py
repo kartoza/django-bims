@@ -6,6 +6,8 @@ from django.core.cache import cache
 from django.http import HttpResponse
 import hashlib
 
+from bims.utils.domain import get_current_domain
+
 
 def cache_with_tag(key, value, tag, timeout=None):
     cache.set(key, value, timeout=timeout)
@@ -28,7 +30,7 @@ def cache_page_with_tag(timeout, tag):
         @wraps(func)
         def _wrapped_view(request, *args, **kwargs):
             cache_key = hashlib.sha256(request.get_full_path().encode('utf-8')).hexdigest()
-            tag_key = f"response_tag:{tag}:{cache_key}:{Site.objects.get_current().id}"
+            tag_key = f"response_tag:{tag}:{cache_key}:{get_current_domain()}"
 
             cached_response = cache.get(tag_key)
             if cached_response:

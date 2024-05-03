@@ -23,9 +23,11 @@ import logging
 
 from allauth.account.adapter import get_adapter
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 
 from django.db import models
 from django.db.models import signals
+from django.template.loader import render_to_string
 
 from django.urls import reverse
 from django.contrib.sites.models import Site
@@ -34,6 +36,7 @@ from django.contrib.auth.models import AbstractUser, UserManager
 
 from taggit.managers import TaggableManager
 
+from bims.utils.domain import get_current_domain
 from geonode.base.enumerations import COUNTRIES
 
 from allauth.account.signals import user_signed_up
@@ -187,21 +190,33 @@ class Profile(AbstractUser):
         became_active = self.is_active and not self._previous_active_state
         if became_active and self.last_login is None:
             try:
-                # send_notification(users=(self,), label="account_active")
-
                 from invitations.adapters import get_invitations_adapter
-                current_site = Site.objects.get_current()
+                current_site = get_current_domain()
                 ctx = {
                     'username': self.username,
                     'current_site': current_site,
-                    'site_name': current_site.name,
+                    'site_name': current_site,
                     'email': self.email,
                     'inviter': self,
                 }
 
                 email_template = 'pinax/notifications/account_active/account_active'
-                adapter = get_invitations_adapter()
-                adapter.send_invitation_email(email_template, self.email, ctx)
+                subject = render_to_string(
+                    '{0}_subject.txt'.format(email_template),
+                    ctx
+                )
+                email_body = render_to_string(
+                    '{0}_message.txt'.format(email_template),
+                    ctx
+                )
+                msg = EmailMultiAlternatives(
+                    subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [self.email]
+                )
+                msg.content_subtype = 'html'
+                msg.send()
             except Exception:
                 import traceback
                 traceback.print_exc()

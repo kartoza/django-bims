@@ -3,6 +3,9 @@ import csv
 import zipfile
 
 from celery import shared_task
+from django.db import connection
+
+from bims.utils.domain import get_current_domain
 
 
 @shared_task(name='bims.tasks.email_csv', queue='search')
@@ -58,7 +61,7 @@ def send_csv_via_email(
 
     ctx = {
         'username': user.username,
-        'current_site': Site.objects.get_current(),
+        'current_site': get_current_domain(),
     }
     subject = render_to_string(
         '{0}_subject.txt'.format(email_template),
@@ -99,13 +102,12 @@ def send_location_site_email(location_site_id, user_id):
     from django.contrib.auth import get_user_model
     from django.conf import settings
     from django.core.mail import EmailMessage
-    from django.contrib.sites.models import Site
     from bims.models.location_site import LocationSite
 
     user = get_user_model().objects.get(id=user_id)
     location_site = LocationSite.objects.get(id=location_site_id)
 
-    current_site = Site.objects.get_current()
+    current_site = get_current_domain()
 
     csv_data = [
         ["ID", "Site Code", "Ecosystem Type",

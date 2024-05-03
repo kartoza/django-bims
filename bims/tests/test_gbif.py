@@ -60,8 +60,6 @@ class TestGBIFUtil(TestCase):
         self.assertIn(taxon_1, species)
         self.assertIn(taxon_2, species)
 
-        taxon_group = TaxonGroup.objects.get(id=harvest_session.module_group.id)
-
 
     @patch('bims.utils.gbif.search')
     def test_error_handling(self, mock_search):

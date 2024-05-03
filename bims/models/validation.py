@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from bims.models.confidence_score import DataConfidenceScore
+from bims.utils.domain import get_current_domain
 
 
 class AbstractValidation(DataConfidenceScore):
@@ -148,7 +149,7 @@ class AbstractValidation(DataConfidenceScore):
                                 subject='',
                                 email_template='',
                                 show_redirect_url=True):
-        site_domain_name = Site.objects.get_current().domain
+        site_domain_name = get_current_domain()
         subject_email = '[%s]%s' % (
             site_domain_name,
             subject)

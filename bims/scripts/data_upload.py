@@ -7,6 +7,8 @@ from bims.scripts.species_keys import *  # noqa
 from bims.models import (
     UploadSession
 )
+from bims.utils.domain import get_current_domain
+
 logger = logging.getLogger('bims')
 
 
@@ -32,7 +34,7 @@ class DataCSVUpload(object):
         """
         self.error_list = []
         self.success_list = []
-        self.domain = Site.objects.get_current().domain
+        self.domain = get_current_domain()
         self.total_rows = len(
             self.upload_session.process_file.readlines()
         ) - 1

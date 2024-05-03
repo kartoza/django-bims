@@ -118,7 +118,7 @@ def get_location_context_data(
 
     if not group_keys:
         geocontext_setting = GeocontextSetting.objects.first()
-        if geocontext_setting.geocontext_keys:
+        if geocontext_setting and geocontext_setting.geocontext_keys:
             group_keys = geocontext_setting.geocontext_keys.split(',')
         else:
             group_keys = []
