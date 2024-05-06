@@ -15,6 +15,28 @@ from bims.models.taxonomy_update_proposal import (
 from bims.models.taxon_group import TaxonGroup
 
 
+def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemism=None):
+    if not iucn_status:
+        iucn_status = taxon.iucn_status
+    if not endemism:
+        endemism = taxon.endemism
+    proposal = TaxonomyUpdateProposal.objects.create(
+        original_taxonomy=taxon,
+        taxon_group=taxon_group,
+        status='pending',
+        rank=data.get('rank', taxon.rank),
+        scientific_name=data.get(
+            'scientific_name', taxon.scientific_name),
+        canonical_name=data.get(
+            'canonical_name', taxon.canonical_name),
+        origin=data.get('origin', taxon.origin),
+        iucn_status=iucn_status,
+        endemism=endemism,
+        taxon_group_under_review=taxon_group
+    )
+    return proposal
+
+
 class UpdateTaxon(UserPassesTestMixin, APIView):
     """
     Provides an API endpoint for updating taxon information. Only superusers or
@@ -77,19 +99,14 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                 if taxon.endemism:
                     endemism = taxon.endemism
 
-            proposal = TaxonomyUpdateProposal.objects.create(
-                original_taxonomy=taxon,
+            proposal = create_taxon_proposal(
+                taxon=taxon,
+                data=data,
                 taxon_group=taxon_group,
-                status='pending',
-                rank=data.get('rank', taxon.rank),
-                scientific_name=data.get(
-                    'scientific_name', taxon.scientific_name),
-                canonical_name=data.get(
-                    'canonical_name', taxon.canonical_name),
-                origin=data.get('origin', taxon.origin),
                 iucn_status=iucn_status,
                 endemism=endemism
             )
+
             TaxonGroupTaxonomy.objects.filter(
                 taxonomy=taxon,
                 taxongroup=taxon_group
@@ -181,30 +198,28 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
         Returns:
             JsonResponse: A response with the outcome message and HTTP status.
         """
-        try:
-            proposal = TaxonomyUpdateProposal.objects.get(
-                original_taxonomy_id=taxon_id,
-                taxon_group_id=taxon_group_id,
-                status='pending'
+        taxon_group = TaxonGroup.objects.get(
+            id=taxon_group_id
+        )
+        all_groups = taxon_group.get_all_children()
+        all_group_ids = [int(taxon_group_id)]
+        for group in all_groups:
+            if group.id not in all_group_ids:
+                all_group_ids.append(group.id)
+
+        proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy_id=taxon_id,
+            taxon_group_id__in=all_group_ids,
+            status='pending'
+        ).first()
+
+        if not proposal:
+            proposal = create_taxon_proposal(
+                taxon=Taxonomy.objects.get(id=taxon_id),
+                data={},
+                taxon_group=taxon_group,
             )
-        except TaxonomyUpdateProposal.MultipleObjectsReturned:
-            proposals = TaxonomyUpdateProposal.objects.filter(
-                original_taxonomy_id=taxon_id,
-                taxon_group_id=taxon_group_id,
-                status='pending'
-            )
-            proposal = proposals.first()
-            proposals.exclude(id=proposal.id).delete()
-        except TaxonomyUpdateProposal.DoesNotExist:
-            TaxonGroupTaxonomy.objects.filter(
-                taxonomy_id=taxon_id,
-                taxongroup_id=taxon_group_id
-            ).update(
-                is_validated=True
-            )
-            return JsonResponse(
-                {'message': 'Taxonomy update proposal approved successfully'},
-                status=status.HTTP_202_ACCEPTED)
+
         if action == 'approve':
             proposal.approve(request.user)
             message = 'Taxonomy update proposal approved successfully'

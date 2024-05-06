@@ -303,7 +303,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 rank=taxonomy.rank,
                 parent=taxonomy.parent,
                 taxonomic_status=taxonomy.taxonomic_status,
-                legacy_canonical_name=taxonomy.legacy_canonical_name
+                legacy_canonical_name=taxonomy.legacy_canonical_name,
+                taxon_group_under_review=taxon_group
             )
 
         return Response(response)
@@ -495,10 +496,17 @@ class TaxaList(LoginRequiredMixin, APIView):
         if page is not None:
             serializer = self.get_paginated_response(
                 TaxonSerializer(page, many=True, context={
-                    'taxon_group_id': request.GET.get('taxonGroup', None)
+                    'taxon_group_id': request.GET.get('taxonGroup', None),
+                    'user': request.user.id
                 }).data)
         else:
-            serializer = TaxonSerializer(taxon_list, many=True)
+            serializer = TaxonSerializer(
+                taxon_list,
+                many=True,
+                context={
+                    'user': request.user.id
+                }
+            )
         return Response(serializer.data)
 
 

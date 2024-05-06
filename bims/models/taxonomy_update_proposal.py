@@ -31,6 +31,17 @@ class TaxonomyUpdateProposal(Taxonomy):
         blank=True
     )
 
+    # Reference to the taxon group currently under review or validation.
+    # This may change based on the proposal's review process.
+    taxon_group_under_review = models.ForeignKey(
+        'bims.TaxonGroup',
+        related_name='taxon_group_under_review',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Taxon Group Under Review"
+    )
+
     reviewers = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
         blank=True,
@@ -60,6 +71,16 @@ class TaxonomyUpdateProposal(Taxonomy):
                 is_validated=True
             )
 
+    def validate_taxon(self, taxon_group, taxonomy):
+        TaxonGroupTaxonomy.objects.filter(
+            taxongroup=taxon_group,
+            taxonomy=taxonomy,
+        ).update(
+            is_validated=True
+        )
+        if taxon_group.parent:
+            self.validate_taxon(taxon_group.parent, taxonomy)
+
     def approve(self, reviewer: settings.AUTH_USER_MODEL):
         """
         Apply the proposed changes to the associated Taxonomy instance
@@ -71,6 +92,10 @@ class TaxonomyUpdateProposal(Taxonomy):
             status='approved'
         )
         top_level_taxon_group = self.taxon_group.get_top_level_parent()
+
+        if self.taxon_group_under_review and self.taxon_group_under_review.parent:
+            self.taxon_group_under_review = self.taxon_group_under_review.parent
+            self.save()
 
         # Only top level experts can approve data
         if top_level_taxon_group.experts.filter(
@@ -93,12 +118,11 @@ class TaxonomyUpdateProposal(Taxonomy):
             self.status = 'approved'
             self.save()
 
-            TaxonGroupTaxonomy.objects.filter(
-                taxongroup=self.taxon_group,
-                taxonomy=self.original_taxonomy,
-            ).update(
-                is_validated=True
+            self.validate_taxon(
+                self.taxon_group,
+                self.original_taxonomy
             )
+            return
 
 
 class TaxonomyUpdateReviewer(models.Model):

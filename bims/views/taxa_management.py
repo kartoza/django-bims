@@ -46,7 +46,7 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             name='').values_list('name', flat=True).distinct()
         context['all_cons_status'] = [
             {'value': status[0], 'label': status[1]} for status in IUCNStatus.CATEGORY_CHOICES]
-        context['is_expert'] = self.is_user_expert_for_taxon(
+        context['is_expert'] = self.request.user.is_superuser or self.is_user_expert_for_taxon(
             self.request.GET.get('selected'))
         return context
 

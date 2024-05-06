@@ -80,7 +80,8 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
                     rank=taxonomy.rank,
                     parent=taxonomy.parent,
                     taxonomic_status=taxonomy.taxonomic_status,
-                    legacy_canonical_name=taxonomy.legacy_canonical_name
+                    legacy_canonical_name=taxonomy.legacy_canonical_name,
+                    taxon_group_under_review=taxon_group
                 )
         taxon_group.taxonomies.add(taxonomy)
 

@@ -110,7 +110,8 @@ from bims.models import (
     AbundanceType,
     SamplingEffortMeasure,
     TaxonGroupTaxonomy,
-    TaxonomyUpdateProposal
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateReviewer
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1896,6 +1897,14 @@ class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):
+    list_display = (
+        'taxonomy_update_proposal',
+        'reviewer',
+        'status'
+    )
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -2011,4 +2020,8 @@ admin.site.register(
 admin.site.register(
     TaxonomyUpdateProposal,
     TaxonomyUpdateProposalAdmin
+)
+admin.site.register(
+    TaxonomyUpdateReviewer,
+    TaxonomyUpdateReviewerAdmin
 )

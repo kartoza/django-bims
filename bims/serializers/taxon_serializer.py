@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from rest_framework import serializers
-from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal
+from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal, TaxonomyUpdateReviewer
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.utils.gbif import get_vernacular_names
@@ -31,6 +31,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     scientific_name = serializers.SerializerMethodField()
     canonical_name = serializers.SerializerMethodField()
     rank = serializers.SerializerMethodField()
+    can_be_validated = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -117,24 +118,33 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_rank(self, obj):
         return self.get_proposed_or_current(obj, 'rank')
 
+    def get_can_be_validated(self, obj: Taxonomy):
+        taxon_group_id = self.context.get('taxon_group_id', None)
+        user_id = self.context.get('user', None)
+        if taxon_group_id:
+            can_be_validated = TaxonomyUpdateProposal.objects.filter(
+                original_taxonomy=obj,
+                taxon_group_under_review=taxon_group_id,
+                status='pending'
+            ).exists()
+
+            # Check if user can validate the taxon
+            if can_be_validated and user_id:
+                return (
+                    TaxonGroup.objects.filter(
+                        experts=user_id,
+                        id=taxon_group_id
+                    ).exists()
+                )
+
+            return can_be_validated
+        return False
+
     def get_validated(self, obj: Taxonomy):
         taxon_group_id = self.context.get('taxon_group_id', None)
-        taxon_group_ids = self.context.get('taxon_group_ids', [])
-        if len(taxon_group_ids) == 0 and taxon_group_id:
-            taxon_group_ids.append(int(taxon_group_id))
-            if TaxonGroup.objects.filter(
-                parent__id=taxon_group_id
-            ).exists():
-                taxon_group_children = TaxonGroup.objects.get(
-                    id=taxon_group_id
-                ).get_all_children()
-                for children in taxon_group_children:
-                    if children.id not in taxon_group_ids:
-                        taxon_group_ids.append(children.id)
-                self.context['taxon_group_ids'] = taxon_group_ids
         if taxon_group_id:
             return TaxonGroupTaxonomy.objects.filter(
-                taxongroup__in=taxon_group_ids,
+                taxongroup=taxon_group_id,
                 taxonomy=obj,
                 is_validated=True
             ).exists()
