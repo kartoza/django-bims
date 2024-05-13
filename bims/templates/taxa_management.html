@@ -54,7 +54,11 @@
             </div>
             <div class="col-9 list-content">
                 <div class="dashboard-title">
-                    <h2>Taxon Management</h2>
+                    {% if selected_taxon_group %}
+                        <h2>{{ selected_taxon_group.name }}</h2>
+                    {% else %}
+                        <h2>Taxon Management</h2>
+                    {% endif %}
                 </div>
                 <div class="dashboard-body">
                     <hr style="max-width: 100% !important; border-color: #e6c762"/>

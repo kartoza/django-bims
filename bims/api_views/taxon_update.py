@@ -143,7 +143,7 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
             proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
             if not proposal.taxon_group:
                 return False
-            taxon_group = proposal.taxon_group
+            taxon_group = proposal.taxon_group_under_review
         else:
             taxon_id = self.kwargs.get('taxon_id')
             taxon_group_id = self.kwargs.get('taxon_group_id')
@@ -154,9 +154,9 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
                     'status': 'pending'
                 }
             )
-            taxon_group = proposal.taxon_group
+            taxon_group = proposal.taxon_group_under_review
 
-        experts = taxon_group.get_all_experts()
+        experts = taxon_group.experts.all()
         return user in experts
 
     def handle_proposal(self, request, proposal_id, action) -> JsonResponse:
@@ -251,7 +251,6 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
 
         if taxon_id is not None and taxon_group_id is not None:
             # Process the review for the specific taxon and taxon group
-            # You might need to add a new method or logic here to handle this case
             return self.handle_taxon_review(
                 request, taxon_id, taxon_group_id, new_status
             )

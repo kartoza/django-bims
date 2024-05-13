@@ -93,8 +93,8 @@ class TaxonomyUpdateProposal(Taxonomy):
         )
         top_level_taxon_group = self.taxon_group.get_top_level_parent()
 
-        if self.taxon_group_under_review and self.taxon_group_under_review.parent:
-            self.taxon_group_under_review = self.taxon_group_under_review.parent
+        if self.taxon_group_under_review:
+            self.taxon_group_under_review = top_level_taxon_group
             self.save()
 
         # Only top level experts can approve data

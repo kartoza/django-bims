@@ -1,11 +1,9 @@
 from django.urls import reverse
-from django.test import TestCase, RequestFactory
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 
-from bims.api_views.taxon import AddNewTaxon
 from bims.models import TaxonGroupTaxonomy
 from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal,
@@ -38,7 +36,7 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             scientific_name='Test Name',
             canonical_name='Test Canonical Name')
         self.taxon_group = TaxonGroupF.create(
-            name='Test Group',
+            name='Test Group 1',
             taxonomies=(self.taxonomy,),
             experts=(self.expert_user,)
         )
@@ -193,14 +191,14 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         )
 
         # Check if the proposal updates the taxon_group_under_review
-        # to the parent of taxon group level 3.
+        # to the highest parent.
         self.assertEqual(
             updated_proposal.taxon_group_under_review,
-            taxon_group_level_2
+            self.taxon_group
         )
 
-        # Check if the can_be_validated flag appears for the expert of taxon group level 2
-        # but not for the expert of taxon group level 3.
+        # Check if the can_be_validated flag appears for the expert of taxon group level 1
+        # but not for the expert of taxon group level 2 or 3.
         self.client.login(username='experts_2', password='password')
         taxa_list_url = reverse('taxa-list')
         unvalidated_taxa_list_url = f'{taxa_list_url}?taxonGroup={taxon_group_level_2.id}&validated=False'
@@ -209,12 +207,6 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             response.data['results'][0]['scientific_name'],
             'New Taxon1'
         )
-        self.assertTrue(
-            response.data['results'][0]['can_be_validated']
-        )
-
-        self.client.login(username='experts_3', password='password')
-        response = self.client.get(unvalidated_taxa_list_url)
         self.assertFalse(
             response.data['results'][0]['can_be_validated']
         )
@@ -236,32 +228,7 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             content_type='application/json')
         self.assertEqual(
             response.status_code,
-            status.HTTP_202_ACCEPTED
-        )
-
-        # Check if the expert of taxon group level 2 is added to the reviewer list.
-        self.assertEqual(
-            TaxonomyUpdateReviewer.objects.filter(
-                reviewer=experts_2,
-                taxonomy_update_proposal=proposal,
-            ).first().status,
-            'approved'
-        )
-        updated_proposal = (
-            TaxonomyUpdateProposal.objects.filter(
-                id=proposal.id
-            ).first()
-        )
-        self.assertEqual(
-            updated_proposal.status,
-            'pending'
-        )
-
-        # Check if the proposal updates the taxon_group_under_review
-        # to the parent of taxon group level 2.
-        self.assertEqual(
-            updated_proposal.taxon_group_under_review,
-            self.taxon_group
+            status.HTTP_403_FORBIDDEN
         )
 
         # Check if the can_be_validated flag appears for the expert of taxon group level 1
@@ -345,9 +312,10 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             scientific_name='Updated Test Name',
             canonical_name='Updated Test Canonical Name',
             original_taxonomy=self.taxonomy,
-            taxon_group=self.taxon_group_level_3
+            taxon_group=self.taxon_group_level_3,
+            taxon_group_under_review=self.taxon_group_level_3
         )
-        self.client.login(username='normal_user', password='password')
+        self.client.login(username='user_2', password='password')
         url = reverse('review-taxon-proposal',
                       kwargs={
                           'taxonomy_update_proposal_id': taxonomy_update_proposal.pk
