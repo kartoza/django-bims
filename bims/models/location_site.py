@@ -544,7 +544,13 @@ def location_site_post_save_handler(sender, instance, **kwargs):
         instance.save()
 
 def generate_site_code(
-        location_site=None, lat=None, lon=None, river_name='', ecosystem_type='', wetland_name=''):
+        location_site=None,
+        lat=None,
+        lon=None,
+        river_name='',
+        ecosystem_type='',
+        wetland_name='',
+        **kwargs):
     """Generate site code"""
     from bims.utils.site_code import (
         fbis_catchment_generator,
@@ -594,9 +600,15 @@ def generate_site_code(
             lon=lon
         )
     else:
-        if location_site:
+        site_name = kwargs.get('site_name', '')
+        site_description = kwargs.get('site_desc', '')
+        if catchment_generator_method == 'bims' and (site_name or site_description):
+            catchment_site_code = site_name[:2].upper()
+            catchment_site_code += site_description[:2].upper()
+        elif location_site:
             catchment_site_code += location_site.name[:2].upper()
             catchment_site_code += location_site.site_description[:4].upper()
+
     site_code += catchment_site_code
 
     # Add hyphen

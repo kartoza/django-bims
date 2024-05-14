@@ -241,13 +241,25 @@
                 </div>
             </div>
             {% endif %}
+            {% if preferences.SiteSetting.site_code_generator == 'bims' %}
+                <div class="form-group row">
+                    <label for="site_name"
+                           class="col-sm-2 col-form-label col-form-label">Site Name</label>
+                    <div class="col-sm-10">
+                        <input type="text" name="site_name"
+                               id="site_name"
+                               class="form-control form-control-sm"
+                               placeholder="" value="{{ site_name }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
+                    </div>
+                </div>
+            {% endif %}
             <div class="form-group row">
                 <label for="site_name"
-                       class="col-sm-2 col-form-label col-form-label">Site
-                    Description</label>
+                       class="col-sm-2 col-form-label col-form-label">Site Description</label>
                 <div class="col-sm-10">
                     <input type="text" name="site_description"
                            class="form-control form-control-sm"
+                           id="site_desc"
                            placeholder="" value="{{ site_description }}" {% if update %}{% if not allow_to_edit %}disabled{% endif %}{% endif %}>
                 </div>
             </div>

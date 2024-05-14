@@ -207,12 +207,14 @@ const updateSiteCode = (e) => {
     let siteCodeInput = $('#site_code');
     let catchmentInput = $('#catchment_geocontext');
     let userRiverName = $('#user_river_name').val();
+    let siteName = $('#site_name').val();
+    let siteDesc = $('#site_desc').val();
     let buttonLabel = button.html();
 
     document.getElementById('update-site-code').disabled = true;
     button.html('Generating...');
     siteCodeInput.prop('disabled', true);
-    let url = '/api/get-site-code/?ecosystem_type=' + ecosystemType  + '&user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude;
+    let url = '/api/get-site-code/?ecosystem_type=' + ecosystemType  + '&user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude + '&site_name=' + siteName + '&site_desc=' + siteDesc;
     if (siteId) {
         url += '&site_id=' + siteId
     }
