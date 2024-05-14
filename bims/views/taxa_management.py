@@ -24,12 +24,20 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         site = get_current_site(self.request)
+        selected = self.request.GET.get('selected')
         taxa_groups_query = TaxonGroup.objects.filter(
             category='SPECIES_MODULE',
             parent__isnull=True
         ).order_by('display_order')
         context['taxa_groups'] = TaxonGroupSerializer(
             taxa_groups_query, many=True).data
+        context['selected_taxon_group'] = None
+        if selected:
+            context['selected_taxon_group'] = TaxonGroup.objects.get(
+                id=selected
+            )
+        else:
+            context['selected_taxon_group'] = TaxonGroup.objects.first()
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
         context['source_collections'] = list(
             BiologicalCollectionRecord.objects.all().values_list(
@@ -46,7 +54,7 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             name='').values_list('name', flat=True).distinct()
         context['all_cons_status'] = [
             {'value': status[0], 'label': status[1]} for status in IUCNStatus.CATEGORY_CHOICES]
-        context['is_expert'] = self.is_user_expert_for_taxon(
+        context['is_expert'] = self.request.user.is_superuser or self.is_user_expert_for_taxon(
             self.request.GET.get('selected'))
         return context
 

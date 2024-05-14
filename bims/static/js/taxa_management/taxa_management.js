@@ -227,11 +227,13 @@ export const taxaManagement = (() => {
                         name += '<span class="badge badge-secondary">Unvalidated</span></a>';
                     }
                     let $rowAction = $('.row-action').clone(true, true);
-                    if (userCanEditTaxon) {
+                    if ((userCanEditTaxon || isExpert)) {
                         $rowAction.removeClass('row-action');
                         if (!data['validated']) {
                             $rowAction.find('.btn-validated-container').hide();
-                            $rowAction.find('.btn-unvalidated-container').show();
+                            if (data['can_be_validated']) {
+                                $rowAction.find('.btn-unvalidated-container').show();
+                            }
                         } else {
                             $rowAction.find('.btn-validated-container').show();
                             $rowAction.find('.btn-unvalidated-container').hide();
@@ -253,7 +255,7 @@ export const taxaManagement = (() => {
                         }).join('')}</td>`
                     );
 
-                    if (userCanEditTaxon) {
+                    if (userCanEditTaxon || isExpert) {
                         let $tdAction = $(`<td style="width: 85px;"></td>`);
                         $row.append($tdAction);
                         $tdAction.append($rowAction);

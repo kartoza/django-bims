@@ -370,14 +370,17 @@ class Taxonomy(AbstractValidation):
         return '-'
 
     def send_new_taxon_email(self, taxon_group_id=None):
+        from bims.models import TaxonGroup
+
         current_site = Site.objects.get_current()
         recipients = get_recipients_for_notification(NEW_TAXONOMY)
+        taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
         email_body = render_to_string(
             'notifications/taxonomy/added_message.txt',
             {
                 'taxonomy': self,
                 'current_site': current_site,
-                'taxon_group_id': taxon_group_id
+                'taxon_group': taxon_group
             }
         )
         msg = EmailMultiAlternatives(

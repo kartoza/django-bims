@@ -19,6 +19,7 @@
         const sourceCollection = {{ source_collections | safe }};
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
+        const isExpert = {% if is_expert %}true{% else %}false{% endif %}
         const rejectUrl = '/api/review-taxon/';
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
@@ -53,7 +54,11 @@
             </div>
             <div class="col-9 list-content">
                 <div class="dashboard-title">
-                    <h2>Taxon Management</h2>
+                    {% if selected_taxon_group %}
+                        <h2>{{ selected_taxon_group.name }}</h2>
+                    {% else %}
+                        <h2>Taxon Management</h2>
+                    {% endif %}
                 </div>
                 <div class="dashboard-body">
                     <hr style="max-width: 100% !important; border-color: #e6c762"/>
@@ -225,7 +230,7 @@
                                 </th>
                                 <th scope="col" style="width: 120px">Tags
                                 </th>
-                                {% if perms.bims.change_taxonomy %}
+                                {% if perms.bims.change_taxonomy or is_expert %}
                                 <th scope="col" style="width: 100px">Action</th>
                                 {% endif %}
                             </tr>
@@ -250,7 +255,7 @@
                     </div>
                 </div>
 
-                {% if perms.bims.change_taxonomy %}
+                {% if perms.bims.change_taxonomy or is_expert %}
                 <div class="row-action" style="display: none">
                     <td>
                         <div class="btn-validated-container">
