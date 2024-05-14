@@ -30,8 +30,13 @@ class ReadReplicaTenantMiddleware(TenantMainMiddleware):
 
 
 def extra_set_tenant_stuff(wrapper_class, tenant):
+    if settings.REPLICA_ENV_VAR:
+        chosen_db_key = random.choice(
+            list(settings.DATABASES.keys())[1:])
+    else:
+        chosen_db_key = 'default'
     try:
-        tenant_replica_connection = connections["replica_1"]
+        tenant_replica_connection = connections[chosen_db_key]
     except Exception:  # noqa
         return
     try:
