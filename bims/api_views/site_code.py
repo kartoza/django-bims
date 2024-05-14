@@ -19,6 +19,9 @@ class GetSiteCode(APIView):
         wetland_name = request.GET.get(
             'user_wetland_name', ''
         )
+        site_desc = request.GET.get('site_desc', '')
+        site_name = request.GET.get('site_name', '')
+
         ecosystem_type = request.GET.get('ecosystem_type', '')
         location_site = None
         if site_id:
@@ -39,7 +42,11 @@ class GetSiteCode(APIView):
             lon=lon,
             river_name=river_name,
             ecosystem_type=ecosystem_type,
-            wetland_name=wetland_name
+            wetland_name=wetland_name,
+            **{
+                'site_desc': site_desc,
+                'site_name': site_name
+            }
         )
 
         return Response({

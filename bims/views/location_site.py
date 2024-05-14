@@ -100,6 +100,7 @@ def handle_location_site_post_data(
 
     site_code = post_data.get('site_code', None)
     site_description = post_data.get('site_description', '')
+    site_name = post_data.get('site_name', '')
     catchment_geocontext = post_data.get('catchment_geocontext', None)
     geomorphological_group_geocontext = post_data.get(
         'geomorphological_group_geocontext',
@@ -134,7 +135,7 @@ def handle_location_site_post_data(
             allowed_geometry='MULTIPOLYGON'
         )
     post_dict = {
-        'name': site_code,
+        'name': site_code if not site_name else site_name,
         'owner': owner,
         'latitude': latitude,
         'longitude': longitude,
@@ -390,6 +391,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['location_site_long'] = self.location_site.longitude
         context_data['site_code'] = self.location_site.site_code
         context_data['site_description'] = self.location_site.site_description
+        context_data['site_name'] = self.location_site.name
         context_data['ecosystem_type'] = self.location_site.ecosystem_type
         context_data['additional_data'] = json.dumps(self.location_site.additional_data);
         context_data['refined_geo_zone'] = (
