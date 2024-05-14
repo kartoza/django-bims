@@ -42,14 +42,11 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
     def get_context_data(self, **kwargs):
         context = super(SourceReferenceView, self).get_context_data(**kwargs)
         context.update(self.additional_context)
-        current_site = Site.objects.get_current()
         additional_context_data = {}
 
         source_reference_document = (
             Document.objects.filter(
-                id__in=SourceReferenceDocument.objects.filter(
-                    active_sites=current_site,
-                ).values('source'))
+                id__in=SourceReferenceDocument.objects.values('source'))
         )
 
         if 'records' in context:
@@ -76,9 +73,7 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
                 additional_context_data['note'] = (
                     self.collection_record.source_reference.note
                 )
-        all_unpublished = SourceReference.objects.filter(
-            active_sites=current_site
-        ).exclude(
+        all_unpublished = SourceReference.objects.exclude(
             polymorphic_ctype__in=[ContentType.objects.get_for_model(
                 SourceReferenceDatabase
             ), ContentType.objects.get_for_model(
@@ -99,9 +94,7 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         context.update({
             'documents': source_reference_document,
             'database': DatabaseRecordSerializer(
-                DatabaseRecord.objects.filter(
-                    sourcereferencedatabase__active_sites=current_site
-                ), many=True).data,
+                DatabaseRecord.objects.all(), many=True).data,
             'ALLOWED_DOC_TYPES': ','.join(
                 ['.%s' % type for type in settings.ALLOWED_DOCUMENT_TYPES]),
             'additional_context_data': additional_context_data
