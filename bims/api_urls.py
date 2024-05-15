@@ -112,7 +112,7 @@ from bims.api_views.download_request import (
 )
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.api_views.email_csv import TestSendEmail
-
+from bims.views.cites import TaxaCitesStatusAPIView
 
 urlpatterns = [
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -351,5 +351,7 @@ urlpatterns = [
          name='wetland-data'),
     path('test-email/',
          TestSendEmail.as_view(),
-         name='test-email')
+         name='test-email'),
+    path('taxa-cites-status/',
+         TaxaCitesStatusAPIView.as_view(), name='taxa-cites-status')
 ]

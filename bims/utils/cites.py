@@ -1,12 +1,13 @@
 import requests
 from django.conf import settings
+from preferences import preferences
 
 
 class CitesSpeciesPlusAPI:
     def __init__(self, base_url="https://api.speciesplus.net/api/v1"):
         self.base_url = base_url
         self.headers = {
-            "X-Authentication-Token": settings.CITES_TOKEN_API
+            "X-Authentication-Token": preferences.SiteSetting.cites_token_api
         }
 
     def _get(self, url, params=None):
