@@ -3,7 +3,7 @@ import requests
 import simplejson
 from requests.exceptions import HTTPError
 
-CITES_TOKEN = "lrPUQ0QDKDwwXkAIIM18cgtt"
+CITES_TOKEN = ""
 CITES_API_URL = "https://api.speciesplus.net/api/v1/taxon_concepts/"
 
 
