@@ -1,0 +1,231 @@
+.total-data {
+    color: #444444;
+    border-radius: 10px;
+    padding: 0.48em;
+    margin-left: 0.5em;
+}
+.btn-sm {
+    font-size: 10pt !important;
+}
+.pagination-centered {
+    text-align: center;
+}
+
+ul.pagination {
+    display: flex;
+    align-items: center;
+    list-style: none;
+}
+
+ul.pagination li {
+    display: inline-block;
+    margin-left: 1rem;
+}
+
+ul.pagination li.arrow {
+    font-size: 2rem;
+}
+
+ul.pagination li a {
+    margin-right: 1rem;
+}
+
+ul.pagination li.current a {
+    font-weight: bold;
+    background-color: #18A090 !important;
+    border-radius: 3rem;
+    padding: 0.3rem 0.8rem;
+    color: #fff;
+}
+
+#sortable {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+#sortable ul {
+    list-style-type: none;
+}
+
+#sortable li {
+    margin: 3px 3px 3px 0;
+    padding: 10px;
+    width: 100%;
+    background-color: rgba(222, 222, 222, 0.31);
+}
+
+#sortable li .row {
+    height: 100%;
+}
+
+#sortable li img {
+    max-height: 80%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+}
+
+.taxon-group-title {
+    display: flex;
+    font-size: 1.3em;
+}
+
+.update-logo-btn {
+    font-size: 10pt;
+    padding: 0 5px;
+    margin-left: 5px;
+}
+
+.selected {
+    border-color: #179f90;
+    background-color: #179f9026 !important;
+}
+
+.sort-button-selected {
+    color: #28a745;
+}
+
+.btn-action {
+    font-size: 10pt;
+}
+
+/* Absolute Center Spinner */
+.loading {
+    position: fixed;
+    z-index: 9999;
+    height: 2em;
+    width: 2em;
+    overflow: show;
+    margin: auto;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+/* Transparent Overlay */
+.loading:before {
+    content: '';
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(rgba(116, 116, 116, 0.63), rgba(0, 0, 0, .8));
+    background: -webkit-radial-gradient(rgba(130, 130, 130, 0.8), rgba(73, 73, 73, 0.8));
+}
+
+.ui-menu .ui-menu-item {
+    margin: 0;
+    padding: 0;
+    zoom: 1;
+    float: left;
+    clear: left;
+    width: 100%;
+}
+.select2-selection__choice, .select2-results__options {
+    font-size: 0.8em !important;
+}
+.select2-results__option {
+    width: 100%;
+}
+
+.remove-extra-attribute {
+    padding: 10px;
+    height: 36px;
+    padding-top: 5px;
+}
+.btn-add-extra-attribute {
+    font-size: 10pt;
+    padding: 5px 20px;
+    margin-bottom: 5px;
+}
+
+.modal-lg {
+    max-width: 1000px;
+}
+
+.dashboard-title {
+    border-bottom: none;
+}
+
+.ui-state-default {
+    cursor: pointer;
+}
+
+.taxa-table {
+    display: block;
+    max-height: 100vh; /* Sets the height to be the same as the viewport */
+    overflow-y: hidden; /* Adds a scrollbar to the table body */
+}
+
+.taxa-table .table {
+    width: 100%; /* Ensures the table takes the full width */
+    table-layout: fixed; /* This helps in keeping the column widths consistent */
+    border-collapse: collapse;
+}
+
+.taxa-table thead,
+.taxa-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed; /* Ensures consistent column widths */
+}
+
+.taxa-table tbody {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable tbody */
+    max-height: calc(100vh - 325px);
+    max-height: -o-calc(100vh - 325px); /* opera */
+    max-height: -webkit-calc(100vh - 325px); /* google, safari */
+    max-height: -moz-calc(100vh - 325px); /* firefox */
+}
+
+#collapseFilter {
+    z-index: 1050;
+}
+
+.taxon-group-info-icon {
+    position: absolute;
+    right: 15px;
+    font-size: 24px;
+}
+
+.list-form .side-panel {
+    padding: 10px;
+}
+
+.taxon-group-experts-container .select2-container {
+    width: 100% !important;
+}
+
+.btn-validated-container .btn{
+    width: 40px;
+    min-width: auto;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.img-container img {
+    width: 100%;
+    padding-left: 10px;
+}
+
+.taxon-group-badge {
+    margin-top: 2px;
+    background: #dedede;
+    font-size: 10pt;
+    padding: 2px 5px;
+    width: fit-content;
+    margin-right: 3px;
+}

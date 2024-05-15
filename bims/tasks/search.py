@@ -1,5 +1,6 @@
 import logging
 
+
 from celery import shared_task
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,11 @@ def search_task(parameters, search_process_id, background=True):
     try:
         search_process = SearchProcess.objects.get(id=search_process_id)
     except SearchProcess.DoesNotExist:
+        print('search process does not exist')
         return
+
+    if search_process.requester and 'requester' not in parameters:
+        parameters['requester'] = search_process.requester.id
 
     if parameters['module'] == 'water_temperature':
         search = WaterTemperatureModule(parameters)

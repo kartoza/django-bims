@@ -10,16 +10,6 @@ import os  # noqa
 from django.utils.translation import gettext_lazy as _
 from .contrib import *  # noqa
 
-# Project apps
-INSTALLED_APPS += (
-    'bims',
-    'td_biblio',
-    'scripts',
-    'bims_theme',
-    'mobile',
-    'pesticide'
-)
-
 # Set languages which want to be translated
 LANGUAGES = (
     ('en', _('English')),
@@ -107,3 +97,5 @@ WEBPACK_LOADER = {
         'STATS_FILE': absolute_path('bims', 'webpack-stats.json'),
     }
 }
+
+CITES_TOKEN_API = os.environ.get('CITES_TOKEN_API', '')

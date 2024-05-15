@@ -14,6 +14,8 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', '
             "&module=<%= module %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
             "&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>&polygon=<%= polygon %>&dst=<%= dst %>&ecosystemType=<%= ecosystemType %>",
         LocationSiteDetailXHRRequest: null,
+        WetlandDashboardXHRRequest: null,
+        NewWetlandRequestInitiated: false,
         MultiSitesOverviewXHRRequest: null,
         TaxonDetailXHRRequest: null,
         GetFeatureXHRRequest: [],

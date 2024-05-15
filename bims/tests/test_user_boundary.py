@@ -1,5 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
@@ -9,11 +11,11 @@ from bims.tests.model_factories import UserBoundaryF
 User = get_user_model()
 
 
-class UserBoundaryAPITest(TestCase):
+class UserBoundaryAPITest(FastTenantTestCase):
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         self.user = User.objects.create_user(username='testuser', password='12345')
         self.other_user = User.objects.create_user(username='otheruser', password='12345')
-        self.client = APIClient()
 
         self.user_boundary = UserBoundaryF.create(
             user=self.user

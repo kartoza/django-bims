@@ -11,6 +11,8 @@ from django.test import TestCase, RequestFactory, override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 import factory
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.api_views.thermal_data import WaterTemperatureThresholdApiView
 from bims.tests.model_factories import (
@@ -23,7 +25,7 @@ test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
 
 
-class TestWaterTemperatureForm(TestCase):
+class TestWaterTemperatureForm(FastTenantTestCase):
 
     def setUp(self):
         user = get_user_model().objects.create(
@@ -33,6 +35,7 @@ class TestWaterTemperatureForm(TestCase):
             username='@.test')
         user.set_password('psst')
         user.save()
+        self.client = TenantClient(self.tenant)
         self.location_site = LocationSiteF.create()
         self.hourly_data = os.path.join(
             test_data_directory, 'hourly.csv'
@@ -108,7 +111,7 @@ class TestWaterTemperatureForm(TestCase):
         )
 
 
-class WaterTemperatureThresholdApiViewTest(TestCase):
+class WaterTemperatureThresholdApiViewTest(FastTenantTestCase):
 
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def setUp(self):
@@ -152,6 +155,7 @@ class WaterTemperatureThresholdApiViewTest(TestCase):
             upper_degree_days=200,
             lower_degree_days=150
         )
+        self.client = TenantClient(self.tenant)
 
     def test_get_threshold(self):
         request = self.factory.get(

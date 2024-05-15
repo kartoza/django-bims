@@ -2,7 +2,10 @@ import json
 from django.contrib.gis.geos import GEOSGeometry
 from datetime import datetime
 import pytz
+from django.contrib.sites.models import Site
 from django.db import IntegrityError
+from django_tenants.test.client import TenantClient
+from django_tenants.utils import get_tenant
 from preferences import preferences
 
 from bims.models.taxon_group import TaxonGroup
@@ -97,6 +100,7 @@ def handle_location_site_post_data(
 
     site_code = post_data.get('site_code', None)
     site_description = post_data.get('site_description', '')
+    site_name = post_data.get('site_name', '')
     catchment_geocontext = post_data.get('catchment_geocontext', None)
     geomorphological_group_geocontext = post_data.get(
         'geomorphological_group_geocontext',
@@ -131,7 +135,7 @@ def handle_location_site_post_data(
             allowed_geometry='MULTIPOLYGON'
         )
     post_dict = {
-        'name': site_code,
+        'name': site_code if not site_name else site_name,
         'owner': owner,
         'latitude': latitude,
         'longitude': longitude,
@@ -325,6 +329,7 @@ class LocationSiteFormView(TemplateView):
         else:
             context['fullname'] = self.request.user.username
         context['taxon_group'] = TaxonGroup.objects.filter(
+            Q(site_id=Site.objects.get_current()) | Q(additional_sites=Site.objects.get_current()),
             category='SPECIES_MODULE'
         ).distinct()
         context['user_id'] = self.request.user.id
@@ -354,9 +359,15 @@ class LocationSiteFormView(TemplateView):
             extra_tags='location_site_form'
         )
 
-        client = APIClient()
+        client = TenantClient(get_tenant(self.request))
+        http_host = self.request.META.get("HTTP_HOST")
+
         api_url = '/api/send-email-validation/'
-        res = client.get(api_url, {'pk': location_site.pk, 'model': 'Site'})
+        res = client.get(
+            api_url,
+            {'pk': location_site.pk, 'model': 'Site'},
+            HTTP_HOST=http_host
+        )
 
         return HttpResponseRedirect(
             '{url}?id={id}'.format(
@@ -380,6 +391,7 @@ class LocationSiteFormUpdateView(LocationSiteFormView):
         context_data['location_site_long'] = self.location_site.longitude
         context_data['site_code'] = self.location_site.site_code
         context_data['site_description'] = self.location_site.site_description
+        context_data['site_name'] = self.location_site.name
         context_data['ecosystem_type'] = self.location_site.ecosystem_type
         context_data['additional_data'] = json.dumps(self.location_site.additional_data);
         context_data['refined_geo_zone'] = (

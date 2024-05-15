@@ -2,9 +2,15 @@
 
 from django.conf import settings
 from django.db import migrations, models
+from django.db.models import signals
 
 
 def add_hydroperiod_and_wetland_indicator_status(apps, schema_editor):
+    try:
+        from easyaudit.signals.model_signals import post_save
+        signals.post_save.disconnect(post_save, dispatch_uid='easy_audit_signals_post_save')
+    except RuntimeError:
+        pass
     Hydroperiod = apps.get_model('bims', 'Hydroperiod')
     WetlandIndicatorStatus = apps.get_model('bims', 'WetlandIndicatorStatus')
 
@@ -36,6 +42,11 @@ def add_hydroperiod_and_wetland_indicator_status(apps, schema_editor):
                 'order': index
             }
         )
+    try:
+        from easyaudit.signals.model_signals import post_save
+        signals.post_save.connect(post_save, dispatch_uid='easy_audit_signals_post_save')
+    except RuntimeError:
+        pass
 
 
 class Migration(migrations.Migration):

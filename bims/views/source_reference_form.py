@@ -1,13 +1,14 @@
 import logging
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.sites.models import Site
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect
-from django.db.models import Count
+from django.db.models import Count, Q, F
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.source_reference import (
     DatabaseRecord,
@@ -82,14 +83,13 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
             )]
         )
 
-        list_unpublished = list(BiologicalCollectionRecord.objects.filter(
-            source_reference__in=all_unpublished
-        ).values('source_reference').annotate(
-            total_reference=Count('source_reference')
-        ).values('source_reference__note', 'source_reference__id',
-                 'total_reference').order_by(
-            'total_reference'
-        ).order_by('source_reference__note'))
+        list_unpublished = list(
+            all_unpublished.annotate(
+                source_reference__note=F('note'),
+                source_reference__id=F('id')).values(
+                    'source_reference__note',
+                    'source_reference__id')
+        )
 
         context.update({
             'documents': source_reference_document,

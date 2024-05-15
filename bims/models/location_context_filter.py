@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.contrib.sites.models import Site
 
 
 class LocationContextFilter(models.Model):
@@ -14,6 +15,14 @@ class LocationContextFilter(models.Model):
     location_context_groups = models.ManyToManyField(
         'bims.LocationContextGroup',
         through='bims.LocationContextFilterGroupOrder'
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this LocationContextFilter is associated with."
     )
 
     def __str__(self):

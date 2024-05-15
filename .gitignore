@@ -144,3 +144,4 @@ deployment/geoserver_data
 node_modules/
 bundles/
 webpack-stats.json
+.celery_results/

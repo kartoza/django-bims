@@ -2,6 +2,8 @@ import hashlib
 import json
 from collections import OrderedDict
 
+from django.contrib.sites.models import Site
+
 from bims.models.search_process import SITES_SUMMARY, SEARCH_PROCESSING
 
 from bims.models.water_temperature import WaterTemperature
@@ -48,7 +50,9 @@ class LocationSiteOverviewData(object):
     def biodiversity_data(self):
         if not self.search_filters:
             return {}
-        search = CollectionSearch(self.search_filters)
+
+        search = CollectionSearch(
+            self.search_filters)
         collection_results = search.process_search()
 
         biodiversity_data = OrderedDict()
@@ -168,7 +172,8 @@ class MultiLocationSitesBackgroundOverview(BimsApiView):
 
         search_process, created = get_or_create_search_process(
             search_type=SITES_SUMMARY,
-            query=search_uri
+            query=search_uri,
+            site=Site.objects.get_current()
         )
         results = search_process.get_file_if_exits()
         if results:
@@ -212,7 +217,9 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
             raise Http404
 
     def get(self, request):
-        self.search_filters = request.GET
+        self.search_filters = dict(request.GET)
+        if not request.user.is_anonymous:
+            self.search_filters['requester'] = request.user.id
         response_data = dict()
         response_data[self.BIODIVERSITY_DATA] = self.biodiversity_data()
         response_data[self.SASS_EXIST] = self.is_sass_exist

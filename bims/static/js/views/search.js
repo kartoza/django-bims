@@ -95,7 +95,6 @@ define([
                 'decision-support-tool-container'
             ]
             if (value === 'occurrence') {
-                $('#module-info').html('Occurrence - Biodiversity module')
                 $('.occurrence-sort').show();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
@@ -103,11 +102,6 @@ define([
                     }
                 }
             } else {
-                if (value === 'water_temperature') {
-                    $('#module-info').html('Water Temperature (time series)')
-                } else {
-                    $('#module-info').html('Physico-chemistry')
-                }
                 $('.occurrence-sort').hide();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
@@ -286,20 +280,16 @@ define([
                 url: listReferenceAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    if (data.length === 0) {
-                        $('.study-reference-wrapper').hide();
-                    } else {
-                        var selected;
-                        for (var i = 0; i < data.length; i++) {
-                            if ($.inArray(data[i]['id'] + '', self.initialSelectedStudyReference) > -1) {
-                                selected = 'selected';
-                            } else {
-                                selected = '';
-                            }
-                            if (data[i]) {
-                                $('#filter-study-reference').append(`
-                                    <option value="${data[i]['id']}" ${selected}>${data[i]['reference']}</option>`);
-                            }
+                    var selected;
+                    for (var i = 0; i < data.length; i++) {
+                        if ($.inArray(data[i]['id'] + '', self.initialSelectedStudyReference) > -1) {
+                            selected = 'selected';
+                        } else {
+                            selected = '';
+                        }
+                        if (data[i]) {
+                            $('#filter-study-reference').append(`
+                                <option value="${data[i]['id']}" ${selected}>${data[i]['reference']}</option>`);
                         }
                     }
                     self.filtersReady['study-reference'] = true;
@@ -994,7 +984,11 @@ define([
             // Polygon
             if (allFilters.hasOwnProperty('polygon')) {
                 filterParameters['polygon'] = allFilters['polygon'];
-                self.lassoPanel.drawPolygonFromJSON(allFilters['polygon']);
+                if(allFilters['polygon'].includes(',')) {
+                    self.lassoPanel.drawPolygonFromJSON(allFilters['polygon']);
+                } else {
+                    self.lassoPanel.loadPolygonById(allFilters['polygon']);
+                }
             }
 
             if (allFilters.hasOwnProperty('ecologicalCategory')) {

@@ -2,6 +2,7 @@ import uuid
 import json
 import logging
 
+from django.contrib.sites.models import Site
 from preferences import preferences
 
 from bims.scripts.collection_csv_keys import *  # noqa
@@ -63,6 +64,7 @@ class OccurrenceProcessor(object):
 
     site_ids = []
     module_group = None
+    source_site = None
     # Whether the script should also fetch location context after ingesting
     # collection data
     fetch_location_context = True
@@ -105,12 +107,15 @@ class OccurrenceProcessor(object):
             sender=LocationContextFilterGroupOrder
         )
 
+    def update_location_site_context(self):
+        update_location_context.delay(
+            location_site_id=','.join(self.site_ids),
+            generate_site_code=True
+        )
+
     def finish_process(self):
         if self.site_ids and self.fetch_location_context:
-            update_location_context.delay(
-                location_site_id=','.join(self.site_ids),
-                generate_site_code=True
-            )
+            self.update_location_site_context()
 
         generate_spatial_scale_filter()
         # Update source reference filter
@@ -839,6 +844,13 @@ class OccurrenceProcessor(object):
         record.additional_data = json.dumps(row)
         record.validated = True
 
+        # -- Assigning source site
+        if not record.source_site and self.source_site:
+            record.source_site = self.source_site
+        elif record.source_site and self.source_site:
+            record.additional_observation_sites.add(
+                self.source_site.id)
+
         record.save()
 
         if not str(record.site.id) in self.site_ids:
@@ -860,6 +872,7 @@ class OccurrencesCSVUpload(DataCSVUpload, OccurrenceProcessor):
 
     def process_row(self, row):
         self.module_group = self.upload_session.module_group
+        self.source_site = self.upload_session.source_site
         self.process_data(row)
 
     def handle_error(self, row, message):

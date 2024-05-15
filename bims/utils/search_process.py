@@ -5,20 +5,32 @@ from django.conf import settings
 from bims.models.search_process import SearchProcess
 
 
-def get_or_create_search_process(search_type, query, process_id=None):
+def get_or_create_search_process(
+        search_type, query, process_id=None, site=None, requester=None):
     """
-    Get or create search process
-    :param search_type: Search process type
-    :param query: Search query (optional)
-    :param process_id: Generated process id
-    :return: search_process model, created status
-    """
+   Retrieves an existing search process or creates a new one.
+
+   :param search_type: Type of the search process.
+   :param query: The search query (optional).
+   :param process_id: The generated process ID (optional).
+   :param site: The current site (optional).
+   :param requester: The user who requested the search (optional).
+
+   :return: A tuple containing the search_process model and
+    a boolean indicating whether it was created.
+   """
     created = False
     fields = {}
+    if requester and requester.is_anonymous:
+        requester = None
     search_processes = SearchProcess.objects.filter(
-        category=search_type
+        category=search_type,
+        site=site,
+        requester=requester
     )
     if query:
+        if requester and 'requester' not in query:
+            query += '&requester=' + str(requester.id)
         search_processes = search_processes.filter(
             query=query
         )
@@ -31,6 +43,10 @@ def get_or_create_search_process(search_type, query, process_id=None):
             process_id=process_id
         )
         fields['process_id'] = process_id
+
+    fields['site'] = site
+    if requester:
+        fields['requester_id'] = requester.id
 
     if search_processes.count() > 1:
         # Check finished

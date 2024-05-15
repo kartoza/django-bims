@@ -2,20 +2,28 @@
 import ast
 import logging
 
-from django.http import Http404
+from django.db import transaction
+from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
+from rest_framework.generics import UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from taggit.models import Tag
+
 from bims.models.taxonomy import Taxonomy
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from bims.models import TaxonGroup, VernacularName
+from bims.models import TaxonGroup, VernacularName, TaxonGroupTaxonomy
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
+from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
+from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 
 logger = logging.getLogger('bims')
 
@@ -171,7 +179,7 @@ class FindTaxon(APIView):
         gbif_response = suggest_search(query_dict)
 
         for gbif in gbif_response:
-            if 'key' not in gbif or 'phylumKey' not in gbif:
+            if 'key' not in gbif:
                 continue
             if phylum_keys and gbif['phylumKey'] not in phylum_keys:
                 continue
@@ -285,6 +293,20 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.parent = family
                 taxonomy.save()
 
+        with transaction.atomic():
+            TaxonomyUpdateProposal.objects.get_or_create(
+                original_taxonomy=taxonomy,
+                taxon_group=taxon_group,
+                status='pending',
+                scientific_name=taxonomy.scientific_name,
+                canonical_name=taxonomy.canonical_name,
+                rank=taxonomy.rank,
+                parent=taxonomy.parent,
+                taxonomic_status=taxonomy.taxonomic_status,
+                legacy_canonical_name=taxonomy.legacy_canonical_name,
+                taxon_group_under_review=taxon_group
+            )
+
         return Response(response)
 
 
@@ -298,6 +320,17 @@ class TaxaList(LoginRequiredMixin, APIView):
     pagination_class = TaxaPagination
 
     @staticmethod
+    def get_descendant_group_ids(taxon_group):
+        """Recursively collect all descendant group IDs"""
+        group_ids = [taxon_group.id]
+        child_groups = TaxonGroup.objects.filter(
+            parent=taxon_group)
+        for child in child_groups:
+            group_ids.extend(TaxaList.get_descendant_group_ids(
+                child))
+        return group_ids
+
+    @staticmethod
     def get_taxa_by_parameters(request):
         taxon_group_id = request.GET.get('taxonGroup', '')
         rank = request.GET.get('rank', '')
@@ -305,6 +338,8 @@ class TaxaList(LoginRequiredMixin, APIView):
         ranks = list(filter(None, ranks))
         origins = request.GET.get('origins', '').split(',')
         origins = list(filter(None, origins))
+        tags = request.GET.get('tags', '').split(',')
+        tags = list(filter(None, tags))
         cons_status = request.GET.get('cons_status', '').split(',')
         cons_status = list(filter(None, cons_status))
         endemism = request.GET.get('endemism', '').split(',')
@@ -326,7 +361,14 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
         except TaxonGroup.DoesNotExist:
             raise Http404('Taxon group does not exist')
-        taxon_list = taxon_group.taxonomies.all()
+
+        taxon_group_ids = TaxaList.get_descendant_group_ids(
+            taxon_group)
+        taxon_list = Taxonomy.objects.filter(
+            taxongroup__id__in=taxon_group_ids,
+            taxongrouptaxonomy__is_rejected=False,
+        ).distinct().order_by('canonical_name')
+
         if parent_ids:
             parents = taxon_list.filter(id__in=parent_ids)
             if parents.exists():
@@ -355,16 +397,22 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if tags:
+            taxon_list = taxon_list.filter(
+                tags__name__in=tags
+            ).distinct()
         if validated:
             try:
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
-                    taxon_list = taxon_list.exclude(
-                        validated=True
+                    taxon_list = taxon_list.filter(
+                        taxongrouptaxonomy__is_validated=False,
+                        taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
                 else:
                     taxon_list = taxon_list.filter(
-                        validated=True
+                        taxongrouptaxonomy__is_validated=True,
+                        taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
             except ValueError:
                 pass
@@ -447,7 +495,37 @@ class TaxaList(LoginRequiredMixin, APIView):
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(
-                TaxonSerializer(page, many=True).data)
+                TaxonSerializer(page, many=True, context={
+                    'taxon_group_id': request.GET.get('taxonGroup', None),
+                    'user': request.user.id
+                }).data)
         else:
-            serializer = TaxonSerializer(taxon_list, many=True)
+            serializer = TaxonSerializer(
+                taxon_list,
+                many=True,
+                context={
+                    'user': request.user.id
+                }
+            )
         return Response(serializer.data)
+
+
+class TaxonTagAutocompleteAPIView(APIView):
+    def get(self, request, format=None):
+        query = request.query_params.get('q', '')
+        taxonomy_tags = Tag.objects.filter(
+            taxonomy__isnull=False,
+            name__icontains=query
+        ).distinct()[:10]
+        serializer = TagSerializer(taxonomy_tags, many=True)
+        return Response(serializer.data)
+
+
+class AddTagAPIView(UpdateAPIView):
+    queryset = Taxonomy.objects.all()
+    serializer_class = TaxonomyTagUpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        taxonomy_id = self.kwargs.get('pk')
+        return Taxonomy.objects.get(pk=taxonomy_id)

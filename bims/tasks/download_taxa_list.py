@@ -11,6 +11,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
     from bims.tasks.email_csv import send_csv_via_email
     from bims.api_views.taxon import TaxaList
+
     class RequestGet:
         def __init__(self, get_data):
             self.GET = get_data

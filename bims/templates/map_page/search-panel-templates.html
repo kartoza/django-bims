@@ -106,9 +106,6 @@
                     ABIOTIC MODULE <i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
-                    <div>
-                        <span id="module-info" class="badge badge-secondary">Occurrence - Biodiversity module</span>
-                    </div>
                 </div>
             </div>
             <div style="display: none;"
@@ -529,7 +526,10 @@
                 </li>
                 {% if user.is_authenticated %}
                 <li class="save-lasso disabled">
-                    <i class="fa fa-upload" aria-hidden="true"></i>&nbsp; Save Polygon
+                    <i class="fa fa-save" aria-hidden="true"></i>&nbsp; Save Polygon
+                </li>
+                <li class="upload-polygon">
+                    <i class="fa fa-upload" aria-hidden="true"></i>&nbsp; Upload Polygon
                 </li>
                 <li class="load-lasso">
                     <i class="fa fa-download" aria-hidden="true"></i>&nbsp; Load Saved Polygon

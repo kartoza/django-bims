@@ -5,6 +5,7 @@
 import json
 import uuid
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
@@ -180,6 +181,19 @@ class BiologicalCollectionRecord(AbstractValidation):
                   'collector values from GBIF and other third party sources',
         verbose_name='collector or observer',
     )
+
+    additional_observation_sites = models.ManyToManyField(
+        to=Site,
+        related_name='additional_observation_sites',
+        blank=True,
+        help_text="List of sites where this biological occurrence has also been observed. "
+                  "This attribute allows for recording multiple observation locations beyond "
+                  "the primary source site. For instance, if an occurrence is recorded at the "
+                  "main location 'FBIS' and is also observed at 'SanParks', "
+                  "this field facilitates linking the occurrence to 'SanParks' as "
+                  "an additional observation site."
+    )
+
     notes = models.TextField(
         blank=True,
         default='',
@@ -336,6 +350,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         'bims.Survey',
         related_name='biological_collection_record',
         null=True,
+        blank=True,
         on_delete=models.SET_NULL
     )
 
@@ -431,7 +446,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         if not self.original_species_name:
             self.original_species_name = self.taxonomy.canonical_name
 
-        if not self.survey:
+        if not self.survey and self.collection_date:
             try:
                 survey, _ = Survey.objects.get_or_create(
                     site=self.site,
@@ -447,16 +462,25 @@ class BiologicalCollectionRecord(AbstractValidation):
                     owner=self.owner
                 )[0]
             self.survey = survey
-        if (
-            'gbif' in self.source_collection.lower()
-            and not self.survey.validated
-        ):
-            self.survey.validated = True
-            self.survey.save()
+            if (
+                'gbif' in self.source_collection.lower()
+                and not self.survey.validated
+            ):
+                self.survey.validated = True
+                self.survey.save()
 
         if not self.survey.owner and self.owner:
             self.survey.owner = self.owner
             self.survey.save()
+
+        if self.end_embargo_date:
+            location_site = self.site
+            other_surveys = Survey.objects.filter(
+                site=self.site
+            ).exclude(id=self.survey.id)
+            if not other_surveys.exists() and not location_site.end_embargo_date:
+                location_site.end_embargo_date = self.end_embargo_date
+                location_site.save()
 
         super(BiologicalCollectionRecord, self).save(*args, **kwargs)
 

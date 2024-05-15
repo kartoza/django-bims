@@ -1,4 +1,5 @@
 import simplejson as json
+from django.contrib.sites.models import Site
 from django.http import HttpResponse
 from django.conf import settings
 from django.db.models import Q, F, Value, CharField
@@ -23,6 +24,10 @@ def autocomplete(request):
     vernacular_additional_filters = {}
     site_additional_filters = {}
     river_additional_filters = {}
+    site = Site.objects.get_current()
+    taxa = Taxonomy.objects.filter(
+        taxongroup__site=site
+    )
 
     if source_collection:
         source_collection = json.loads(source_collection)
@@ -44,7 +49,7 @@ def autocomplete(request):
 
     # Collection name
     suggestions = list(
-        Taxonomy.objects.filter(
+        taxa.filter(
             canonical_name__icontains=q,
             biologicalcollectionrecord__validated=True,
             **taxonomy_additional_filters
@@ -65,7 +70,7 @@ def autocomplete(request):
         TaxonomicRank.FAMILY.name,
         TaxonomicRank.SUPERFAMILY.name,
     ]
-    taxonomy_suggestions = Taxonomy.objects.filter(
+    taxonomy_suggestions = taxa.filter(
         canonical_name__icontains=q,
         rank__in=taxonomic_ranks,
     ).distinct('canonical_name').annotate(
@@ -163,7 +168,8 @@ def user_autocomplete(request):
             results.append({
                 'id': r.id,
                 'first_name': r.first_name,
-                'last_name': r.last_name
+                'last_name': r.last_name,
+                'email': r.email
             })
         data = json.dumps(results)
     mime_type = 'application/json'

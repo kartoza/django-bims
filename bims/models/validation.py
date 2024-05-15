@@ -4,9 +4,11 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.contrib.sites.models import Site
 from django.urls import reverse
+from bims.models.confidence_score import DataConfidenceScore
+from bims.utils.domain import get_current_domain
 
 
-class AbstractValidation(models.Model):
+class AbstractValidation(DataConfidenceScore):
     """Simple Abstract Validation model
     """
     EMAIL_REJECTION_SUBJECT = 'Your data has been rejected'
@@ -66,6 +68,15 @@ class AbstractValidation(models.Model):
             'The date when the embargo on the data expires. '
             'After this date, the data will become public.'
         )
+    )
+
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this record is associated with."
     )
 
     class Meta:
@@ -138,7 +149,7 @@ class AbstractValidation(models.Model):
                                 subject='',
                                 email_template='',
                                 show_redirect_url=True):
-        site_domain_name = Site.objects.get_current().domain
+        site_domain_name = get_current_domain()
         subject_email = '[%s]%s' % (
             site_domain_name,
             subject)
@@ -163,9 +174,10 @@ class AbstractValidation(models.Model):
             msg_data
         )
 
-        send_mail(
-            subject=subject_email,
-            message=msg_plain,
-            from_email=settings.SERVER_EMAIL,
-            recipient_list=[self.owner.email]
-        )
+        if self.owner:
+            send_mail(
+                subject=subject_email,
+                message=msg_plain,
+                from_email=settings.SERVER_EMAIL,
+                recipient_list=[self.owner.email]
+            )

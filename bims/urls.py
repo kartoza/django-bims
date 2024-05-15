@@ -34,7 +34,7 @@ from bims.views.boundary_upload import (
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.download_csv_taxa_list import (
-    download_csv_taxa_list
+    download_csv_taxa_list, DownloadPdfTaxaList
 )
 from bims.views.autocomplete_search import (
     autocomplete,
@@ -85,7 +85,6 @@ from bims.views.profile import ProfileView, moderator_contacted
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
 from bims.views.download_request import DownloadRequestListView
-from bims.api_router import api_router
 from bims.views.custom_contact_us import CustomContactUsView
 from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
@@ -93,6 +92,11 @@ from bims.views.water_temperature import WaterTemperatureView, \
 from bims.views.download_taxa_template import download_taxa_template
 from bims.views.physico_chemical import PhysicoChemicalView, \
     PhysicoChemicalSiteView
+from bims.views.harvest_gbif_species import HarvestGbifSpeciesView
+from bims.views.layer_upload import (
+    BoundaryUploadView,
+    UserBoundaryUploadView
+)
 
 urlpatterns = [
     re_path(r'^$', landing_page_view, name='landing-page'),
@@ -125,6 +129,9 @@ urlpatterns = [
     re_path(r'^download-csv-taxa-list/$',
         download_csv_taxa_list,
         name='taxa-list-download'),
+    re_path(r'^download-pdf-taxa-list/$',
+            DownloadPdfTaxaList.as_view(),
+            name='taxa-list-pdf-download'),
     re_path(r'^autocomplete/$', autocomplete, name='autocomplete-search'),
     re_path(r'^user-autocomplete/$',
         user_autocomplete,
@@ -194,7 +201,8 @@ urlpatterns = [
     re_path(r'^site-visit/delete/(?P<sitevisitid>\d+)/$',
         SiteVisitDeleteView.as_view()),
     re_path(r'^taxa-management/$',
-        TaxaManagementView.as_view()),
+        TaxaManagementView.as_view(),
+        name='taxa-management'),
     re_path(r'^backups-management/$',
         BackupsManagementView.as_view()),
     re_path(r'^dashboard-management/$',
@@ -205,6 +213,7 @@ urlpatterns = [
         name='upload-physico-chemical'),
     re_path(r'^harvest-collections/$', HarvestCollectionView.as_view(),
         name='harvest-collections'),
+    path('harvest-species/', HarvestGbifSpeciesView.as_view(), name='harvest-gbif-species'),
     re_path(r'^source-references/$', SourceReferenceListView.as_view(),
         name='source-references'),
     re_path(r'^delete-source-reference/$', DeleteSourceReferenceView.as_view(),
@@ -271,13 +280,18 @@ urlpatterns = [
         moderator_contacted,
         name='moderator_contacted'),
     path('ckeditor/', include('ckeditor_uploader.urls')),
+    path('upload-layer/',
+         BoundaryUploadView.as_view(),
+         name='layer-upload-view'),
+    path('upload-polygon/',
+         UserBoundaryUploadView.as_view(),
+         name='user-boundary-upload-view'),
 ]
 
 # Api urls
 urlpatterns += [  # '',
     re_path(r'^api/',
         include('bims.api_urls')),
-    re_path(r'^wagtail-api/v2/', api_router.urls),
 ]
 
 

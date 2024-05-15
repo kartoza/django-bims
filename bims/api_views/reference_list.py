@@ -10,7 +10,7 @@ from bims.tasks.source_reference import get_source_reference_filter
 class ReferenceList(APIView):
     """Return list of reference"""
     def get(self, request, *args):
-        return Response(get_source_reference_filter())
+        return Response(get_source_reference_filter(request))
 
 
 class ReferenceEntryList(PaginationAPIView):

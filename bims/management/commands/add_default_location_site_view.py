@@ -64,7 +64,7 @@ class Command(BaseCommand):
         )
         empty_query = (
             'SELECT bims_locationsite.id AS site_id,'
-            'bims_locationsite.geometry_point, bims_locationsite.name '
+            'bims_locationsite.geometry_point, bims_locationsite.name, bims_locationsite.ecosystem_type '
             'FROM bims_locationsite;'
         )
         cursor = connection.cursor()

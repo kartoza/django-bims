@@ -6,15 +6,14 @@ import os
 from celery import shared_task
 from collections import OrderedDict
 
-from django.conf import settings
 from django.core.cache import cache
 from django.db.models import F
 from django.utils.text import slugify
-
-from bims.utils.celery import single_instance_task
+from django_tenants.utils import tenant_context, get_tenant_model, get_tenant
 
 logger = logging.getLogger(__name__)
 SPATIAL_SCALE_FILTER_FILE = 'spatial_scale_filter.txt'
+SPATIAL_SCALE_FILTER_DIR = 'spatial_scale'
 
 
 SPATIAL_FILTER_GROUPS = OrderedDict([
@@ -119,27 +118,53 @@ LAYER_NAMES = {
 
 @shared_task(
     name='bims.tasks.generate_filters',
-    queue='geocontext'
+    queue='geocontext',
+    ignore_result=True
 )
-@single_instance_task(60 * 10)
-def generate_spatial_scale_filter_if_empty():
+def generate_filters(tenant_id=None):
     from bims.tasks.source_reference import generate_source_reference_filter
-    get_spatial_scale_filter()
-    generate_source_reference_filter()
+    from bims.api_views.module_summary import ModuleSummary
+    generate_spatial_scale_filter(tenant_id)
+    generate_source_reference_filter(tenant_id)
+
+    module_summary_api = ModuleSummary()
+    module_summary_api.call_summary_data_in_background()
 
 
 @shared_task(
-    name='bims.tasks.generate_spatial_scale_filter', queue='geocontext')
-@single_instance_task(60 * 10)
-def generate_spatial_scale_filter():
+    name='bims.tasks.generate_filters_in_all_schemas',
+    queue='geocontext',
+    ignore_result=True
+)
+def generate_filters_in_all_schemas():
+    from django_tenants.utils import get_tenant_model, tenant_context
+
+    for tenant in get_tenant_model().objects.exclude(schema_name='public'):
+        with tenant_context(tenant):
+            generate_filters.delay(tenant.id)
+
+
+@shared_task(
+    name='bims.tasks.generate_spatial_scale_filter',
+    queue='geocontext',
+    ignore_result=True)
+def generate_spatial_scale_filter(tenant_id=None):
     from bims.models import (
         LocationContext, LocationContextFilter, LocationContextFilterGroupOrder
     )
+    if not tenant_id:
+        for tenant in get_tenant_model().objects.all():
+            with tenant_context(tenant):
+                generate_spatial_scale_filter(tenant.id)
+        return
+
     spatial_tree = []
-    location_context_filters = LocationContextFilter.objects.all(
-    ).order_by(
+    location_context_filters = LocationContextFilter.objects.all()
+    location_context_filters = location_context_filters.order_by(
         'display_order',
     )
+    tenant = get_tenant_model().objects.get(id=int(tenant_id))
+
     for location_context_filter in location_context_filters:
         spatial_tree_data = {
             'name': location_context_filter.title,
@@ -207,24 +232,16 @@ def generate_spatial_scale_filter():
         )
 
     if spatial_tree:
-        file_path = os.path.join(
-            settings.MEDIA_ROOT,
-            SPATIAL_SCALE_FILTER_FILE
-        )
-        with open(file_path, 'w') as file_handle:
-            json.dump(spatial_tree, file_handle)
+        cache_key = f'spatial_scale_filter_{tenant}'
+        cache.set(cache_key, spatial_tree, timeout=None)
 
 
-def get_spatial_scale_filter():
-    file_path = os.path.join(
-        settings.MEDIA_ROOT,
-        SPATIAL_SCALE_FILTER_FILE
-    )
-    if not os.path.exists(file_path):
-        generate_spatial_scale_filter()
-    with open(file_path, 'r') as file_handler:
-        filter_data = file_handler.read()
-    if filter_data:
-        return json.loads(filter_data)
-    else:
-        return []
+def get_spatial_scale_filter(request):
+    cache_key = f'spatial_scale_filter_{get_tenant(request)}'
+    filter_data = cache.get(cache_key)
+
+    if not filter_data:
+        generate_spatial_scale_filter(get_tenant(request).id)
+        filter_data = cache.get(cache_key)
+
+    return filter_data if filter_data else []

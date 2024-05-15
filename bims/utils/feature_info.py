@@ -2,6 +2,7 @@ from typing import Union, Dict
 
 import requests
 from requests import HTTPError
+from django.contrib.gis.geos import GEOSGeometry
 
 
 def get_feature_info_from_wms(
@@ -53,3 +54,40 @@ def get_feature_info_from_wms(
         return None
 
     return None
+
+
+def get_feature_centroid(lat, lon, wfs_url, layer_name):
+    """
+    Get the centroid of a WFS layer feature intersecting with the given lat/lon coordinates using Django GIS.
+
+    :param lat: Latitude of the point.
+    :param lon: Longitude of the point.
+    :param wfs_url: URL of the WFS service.
+    :param layer_name: Name of the layer to query.
+    :return: A tuple containing the centroid's latitude and longitude or None if no feature is found.
+    """
+    # Construct WFS request with spatial filter (CQL_FILTER) for GeoJSON format
+    params = {
+        'service': 'WFS',
+        'version': '2.0.0',
+        'request': 'GetFeature',
+        'typeName': layer_name,
+        'outputFormat': 'application/json',
+        'srsName': 'EPSG:4326',
+        'CQL_FILTER': f"INTERSECTS(geom, POINT({lon} {lat}))"
+    }
+
+    try:
+        response = requests.get(wfs_url, params=params)
+        response.raise_for_status()
+        features = response.json().get('features')
+        if features:
+            geometry = GEOSGeometry(str(features[0]['geometry']))
+            centroid = geometry.centroid
+            return centroid.y, centroid.x
+        else:
+            print("No feature found at the provided coordinates.")
+            return None
+    except requests.RequestException as e:
+        print(f"Error fetching the WFS data: {e}")
+        return None

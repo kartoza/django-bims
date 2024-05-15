@@ -1,11 +1,14 @@
 import datetime
 import json
+import time
 import urllib.parse
 import operator
 import hashlib
 import ast
 import logging
 from functools import reduce
+
+from preferences import preferences
 
 from bims.models.chemical_record import ChemicalRecord
 
@@ -14,10 +17,11 @@ from django.db.models import Q, Count, F, Value, Case, When, IntegerField
 from django.db.models.functions import Concat
 from django.db.models.query import QuerySet
 from django.contrib.gis.db.models import Union, Extent
-from django.contrib.gis.geos import Polygon
+from django.contrib.gis.geos import Polygon, GEOSGeometry
 from django.contrib.contenttypes.models import ContentType
 from rest_framework.response import Response
 
+from bims.serializers.boundary_serializer import check_crs
 from geonode.people.models import Profile
 from bims.models import (
     BiologicalCollectionRecord,
@@ -29,7 +33,8 @@ from bims.models import (
     Endemism,
     LIST_SOURCE_REFERENCES,
     LocationSite,
-    Survey
+    Survey,
+    TaxonGroup
 )
 from bims.tasks.search import search_task
 from sass.models import (
@@ -50,11 +55,12 @@ class CollectionSearchAPIView(BimsApiView):
     """
 
     def get(self, request):
-        parameters = request.GET
+        parameters = request.GET.dict()
         search_uri = request.build_absolute_uri()
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
-            query=search_uri
+            query=search_uri,
+            requester=request.user
         )
 
         if self.is_cached():
@@ -75,6 +81,7 @@ class CollectionSearchAPIView(BimsApiView):
         # Create process id
         data_for_process_id = dict()
         data_for_process_id['search_uri'] = search_uri
+        data_for_process_id['requester_id'] = request.user.id if not request.user.is_anonymous else 0
         data_for_process_id['collections_total'] = (
             BiologicalCollectionRecord.objects.all().count()
         )
@@ -111,6 +118,9 @@ class CollectionSearch(object):
     collection_records = None
     filtered_taxa_records = None
     sass_only = False
+    site = None
+    taxon_groups = TaxonGroup.objects.all()
+    start_time = None
 
     def __init__(self, parameters):
         self.parameters = parameters
@@ -291,8 +301,24 @@ class CollectionSearch(object):
     @property
     def polygon(self):
         try:
-            polygon_coordinates = self.parse_request_json('polygon')
-            return Polygon(polygon_coordinates)
+            layer_param = self.parse_request_json('polygon')
+            if isinstance(layer_param, int):
+                try:
+                    user_boundary = UserBoundary.objects.get(
+                        id=layer_param
+                    )
+                    crs = check_crs(user_boundary)
+                    if '3857' in crs:
+                        geometry = GEOSGeometry(
+                            str(user_boundary.geometry).replace(
+                                '4326',  '3857'))
+                        geometry.transform(4326)
+                    else:
+                        geometry = user_boundary.geometry
+                    return geometry
+                except UserBoundary.DoesNotExist:
+                    return None
+            return Polygon(layer_param)
         except TypeError:
             return None
 
@@ -327,7 +353,7 @@ class CollectionSearch(object):
                 )
             return ecosystem_types
         else:
-            return None
+            return []
 
     @property
     def spatial_filter(self):
@@ -401,36 +427,24 @@ class CollectionSearch(object):
                 **query_dict
             )
 
-    def get_all_taxa_children(self, taxa):
-        """
-        Get all children from taxa
-        :param taxa: QuerySet of taxa
-        :return: list all children ids
-        """
-        query = {}
-        parent = ''
-        or_condition = Q()
-        query['id__in'] = taxa.values_list('id')
-        for i in range(6):  # species to class
-            parent += 'parent__'
-            query[parent + 'in'] = taxa
-        for key, value in query.items():
-            or_condition |= Q(**{key: value})
-        return Taxonomy.objects.filter(or_condition)
-
     def process_search(self):
         """
         Do the search process.
         :return: search results
         """
+        self.start_time = time.time()
         collection_record_model = BiologicalCollectionRecord
         filtered_location_sites = None
         bio_filtered = False
 
         if self.is_sass_records_only():
             collection_record_model = SiteVisitTaxon
+
         rank = self.get_request_data('rank')
         bio = None
+
+        collection_records_by_site = collection_record_model.objects.all()
+
         if rank:
             taxa_list = []
             taxa_children_exist = True
@@ -448,8 +462,8 @@ class CollectionSearch(object):
                 'id__in': taxa_list,
                 'biologicalcollectionrecord__isnull': False
             })
-        elif self.search_query and bio is None:
-            bio = collection_record_model.objects.filter(
+        elif self.search_query:
+            bio = collection_records_by_site.filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
                 Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
                   self.search_query) |
@@ -457,33 +471,33 @@ class CollectionSearch(object):
                   self.search_query)
             )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     original_species_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__scientific_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     site__site_code__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     site__legacy_river_name__icontains=self.search_query
                 )
             if not bio.exists():
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     site__river__name__icontains=self.search_query
                 )
             if not bio.exists():
                 # Search by vernacular names
-                bio = collection_record_model.objects.filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
         if bio is None:
-            bio = collection_record_model.objects.all()
+            bio = collection_records_by_site
         else:
             bio_filtered = True
 
@@ -600,9 +614,14 @@ class CollectionSearch(object):
 
         bio = bio.filter(**filters)
 
+        requester_id = self.parameters.get('requester', None)
+
         bio = bio.filter(
-            Q(end_embargo_date__lte=datetime.date.today()) |
-            Q(end_embargo_date__isnull=True)
+            Q(owner_id=requester_id) |
+            Q(
+                Q(end_embargo_date__lte=datetime.date.today()) |
+                Q(end_embargo_date__isnull=True)
+            )
         )
 
         # Filter collection record with SASS Accreditation status
@@ -667,7 +686,7 @@ class CollectionSearch(object):
             bio = bio.filter(reference_category_filter)
             bio_filtered = True
 
-        if self.parameters.get('ecosystemType'):
+        if preferences.SiteSetting.enable_ecosystem_type and self.parameters.get('ecosystemType'):
             ecosystem_types = self.ecosystem_type
             if ecosystem_types:
                 if not isinstance(filtered_location_sites, QuerySet):
@@ -722,18 +741,20 @@ class CollectionSearch(object):
             bio_filtered = True
 
         if self.get_request_data('polygon'):
-            if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
-                    geometry_point__within=self.polygon
-                )
-                bio = bio.filter(
-                    site__in=filtered_location_sites
-                )
-                bio_filtered = True
-            else:
-                filtered_location_sites = filtered_location_sites.filter(
-                    geometry_point__within=self.polygon
-                )
+            polygon = self.polygon
+            if polygon:
+                if not isinstance(filtered_location_sites, QuerySet):
+                    filtered_location_sites = LocationSite.objects.filter(
+                        geometry_point__within=polygon
+                    )
+                    bio = bio.filter(
+                        site__in=filtered_location_sites
+                    )
+                    bio_filtered = True
+                else:
+                    filtered_location_sites = filtered_location_sites.filter(
+                        geometry_point__within=polygon
+                    )
 
         if self.abiotic_data:
             if not isinstance(filtered_location_sites, QuerySet):
@@ -743,7 +764,10 @@ class CollectionSearch(object):
                 survey__chemical_collection_record__isnull=False
             )
 
-        if isinstance(filtered_location_sites, QuerySet):
+        if (
+            isinstance(filtered_location_sites, QuerySet) and
+            filtered_location_sites.count() > 0
+        ):
             bio = bio.filter(
                 site__in=filtered_location_sites
             ).select_related()
@@ -784,6 +808,19 @@ class CollectionSearch(object):
                     Q(id__in=water_temperature) |
                     Q(site_code__icontains=self.search_query)
                 )
+
+                location_sites_filter = location_sites_filter.filter(
+                    Q(owner_id=requester_id) |
+                    Q(
+                        Q(end_embargo_date__lte=datetime.date.today()) |
+                        Q(end_embargo_date__isnull=True)
+                    )
+                )
+
+                if preferences.SiteSetting.enable_ecosystem_type and self.ecosystem_type:
+                    location_sites_filter = location_sites_filter.filter(
+                        ecosystem_type__in=self.ecosystem_type
+                    )
             self.location_sites_raw_query = location_sites_filter.annotate(
                 site_id=F('id')).values(
                 'site_id',
@@ -794,6 +831,11 @@ class CollectionSearch(object):
 
         if not self.location_sites_raw_query and self.search_query:
             self.location_sites_raw_query = LocationSite.objects.filter(
+                Q(owner_id=requester_id) |
+                Q(
+                    Q(end_embargo_date__lte=datetime.date.today()) |
+                    Q(end_embargo_date__isnull=True)
+                ),
                 site_code__icontains=self.search_query
             ).annotate(site_id=F('id')).values(
                 'site_id',
@@ -955,6 +997,7 @@ class CollectionSearch(object):
             })
 
         return {
+            'duration': time.time() - self.start_time if self.start_time else 0,
             'total_records': self.collection_records.count(),
             'total_sites': (
                 sites.count() + (thermal_sites.count() if thermal_sites else 0) +

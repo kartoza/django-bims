@@ -1,29 +1,27 @@
 # coding=utf-8
-import os
-import json
 from celery import shared_task
-from django.conf import settings
-from bims.utils.celery import single_instance_task
-from bims.utils.logger import log
-
-SOURCE_REFERENCE_FILTER_FILE = 'source_reference_filter.txt'
+from django.core.cache import cache
+from django_tenants.utils import tenant_context, get_tenant_model, get_tenant
 
 
-@shared_task(
-    name='bims.tasks.generate_source_reference_filter',
-    queue='update')
-@single_instance_task(60 * 10)
-def generate_source_reference_filter(file_path=None):
+def generate_source_reference_filter_by_site(tenant_id=None):
+    if not tenant_id:
+        for tenant in get_tenant_model().objects.all():
+            with tenant_context(tenant):
+                generate_source_reference_filter_by_site(tenant.id)
+        return
+
+    tenant = get_tenant_model().objects.get(id=tenant_id)
     from bims.models.source_reference import (
         SourceReference
     )
-    references = SourceReference.objects.all().distinct('id')
+    references = SourceReference.objects.all()
     results = []
     reference_source_list = []
     for reference in references:
         if (
-            reference.reference_type == 'Peer-reviewed scientific article' or
-            reference.reference_type == 'Published report or thesis'
+                reference.reference_type == 'Peer-reviewed scientific article' or
+                reference.reference_type == 'Published report or thesis'
         ):
             source = u'{authors} | {year} | {title}'.format(
                 authors=reference.authors,
@@ -43,26 +41,27 @@ def generate_source_reference_filter(file_path=None):
                 'type': reference.reference_type
             }
         )
-    if not file_path:
-        file_path = os.path.join(
-            settings.MEDIA_ROOT,
-            SOURCE_REFERENCE_FILTER_FILE
-        )
-    log(file_path)
-    with open(file_path, 'w') as file_handle:
-        json.dump(results, file_handle)
+
+    cache_key = f'source_reference_filter_{tenant}'
+    cache.set(cache_key, results, timeout=None)
 
 
-def get_source_reference_filter():
-    file_path = os.path.join(
-        settings.MEDIA_ROOT,
-        SOURCE_REFERENCE_FILTER_FILE
-    )
-    if not os.path.exists(file_path):
-        generate_source_reference_filter(file_path)
-    with open(file_path, 'r') as file_handler:
-        filter_data = file_handler.read()
-    if filter_data:
-        return json.loads(filter_data)
-    else:
-        return []
+@shared_task(
+    name='bims.tasks.generate_source_reference_filter',
+    queue='update')
+def generate_source_reference_filter(
+        tenant_id=None):
+    generate_source_reference_filter_by_site(tenant_id)
+
+
+def get_source_reference_filter(request, tenant=None):
+    if request and not tenant:
+        tenant = get_tenant(request)
+    cache_key = f'source_reference_filter_{tenant}'
+    filter_data = cache.get(cache_key)
+
+    if filter_data is None:
+        generate_source_reference_filter(tenant.id)
+        filter_data = cache.get(cache_key)
+
+    return filter_data if filter_data else []

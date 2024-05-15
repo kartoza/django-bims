@@ -4,6 +4,8 @@
 """
 from django.conf import settings
 from datetime import datetime
+
+from django.contrib.sites.models import Site
 from django.db import models
 from bims.models.taxon_group import TaxonGroup
 
@@ -54,9 +56,30 @@ class HarvestSession(models.Model):
         null=True
     )
 
+    is_fetching_species = models.BooleanField(
+        default=False,
+        help_text='Flag indicating whether it is only fetching species'
+    )
+
+    boundary = models.ForeignKey(
+        'bims.Boundary',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     status = models.TextField(
         null=True,
         blank=True
+    )
+
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this record is associated with."
     )
 
     def __str__(self):

@@ -15,7 +15,7 @@ class AddSourceReferenceView extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      selected_reference_type: DATABASE,
+      selected_reference_type: this.props.reference_type[0],
       authors: []
     };
     this.authorInput = null;

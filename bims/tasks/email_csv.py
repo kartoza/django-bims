@@ -3,13 +3,16 @@ import csv
 import zipfile
 
 from celery import shared_task
+from django.db import connection
+
+from bims.utils.domain import get_current_domain
 
 
 @shared_task(name='bims.tasks.email_csv', queue='search')
 def send_csv_via_email(
         user_id,
         csv_file,
-        file_name = 'OccurrenceData',
+        file_name='OccurrenceData',
         approved=False,
         download_request_id=None):
     """
@@ -31,6 +34,10 @@ def send_csv_via_email(
 
     user = get_user_model().objects.get(id=user_id)
 
+    download_request = None
+    extension = 'csv'
+    download_file_path = csv_file
+
     if not approved and download_request_id:
         try:
             download_request = DownloadRequest.objects.get(
@@ -43,9 +50,18 @@ def send_csv_via_email(
             pass
 
     email_template = 'csv_download/csv_created'
+    if download_request and download_request.resource_type == DownloadRequest.XLS:
+        import pandas as pd
+        df = pd.read_csv(csv_file, encoding='ISO-8859-1', on_bad_lines='warn')
+        excel_file_path = os.path.splitext(csv_file)[0] + '.xlsx'
+        df.to_excel(excel_file_path, index=False)
+        extension = 'xlsx'
+        download_file_path = excel_file_path
+        email_template = 'excel_download/excel_created'
+
     ctx = {
         'username': user.username,
-        'current_site': Site.objects.get_current(),
+        'current_site': get_current_domain(),
     }
     subject = render_to_string(
         '{0}_subject.txt'.format(email_template),
@@ -66,7 +82,7 @@ def send_csv_via_email(
         os.mkdir(zip_folder)
     zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        zf.write(csv_file, '{}.csv'.format(file_name))
+        zf.write(download_file_path, f'{file_name}.{extension}')
         if preferences.SiteSetting.readme_download:
             zf.write(
                 preferences.SiteSetting.readme_download.path,
@@ -86,13 +102,12 @@ def send_location_site_email(location_site_id, user_id):
     from django.contrib.auth import get_user_model
     from django.conf import settings
     from django.core.mail import EmailMessage
-    from django.contrib.sites.models import Site
     from bims.models.location_site import LocationSite
 
     user = get_user_model().objects.get(id=user_id)
     location_site = LocationSite.objects.get(id=location_site_id)
 
-    current_site = Site.objects.get_current()
+    current_site = get_current_domain()
 
     csv_data = [
         ["ID", "Site Code", "Ecosystem Type",

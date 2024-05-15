@@ -5,8 +5,11 @@
 import re
 import json
 from collections import OrderedDict
+
+from django.contrib.sites.models import Site
 from django.db import models
 from django.conf import settings
+from django.db.models import Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.dispatch import receiver
 from polymorphic.models import PolymorphicModel
@@ -100,6 +103,12 @@ class SourceReference(PolymorphicModel):
         help_text='Also available for mobile app',
         default=False,
     )
+    active_sites = models.ManyToManyField(
+        to=Site,
+        related_name='source_reference_active_sites',
+        blank=True,
+        help_text='Identifies the sites where the source reference is actively used.'
+    )
 
     @property
     def reference_source(self):
@@ -113,7 +122,9 @@ class SourceReference(PolymorphicModel):
         from bims.models.biological_collection_record import (
             BiologicalCollectionRecord
         )
+        current_site = Site.objects.get_current()
         return BiologicalCollectionRecord.objects.filter(
+            Q(source_site=current_site) | Q(additional_observation_sites=current_site),
             source_reference=self.id
         ).count()
 
@@ -523,16 +534,9 @@ LIST_SOURCE_REFERENCES = OrderedDict([
 @prevent_recursion
 def source_reference_post_save_handler(sender, instance, **kwargs):
     from bims.tasks.source_reference import (
-        generate_source_reference_filter,
-        SOURCE_REFERENCE_FILTER_FILE
+        generate_source_reference_filter
     )
-    import os
-    from django.conf import settings
-    file_path = os.path.join(
-        settings.MEDIA_ROOT,
-        SOURCE_REFERENCE_FILTER_FILE
-    )
-    generate_source_reference_filter.delay(file_path)
+    generate_source_reference_filter.delay()
 
 
 def merge_source_references(primary_source_reference, source_reference_list):

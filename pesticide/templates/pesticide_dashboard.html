@@ -70,6 +70,19 @@
 {% block body_content %}
     <script type="text/javascript">
     </script>
+    <script type="text/template" id="site-details-container">
+    <div class="site-details-container">
+        <div class="col-12 sub-title site-details-header"><%= title %></div>
+        <div class="col-12 site-details-content">
+            <% _.each(detailsData, function(value, key) { %>
+                <div class="row">
+                    <div class="col-6"><%= key %> </div>
+                    <div class="col-6"><%= value %> </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+    </script>
     <div style="padding-bottom: 0.2em">
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"
@@ -111,7 +124,46 @@
                     </div>
                     <div class="vertical-space"></div>
 
-                    {% include 'includes/overview_table.html' %}
+                    <div class="card overview" id="species-ssdd-overview">
+                    <div class="card-header">
+                        <div class="card-header-title pull-left d-inline">
+                            Overview
+                        </div>
+                        <button class="ssdd-export btn btn-default pull-right"
+                                data-datac="ssdd-overview-wrapper" data-title="Site Overview">
+                            <i class="fa fa-download"></i>
+                        </button>
+                    </div>
+                    <div class="card-body" id="ssdd-overview-wrapper">
+                        <div class="content-body" id="species-ssdd-site-details">
+                            <div class="col-12 sub-title site-details-header">
+                                Site Details
+                            </div>
+                            <div class="col-12"
+                                 id="overview"></div>
+                            <div class="col-12 sub-title site-details-header">
+                                River and Geomorphological Zone
+                            </div>
+                            <div class="col-12"
+                                 id="river_and_geomorphological"></div>
+                            <div class="col-12 sub-title site-details-header">
+                                Catchments
+                            </div>
+                            <div class="col-12"
+                                 id="catchments"></div>
+                            <div class="col-12 sub-title site-details-header">
+                                Management Areas
+                            </div>
+                            <div class="col-12"
+                                 id="sub_water_management_areas"></div>
+                            <div class="col-12 sub-title site-details-header">
+                                Ecoregion and Province
+                            </div>
+                            <div class="col-12"
+                                 id="sa-ecoregions"></div>
+                        </div>
+                    </div>
+                </div>
 
                     <div class="vertical-space"></div>
             </div>
@@ -204,6 +256,7 @@
     <script src="{% static "js/libs/highcharts/modules/data.js" %}"></script>
     <script src="{% static "js/libs/highcharts/modules/exporting.js" %}"></script>
     <script src="{% static "js/libs/highcharts/modules/export-data.js" %}"></script>
+    <script src="{% static "js/libs/underscore-1.8.3/underscore-min.js" %}"></script>
     <script src="{% static "js/libs/highcharts/modules/accessibility.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/utils/table_download.js" %}"></script>

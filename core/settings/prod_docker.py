@@ -2,9 +2,10 @@
 """Configuration for production server"""
 # noinspection PyUnresolvedReferences
 from .prod import *  # noqa
-import ast
 import os
 import ast
+
+from .utils import extract_replicas
 
 DEBUG = False
 
@@ -16,29 +17,35 @@ ADMINS = (
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': os.environ.get('DATABASE_NAME'),
         'USER': os.environ.get('DATABASE_USERNAME'),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
         'HOST': os.environ.get('DATABASE_HOST'),
-        'PORT': 5432,
+        'PORT': int(os.environ.get('DATABASE_PORT', 5432)),
         'TEST_NAME': 'unittests',
+        'DATABASE': 'default'
     }
 }
 
-if os.getenv('DEFAULT_BACKEND_DATASTORE'):
-    DATABASES[os.getenv('DEFAULT_BACKEND_DATASTORE')] = {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.environ.get('GEONODE_GEODATABASE'),
-        'USER': os.environ.get('GEONODE_GEODATABASE_USERNAME'),
-        'PASSWORD': os.environ.get('GEONODE_GEODATABASE_PASSWORD'),
-        'HOST': os.environ.get('GEONODE_GEODATABASE_HOST'),
-        'PORT': 5432
+ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
+
+REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
+REPLICAS = extract_replicas(REPLICA_ENV_VAR)
+for index, replica in enumerate(REPLICAS, start=1):
+    DATABASES[f'replica_{index}'] = {
+        'ENGINE': os.getenv('DB_ENGINE', 'django_tenants.postgresql_backend'),
+        'NAME': replica['NAME'],
+        'USER': replica['USER'],
+        'PASSWORD': replica['PASSWORD'],
+        'HOST': replica['HOST'],
+        'PORT': replica['PORT'],
+        'DATABASE': f'replica_{index}'
     }
 
 # See fig.yml file for postfix container definition
 #
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'bims.resend_email_backend.ResendBackend'
 # Host for sending e-mail.
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp')
 # Port for sending e-mail.

@@ -45,5 +45,25 @@ def ensure_unique_app_labels(installed_apps):
     return retval
 
 
+def extract_replicas(replica_env_var):
+    replicas = []
+    if replica_env_var:
+        replica_details = replica_env_var.split(",")
+        for detail in replica_details:
+            user, password_host_port_name = detail.split(":", 1)
+            password, host_port_name = password_host_port_name.split("@", 1)
+            host_port, name = host_port_name.rsplit("/", 1)
+            host, port = host_port.rsplit(":", 1)
+            replicas.append({
+                'ENGINE': 'django_tenants.postgresql_backend',
+                'USER': user,
+                'PASSWORD': password,
+                'HOST': host,
+                'PORT': port,
+                'NAME': name,
+            })
+    return replicas
+
+
 # Import the secret key
 ensure_secret_key_file()

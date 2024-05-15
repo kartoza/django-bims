@@ -5,7 +5,7 @@ from rest_framework.views import APIView, Response
 from bims.models.location_site import LocationSite, generate_site_code
 
 
-class GetSiteCode(LoginRequiredMixin, APIView):
+class GetSiteCode(APIView):
 
     def get(self, request):
         from bims.location_site.river import fetch_river_name
@@ -19,6 +19,9 @@ class GetSiteCode(LoginRequiredMixin, APIView):
         wetland_name = request.GET.get(
             'user_wetland_name', ''
         )
+        site_desc = request.GET.get('site_desc', '')
+        site_name = request.GET.get('site_name', '')
+
         ecosystem_type = request.GET.get('ecosystem_type', '')
         location_site = None
         if site_id:
@@ -39,7 +42,11 @@ class GetSiteCode(LoginRequiredMixin, APIView):
             lon=lon,
             river_name=river_name,
             ecosystem_type=ecosystem_type,
-            wetland_name=wetland_name
+            wetland_name=wetland_name,
+            **{
+                'site_desc': site_desc,
+                'site_name': site_name
+            }
         )
 
         return Response({

@@ -1,7 +1,7 @@
 # coding=utf-8
 """Non biodiversity layer model definition.
 """
-
+from django.contrib.sites.models import Site
 from django.db import models
 from ordered_model.models import OrderedModel
 
@@ -81,6 +81,22 @@ class NonBiodiversityLayer(OrderedModel):
         verbose_name='Enable styles selection',
         help_text='Check this box to show the styles selection '
                   'in the layer selector.'
+    )
+
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Source Site",
+        help_text="The site this record is first associated with."
+    )
+
+    additional_sites = models.ManyToManyField(
+        to=Site,
+        related_name='non_bio_layer_additional_sites',
+        blank=True,
+        help_text='Additional sites where this layer will be displayed.'
     )
 
     # noinspection PyClassicStyleClass

@@ -30,12 +30,12 @@
             --main-button-text-color: {% if custom_theme.main_button_text_color %}{{ custom_theme.main_button_text_color }}{% else %}#fff{% endif %};
             --navbar-bg-color: {% if custom_theme.navbar_background_color %}{{ custom_theme.navbar_background_color }}{% else %}#343a40{% endif %};
             --navbar-txt-color: {% if custom_theme.navbar_text_color %}{{ custom_theme.navbar_text_color }}{% else %}#fff{% endif %};
+            --auth-background: url({% if custom_theme.auth_background %}{{ MEDIA_URL }}/{{ custom_theme.auth_background }}{% else %}/static/img/Login_Background.jpg{% endif %});
         }
     </style>
 
     {% block pre-head %} {% endblock %}
     <link href="{% static "css/base.css" %}" rel="stylesheet">
-
     {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
         <link href="{% static "css/fbis/navbar.css" %}" rel="stylesheet">
     {% else %}
@@ -52,6 +52,7 @@
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', '{{ GOOGLE_ANALYTIC_KEY }}');
+        const tenant = '{{ request.tenant }}'
         const isSiteNoticeAvailable = {% if preferences.SiteSetting.site_notice %}true{% else %}false{% endif %};
         const is_logged_in = {% if user.is_authenticated  %} true {% else %} false {% endif %};
         const reportUrl = '{% url "bug-report" %}';
@@ -60,7 +61,11 @@
         const downloadRequestMessage = '{{ download_request_message }}';
         const mainAccentColor = '{% if custom_theme.main_accent_color %}{{ custom_theme.main_accent_color }}{% else %}#18A090{% endif %}';
         const secondaryAccentColor = '{% if custom_theme.secondary_accent_color %}{{ custom_theme.secondary_accent_color }}{% else %}#ffc107{% endif %}';
+        const hideSiteVisits = '{% if custom_theme.hide_site_visit %}{{ custom_theme.hide_site_visit }}{% else %}false{% endif %}';
+        const locationSiteName = '{% if custom_theme.location_site_name %}{{ custom_theme.location_site_name }}{% else %}Site{% endif %}';
+        const locationSiteNamePlural = '{% if custom_theme.location_site_name_plural %}{{ custom_theme.location_site_name_plural }}{% else %}Sites{% endif %}';
         const bingMapKey = '{{ BING_MAP_KEY }}';
+        let siteDetailsData = null;
     </script>
 
     <script src="{% static 'js/non_requirejs/cookies.js' %}"></script>
@@ -122,6 +127,14 @@
            <label for="download-details">Notes (optional)</label>
            <textarea class="form-control" name="download_notes" id="download-notes"></textarea>
        </div>
+
+        <div class="form-group" id="data-format" style="display: none">
+           <label for="download-purpose">Format</label>
+           <select class="form-control" id="download-format">
+               <option value="CSV">CSV</option>
+               <option value="XLS">Excel</option>
+           </select>
+       </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary submit-download">Download</button>
@@ -152,6 +165,7 @@
     <script src="{% static 'js/utils/detect-browser.js' %}"></script>
     <script src="{% static 'js/non_requirejs/bug_report.js' %}"></script>
     <script src="{% static 'js/libs/chosen/chosen.jquery.min.js' %}"></script>
+    <script src="{% static 'js/utils/helpers.js' %}"></script>
     {% include 'bug_report_template.html' %}
 {% endif %}
 <script src="{% static 'js/non_requirejs/download_request_popup.js' %}"></script>

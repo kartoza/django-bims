@@ -1,16 +1,19 @@
 from django.test import TestCase, RequestFactory
 from django.urls import reverse
 from django.core import mail
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.tests.model_factories import UserF
 
 
-class WetlandFeedbackViewTest(TestCase):
+class WetlandFeedbackViewTest(FastTenantTestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
         self.user = UserF.create(is_superuser=True, email='test@example.com')
         self.url = reverse('wetland-feedback')
+        self.client = TenantClient(self.tenant)
 
     def test_post_with_all_data(self):
         self.client.login(username=self.user.username, password='password')

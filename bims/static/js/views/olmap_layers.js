@@ -19,7 +19,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         orders: {},
         administrativeOrder: 0,
         layerSelector: null,
+        currentWetlandRequestId: null,
         legends: {},
+        wetlandLayer: 'kartoza:nwm6_beta_v3_20230714',
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
@@ -196,7 +198,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // BIODIVERSITY LAYERS
             // ---------------------------------
             var biodiversityLayersOptions = {
-                url: geoserverPublicUrl + 'wms',
+                url: '/bims_proxy/' + geoserverPublicUrl + 'wms',
                 params: {
                     LAYERS: locationSiteGeoserverLayer,
                     FORMAT: 'image/png8',
@@ -488,15 +490,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             let $legendElement = this.getLegendElement(layerName);
             if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
-
                 if (siteCodeGeneratorMethod === 'fbis') {
                     if (selected) {
                         this.renderSitesLegend();
                     } else {
                         this.hideSitesLegend();
                     }
-                    $legendElement = this.getLegendElement(layerName);
                 }
+                $legendElement = this.getLegendElement(layerName);
                 if (reloadXHR) {
                     Shared.Dispatcher.trigger('map:reloadXHR');
                 }
@@ -508,12 +509,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         const layer = this.layers[layerName];
                         const source = layer.layer.getSource();
                         const params = layer.layer.getSource().getParams();
+                        const layers = params.layers || params.LAYERS;
+                        const name = params.name || params.NAME;
                         // Draw legend
                         this.renderLegend(
                             layerName,
-                            params.name,
+                            name,
                             source.getUrls()[0],
-                            params.layers,
+                            layers,
                             false,
                             params.STYLES
                         );
@@ -562,6 +565,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 "[data-name='" + layerName + "']");
         },
         renderLegend: function (id, name, url, layer, visibleDefault, style='') {
+            if (typeof name === 'undefined') {
+                name = id;
+            }
             var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
             if (url.indexOf('.qgs') != -1) {
                 scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
@@ -760,7 +766,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             lon = parseFloat(lon);
             lat = parseFloat(lat);
-            const coordinate = ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3857');
+            const coordinate = ol.proj.transform(
+                [lon, lat], 'EPSG:4326', 'EPSG:3857');
 
             if (Shared.GetFeatureRequested) {
                 Shared.GetFeatureRequested = false;
@@ -894,6 +901,81 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $button.removeAttr("disabled");
             })
         },
+        hideAll: function (e) {
+            if ($(e.target).data('visibility')) {
+                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-down');
+                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-up');
+                $(e.target).nextAll().hide();
+                $(e.target).data('visibility', false)
+            } else {
+                $(e.target).find('.filter-icon-arrow').addClass('fa-angle-up');
+                $(e.target).find('.filter-icon-arrow').removeClass('fa-angle-down');
+                $(e.target).nextAll().show();
+                $(e.target).data('visibility', true)
+            }
+        },
+        showWetlandDashboard: function (coordinateStr) {
+            let requestId = Math.random().toString(36).substr(2, 9);
+            let self = this;
+            self.currentWetlandRequestId = requestId;
+            let coords = coordinateStr.split(',').map(function(item) {
+                return parseFloat(item);
+            });
+            let convertedCoords = ol.proj.transform(coords, 'EPSG:3857', 'EPSG:4326');
+
+            Shared.Dispatcher.trigger('sidePanel:toggleLoading', true);
+            Shared.Dispatcher.trigger('sidePanel:openSidePanel');
+            if (Shared.WetlandDashboardXHRRequest) {
+                Shared.WetlandDashboardXHRRequest.abort();
+                Shared.WetlandDashboardXHRRequest = null;
+            }
+
+            // NewWetlandRequestInitiated
+            function fetchWetlandData() {
+
+                Shared.WetlandDashboardXHRRequest = $.get({
+                    url: `/api/wetland-data/${convertedCoords[0]}/${convertedCoords[1]}/`,
+                    dataType: 'json',
+                    success: function (data) {
+                        if (self.currentWetlandRequestId !== requestId) {
+                            return;
+                        }
+                        Shared.Dispatcher.trigger('sidePanel:toggleLoading', false);
+                        let $detailWrapper = $('<div style="padding-left: 0;"></div>');
+
+                        if (data.hasOwnProperty('message')) {
+                            if (data['message'] === 'layer not found') {
+                                $detailWrapper.html('<div>Wetland data not found</div>')
+                                return;
+                            }
+                        }
+
+                        let siteDetailsTemplate = _.template($('#wetland-side-panel-dashboard').html());
+                        $detailWrapper.html(siteDetailsTemplate(data));
+
+                        $detailWrapper.find('.search-results-total').click(self.hideAll);
+                        $detailWrapper.find('.search-results-total').click();
+
+                        Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', 'Wetland Dashboard');
+                        Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $detailWrapper);
+
+                        if (data.task_status.state !== 'SUCCESS') {
+                            setTimeout(function() {
+                                // Ensure no new request has been initiated
+                                if (!Shared.NewWetlandRequestInitiated) {
+                                    fetchWetlandData();
+                                }
+                            }, 5000);
+                        }
+                    }
+                })
+                Shared.NewWetlandRequestInitiated = false;
+            }
+
+            Shared.NewWetlandRequestInitiated = true;
+
+            fetchWetlandData();
+        },
         renderFeaturesInfo: function (featuresInfo, coordinate) {
             var that = this;
             let tabs = '<ul class="nav nav-tabs">';
@@ -953,8 +1035,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     });
                     $(`#${contentId}`).prepend(downloadButton);
                 }
+                if (key_feature === that.wetlandLayer) {
+                    let wetlandDashboardButton = $('<div class="btn btn-xs btn-primary wetland-dashboard">Wetland Dashboard</div>');
+                    wetlandDashboardButton.click(function() {
+                        that.showWetlandDashboard('' + coordinate);
+                    });
+                    $(`#${contentId}`).prepend(wetlandDashboardButton);
+                }
             });
-
             if ($('.nav-tabs').innerHeight() > $(infoWrapperTab[0]).innerHeight()) {
                 let width = $('.info-popup').width() / infoWrapperTab.length;
                 infoWrapperTab.innerWidth(width);

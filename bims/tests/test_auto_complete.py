@@ -1,14 +1,17 @@
 import json
 from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework.test import APIRequestFactory
 from bims.tests.model_factories import DataSourceF
 
 
-class TestApiView(TestCase):
+class TestApiView(FastTenantTestCase):
     """Test autocomplete search"""
 
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         self.factory = APIRequestFactory()
 
     def test_data_search_auto_complete(self):

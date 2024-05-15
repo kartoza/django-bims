@@ -1,17 +1,19 @@
+from django.contrib.sites.models import Site
+import threading
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
-from django.db.models import Count, F, Case, When, Value, Q
+from django.db.models import Count, F, Case, When, Value, Q, Subquery
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
     IUCNStatus,
-    UploadSession,
     DownloadRequest,
     Survey
 )
 from bims.models.taxonomy import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
 
@@ -44,8 +46,12 @@ class ModuleSummary(APIView):
             dict: Dictionary containing summary data.
         """
         summary = {}
+
+        taxonomies_subquery = taxon_group.taxonomies.values_list('id', flat=True)
+
         collections = BiologicalCollectionRecord.objects.filter(
-            module_group=taxon_group)
+            taxonomy__in=Subquery(taxonomies_subquery)
+        )
 
         # Check the chart data type and add corresponding summary data
         if taxon_group.chart_data == 'division':
@@ -139,7 +145,7 @@ class ModuleSummary(APIView):
         Returns conservation status summary data from the provided collections
         """
         summary_temp = dict(
-            collections.exclude(taxonomy__origin__exact='').annotate(
+            collections.annotate(
                 value=Case(When(taxonomy__iucn_status__isnull=False,
                                 then=F('taxonomy__iucn_status__category')),
                            default=Value('Not evaluated'))
@@ -169,10 +175,18 @@ class ModuleSummary(APIView):
             Q(owner__username__icontains='map_vm')
         ).count()
 
+        taxon_group_ids = list(TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+        ).values_list('id', flat=True))
+
         counts = (
-            BiologicalCollectionRecord.objects.all().aggregate(
+            BiologicalCollectionRecord.objects.filter(
+                taxonomy__taxongrouptaxonomy__taxongroup__in=taxon_group_ids
+            ).aggregate(
                 total_occurrences=Count('id')),
-            Taxonomy.objects.all().aggregate(total_taxa=Count('id')),
+            Taxonomy.objects.filter(
+                taxongrouptaxonomy__taxongroup__id__in=taxon_group_ids
+            ).aggregate(total_taxa=Count('id')),
             get_user_model().objects.filter(
                 last_login__isnull=False
             ).aggregate(total_users=Count('id')),
@@ -184,15 +198,37 @@ class ModuleSummary(APIView):
 
         return {key: value for d in counts for key, value in d.items()}
 
-    def get(self, request, *args):
-        response_data = dict()
+    def _cache_key(self):
+        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}'
+
+    def summary_data(self):
+        module_summary = dict()
         taxon_groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         ).order_by('display_order')
-        response_data['general_summary'] = self.general_summary_data()
+        module_summary['general_summary'] = self.general_summary_data()
         for taxon_group in taxon_groups:
             taxon_group_name = taxon_group.name
-            response_data[taxon_group_name] = (
-                self.module_summary_data(taxon_group)
+            module_summary[taxon_group_name] = (
+                self.module_summary_data(
+                    taxon_group
+                )
             )
-        return Response(response_data)
+        set_cache(
+            self._cache_key(),
+            module_summary
+        )
+        return module_summary
+
+    def call_summary_data_in_background(self):
+        background_thread = threading.Thread(
+            target=self.summary_data,
+        )
+        background_thread.start()
+
+    def get(self, request, *args):
+        cached_data = get_cache(self._cache_key())
+        if cached_data:
+            return Response(cached_data)
+        summary_data = self.summary_data()
+        return Response(summary_data)

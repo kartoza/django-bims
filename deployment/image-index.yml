@@ -1,0 +1,4 @@
+images:
+  - name: kbims_uwsgi
+    dockerfile: deployment/docker/Dockerfile
+    buildPath: .

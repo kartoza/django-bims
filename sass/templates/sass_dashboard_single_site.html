@@ -95,7 +95,8 @@
             const sourceReferences = {{ source_references | safe }};
             const chemicalRecords = {{ chemical_records | safe }};
             const geoClass = '{{ geo_class }}';
-            const siteVisitId = {{ sass_taxon_table_data.site_visit_id }}
+            const siteVisitId = {{ sass_taxon_table_data.site_visit_id }};
+            siteDetailsData = {{ site_details | safe }};
         </script>
         <div class="body-form container">
             <div class="logo hide-logo pull-right"><img width="50"

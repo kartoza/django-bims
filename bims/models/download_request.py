@@ -3,20 +3,21 @@
 
 """
 from datetime import datetime
+
+from django.contrib.sites.models import Site
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from bims.tasks.email_csv import send_csv_via_email
 from bims.download.csv_download import (
-    send_rejection_csv,
-    send_new_csv_notification
+    send_rejection_csv
 )
 
 
 def validate_file_extension(value):
     import os
     ext = os.path.splitext(value.name)[1]
-    valid_extensions = ['.csv']
+    valid_extensions = ['.csv', '.xlsx', '.xls']
     if ext not in valid_extensions:
         raise ValidationError('File not supported!')
 
@@ -36,6 +37,12 @@ class DownloadRequestPurpose(models.Model):
         null=False,
         blank=False
     )
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.name
@@ -51,11 +58,14 @@ class DownloadRequest(models.Model):
     CHART = 'CHART'
     TABLE = 'TABLE'
     IMAGE = 'IMAGE'
+    XLS = 'XLS'
+
     RESOURCE_TYPE_CHOICES = [
         (CSV, 'Csv'),
+        (XLS, 'Xls'),
         (CHART, 'Chart'),
         (TABLE, 'Table'),
-        (IMAGE, 'Image')
+        (IMAGE, 'Image'),
     ]
 
     requester = models.ForeignKey(
@@ -139,6 +149,12 @@ class DownloadRequest(models.Model):
         null=True,
         blank=True
     )
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
@@ -169,7 +185,8 @@ class DownloadRequest(models.Model):
 
         if (
             not self.requester or
-            self.resource_type != DownloadRequest.CSV
+            self.resource_type != DownloadRequest.CSV or
+            self.resource_type != DownloadRequest.XLS
         ):
             super(DownloadRequest, self).save(*args, **kwargs)
             return

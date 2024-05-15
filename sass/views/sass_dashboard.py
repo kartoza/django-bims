@@ -26,6 +26,7 @@ from sass.models import (
     SassEcologicalCategory
 )
 from sass.enums.chem_unit import ChemUnit
+from bims.utils.location_site import overview_site_detail
 
 
 class SassDashboardView(TemplateView):
@@ -467,6 +468,9 @@ class SassDashboardView(TemplateView):
                     list_chems[chem_name] = [{chem: data}]
         context['chemical_records'] = json.dumps(list_chems)
         context['is_chem_exists'] = len(list_chems) > 1
+        context['site_details'] = json.dumps(
+            overview_site_detail(self.location_site.id)
+        )
 
         try:
             context['bing_map_key'] = BaseMapLayer.objects.get(source_type='bing').key

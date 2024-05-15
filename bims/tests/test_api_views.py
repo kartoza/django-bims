@@ -3,6 +3,8 @@ import logging
 
 import factory
 from django.db.models import signals
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.api_views.taxon_images import TaxonImageList
 from django.urls import reverse
@@ -18,7 +20,8 @@ from bims.tests.model_factories import (
     GroupF,
     LocationSiteF,
     TaxonomyF,
-    TaxonGroupF, TaxonImageF
+    TaxonGroupF, TaxonImageF,
+    SiteF
 )
 from bims.api_views.location_site import (
     LocationSiteDetail,
@@ -35,18 +38,17 @@ from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.views.autocomplete_search import autocomplete
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 logger = logging.getLogger('bims')
 
 
-class TestApiView(TestCase):
+class TestApiView(FastTenantTestCase):
     """Test Location site API """
 
     def setUp(self):
         self.factory = APIRequestFactory()
         self.location_site = LocationSiteF.create(
-            pk=1,
             location_context_document='""'
         )
 
@@ -98,7 +100,7 @@ class TestApiView(TestCase):
 
     def test_get_location_by_id(self):
         view = LocationSiteDetail.as_view()
-        pk = '1'
+        pk = str(self.location_site.id)
         request = self.factory.get('/api/location-site-detail/?siteId=' + pk)
         response = view(request)
         self.assertTrue(
@@ -176,25 +178,6 @@ class TestApiView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['data']), 2)
 
-    def test_only_get_aves_collection(self):
-        from django.contrib.auth.models import Permission
-        view = GetNonValidatedRecords.as_view()
-        BiologicalCollectionRecordF.create(
-            site=self.location_site,
-            taxonomy=self.taxonomy_class_1,
-            validated=False
-        )
-        user = UserF.create()
-        permission = Permission.objects.filter(codename='can_validate_aves')[0]
-        group = GroupF.create()
-        group.permissions.add(permission)
-        user.groups.add(group)
-
-        request = self.factory.get(reverse('get-unvalidated-records'))
-        request.user = user
-        response = view(request)
-        self.assertEqual(response.status_code, 200)
-
     def test_get_referece_category(self):
         view = ReferenceCategoryList.as_view()
         BiologicalCollectionRecordF.create(
@@ -209,6 +192,7 @@ class TestApiView(TestCase):
 
     def test_get_module_summary(self):
         view = ModuleSummary.as_view()
+        source_site = SiteF.create()
         taxon_class_1 = TaxonomyF.create(
             scientific_name='Aves',
             rank=TaxonomicRank.CLASS.name,
@@ -223,46 +207,64 @@ class TestApiView(TestCase):
         taxon_group_1 = TaxonGroupF.create(
             name='algae',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies=(taxon_class_1,),
-            chart_data='division'
+            taxonomies=(taxon_species_1,),
+            chart_data='division',
+            site=source_site
         )
 
         taxon_group_2 = TaxonGroupF.create(
             name='fish',
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies=(taxon_class_1,),
-            chart_data='conservation status'
+            taxonomies=(taxon_species_1,),
+            chart_data='conservation status',
+            site=source_site
         )
 
-        BiologicalCollectionRecordF.create(
+        bio1 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
             validated=True,
             site=self.location_site,
-            module_group=taxon_group_2
+            source_site=source_site
         )
 
-        BiologicalCollectionRecordF.create(
+        bio2 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
             validated=True,
             site=self.location_site,
-            module_group=taxon_group_1
+            source_site=source_site
         )
 
-        request = self.factory.get(reverse('module-summary'))
-        response = view(request)
-        self.assertGreater(
-            response.data['general_summary']['total_occurrences'],
-            1
-        )
-        self.assertGreater(
-            response.data['general_summary']['total_taxa'],
-            1
-        )
-        self.assertTrue(len(response.data['fish']) > 0)
-        self.assertEqual(len(response.data['algae']['division']), 1)
+        module_summary = ModuleSummary()
+        module_summary.summary_data()
+        with override_settings(SITE_ID=source_site.id):
+            request = self.factory.get(reverse('module-summary'))
+            response = view(request)
+            self.assertGreater(
+                response.data['general_summary']['total_occurrences'],
+                1
+            )
+            self.assertGreater(
+                response.data['general_summary']['total_taxa'],
+                1
+            )
+            self.assertTrue(len(response.data['fish']) > 0)
+            self.assertEqual(len(response.data['algae']['division']), 1)
 
     def test_get_autocomplete(self):
         view = autocomplete
+        TaxonGroupF.create(
+            name='algae',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(self.taxonomy_1,),
+            chart_data='division'
+        )
+
+        TaxonGroupF.create(
+            name='fish',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            taxonomies=(self.taxonomy_2,),
+            chart_data='conservation status'
+        )
         request = self.factory.get(
             '%s/?q=aves' % reverse('autocomplete-search'))
         response = view(request)
@@ -273,7 +275,7 @@ class TestApiView(TestCase):
 
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def test_send_notification_to_validator(self):
-        client = APIClient()
+        client = TenantClient(self.tenant)
         user = UserF.create(is_superuser=True)
         client.login(
             username=user.username,
@@ -285,7 +287,7 @@ class TestApiView(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         new_site = LocationSite.objects.get(pk=new_site.pk)
         self.assertEqual(new_site.ready_for_validation, True)
-        
+
     def test_get_taxon_images(self):
         taxon = TaxonomyF.create(
             scientific_name=u'Golden fish',

@@ -15,17 +15,15 @@ class TaxonomicRank(Enum):
     SUBPHYLUM = 'SubPhylum'
     KINGDOM = 'Kingdom'
     DOMAIN = 'Domain'
-    LIFE = 'Life'
-    CULTIVAR_GROUP = 'Cultivar Group'
     SUBORDER = 'Sub Order'
     INFRAORDER = 'Infra Order'
     SUBFAMILY = 'Sub Family'
     VARIETY = 'Variety'
+    FORMA = 'Forma'
 
     @staticmethod
     def hierarchy():
         return [
-            TaxonomicRank.LIFE,
             TaxonomicRank.DOMAIN,
             TaxonomicRank.KINGDOM,
             TaxonomicRank.PHYLUM,
@@ -38,6 +36,5 @@ class TaxonomicRank(Enum):
             TaxonomicRank.GENUS,
             TaxonomicRank.SPECIES,
             TaxonomicRank.SUBSPECIES,
-            TaxonomicRank.CULTIVAR_GROUP,
             TaxonomicRank.VARIETY
         ]

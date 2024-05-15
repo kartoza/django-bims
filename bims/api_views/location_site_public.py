@@ -28,6 +28,7 @@ from bims.models.location_context_filter_group_order import (
     LocationContextFilterGroupOrder
 )
 from bims.request_log.mixin import RequestLogViewMixin
+from bims.utils.location_site import overview_site_detail
 
 
 class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
@@ -88,8 +89,8 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
             (x, y) for x, y in Taxonomy.CATEGORY_CHOICES
         )
 
-        site_details = self.get_site_details(site_id)
-        site_details['Species and Occurences'] = (
+        site_details = overview_site_detail(site_id)
+        site_details['Species and Occurrences'] = (
             self.get_number_of_records_and_taxa(collection_results))
 
         site_image_objects = SiteImage.objects.filter(
@@ -221,78 +222,6 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
             occurrence_data.append(table_data)
 
         return occurrence_data
-
-
-    def get_site_details(self, site_id):
-        # get single site detailed dashboard overview data
-        try:
-            location_site = LocationSite.objects.get(id=site_id)
-        except LocationSite.DoesNotExist:
-            return {}
-        location_context = LocationContext.objects.filter(site=location_site)
-        site_river = '-'
-        if location_site.river:
-            site_river = location_site.river.name
-        overview = dict()
-        overview['{} Site Code'.format(
-            preferences.SiteSetting.default_site_name
-        )] = location_site.site_code
-        overview['User Site Code'] = location_site.legacy_site_code
-        overview['Site coordinates'] = (
-            'Longitude: {long}, Latitude: {lat}'.format(
-                long=self.parse_string(location_site.longitude),
-                lat=self.parse_string(location_site.latitude)
-            )
-        )
-        if location_site.site_description:
-            overview['Site description'] = self.parse_string(
-                location_site.site_description
-            )
-        else:
-            overview['Site description'] = self.parse_string(
-                location_site.name
-            )
-
-        result = dict()
-        result['Overview'] = overview
-
-        if preferences.SiteSetting.site_code_generator == 'fbis':
-            river_and_geo = OrderedDict()
-            river_and_geo['River'] = site_river
-            river_and_geo[
-                'User River Name'] = location_site.legacy_river_name
-            river_and_geo['Geomorphological zone'] = (
-                location_context.value_from_key(
-                    'geo_class_recoded')
-            )
-            refined_geomorphological = '-'
-            if location_site.refined_geomorphological:
-                refined_geomorphological = (
-                    location_site.refined_geomorphological
-                )
-            river_and_geo['User Geomorphological zone'] = (
-                refined_geomorphological
-            )
-            result['River and Geomorphological Zone'] = river_and_geo
-
-        # Location context group data
-        location_context_filters = (
-            LocationContextFilterGroupOrder.objects.filter(
-                show_in_dashboard=True
-            ).order_by('group_display_order')
-        )
-
-        for context_filter in location_context_filters:
-            title = context_filter.filter.title
-            if title not in result:
-                result[title] = {}
-            result[title][context_filter.group.name] = (
-                location_context.value_from_key(
-                    context_filter.group.key
-                )
-            )
-
-        return result
 
     def parse_string(self, string_in):
         if not string_in:

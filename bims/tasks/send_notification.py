@@ -1,7 +1,9 @@
 from celery import shared_task
 from django.conf import settings
+from django.contrib.sites.models import Site
 
 from bims.celery import app
+from bims.utils.domain import get_current_domain
 
 
 @app.task(

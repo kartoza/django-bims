@@ -1,5 +1,6 @@
-from django.urls import re_path, include, path
+from django.urls import re_path, path
 
+from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
 from bims.api_views.reference import DeleteRecordsByReferenceId
 # from rest_framework.documentation import include_docs_urls
 from bims.api_views.boundary import (
@@ -24,7 +25,8 @@ from bims.api_views.taxon import (
     TaxonDetail,
     FindTaxon,
     AddNewTaxon,
-    TaxaList
+    TaxaList,
+    TaxonTagAutocompleteAPIView, AddTagAPIView
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -108,6 +110,9 @@ from bims.api_views.decision_support_tool import DecisionSupportToolView, \
 from bims.api_views.download_request import (
     DownloadRequestApi
 )
+from bims.api_views.wetland_data import WetlandDataApiView
+from bims.api_views.email_csv import TestSendEmail
+
 
 urlpatterns = [
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -252,6 +257,13 @@ urlpatterns = [
     re_path(r'^taxa-list/$',
         TaxaList.as_view(),
         name='taxa-list'),
+    re_path(r'^update-taxon/(?P<taxon_id>[0-9]+)/(?P<taxon_group_id>[0-9]+)/$',
+        UpdateTaxon.as_view(),
+        name='update-taxon'),
+    path('review-taxon/<int:taxonomy_update_proposal_id>/',
+         ReviewTaxonProposal.as_view(), name='review-taxon-proposal'),
+    path('review-taxon/<int:taxon_id>/<int:taxon_group_id>/',
+         ReviewTaxonProposal.as_view(), name='review-taxon'),
     re_path(r'^update-taxon-group-order/$',
         UpdateTaxonGroupOrder.as_view(),
         name='update-taxon-group-order'),
@@ -327,5 +339,17 @@ urlpatterns = [
         name='download-layer-data'),
     path('delete-records-by-source-reference-id/<int:source_reference_id>/',
          DeleteRecordsByReferenceId.as_view(),
-         name='delete-records-by-source-reference-id')
+         name='delete-records-by-source-reference-id'),
+    re_path(r'^taxon-tag-autocomplete/$',
+            TaxonTagAutocompleteAPIView.as_view(),
+            name='taxon-tag-autocomplete'),
+    path('taxonomy/<int:pk>/add-tag/',
+         AddTagAPIView.as_view(),
+         name='add-tag-taxon'),
+    path('wetland-data/<str:lat>/<str:lon>/',
+         WetlandDataApiView.as_view(),
+         name='wetland-data'),
+    path('test-email/',
+         TestSendEmail.as_view(),
+         name='test-email')
 ]

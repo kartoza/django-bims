@@ -3,6 +3,9 @@ import logging
 import time
 from datetime import datetime
 
+from django.contrib.sites.models import Site
+from preferences import preferences
+
 from bims.models.source_reference import SourceReference
 from dateutil.parser import parse
 from django.contrib.auth import get_user_model
@@ -51,7 +54,7 @@ RIVER_CATCHMENT_ORDER = [
 ]
 
 
-def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
+def add_survey_occurrences(self, post_data, site_image=None) -> Survey:
     date_string = post_data.get('date', None)
     end_embargo_date = post_data.get('end_embargo_date', None)
     owner_id = post_data.get('owner_id', '').strip()
@@ -66,6 +69,11 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
     reference = post_data.get('study_reference', '')
     reference_category = post_data.get('reference_category', '')
     record_type_str = post_data.get('record_type', None)
+    source_site_id = post_data.get('source_site', None)
+    if source_site_id:
+        source_site = Site.objects.get(id=source_site_id)
+    else:
+        source_site = Site.objects.get_current()
     ecosystem_type = ''
     if record_type_str is not None and record_type_str != '':
         record_type, _ = RecordType.objects.get_or_create(
@@ -186,7 +194,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
         date=collection_date,
         site=self.location_site,
         collector_user=self.request.user,
-        validated=False
+        validated=False,
+        source_site=source_site
     )
 
     if site_image:
@@ -325,7 +334,8 @@ def add_survey_occurrences(self, post_data, site_image = None) -> Survey:
                         source_reference=source_reference,
                         hydroperiod=hydroperiod,
                         ecosystem_type=ecosystem_type,
-                        wetland_indicator_status=wetland_indicator_status
+                        wetland_indicator_status=wetland_indicator_status,
+                        source_site=source_site
                     )
                 )
                 collection_record_ids.append(collection_record.id)
@@ -587,6 +597,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         post_data = request.POST.dict()
+        post_data['source_site'] = Site.objects.get_current().id
         survey = add_survey_occurrences(
             self, post_data, request.FILES.get('site-image', None))
 
@@ -614,16 +625,22 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             )
         )
 
+        redirect_url = source_reference_url
+
         # Create a survey
-        abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
-            base_url=reverse('abiotic-form'),
-            survey_id=self.survey.id,
-            next=source_reference_url
-        )
+        if (
+            'river' in self.location_site.ecosystem_type.lower() or
+            preferences.SiteSetting.default_data_source == 'fbis'
+        ):
+            redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
+                base_url=reverse('abiotic-form'),
+                survey_id=self.survey.id,
+                next=source_reference_url
+            )
 
         self.extra_post(request.POST)
 
-        return HttpResponseRedirect(abiotic_url)
+        return HttpResponseRedirect(redirect_url)
 
 
 class ModuleFormView(CollectionFormView):

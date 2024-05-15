@@ -7,6 +7,7 @@ from allauth.account.utils import user_field
 from allauth.account.utils import user_email
 from allauth.account.utils import user_username
 
+from bims.utils.domain import get_current_domain
 from geonode.groups.models import GroupProfile
 from invitations.adapters import BaseInvitationsAdapter
 from preferences import preferences
@@ -132,7 +133,7 @@ class AccountAdapter(LocalAccountAdapter):
     def respond_user_inactive(self, request, user):
         # Sent email to superuser
         try:
-            current_site = Site.objects.get_current()
+            current_site = get_current_domain()
             profile = Profile.objects.get(user=user)
             ctx = {
                 'username': user.username,
@@ -141,7 +142,7 @@ class AccountAdapter(LocalAccountAdapter):
                 'organization': user.organization,
                 'user_id': user.id,
                 'current_site': current_site,
-                'site_name': current_site.name,
+                'site_name': current_site,
                 'email': user.email,
                 'role': profile.get_role_display(),
                 'inviter': user,

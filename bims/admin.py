@@ -4,6 +4,8 @@ from datetime import timedelta
 from datetime import date
 import json
 
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
+from django.contrib.sites.models import Site
 from django.http import HttpResponse
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
@@ -38,7 +40,7 @@ from geonode.people.admin import ProfileAdmin
 from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
-from ckeditor.widgets import CKEditorWidget
+from django_admin_inline_paginator.admin import TabularInlinePaginated
 
 from bims.models import (
     LocationType,
@@ -106,7 +108,10 @@ from bims.models import (
     Hydroperiod,
     WetlandIndicatorStatus,
     AbundanceType,
-    SamplingEffortMeasure
+    SamplingEffortMeasure,
+    TaxonGroupTaxonomy,
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateReviewer
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -286,7 +291,9 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         generate_spatial_scale_filter = queryset.count() <= 1
         for location_site in queryset:
             update_location_context_task.delay(
-                location_site.id, False, generate_spatial_scale_filter)
+                location_site.id,
+                False,
+                generate_spatial_scale_filter)
         full_message = (
             'Updating location context for {} sites in background'.format(
                 queryset.count()
@@ -416,6 +423,28 @@ class PermissionAdmin(admin.ModelAdmin):
 class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
     date_hierarchy = 'collection_date'
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        if request.user.is_staff:
+            if not hasattr(
+                request.user,
+                'bims_profile'
+            ):
+                return qs.none()
+            profile = request.user.bims_profile
+            if profile.signup_source_site:
+                source_site = (
+                    profile.signup_source_site
+                )
+                return qs.filter(
+                    Q(source_site=source_site) |
+                    Q(additional_observation_sites=source_site)
+                )
+            return qs
+        return qs
+
     class Media:
         css = {
             'all': ('admin/custom-admin.css',)
@@ -433,7 +462,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'abundance_number',
         'biotope',
         'record_type',
-        'sampling_method'
+        'sampling_method',
+        'source_site'
     )
     raw_id_fields = (
         'site',
@@ -449,7 +479,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'taxonomy__origin',
         'record_type__name',
         'sampling_method',
-        'ecosystem_type'
+        'ecosystem_type',
+        'source_site'
     )
     search_fields = (
         'taxonomy__scientific_name',
@@ -889,20 +920,28 @@ class BaseMapLayerAdmin(OrderedModelAdmin):
 
 
 class NonBiodiversityLayerAdmin(OrderedModelAdmin):
+    filter_horizontal = ('additional_sites',)
     list_display = (
         'order',
         'name',
         'wms_url',
         'wms_layer_name',
-        'move_up_down_links')
+        'source_site',
+        'display_additional_sites',
+        'move_up_down_links',)
     list_filter = ('wms_url',)
     ordering = ('order',)
+
+    def display_additional_sites(self, obj):
+        """A method to display additional sites in list_display."""
+        return ", ".join([site.name for site in obj.additional_sites.all()])
+    display_additional_sites.short_description = "Additional Sites"
 
 
 # flatpage ckeditor integration
 class FlatPageCustomAdmin(FlatPageAdmin):
     formfield_overrides = {
-        models.TextField: {'widget': CKEditorWidget}
+        models.TextField: {'widget': CKEditorUploadingWidget}
     }
 
 
@@ -1004,7 +1043,18 @@ class TaxonomyAdminForm(forms.ModelForm):
         fields = '__all__'
 
 
+class TaxonGroupTaxonomyInline(TabularInlinePaginated):
+    model = TaxonGroupTaxonomy
+    extra = 1
+    raw_id_fields = ('taxonomy',)
+    per_page = 20
+
+
 class TaxonGroupAdmin(admin.ModelAdmin):
+    inlines = [
+        TaxonGroupTaxonomyInline,
+    ]
+    list_per_page = 20
     list_display = (
         'name',
         'singular_name',
@@ -1016,6 +1066,13 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     )
     list_filter = (
         'category',
+    )
+    filter_horizontal = (
+        'taxonomies',
+        'experts'
+    )
+    raw_id_fields = (
+        'gbif_parent_species',
     )
 
 
@@ -1038,7 +1095,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'legacy_canonical_name',
         'iucn_status',
         'validated',
-        'verified'
+        'verified',
+        'tag_list'
     )
 
     list_filter = (
@@ -1127,6 +1185,12 @@ class TaxonomyAdmin(admin.ModelAdmin):
         return super().change_view(
             request, object_id, form_url, extra_context=extra_context,
         )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('tags')
+
+    def tag_list(self, obj):
+        return u", ".join(o.name for o in obj.tags.all())
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
@@ -1735,7 +1799,7 @@ class ClimateDataAdmin(admin.ModelAdmin):
 
 
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'get_users')
+    list_display = ('name', 'description', 'get_users', 'site')
 
     def get_users(self, obj):
         return ", ".join([user.username for user in obj.users.all()])
@@ -1772,6 +1836,73 @@ class AbundanceTypeAdmin(OrderedModelAdmin):
 class SamplingEffortMeasureAdmin(OrderedModelAdmin):
     list_display = ('name', 'move_up_down_links', 'order')
     ordering = ('order',)
+
+
+class HarvestSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        'start_time', 'status', 'harvester',
+        'module_group',
+        'finished', 'canceled', 'is_fetching_species')
+
+    actions = [
+        'resume_harvest',
+    ]
+
+    def resume_harvest(self, request, queryset):
+        from bims.tasks.harvest_collections import (
+            harvest_collections
+        )
+        if len(queryset) > 1:
+            message = 'You can only resume one session'
+            self.message_user(request, message, level=messages.ERROR)
+            return
+
+        queryset.first().canceled = False
+        queryset.first().save()
+
+        full_message = 'Resumed'
+        harvest_collections.delay(
+            queryset.first().id,
+            True
+        )
+
+        self.message_user(request, full_message)
+
+
+class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'taxonomy',
+    )
+    list_display = (
+        'taxongroup',
+        'taxonomy',
+        'is_validated'
+    )
+
+
+class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
+    raw_id_fields = (
+        'original_taxonomy',
+        'accepted_taxonomy',
+        'parent',
+        'owner',
+        'collector_user',
+        'analyst'
+    )
+    list_display = (
+        'original_taxonomy',
+        'scientific_name',
+        'canonical_name',
+        'status'
+    )
+
+
+class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):
+    list_display = (
+        'taxonomy_update_proposal',
+        'reviewer',
+        'status'
+    )
 
 
 # Re-register GeoNode's Profile page
@@ -1822,7 +1953,7 @@ admin.site.register(GeocontextSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
 admin.site.register(UploadSession, UploadSessionAdmin)
-admin.site.register(HarvestSession)
+admin.site.register(HarvestSession, HarvestSessionAdmin)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
 admin.site.register(DownloadRequestPurpose, DownloadRequestPurposeAdmin)
@@ -1881,4 +2012,16 @@ admin.site.register(
 admin.site.register(
     SamplingEffortMeasure,
     SamplingEffortMeasureAdmin
+)
+admin.site.register(
+    TaxonGroupTaxonomy,
+    TaxonGroupTaxonomyAdmin
+)
+admin.site.register(
+    TaxonomyUpdateProposal,
+    TaxonomyUpdateProposalAdmin
+)
+admin.site.register(
+    TaxonomyUpdateReviewer,
+    TaxonomyUpdateReviewerAdmin
 )

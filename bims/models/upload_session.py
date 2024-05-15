@@ -5,6 +5,8 @@
 import uuid
 from django.conf import settings
 from datetime import datetime
+
+from django.contrib.sites.models import Site
 from django.db import models
 from bims.models.taxon_group import TaxonGroup
 
@@ -104,6 +106,12 @@ class UploadSession(models.Model):
         upload_to=file_storage,
         null=True,
         max_length=512,
+        blank=True
+    )
+    source_site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True
     )
 

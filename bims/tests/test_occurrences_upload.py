@@ -13,7 +13,7 @@ from bims.tests.model_factories import (
     UserF,
     UploadSessionF,
     TaxonomyF,
-    TaxonGroupF, BiologicalCollectionRecordF,
+    TaxonGroupF, BiologicalCollectionRecordF, SiteF,
 )
 from bims.models import UploadSession, BiologicalCollectionRecord
 from bims.scripts.occurrences_upload import (
@@ -110,6 +110,9 @@ class TestCollectionUpload(TestCase):
             source_reference.title,
             self.reference_title
         )
+        self.assertIsNotNone(
+            source_reference.active_sites.first()
+        )
 
     def test_reference_bibliography_not_created(self):
         message, source_reference = process_source_reference(
@@ -161,7 +164,8 @@ class TestCollectionUpload(TestCase):
         side_effect=mocked_location_context_data))
     @mock.patch.object(SiteSetting, 'default_data_source', new_callable=mock.PropertyMock)
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
-    def test_csv_upload(self, mock_finish, mock_default_data_source):
+    @mock.patch('bims.scripts.occurrences_upload.OccurrenceProcessor.update_location_site_context')
+    def test_csv_upload(self, mock_finish, mock_update_location_context, mock_default_data_source):
         mock_finish.return_value = None
         mock_default_data_source.return_value = "fbis"
 

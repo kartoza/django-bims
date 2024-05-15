@@ -1,18 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from django.db import models
+from django.db import models, connection
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from colorfield.fields import ColorField
 from bims_theme.models.carousel_header import CarouselHeader
 from bims_theme.models.partner import Partner
+from django.contrib.sites.models import Site
 
 
 THEME_CACHE_KEY = 'bims_theme'
 
 
 class CustomTheme(models.Model):
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this taxon group is associated with."
+    )
     name = models.CharField(
         max_length=100,
         help_text='Will not appear anywhere'
@@ -171,6 +180,29 @@ class CustomTheme(models.Model):
         default='',
         help_text='To be displayed in the footer'
     )
+    auth_background = models.ImageField(
+        blank=True,
+        null=True,
+        help_text='Background image for login/logout page.'
+    )
+    hide_site_visit = models.BooleanField(
+        default=False,
+        help_text='Hide site visit in the landing page'
+    )
+    location_site_name = models.CharField(
+        default='Site',
+        help_text=(
+            'The name of the location site as it will appear in the dashboard, '
+            'on landing pages, and in other user interfaces.'
+        )
+    )
+    location_site_name_plural = models.CharField(
+        default='Sites',
+        help_text=(
+            'The plural form of the location site name for use '
+            'when referring to multiple sites.'
+        )
+    )
 
     class Meta:
         ordering = ("date", )
@@ -183,7 +215,9 @@ class CustomTheme(models.Model):
 @receiver(post_save, sender=CustomTheme)
 def disable_other(sender, instance, **kwargs):
     if instance.is_enabled:
-        CustomTheme.objects.exclude(pk=instance.pk).update(is_enabled=False)
+        CustomTheme.objects.exclude(
+            pk=instance.pk,
+        ).update(is_enabled=False)
 
 
 # Invalidate the cached theme if a partner or a theme is updated.
@@ -194,4 +228,6 @@ def disable_other(sender, instance, **kwargs):
 @receiver(post_save, sender=CarouselHeader)
 @receiver(post_delete, sender=CarouselHeader)
 def invalidate_cache(sender, instance, **kwargs):
-    cache.delete(THEME_CACHE_KEY)
+    tenant = connection.tenant
+    tenant_name = str(tenant.name)
+    cache.delete(THEME_CACHE_KEY + tenant_name)

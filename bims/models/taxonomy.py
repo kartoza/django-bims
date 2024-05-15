@@ -1,10 +1,10 @@
 import json
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from taggit.managers import TaggableManager
 
 from bims.models.validation import AbstractValidation
 from django.db import models
@@ -16,7 +16,6 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
 from bims.models.endemism import Endemism
 from bims.utils.iucn import get_iucn_status
-from bims.permissions.generate_permission import generate_permission
 from bims.models.vernacular_name import VernacularName
 from bims.models.notification import (
     get_recipients_for_notification,
@@ -63,6 +62,9 @@ class Taxonomy(AbstractValidation):
         ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
         ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
     }
+    tags = TaggableManager(
+        blank=True,
+    )
 
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
@@ -368,14 +370,17 @@ class Taxonomy(AbstractValidation):
         return '-'
 
     def send_new_taxon_email(self, taxon_group_id=None):
+        from bims.models import TaxonGroup
+
         current_site = Site.objects.get_current()
         recipients = get_recipients_for_notification(NEW_TAXONOMY)
+        taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
         email_body = render_to_string(
             'notifications/taxonomy/added_message.txt',
             {
                 'taxonomy': self,
                 'current_site': current_site,
-                'taxon_group_id': taxon_group_id
+                'taxon_group': taxon_group
             }
         )
         msg = EmailMultiAlternatives(
@@ -390,9 +395,6 @@ class Taxonomy(AbstractValidation):
 @receiver(models.signals.pre_save, sender=Taxonomy)
 def taxonomy_pre_save_handler(sender, instance, **kwargs):
     """Get iucn status before save."""
-    if instance.rank == TaxonomicRank.CLASS.name:
-        generate_permission(instance.scientific_name)
-
     if instance.is_species and not instance.iucn_status:
         iucn_status = get_iucn_status(
             species_name=instance.canonical_name,

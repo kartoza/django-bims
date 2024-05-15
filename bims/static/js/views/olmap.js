@@ -301,8 +301,10 @@ define([
                             try {
                                 objectData = JSON.parse(data);
                             } catch (e) {
+                                objectData = {
+                                    'features': []
+                                };
                                 console.log(e)
-                                return
                             }
                         }
                         let features = objectData['features'];
@@ -646,6 +648,9 @@ define([
                         source.on('tileloadend', function () {
                             --self.numInFlightTiles
                         });
+                        source.on('tileloaderror', function () {
+                            --self.numInFlightTiles
+                        });
                     }
                 } catch (err) {
                 }
@@ -661,9 +666,10 @@ define([
                     if (wanted.hasOwnProperty(layer))
                         numHeldTiles += Object.keys(wanted[layer]).length;
 
-                var ready = self.numInFlightTiles === 0 && numHeldTiles === 0;
-                if (self.mapIsReady !== ready)
+                var ready = self.numInFlightTiles <= 15 && numHeldTiles === 0;
+                if (self.mapIsReady !== ready) {
                     self.mapIsReady = ready;
+                }
             });
 
             return this;
@@ -892,7 +898,7 @@ define([
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
-                viewparams: 'where:"' + query + '"'
+                viewparams: 'where:' + tenant + '."' + query + '"'
             };
             this.layers.biodiversitySource.updateParams(newParams);
         },
@@ -927,8 +933,9 @@ define([
         },
         whenMapIsReady: function (callback) {
             var self = this;
-            if (this.mapIsReady)
+            if (this.mapIsReady) {
                 callback();
+            }
             else {
                 setTimeout(function () {
                     self.map.once('change:ready', self.whenMapIsReady.bind(null, callback));

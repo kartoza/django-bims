@@ -311,7 +311,7 @@ $(document).ready(function () {
     });
 
     graticule.setMap(map);
-    
+
     let options = {
         url: 'https://maps.kartoza.com/geoserver/wms',
         params: {
@@ -460,4 +460,14 @@ $(document).ready(function () {
         }
     });
 
+});
+
+$("#embargo-end-date").datepicker({
+    changeMonth: true,
+    changeYear: true,
+    minDate: 0,
+    dateFormat: 'dd/mm/yy',
+    onSelect: function (dateText) {
+        let $target = $(this);
+    }
 });

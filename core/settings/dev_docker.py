@@ -2,6 +2,8 @@
 """Settings for when running under docker in development mode."""
 from .dev import *  # noqa
 
+from .utils import extract_replicas
+
 ALLOWED_HOSTS = ['*']
 USE_X_FORWARDED_HOST = True
 
@@ -19,8 +21,8 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'gis',
+        'ENGINE': 'django_tenants.postgresql_backend',
+        'NAME': 'app',
         'USER': 'docker',
         'PASSWORD': 'docker',
         'HOST': 'db',
@@ -28,22 +30,30 @@ DATABASES = {
         'TEST': {
             'NAME': 'gis_test'
         },
+        'DATABASE': 'default'
     }
 }
 
-if os.getenv('DEFAULT_BACKEND_DATASTORE'):
-    DATABASES[os.getenv('DEFAULT_BACKEND_DATASTORE')] = {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'geonode_data',
-        'USER': 'docker',
-        'PASSWORD': 'docker',
-        'HOST': 'db',
-        'PORT': 5432
+ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
+
+REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
+REPLICAS = extract_replicas(REPLICA_ENV_VAR)
+for index, replica in enumerate(REPLICAS, start=1):
+    DATABASES[f'replica_{index}'] = {
+        'ENGINE': os.getenv('DB_ENGINE', 'django_tenants.postgresql_backend'),
+        'NAME': replica['NAME'],
+        'USER': replica['USER'],
+        'PASSWORD': replica['PASSWORD'],
+        'HOST': replica['HOST'],
+        'PORT': replica['PORT'],
+        'DATABASE': f'replica_{index}'
     }
 
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': 'cache:11211',
+        'KEY_FUNCTION': 'django_tenants.cache.make_key',
+        'REVERSE_KEY_FUNCTION': 'django_tenants.cache.reverse_key',
     }
 }

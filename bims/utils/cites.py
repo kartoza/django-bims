@@ -1,27 +1,41 @@
-# coding: utf-8
 import requests
-import simplejson
-from requests.exceptions import HTTPError
-
-CITES_TOKEN = ""
-CITES_API_URL = "https://api.speciesplus.net/api/v1/taxon_concepts/"
+from django.conf import settings
 
 
-def get_cites_status(taxon_id):
-    """
-    Get cites status by taxon id
-    :param taxon_id: gbif id
-    :return: cites status of a taxon
-    """
+class CitesSpeciesPlusAPI:
+    def __init__(self, base_url="https://api.speciesplus.net/api/v1"):
+        self.base_url = base_url
+        self.headers = {
+            "X-Authentication-Token": settings.CITES_TOKEN_API
+        }
 
-    headers = {
-        'X-Authentication-Token': CITES_TOKEN,
-    }
-    cites_legislation = "{}/cites_legislation".format(taxon_id)
-    try:
-        response = requests.get(CITES_API_URL+cites_legislation, headers=headers)
-        json_result = response.json()
-        return json_result
-    except (HTTPError, KeyError, simplejson.errors.JSONDecodeError) as e:
-        print(e)
-        return None
+    def _get(self, url, params=None):
+        """General GET request handler."""
+        response = requests.get(url, headers=self.headers, params=params)
+        response.raise_for_status()
+        return response.json()
+
+    def get_cites_legislation(self, taxon_concept_id, params=None):
+        """Get CITES legislation for a given taxon concept."""
+        url = f"{self.base_url}/taxon_concepts/{taxon_concept_id}/cites_legislation"
+        return self._get(url, params=params)
+
+    def get_distributions(self, taxon_concept_id, params=None):
+        """Get distributions for a given taxon concept."""
+        url = f"{self.base_url}/taxon_concepts/{taxon_concept_id}/distributions"
+        return self._get(url, params=params)
+
+    def get_eu_legislation(self, taxon_concept_id, params=None):
+        """Get EU legislation for a given taxon concept."""
+        url = f"{self.base_url}/taxon_concepts/{taxon_concept_id}/eu_legislation"
+        return self._get(url, params=params)
+
+    def get_references(self, taxon_concept_id, params=None):
+        """Get references for a given taxon concept."""
+        url = f"{self.base_url}/taxon_concepts/{taxon_concept_id}/references"
+        return self._get(url, params=params)
+
+    def list_taxon_concepts(self, params=None):
+        """List taxon concepts."""
+        url = f"{self.base_url}/taxon_concepts.json"
+        return self._get(url, params=params)

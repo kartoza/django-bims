@@ -5,6 +5,7 @@ from datetime import date
 
 import json
 from django.conf import settings
+from django.contrib.sites.models import Site
 from django.db.models import JSONField
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -46,7 +47,7 @@ class Profile(models.Model):
         null=True,
     )
     data = JSONField(
-        default='',
+        default=dict,
         null=True,
         blank=True,
     )
@@ -66,6 +67,13 @@ class Profile(models.Model):
         choices=ROLE_CHOICES,
         blank=True,
         null=True,
+    )
+    signup_source_site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The source site where the user signed up. For tracking user registration origins."
     )
 
     @property
@@ -132,6 +140,9 @@ class Profile(models.Model):
         max_allowed = 10
         attempt = 0
         is_dictionary = False
+
+        if not self.signup_source_site:
+            self.signup_source_site = Site.objects.get_current()
 
         while not is_dictionary and attempt < max_allowed:
             if not self.data:

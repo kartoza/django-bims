@@ -58,7 +58,7 @@ class Survey(AbstractValidation):
     @property
     def unvalidated_species_exists(self):
         return self.biological_collection_record.all().filter(
-            taxonomy__validated=False
+            taxonomy__taxongrouptaxonomy__is_validated=False
         ).exists()
 
     @property
@@ -99,8 +99,11 @@ class Survey(AbstractValidation):
 
     @property
     def data_name(self):
-        if not self.site:
-            return self.id
+        try:
+            if not self.site:
+                return self.id
+        except LocationSite.DoesNotExist:
+            return '-'
         site = (
             self.site.name if not self.site.site_code else
             self.site.site_code)

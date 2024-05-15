@@ -5,12 +5,14 @@ from django.conf import settings
 from django.utils.safestring import mark_safe
 from preferences import preferences
 
+from bims.utils.domain import get_current_domain
+
 register = template.Library()
 
 
 @register.simple_tag
 def current_domain():
-    return 'http://%s' % Site.objects.get_current().domain
+    return 'http://%s' % get_current_domain()
 
 # USAGE:
 # {% load file_the_templatetag_is_in %}

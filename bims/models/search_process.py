@@ -6,6 +6,8 @@ import os
 import json
 import errno
 from datetime import date
+
+from django.contrib.sites.models import Site
 from django.db import connection, DatabaseError
 from django.db.utils import ProgrammingError
 from django.conf import settings
@@ -21,6 +23,31 @@ TAXON_SUMMARY = 'taxon_summary'
 SEARCH_PROCESSING = 'processing'
 SEARCH_FINISHED = 'finished'
 SEARCH_FAILED = 'failed'
+
+
+def format_search_result_raw_query(raw_query):
+    if not raw_query:
+        return
+    formatted_params = ()
+    params = raw_query[1]
+    for param in params:
+        formatted_param = param
+        if (
+                isinstance(param, str) or
+                isinstance(param, int) or
+                isinstance(param, date) or
+                param == 'BioBaseData'
+        ):
+            formatted_param = '\'' + str(param) + '\''
+        elif isinstance(param, list):
+            formatted_param = str(param)
+            formatted_param = formatted_param.replace('[u\'', '\'{"')
+            formatted_param = formatted_param.replace('\',', '",')
+            formatted_param = formatted_param.replace(' u\'', ' "')
+            formatted_param = formatted_param.replace('\']', '"}\'')
+        formatted_params += (formatted_param, )
+    query_string = raw_query[0] % formatted_params
+    return query_string
 
 
 class SearchProcess(models.Model):
@@ -57,32 +84,29 @@ class SearchProcess(models.Model):
         null=True,
         blank=True
     )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this record is associated with."
+    )
+    requester = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        related_name='requester',
+        blank=True,
+        null=True,
+    )
 
     def save(self, *args, **kwargs):
         super(SearchProcess, self).save(*args, **kwargs)
 
     def set_search_raw_query(self, raw_query):
-        if not raw_query:
+        query_string = format_search_result_raw_query(raw_query)
+        if not query_string:
             return
-        formatted_params = ()
-        params = raw_query[1]
-        for param in params:
-            formatted_param = param
-            if (
-                    isinstance(param, str) or
-                    isinstance(param, int) or
-                    isinstance(param, date) or
-                    param == 'BioBaseData'
-            ):
-                formatted_param = '\'' + str(param) + '\''
-            elif isinstance(param, list):
-                formatted_param = str(param)
-                formatted_param = formatted_param.replace('[u\'', '\'{"')
-                formatted_param = formatted_param.replace('\',', '",')
-                formatted_param = formatted_param.replace(' u\'', ' "')
-                formatted_param = formatted_param.replace('\']', '"}\'')
-            formatted_params += (formatted_param, )
-        query_string = raw_query[0] % formatted_params
         self.search_raw_query = query_string
         self.save()
 

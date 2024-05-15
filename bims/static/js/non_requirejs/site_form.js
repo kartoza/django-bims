@@ -47,7 +47,6 @@ let validator = $('#site-form').validate({
                 }
             } else {
                 if (siteCode.length !== 15) {
-                    alert(siteCode.length)
                     showSiteCodeError();
                     return false;
                 }
@@ -148,6 +147,22 @@ $(function () {
         map.addLayer(riverLayer);
     }
 
+    let biodiversityLayersOptions = {
+        url: geoserverPublicUrl + 'wms',
+        params: {
+            LAYERS: locationSiteGeoserverLayer,
+            FORMAT: 'image/png8',
+            viewparams: 'where:' + defaultWMSSiteParameters
+        },
+        ratio: 1,
+        serverType: 'geoserver'
+    };
+    let biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
+    let biodiversityTileLayer = new ol.layer.Tile({
+        source: biodiversitySource
+    });
+    map.addLayer(biodiversityTileLayer);
+
     map.on('click', mapOnClicked);
 
     map.getView().fit(extent);
@@ -192,12 +207,14 @@ const updateSiteCode = (e) => {
     let siteCodeInput = $('#site_code');
     let catchmentInput = $('#catchment_geocontext');
     let userRiverName = $('#user_river_name').val();
+    let siteName = $('#site_name').val();
+    let siteDesc = $('#site_desc').val();
     let buttonLabel = button.html();
 
     document.getElementById('update-site-code').disabled = true;
     button.html('Generating...');
     siteCodeInput.prop('disabled', true);
-    let url = '/api/get-site-code/?ecosystem_type=' + ecosystemType  + '&user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude;
+    let url = '/api/get-site-code/?ecosystem_type=' + ecosystemType  + '&user_river_name=' + userRiverName  + '&lon=' + longitude + '&lat=' + latitude + '&site_name=' + siteName + '&site_desc=' + siteDesc;
     if (siteId) {
         url += '&site_id=' + siteId
     }
@@ -409,21 +426,6 @@ $('#owner').autocomplete({
         e.preventDefault();
         $('#owner').val(u.item.label);
         $('#owner_id').val(u.item.value);
-    }
-});
-
-$('.site-form-close').click(function () {
-    let page_before = window.document.referrer;
-    if (page_before === '') {
-        if (siteId) {
-            window.location.href = 'map/#site/siteIdOpen=' + siteId;
-        } else {
-            window.location.href = 'map/';
-        }
-    } else if (page_before.indexOf('source-reference-form') > -1) {
-        window.history.go(-2);
-    } else {
-        window.history.back();
     }
 });
 

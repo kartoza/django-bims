@@ -17,11 +17,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.urls import include, re_path
-from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.core import urls as wagtail_urls
-from wagtail.documents import urls as wagtaildocs_urls
-# from geonode.urls import urlpatterns as geonode_urlpatterns
+from django.urls import include
 from bims.views.documents import BimsDocumentUploadView
 from django.urls import re_path
 
@@ -51,8 +47,6 @@ urlpatterns = [
     re_path(r'^geonode/?$',
         TemplateView.as_view(template_name='site_index.html'),
         name='home'),
-    re_path(r'^wagtail-documents/', include(wagtaildocs_urls)),
-    re_path(r'^cms/', include(wagtailadmin_urls)),
 ]
 
 # for geonode_pattern in geonode_urlpatterns:
@@ -66,7 +60,6 @@ urlpatterns = [
 
 urlpatterns += [
     re_path('^admin/', admin.site.urls),
-    re_path(r'^', include(wagtail_urls)),
 ]
 
 if settings.DEBUG:

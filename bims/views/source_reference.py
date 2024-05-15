@@ -1,5 +1,8 @@
 import json
 from urllib.parse import urlencode
+
+from braces.views import LoginRequiredMixin
+from django.contrib.sites.models import Site
 from django.views.generic import ListView, UpdateView, View, CreateView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -111,14 +114,14 @@ class SourceReferenceList(View):
 
         if self.search_query:
             qs = qs.filter(
-                Q(sourcereferencebibliography__source__title__icontains =
+                Q(sourcereferencebibliography__source__title__icontains=
                   self.search_query) |
-                Q(sourcereferencedocument__source__title__icontains =
+                Q(sourcereferencedocument__source__title__icontains=
                   self.search_query) |
-                Q(sourcereferencedatabase__source__name__icontains =
+                Q(sourcereferencedatabase__source__name__icontains=
                   self.search_query) |
-                Q(note__icontains = self.search_query) |
-                Q(source_name__icontains = self.search_query)
+                Q(note__icontains=self.search_query) |
+                Q(source_name__icontains=self.search_query)
             )
 
         qs = qs.filter(**filters).distinct('id')
@@ -225,7 +228,7 @@ class DeleteSourceReferenceView(UserPassesTestMixin, View):
 class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
     template_name = 'edit_source_reference.html'
     model = SourceReference
-    fields = '__all__'
+    fields = ['note', 'source_name']
 
     def test_func(self):
         if self.request.user.is_anonymous:
@@ -517,7 +520,7 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         return context
 
 
-class AddSourceReferenceView(UserPassesTestMixin, CreateView):
+class AddSourceReferenceView(LoginRequiredMixin, CreateView):
     template_name = 'source_references/add_source_reference.html'
     model = SourceReference
     fields = '__all__'
@@ -544,13 +547,6 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
             next_url += urlencode(url_params)
             return next_url
         return '/source-references/'
-
-    def test_func(self):
-        if self.request.user.is_anonymous:
-            return False
-        if self.request.user.is_superuser:
-            return True
-        return self.request.user.has_perm('bims.change_sourcereference')
 
     def handle_peer_reviewed(self, post_data):
         if (
@@ -583,6 +579,8 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
 
 
     def handle_database_record(self, post_data):
+        if not self.request.user.is_superuser or not self.request.user.is_staff:
+            return False
         if (
                 DatabaseRecord.objects.filter(
                     name__iexact=post_data.get('name')).exists()
@@ -688,12 +686,18 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super(
             AddSourceReferenceView, self).get_context_data(**kwargs)
-        reference_type = [
-            'Unpublished',
-            'Database',
-            'Published report or thesis',
-            'Peer-reviewed scientific article'
-        ]
+        if self.request.user.is_superuser or self.request.user.is_staff:
+            reference_type = [
+                'Unpublished',
+                'Database',
+                'Published report or thesis',
+                'Peer-reviewed scientific article'
+            ]
+        else:
+            reference_type = [
+                'Published report or thesis',
+                'Peer-reviewed scientific article'
+            ]
         context['params'] = {
             'reference_type': json.dumps(reference_type)
         }.items()
@@ -717,12 +721,15 @@ class AddSourceReferenceView(UserPassesTestMixin, CreateView):
                 post_data=post_dict
             )
         else: # Unpublished
-            source_reference, created = SourceReference.objects.get_or_create(
-                note=post_dict.get('notes', ''),
-                source_name=post_dict.get('source', '')
-            )
-            self.object = source_reference
-            processed = True
+            if self.request.user.is_superuser or self.request.user.is_staff:
+                source_reference, created = SourceReference.objects.get_or_create(
+                    note=post_dict.get('notes', ''),
+                    source_name=post_dict.get('source', '')
+                )
+                self.object = source_reference
+                processed = True
+
+        self.object.active_sites.add(Site.objects.get_current())
 
         if not processed:
             return self.form_invalid(form)

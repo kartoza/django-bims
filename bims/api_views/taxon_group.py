@@ -1,11 +1,14 @@
 import json
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.sites.models import Site
 from django.http import Http404
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
-    TaxonExtraAttribute
+    TaxonExtraAttribute, TaxonomicGroupCategory,
+    TaxonomyUpdateProposal
 )
 
 
@@ -64,15 +67,28 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
     except TaxonGroup.DoesNotExist:
         return
     for taxonomy in taxa:
+        if not taxon_group.taxonomies.filter(
+            id=taxonomy.id
+        ).exists():
+            with transaction.atomic():
+                TaxonomyUpdateProposal.objects.get_or_create(
+                    original_taxonomy=taxonomy,
+                    taxon_group=taxon_group,
+                    status='pending',
+                    scientific_name=taxonomy.scientific_name,
+                    canonical_name=taxonomy.canonical_name,
+                    rank=taxonomy.rank,
+                    parent=taxonomy.parent,
+                    taxonomic_status=taxonomy.taxonomic_status,
+                    legacy_canonical_name=taxonomy.legacy_canonical_name,
+                    taxon_group_under_review=taxon_group
+                )
         taxon_group.taxonomies.add(taxonomy)
-        BiologicalCollectionRecord.objects.filter(
-            taxonomy=taxonomy
-        ).update(module_group=taxon_group)
 
 
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):
     def test_func(self):
-        return self.request.user.has_perm('bims.can_update_taxon_group')
+        return self.request.user.has_perm('bims.change_taxongroup')
 
 
 class UpdateTaxonGroupOrder(TaxaUpdateMixin):
@@ -143,6 +159,10 @@ class AddTaxaToTaxonGroup(TaxaUpdateMixin):
 
 class UpdateTaxonGroup(TaxaUpdateMixin):
     """Api to update taxon group.
+    API to update or add a new taxon group.
+    For updating, 'module_id' is required in POST data.
+    To add a new module, omit 'module_id'.
+
     Post data required:
     {
         'module_id': id
@@ -154,16 +174,28 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
     }
     """
     def post(self, request, *args):
-        module_name = self.request.POST.get('module_name', None)
+        module_name = self.request.POST.get('module_name')
         module_logo = self.request.FILES.get('module_logo', None)
         module_id = self.request.POST.get('module_id', None)
         extra_attributes = self.request.POST.getlist('extra_attribute', [])
-        if not module_id:
-            raise Http404('Missing required parameter')
-        try:
-            taxon_group = TaxonGroup.objects.get(id=module_id)
-        except TaxonGroup.DoesNotExist:
-            raise Http404('Taxon group does not exist')
+        new_expert_ids = self.request.POST.getlist('taxon-group-experts')
+        gbif_species = self.request.POST.get('gbif-species', None)
+        parent_taxon_id = self.request.POST.get('parent-taxon', None)
+
+        if module_id:
+            # Update existing module
+            try:
+                taxon_group = TaxonGroup.objects.get(id=module_id)
+                taxon_group.gbif_parent_species_id = gbif_species
+            except TaxonGroup.DoesNotExist:
+                raise Http404('Taxon group does not exist')
+        else:
+            # Create new module
+            taxon_group = TaxonGroup()
+
+        taxon_group.site = Site.objects.get_current()
+        if not taxon_group.parent:
+            taxon_group.category = TaxonomicGroupCategory.SPECIES_MODULE.name
 
         if module_name:
             taxon_group.name = module_name
@@ -175,6 +207,7 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
             name__in=extra_attributes).delete()
 
         if extra_attributes:
+            taxon_group.save()
             for extra_attribute in extra_attributes:
                 if not extra_attribute:
                     continue
@@ -186,5 +219,20 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
                 except TaxonExtraAttribute.MultipleObjectsReturned:
                     pass
 
+        if parent_taxon_id:
+            try:
+                parent_taxon_group = TaxonGroup.objects.get(
+                    id=parent_taxon_id
+                )
+                taxon_group.parent = parent_taxon_group
+            except TaxonGroup.DoesNotExist:
+                pass
+        else:
+            taxon_group.parent = None
+
         taxon_group.save()
-        return Response('Updated')
+
+        new_expert_ids = [int(expert_id) for expert_id in new_expert_ids]
+        taxon_group.experts.set(new_expert_ids)
+
+        return Response('Taxon group updated' if module_id else 'New taxon group added')

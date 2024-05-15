@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def location_sites_overview(
         search_parameters=None,
         search_process_id=None
-    ):
+):
     from bims.utils.celery import memcache_lock
     from bims.api_views.location_site_overview import (
         LocationSiteOverviewData
@@ -59,21 +59,29 @@ def location_sites_overview(
         search_process.process_id)
 
 
-@shared_task(name='bims.tasks.update_location_context', queue='geocontext')
+@shared_task(bind=True, name='bims.tasks.update_location_context', queue='geocontext')
 def update_location_context(
+        self,
         location_site_id,
         generate_site_code=False,
         generate_filter=True):
-    from bims.models import LocationSite
+    from bims.models import LocationSite, location_site_post_save_handler
     from bims.utils.location_context import get_location_context_data
     from bims.models.location_context_group import LocationContextGroup
     from bims.models.location_context_filter_group_order import (
         location_context_post_save_handler
     )
+    group_keys = None
+
+    self.update_state(state='STARTED', meta={'process': 'Checking location site'})
 
     if isinstance(location_site_id, str):
+        self.update_state(
+            state='PROGRESS',
+            meta={'process': 'Updating location context for multiple IDs'})
         if ',' in location_site_id:
             get_location_context_data(
+                group_keys=group_keys,
                 site_id=str(location_site_id),
                 only_empty=False,
                 should_generate_site_code=generate_site_code
@@ -90,12 +98,28 @@ def update_location_context(
             location_context_post_save_handler,
             sender=LocationContextGroup
         )
-
+    signals.post_save.disconnect(
+        location_site_post_save_handler,
+        sender=LocationSite
+    )
+    self.update_state(state='PROGRESS', meta={'process': 'Updating location context'})
     get_location_context_data(
+        group_keys=group_keys,
         site_id=str(location_site_id),
         only_empty=False,
         should_generate_site_code=generate_site_code
     )
+    self.update_state(state='SUCCESS')
+    signals.post_save.connect(
+        location_site_post_save_handler,
+        sender=LocationSite
+    )
+    if not generate_filter:
+        signals.post_save.connect(
+            location_context_post_save_handler,
+            sender=LocationContextGroup
+        )
+    return 'Finished updating location context'
 
 
 @shared_task(name='bims.tasks.update_site_code', queue='geocontext')

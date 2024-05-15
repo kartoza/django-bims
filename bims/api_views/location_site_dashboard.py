@@ -51,6 +51,7 @@ class ChartDataApiView(APIView):
         filters = request.GET.dict()
 
         self.data_frequency = filters.get('d', PER_YEAR_FREQUENCY)
+        filters['requester'] = self.request.user.id
 
         search = CollectionSearch(filters)
         collection_results = search.process_search()

@@ -23,5 +23,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_sass_assessor_to_owner),
+        # migrations.RunPython(migrate_sass_assessor_to_owner),
     ]

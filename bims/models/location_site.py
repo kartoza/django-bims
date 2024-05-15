@@ -9,6 +9,9 @@ from abc import ABC
 import requests
 import json
 
+from django.contrib.sites.models import Site
+
+from bims.tasks.location_site import update_location_context
 from bims.models.validation import AbstractValidation
 from django.core.exceptions import ValidationError
 from django.contrib.gis.db import models
@@ -19,7 +22,6 @@ from django.utils import timezone
 
 from bims.models.location_type import LocationType
 from bims.utils.get_key import get_key
-from bims.models.document_links_mixin import DocumentLinksMixin
 from bims.enums.geomorphological_zone import GeomorphologicalZoneCategory
 from bims.models.location_context import LocationContext
 from bims.models.location_context_group import LocationContextGroup
@@ -207,6 +209,17 @@ class LocationSite(AbstractValidation):
         null=True,
         default=HYDROGEOMORPHIC_NONE,
         choices=HYDROGEOMORPHIC_CHOICES
+    )
+    additional_observation_sites = models.ManyToManyField(
+        to=Site,
+        related_name='location_site_additional_observation_sites',
+        blank=True,
+        help_text="List of sites where this location site has also been observed. "
+                  "This attribute allows for recording multiple observation locations beyond "
+                  "the primary source site. For instance, if an occurrence is recorded at the "
+                  "main location 'FBIS' and is also observed at 'SanParks', "
+                  "this field facilitates linking the location site to 'SanParks' as "
+                  "an additional observation site."
     )
 
     @property
@@ -474,13 +487,17 @@ class LocationSite(AbstractValidation):
             return
 
 
+def update_location_site_context(location_site_id):
+    async_result = update_location_context.delay(location_site_id)
+    return async_result
+
+
 @receiver(models.signals.post_save, sender=LocationSite)
 @prevent_recursion
 def location_site_post_save_handler(sender, instance, **kwargs):
     """
     Post save location site
     """
-    from bims.tasks.location_site import update_location_context
     if (
             not isinstance(sender, LocationSite) and
             not sender.__name__ == 'LocationSite'
@@ -521,12 +538,19 @@ def location_site_post_save_handler(sender, instance, **kwargs):
         except LocationContext.MultipleObjectsReturned:
             pass
 
-    # Update location context in background
-    update_location_context.delay(instance.id)
-
+    async_result = update_location_site_context(location_site_id=instance.id)
+    if not instance.site_description:
+        instance.site_description = async_result.id
+        instance.save()
 
 def generate_site_code(
-        location_site=None, lat=None, lon=None, river_name='', ecosystem_type='', wetland_name=''):
+        location_site=None,
+        lat=None,
+        lon=None,
+        river_name='',
+        ecosystem_type='',
+        wetland_name='',
+        **kwargs):
     """Generate site code"""
     from bims.utils.site_code import (
         fbis_catchment_generator,
@@ -534,11 +558,22 @@ def generate_site_code(
         wetland_catchment,
         open_waterbody_catchment
     )
+    from bims.models.site_setting import SiteSetting
     from preferences import preferences
     site_code = ''
     catchment_site_code = ''
     catchments_data = {}
-    catchment_generator_method = preferences.SiteSetting.site_code_generator
+    catchment_generator_method = ''
+
+    if location_site and location_site.source_site:
+        site_setting = SiteSetting.objects.filter(
+            sites__in=[location_site.source_site.id]
+        ).first()
+        if site_setting:
+            catchment_generator_method = site_setting.site_code_generator
+    if not catchment_generator_method:
+        catchment_generator_method = preferences.SiteSetting.site_code_generator
+
     if catchment_generator_method == 'fbis':
         if ecosystem_type.lower() == 'wetland':
             wetland_data = location_site.additional_data if (
@@ -565,9 +600,15 @@ def generate_site_code(
             lon=lon
         )
     else:
-        if location_site:
+        site_name = kwargs.get('site_name', '')
+        site_description = kwargs.get('site_desc', '')
+        if catchment_generator_method == 'bims' and (site_name or site_description):
+            catchment_site_code = site_name[:2].upper()
+            catchment_site_code += site_description[:2].upper()
+        elif location_site:
             catchment_site_code += location_site.name[:2].upper()
             catchment_site_code += location_site.site_description[:4].upper()
+
     site_code += catchment_site_code
 
     # Add hyphen

@@ -1,4 +1,3 @@
-import json
 from django.db import models
 from django.db.models import JSONField
 from preferences.models import Preferences
@@ -19,7 +18,9 @@ class SiteSetting(Preferences):
     )
 
     map_default_filters = JSONField(
-        default=[],
+        default=dict,
+        null=True,
+        blank=True,
         help_text='Which filters are selected by default, '
                   'the format must be as follows : '
                   '[{"filter_key": "sourceCollection", '
@@ -240,6 +241,17 @@ class SiteSetting(Preferences):
         help_text='The key of the boundary data form GeoContext'
     )
 
+    site_boundary = models.ForeignKey(
+        'bims.Boundary',
+        blank=True,
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text=(
+            'Boundary used for checking if the site is '
+            'within the correct boundary'
+        )
+    )
+
     copyright_text = models.CharField(
         max_length=200,
         blank=True,
@@ -255,17 +267,17 @@ class SiteSetting(Preferences):
         )
     )
 
-    def save(self, *args, **kwargs):
-        max_allowed = 10
-        attempt = 0
-        is_dictionary = False
+    enable_ecosystem_type = models.BooleanField(
+        default=False
+    )
 
-        while not is_dictionary and attempt < max_allowed:
-            if not self.map_default_filters:
-                break
-            if isinstance(self.map_default_filters, list):
-                is_dictionary = True
-            else:
-                self.map_default_filters = json.loads(self.map_default_filters)
-                attempt += 1
-        super(SiteSetting, self).save(*args, **kwargs)
+    resend_api_key = models.CharField(
+        max_length=128,
+        default='',
+        blank=True,
+    )
+
+    default_from_email = models.EmailField(
+        default='',
+        blank=True
+    )

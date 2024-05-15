@@ -4,6 +4,7 @@ from datetime import datetime as libdatetime
 from dateutil.parser import parse
 
 from django.contrib.auth import get_user_model
+from preferences import preferences
 
 from bims.models.taxonomy import Taxonomy
 from django.views.generic.edit import UpdateView
@@ -398,9 +399,14 @@ class SiteVisitUpdateView(
                 identifier=self.session_identifier
             )
         )
-        abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
-            base_url=reverse('abiotic-form'),
-            survey_id=self.object.id,
-            next=source_reference_url
-        )
-        return abiotic_url
+        redirect_url = source_reference_url
+        if (
+                'river' in self.object.site.ecosystem_type.lower() or
+                preferences.SiteSetting.default_data_source == 'fbis'
+        ):
+            redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
+                base_url=reverse('abiotic-form'),
+                survey_id=self.object.id,
+                next=source_reference_url
+            )
+        return redirect_url

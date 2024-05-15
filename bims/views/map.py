@@ -57,8 +57,6 @@ class MapPageView(TemplateView):
         # Additional filters
         context['use_ecological_condition'] = bool(
                 get_key('ECOLOGICAL_CONDITION_FILTER'))
-        context['use_conservation_status'] = bool(
-                get_key('CONSERVATION_STATUS_FILTER'))
 
         # Search panel titles
         date_title = get_key('DATE_TITLE')
@@ -90,75 +88,74 @@ class MapPageView(TemplateView):
                 pass
 
         # Get all the iucn conservation status
-        if context['use_conservation_status']:
-            iucn_statuses = IUCNStatus.objects.all().distinct(
-                'category', 'national')
-            conservation_status_data = []
-            conservation_status_desc = {
-                'CR': 'A taxon is Critically Endangered when the best '
-                      'available evidence indicates that it is considered '
-                      'to be facing an extremely high risk of extinction in '
-                      'the wild.',
-                'EN': 'A taxon is Endangered when it is considered to be '
-                      'facing a very high risk of extinction in the wild.',
-                'VU': 'A taxon is Vulnerable when the best available evidence '
-                      'indicates that it is considered to be facing a high '
-                      'risk of extinction in the wild.',
-                'NT': 'A taxon is Near Threatened when it has been evaluated '
-                      'against the criteria but does not qualify for '
-                      'Critically Endangered, Endangered or Vulnerable now, '
-                      'but is close to qualifying for or is likely to qualify '
-                      'for a threatened category in the near future.',
-                'LC': 'A taxon is Least Concern when it has been evaluated '
-                      'against the criteria and does not qualify for '
-                      'Critically Endangered, Endangered, Vulnerable or '
-                      'Near Threatened. Widespread and abundant taxa are '
-                      'included in this category.',
-                'DD': 'A taxon is Data Deficient when there is inadequate '
-                      'information to make a direct, or indirect, assessment '
-                      'of its risk of extinction based on its distribution '
-                      'and/or population status. A taxon in this category'
-                      ' may be well studied, and its biology well known, '
-                      'but appropriate data on abundance and/or distribution '
-                      'are lacking. Data Deficient is therefore not a '
-                      'category of threat. Listing of taxa in this category '
-                      'indicates that more information is required and '
-                      'acknowledges the possibility that future research '
-                      'will show that threatened classification is '
-                      'appropriate. '
-                      'It is important to make positive use of whatever '
-                      'data are '
-                      'available. In many cases great care should be '
-                      'exercised '
-                      'in choosing between DD and a threatened status. '
-                      'If the range of a taxon is suspected to be relatively '
-                      'circumscribed, and a considerable period of time has '
-                      'elapsed since the last record of the taxon, threatened '
-                      'status may well be justified.',
-                'NE': 'A taxon is Not Evaluated when it has not '
-                      'yet been evaluated against the criteria.'
-            }
-            categories = dict(IUCNStatus.CATEGORY_CHOICES)
-            for iucn_status in iucn_statuses:
-                status = str(iucn_status.category)
-                desc = ''
-                if status in conservation_status_desc:
-                    desc = conservation_status_desc[status]
-                if iucn_status.category in categories:
-                    conservation_status_data.append({
-                        'status': str(iucn_status.category),
-                        'is_national': iucn_status.national,
-                        'name': categories[iucn_status.category].title(),
-                        'desc': desc
-                    })
-                else:
-                    conservation_status_data.append({
-                        'status': str(iucn_status.category),
-                        'is_national': iucn_status.national,
-                        'name': iucn_status.category,
-                        'desc': desc
-                    })
-            context['conservation_status_data'] = conservation_status_data
+        iucn_statuses = IUCNStatus.objects.all().distinct(
+            'category', 'national')
+        conservation_status_data = []
+        conservation_status_desc = {
+            'CR': 'A taxon is Critically Endangered when the best '
+                  'available evidence indicates that it is considered '
+                  'to be facing an extremely high risk of extinction in '
+                  'the wild.',
+            'EN': 'A taxon is Endangered when it is considered to be '
+                  'facing a very high risk of extinction in the wild.',
+            'VU': 'A taxon is Vulnerable when the best available evidence '
+                  'indicates that it is considered to be facing a high '
+                  'risk of extinction in the wild.',
+            'NT': 'A taxon is Near Threatened when it has been evaluated '
+                  'against the criteria but does not qualify for '
+                  'Critically Endangered, Endangered or Vulnerable now, '
+                  'but is close to qualifying for or is likely to qualify '
+                  'for a threatened category in the near future.',
+            'LC': 'A taxon is Least Concern when it has been evaluated '
+                  'against the criteria and does not qualify for '
+                  'Critically Endangered, Endangered, Vulnerable or '
+                  'Near Threatened. Widespread and abundant taxa are '
+                  'included in this category.',
+            'DD': 'A taxon is Data Deficient when there is inadequate '
+                  'information to make a direct, or indirect, assessment '
+                  'of its risk of extinction based on its distribution '
+                  'and/or population status. A taxon in this category'
+                  ' may be well studied, and its biology well known, '
+                  'but appropriate data on abundance and/or distribution '
+                  'are lacking. Data Deficient is therefore not a '
+                  'category of threat. Listing of taxa in this category '
+                  'indicates that more information is required and '
+                  'acknowledges the possibility that future research '
+                  'will show that threatened classification is '
+                  'appropriate. '
+                  'It is important to make positive use of whatever '
+                  'data are '
+                  'available. In many cases great care should be '
+                  'exercised '
+                  'in choosing between DD and a threatened status. '
+                  'If the range of a taxon is suspected to be relatively '
+                  'circumscribed, and a considerable period of time has '
+                  'elapsed since the last record of the taxon, threatened '
+                  'status may well be justified.',
+            'NE': 'A taxon is Not Evaluated when it has not '
+                  'yet been evaluated against the criteria.'
+        }
+        categories = dict(IUCNStatus.CATEGORY_CHOICES)
+        for iucn_status in iucn_statuses:
+            status = str(iucn_status.category)
+            desc = ''
+            if status in conservation_status_desc:
+                desc = conservation_status_desc[status]
+            if iucn_status.category in categories:
+                conservation_status_data.append({
+                    'status': str(iucn_status.category),
+                    'is_national': iucn_status.national,
+                    'name': categories[iucn_status.category].title(),
+                    'desc': desc
+                })
+            else:
+                conservation_status_data.append({
+                    'status': str(iucn_status.category),
+                    'is_national': iucn_status.national,
+                    'name': iucn_status.category,
+                    'desc': desc
+                })
+        context['conservation_status_data'] = conservation_status_data
 
         try:
             context['flatpage'] = FlatPage.objects.get(title__icontains='info')

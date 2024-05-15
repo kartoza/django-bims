@@ -4,6 +4,7 @@
 
 import ast
 from datetime import datetime
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
@@ -15,7 +16,10 @@ from bims.models.taxon_group import TaxonGroup
 
 
 class DataUploadView(
-    UserPassesTestMixin, LoginRequiredMixin, TemplateView):
+    UserPassesTestMixin,
+    LoginRequiredMixin,
+    TemplateView
+):
     """Generic data upload view."""
     template_name = ''
     upload_task = None

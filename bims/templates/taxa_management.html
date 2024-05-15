@@ -14,410 +14,309 @@
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/fish_form.css" %}" rel="stylesheet">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
-    <style>
-        .total-data {
-            background-color: var(--main-accent-color);
-            color: white;
-            border-radius: 10px;
-            padding: 0.48em;
-            margin-left: 0.5em;
-        }
-        .btn-sm {
-            font-size: 10pt !important;
-        }
-        .pagination-centered {
-            text-align: center;
-        }
-
-        ul.pagination {
-            display: flex;
-            align-items: center;
-            list-style: none;
-        }
-
-        ul.pagination li {
-            display: inline-block;
-            margin-left: 1rem;
-        }
-
-        ul.pagination li.arrow {
-            font-size: 2rem;
-        }
-
-        ul.pagination li a {
-            margin-right: 1rem;
-        }
-
-        ul.pagination li.current a {
-            font-weight: bold;
-            background-color: #18A090 !important;
-            border-radius: 3rem;
-            padding: 0.3rem 0.8rem;
-            color: #fff;
-        }
-
-        #sortable {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            padding-left: 15px;
-            width: 100%;
-        }
-
-        #sortable li {
-            margin: 3px 3px 3px 0;
-            padding: 10px;
-            width: 32%;
-            height: 90px;
-            background-color: rgba(222, 222, 222, 0.31);
-        }
-
-        #sortable li .row {
-            height: 100%;
-        }
-
-        #sortable li img {
-            max-height: 80%;
-            max-width: 100%;
-            width: auto;
-            height: auto;
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
-        }
-
-        .taxon-group-title {
-            font-size: 1.5em;
-        }
-
-        ul li {
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        .selected {
-            border-color: #179f90;
-            background-color: #179f9026 !important;
-        }
-
-        .sort-button-selected {
-            color: #28a745;
-        }
-
-        .btn-action {
-            font-size: 10pt;
-        }
-
-        /* Absolute Center Spinner */
-        .loading {
-            position: fixed;
-            z-index: 9999;
-            height: 2em;
-            width: 2em;
-            overflow: show;
-            margin: auto;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-        }
-
-        /* Transparent Overlay */
-        .loading:before {
-            content: '';
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(rgba(116, 116, 116, 0.63), rgba(0, 0, 0, .8));
-            background: -webkit-radial-gradient(rgba(130, 130, 130, 0.8), rgba(73, 73, 73, 0.8));
-        }
-
-        .ui-menu .ui-menu-item {
-            margin: 0;
-            padding: 0;
-            zoom: 1;
-            float: left;
-            clear: left;
-            width: 100%;
-        }
-        .select2-selection__choice, .select2-results__options {
-            font-size: 0.8em !important;
-        }
-        .select2-results__option {
-            width: 100%;
-        }
-        .taxa-table {
-            max-height: calc(100vh - 400px);
-            max-height: -o-calc(100vh - 400px); /* opera */
-            max-height: -webkit-calc(100vh - 400px); /* google, safari */
-            max-height: -moz-calc(100vh - 400px); /* firefox */
-            overflow-y: auto; /* Trigger vertical scroll    */
-            overflow-x: hidden; /* Hide the horizontal scroll */
-        }
-
-        .list-form {
-            height: calc(100% + 125px);
-        }
-        .remove-extra-attribute {
-            padding: 10px;
-            height: 36px;
-            padding-top: 5px;
-        }
-        .btn-add-extra-attribute {
-            font-size: 10pt;
-            padding: 5px 20px;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
-
-        .modal-lg {
-            max-width: 1000px;
-        }
-    </style>
+    <link href="{% static "css/taxa_management.css" %}" rel="stylesheet">
     <script>
         const sourceCollection = {{ source_collections | safe }};
-        const rejectUrl = '{% url "reject-taxon" %}';
-        const approveUrl = '{% url "validate-taxon" %}';
+        const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
+        const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
+        const isExpert = {% if is_expert %}true{% else %}false{% endif %}
+        const rejectUrl = '/api/review-taxon/';
+        const approveUrl = '/api/review-taxon/';
+        let userAutocompletePlaceholder = 'Search for an expert';
+        const taxaGroups = {{ taxa_groups_json | safe }};
     </script>
 {% endblock %}
 
 {% block body_content %}
     <div class="loading">
-        <img src="/static/img/small-loading.svg" width="150" style="filter: brightness(104%) contrast(97%);"
-                             alt="Loading view">
+        <img src="/static/img/small-loading.svg"
+             width="150"
+             style="filter: brightness(104%) contrast(97%);"
+             alt="Loading view">
     </div>
-    <div class="nav-space" style="height: 51px;"></div>
-    <div class="list-form container">
-        <div class="dashboard-title" style="text-align: center">
-            <h2>Taxon Management</h2>
-        </div>
-        <div class="dashboard-body">
-            <ul id="sortable">
-                {% for taxa_group in taxa_groups %}
-                    <li data-id="{{ taxa_group.id }}" class="ui-state-default">
-                        <div class="row">
-                            <div class="col-sm-3 img-container">
-                                {% if taxa_group.logo %}
-                                    <img src="{{ taxa_group.logo }}"/>
-                                {% endif %}
-                            </div>
-                            <div class="col-sm-9">
-                                <div class="taxon-group-title" data-extra-attributes="{{ taxa_group.extra_attributes }}">
-                                    {{ taxa_group.name }}
-                                </div>
-                                <div>
-                                    Total taxonomy
-                                    : <span id="taxon_group_{{ taxa_group.id }}">{{ taxa_group.taxa_count }}</span>
-                                </div>
-                                <div style="margin-top: 3px">
-                                    <span class="btn btn-warning update-logo-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0"><i class="fa fa-pencil" aria-hidden="true"></i> Edit</span>
-                                    {% if preferences.SiteSetting.enable_remove_all_occurrences_tool %}
-                                        <span class="btn btn-danger remove-all-btn" style="font-size: 10pt; padding-top: 0; padding-bottom: 0" data-module-id="{{ taxa_group.id }}"><i class="fa fa-trash-o" aria-hidden="true"></i> Remove All</span>
-                                    {% endif %}
+    {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+    {% else %}
+        <div class="nav-space" style="height: 51px;"></div>
+    {% endif %}
+    <div class="list-form container-fluid">
+        <div class="row" style="height: 100%">
+            <div class="col-3 side-panel">
+                <ul id="sortable">
+                    {% for taxa_group in taxa_groups %}
+                        {% include "_taxongroup_item.html" with taxon_group=taxa_group %}
+                    {% endfor %}
+                </ul>
+                {% if user.is_superuser %}
+                    <div style="width: 100%; text-align: center">
+                        <button class="btn btn-success btn-md my-0 ml-sm-2 mt-2 add-new-module"><i class="fa fa-plus" aria-hidden="true"></i></button>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-9 list-content">
+                <div class="dashboard-title">
+                    {% if selected_taxon_group %}
+                        <h2>{{ selected_taxon_group.name }}</h2>
+                    {% else %}
+                        <h2>Taxon Management</h2>
+                    {% endif %}
+                </div>
+                <div class="dashboard-body">
+                    <hr style="max-width: 100% !important; border-color: #e6c762"/>
+                    <!-- Search form -->
+                    <div class="form-inline d-flex md-form form-sm mt-0"
+                         style="margin-bottom: 10px;">
+                        <i class="fa fa-search" aria-hidden="true"></i>
+                        <input class="form-control form-control-sm ml-3 w-45"
+                               type="text" placeholder="Taxon name"
+                               aria-label="Search" id="taxon-name-input">
+                        <button id="search-button"
+                                class="btn btn-success btn-md my-0 ml-sm-2"
+                                style="height: 31px; padding-top: 3px"><i class="fa fa-search" aria-hidden="true"></i> Search
+                        </button>
+                        <button id="add-filters"
+                                class="btn btn-info btn-md my-0 ml-sm-2" data-toggle="collapse"  data-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter"
+                                style="height: 31px; padding-top: 3px"><span class="badge badge-sm badge-warning" id="total-selected-filter"></span> Filters <i class="fa fa-chevron-down" aria-hidden="true"></i></button>
+                        <button id="clear-search-button"
+                                class="btn btn-danger btn-md my-0 ml-sm-2"
+                                style="height: 31px; padding-top: 3px; display: none">Clear
+                        </button>
+                        <div class="total-data">Total Taxa : <span id="total-taxa">-</span></div>
+                    </div>
+
+                    <div class="row" style="font-size: 0.9em;">
+                        <div class="col-md-6">
+                            <div class="collapse" id="collapseFilter"  style="width: 100%; position: absolute;">
+                                <div class="card card-body" style="background: #f2f2f2;">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group row">
+                                                <label for="staticEmail"
+                                                       class="col-sm-2 col-form-label">Rank</label>
+                                                <div class="col-sm-10">
+                                                    <select id="rank-filters" class="select-multiple"
+                                                            name="states[]" multiple="multiple"
+                                                            style="font-size: 1em; width: 100%">
+                                                        {% for rank in all_ranks %}
+                                                            <option value="{{ rank }}">{{ rank }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="staticEmail"
+                                                       class="col-sm-2 col-form-label">Cons. Status (Global)</label>
+                                                <div class="col-sm-10">
+                                                    <select id="cons-status-filters" class="select-multiple"
+                                                            name="states[]" multiple="multiple"
+                                                            style="font-size: 1em; width: 100%">
+                                                        {% for status in all_cons_status %}
+                                                            <option value="{{ status.value }}">{{ status.label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="staticEmail"
+                                                       class="col-sm-2 col-form-label">Origin</label>
+                                                <div class="col-sm-10">
+                                                    <select id="origin-filters" class="select-multiple"
+                                                            name="states[]" multiple="multiple"
+                                                            style="font-size: 1em; width: 100%">
+                                                        {% for origin in all_origins %}
+                                                            <option value="{{ origin.value }}">{{ origin.label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="staticEmail"
+                                                       class="col-sm-2 col-form-label">Endemism</label>
+                                                <div class="col-sm-10">
+                                                    <select id="endemism-filters" class="select-multiple"
+                                                            name="states[]" multiple="multiple"
+                                                            style="font-size: 1em; width: 100%">
+                                                        {% for endemism in all_endemism %}
+                                                            <option value="{{ endemism }}">{{ endemism }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="parentTaxa" class="col-sm-2 col-form-label">Parent Taxonomy</label>
+                                                <div class="col-sm-10">
+                                                    <select id="taxa-auto-complete" class="taxa-auto-complete" style="width: 100%"></select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="validated" class="col-sm-2 col-form-label">Validated</label>
+                                                <div class="col-sm-10">
+                                                    <select id="validated" class="form-control" style="width: 100%">
+                                                        <option value="True">True</option>
+                                                        <option value="False">False</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="tag-auto-complete" class="col-sm-2 col-form-label">Tags</label>
+                                                <div class="col-sm-10">
+                                                    <select id="tag-filters" name="tag-auto-complete" class="tag-auto-complete form-control" multiple="multiple" style="width: 100%"></select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button id="apply-filters"
+                                                class="btn btn-success btn-md my-0 ml-sm-2 pull-right" style="font-size: 0.9em">
+                                            Apply
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </li>
-                {% endfor %}
-            </ul>
-            <hr style="max-width: 100% !important; border-color: #e6c762"/>
-            <!-- Search form -->
-            <div class="form-inline d-flex md-form form-sm mt-0"
-                 style="margin-bottom: 10px;">
-                <i class="fa fa-search" aria-hidden="true"></i>
-                <input class="form-control form-control-sm ml-3 w-45"
-                       type="text" placeholder="Taxon name"
-                       aria-label="Search" id="taxon-name-input">
-                <button id="search-button"
-                        class="btn btn-success btn-md my-0 ml-sm-2"
-                        style="height: 31px; padding-top: 3px"><i class="fa fa-search" aria-hidden="true"></i> Search
-                </button>
-                <button id="add-filters"
-                        class="btn btn-info btn-md my-0 ml-sm-2" data-toggle="collapse"  data-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter"
-                        style="height: 31px; padding-top: 3px"><span class="badge badge-sm badge-warning" id="total-selected-filter"></span> Filters <i class="fa fa-chevron-down" aria-hidden="true"></i></button>
-                <button id="clear-search-button"
-                        class="btn btn-danger btn-md my-0 ml-sm-2"
-                        style="height: 31px; padding-top: 3px; display: none">Clear
-                </button>
-                <div class="total-data">Total Taxa : <span id="total-taxa">-</span></div>
-            </div>
+                        <div class="col-md-6"></div>
+                    </div>
+                    <!-- Download button -->
+                    <div class="float-right download-button-container"
+                         style="margin-top: -47px; display: none">
+                        {% if perms.bims.add_taxonomy or is_expert %}
+                        <button id="add-taxon-btn"
+                                class="btn btn-outline-success" data-toggle="modal"
+                                data-target="#addNewTaxonModal">Add a taxon
+                        </button>
+                        <div class="btn-group">
+                            <a class="btn dropdown-toggle btn-outline-success" data-toggle="dropdown" href="#">
+                                <i class="fa fa-download" aria-hidden="true"></i>&nbsp;Download
+                                <span class="caret"></span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="#" id="download-csv">CSV Taxa List</a>
+                                <a class="dropdown-item disabled" href="#" id="download-pdf">PDF Report</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="taxa-table">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">Taxon Name
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="canonical_name"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i>
+                                </th>
+                                <th scope="col">Rank
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="rank"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-rank"></i>
+                                </th>
+                                <th scope="col">Cons. Status (Global)
+                                    <br/>
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="iucn_status__category"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-iucn_status__category"></i>
+                                </th>
+                                <th scope="col">Origin
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="origin"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-origin"></i>
+                                </th>
+                                <th scope="col">Endemism
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="endemism__name"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-endemism__name"></i>
+                                </th>
+                                <th scope="col">Records
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="total_records"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-total_records"></i>
+                                </th>
+                                <th scope="col">Import date
+                                    <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="import_date"></i>
+                                    <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
+                                </th>
+                                <th scope="col" style="width: 120px">Tags
+                                </th>
+                                {% if perms.bims.change_taxonomy or is_expert %}
+                                <th scope="col" style="width: 100px">Action</th>
+                                {% endif %}
+                            </tr>
+                            </thead>
+                            <tbody id="taxa-list"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-centered" style="display:none">
+                        <ul class="pagination">
+                            <li class="arrow"><a href="#"
+                                                 class="pagination pagination-previous">&laquo;</a>
+                            </li>
+                            <li class="current">
+                                <span id="taxa-current-page"></span> - <span
+                                    id="taxa-current-size"></span> / <span
+                                    id="taxa-count"></span>
+                            </li>
+                            <li class="arrow"><a href="#"
+                                                 class="pagination pagination-next">&raquo;</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-            <div class="row" style="font-size: 0.9em;">
-                <div class="col-md-6">
-                    <div class="collapse" id="collapseFilter"  style="width: 100%; position: absolute;">
-                        <div class="card card-body" style="background: #f2f2f2;">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="form-group row">
-                                        <label for="staticEmail"
-                                               class="col-sm-2 col-form-label">Rank</label>
-                                        <div class="col-sm-10">
-                                            <select id="rank-filters" class="select-multiple"
-                                                    name="states[]" multiple="multiple"
-                                                    style="font-size: 1em; width: 100%">
-                                                {% for rank in all_ranks %}
-                                                    <option value="{{ rank }}">{{ rank }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="staticEmail"
-                                               class="col-sm-2 col-form-label">Cons. Status (Global)</label>
-                                        <div class="col-sm-10">
-                                            <select id="cons-status-filters" class="select-multiple"
-                                                    name="states[]" multiple="multiple"
-                                                    style="font-size: 1em; width: 100%">
-                                                {% for status in all_cons_status %}
-                                                    <option value="{{ status.value }}">{{ status.label }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="staticEmail"
-                                               class="col-sm-2 col-form-label">Origin</label>
-                                        <div class="col-sm-10">
-                                            <select id="origin-filters" class="select-multiple"
-                                                    name="states[]" multiple="multiple"
-                                                    style="font-size: 1em; width: 100%">
-                                                {% for origin in all_origins %}
-                                                    <option value="{{ origin.value }}">{{ origin.label }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="staticEmail"
-                                               class="col-sm-2 col-form-label">Endemism</label>
-                                        <div class="col-sm-10">
-                                            <select id="endemism-filters" class="select-multiple"
-                                                    name="states[]" multiple="multiple"
-                                                    style="font-size: 1em; width: 100%">
-                                                {% for endemism in all_endemism %}
-                                                    <option value="{{ endemism }}">{{ endemism }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="parentTaxa" class="col-sm-2 col-form-label">Parent Taxonomy</label>
-                                        <div class="col-sm-10">
-                                            <select id="taxa-auto-complete" class="taxa-auto-complete" style="width: 100%"></select>
-                                        </div>
-                                    </div>
-                                    <div class="form-group row">
-                                        <label for="validated" class="col-sm-2 col-form-label">Validated</label>
-                                        <div class="col-sm-10">
-                                            <select id="validated" class="form-control" style="width: 100%">
-                                                <option value="True">True</option>
-                                                <option value="False">False</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                 <button id="apply-filters"
-                                    class="btn btn-success btn-md my-0 ml-sm-2 pull-right" style="font-size: 0.9em">
-                                     Apply
-                                 </button>
-                            </div>
+                {% if perms.bims.change_taxonomy or is_expert %}
+                <div class="row-action" style="display: none">
+                    <td>
+                        <div class="btn-validated-container">
+                            <button class="btn btn-action btn-danger remove-taxon-from-group"
+                                    data-toggle="tooltip" data-placement="bottom" title="Remove from group">
+                                <i class="fa fa-chain-broken" aria-hidden="true"></i>
+                            </button>
+                            <a href="" class="btn btn-action btn-warning edit-taxon"
+                               data-toggle="tooltip" data-placement="bottom" title="Edit">
+                                <i class="fa fa-pencil" aria-hidden="true"></i>
+                            </a>
+                            <button class="btn btn-action btn-info add-tag"
+                                    data-toggle="tooltip" data-placement="bottom" title="Manage tags">
+                                <i class="fa fa-tags" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="btn-unvalidated-container">
+                            <a href=""
+                               class="btn btn-action btn-warning validate-taxon"
+                               style="width: 100%; padding: 0; margin-top: 5px">Approve
+                            </a>
+                            <a href=""
+                               class="btn btn-action btn-warning reject-taxon"
+                               style="width: 100%; padding: 0;  margin-top: 5px">Reject
+                            </a>
+                        </div>
+                    </td>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Add tag modal -->
+    <div id="addTagModal" class="modal fade">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">
+                        Add Tag
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="recipient-name" class="col-form-label">Tags</label>
+                        <div class="taxon-group-experts-container">
+                            <select id="taxa-tag-auto-complete" name="tag-auto-complete" class="tag-auto-complete form-control" multiple="multiple" data-add-new-tag="true">
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6"></div>
-            </div>
-            <!-- Download button -->
-            <div class="float-right download-button-container"
-                 style="margin-top: -47px; display: none">
-                <button id="add-taxon-btn"
-                        class="btn btn-outline-success" data-toggle="modal"
-                            data-target="#addNewTaxonModal">Add a taxon
-                </button>
-                <button class="btn btn-outline-success" id="download-csv"><i
-                        class="fa fa-download" aria-hidden="true"></i>&nbsp;Download
-                    as csv
-                </button>
-            </div>
-            <div class="taxa-table">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th scope="col" style="width: 25%">Taxon Name
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="canonical_name"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-canonical_name"></i>
-                        </th>
-                        <th scope="col" style="width: 10%">Rank
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="rank"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-rank"></i>
-                        </th>
-                        <th scope="col" style="width: 20%">Cons. Status (Global)
-                            <br/>
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="iucn_status__category"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-iucn_status__category"></i>
-                        </th>
-                        <th scope="col" style="width: 20%">Origin
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="origin"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-origin"></i>
-                        </th>
-                        <th scope="col" style="width: 20%">Endemism
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="endemism__name"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-endemism__name"></i>
-                        </th>
-                        <th scope="col" style="width: 20%">Records
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="total_records"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-total_records"></i>
-                        </th>
-                        <th scope="col" style="width: 15%">Import date
-                            <i class="fa fa-arrow-up sort-button" aria-hidden="true" data-order="import_date"></i>
-                            <i class="fa fa-arrow-down sort-button" aria-hidden="true" data-order="-import_date"></i>
-                        </th>
-                        <th scope="col">Action</th>
-                    </tr>
-                    </thead>
-                    <tbody id="taxa-list"></tbody>
-                </table>
-            </div>
-            <div class="pagination-centered" style="display:none">
-                    <ul class="pagination">
-                        <li class="arrow"><a href="#"
-                                             class="pagination pagination-previous">&laquo;</a>
-                        </li>
-                        <li class="current">
-                            <span id="taxa-current-page"></span> - <span
-                                id="taxa-current-size"></span> / <span
-                                id="taxa-count"></span>
-                        </li>
-                        <li class="arrow"><a href="#"
-                                             class="pagination pagination-next">&raquo;</a>
-                        </li>
-                    </ul>
+
+                <div class="modal-footer">
+                    <button class="modal-action modal-close btn btn-action"
+                            data-dismiss="modal">Close
+                    </button>
+                    <button class="modal-action modal-save btn btn-action btn-info save-tag">Save Tag</button>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="row-action" style="display: none">
-        <td>
-            <div class="btn-validated-container">
-                <button class="btn btn-action btn-danger remove-taxon-from-group" style="width: 100%">Remove from group
-                </button>
-                <a href="" class="btn btn-action btn-warning edit-taxon" style="width: 100%; margin-top: 5px">Edit
-                </a>
-            </div>
-            <div class="btn-unvalidated-container">
-                <a href="" class="btn btn-action btn-warning validate-taxon" style="width: 100%; margin-top: 5px">Validate
-                </a>
-                <a href="" class="btn btn-action btn-warning reject-taxon" style="width: 100%; margin-top: 5px">Reject
-                </a>
-            </div>
-        </td>
     </div>
 
     <div class="modal fade" tabindex="-1" role="dialog" id="addNewTaxonModal">
@@ -526,7 +425,7 @@
             <form id="moduleEditForm" enctype="multipart/form-data" >
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">
+                    <h5 class="modal-title" id="moduleModalLabel">
                         Edit Module
                     </h5>
                     <button type="button" class="close" data-dismiss="modal"
@@ -538,24 +437,47 @@
                         <input type="hidden" class="form-control"
                                    id="edit-module-id" name="module_id">
                         <div class="form-group">
-                            <label for="recipient-name" class="col-form-label">Label:</label>
+                            <label for="recipient-name" class="col-form-label">Label</label>
                             <input type="text" class="form-control"
                                    id="edit-module-name" name="module_name">
                         </div>
                         <div class="form-group">
-                            <label for="message-text" class="col-form-label">Logo:</label>
+                            <label for="message-text" class="col-form-label">Logo</label>
                             <div class="row">
                                 <div class="col-4" id="edit-module-img-container">
 
                                 </div>
                                 <div class="col-8">
                                     <input type="file" class="form-control" id="inputLogo" name="module_logo">
-
-                                    <button class="btn btn-warning btn-add-extra-attribute">Add attribute +</button>
-                                    <div class="extra-attribute-field">
-                                    </div>
-
                                 </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="additional-attributes" class="col-form-label">Additional Attributes</label>
+                            <div>
+                                <button class="btn btn-warning btn-add-extra-attribute">Add attribute +</button>
+                                <div class="extra-attribute-field">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">Experts</label>
+                            <div class="taxon-group-experts-container">
+                                <select name="taxon-group-experts" class="form-control owner-auto-complete" multiple="multiple">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group gbif-species-container">
+                            <label for="recipient-name" class="col-form-label">Parent</label>
+                            <div id="parent-taxon-module-container">
+
+                            </div>
+                        </div>
+                        <div class="form-group gbif-species-container">
+                            <label for="recipient-name" class="col-form-label">GBIF Taxonomy</label>
+                            <div class="taxon-group-experts-container">
+                                <select name="gbif-species" class="form-control" id="edit-module-taxa-autocomplete">
+                                </select>
                             </div>
                         </div>
                 </div>
@@ -563,7 +485,7 @@
                     <button type="button" class="btn btn-secondary"
                             data-dismiss="modal">Close
                     </button>
-                    <button type="submit" class="btn btn-primary btn-submit">
+                    <button type="submit" class="btn btn-success btn-submit">
                         <img class="loading-btn" src="/static/img/small-loading.svg" width="20" style="filter: brightness(104%) contrast(97%); display: none"
                              alt="Loading view">
                         Save
@@ -640,6 +562,91 @@
         </div>
     </div>
 
+    <div class="modal fade" id="editTaxonModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Taxon</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="saveTaxon">
+                        Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/html" id="editTaxonForm">
+        <form action="/api/update-taxon/<%= id %>/<%= taxon_group_id %>/" id="editTaxonForm" enctype="multipart/form-data" method="put">
+        {% csrf_token %}
+        <input type="hidden" name="taxon_id" value="<%= id %>">
+        <input type="hidden" name="next" value="{{ request.build_absolute_uri }}">
+        <input type="hidden" name="taxon_group_id" value="<%= taxon_group_id %>">
+        <div class="form-group">
+            <label for="scientific_name">Scientific Name</label>
+            <input type="text"
+                   class="form-control mb-2 mr-sm-2 ud-item"
+                   id="scientific_name" name="scientific_name"
+                   value="<%= scientific_name %>">
+        </div>
+        <div class="form-group">
+            <label for="canonical_name">Canonical Name</label>
+            <input type="text"
+                   class="form-control mb-2 mr-sm-2 ud-item"
+                   id="canonical_name" name="canonical_name"
+                   value="<%= canonical_name %>">
+        </div>
+        <div class="form-group">
+            <label for="rank">Rank</label>
+            <select id="rank-options" class="form-control"
+                    name="rank">
+                {% for rank in all_ranks %}
+                    <option value="{{ rank }}">{{ rank }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="conservation_status">Conservation Status</label>
+            <select id="cons-status-options" class="form-control"
+                    name="conservation_status">
+                {% for status in all_cons_status %}
+                    <option value="{{ status.value }}">{{ status.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="origin">Origin</label>
+            <select id="origin-options"
+                    class="form-control"
+                    name="origin">
+                {% for origin in all_origins %}
+                    <option value="{{ origin.value }}">{{ origin.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="endemism">Endemism</label>
+            <select id="endemism-options" class="form-control"
+                    name="endemism">
+                {% for endemism in all_endemism %}
+                    <option value="{{ endemism }}">{{ endemism }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        </form>
+    </script>
+
 {% endblock %}
 
 {% block foot %}
@@ -666,14 +673,14 @@
         }
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/underscore@1.13.6/underscore-umd-min.js"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/helpers.js" %}"></script>
-    <script src="{% static "js/non_requirejs/taxa_management.js" %}"></script>
-
-    <script>
-
-    </script>
+    <script src="{% static "js/non_requirejs/multi_author_select.js" %}"></script>
+    <script type="module" src="{% static "js/taxa_management/taxa_management.js" %}"></script>
+    <script src="{% static "js/non_requirejs/tag_select.js" %}"></script>
 {% endblock %}

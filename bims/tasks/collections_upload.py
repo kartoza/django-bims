@@ -33,35 +33,50 @@ def collections_upload(session_id):
     upload_session.progress = 'Checking header row'
     upload_session.save()
 
-    def check_header(_csv_file):
-        reader = csv.DictReader(_csv_file)
-        headers = reader.fieldnames
-        if (
-            (not all(header in headers for header in FILE_HEADERS)) or
-            (not any(header in headers for header in FILE_HEADERS_USER_SITE_CODE))
-        ):
-            error_message = (
-                'Header row does not follow the correct format'
-            )
-            upload_session.progress = error_message
-            upload_session.error_file = (
-                upload_session.process_file
-            )
-            upload_session.processed = True
-            upload_session.save()
-            return False
+    def clean_header(header):
+        return header.replace('\ufeff', '').strip()
+
+    def check_and_clean_headers(_csv_file_path):
+        with open(_csv_file_path, mode='r', newline='', encoding='utf-8') as file:
+            lines = file.readlines()
+
+            if lines:
+                original_headers = lines[0].strip().split(',')
+                cleaned_headers = [clean_header(header) for header in original_headers]
+
+                cleaned_header_row = ','.join(cleaned_headers) + '\n'
+                if not all(header in cleaned_headers for header in FILE_HEADERS) or \
+                        not any(header in cleaned_headers for header in FILE_HEADERS_USER_SITE_CODE):
+                    error_message = (
+                        'Header row does not follow the correct format'
+                    )
+                    upload_session.progress = error_message
+                    upload_session.error_file = (
+                        upload_session.process_file
+                    )
+                    upload_session.processed = True
+                    upload_session.save()
+                    return False
+            else:
+                error_message = (
+                    'File empty'
+                )
+                upload_session.progress = error_message
+                upload_session.error_file = (
+                    upload_session.process_file
+                )
+                upload_session.processed = True
+                upload_session.save()
+                return False
+
+        with open(_csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+            file.write(cleaned_header_row)
+            file.writelines(lines[1:])
+
         return True
 
-    try:
-        with open(upload_session.process_file.path) as csv_file:
-            checked = check_header(csv_file)
-    except UnicodeDecodeError:
-        with open(
-            upload_session.process_file.path,
-            encoding='ISO-8859-1'
-        ) as csv_file:
-            checked = check_header(csv_file)
-
+    checked = check_and_clean_headers(
+        upload_session.process_file.path)
     if not checked:
         return
 

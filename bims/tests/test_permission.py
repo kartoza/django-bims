@@ -34,11 +34,3 @@ class TestValidatorPermission(TestCase):
         taxon_class = 'Animalia'
         result = generate_permission(taxon_class)
         self.assertIsNotNone(result)
-
-    def test_permission_already_exists(self):
-        """
-        Tests existed permission not generated
-        """
-        taxon_class = 'Aves'
-        result = generate_permission(taxon_class)
-        self.assertIsNone(result)

@@ -1,4 +1,5 @@
 from django.contrib.gis.db import models
+from django.contrib.sites.models import Site
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from bims.models.location_context_group import LocationContextGroup
@@ -34,6 +35,14 @@ class LocationContextFilterGroupOrder(models.Model):
         default=False,
         help_text='Enable autocomplete for the filter. '
                   'Useful when dealing with large datasets in the location context.'
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Associated Site",
+        help_text="The site this LocationContextFilterGroupOrder is associated with."
     )
 
     @property

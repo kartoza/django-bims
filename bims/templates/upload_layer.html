@@ -1,0 +1,162 @@
+{% extends 'main_base.html' %}
+{% load static %}
+
+{% block subtitle %}
+    Upload {{ title }}
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <style>
+        #log-container {
+            background-color: black !important;
+            color: white !important;
+            font-size: 10pt;
+        }
+        body {
+            background-image: none;
+        }
+        #boundary-map {
+            width: 100%;
+            max-height: 500px;
+            height: 300px;
+            padding-bottom: 15px;
+        }
+    </style>
+
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="body-form container">
+
+
+            <div class="dashboard-title">
+                <h2>
+                    Upload {{ title }}
+                    <div class="upload-form-close dashboard-close-button">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </div>
+                </h2>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.extra_tags == 'layer_upload' %}
+                        <div class="alert alert-{% if 'success' in message.tags %}success{% else %}danger{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <div class="modal-body">
+            <div class="alert alert-warning alert-block" style="margin-bottom: 20px; padding: 15px; padding-bottom: 0">
+                Please review the following requirements before uploading your file:
+                <ul>
+                    <li>The file must have a <code>.json</code> or <code>.geojson</code> extension.</li>
+                    <li>The maximum file size allowed is 5MB.</li>
+                    <li>Ensure the file's coordinate system uses the EPSG:4326 projection.</li>
+                </ul>
+            </div>
+
+            <form action="{{ request.path }}" method="post" id="gbif-harvest-form" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="help-block">
+                    <div class="help-block-space"></div>
+                    <div class="form-group row">
+                        <label for="inputLayerName"
+                               class="col-sm-2 col-form-label">
+                            <b>Name</b>
+                        </label>
+                        <div class="col-sm-10">
+                            <input name="name" class="form-control" type="text" id="layer-name"/>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="inputLayerName"
+                               class="col-sm-2 col-form-label">
+                            <b>File</b>
+                        </label>
+                        <div class="col-sm-10">
+                            <input class="form-control" type="file" name="geojson_file" accept="application/geo+json,application/json" id="layer-file"/>
+
+                            <span class="text-muted" style="font-size: 10pt; position: absolute;">
+                                Currently, only GeoJSON files are supported for upload. Please ensure your file is in GeoJSON format.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="help-block-space"></div>
+
+                    <button class="btn btn-primary" type="submit" id="submit-btn" disabled>Submit</button>
+                </div>
+            </form>
+
+            {# Upload sessions #}
+            {% if upload_session %}
+                <div class="upload-progress-container">
+                    <h5>Current process : </h5>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Module group {{ upload_session.module_group.name }}</h5> <div style="float: right; margin-top: -40px">
+                                {% if upload_session.module_group.logo %}
+                                <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                {% endif %}
+                            </div>
+                            <p>Start time {{ upload_session.start_time }}</p>
+                            <p class="card-text">Status : <span class="progress-text">{% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</span></p>
+                            <div class="log">
+                                <textarea id="log-container" rows="10" style="width: 100%">{{ upload_session.log | safe }}</textarea>
+                            <div>
+                            <button class="btn btn-danger" data-toggle="modal" data-target="#cancelModal" data-id="{{ upload_session.id }}">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Upload sessions #}
+            {% if finished_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Finished harvest sessions : </h5>
+                    {% for upload_session in finished_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title"><a href="{{ upload_session.log_file.url }}" class="btn btn-warning">Download logs</a></h5>
+                                <div style="float: right; margin-top: -40px">
+                                    {% if upload_session.module_group.logo %}
+                                        <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                    {% endif %}
+                                </div>
+                                <p>Started at {{ upload_session.start_time }}</p>
+                                {% if upload_session.canceled %}
+                                    <p style="color:red">Canceled</p>
+                                {% else %}
+                                <p class="card-text">Result : {% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            </div>
+    </div>
+
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/utils/helpers.js' %}"></script>
+    <script type="module" src="{% static "js/upload-layer.js" %}"></script>
+    <script type="module" src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
+
+{% endblock %}

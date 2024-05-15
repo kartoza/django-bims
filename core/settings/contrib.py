@@ -34,24 +34,45 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 
-# Django grappelli need to be added before django.contrib.admin
-INSTALLED_APPS = (
-    'grappelli',
-    'colorfield',
-    'polymorphic',
-    'webpack_loader',
-    'ckeditor_uploader'
-) + INSTALLED_APPS
-
 # Grapelli settings
 GRAPPELLI_ADMIN_TITLE = 'Bims Admin Page'
 
-INSTALLED_APPS += (
-    # AppConfig Hook to fix issue from geonode
+SHARED_APPS = (
+    'grappelli',
+    'django_tenants',
+    'tenants',
+
+    'colorfield',
+    'polymorphic',
+    'webpack_loader',
+    'ckeditor_uploader',
+    'django_admin_inline_paginator',
+    'django_celery_results',
+
+    # Apps bundled with Django
+    'modeltranslation',
+    'dal',
+    'dal_select2',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
+    'django.contrib.staticfiles',
+    'django.contrib.messages',
+    'django.contrib.humanize',
+    'django.contrib.gis',
+    'django.contrib.flatpages',
+
+    # Utility
+    'dj_pagination',
+    'taggit',
+    'treebeard',
+    'django_filters',
+    'mptt',
+
+    'corsheaders',
+
     'core.config_hook',
-    'bims.signals',
-    'allauth',
-    'allauth.account',
     'rolepermissions',
     'rest_framework',
     'rest_framework_gis',
@@ -59,37 +80,88 @@ INSTALLED_APPS += (
     'pipeline',
     'modelsdoc',
     'contactus',
-    # 'django_prometheus',
+
     'crispy_forms',
-    'sass',
     'rangefilter',
     'preferences',
     'sorl.thumbnail',
     'ckeditor',
     'django_json_widget',
-    'django_forms_bootstrap'
+    'django_forms_bootstrap',
+
+    'allauth',
+    'allauth.account',
+    'django.contrib.auth',
+    'django.contrib.admin',
+    # tenant-specific apps
+    'geonode.people',
+    'geonode.base',
+    'geonode.groups',
+    'geonode.documents',
+
+    'invitations',
+    'guardian',
+    'oauth2_provider',
+    'rest_framework.authtoken',
+    'bims',
+    'bims.signals',
+    'sass',
+    'td_biblio',
+    'scripts',
+    'bims_theme',
+    'mobile',
+    'pesticide',
 )
 
-# Wagtail configurations
-INSTALLED_APPS += (
-    'modelcluster',
-    'taggit',
-)
-INSTALLED_APPS = (
-    'wagtail.contrib.forms',
-    'wagtail.contrib.redirects',
-    'wagtail.embeds',
-    'wagtail.sites',
-    'wagtail.users',
-    'wagtail.snippets',
-    'wagtail.documents',
-    'wagtail.images',
-    'wagtail.search',
-    'wagtail.admin',
-    'wagtail.core',
+TENANT_APPS = (
+    'rest_framework',
+    'rest_framework_gis',
+    'allauth',
+    'allauth.account',
+    'django.contrib.auth',
+    'django.contrib.admin',
+    # tenant-specific apps
+    'geonode.people',
+    'geonode.base',
+    'geonode.groups',
+    'geonode.documents',
+
+    'invitations',
+    'guardian',
+    'oauth2_provider',
     'rest_framework.authtoken',
-) + INSTALLED_APPS
-WAGTAIL_SITE_NAME = 'BIMS Wagtail'
+    'bims',
+    'bims.signals',
+    'sass',
+    'td_biblio',
+    'scripts',
+    'bims_theme',
+    'mobile',
+    'pesticide',
+)
+
+TESTING = sys.argv[1:2] == ['test']
+if not TESTING and not on_travis:
+    SHARED_APPS += (
+        'easyaudit',
+    )
+    TENANT_APPS += (
+        'easyaudit',
+    )
+    MIDDLEWARE += (
+        'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
+    )
+
+INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
+
+TENANT_MODEL = "tenants.Client"
+TENANT_DOMAIN_MODEL = "tenants.Domain"
+
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_FORMS = {
+    'signup': 'bims.forms.CustomSignupForm',
+}
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 if os.environ.get('SENTRY_KEY'):
     import sentry_sdk
@@ -99,10 +171,6 @@ if os.environ.get('SENTRY_KEY'):
     )
 
 # workaround to get flatpages picked up in installed apps.
-INSTALLED_APPS += (
-    'django.contrib.flatpages',
-    'django.contrib.sites',
-)
 
 # Set templates
 try:
@@ -179,19 +247,9 @@ STATICFILES_DIRS = [
 ]
 
 MIDDLEWARE += (
-    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'bims.middleware.VisitorTrackingMiddleware',
-    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 )
 
-TESTING = sys.argv[1:2] == ['test']
-if not TESTING and not on_travis:
-    INSTALLED_APPS += (
-        'easyaudit',
-    )
-    MIDDLEWARE += (
-        'easyaudit.middleware.easyaudit.EasyAuditMiddleware',
-    )
 # for middleware in MIDDLEWARE_CLASSES:
 #     if middleware not in MIDDLEWARE:
 #         MIDDLEWARE += (middleware,)
@@ -213,31 +271,6 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 LOGIN_REDIRECT_URL = "/"
 
-AUTH_WITH_EMAIL_ONLY = ast.literal_eval(os.environ.get(
-        'AUTH_WITH_EMAIL_ONLY', 'True'))
-
-if AUTH_WITH_EMAIL_ONLY:
-    ACCOUNT_USERNAME_REQUIRED = False
-    ACCOUNT_FORMS = {
-        'signup': 'bims.forms.CustomSignupForm',
-    }
-    ACCOUNT_AUTHENTICATION_METHOD = 'email'
-else:
-    INSTALLED_APPS += (
-        'allauth.socialaccount',
-        'allauth.socialaccount.providers.google',
-        'allauth.socialaccount.providers.github',
-    )
-
-
-INSTALLED_APPS = ensure_unique_app_labels(INSTALLED_APPS)
-# ROLEPERMISSIONS_MODULE = 'roles.settings.roles'
-
-# Remove pinax notifications from installed apps
-if 'pinax.notifications' in INSTALLED_APPS:
-    INSTALLED_APPS = list(INSTALLED_APPS)
-    INSTALLED_APPS.remove('pinax.notifications')
-    INSTALLED_APPS = tuple(INSTALLED_APPS)
 
 IUCN_API_URL = 'http://apiv3.iucnredlist.org/api/v3'
 
@@ -265,14 +298,15 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'people.Profile',
     'bims.Pageview',
     'bims.Visitor',
-    'bims.Taxonomy',
     'bims.LocationContext',
     'bims.LocationContextGroup',
     'bims.SearchProcess',
     'flatpages.FlatPage',
-    'wagtailcore.ReferenceIndex',
-    'td_biblio.author'
+    'td_biblio.author',
+    'django_celery_results.TaskResult'
 ]
+
+DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True
 
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
@@ -447,10 +481,13 @@ CELERY_TASK_QUEUES += (
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TRACK_STARTED = True
 TASK_TRACK_STARTED = True
+CELERY_IGNORE_RESULT = False
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': 'cache:11211',
+        'KEY_FUNCTION': 'django_tenants.cache.make_key',
+        'REVERSE_KEY_FUNCTION': 'django_tenants.cache.reverse_key',
     }
 }
 
@@ -460,3 +497,7 @@ LOGOUT_URL = '/accounts/logout/'
 
 # CKEDITOR CONFIGURATIONS
 CKEDITOR_UPLOAD_PATH = 'ckeditor/'
+
+
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+CELERY_RESULT_BACKEND = 'django-db'

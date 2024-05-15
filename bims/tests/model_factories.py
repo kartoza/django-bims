@@ -2,6 +2,8 @@
 import factory
 import random
 
+from django.contrib.sites.models import Site
+
 from bims.models.sampling_method import SamplingMethod
 
 from bims.models.chem import Chem, Unit
@@ -45,7 +47,10 @@ from bims.models import (
     SiteImage,
     WaterTemperature,
     WaterTemperatureThreshold,
-    UserBoundary
+    UserBoundary,
+    HarvestSession,
+    TaxonomyUpdateProposal,
+    TaxonGroupTaxonomy
 )
 from sass.models import River
 
@@ -57,9 +62,7 @@ class LocationTypeF(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LocationType
-        django_get_or_create = ('id', )
 
-    id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'Test location type %s' % n)
     description = u'Only for testing'
     allowed_geometry = 'POINT'
@@ -73,9 +76,7 @@ class LocationSiteF(factory.django.DjangoModelFactory):
 
     class Meta:
         model = LocationSite
-        django_get_or_create = ('id', )
 
-    id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: 'Site name %s' % n)
     location_type = factory.SubFactory(LocationTypeF)
     geometry_point = Point(
@@ -256,6 +257,12 @@ class VernacularNameF(factory.django.DjangoModelFactory):
     source = factory.Sequence(lambda n: u'source name %s' % n)
 
 
+class TaxonGroupTaxonomyF(factory.django.DjangoModelFactory):
+
+    class Meta:
+        model = TaxonGroupTaxonomy
+
+
 class TaxonGroupF(factory.django.DjangoModelFactory):
     """
     Taxon group factory
@@ -265,6 +272,18 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
 
     id = factory.Sequence(lambda n: n)
     name = factory.Sequence(lambda n: u'Name %s' % n)
+    site = Site.objects.get_current()
+
+    @factory.post_generation
+    def experts(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for expert in extracted:
+                self.experts.add(expert)
 
     @factory.post_generation
     def taxonomies(self, create, extracted, **kwargs):
@@ -275,7 +294,21 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
         if extracted:
             # A list of groups were passed in, use them
             for taxonomy in extracted:
-                self.taxonomies.add(taxonomy)
+                TaxonGroupTaxonomyF.create(
+                    taxonomy=taxonomy,
+                    taxongroup=self
+                )
+
+
+class TaxonomyUpdateProposalF(TaxonomyF):
+    """
+    Taxonomy update proposal
+    """
+    class Meta:
+        model = TaxonomyUpdateProposal
+
+    taxon_group = factory.SubFactory(TaxonGroupF)
+    original_taxonomy = factory.SubFactory(TaxonomyF)
 
 
 @factory.django.mute_signals(signals.post_save)
@@ -299,6 +332,7 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     taxonomy = factory.SubFactory(TaxonomyF)
     survey = factory.SubFactory(SurveyF)
     validated = True
+    source_site = Site.objects.get_current()
 
 
 class UnitF(factory.django.DjangoModelFactory):
@@ -402,6 +436,15 @@ class SourceReferenceBibliographyF(factory.django.DjangoModelFactory):
 
     source = factory.SubFactory(EntryFactory)
 
+    @factory.post_generation
+    def active_sites(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for active_site in extracted:
+                self.active_sites.add(active_site)
+
 
 class DatabaseRecordF(factory.django.DjangoModelFactory):
     class Meta:
@@ -427,6 +470,15 @@ class SourceReferenceDocumentF(factory.django.DjangoModelFactory):
         model = SourceReferenceDocument
 
     source = factory.SubFactory(DocumentF)
+
+    @factory.post_generation
+    def active_sites(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for active_site in extracted:
+                self.active_sites.add(active_site)
 
 
 class TaxonImageF(factory.django.DjangoModelFactory):
@@ -481,3 +533,26 @@ class UserBoundaryF(factory.django.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: u'name %s' % n)
     geometry = GEOSGeometry('MULTIPOLYGON(((0 0, 4 0, 4 4, 0 4, 0 0), (10 10, 14 10, 14 14, 10 14, 10 10)))')
+
+
+class HarvestSessionF(factory.django.DjangoModelFactory):
+    """
+    Harvest session factory
+    """
+    class Meta:
+        model = HarvestSession
+
+    module_group = factory.SubFactory(TaxonGroupF)
+
+
+class SiteF(factory.django.DjangoModelFactory):
+    """
+    Django Site model factory
+    """
+    class Meta:
+        model = Site
+
+    id = factory.Sequence(lambda n: n + 1000)
+    name = factory.Sequence(lambda n: u'name %s' % n)
+    domain = factory.Sequence(lambda n: u'domain %s' % n)
+

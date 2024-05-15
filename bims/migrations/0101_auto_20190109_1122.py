@@ -62,8 +62,4 @@ class Migration(migrations.Migration):
         ('bims', '0100_auto_20190109_0645'),
     ]
 
-    operations = [
-        migrations.RunPython(
-            add_about_us_flatpage,
-        ),
-    ]
+    operations = []
