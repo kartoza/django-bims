@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 from django.contrib.sites.models import Site
+from preferences import preferences
 
 from bims.models.source_reference import SourceReference
 from dateutil.parser import parse
@@ -624,16 +625,22 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             )
         )
 
+        redirect_url = source_reference_url
+
         # Create a survey
-        abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
-            base_url=reverse('abiotic-form'),
-            survey_id=self.survey.id,
-            next=source_reference_url
-        )
+        if (
+            'river' in self.location_site.ecosystem_type.lower() or
+            preferences.SiteSetting.default_data_source == 'fbis'
+        ):
+            redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
+                base_url=reverse('abiotic-form'),
+                survey_id=self.survey.id,
+                next=source_reference_url
+            )
 
         self.extra_post(request.POST)
 
-        return HttpResponseRedirect(abiotic_url)
+        return HttpResponseRedirect(redirect_url)
 
 
 class ModuleFormView(CollectionFormView):

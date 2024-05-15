@@ -73,4 +73,7 @@ def split(string, separator):
 
 @register.filter
 def percent(value, total):
-    return int(value) * 100 / int(total)
+    try:
+        return int(value) * 100 / int(total)
+    except ZeroDivisionError:
+        return 0

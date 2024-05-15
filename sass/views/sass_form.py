@@ -3,6 +3,8 @@ import time
 import uuid
 from datetime import datetime as libdatetime
 
+from preferences import preferences
+
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from dateutil.parser import parse
 from django.db.models import Case, When, F, Q, signals
@@ -511,14 +513,19 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 identifier=self.session_identifier
             )
         )
+        redirect_url = source_reference_url
 
-        abiotic_url = '{base_url}?survey={survey_id}&next={next}'.format(
-            base_url=reverse('abiotic-form'),
-            survey_id=survey.id,
-            next=source_reference_url
-        )
+        if (
+                'river' in survey.site.ecosystem_type.lower() or
+                preferences.SiteSetting.default_data_source == 'fbis'
+        ):
+            redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
+                base_url=reverse('abiotic-form'),
+                survey_id=survey.id,
+                next=source_reference_url
+            )
 
-        return HttpResponseRedirect(abiotic_url)
+        return HttpResponseRedirect(redirect_url)
 
 
     def get_biotope_form_data(self):
