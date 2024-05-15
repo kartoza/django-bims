@@ -150,8 +150,71 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     self.generateDashboard(data);
                     self.renderMetadataTable(data);
                     self.loadingDashboard.hide();
+                    self.renderCitesTable(data);
                 }
             })
+        },
+        renderCitesTable: function (data) {
+            const tableElement = document.getElementById('citesTable');
+            const tbodyElement = tableElement.querySelector('tbody');
+            const messageElement = document.getElementById('citesTableMessage');
+            const spinnerElement = document.getElementById('cites-spinner');
+            if (!is_logged_in) {
+                spinnerElement.style.display = 'none';
+                messageElement.style.display = 'block';
+                messageElement.textContent = 'Please log in to view this data.';
+                return
+            }
+            tableElement.style.display = 'none';
+            messageElement.style.display = 'none';
+            spinnerElement.style.display = 'block';
+            tbodyElement.innerHTML = '';
+
+            fetch('/api/taxa-cites-status/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfmiddlewaretoken,
+                },
+                body: JSON.stringify({ taxon_name: data['canonical_name'] })
+            })
+            .then(response => response.json())
+            .then(data => {
+                spinnerElement.style.display = 'none';
+                if (data.error) {
+                    messageElement.textContent = data.error;
+                    tableElement.style.display = 'none';
+                    messageElement.style.display = 'block';
+                } else {
+                    if (data.cites_listing_info && data.cites_listing_info.length > 0) {
+                        data.cites_listing_info.forEach(item => {
+                            const row = document.createElement('tr');
+                            const appendixCell = document.createElement('td');
+                            appendixCell.textContent = item.appendix;
+                            const annotationCell = document.createElement('td');
+                            annotationCell.textContent = item.annotation;
+                            const effectiveDateCell = document.createElement('td');
+                            effectiveDateCell.textContent = new Date(item.effective_at).toLocaleDateString();
+
+                            row.appendChild(appendixCell);
+                            row.appendChild(annotationCell);
+                            row.appendChild(effectiveDateCell);
+                            tbodyElement.appendChild(row);
+                        });
+                        tableElement.style.display = 'table';
+                    } else {
+                        messageElement.textContent = 'No CITES listing information available.';
+                        tableElement.style.display = 'none';
+                        messageElement.style.display = 'block';
+                    }
+                }
+            })
+            .catch(error => {
+                spinnerElement.style.display = 'none';
+                messageElement.textContent = `An error occurred: ${error.message}`;
+                tableElement.style.display = 'none';
+                messageElement.style.display = 'block';
+            });
         },
         displayTaxonomyRank: function (taxonomy_rank) {
             let taxononomyRankList = _.template($('#taxon-detail-table').html());

@@ -140,3 +140,34 @@
 .progress-bar-download-request{
     background-color: var(--main-accent-color);
 }
+
+.taxon-cites-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.taxon-cites-container table, .taxon-cites-container th, .taxon-cites-container td {
+    border: 1px solid var(--main-accent-color);
+}
+.taxon-cites-container th, .taxon-cites-container td {
+    padding: 10px;
+    text-align: left;
+}
+
+.cites-spinner {
+    display: block;
+    margin: 20px auto;
+    width: 50px;
+    height: 50px;
+    border: 5px solid lightgray;
+    border-top: 5px solid var(--main-accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+#citesTableMessage {
+    padding: 20px;
+    display: none;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

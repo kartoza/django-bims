@@ -281,3 +281,9 @@ class SiteSetting(Preferences):
         default='',
         blank=True
     )
+
+    cites_token_api = models.CharField(
+        max_length=200,
+        blank=True,
+        default=''
+    )
