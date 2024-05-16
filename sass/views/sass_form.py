@@ -3,6 +3,7 @@ import time
 import uuid
 from datetime import datetime as libdatetime
 
+from django_tenants.utils import get_tenant
 from preferences import preferences
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -50,7 +51,9 @@ from sass.models import (
     SassBiotopeFraction
 )
 from bims.views.mixin.session_form.mixin import SessionFormMixin
-from bims.utils.search_process import clear_finished_search_process
+from bims.utils.search_process import (
+    clear_finished_search_process, clear_finished_search_in_background
+)
 
 from bims.enums import TaxonomicGroupCategory
 from bims.models.notification import get_recipients_for_notification, SASS_CREATED
@@ -277,9 +280,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                     site_visit_taxon.end_embargo_date = libdatetime.strptime(
                         end_embargo_date, '%d/%m/%Y'
                     )
-
-                if created:
-                    clear_finished_search_process()
 
                 site_visit_taxon.save()
 
@@ -524,6 +524,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 survey_id=survey.id,
                 next=source_reference_url
             )
+
+        clear_finished_search_in_background(get_tenant(request))
 
         return HttpResponseRedirect(redirect_url)
 
@@ -872,4 +874,7 @@ class SassDeleteView(UserPassesTestMixin, View):
         redirect_url = '/sass/dashboard/{0}/?siteId={0}'.format(
             site_visit.location_site.id
         )
+
+        clear_finished_search_in_background(get_tenant(request))
+
         return HttpResponseRedirect(redirect_url)

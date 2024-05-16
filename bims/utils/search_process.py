@@ -1,8 +1,12 @@
 import json
 import hashlib
 import os
+
 from django.conf import settings
+from django_tenants.utils import get_tenant_model, schema_context
+
 from bims.models.search_process import SearchProcess
+from tenants.models import Client
 
 
 def get_or_create_search_process(
@@ -114,5 +118,19 @@ def create_search_process_file(data, search_process,
     return search_process.file_path
 
 
-def clear_finished_search_process():
+def clear_finished_search_process(tenant_id: int = None):
+    if tenant_id:
+        tenant = get_tenant_model().objects.get(id=tenant_id)
+        with schema_context(tenant.schema_name):
+            SearchProcess.objects.filter(finished=True).delete()
+            return
     SearchProcess.objects.filter(finished=True).delete()
+
+
+def clear_finished_search_in_background(tenant: Client):
+    import threading
+    background_thread = threading.Thread(
+        target=clear_finished_search_process,
+        args=(tenant.id,)
+    )
+    background_thread.start()

@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 from django.contrib.sites.models import Site
+from django_tenants.utils import get_tenant
 from preferences import preferences
 
 from bims.models.source_reference import SourceReference
@@ -46,6 +47,7 @@ from bims.serializers.abundance_type import AbundanceTypeSerializer
 from bims.serializers.sampling_effort_measure import (
     SamplingEffortMeasureSerializer
 )
+from bims.utils.search_process import clear_finished_search_in_background
 
 logger = logging.getLogger('bims')
 
@@ -639,6 +641,8 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             )
 
         self.extra_post(request.POST)
+
+        clear_finished_search_in_background(get_tenant(request))
 
         return HttpResponseRedirect(redirect_url)
 
