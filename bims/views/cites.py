@@ -11,10 +11,14 @@ from bims.utils.cache import cache_page_with_tag
 class TaxonNameSerializer(serializers.Serializer):
     taxon_name = serializers.CharField(max_length=100)
 
+
+CITES_CACHE_KEY = 'CITES_API_CACHE'
+
+
 class TaxaCitesStatusAPIView(LoginRequiredMixin, APIView):
 
     @method_decorator(
-        cache_page_with_tag(60 * 60 * 24, 'CITES_API', key_param='taxon_name'),
+        cache_page_with_tag(60 * 60 * 24, CITES_CACHE_KEY, key_param='taxon_name'),
         name='dispatch')
     def post(self, request):
         serializer = TaxonNameSerializer(data=request.data)
@@ -52,6 +56,7 @@ class TaxaCitesStatusAPIView(LoginRequiredMixin, APIView):
             ]
 
             response_data = {
+                'taxon_concept_id': taxon_concept_id,
                 'taxon_name': taxon_concept.get('full_name'),
                 'cites_listing': taxon_concept.get('cites_listing'),
                 'cites_legislation': cites_legislation,
