@@ -159,6 +159,8 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
             const tbodyElement = tableElement.querySelector('tbody');
             const messageElement = document.getElementById('citesTableMessage');
             const spinnerElement = document.getElementById('cites-spinner');
+            const citesContainer = document.querySelector('.taxon-cites-container');
+            const speciesPlusLink = document.getElementById('speciesPlusLink');
             if (!is_logged_in) {
                 spinnerElement.style.display = 'none';
                 messageElement.style.display = 'block';
@@ -166,6 +168,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 return
             }
             tableElement.style.display = 'none';
+            speciesPlusLink.style.display = 'none';
             messageElement.style.display = 'none';
             spinnerElement.style.display = 'block';
             tbodyElement.innerHTML = '';
@@ -186,6 +189,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     tableElement.style.display = 'none';
                     messageElement.style.display = 'block';
                 } else {
+                    citesContainer.appendChild(tableElement);
                     if (data.cites_listing_info && data.cites_listing_info.length > 0) {
                         data.cites_listing_info.forEach(item => {
                             const row = document.createElement('tr');
@@ -202,6 +206,18 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                             tbodyElement.appendChild(row);
                         });
                         tableElement.style.display = 'table';
+
+                        let speciesPlusLinkElm = document.createElement('a');
+
+                        speciesPlusLinkElm.href = `https://speciesplus.net/species#/taxon_concepts/${data['taxon_concept_id']}/legal`;
+                        speciesPlusLinkElm.target = '_blank';
+                        speciesPlusLinkElm.textContent = 'Species+ page';
+                        speciesPlusLinkElm.style.textDecoration = 'underline';
+                        speciesPlusLink.style.marginBottom = '5px';
+                        speciesPlusLink.style.marginTop = '5px';
+                        speciesPlusLink.style.marginLeft = '10px';
+                        speciesPlusLink.innerHTML = speciesPlusLinkElm.outerHTML;
+                        speciesPlusLink.style.display = 'block';
                     } else {
                         messageElement.textContent = 'No CITES listing information available.';
                         tableElement.style.display = 'none';

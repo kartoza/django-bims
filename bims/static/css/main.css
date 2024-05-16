@@ -146,7 +146,8 @@
     border-collapse: collapse;
 }
 .taxon-cites-container table, .taxon-cites-container th, .taxon-cites-container td {
-    border: 1px solid var(--main-accent-color);
+    border: 1px solid #d3d4d1;
+    font-size: 10pt;
 }
 .taxon-cites-container th, .taxon-cites-container td {
     padding: 10px;

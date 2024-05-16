@@ -353,5 +353,6 @@ urlpatterns = [
          TestSendEmail.as_view(),
          name='test-email'),
     path('taxa-cites-status/',
-         TaxaCitesStatusAPIView.as_view(), name='taxa-cites-status')
+         TaxaCitesStatusAPIView.as_view(),
+         name='taxa-cites-status')
 ]
