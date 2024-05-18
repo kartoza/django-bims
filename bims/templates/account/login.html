@@ -43,7 +43,18 @@
                         </ul>
                     {% endif %}
 
-                    <h1>{% trans "LOG IN" %}</h1>
+                    {% if custom_theme.login_modal_logo %}
+                            <div class="row modal-logo">
+                                <div class="col-4">
+                                    <img src="{{ MEDIA_URL }}/{{ custom_theme.login_modal_logo }}" width="100%">
+                                </div>
+                                <div class="col-8">
+                                    <h4>{{ custom_theme.login_modal_title }}</h4>
+                                </div>
+                            </div>
+                    {% else %}
+                        <h1>LOG IN</h1>
+                    {% endif %}
 
                     <form class="login" method="POST" action="{% url 'account_login' %}">{% csrf_token %}
                         {{ form.as_p }}

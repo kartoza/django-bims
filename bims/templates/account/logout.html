@@ -35,8 +35,19 @@
             <div class="container">
 
                 <div class="custom-form-container">
-
+                    
+                 {% if custom_theme.login_modal_logo %}
+                        <div class="row modal-logo">
+                            <div class="col-4">
+                                <img src="{{ MEDIA_URL }}/{{ custom_theme.login_modal_logo }}" width="100%">
+                            </div>
+                            <div class="col-8">
+                                <h4>{{ custom_theme.login_modal_title }}</h4>
+                            </div>
+                        </div>
+                {% else %}
                     <h1>{% trans "LOG OUT" %}</h1>
+                {% endif %}
 
                     <p style="font-size:12pt">{% trans 'Are you sure you want to log out?' %}</p>
                     <form class="logout" method="POST" action="{% url 'account_logout' %}">{% csrf_token %}
