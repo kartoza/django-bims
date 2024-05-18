@@ -204,6 +204,19 @@ class CustomTheme(models.Model):
         )
     )
 
+    login_modal_logo = models.ImageField(
+        blank=True,
+        null=True,
+        help_text='Optional logo displayed in the login modal.'
+    )
+
+    login_modal_title = models.CharField(
+        default='Login',
+        blank=True,
+        max_length=100,
+        help_text='Optional title text displayed in the login modal.'
+    )
+
     class Meta:
         ordering = ("date", )
         verbose_name_plural = 'Custom Themes'

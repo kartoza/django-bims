@@ -36,7 +36,18 @@
             <div class="container" style="height: 100%;">
 
                 <div class="custom-form-container" style="margin-top: 40px;">
-                    <h1>{% trans "SIGN UP" %}</h1>
+                    {% if custom_theme.login_modal_logo %}
+                            <div class="row modal-logo">
+                                <div class="col-4">
+                                    <img src="{{ MEDIA_URL }}/{{ custom_theme.login_modal_logo }}" width="100%">
+                                </div>
+                                <div class="col-8">
+                                    <h4>{{ custom_theme.login_modal_title }}</h4>
+                                </div>
+                            </div>
+                    {% else %}
+                        <h1>{% trans "SIGN UP" %}</h1>
+                    {% endif %}
                     <form class="signup" id="signup_form" method="POST" action="{% url 'account_signup' %}">{% csrf_token %}
                         <input type="hidden" name="recaptcha_token" id="recaptcha-token-input" value="">
                         {% if form.non_field_errors %}
