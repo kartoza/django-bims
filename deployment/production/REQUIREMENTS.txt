@@ -1,4 +1,4 @@
-Django==4.2.8
+Django==4.2.13
 psycopg2-binary==2.8.5
 django-braces==1.14.0
 django-model-utils==4.0.0

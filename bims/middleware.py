@@ -3,10 +3,12 @@ import logging
 import warnings
 
 import django
-from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.contrib.sites.models import Site
+from django.shortcuts import redirect
 from django.utils.encoding import smart_str
+
+from preferences import preferences
+
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:
@@ -163,30 +165,25 @@ class VisitorTrackingMiddleware(MiddlewareMixin):
         return response
 
 
-class SetSiteMiddleware:
+class RedirectHomePageMiddleware:
     """
-    Middleware to set the 'site' attribute in the request object based
-    on the domain of the request.
+    Middleware to redirect the homepage to a specified URL based on an environment variable.
 
-    This middleware dynamically assigns a Django Site object to the
-    request based on the domain from which
-    the request is made.
-    If a matching Site object is found in the database for the request's domain, it is used.
-    If no matching Site object is found, the first Site object in the database is used as a default.
+    This middleware checks if the incoming request is for the homepage ('/') and, if so,
+    redirects the request to the URL specified in the 'homepage_redirect_url' in SiteSetting.
+    If homepage_redirect_url variable is not set or is empty, the middleware does nothing.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        host = request.get_host().split(':')[0]  # Remove port if present
-        try:
-            current_site = Site.objects.get(domain=host)
-        except Site.DoesNotExist:
-            current_site = Site.objects.get(id=settings.SITE_ID)
-
-        request.current_site = current_site
-        request.site = current_site
-        settings.SITE_ID = current_site.id
-
         response = self.get_response(request)
+
+        # Check if the request is for the homepage
+        if request.path == '/':
+            # Get the target URL from the environment variable
+            target_url = preferences.SiteSetting.homepage_redirect_url
+            if target_url:
+                return redirect(target_url)
+
         return response
