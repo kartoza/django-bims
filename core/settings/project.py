@@ -99,3 +99,7 @@ WEBPACK_LOADER = {
 }
 
 CITES_TOKEN_API = os.environ.get('CITES_TOKEN_API', '')
+
+MIDDLEWARE += (
+    'bims.middleware.RedirectHomePageMiddleware',
+)

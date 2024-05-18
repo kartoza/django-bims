@@ -287,3 +287,9 @@ class SiteSetting(Preferences):
         blank=True,
         default=''
     )
+
+    homepage_redirect_url = models.CharField(
+        max_length=128,
+        default='',
+        blank=True
+    )
