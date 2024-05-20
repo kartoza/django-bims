@@ -9,7 +9,7 @@ CELERY_BEAT_SCHEDULE = {
         }
     },
     'resume_harvesters': {
-        'task': 'bims.tasks.auto_resume_harvest',
+        'task': 'bims.tasks.auto_resume_harvest_all_schemas',
         'schedule': 300,
         'options': {
             'expires': 14,
