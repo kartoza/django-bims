@@ -131,14 +131,14 @@ def auto_resume_harvest():
     try:
         # Subquery to get the latest harvest session id for each harvester
         latest_sessions_subquery = HarvestSession.objects.filter(
-            harvester=OuterRef('harvester')
-        ).order_by('-id').values('id')[:1]
-
-        # Retrieve the latest harvest session for each harvester
-        harvest_sessions = HarvestSession.objects.filter(
-            id__in=Subquery(latest_sessions_subquery),
+            harvester=OuterRef('harvester'),
             finished=False,
             canceled=False
+        ).order_by('-id').values('id')[:1]
+
+        # Retrieve the latest harvest session for each harvester that meets the conditions
+        harvest_sessions = HarvestSession.objects.filter(
+            id__in=Subquery(latest_sessions_subquery)
         )
 
         harvester_keys_label = 'harvester_keys'
@@ -155,7 +155,7 @@ def auto_resume_harvest():
             # Compare log lines to determine if the session needs to be resumed
             if cached_log_line and last_log_line == cached_log_line:
                 logger.info(f"Resuming harvest session for harvester {session.harvester_id}.")
-                harvest_collections(session.id, True)
+                harvest_collections.delay(session.id, True)
 
             # Update the cache with the current last log line
             set_cache(cache_key, last_log_line)
