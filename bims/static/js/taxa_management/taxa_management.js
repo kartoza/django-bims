@@ -199,34 +199,25 @@ export const taxaManagement = (() => {
                 }
                 $taxaList.html('');
                 $.each(response['results'], function (index, data) {
-                    let name = data['canonical_name'];
-                    if (!name) {
-                        name = data['scientific_name'];
-                    }
+                    let name = data.canonical_name || data.scientific_name;
+                    let scientificNameHTML = `<br/><span style="font-size: 9pt">${data.scientific_name}</span><br/>`;
+                    let commonNameHTML = data.common_name ? ` <span class="badge badge-info">${data.common_name}</span><br/>` : '';
+                    let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
+                                              ` <span class="badge badge-info">Synonym</span>` : '';
+                    let dividerHTML = (data.gbif_key || data.iucn_redlist_id) ?
+                                      '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>' : '';
+                    let gbifHTML = data.gbif_key ?
+                                   ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
+                    let iucnHTML = data.iucn_redlist_id ?
+                                   ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
+                    let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
+
+                    name += scientificNameHTML + commonNameHTML + taxonomicStatusHTML + dividerHTML + gbifHTML + iucnHTML + validatedHTML;
+
                     let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
-                    name += `<br/><span style="font-size: 9pt">${data['scientific_name']}</span><br/>`;
-                    if (data['common_name']) {
-                        name += ` <span class="badge badge-info">${data['common_name']}</span><br/>`
-                    }
-                    if (data['taxonomic_status'] && data['taxonomic_status'].toLowerCase() === 'synonym') {
-                        name += ` <span class="badge badge-info">Synonym</span>`
-                    }
-                    if (data['gbif_key'] || data['iucn_redlist_id']) {
-                        name += '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>';
-                    }
-                    if (data['gbif_key']) {
-                        name += ` <a href="https://www.gbif.org/species/${data['gbif_key']}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
-                    }
-                    if (data['iucn_redlist_id']) {
-                        name += ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data['iucn_redlist_id']}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
-                    }
-                    if (data['gbif_key'] || data['iucn_redlist_id']) {
-                        name += '<br/>';
-                    }
-                    if (!data['validated']) {
-                        name += '<span class="badge badge-secondary">Unvalidated</span></a>';
-                    }
-                    let $rowAction = $('.row-action').clone(true, true);
+
+                    let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
+
                     if ((userCanEditTaxon || isExpert)) {
                         $rowAction.removeClass('row-action');
                         if (!data['validated']) {
@@ -239,6 +230,10 @@ export const taxaManagement = (() => {
                             $rowAction.find('.btn-unvalidated-container').hide();
                         }
                         $rowAction.show();
+                        setTimeout(function () {
+                            $('[data-toggle="tooltip"]').tooltip();
+                            $('[data-toggle="popover"]').popover();
+                        }, 100)
                     }
                     let $row = $(`<tr class="taxa-row" data-id="${data['id']}"></tr>`);
                     $taxaList.append($row);

@@ -17,8 +17,6 @@ export const taxaTable = (() => {
     function init(getTaxaList, _selectedTaxonGroup) {
         selectedTaxonGroup = _selectedTaxonGroup;
 
-        $('[data-toggle="tooltip"]').tooltip();
-        $('[data-toggle="popover"]').popover();
         initSelect2Components();
         handleUrlParameters();
         if (url) {
