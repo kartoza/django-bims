@@ -122,20 +122,23 @@ def harvest_collections(session_id, resume=False):
     connect_bims_signals()
 
 
-@shared_task(name='bims.tasks.auto_resume_harvest', queue='update')
+@shared_task(
+    name='bims.tasks.auto_resume_harvest',
+    queue='update',
+    ignore_result=True)
 def auto_resume_harvest():
     from bims.models.harvest_session import HarvestSession
     try:
         # Subquery to get the latest harvest session id for each harvester
         latest_sessions_subquery = HarvestSession.objects.filter(
-            harvester=OuterRef('harvester')
-        ).order_by('-id').values('id')[:1]
-
-        # Retrieve the latest harvest session for each harvester
-        harvest_sessions = HarvestSession.objects.filter(
-            id__in=Subquery(latest_sessions_subquery),
+            harvester=OuterRef('harvester'),
             finished=False,
             canceled=False
+        ).order_by('-id').values('id')[:1]
+
+        # Retrieve the latest harvest session for each harvester that meets the conditions
+        harvest_sessions = HarvestSession.objects.filter(
+            id__in=Subquery(latest_sessions_subquery)
         )
 
         harvester_keys_label = 'harvester_keys'
@@ -152,7 +155,7 @@ def auto_resume_harvest():
             # Compare log lines to determine if the session needs to be resumed
             if cached_log_line and last_log_line == cached_log_line:
                 logger.info(f"Resuming harvest session for harvester {session.harvester_id}.")
-                harvest_collections(session.id, True)
+                harvest_collections.delay(session.id, True)
 
             # Update the cache with the current last log line
             set_cache(cache_key, last_log_line)
@@ -169,17 +172,54 @@ def auto_resume_harvest():
     except Exception as e:
         logger.error(f"Error in auto_resume_harvest: {str(e)}")
 
+
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def read_last_line(log_file):
-    """Read the last line of the log file."""
+    """Read the last non-empty line of the log file."""
     try:
         if log_file and log_file.path:
             with open(log_file.path, 'rb') as f:
-                f.seek(-2, os.SEEK_END)
-                while f.read(1) != b'\n':
+                f.seek(-1, os.SEEK_END)
+
+                # Handle case where file is empty or has only newlines
+                if f.read(1) == b'\n':
+                    f.seek(-2, os.SEEK_END)
+
+                # Read backwards until we find a non-empty line
+                while f.tell() > 0:
                     f.seek(-2, os.SEEK_CUR)
-                last_line = f.readline().decode()
-                return last_line.strip()
+                    while f.read(1) != b'\n' and f.tell() > 1:
+                        f.seek(-2, os.SEEK_CUR)
+
+                    last_line = f.readline().decode().strip()
+
+                    if last_line:  # Return if the line is not empty
+                        return last_line
+
+                    f.seek(-2, os.SEEK_CUR)  # Move back before the current line
+
+                # If reached the beginning of the file
+                f.seek(0)
+                first_line = f.readline().decode().strip()
+                return first_line if first_line else ''
         return ''
     except Exception as e:
         logger.error(f"Error reading last line of log file: {str(e)}")
         return ''
+
+@shared_task(
+    name='bims.tasks.auto_resume_harvest_all_schemas',
+    queue='update',
+    ignore_result=True
+)
+def auto_resume_harvest_all_schemas():
+    from django_tenants.utils import get_tenant_model, tenant_context
+
+    for tenant in get_tenant_model().objects.all():
+        with tenant_context(tenant):
+            auto_resume_harvest()
