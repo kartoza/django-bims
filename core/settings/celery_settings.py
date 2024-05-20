@@ -8,6 +8,15 @@ CELERY_BEAT_SCHEDULE = {
             'queue': 'geocontext'
         }
     },
+    'resume_harvesters': {
+        'task': 'bims.tasks.auto_resume_harvest',
+        'schedule': 300,
+        'options': {
+            'expires': 14,
+            'retry': False,
+            'queue': 'update'
+        }
+    },
 }
 
 CELERY_TIMEZONE = 'UTC'

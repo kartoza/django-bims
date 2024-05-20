@@ -1,4 +1,5 @@
 import json
+from logging.handlers import RotatingFileHandler
 
 import requests
 import logging
@@ -77,10 +78,33 @@ def build_api_url(taxonomy_gbif_key, offset, base_country_codes, boundary_str=''
     )
 
 
+def setup_logger(log_file_path, max_bytes=10 ** 6, backup_count=10):
+    """
+    Set up the logger with a rotating file handler.
+    """
+    # Create a specific logger
+    logger = logging.getLogger('harvest_logger')
+    logger.setLevel(logging.INFO)
+
+    # Clear existing handlers
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    handler = RotatingFileHandler(log_file_path, maxBytes=max_bytes, backupCount=backup_count)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    logger.addHandler(handler)
+    return logger
+
+
 def log_to_file_or_logger(log_file_path, message, is_error=False):
     """
     Log messages to either a file or the logger.
     """
+    logger = logging.getLogger('harvest_logger')
+    if not logger.handlers:
+        setup_logger(log_file_path)
     if log_file_path:
         with open(log_file_path, 'a') as log_file:
             log_file.write('{}'.format(message))
@@ -308,6 +332,9 @@ def import_gbif_occurrences(
     site_boundary = preferences.SiteSetting.site_boundary
     extracted_polygons = []
     area = area_index
+
+    if log_file_path:
+        setup_logger(log_file_path)
 
     def fetch_and_process_gbif_data(
             data_offset,

@@ -1,6 +1,15 @@
 # coding=utf-8
+import os
+
 from celery import shared_task
 import re
+import logging
+
+from django.db.models import Max, Subquery, OuterRef
+
+from bims.cache import get_cache, set_cache, delete_cache
+
+logger = logging.getLogger(__name__)
 
 
 def find_last_index(pattern_str, filepath) -> int:
@@ -111,3 +120,66 @@ def harvest_collections(session_id, resume=False):
     harvest_session.save()
 
     connect_bims_signals()
+
+
+@shared_task(name='bims.tasks.auto_resume_harvest', queue='update')
+def auto_resume_harvest():
+    from bims.models.harvest_session import HarvestSession
+    try:
+        # Subquery to get the latest harvest session id for each harvester
+        latest_sessions_subquery = HarvestSession.objects.filter(
+            harvester=OuterRef('harvester')
+        ).order_by('-id').values('id')[:1]
+
+        # Retrieve the latest harvest session for each harvester
+        harvest_sessions = HarvestSession.objects.filter(
+            id__in=Subquery(latest_sessions_subquery),
+            finished=False,
+            canceled=False
+        )
+
+        harvester_keys_label = 'harvester_keys'
+        new_harvester_keys = []
+
+        for session in harvest_sessions:
+            cache_key = f'harvester_{session.id}_last_log'
+            last_log_line = read_last_line(session.log_file)
+
+            # Retrieve the last known log line from the cache
+            cached_log_line = get_cache(cache_key)
+            new_harvester_keys.append(session.id)
+
+            # Compare log lines to determine if the session needs to be resumed
+            if cached_log_line and last_log_line == cached_log_line:
+                logger.info(f"Resuming harvest session for harvester {session.harvester_id}.")
+                harvest_collections(session.id, True)
+
+            # Update the cache with the current last log line
+            set_cache(cache_key, last_log_line)
+
+        # Remove old caches for harvesters that are no longer active
+        old_harvester_keys = get_cache(harvester_keys_label, [])
+        for old_key in old_harvester_keys:
+            if old_key not in new_harvester_keys:
+                delete_cache(f'harvester_{old_key}_last_log')
+
+        # Update the cache with the current active harvester keys
+        set_cache(harvester_keys_label, new_harvester_keys)
+
+    except Exception as e:
+        logger.error(f"Error in auto_resume_harvest: {str(e)}")
+
+def read_last_line(log_file):
+    """Read the last line of the log file."""
+    try:
+        if log_file and log_file.path:
+            with open(log_file.path, 'rb') as f:
+                f.seek(-2, os.SEEK_END)
+                while f.read(1) != b'\n':
+                    f.seek(-2, os.SEEK_CUR)
+                last_line = f.readline().decode()
+                return last_line.strip()
+        return ''
+    except Exception as e:
+        logger.error(f"Error reading last line of log file: {str(e)}")
+        return ''

@@ -7,7 +7,6 @@ import os
 from collections import deque
 from datetime import datetime
 
-from django.contrib.sites.models import Site
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
@@ -66,8 +65,7 @@ class HarvestCollectionView(
             '-start_time'
         )
         context['taxa_groups'] = TaxonGroup.objects.filter(
-            category='SPECIES_MODULE',
-            site_id=Site.objects.get_current().id
+            category='SPECIES_MODULE'
         ).order_by('display_order')
         return context
 
@@ -108,7 +106,6 @@ class HarvestCollectionView(
             start_time=datetime.now(),
             module_group_id=taxon_group_id,
             category=self.category,
-            source_site_id=Site.objects.get_current().id
         )
         log_file_folder = os.path.join(
             settings.MEDIA_ROOT, 'harvest-session-log'
