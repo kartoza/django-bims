@@ -37,6 +37,39 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
     return proposal
 
 
+def update_taxon_proposal(
+        proposal: TaxonomyUpdateProposal,
+        data=None,
+        iucn_status=None,
+        endemism=None):
+    if data is None:
+        data = {}
+    if not iucn_status:
+        iucn_status = proposal.iucn_status
+    if not endemism:
+        endemism = proposal.endemism
+    TaxonomyUpdateProposal.objects.filter(
+        id=proposal.id
+    ).update(
+        status='pending',
+        rank=data.get('rank', proposal.rank),
+        scientific_name=data.get(
+            'scientific_name', proposal.scientific_name),
+        canonical_name=data.get(
+            'canonical_name', proposal.canonical_name),
+        origin=data.get('origin', proposal.origin),
+        iucn_status=iucn_status,
+        endemism=endemism,
+    )
+
+def is_expert(user, taxon_group):
+    if user.is_superuser:
+        return True
+    return taxon_group.experts.filter(
+        id=user.id
+    ).exists()
+
+
 class UpdateTaxon(UserPassesTestMixin, APIView):
     """
     Provides an API endpoint for updating taxon information. Only superusers or
@@ -72,8 +105,10 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
             TaxonGroup,
             pk=taxon_group_id
         )
+        taxon_edited = self.is_taxon_edited(taxon)
         # Check if taxon is still being edited
-        if self.is_taxon_edited(taxon):
+        if taxon_edited and not is_expert(request.user, taxon_group):
+            # if expert
             return Response({
                 'message': 'Taxon is still being edited'
             }, status=status.HTTP_403_FORBIDDEN)
@@ -99,22 +134,39 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                 if taxon.endemism:
                     endemism = taxon.endemism
 
-            proposal = create_taxon_proposal(
-                taxon=taxon,
-                data=data,
-                taxon_group=taxon_group,
-                iucn_status=iucn_status,
-                endemism=endemism
-            )
-
-            TaxonGroupTaxonomy.objects.filter(
-                taxonomy=taxon,
-                taxongroup=taxon_group
-            ).update(is_validated=False)
+            if not taxon_edited:
+                proposal = create_taxon_proposal(
+                    taxon=taxon,
+                    data=data,
+                    taxon_group=taxon_group,
+                    iucn_status=iucn_status,
+                    endemism=endemism
+                )
+                TaxonGroupTaxonomy.objects.filter(
+                    taxonomy=taxon,
+                    taxongroup=taxon_group
+                ).update(is_validated=False)
+                success_message = (
+                    'Taxonomy update proposal created successfully'
+                )
+            else:
+                proposal = TaxonomyUpdateProposal.objects.filter(
+                    original_taxonomy=taxon,
+                    status='pending'
+                ).first()
+                update_taxon_proposal(
+                    proposal=proposal,
+                    data=data,
+                    iucn_status=iucn_status,
+                    endemism=endemism
+                )
+                success_message = (
+                    'Taxonomy updated successfully'
+                )
 
         return Response(
             {
-                'message': 'Taxonomy update proposal created successfully',
+                'message': success_message,
                 'proposal_id': proposal.pk
             },
             status=status.HTTP_202_ACCEPTED)

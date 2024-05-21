@@ -300,27 +300,40 @@ export const taxaTable = (() => {
             $target = $target.parent();
         }
         let id = $target.data('id');
-        let r = confirm("Are you sure you want to validate this taxon?");
-        if (r === true) {
-            $.ajax({
-                url: approveUrl + id + '/' + selectedTaxonGroup + '/',
-                headers: {"X-CSRFToken": csrfToken},
-                type: 'PUT',
-                data: {
-                    'action': 'approve'
-                },
-                success: function () {
-                    alert('Taxon is successfully validated.');
-                    location.reload()
-                },
-                error: function (e) {
-                    alert('Something is wrong, please try again.');
-                    console.log(e)
-                    // location.reload()
-                }
-            })
-        }
+        $('#confirmationModal').data('id', id).modal('show');
     }
+
+     function updateStatusModal(title, message, isError = false) {
+        $('#statusModalLabel').text(title);
+        $('#statusModalBody').text(message);
+        $('#statusModal').modal('show');
+        setTimeout(function() {
+            $('#statusModal').modal('hide');
+            if (!isError) {
+                location.reload();
+            }
+        }, 1000); // 2 seconds timer
+    }
+
+     $('#confirmButton').click(function() {
+        let id = $('#confirmationModal').data('id');
+        $.ajax({
+            url: approveUrl + id + '/' + selectedTaxonGroup + '/',
+            headers: {"X-CSRFToken": csrfToken},
+            type: 'PUT',
+            data: {
+                'action': 'approve'
+            },
+            success: function () {
+                updateStatusModal('Success', 'Taxon is successfully validated.');
+            },
+            error: function (e) {
+                updateStatusModal('Error', 'Something is wrong, please try again.', true);
+                console.log(e);
+            }
+        });
+        $('#confirmationModal').modal('hide');
+    });
 
     function handleRejectTaxon(e) {
         e.preventDefault();
@@ -350,11 +363,11 @@ export const taxaTable = (() => {
                 'comments': rejectionMessage
             },
             success: function () {
-                alert('Taxon is successfully rejected.');
+                updateStatusModal('Rejected', 'Taxon is successfully rejected.');
                 location.reload()
             },
             error: function () {
-                alert('Something is wrong, please try again.');
+                updateStatusModal('Error', 'Something is wrong, please try again.', true);
                 location.reload()
             }
         })

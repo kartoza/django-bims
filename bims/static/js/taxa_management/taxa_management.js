@@ -117,31 +117,58 @@ export const taxaManagement = (() => {
         })
     }
 
-    const onEditTaxonFormChanged = (elm, value = '') => {
-        elm.on('change', function (e) {
+    const onEditTaxonFormChanged = (elm, event='change') => {
+        elm.on(event, function (e) {
             $saveTaxonBtn.attr('disabled', false);
         })
     }
 
+    const getValuesAfterArrow = (obj) => {
+        let results = {};
+
+        // Helper function to check each value
+        function checkValue(key, value) {
+            if (typeof value === 'string') {
+                const parts = value.split('→');
+                if (parts.length > 1) {
+                    results[key] = parts[1].trim();
+                } else {
+                    results[key] = value
+                }
+            } else {
+                results[key] = value;
+            }
+        }
+
+        // Loop through each key-value pair in the object
+        for (const key in obj) {
+            checkValue(key, obj[key]);
+        }
+
+        return results;
+    }
+
+
     const editTaxonClicked = (data) => {
         const template = _.template($('#editTaxonForm').html());
         data['taxon_group_id'] = selectedTaxonGroup;
-        const form = template(data);
+        const taxonData = getValuesAfterArrow(data);
+        const form = template(taxonData);
         const modal = $('#editTaxonModal');
 
         modal.find('.modal-body').html(form);
 
-        modal.find('#rank-options').val(data['rank'])
-        modal.find('#cons-status-options').val(data['iucn_status_name'])
-        modal.find('#origin-options').val(data['origin'])
-        modal.find('#endemism-options').val(data['endemism_name'])
+        modal.find('#rank-options').val(taxonData['rank'])
+        modal.find('#cons-status-options').val(taxonData['iucn_status_name'])
+        modal.find('#origin-options').val(taxonData['origin'])
+        modal.find('#endemism-options').val(taxonData['endemism_name'])
 
         onEditTaxonFormChanged(modal.find('#rank-options'));
         onEditTaxonFormChanged(modal.find('#cons-status-options'));
         onEditTaxonFormChanged(modal.find('#origin-options'));
         onEditTaxonFormChanged(modal.find('#endemism-options'));
-        onEditTaxonFormChanged(modal.find('#scientific_name'));
-        onEditTaxonFormChanged(modal.find('#canonical_name'));
+        onEditTaxonFormChanged(modal.find('#scientific_name'), 'input');
+        onEditTaxonFormChanged(modal.find('#canonical_name'), 'input');
 
         $saveTaxonBtn.attr('disabled', true);
         modal.modal('show');
@@ -200,6 +227,7 @@ export const taxaManagement = (() => {
                 $taxaList.html('');
                 $.each(response['results'], function (index, data) {
                     let name = data.canonical_name || data.scientific_name;
+                    let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
                     let scientificNameHTML = `<br/><span style="font-size: 9pt">${data.scientific_name}</span><br/>`;
                     let commonNameHTML = data.common_name ? ` <span class="badge badge-info">${data.common_name}</span><br/>` : '';
                     let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
@@ -213,8 +241,6 @@ export const taxaManagement = (() => {
                     let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
                     name += scientificNameHTML + commonNameHTML + taxonomicStatusHTML + dividerHTML + gbifHTML + iucnHTML + validatedHTML;
-
-                    let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
 
                     let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
 
