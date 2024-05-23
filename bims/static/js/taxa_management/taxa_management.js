@@ -342,6 +342,12 @@ export const taxaManagement = (() => {
                 }
             }
         )
+
+        $("#add-taxon-input").on("keydown", function(event) {
+            if(event.which === 13) {
+                $('#find-taxon-button').click();
+            }
+        });
     }
 
     return {

@@ -57,5 +57,5 @@ class LocationContextFilterGroupOrder(models.Model):
 @receiver(post_save, sender=LocationContextGroup)
 @receiver(post_save, sender=LocationContextFilter)
 def location_context_post_save_handler(**kwargs):
-    from bims.tasks.location_context import generate_spatial_scale_filter
-    generate_spatial_scale_filter.delay()
+    from bims.cache import set_cache, UPDATE_FILTERS_CACHE
+    set_cache(UPDATE_FILTERS_CACHE, True)

@@ -138,10 +138,15 @@ def generate_filters(tenant_id=None):
 )
 def generate_filters_in_all_schemas():
     from django_tenants.utils import get_tenant_model, tenant_context
+    from bims.cache import get_cache, set_cache, UPDATE_FILTERS_CACHE
 
     for tenant in get_tenant_model().objects.exclude(schema_name='public'):
         with tenant_context(tenant):
-            generate_filters.delay(tenant.id)
+            should_update_filters = get_cache(
+                UPDATE_FILTERS_CACHE, False)
+            if should_update_filters:
+                generate_filters.delay(tenant.id)
+                set_cache(UPDATE_FILTERS_CACHE, False)
 
 
 @shared_task(
