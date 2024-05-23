@@ -97,7 +97,7 @@ class UpdateTaxonTest(FastTenantTestCase):
             taxon_group=self.taxon_group,
             status='pending'
         )
-        self.client.login(username='superuser', password='password')
+        self.client.login(username='normal_user', password='password')
 
         url = reverse('update-taxon',
                       kwargs={

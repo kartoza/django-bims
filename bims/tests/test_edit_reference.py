@@ -4,6 +4,7 @@ from django.test import TestCase, Client
 from allauth.utils import get_user_model
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
+from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
 
 from bims.factories import (
     EntryFactory,
@@ -28,6 +29,7 @@ class TestEditReference(FastTenantTestCase):
         """
         Sets up before each test
         """
+        disconnect_bims_signals()
         user = get_user_model().objects.create(
             is_staff=True,
             is_active=True,
@@ -49,6 +51,9 @@ class TestEditReference(FastTenantTestCase):
         self.source_reference = SourceReferenceBibliographyF.create(
             source=entry
         )
+
+    def tearDown(self):
+        connect_bims_signals()
 
     def test_staff_open_edit_reference_page(self):
         """

@@ -3,6 +3,7 @@ from django.core.cache import cache
 from django.db.models.query import QuerySet
 
 LANDING_PAGE_MODULE_SUMMARY_CACHE = 'LANDING_PAGE_MODULE_SUMMARY_CACHE'
+UPDATE_FILTERS_CACHE = 'UPDATE_FILTERS'
 
 
 def instance_cache_key(instance):
