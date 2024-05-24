@@ -1,5 +1,9 @@
 from django.urls import re_path, path
 
+from bims.api_views.geocontext import (
+    IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
+    GetGeocontextLogLinesView
+)
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
 from bims.api_views.reference import DeleteRecordsByReferenceId
 # from rest_framework.documentation import include_docs_urls
@@ -354,5 +358,17 @@ urlpatterns = [
          name='test-email'),
     path('taxa-cites-status/',
          TaxaCitesStatusAPIView.as_view(),
-         name='taxa-cites-status')
+         name='taxa-cites-status'),
+    path('is-harvesting-geocontext/',
+         IsHarvestingGeocontext.as_view(),
+         name='is-harvesting-geocontext'),
+    path('harvest-geocontext/',
+         HarvestGeocontextView.as_view(),
+         name='harvest-geocontext'),
+    path('clear-harvesting-geocontext-cache/',
+         ClearHarvestingGeocontextCache.as_view(),
+         name='clear-harvesting-geocontext-cache'),
+    path('harvesting-geocontext-logs/',
+         GetGeocontextLogLinesView.as_view(),
+         name='get_log_lines'),
 ]

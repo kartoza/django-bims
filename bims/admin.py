@@ -183,6 +183,7 @@ class LocationContextAdmin(admin.ModelAdmin):
 
 
 class LocationSiteAdmin(admin.GeoModelAdmin):
+    change_list_template = 'admin/location_site_changelist.html'
     form = LocationSiteForm
     default_zoom = 5
     default_lat = -30

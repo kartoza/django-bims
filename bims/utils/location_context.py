@@ -1,7 +1,14 @@
+import logging
 import operator
+import os
 from functools import reduce
+
+from django.conf import settings
+from django.db import connection
 from django.db.models import Q
 from django.db.models.fields.related import ForeignObjectRel
+
+from bims.cache import HARVESTING_GEOCONTEXT, set_cache
 from bims.models.spatial_scale import SpatialScale
 from bims.models.spatial_scale_group import SpatialScaleGroup
 from bims.models.location_site import LocationSite, generate_site_code
@@ -115,6 +122,28 @@ def get_location_context_data(
     else:
         location_sites = LocationSite.objects.all()
 
+    tenant = connection.schema_name
+    tenant_name = str(tenant)
+    log_file_name = f'{tenant_name}_get_location_context_data.log'
+    log_file_path = os.path.join(settings.MEDIA_ROOT, log_file_name)
+
+    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+    open(log_file_path, 'w').close()
+
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # Check if the handler is already added to avoid duplicate handlers
+    if not any(isinstance(handler, logging.FileHandler) and handler.baseFilename == log_file_path for handler in
+               logger.handlers):
+        handler = logging.FileHandler(log_file_path)
+        handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    def _log(log_message):
+        logger.info(log_message)
 
     if not group_keys:
         geocontext_setting = GeocontextSetting.objects.first()
@@ -136,11 +165,11 @@ def get_location_context_data(
     i = 1
 
     if num == 0:
-        log('No locations with applied filters were found')
+        _log('No locations with applied filters were found')
         return
 
     for location_site in location_sites:
-        log('Updating %s of %s, %s' % (i, num, location_site.site_code))
+        _log('Updating %s of %s, %s' % (i, num, location_site.site_code))
         i += 1
         all_context = None
         if only_empty:
@@ -155,14 +184,14 @@ def get_location_context_data(
         for group_key in group_keys:
             if (all_context and
                     group_key in all_context):
-                log('Context data already exists for {}'.format(
+                _log('Context data already exists for {}'.format(
                     group_key
                 ))
                 continue
             current_outcome, message = (
                 location_site.add_context_group(group_key))
             success = current_outcome
-            log(str('[{status}] [{site_id}] [{group}] - {message}').format(
+            _log(str('[{status}] [{site_id}] [{group}] - {message}').format(
                 status='SUCCESS' if success else 'FAILED',
                 site_id=location_site.id,
                 message=message,
@@ -177,11 +206,13 @@ def get_location_context_data(
                 )
                 location_site.site_code = site_code
                 location_site.save()
-                log(str('Site code {site_code} '
+                _log(str('Site code {site_code} '
                     'generated for {site_id}').format(
                     site_code=site_code,
                     site_id=location_site.id
                 ))
+
+    set_cache(HARVESTING_GEOCONTEXT, False)
 
 
 def merge_context_group(excluded_group=None, group_list=None):

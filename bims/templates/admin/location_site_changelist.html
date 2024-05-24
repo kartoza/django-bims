@@ -1,0 +1,164 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block object-tools %}
+{{ block.super }}
+<div class="dropdown" id="update-container">
+    <button class="button custom-button" id="update-geo-context" disabled="disabled">Update GeoContext</button>
+    <div class="dropdown-content" id="dropdown-content">
+        <a href="#" id="update-all" class="disabled-link">Update All Records</a>
+        <a href="#" id="update-empty" class="disabled-link">Update Only Empty Records</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+     .custom-button {
+        display: inline-block;
+        height: 30px;
+        width: 200px;
+        margin-left: 10px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.42857143;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: middle;
+        cursor: pointer;
+        background-color: #337ab7;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: #fff;
+        text-decoration: none;
+    }
+    .custom-button:disabled {
+        background-color: #cccccc;
+        border-color: #aaaaaa;
+        cursor: not-allowed;
+    }
+    .custom-button:hover:not(:disabled) {
+        background-color: #286090;
+        border-color: #204d74;
+        text-decoration: none;
+        color: #fff;
+    }
+    .dropdown {
+        right: 170px;
+        position: absolute;
+        top: 90px;
+        display: inline-block;
+    }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+    .dropdown-content a:hover {
+        background-color: #f1f1f1;
+    }
+    .dropdown-content .disabled-link {
+        pointer-events: none;
+        color: #cccccc;
+    }
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+</style>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const updateGeoContextButton = document.getElementById('update-geo-context');
+        const updateContainer = document.getElementById('update-container');
+        const dropdownContent = document.getElementById('dropdown-content');
+        const updateAllLink = document.getElementById('update-all');
+        const updateEmptyLink = document.getElementById('update-empty');
+
+        // Function to check if harvesting is ongoing
+        async function checkHarvestingStatus() {
+            try {
+                const response = await fetch('/api/is-harvesting-geocontext');
+                const data = await response.json();
+                if (data.harvesting) {
+                    updateGeoContextButton.disabled = true;
+                    updateGeoContextButton.textContent = 'Harvesting GeoContext...';
+                } else {
+                    updateGeoContextButton.disabled = false;
+                    var links = document.querySelectorAll('.dropdown-content a');
+                    links.forEach(function(link) {
+                        link.classList.remove('disabled-link');
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking harvesting status:', error);
+            }
+        }
+
+            async function startHarvesting(isAll) {
+            try {
+                const response = await fetch('/api/harvest-geocontext/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({ is_all: isAll }),
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Harvesting started successfully.');
+                    checkHarvestingStatus();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error starting harvesting:', error);
+                alert('An error occurred while starting harvesting.');
+            }
+        }
+
+        checkHarvestingStatus();
+
+        updateContainer.addEventListener('mouseover', function (event) {
+            if (updateGeoContextButton.disabled) {
+                dropdownContent.style.display = 'none';
+            } else {
+                event.preventDefault();
+                dropdownContent.style.display = 'block';
+            }
+        });
+
+        updateContainer.addEventListener('mouseleave', function (event) {
+            if (updateGeoContextButton.disabled) {
+                dropdownContent.style.display = 'none';
+            } else {
+                event.preventDefault();
+                dropdownContent.style.display = 'none';
+            }
+        });
+
+        updateAllLink.addEventListener('click', function (event) {
+            if (!event.target.classList.contains('disabled-link')) {
+                event.preventDefault();
+                startHarvesting(true);
+            }
+        });
+
+        updateEmptyLink.addEventListener('click', function (event) {
+            if (!event.target.classList.contains('disabled-link')) {
+                event.preventDefault();
+                startHarvesting(false);
+            }
+        });
+    });
+</script>
+{% endblock %}
