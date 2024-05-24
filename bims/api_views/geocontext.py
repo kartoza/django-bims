@@ -1,3 +1,8 @@
+import os
+
+from django.conf import settings
+from django.db import connection
+from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from braces.views import SuperuserRequiredMixin
@@ -72,3 +77,28 @@ class ClearHarvestingGeocontextCache(SuperuserRequiredMixin, APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
+
+def get_last_100_lines(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    return lines[-100:]
+
+
+class GetGeocontextLogLinesView(SuperuserRequiredMixin, APIView):
+    def get(self, request, *args, **kwargs):
+        tenant = connection.schema_name
+        tenant_name = str(tenant)
+        log_file_name = f'{tenant_name}_get_location_context_data.log'
+        log_file_path = os.path.join(settings.MEDIA_ROOT, log_file_name)
+
+        if not os.path.exists(log_file_path):
+            return JsonResponse(
+                {'error': 'Log file not found'}, status=404)
+
+        try:
+            last_100_lines = get_last_100_lines(log_file_path)
+            return JsonResponse(
+                {'log': last_100_lines})
+        except Exception as e:
+            return JsonResponse(
+                {'error': str(e)}, status=500)
