@@ -18,7 +18,7 @@
      .custom-button {
         display: inline-block;
         height: 30px;
-        width: 150px;
+        width: 200px;
         margin-left: 10px;
         font-size: 14px;
         font-weight: 400;
@@ -80,8 +80,55 @@
         const updateGeoContextButton = document.getElementById('update-geo-context');
         const updateContainer = document.getElementById('update-container');
         const dropdownContent = document.getElementById('dropdown-content');
+        const updateAllLink = document.getElementById('update-all');
+        const updateEmptyLink = document.getElementById('update-empty');
 
-         updateContainer.addEventListener('mouseover', function (event) {
+        // Function to check if harvesting is ongoing
+        async function checkHarvestingStatus() {
+            try {
+                const response = await fetch('/api/is-harvesting-geocontext');
+                const data = await response.json();
+                if (data.harvesting) {
+                    updateGeoContextButton.disabled = true;
+                    updateGeoContextButton.textContent = 'Harvesting GeoContext...';
+                } else {
+                    updateGeoContextButton.disabled = false;
+                    var links = document.querySelectorAll('.dropdown-content a');
+                    links.forEach(function(link) {
+                        link.classList.remove('disabled-link');
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking harvesting status:', error);
+            }
+        }
+
+            async function startHarvesting(isAll) {
+            try {
+                const response = await fetch('/api/harvest-geocontext/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({ is_all: isAll }),
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Harvesting started successfully.');
+                    checkHarvestingStatus();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error starting harvesting:', error);
+                alert('An error occurred while starting harvesting.');
+            }
+        }
+
+        checkHarvestingStatus();
+
+        updateContainer.addEventListener('mouseover', function (event) {
             if (updateGeoContextButton.disabled) {
                 dropdownContent.style.display = 'none';
             } else {
@@ -90,7 +137,7 @@
             }
         });
 
-         updateContainer.addEventListener('mouseleave', function (event) {
+        updateContainer.addEventListener('mouseleave', function (event) {
             if (updateGeoContextButton.disabled) {
                 dropdownContent.style.display = 'none';
             } else {
@@ -99,29 +146,17 @@
             }
         });
 
-
-        // Simulate enabling the button after some condition is met
-        setTimeout(function () {
-            updateGeoContextButton.disabled = false;
-            var links = document.querySelectorAll('.dropdown-content a');
-            links.forEach(function(link) {
-                link.classList.remove('disabled-link');
-            });
-        }, 2000); // 2 seconds delay for demo purposes
-
-        document.getElementById('update-all').addEventListener('click', function (event) {
+        updateAllLink.addEventListener('click', function (event) {
             if (!event.target.classList.contains('disabled-link')) {
                 event.preventDefault();
-                // Your custom action for "Update All Records" here
-                alert('Update All Records clicked!');
+                startHarvesting(true);
             }
         });
 
-        document.getElementById('update-empty').addEventListener('click', function (event) {
+        updateEmptyLink.addEventListener('click', function (event) {
             if (!event.target.classList.contains('disabled-link')) {
                 event.preventDefault();
-                // Your custom action for "Update Only Empty Records" here
-                alert('Update Only Empty Records clicked!');
+                startHarvesting(false);
             }
         });
     });

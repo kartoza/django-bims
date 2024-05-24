@@ -4,6 +4,8 @@ import logging
 from django.db.models import signals
 
 from celery import shared_task
+
+from bims.cache import set_cache, HARVESTING_GEOCONTEXT
 from bims.utils.logger import log
 
 logger = logging.getLogger(__name__)
@@ -64,7 +66,8 @@ def update_location_context(
         self,
         location_site_id,
         generate_site_code=False,
-        generate_filter=True):
+        generate_filter=True,
+        only_empty=False):
     from bims.models import LocationSite, location_site_post_save_handler
     from bims.utils.location_context import get_location_context_data
     from bims.models.location_context_group import LocationContextGroup
@@ -75,6 +78,21 @@ def update_location_context(
 
     self.update_state(state='STARTED', meta={'process': 'Checking location site'})
 
+    if not location_site_id:
+        self.update_state(
+            state='PROGRESS',
+            meta={'process': 'Updating location context for multiple sites'})
+        try:
+            get_location_context_data(
+                group_keys=group_keys,
+                site_id=None,
+                only_empty=only_empty,
+                should_generate_site_code=generate_site_code
+            )
+        except Exception:
+            set_cache(HARVESTING_GEOCONTEXT, False)
+        return
+
     if isinstance(location_site_id, str):
         self.update_state(
             state='PROGRESS',
@@ -83,7 +101,7 @@ def update_location_context(
             get_location_context_data(
                 group_keys=group_keys,
                 site_id=str(location_site_id),
-                only_empty=False,
+                only_empty=only_empty,
                 should_generate_site_code=generate_site_code
             )
             return
