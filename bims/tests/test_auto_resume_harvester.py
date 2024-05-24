@@ -45,7 +45,7 @@ class AutoResumeHarvestTestCase(TestCase):
     @patch('bims.tasks.harvest_collections.get_cache', side_effect=cache.get)
     @patch('bims.tasks.harvest_collections.set_cache', side_effect=cache.set)
     @patch('bims.tasks.harvest_collections.delete_cache', side_effect=cache.delete)
-    @patch('bims.tasks.harvest_collections.harvest_collections')
+    @patch('bims.tasks.harvest_collections.harvest_collections.delay')
     @patch('bims.tasks.harvest_collections.read_last_line')
     def test_auto_resume_harvest(self, mock_read_last_line, mock_harvest_collections, mock_delete_cache, mock_set_cache, mock_get_cache):
         # Mock read_last_line to return the last line of the log file

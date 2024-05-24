@@ -208,6 +208,9 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
             )
             taxon_group = proposal.taxon_group_under_review
 
+        if not taxon_group:
+            return False
+
         experts = taxon_group.experts.all()
         return user in experts
 
