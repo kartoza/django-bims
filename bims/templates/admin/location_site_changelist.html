@@ -1,0 +1,129 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block object-tools %}
+{{ block.super }}
+<div class="dropdown" id="update-container">
+    <button class="button custom-button" id="update-geo-context" disabled="disabled">Update GeoContext</button>
+    <div class="dropdown-content" id="dropdown-content">
+        <a href="#" id="update-all" class="disabled-link">Update All Records</a>
+        <a href="#" id="update-empty" class="disabled-link">Update Only Empty Records</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+     .custom-button {
+        display: inline-block;
+        height: 30px;
+        width: 150px;
+        margin-left: 10px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.42857143;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: middle;
+        cursor: pointer;
+        background-color: #337ab7;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        color: #fff;
+        text-decoration: none;
+    }
+    .custom-button:disabled {
+        background-color: #cccccc;
+        border-color: #aaaaaa;
+        cursor: not-allowed;
+    }
+    .custom-button:hover:not(:disabled) {
+        background-color: #286090;
+        border-color: #204d74;
+        text-decoration: none;
+        color: #fff;
+    }
+    .dropdown {
+        right: 170px;
+        position: absolute;
+        top: 90px;
+        display: inline-block;
+    }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+    .dropdown-content a:hover {
+        background-color: #f1f1f1;
+    }
+    .dropdown-content .disabled-link {
+        pointer-events: none;
+        color: #cccccc;
+    }
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+</style>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const updateGeoContextButton = document.getElementById('update-geo-context');
+        const updateContainer = document.getElementById('update-container');
+        const dropdownContent = document.getElementById('dropdown-content');
+
+         updateContainer.addEventListener('mouseover', function (event) {
+            if (updateGeoContextButton.disabled) {
+                dropdownContent.style.display = 'none';
+            } else {
+                event.preventDefault();
+                dropdownContent.style.display = 'block';
+            }
+        });
+
+         updateContainer.addEventListener('mouseleave', function (event) {
+            if (updateGeoContextButton.disabled) {
+                dropdownContent.style.display = 'none';
+            } else {
+                event.preventDefault();
+                dropdownContent.style.display = 'none';
+            }
+        });
+
+
+        // Simulate enabling the button after some condition is met
+        setTimeout(function () {
+            updateGeoContextButton.disabled = false;
+            var links = document.querySelectorAll('.dropdown-content a');
+            links.forEach(function(link) {
+                link.classList.remove('disabled-link');
+            });
+        }, 2000); // 2 seconds delay for demo purposes
+
+        document.getElementById('update-all').addEventListener('click', function (event) {
+            if (!event.target.classList.contains('disabled-link')) {
+                event.preventDefault();
+                // Your custom action for "Update All Records" here
+                alert('Update All Records clicked!');
+            }
+        });
+
+        document.getElementById('update-empty').addEventListener('click', function (event) {
+            if (!event.target.classList.contains('disabled-link')) {
+                event.preventDefault();
+                // Your custom action for "Update Only Empty Records" here
+                alert('Update Only Empty Records clicked!');
+            }
+        });
+    });
+</script>
+{% endblock %}
