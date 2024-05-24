@@ -372,7 +372,8 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             scientific_name='Updated Test Name',
             canonical_name='Updated Test Canonical Name',
             original_taxonomy=self.taxonomy,
-            taxon_group=self.taxon_group
+            taxon_group=self.taxon_group,
+            taxon_group_under_review=self.taxon_group
         )
         self.client.login(username='testuser', password='password')
         url = reverse('review-taxon-proposal',
