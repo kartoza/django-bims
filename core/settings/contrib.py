@@ -66,8 +66,6 @@ SHARED_APPS = (
     # Utility
     'dj_pagination',
     'taggit',
-    'treebeard',
-    'django_filters',
     'mptt',
 
     'corsheaders',
