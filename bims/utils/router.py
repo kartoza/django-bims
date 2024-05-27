@@ -42,9 +42,13 @@ def extra_set_tenant_stuff(wrapper_class, tenant):
         database_name = wrapper_class.settings_dict["DATABASE"]
     except Exception:
         return
+    try:
+        connection_schema_name = connections.databases[chosen_db_key]['SCHEMA']
+    except Exception:
+        return
     if (
         database_name == DEFAULT_DB_ALIAS
-        and connections.databases[chosen_db_key]['SCHEMA'] != tenant.schema_name
+        and connection_schema_name != tenant.schema_name
     ):
         try:
             tenant_replica_connection = connections[chosen_db_key]
