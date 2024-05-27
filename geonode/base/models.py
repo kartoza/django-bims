@@ -38,7 +38,6 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 from taggit.models import TagBase, ItemBase
 from taggit.managers import TaggableManager, _TaggableManager
-from treebeard.mp_tree import MP_Node, MP_NodeQuerySet, MP_NodeManager
 
 from geonode.base.enumerations import (
     ALL_LANGUAGES,
@@ -170,26 +169,8 @@ class ResourceBaseManager(PolymorphicManager):
         return super(ResourceBaseManager, self).get_queryset()
 
 
-
-class HierarchicalKeywordQuerySet(MP_NodeQuerySet):
-    """QuerySet to automatically create a root node if `depth` not given."""
-
-    def create(self, **kwargs):
-        if 'depth' not in kwargs:
-            return self.model.add_root(**kwargs)
-        return super(HierarchicalKeywordQuerySet, self).create(**kwargs)
-
-
-class HierarchicalKeywordManager(MP_NodeManager):
-
-    def get_queryset(self):
-        return HierarchicalKeywordQuerySet(self.model).order_by('path')
-
-
-class HierarchicalKeyword(TagBase, MP_Node):
+class HierarchicalKeyword(TagBase):
     node_order_by = ['name']
-
-    objects = HierarchicalKeywordManager()
 
 
 class _HierarchicalTagManager(_TaggableManager):

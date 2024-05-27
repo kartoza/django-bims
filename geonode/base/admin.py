@@ -24,8 +24,6 @@ from django.conf import settings
 from dal import autocomplete
 from taggit.forms import TagField
 
-from treebeard.admin import TreeAdmin
-from treebeard.forms import movenodeform_factory
 from dal_select2_taggit.widgets import TaggitSelect2
 
 from geonode.base.models import (
@@ -107,17 +105,12 @@ class RestrictionCodeTypeAdmin(admin.ModelAdmin):
         return False
 
 
-class HierarchicalKeywordAdmin(TreeAdmin):
-    search_fields = ('name', )
-    form = movenodeform_factory(HierarchicalKeyword)
-
 
 admin.site.register(TopicCategory, TopicCategoryAdmin)
 admin.site.register(Region, RegionAdmin)
 admin.site.register(SpatialRepresentationType, SpatialRepresentationTypeAdmin)
 admin.site.register(RestrictionCodeType, RestrictionCodeTypeAdmin)
 admin.site.register(License, LicenseAdmin)
-admin.site.register(HierarchicalKeyword, HierarchicalKeywordAdmin)
 
 
 class TaggitSelect2Custom(TaggitSelect2):

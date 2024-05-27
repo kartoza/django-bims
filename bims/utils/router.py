@@ -29,26 +29,29 @@ class ReadReplicaTenantMiddleware(TenantMainMiddleware):
         self.setup_url_routing(request)
 
 
+DEFAULT_DB_ALIAS = 'default'
+
+
 def extra_set_tenant_stuff(wrapper_class, tenant):
     if settings.REPLICA_ENV_VAR:
         chosen_db_key = random.choice(
             list(settings.DATABASES.keys())[1:])
     else:
-        chosen_db_key = 'default'
-    try:
-        tenant_replica_connection = connections[chosen_db_key]
-    except Exception:  # noqa
-        return
+        chosen_db_key = DEFAULT_DB_ALIAS
     try:
         database_name = wrapper_class.settings_dict["DATABASE"]
     except Exception:
         return
     if (
-            wrapper_class.settings_dict["DATABASE"] == "default"
-            and tenant_replica_connection.schema_name != tenant.schema_name
+        database_name == DEFAULT_DB_ALIAS
+        and connections.databases[chosen_db_key]['SCHEMA'] != tenant.schema_name
     ):
-        tenant_replica_connection.set_schema(tenant.schema_name)
-        print(f"changing replica schema to {tenant.schema_name}")
+        try:
+            tenant_replica_connection = connections[chosen_db_key]
+            tenant_replica_connection.set_schema(tenant.schema_name)
+            print(f"changing replica schema to {tenant.schema_name}")
+        except Exception:  # noqa
+            return
 
 
 class PrimaryReplicaRouter:
