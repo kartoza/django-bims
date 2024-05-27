@@ -329,7 +329,7 @@
         </div>
     </div>
 
-    <div class="modal fade" tabindex="-1" role="dialog" id="addNewTaxonModal">
+    <div class="modal fade" role="dialog" id="addNewTaxonModal">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -382,9 +382,10 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 30%">Family</th>
-                                    <th scope="col" style="width: 30%">Taxon Name</th>
-                                    <th scope="col" style="width: 30%">Rank</th>
+                                    <th scope="col" style="width: 25%">Family</th>
+                                    <th scope="col" style="width: 25%">Taxon Name</th>
+                                    <th scope="col" style="width: 25%">Author</th>
+                                    <th scope="col" style="width: 25%">Rank</th>
                                     <th scope="col">Action</th>
                                 </tr>
                             </thead>
@@ -393,6 +394,12 @@
                                 <td><input type="text" class="form-control new-taxon-family-name" placeholder="Family">
                                     <input type="hidden" class="new-taxon-family-id"></td>
                                 <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+
+                                    <div>
+                                        <select id="author-auto-complete" name="authorName" class="author-auto-complete form-control" data-add-new-tag="true"></select>
+                                    </div>
+                                </td>
                                 <td>
                                     <select class="form-control new-taxon-rank">
                                         {% for rank in taxon_rank %}

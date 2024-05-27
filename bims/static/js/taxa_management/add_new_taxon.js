@@ -14,14 +14,18 @@ export const addNewTaxon = (() => {
         })
         $newTaxonNameInput.val(capitalizedTaxonName);
         $taxonForm.show();
+        const authorAutoComplete = $('.author-auto-complete');
+        authorAutoComplete.empty();
+        authorAutoComplete.val(null).trigger('change');
     }
 
-    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId = "") {
+    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId = "", authorName = "") {
         let postData = {
             'gbifKey': gbifKey,
             'taxonName': name,
             'rank': rank,
-            'taxonGroupId': selectedTaxonGroup
+            'taxonGroupId': selectedTaxonGroup,
+            'authorName': authorName
         };
         if (familyId) {
             postData['familyId'] = familyId
@@ -144,15 +148,40 @@ export const addNewTaxon = (() => {
 
     function handleAddNewTaxon(event) {
         let $rank = $taxonForm.find('.new-taxon-rank');
+        let $author = $taxonForm.find('.author-auto-complete');
         const familyId = $newTaxonFamilyIdInput.val();
         if (!familyId) {
             alert("Missing family");
             return
         }
-        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, familyId);
+        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, familyId, $author.val());
         $taxonForm.hide();
         $newTaxonFamilyInput.val("")
         $newTaxonFamilyIdInput.val("")
+    }
+
+    function formatAuthor (tag) {
+        if (tag.loading) {
+            return tag.text;
+        }
+        let $container = $(
+            "<div class='select2-result-repository clearfix'>" +
+            "<div class='select2-result-repository__meta'>" +
+            "<div class='select2-result-repository__title'></div>" +
+            "</div>" +
+            "</div>"
+        );
+        if (tag.newTag) {
+            $container.find(".select2-result-repository__title").text(`Add new author : ${tag.text}`);
+        } else {
+            $container.find(".select2-result-repository__title").text(tag.name);
+        }
+        return $container;
+    }
+
+    function formatAuthorSelection (tag) {
+        const tagName = tag.text || tag.name;
+        return $(`<span class="tag_result" data-tag-id="${tagName}">${tagName}</span>`);
     }
 
     function init(_selectedTaxonGroup) {
@@ -168,6 +197,64 @@ export const addNewTaxon = (() => {
             const rank = button.data('rank');
             const taxaId = button.data('taxa-id');
             addNewTaxonToObservedList(name, gbifKey, rank, taxaId);
+        });
+        const authorAutoComplete = $('.author-auto-complete');
+        authorAutoComplete.select2({
+            width: 200,
+            ajax: {
+                url: '/user-autocomplete/',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        term: params.term,
+                    };
+                },
+                processResults: function (data, params) {
+                    return {
+                        results: data.map(_data => { return {
+                            'id': _data.id,
+                            'name': _data.first_name + ' ' + _data.last_name
+                        }}),
+                    };
+                },
+                cache: true
+            },
+            allowClear: true,
+            placeholder: 'Search for an Author',
+            minimumInputLength: 3,
+            templateResult: formatAuthor,
+            templateSelection: formatAuthorSelection,
+            tags: true,
+            createTag: function (params) {
+                if (!this.$element.data('add-new-tag')) {
+                    return null
+                }
+                let term = $.trim(params.term);
+
+                if (term === '') {
+                    return null;
+                }
+
+                let exists = false;
+                this.$element.find('option').each(function(){
+                    if ($.trim($(this).text()).toUpperCase() === term.toUpperCase()) {
+                        exists = true;
+                        return false;
+                    }
+                });
+
+                if (exists) {
+                    return null;
+                }
+
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+
         });
     }
 

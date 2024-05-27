@@ -2,6 +2,7 @@
 import ast
 import logging
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.db.models import Count
@@ -24,8 +25,11 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+from bims.utils.user import get_user
 
 logger = logging.getLogger('bims')
+
+User = get_user_model()
 
 
 class TaxonDetail(APIView):
@@ -252,6 +256,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
         taxon_group_id = self.request.POST.get('taxonGroupId', None)
+        author_name = self.request.POST.get('authorName', None)
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         family = None
@@ -282,6 +287,14 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
+
+            if author_name:
+                if author_name.isnumeric():
+                    user = User.objects.get(id=int(author_name))
+                else:
+                    user = get_user(author_name)
+                taxonomy.collector_user = user
+                taxonomy.save()
 
             # Check if it's a new taxonomy
             if not taxonomy.validated:
