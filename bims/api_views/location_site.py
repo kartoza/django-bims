@@ -128,10 +128,19 @@ class LocationSitesSummary(APIView):
                         raw_data = open(search_process.file_path)
                         return Response(json.load(raw_data))
                     except ValueError:
-                        pass
+                        search_process.delete()
+                        return Response({
+                            'status': 'PROGRESS',
+                        })
             else:
                 task = AsyncResult(search_process.process_id)
                 state = task.state
+
+                if state == 'SUCCESS' and not search_process.file_path:
+                    search_process.delete()
+                    return Response({
+                        'status': 'PROGRESS',
+                    })
 
                 if state == 'PENDING':
                     async_result = generate_location_site_summary.delay(

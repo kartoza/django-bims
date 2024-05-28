@@ -45,6 +45,7 @@ class RiskChart {
         this.containerId = containerId;
         this.pesticideRisk = pesticideRisk;
         this.coordinates = coordinates;
+        this.overViewXHRRequest = null;
 
         this.colorMapping = {
             '': '#d3d3d3',
@@ -216,25 +217,40 @@ class RiskChart {
             });
         }
     }
+
     renderOverviewTable(){
-        const url = '/api/location-sites-summary/?siteId='+siteId
-        $.ajax({
-            type: 'GET',
+        const url = '/api/location-sites-summary/?siteId='+siteId;
+        let self = this;
+        if (this.overViewXHRRequest) {
+            this.overViewXHRRequest.abort();
+            this.overViewXHRRequest = null;
+        }
+        this.overViewXHRRequest = $.get({
             url: url,
-            success: function (result) {
+            dataType: 'json',
+            success: function (data) {
+                if (data.hasOwnProperty('status')) {
+                    let status = data['status'].toLowerCase()
+                    if (status === 'processing' || status === 'started' || status === 'progress') {
+                        setTimeout(function () {
+                            self.renderOverviewTable();
+                        }, 1000);
+                        return false;
+                    }
+                }
                 let siteDetailsWrapper = $('#species-ssdd-site-details');
-                const siteDetailsData = result['site_details']
-                siteDetailsWrapper.html('');
+                const siteDetailsData = data['site_details']
                 const container =  _.template($('#site-details-container').html());
-                $.each(siteDetailsData, (key, data) => {
+                siteDetailsWrapper.html('')
+                $.each(siteDetailsData, (key, _data) => {
                     const containerHtml = container({
                         title: key,
-                        detailsData: data
+                        detailsData: _data
                     })
                     siteDetailsWrapper.append(containerHtml);
                 })
             }
-        })
+        });
 
     }
 }
