@@ -70,7 +70,7 @@ services:
 
   db:
     container_name: bims_db
-    image: kartoza/postgis:11.5-2.5
+    image: kartoza/postgis:15-3.3
     shm_size: 1g
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
