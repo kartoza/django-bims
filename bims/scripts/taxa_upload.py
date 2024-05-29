@@ -474,7 +474,7 @@ class TaxaProcessor(object):
                     taxongroup=taxon_group,
                     taxonomy=taxonomy,
                     defaults={
-                        'validated': True
+                        'is_validated': True
                     }
                 )
 

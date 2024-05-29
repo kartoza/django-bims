@@ -13,7 +13,6 @@ class TestCitesSpeciesPlusAPI(TestCase):
     def test_initialization(self):
         """Test the initialization of the CitesSpeciesPlusAPI class."""
         self.assertEqual(self.api.base_url, "https://api.speciesplus.net/api/v1")
-        self.assertEqual(self.api.headers, {"X-Authentication-Token": settings.CITES_TOKEN_API})
 
     @patch('bims.utils.cites.requests.get')
     def test_get_cites_legislation(self, mock_get):

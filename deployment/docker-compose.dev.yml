@@ -60,8 +60,6 @@ services:
       - FLOWER_BASIC_AUTH=${FLOWER_USERNAME:-username}:${FLOWER_PASSWORD:-password}
     ports:
       - "${FLOWER_PORT:-5555}:5555"
-    depends_on:
-      - rabbitmq
 
   cache:
     container_name: bims_dev_cache

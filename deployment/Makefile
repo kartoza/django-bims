@@ -6,7 +6,7 @@ dev:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in dev mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose ${ARGS} up -d dev worker flower
+	@docker compose ${ARGS} up -d dev worker
 
 dev-test:
 	@echo
