@@ -165,7 +165,6 @@ ul.pagination li.current a {
 .taxa-table {
     display: block;
     max-height: 100vh; /* Sets the height to be the same as the viewport */
-    overflow-y: hidden; /* Adds a scrollbar to the table body */
 }
 
 .taxa-table .table {
@@ -209,11 +208,21 @@ ul.pagination li.current a {
     width: 100% !important;
 }
 
-.btn-validated-container .btn{
-    width: 40px;
+.btn-validated-container, .btn-unvalidated-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-validated-container .btn, .btn-unvalidated-container .btn{
     min-width: auto;
     padding-left: 10px;
     padding-right: 10px;
+}
+
+.row-action {
+    max-width: 60px;
 }
 
 .img-container img {
@@ -242,4 +251,9 @@ ul.pagination li.current a {
 }
 .select2-container--default .select2-search--dropdown .select2-search__field {
   height: 30px;
+}
+.dropdown-menu {
+    will-change: transform;
+    position: fixed;
+    z-index: 999999;
 }

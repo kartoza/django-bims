@@ -218,10 +218,10 @@
                                 </th>
                                 <th scope="col">Import date
                                 </th>
-                                <th scope="col" style="width: 120px">Tags
+                                <th scope="col">Tags
                                 </th>
                                 {% if perms.bims.change_taxonomy or is_expert %}
-                                <th scope="col" style="width: 100px">Action</th>
+                                    <th scope="col"></th>
                                 {% endif %}
                             </tr>
                             </thead>
@@ -247,38 +247,44 @@
 
                 {% if perms.bims.change_taxonomy or is_expert %}
                 <div class="row-action" style="display: none">
-                    <td>
-                        <div class="btn-validated-container">
-                            <button class="btn btn-action btn-danger remove-taxon-from-group"
-                                    data-toggle="tooltip" data-placement="bottom" title="Remove from group">
-                                <i class="fa fa-chain-broken" aria-hidden="true"></i>
+                    <div class="btn-validated-container">
+                        <div class="dropdown dropdown-action">
+                           <button class="btn btn-primary dropdown-toggle" type="button" id="validatedDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Actions
                             </button>
-                            <a href="" class="btn btn-action btn-warning edit-taxon"
-                               data-toggle="tooltip" data-placement="bottom" title="Edit">
-                                <i class="fa fa-pencil" aria-hidden="true"></i>
-                            </a>
-                            <button class="btn btn-action btn-info add-tag"
-                                    data-toggle="tooltip" data-placement="bottom" title="Manage tags">
-                                <i class="fa fa-tags" aria-hidden="true"></i>
+                            <div class="dropdown-menu" aria-labelledby="validatedDropdown">
+                                <button class="dropdown-item remove-taxon-from-group" title="Remove from group">
+                                    <i class="fa fa-chain-broken" aria-hidden="true"></i> Remove from group
+                                </button>
+                                <a href="" class="dropdown-item edit-taxon" title="Edit">
+                                    <i class="fa fa-pencil" aria-hidden="true"></i> Edit
+                                </a>
+                                <button class="dropdown-item add-tag" title="Manage tags">
+                                    <i class="fa fa-tags" aria-hidden="true"></i> Manage tags
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn-unvalidated-container">
+                        <div class="dropdown dropdown-action">
+                            <button class="btn btn-primary dropdown-toggle" type="button" id="unvalidatedDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Actions
                             </button>
+                            <div class="dropdown-menu" aria-labelledby="unvalidatedDropdown">
+                                <a href="" class="dropdown-item validate-taxon" title="Approve">
+                                    <i class="fa fa-check-circle-o" aria-hidden="true"></i> Approve
+                                </a>
+                                <a href="" class="dropdown-item reject-taxon" title="Reject">
+                                    <i class="fa fa-times-circle-o" aria-hidden="true"></i> Reject
+                                </a>
+                                <a href="" class="dropdown-item edit-taxon" title="Edit">
+                                    <i class="fa fa-pencil" aria-hidden="true"></i> Edit
+                                </a>
+                            </div>
                         </div>
-                        <div class="btn-unvalidated-container">
-                            <a href=""
-                               class="btn btn-action btn-success validate-taxon"
-                               data-toggle="tooltip" data-placement="bottom" title="Approve">
-                                <i class="fa fa-check-circle-o" aria-hidden="true"></i>
-                            </a>
-                            <a href="" class="btn btn-action btn-danger reject-taxon"
-                               data-toggle="tooltip" data-placement="bottom" title="Reject">
-                                <i class="fa fa-times-circle-o" aria-hidden="true"></i>
-                            </a>
-                            <a href="" class="btn btn-action btn-warning edit-taxon"
-                               data-toggle="tooltip" data-placement="bottom" title="Edit">
-                                <i class="fa fa-pencil" aria-hidden="true"></i>
-                            </a>
-                        </div>
-                    </td>
+                    </div>
                 </div>
+
                 {% endif %}
 
             </div>

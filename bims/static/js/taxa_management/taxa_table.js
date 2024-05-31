@@ -4,8 +4,6 @@ export const taxaTable = (() => {
     const filterSelected = {};
     const $clearSearchBtn = $('#clear-search-button');
     const $searchBtn = $('#search-button');
-    let $validateTaxonBtn = $('.validate-taxon');
-    let $rejectTaxonBtn = $('.reject-taxon');
     let $rejectTaxonConfirmBtn = $('#rejectBtn');
 
     let taxaListCurrentUrl = '';
@@ -26,11 +24,7 @@ export const taxaTable = (() => {
         $('#apply-filters').on('click', handleFilters)
         $clearSearchBtn.on('click', handleClearFilters)
         $searchBtn.on('click', handleSearch)
-        $validateTaxonBtn.on('click', handleValidateTaxon)
-        $rejectTaxonBtn.on('click', handleRejectTaxon)
         $rejectTaxonConfirmBtn.on('click', handleConfirmRejectTaxon)
-
-        $('.remove-taxon-from-group').on('click', handleRemoveTaxonFromGroup)
 
         $('.sort-button').on('click', handleSortButtonClicked)
 
@@ -291,16 +285,8 @@ export const taxaTable = (() => {
         insertParam('taxon', taxonName);
     }
 
-    function handleValidateTaxon(e) {
-        e.preventDefault();
-        let $target = $(e.target);
-        let currentTry = 0;
-        while (!$target.hasClass('taxa-row') && currentTry < 10) {
-            currentTry += 1;
-            $target = $target.parent();
-        }
-        let id = $target.data('id');
-        $('#confirmationModal').data('id', id).modal('show');
+    function handleValidateTaxon(taxaId) {
+        $('#confirmationModal').data('id', taxaId).modal('show');
     }
 
      function updateStatusModal(title, message, isError = false) {
@@ -335,19 +321,11 @@ export const taxaTable = (() => {
         $('#confirmationModal').modal('hide');
     });
 
-    function handleRejectTaxon(e) {
-        e.preventDefault();
+    function handleRejectTaxon(taxaId) {
         const modal = $('#confirmRejectModal');
-        let $target = $(e.target);
-        let currentTry = 0;
-        while (!$target.hasClass('taxa-row') && currentTry < 10) {
-            currentTry += 1;
-            $target = $target.parent();
-        }
-        let id = $target.data('id');
         modal.find('.rejection-message').val('');
         modal.modal('show');
-        modal.data('id', id);
+        modal.data('id', taxaId);
     }
 
     function handleConfirmRejectTaxon(e) {
@@ -390,18 +368,10 @@ export const taxaTable = (() => {
         });
     }
 
-    function handleRemoveTaxonFromGroup(e) {
+    function handleRemoveTaxonFromGroup(taxaId) {
         let r = confirm("Are you sure you want to remove this taxon from the group?");
         if (r === true) {
-            let $target = $(e.target);
-            let maxTry = 10;
-            let currentTry = 0;
-            while (!$target.hasClass('taxa-row') && currentTry < maxTry) {
-                currentTry += 1;
-                $target = $target.parent();
-            }
-            let id = $target.data('id');
-            removeTaxonFromTaxonGroup(id);
+            removeTaxonFromTaxonGroup(taxaId);
         }
     }
 
@@ -415,5 +385,8 @@ export const taxaTable = (() => {
 
     return {
         init,
+        handleRemoveTaxonFromGroup,
+        handleRejectTaxon,
+        handleValidateTaxon
     };
 })();

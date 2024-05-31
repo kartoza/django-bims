@@ -2,6 +2,12 @@ import { taxaSidebar } from './taxa_sidebar.js';
 import { taxaTable } from "./taxa_table.js";
 import { addNewTaxon} from "./add_new_taxon.js";
 
+let taxaData = [];
+let orderField = {
+    'iucn_status_full_name': 'iucn_status__category',
+    'endemism_name': 'endemism__name'
+}
+
 
 export const taxaManagement = (() => {
     const fullUrl = new URL(window.location.href);
@@ -197,12 +203,13 @@ export const taxaManagement = (() => {
 
         if (window.focus) newWindow.focus();
     }
+
     const getTaxaList = (url) => {
         taxaUrlList = url;
         loading.show();
         let urlParams = new URLSearchParams(window.location.search);
         let initialPage = urlParams.get('page') ? parseInt(urlParams.get('page')) : 1;
-        let initialPageSize = urlParams.get('page_size') ? parseInt(urlParams.get('page_size')) : 20;
+        let initialPageSize = urlParams.get('page_size') ? parseInt(urlParams.get('page_size')) : 25;
         let initialSortOrder = urlParams.get('o') ? urlParams.get('o').replace('-', '') : 'canonical_name';
         let initialSortBy = urlParams.get('o') ? (urlParams.get('o').includes('-') ? '-' : '') : '';
         let initialStart = (initialPage - 1) * 20;
@@ -215,31 +222,125 @@ export const taxaManagement = (() => {
             "order": [],
             "initComplete": function(settings, json) {
                 let columnIdx = settings.aoColumns.findIndex(col => col.data === (initialSortOrder ? initialSortOrder : 'canonical_name'));
-                table.order([columnIdx, initialSortBy.includes('-') ? 'desc' : 'asc']).draw();
+                let initialOrder = [columnIdx, initialSortBy.includes('-') ? 'desc' : 'asc'];
+                this.api().order(initialOrder).draw(false);
+            },
+            "drawCallback": function (settings) {
+                $(".dropdown-action").each(function () {
+                    let parent, dropdownMenu, left, top;
+                    $(this).off('show.bs.dropdown hidden.bs.dropdown'); // Prevent multiple bindings
+                    $(this).on('show.bs.dropdown', function () {
+                        parent = $(this).parent();
+                        dropdownMenu = $(this).find('.dropdown-menu');
+                        left = dropdownMenu.offset().left - $(window).scrollLeft();
+                        top = dropdownMenu.offset().top - $(window).scrollLeft();
+                        $('body').append(dropdownMenu.css({position: 'fixed', left: left, top: top}).detach());
+                    });
+                    $(this).on('hidden.bs.dropdown', function () {
+                        $(this).append(dropdownMenu.css({position: 'absolute', left: false, top: false}).detach());
+                    });
+                });
+
+                $('.edit-taxon').off('click').on('click', function(event) {
+                    event.preventDefault();
+                    if (!taxaData) return false;
+                    let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
+                    if (data) {
+                        editTaxonClicked(data);
+                    }
+                });
+
+                $('.add-tag').off('click').on('click', function (event) {
+                    event.preventDefault();
+                    if (!taxaData) return false;
+                    let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
+                    $('#addTagModal').modal({keyboard: false});
+                    $('#addTagModal').find('.save-tag').data('taxonomy-id', data.id);
+                    let tagsString = data.tag_list;
+                    let tagsArray = tagsString.split(',').filter(n => n);
+                    let formattedTags = tagsArray.map(tag => ({id: tag, text: tag, name: tag}));
+                    const tagAutoComplete = $('#taxa-tag-auto-complete');
+                    tagAutoComplete.empty().val(null).trigger('change');
+                    if (tagsArray.length > 0) {
+                        const tagIds = [];
+                        tagsArray.forEach(tag => {
+                            let newOption = new Option(tag, tag, false, false);
+                            tagAutoComplete.append(newOption);
+                            tagIds.push(tag);
+                        });
+                        tagAutoComplete.val(tagIds).trigger('change');
+                    }
+                });
+
+                $('.remove-taxon-from-group').off('click').on('click', function (event) {
+                    taxaTable.handleRemoveTaxonFromGroup($(this).parent().data('id'));
+                });
+
+                $('.reject-taxon').off('click').on('click', function (event) {
+                    event.preventDefault();
+                    taxaTable.handleRejectTaxon($(this).parent().data('id'));
+                });
+
+                $('.validate-taxon').off('click').on('click', function (event) {
+                    event.preventDefault();
+                    taxaTable.handleValidateTaxon($(this).parent().data('id'));
+                });
             },
             "displayStart": initialStart,
-            "ajax": function(data, callback, settings) {
-                let page = urlParams.has('page') && settings.iDraw == 1 ? initialPage : Math.ceil(data.start / data.length) + 1;
+            "ajax": function (data, callback, settings) {
+                let page = urlParams.has('page') && settings.iDraw === 1 ? initialPage : Math.ceil(data.start / data.length) + 1;
                 let pageSize = data.length;
                 let sortBy = urlParams.get('o') && settings.iDraw == 1 ? initialSortOrder : (data.order.length ? data.columns[data.order[0].column].data : 'canonical_name');
-                let sortOrder = urlParams.get('o') && settings.iDraw == 1 ? initialSortBy : (data.order.length && data.order[0].dir === 'desc' ? '-' : '');
+                let sortOrder = urlParams.get('o') && settings.iDraw === 1 ? initialSortBy : (data.order.length && data.order[0].dir === 'desc' ? '-' : '');
                 let order = sortOrder + sortBy;
 
                 var currentUrl = new URL(window.location);
                 currentUrl.searchParams.set('page', page);
                 currentUrl.searchParams.set('page_size', pageSize);
                 currentUrl.searchParams.set('o', order);
-                window.history.pushState({}, '', currentUrl);
+                window.history.pushState({}, '', currentUrl)
+
+                let orderParam = sortOrder + (orderField.hasOwnProperty(sortBy) ? orderField[sortBy] : sortBy);
 
                 $.ajax({
                     url: url,
-                    data: {
-                        o: order,
-                        page: page,
-                        page_size: pageSize,
-                    },
-                    success: function(response) {
+                    data: {o: orderParam, page: page, page_size: pageSize},
+                    success: function (response) {
                         loading.hide();
+                        taxaData = response.results;
+                        $.each(response.results, function (index, data) {
+                            let name = data.canonical_name || data.scientific_name;
+                            let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
+                            let scientificNameHTML = `<br/><span style="font-size: 9pt">${data.scientific_name}</span><br/>`;
+                            let commonNameHTML = data.common_name ? ` <span class="badge badge-info">${data.common_name}</span><br/>` : '';
+                            let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
+                                ` <span class="badge badge-info">Synonym</span>` : '';
+                            let dividerHTML = (data.gbif_key || data.iucn_redlist_id) ?
+                                '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>' : '';
+                            let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
+                            let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
+                            let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
+
+                            data.nameHTML = name + scientificNameHTML + commonNameHTML + taxonomicStatusHTML + dividerHTML + gbifHTML + iucnHTML + validatedHTML;
+
+                            if (userCanEditTaxon || isExpert) {
+                                let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
+                                if (!data['validated']) {
+                                    $rowAction.find('.btn-validated-container').hide();
+                                    if (data['can_be_validated']) {
+                                        $rowAction.find('.btn-unvalidated-container').show();
+                                    }
+                                } else {
+                                    $rowAction.find('.btn-validated-container').show();
+                                    $rowAction.find('.btn-unvalidated-container').hide();
+                                }
+                                $rowAction.find('.dropdown-menu').attr('data-id', data['id']);
+                                $rowAction.show();
+                                data.rowActionHTML = $rowAction.html();
+                            } else {
+                                data.rowActionHTML = '';
+                            }
+                        });
                         callback({
                             draw: data.draw,
                             recordsTotal: response.count,
@@ -250,166 +351,40 @@ export const taxaManagement = (() => {
                 });
             },
             "columns": [
-                { "data": "canonical_name" },
-                { "data": "rank" },
-                { "data": "iucn_status_full_name" },
-                { "data": "origin_name" },
-                { "data": "endemism_name" },
-                { "data": "total_records" },
-                { "data": "import_date" },
-                { "data": "tag_list" },
                 {
-                    "data": null,
-                    "render": function(data, type, row) {
-                        return '<button class="action-btn" data-id="' + row.id + '">Action</button>';
+                    "data": "canonical_name",
+                    "render": function (data, type, row) {
+                        return row.nameHTML;
                     }
+                },
+                {"data": "rank"},
+                {"data": "iucn_status_full_name", "orderData": [2], "orderField": "iucn_status__category"},
+                {"data": "origin_name"},
+                {"data": "endemism_name", "orderData": [4], "orderField": "endemism__name"},
+                {
+                    "data": "total_records",
+                    "render": function (data, type, row) {
+                        let searchUrl = `/map/#search/${row.canonical_name}/taxon=&search=${row.canonical_name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
+                        return `${data} <a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a>`;
+                    }
+                },
+                {"data": "import_date"},
+                {
+                    "data": "tag_list",
+                    "render": function (data) {
+                        return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
+                    }
+                },
+                {
+                    "data": "rowActionHTML",
+                    "sortable": false,
+                    "searchable": false
                 }
             ],
             "pageLength": initialPageSize,
             "pagingType": "simple_numbers",
-            "searching": false,
+            "searching": false
         });
-        // $.get(url).then(
-        //     function (response) {
-        //         loading.hide();
-        //         $('#total-taxa').html(response.count);
-        //         let $taxaList = $('#taxa-list');
-        //         let $pagination = $('.pagination-centered');
-        //         let paginationNext = $('.pagination-next');
-        //         let paginationPrev = $('.pagination-previous');
-        //
-        //         // Get current page by parsing the next url
-        //         let currentPage = 1;
-        //         let taxaCurrentSize = 0;
-        //         if (response['next']) {
-        //             let url = new URL(response['next']);
-        //             let page = url.searchParams.get('page');
-        //             currentPage = page - 1;
-        //             taxaCurrentSize = currentPage * 20;
-        //         }
-        //         if (!response['next'] && response['previous']) {
-        //             let url = new URL(response['previous']);
-        //             currentPage = parseInt(url.searchParams.get('page')) + 1;
-        //             taxaCurrentSize = response['count']
-        //         }
-        //         $taxaList.html('');
-        //         $.each(response['results'], function (index, data) {
-        //             let name = data.canonical_name || data.scientific_name;
-        //             let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
-        //             let scientificNameHTML = `<br/><span style="font-size: 9pt">${data.scientific_name}</span><br/>`;
-        //             let commonNameHTML = data.common_name ? ` <span class="badge badge-info">${data.common_name}</span><br/>` : '';
-        //             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
-        //                                       ` <span class="badge badge-info">Synonym</span>` : '';
-        //             let dividerHTML = (data.gbif_key || data.iucn_redlist_id) ?
-        //                               '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>' : '';
-        //             let gbifHTML = data.gbif_key ?
-        //                            ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
-        //             let iucnHTML = data.iucn_redlist_id ?
-        //                            ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
-        //             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
-        //
-        //             name += scientificNameHTML + commonNameHTML + taxonomicStatusHTML + dividerHTML + gbifHTML + iucnHTML + validatedHTML;
-        //
-        //             let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
-        //
-        //             if ((userCanEditTaxon || isExpert)) {
-        //                 $rowAction.removeClass('row-action');
-        //                 if (!data['validated']) {
-        //                     $rowAction.find('.btn-validated-container').hide();
-        //                     if (data['can_be_validated']) {
-        //                         $rowAction.find('.btn-unvalidated-container').show();
-        //                     }
-        //                 } else {
-        //                     $rowAction.find('.btn-validated-container').show();
-        //                     $rowAction.find('.btn-unvalidated-container').hide();
-        //                 }
-        //                 $rowAction.show();
-        //                 setTimeout(function () {
-        //                     $('[data-toggle="tooltip"]').tooltip();
-        //                     $('[data-toggle="popover"]').popover();
-        //                 }, 100)
-        //             }
-        //             let $row = $(`<tr class="taxa-row" data-id="${data['id']}"></tr>`);
-        //             $taxaList.append($row);
-        //             $row.append(`<td>${name}</td>`);
-        //             $row.append(`<td>${data['rank']}</td>`);
-        //             $row.append(`<td>${data['iucn_status_full_name']}</td>`);
-        //             $row.append(`<td>${data['origin_name']}</td>`);
-        //             $row.append(`<td>${data['endemism_name']}</td>`);
-        //             $row.append(`<td>${data['total_records']}&nbsp;<a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a></td>`);
-        //             $row.append(`<td>${data['import_date']}</td>`);
-        //             $row.append(
-        //                 `<td style="width: 120px;">${data['tag_list'].split(',').map(function (tag) {
-        //                     return `<span class="badge badge-info">${tag}</span>`
-        //                 }).join('')}</td>`
-        //             );
-        //
-        //             if (userCanEditTaxon || isExpert) {
-        //                 let $tdAction = $(`<td style="width: 85px;"></td>`);
-        //                 $row.append($tdAction);
-        //                 $tdAction.append($rowAction);
-        //                 $rowAction.find('.edit-taxon').click((event) => {
-        //                     event.preventDefault();
-        //                     editTaxonClicked(data);
-        //                     return false;
-        //                 });
-        //                 $rowAction.find('.add-tag').click((event) => {
-        //                     $('#addTagModal').modal({
-        //                         keyboard: false
-        //                     });
-        //                     $('#addTagModal').find('.save-tag').data('taxonomy-id', data['id']);
-        //                     let tagsString = data['tag_list'];
-        //                     let tagsArray = tagsString.split(',').filter(n => n);
-        //                     let formattedTags = tagsArray.map(function(tag) {
-        //                         return { id: tag, text: tag, name: tag};
-        //                     });
-        //                     const tagAutoComplete = $('#taxa-tag-auto-complete');
-        //                     tagAutoComplete.empty();
-        //                     tagAutoComplete.val(null).trigger('change');
-        //                     if (tagsArray.length > 0) {
-        //                         const tagIds = []
-        //                         tagsArray.forEach(tag => {
-        //                             let newOption = new Option(
-        //                                 tag, tag, false, false);
-        //                             tagAutoComplete.append(newOption);
-        //                             tagIds.push(tag);
-        //                         });
-        //                         tagAutoComplete.val(tagIds);
-        //                         tagAutoComplete.trigger('change');
-        //                     }
-        //                 });
-        //             }
-        //         });
-        //         if (response['next'] == null && response['previous'] == null) {
-        //             $pagination.hide();
-        //         } else {
-        //             $('#taxa-count').html(response['count']);
-        //             $('#taxa-current-size').html(taxaCurrentSize);
-        //             $('#taxa-current-page').html((currentPage * 20) - 19);
-        //             $pagination.show();
-        //             if (response['next']) {
-        //                 paginationNext.show();
-        //                 paginationNext.off('click');
-        //                 paginationNext.click(() => {
-        //                     const urlParams = new URLSearchParams(new URL(response['next']).search);
-        //                     insertParam('page', urlParams.get('page'), false);
-        //                 })
-        //             } else {
-        //                 paginationNext.hide();
-        //             }
-        //             if (response['previous']) {
-        //                 paginationPrev.show();
-        //                 paginationPrev.off('click');
-        //                 paginationPrev.click(() => {
-        //                     const urlParams = new URLSearchParams(new URL(response['previous']).search);
-        //                     insertParam('page', urlParams.get('page') ? urlParams.get('page') : 1, false);
-        //                 })
-        //             } else {
-        //                 paginationPrev.hide();
-        //             }
-        //         }
-        //     }
-        // )
 
         $("#add-taxon-input").on("keydown", function(event) {
             if(event.which === 13) {
