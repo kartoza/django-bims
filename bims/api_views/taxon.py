@@ -3,6 +3,7 @@ import ast
 import logging
 
 from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import transaction
 from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.db.models import Count
@@ -362,6 +363,10 @@ class TaxaList(LoginRequiredMixin, APIView):
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
+
+        if order == 'endemism_name':
+            order = 'endemism__name'
+
         # Filter by parent
         parent_ids = request.GET.get('parent', '').split(',')
         parent_ids = list(filter(None, parent_ids))
@@ -491,7 +496,6 @@ class TaxaList(LoginRequiredMixin, APIView):
         return self._paginator
 
     def paginate_queryset(self, queryset):
-
         if self.paginator is None:
             return None
         return self.paginator.paginate_queryset(
@@ -505,6 +509,7 @@ class TaxaList(LoginRequiredMixin, APIView):
 
     def get(self, request, *args):
         taxon_list = self.get_taxa_by_parameters(request)
+        self.pagination_class.page_size = request.GET.get('page_size', 20)
         page = self.paginate_queryset(taxon_list)
         if page is not None:
             serializer = self.get_paginated_response(
