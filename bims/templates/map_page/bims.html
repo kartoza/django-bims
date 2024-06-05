@@ -66,7 +66,7 @@
         const is_sass_enabled = {% if preferences.SiteSetting.enable_sass %}true{% else %}false{% endif %};
         const is_water_temperature_enabled = {% if preferences.SiteSetting.enable_water_temperature %}true{% else %}false{% endif %};
         const is_pesticide_dashboard_enabled = {% if preferences.SiteSetting.pesticide_quaternary_data_file %}true{% else %}false{% endif %};
-        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const locationSiteGeoserverLayer = '{{ preferences.SiteSetting.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const emptyWMSSiteParameter = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};

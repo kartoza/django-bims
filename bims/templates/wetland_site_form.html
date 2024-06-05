@@ -17,7 +17,7 @@
         const defaultExtentMap = '{{ preferences.SiteSetting.default_extent_map }}';
         const isFbis = {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}true{% else %}false{% endif %};
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
-        const locationSiteGeoserverLayer = '{{ bims_preferences.geoserver_location_site_layer }}';
+        const locationSiteGeoserverLayer = '{{ preferences.SiteSetting.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
         const locationSiteLat = '{{ location_site_lat }}';
         const locationSiteLong = '{{ location_site_long }}';
