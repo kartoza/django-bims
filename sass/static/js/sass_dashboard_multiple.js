@@ -405,13 +405,13 @@ function renderBiotopeRatingsChart(data) {
     let color = {
         'Stones in current (SIC)': '#1F4E7A',
         'Stones out of current (SOOC)': '#2E76B6',
-        'Aquatic vegetation': '#375822',
-        'Gravel': '#4E7F31',
+        'Bedrock': '#699bd2',
+        'Gravel': '#886a02',
         'Sand': '#BE9001',
-        'Silt/mud/clay': '#bdbe0d',
-        'Bedrock': '#8D2641',
-        'Marginal vegetation in current (MVIC)': '#B77282',
-        'Marginal vegetation out of current (MVOC)': '#18A090'
+        'Silt/mud/clay': '#eabe89',
+        'Aquatic vegetation': '#375822',
+        'Marginal vegetation in current (MVIC)': '#689159',
+        'Marginal vegetation out of current (MVOC)': '#8cbd79',
     };
 
     $.each(siteIds, function (index, siteId) {
