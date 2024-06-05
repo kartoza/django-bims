@@ -293,3 +293,9 @@ class SiteSetting(Preferences):
         default='',
         blank=True
     )
+
+    geoserver_location_site_layer = models.CharField(
+        max_length=128,
+        default='bims:location_site_view',
+        blank=True
+    )
