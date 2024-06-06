@@ -58,6 +58,26 @@ def extra_set_tenant_stuff(wrapper_class, tenant):
             return
 
 
+class CustomTenantMiddleware(TenantMainMiddleware):
+    def process_request(self, request):
+        super().process_request(request)
+        if settings.REPLICA_ENV_VAR:
+            for replica in list(settings.DATABASES.keys())[1:]:
+                self._set_tenant_to_replicas(request, replica)
+
+    def _set_tenant_to_replicas(self, request, alias: str) -> None:
+        """
+        Function in charge of setting the tenant on the
+        read replica alias connection.
+        :param request:
+        :param alias str:
+        :return None:
+        """
+        connection = connections.__getitem__(alias)
+        if connection and hasattr(request, "tenant"):
+            connection.set_tenant(request.tenant)
+
+
 class PrimaryReplicaRouter:
     def db_for_read(self, model, **hints):
         """
