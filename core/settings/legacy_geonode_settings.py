@@ -517,7 +517,7 @@ TEMPLATES = [
 ]
 
 MIDDLEWARE = (
-    'bims.utils.router.CustomTenantMiddleware',
+    'django_tenants.middleware.main.TenantMainMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
