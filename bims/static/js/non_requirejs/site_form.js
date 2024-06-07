@@ -298,8 +298,12 @@ let updateCoordinate = function (zoomToMap = true) {
 
     moveMarkerOnTheMap(latitude, longitude, zoomToMap);
     let radius = 0.5;
+    let url =  '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius;
+    if (ecosystemType) {
+        url += '&ecosystem=' + ecosystemType;
+    }
     $.ajax({
-        url: '/api/get-site-by-coord/?lon=' + longitude + '&lat=' + latitude + '&radius=' + radius,
+        url: url,
         success: function (all_data) {
             if (all_data.length > 0) {
                 let nearestSite = null;

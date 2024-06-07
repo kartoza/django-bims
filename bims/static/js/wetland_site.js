@@ -107,9 +107,52 @@ const getFeature = (layerSource, coordinates, renderResult) => {
 let mapClicked = (coordinate) => {
   if (!wmsLayer) return;
   currentCoordinate = coordinate;
+  let tableBody = $('#closest-site-table-body');
+
+  document.getElementById('update-coordinate').disabled = true;
+  $('#closest-sites-container').show();
+  tableBody.html('');
 
   let _coordinates = ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326');
   moveMarkerOnTheMap(_coordinates[1], _coordinates[0], false);
+
+  let radius = 0.5;
+  let url =  '/api/get-site-by-coord/?lon=' + _coordinates[0] + '&lat=' + _coordinates[1] + '&radius=' + radius;
+  if (ecosystemType) {
+      url += '&ecosystem=' + ecosystemType;
+  }
+  $.ajax({
+      url: url,
+      success: function (all_data) {
+          if (all_data.length > 0) {
+              let nearestSite = null;
+              if (siteId) {
+                  let site_id = parseInt(siteId);
+                  $.each(all_data, function (index, site_data) {
+                  if (site_data['id'] !== site_id) {
+                          nearestSite = site_data;
+                          return false;
+                      }
+                  });
+              } else {
+                  nearestSite = all_data[0];
+              }
+
+              if (nearestSite) {
+                  let modal = $("#site-modal");
+                  let nearestSiteName = '';
+                  if (nearestSite['site_code']) {
+                      nearestSiteName = nearestSite['site_code'];
+                  } else {
+                      nearestSiteName = nearestSite['name'];
+                  }
+                  modal.find('#nearest-site-name').html(nearestSiteName);
+                  modal.find('#existing-site-button').attr('onClick', 'location.href="/location-site-form/update/?id=' + nearestSite['id'] + '"');
+                  modal.modal('show');
+              }
+          }
+      }
+  });
 
   wetlandSiteCodeButton.attr('disabled', false);
 

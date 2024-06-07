@@ -28,7 +28,7 @@ class Command(BaseCommand):
         query = (
             f'SELECT {schema_name}.bims_locationsite.id AS site_id,'
             f'{schema_name}.bims_locationsite.geometry_point, {schema_name}.bims_locationsite.name, {schema_name}.bims_locationsite.ecosystem_type '
-            f'FROM {schema_name}.bims_locationsite WHERE {schema_name}.bims_locationsite.source_site_id = 1;'
+            f'FROM {schema_name}.bims_locationsite;'
         )
         cursor = connection.cursor()
         cursor.execute('''%s''' % self.create_sql_query(
