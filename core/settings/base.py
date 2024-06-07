@@ -86,7 +86,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-# EXTRA_SET_TENANT_METHOD_PATH = 'bims.utils.router.extra_set_tenant_stuff'
+EXTRA_SET_TENANT_METHOD_PATH = 'bims.utils.router.extra_set_tenant_stuff'
 
 DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
