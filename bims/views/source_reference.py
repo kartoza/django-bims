@@ -696,7 +696,6 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
         else:
             reference_type = [
                 'Published report or thesis',
-                'Peer-reviewed scientific article'
             ]
         context['params'] = {
             'reference_type': json.dumps(reference_type)
