@@ -122,9 +122,7 @@ class SourceReference(PolymorphicModel):
         from bims.models.biological_collection_record import (
             BiologicalCollectionRecord
         )
-        current_site = Site.objects.get_current()
         return BiologicalCollectionRecord.objects.filter(
-            Q(source_site=current_site) | Q(additional_observation_sites=current_site),
             source_reference=self.id
         ).count()
 

@@ -29,6 +29,7 @@ class SiteByCoord(APIView):
         radius = request.GET.get('radius', 0.0)
         process_id = request.GET.get('process_id', None)
         search_mode = request.GET.get('search_mode', None)
+        ecosystem = request.GET.get('ecosystem', None)
         radius = float(radius)
 
         if not lat or not lon:
@@ -59,6 +60,11 @@ class SiteByCoord(APIView):
                 ).distinct()
             else:
                 location_sites = LocationSite.objects.all()
+
+            if ecosystem:
+                location_sites = location_sites.filter(
+                    ecosystem_type__iexact=ecosystem
+                )
             location_sites = location_sites.filter(
                 geometry_point__distance_lte=(point, D(km=radius))
             ).annotate(

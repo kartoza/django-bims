@@ -329,7 +329,6 @@ class LocationSiteFormView(TemplateView):
         else:
             context['fullname'] = self.request.user.username
         context['taxon_group'] = TaxonGroup.objects.filter(
-            Q(site_id=Site.objects.get_current()) | Q(additional_sites=Site.objects.get_current()),
             category='SPECIES_MODULE'
         ).distinct()
         context['user_id'] = self.request.user.id

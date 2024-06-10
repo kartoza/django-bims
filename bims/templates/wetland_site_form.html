@@ -22,8 +22,9 @@
         const locationSiteLat = '{{ location_site_lat }}';
         const locationSiteLong = '{{ location_site_long }}';
         const allowToEdit = {% if update %}{% if allow_to_edit %}true{% else %}false{% endif %}{% else %}true{% endif %};
-        let siteId = null;
+        let siteId = '{{ site_id }}';
         {% if additional_data %}window.wetlandData = {{ additional_data | safe }};{% endif %}
+        const ecosystemType = 'wetland';
     </script>
 
     <style>
@@ -349,7 +350,25 @@
                     {% endif %}
                 </div>
             </div>
-
+            <div class="modal fade" id="site-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Warning</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            Site <span id="nearest-site-name"></span> is within 500 metres of your site - do you wish to create a new site or use the existing site?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Create new site</button>
+                            <button type="button" class="btn btn-info" id="existing-site-button">Use the existing site</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="modal fade" id="confirm-delete-site-image" tabindex="-1" role="dialog"
                  aria-labelledby="myModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
