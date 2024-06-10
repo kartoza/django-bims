@@ -555,7 +555,12 @@ define([
                     self.currentDashbordWrapper.html('');
                 }
                 self.loadingDashboard.show();
-                Shared.Router.clearSearch();
+                let currentUrl = window.location.href;
+                let newUrl = currentUrl.replace(/#site-detail\//, '#search//')
+                    .replace(/siteId=[^&]*/, 'siteId=')
+                    .replace(/siteIdOpen=[^&]*/, 'siteIdOpen=')
+                    .replace(/modules=[^&]*/, 'modules=')
+                Shared.Router.navigate(newUrl.split('#').at(-1), { trigger: false, replace: true });
             });
             this.$el.find('.dashboard-data-frequency').val('y');
         },

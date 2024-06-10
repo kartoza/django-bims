@@ -883,6 +883,19 @@ define([
         },
         zoomToDefault: function () {
             var center = this.initCenter;
+
+            if (defaultExtentMap) {
+                let extent = defaultExtentMap.split(',');
+                let newExtent = [];
+                for (let e=0; e < extent.length; e++) {
+                    newExtent.push(parseFloat(extent[e]));
+                }
+                extent = ol.proj.transformExtent(newExtent, 'EPSG:4326', 'EPSG:3857');
+
+                this.map.getView().fit(extent);
+                return;
+            }
+
             if (centerPointMap) {
                 var centerArray = centerPointMap.split(',');
                 for (var i in centerArray) {

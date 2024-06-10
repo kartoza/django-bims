@@ -44,12 +44,11 @@ define(['backbone', 'utils/class', 'shared'], function (Backbone, UtilClass, Sha
                 return false;
             }
 
-            Shared.Dispatcher.trigger('clusterBiological:clearFilterByTaxon');
+            //Shared.Dispatcher.trigger('clusterBiological:clearFilterByTaxon');
 
-            var zoomToObject = true;
+            var zoomToObject = false;
             filterParameters['siteId'] = site['id'];
-            Shared.Dispatcher.trigger('siteDetail:show',
-                site['id'], site['name'], zoomToObject);
+            Shared.Dispatcher.trigger('siteDetail:show', site['id'], site['name'], zoomToObject);
         }
     });
     return EventsConnector;
