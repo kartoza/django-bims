@@ -104,9 +104,6 @@ define([
                         timeout = 500;
                         self.initialSearch = false;
                         self.secondSearch = true;
-                        if (self.fromSearchClick) {
-                            Shared.Dispatcher.trigger('map:zoomToDefault');
-                        }
                         Shared.Dispatcher.trigger('map:startFetching');
                     }
                     if (self.secondSearch) {

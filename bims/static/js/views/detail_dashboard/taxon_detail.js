@@ -570,7 +570,10 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                 self.loadingDashboard.hide();
                 self.dashboardTitleContainer.html('&nbsp;');
                 filterParameters['taxon'] = '';
-                Shared.Router.clearSearch();
+                let currentUrl = window.location.href;
+                let newUrl = currentUrl.replace(/#species-detail\//, '#search//')
+                    .replace(/taxon=[^&]*/, 'taxon=')
+                Shared.Router.navigate(newUrl.split('#').at(-1), { trigger: false, replace: true });
             });
         },
         createTimelineGraph: function (canvas, labels, dataset, options, chartTitle = '') {

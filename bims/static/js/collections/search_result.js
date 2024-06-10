@@ -314,8 +314,9 @@ define([
 
                 }
             } else {
-                Shared.Dispatcher.trigger('map:clearAllLayers');
-                Shared.Dispatcher.trigger('map:zoomToDefault');
+                if (self.status === 'finished' && (this.sitesData.length === 0 || this.recordsData.length === 0)) {
+                    Shared.Dispatcher.trigger('map:clearAllLayers');
+                }
             }
 
             var taxaListNumberElm = $('#taxa-list-number');

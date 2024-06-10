@@ -602,9 +602,6 @@ define([
             permalinkButton.attr('data-content', 'Copy sharable link for this map');
         },
         searchClick: function () {
-            // if (Shared.CurrentState.FETCH_CLUSTERS) {
-            //     return true;
-            // }
             Shared.Dispatcher.trigger('map:clearAllLayers');
             var searchValue = $('#search').val();
             this.search(searchValue);
