@@ -108,6 +108,10 @@ let mapClicked = (coordinate) => {
   if (!wmsLayer) return;
   currentCoordinate = coordinate;
   let tableBody = $('#closest-site-table-body');
+  let loadingIndicator = document.getElementById('loading-indicator');
+
+  loadingIndicator.style.display = 'block';
+  loadingIndicator.textContent = 'Checking nearby sites...';
 
   document.getElementById('update-coordinate').disabled = true;
   $('#closest-sites-container').show();
@@ -124,6 +128,7 @@ let mapClicked = (coordinate) => {
   $.ajax({
       url: url,
       success: function (all_data) {
+          loadingIndicator.style.display = 'none';
           if (all_data.length > 0) {
               let nearestSite = null;
               if (siteId) {
@@ -151,6 +156,10 @@ let mapClicked = (coordinate) => {
                   modal.modal('show');
               }
           }
+      },
+      error: function (err) {
+          loadingIndicator.style.display = 'none';
+          console.log(err);
       }
   });
 

@@ -157,6 +157,9 @@ $(function () {
         ratio: 1,
         serverType: 'geoserver'
     };
+    if (ecosystemType) {
+        biodiversityLayersOptions['params']['viewparams'] += ';ecosystem_type:' + ecosystemType;
+    }
     let biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
     let biodiversityTileLayer = new ol.layer.Tile({
         source: biodiversitySource
@@ -291,6 +294,10 @@ let updateCoordinate = function (zoomToMap = true) {
     let latitude = $('#latitude').val();
     let longitude = $('#longitude').val();
     let tableBody = $('#closest-site-table-body');
+    let loadingIndicator = document.getElementById('loading-indicator');
+
+    loadingIndicator.style.display = 'block';
+    loadingIndicator.textContent = 'Checking nearby sites...';
 
     document.getElementById('update-coordinate').disabled = true;
     $('#closest-sites-container').show();
@@ -305,6 +312,7 @@ let updateCoordinate = function (zoomToMap = true) {
     $.ajax({
         url: url,
         success: function (all_data) {
+            loadingIndicator.style.display = 'none';
             if (all_data.length > 0) {
                 let nearestSite = null;
                 if (siteId) {
@@ -332,6 +340,9 @@ let updateCoordinate = function (zoomToMap = true) {
                     modal.modal('show');
                 }
             }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            loadingIndicator.style.display = 'none';
         }
     });
 };
@@ -463,3 +474,6 @@ let checkSiteInCountry = (latitude, longitude, callback) => {
         }
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+});
