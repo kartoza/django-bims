@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import F, CharField, Count
 from django.db.models.functions import Concat
 
-from bims.models import TaxonGroup, TaxonGroupTaxonomy
+from bims.models import TaxonGroup
 from bims.models.location_site import LocationSite
 from bims.models.survey import Survey
 

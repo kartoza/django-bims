@@ -1,4 +1,5 @@
 {% extends 'main_base.html' %}
+{% load site %}
 {% load static %}
 
 {% block subtitle %}
@@ -104,17 +105,24 @@
                             <div class="card-text">
                                 {% if source_reference.occurrences > 0 %}
                                     <a href='/map/#search//taxon=&search=&reference=["{{ source_reference.id }}"]'><span
-                                            class="badge badge-info badge-occurrences">{{ source_reference.occurrences }} records</span>
+                                            class="badge badge-info badge-occurrences">{{ source_reference.occurrences | space_separated }} Occurrence Records</span>
                                     </a>
                                 {% else %}
-                                    <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} records</span>
+                                    <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} Occurrence Records</span>
                                 {% endif %}
                                 {% if source_reference.chemical_records > 0 %}
-                                    <a href='/map/#search//taxon=&abioticData=True&search=&reference=["{{ source_reference.id }}"]'><span
-                                            class="badge badge-info badge-occurrences">{{ source_reference.chemical_records }} Physico-chemical data</span>
+                                    <a href='/map/#search//taxon=&module=physico_chemistry&search=&reference=["{{ source_reference.id }}"]'><span
+                                            class="badge badge-info badge-occurrences">{{ source_reference.chemical_records | space_separated }} Physico-chemical data</span>
                                     </a>
                                 {% else %}
                                     <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.chemical_records }} Physico-chemical data</span>
+                                {% endif %}
+                                {% if source_reference.water_temperature > 0 %}
+                                    <a href='/map/#search//taxon=&module=water_temperature&search=&reference=["{{ source_reference.id }}"]'><span
+                                            class="badge badge-info badge-occurrences">{{ source_reference.water_temperature | space_separated }} Water Temperature data</span>
+                                    </a>
+                                {% else %}
+                                    <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.water_temperature }} Water Temperature data</span>
                                 {% endif %}
                                 {% if perms.bims.change_sourcereference %}
                                     <div class="float-right">

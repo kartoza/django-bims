@@ -127,6 +127,13 @@ class SourceReference(PolymorphicModel):
         ).count()
 
     @property
+    def water_temperature(self):
+        from bims.models.water_temperature import WaterTemperature
+        return WaterTemperature.objects.filter(
+            source_reference_id=self.id
+        ).count()
+
+    @property
     def chemical_records(self):
         from bims.models.chemical_record import (
             ChemicalRecord
