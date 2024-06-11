@@ -2,7 +2,7 @@ import logging
 from django.core.management.base import BaseCommand
 from bims.models import BiologicalCollectionRecord, Survey
 from django.db.models import F
-from django.db import transaction
+from django.db import transaction, connection
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,19 @@ BATCH_SIZE = 1000
 class Command(BaseCommand):
     help = 'Ensure BiologicalCollectionRecord collection_date matches Survey date'
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-s',
+            '--schema-name',
+            dest='schema_name',
+            default='public',
+            help='Schema name to use for the database connection.'
+        )
+
+    def handle(self, *args, **options):
+        schema_name = options.get('schema_name', '')
+        if schema_name:
+            connection.set_schema(schema_name)
         self.fix_collection_dates()
 
     def fix_collection_dates(self):

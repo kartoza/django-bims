@@ -71,7 +71,7 @@
                 </div>
             </div>
         <% }); %>
-        <% if (is_sass_enabled && ecosytem_type == 'River') { %>
+        <% if (is_sass_enabled && ecosystem_type && ecosystem_type == 'River') { %>
             <div class="row" style="padding: 10px;">
                 <div class="col-sm-<% if (!add_data) { %>12<%  } else { %>6<% } %>" style="padding-right: 0">
                     <button class="fbis-button-small <% if (sass_exist) { %> sp-sass-dashboard <% } else { %> disabled <% } %>" style="width: 100%; height: 30px">SASS Dashboard</button>

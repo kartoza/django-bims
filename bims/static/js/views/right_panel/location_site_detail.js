@@ -335,7 +335,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
             } catch (e) {
             }
             container.append(biodiversitySectionTemplate({
-                ecosytem_type: ecosystem_type,
+                ecosystem_type: ecosystem_type,
                 data: data.biodiversity_data,
                 is_sass_enabled: is_sass_enabled,
                 is_water_temperature_enabled: is_water_temperature_enabled,
