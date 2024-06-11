@@ -88,3 +88,8 @@ def current_version():
             )
         )
     return mark_safe(version)
+
+
+@register.filter
+def space_separated(value):
+    return f"{value:,}".replace(',', ' ')
