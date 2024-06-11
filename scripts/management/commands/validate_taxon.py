@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import F, CharField, Count
 from django.db.models.functions import Concat
 
+from bims.models import TaxonGroup
 from bims.models.location_site import LocationSite
 from bims.models.survey import Survey
 
@@ -14,7 +15,7 @@ logger = logging.getLogger('bims')
 
 class Command(BaseCommand):
     """
-    Combine duplicated surveys
+    Validate taxon
     """
 
     def add_arguments(self, parser):
@@ -24,27 +25,38 @@ class Command(BaseCommand):
             dest='simulate',
             default=None,
         )
+        parser.add_argument(
+            '-tg',
+            '--taxon_group',
+            dest='taxon_group',
+            default=None,
+        )
 
-    def delete_in_batches(self, queryset, batch_size=100):
-        with transaction.atomic():
-            while queryset.exists():
-                # Delete a batch of records
-                ids = queryset.values_list('id', flat=True)[:batch_size]
-                queryset.filter(id__in=list(ids)).delete()
-                logger.debug(f'Deleted batch of {batch_size} sites')
-
-    def delete_legacy_site(self, simulate):
-        sites = LocationSite.objects.filter(
-            biological_collection_record__isnull=True,
-            chemical_collection_record__isnull=True,
-            watertemperature__isnull=True
-        ).exclude(map_reference='Wetland layer')
-        logger.debug(f'Found {sites.count()} sites to delete')
+    def validate_taxon(self, simulate, taxon_group: TaxonGroup):
+        taxa = taxon_group.taxonomies.all()
+        logger.debug(f'Found {taxa.count()} sites to validate')
         if not simulate:
-            self.delete_in_batches(sites)
+            for taxon in taxa:
+                logger.debug(f'Validating {taxon.canonical_name}')
+                try:
+                    TaxonGroupTaxonomy.objects.update_or_create(
+                        taxongroup=taxon_group,
+                        taxonomy=taxon,
+                        defaults={
+                            'is_validated': True
+                        }
+                    )
+                except Exception as e:
+                    logger.debug(f'Error validating {taxon.canonical_name}: {e}')
+
         else:
-            logger.debug(f'Simulation: Would delete {sites.count()} sites')
+            logger.debug(f'Simulation: Would validate {taxa.count()} taxa')
 
     def handle(self, *args, **options):
-        simulate = options.get('simulate', None)
-        self.delete_legacy_site(simulate)
+        simulate = options.get('simulate', 'True') == 'True'
+        taxon_groups = TaxonGroup.objects.filter(
+            id__in=options.get('taxon_group', '').split(',')
+        )
+        for taxon_group in taxon_groups:
+            logger.debug(f'Validating taxon group {taxon_group.name}')
+            self.validate_taxon(simulate, taxon_group)
