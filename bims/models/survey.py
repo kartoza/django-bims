@@ -9,6 +9,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from bims.models import LocationSite
+from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 from bims.models.validation import AbstractValidation
 
 
@@ -57,8 +58,14 @@ class Survey(AbstractValidation):
 
     @property
     def unvalidated_species_exists(self):
-        return self.biological_collection_record.all().filter(
-            taxonomy__taxongrouptaxonomy__is_validated=False
+        taxon_group = self.taxon_group
+        taxa = self.biological_collection_record.all().values(
+            'taxonomy'
+        )
+        return TaxonGroupTaxonomy.objects.filter(
+            taxongroup=taxon_group,
+            taxonomy__in=taxa,
+            is_validated=False
         ).exists()
 
     @property

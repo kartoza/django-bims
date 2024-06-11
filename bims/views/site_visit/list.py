@@ -94,7 +94,7 @@ class SiteVisitListView(ListView):
                     survey__id=OuterRef('id')
                 ).values('source_collection')[:1])
         )
-        return qs.order_by(order)
+        return qs.order_by(order, 'id')
 
     def get_context_data(self, **kwargs):
         """
