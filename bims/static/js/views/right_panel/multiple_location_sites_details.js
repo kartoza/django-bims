@@ -68,6 +68,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             container.append($sectionWrapper);
             $sectionWrapper.append(biodiversitySectionTemplate(
               {
+                  ecosystem_type: '',
                   data: data.biodiversity_data,
                   is_sass_enabled: is_sass_enabled,
                   is_water_temperature_enabled: is_water_temperature_enabled,
