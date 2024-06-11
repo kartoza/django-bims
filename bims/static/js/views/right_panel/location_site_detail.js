@@ -329,7 +329,14 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
         renderBiodiversityDataSection: function (container, data) {
             let self = this;
             let biodiversitySectionTemplate = _.template($('#biodiversity-data-template-new').html());
-            container.append(biodiversitySectionTemplate({ data: data.biodiversity_data,
+            let ecosystem_type = '';
+            try {
+                ecosystem_type = data.site_detail_info.ecosystem_type;
+            } catch (e) {
+            }
+            container.append(biodiversitySectionTemplate({
+                ecosytem_type: ecosystem_type,
+                data: data.biodiversity_data,
                 is_sass_enabled: is_sass_enabled,
                 is_water_temperature_enabled: is_water_temperature_enabled,
                 is_pesticide_dashboard_enabled: is_pesticide_dashboard_enabled,

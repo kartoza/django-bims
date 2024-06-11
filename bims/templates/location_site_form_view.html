@@ -101,7 +101,7 @@
                                class="btn btn-info">Add {% if module.singular_name %}{{ module.singular_name }}{% else %}{{ module.name }}{% endif %} data</a>
                         {% endfor %}
 
-                        {% if preferences.SiteSetting.enable_sass %}
+                        {% if preferences.SiteSetting.enable_sass and ecosystem_type == 'River' %}
                             <a href="/sass/{{ site_id }}/"
                                class="btn btn-info">Add SASS data</a>
                         {% endif %}
