@@ -299,3 +299,21 @@ class SiteSetting(Preferences):
         default='bims:location_site_view',
         blank=True
     )
+
+    park_wfs_url = models.CharField(
+        max_length=200,
+        default='https://maps.kartoza.com/geoserver/wfs',
+        blank=True
+    )
+
+    park_wfs_attribute_key = models.CharField(
+        max_length=200,
+        default='',
+        blank=True
+    )
+
+    park_wfs_layer_name = models.CharField(
+        max_length=200,
+        default='',
+        blank=True
+    )

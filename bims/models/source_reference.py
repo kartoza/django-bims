@@ -544,6 +544,19 @@ def source_reference_post_save_handler(sender, instance, **kwargs):
     generate_source_reference_filter.delay()
 
 
+def disconnect_source_reference_signals():
+    models.signals.post_save.disconnect(receiver=source_reference_post_save_handler, sender=SourceReferenceDatabase)
+    models.signals.post_save.disconnect(receiver=source_reference_post_save_handler, sender=SourceReferenceBibliography)
+    models.signals.post_save.disconnect(receiver=source_reference_post_save_handler, sender=SourceReference)
+    models.signals.post_save.disconnect(receiver=source_reference_post_save_handler, sender=SourceReferenceDocument)
+
+def reconnect_source_reference_signals():
+    models.signals.post_save.connect(receiver=source_reference_post_save_handler, sender=SourceReferenceDatabase)
+    models.signals.post_save.connect(receiver=source_reference_post_save_handler, sender=SourceReferenceBibliography)
+    models.signals.post_save.connect(receiver=source_reference_post_save_handler, sender=SourceReference)
+    models.signals.post_save.connect(receiver=source_reference_post_save_handler, sender=SourceReferenceDocument)
+
+
 def merge_source_references(primary_source_reference, source_reference_list):
     """
     Merge multiple source references into one primary_source_reference

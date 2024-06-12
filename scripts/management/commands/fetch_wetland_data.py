@@ -25,9 +25,9 @@ class Command(BaseCommand):
         wetland_layer_name = 'kartoza:nwm6_beta_v3_20230714'
         wfs_url = 'https://maps.kartoza.com/geoserver/wfs'
         centroid = get_feature_centroid(
-            lon,
-            lat,
             wfs_url=wfs_url,
-            layer_name=wetland_layer_name
+            layer_name=wetland_layer_name,
+            lon=lon,
+            lat=lat,
         )
         print(centroid)
