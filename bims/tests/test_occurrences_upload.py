@@ -247,4 +247,5 @@ class TestCollectionUpload(TestCase):
         )
         self.assertEqual(bio.count(), 1)
         self.assertEqual(bio.first().site.legacy_river_name, 'User River Name 2')
-        self.assertTrue(mock_get_feature_centroid.called)
+        mock_get_feature_centroid.assert_called_once_with(
+            'https://maps.kartoza.com/geoserver/wfs', '', attribute_key='', attribute_value='test')

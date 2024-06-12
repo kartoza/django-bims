@@ -71,6 +71,7 @@ class OccurrenceProcessor(object):
     # Whether the script should also fetch location context after ingesting
     # collection data
     fetch_location_context = True
+    park_centroid = {}
 
     def start_process(self):
         signals.post_save.disconnect(
@@ -281,21 +282,27 @@ class OccurrenceProcessor(object):
             layer_name = preferences.SiteSetting.park_wfs_layer_name
             attribute_key = preferences.SiteSetting.park_wfs_attribute_key
             attribute_value = park_name
-            park_centroid = get_feature_centroid(
-                wfs_url,
-                layer_name,
-                attribute_key=attribute_key,
-                attribute_value=attribute_value
-            )
-            if park_centroid:
-                latitude = park_centroid[0]
-                longitude = park_centroid[1]
+
+            if park_name in self.park_centroid:
+                latitude = self.park_centroid[park_name][0]
+                longitude = self.park_centroid[park_name][1]
             else:
-                self.handle_error(
-                    row=record,
-                    message='Park or MPA name does not exist in the database'
+                park_centroid = get_feature_centroid(
+                    wfs_url,
+                    layer_name,
+                    attribute_key=attribute_key,
+                    attribute_value=attribute_value
                 )
-                return None
+                if park_centroid:
+                    latitude = park_centroid[0]
+                    longitude = park_centroid[1]
+                    self.park_centroid[park_name] = park_centroid
+                else:
+                    self.handle_error(
+                        row=record,
+                        message='Park or MPA name does not exist in the database'
+                    )
+                    return None
 
         if not longitude or not latitude:
             self.handle_error(
