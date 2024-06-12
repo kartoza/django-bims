@@ -127,7 +127,8 @@
                                            data-id="{{ obj.id }}">Reject</a>
                                     {% endif %}
                                     {% if obj.request_file %}
-                                        <a download="{{ obj.request_file.name|filename }}.csv" href="{{ obj.request_file.url|remove_media_path }}"
+                                        <a download="{% if '.xlsx' in obj.request_file.name  %}{{ obj.request_file.name|filename }}{% else %}{{ obj.request_file.name|filename }}.csv{% endif %}"
+                                           href="{{ obj.request_file.url|remove_media_path }}"
                                            class="btn btn-sm btn-primary"
                                            style="font-size: 10pt; margin-top: -10px">Download File</a>
                                     {% endif %}
