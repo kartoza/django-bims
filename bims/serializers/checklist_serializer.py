@@ -105,7 +105,7 @@ class ChecklistSerializer(SerializerContextCache):
         synonyms = Taxonomy.objects.filter(
             accepted_taxonomy=obj
         ).values_list('scientific_name', flat=True)
-        return list(synonyms)
+        return ','.join(list(synonyms))
 
     def get_common_name(self, obj: Taxonomy):
         vernacular_names = list(
@@ -126,7 +126,11 @@ class ChecklistSerializer(SerializerContextCache):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return ''
-        return list(set(bio.values_list('source_reference__source_name', flat=True)))
+        return ','.join(
+            list(set(
+                bio.values_list(
+                    'source_reference__source_name', flat=True)))
+        )
 
     def get_confidence(self, obj: Taxonomy):
         return ''

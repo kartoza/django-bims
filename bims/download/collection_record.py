@@ -198,6 +198,7 @@ def download_collection_records(
             user = UserModel.objects.get(id=user_id)
             send_csv_via_email(
                 user_id=user.id,
+                file_name='Occurrence Data',
                 csv_file=path_file,
                 download_request_id=download_request_id
             )
