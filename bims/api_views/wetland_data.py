@@ -100,10 +100,10 @@ class WetlandDataApiView(APIView):
         wfs_url = 'https://maps.kartoza.com/geoserver/wfs'
 
         centroid = get_feature_centroid(
-            lat,
-            lon,
             wfs_url=wfs_url,
-            layer_name=self.wetland_layer_name
+            layer_name=self.wetland_layer_name,
+            lat=lat,
+            lon=lon,
         )
         if not centroid:
             return Response({

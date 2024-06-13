@@ -43,8 +43,11 @@ from bims.models import (
     RecordType,
     AbundanceType,
     SamplingEffortMeasure,
-    location_context_post_save_handler
+    BimsDocument,
+    location_context_post_save_handler, bims_document_post_save_handler, disconnect_source_reference_signals,
+    reconnect_source_reference_signals
 )
+from bims.utils.feature_info import get_feature_centroid
 from bims.utils.user import create_users_from_string
 from bims.scripts.data_upload import DataCSVUpload
 from bims.tasks.location_site import update_location_context
@@ -68,6 +71,7 @@ class OccurrenceProcessor(object):
     # Whether the script should also fetch location context after ingesting
     # collection data
     fetch_location_context = True
+    park_centroid = {}
 
     def start_process(self):
         signals.post_save.disconnect(
@@ -77,22 +81,6 @@ class OccurrenceProcessor(object):
         signals.post_save.disconnect(
             location_site_post_save_handler,
             sender=LocationSite
-        )
-        signals.post_save.disconnect(
-            source_reference_post_save_handler,
-            sender=SourceReference
-        )
-        signals.post_save.disconnect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceDatabase
-        )
-        signals.post_save.disconnect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceBibliography
-        )
-        signals.post_save.disconnect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceDocument
         )
         signals.post_save.disconnect(
             location_context_post_save_handler,
@@ -106,6 +94,11 @@ class OccurrenceProcessor(object):
             location_context_post_save_handler,
             sender=LocationContextFilterGroupOrder
         )
+        signals.post_save.disconnect(
+            bims_document_post_save_handler,
+            sender=BimsDocument
+        )
+        disconnect_source_reference_signals()
 
     def update_location_site_context(self):
         update_location_context.delay(
@@ -130,22 +123,6 @@ class OccurrenceProcessor(object):
             sender=LocationSite
         )
         signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReference
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceDatabase
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceBibliography
-        )
-        signals.post_save.connect(
-            source_reference_post_save_handler,
-            sender=SourceReferenceDocument
-        )
-        signals.post_save.connect(
             location_context_post_save_handler,
             sender=LocationContextGroup
         )
@@ -157,6 +134,11 @@ class OccurrenceProcessor(object):
             location_context_post_save_handler,
             sender=LocationContextFilterGroupOrder
         )
+        signals.post_save.connect(
+            bims_document_post_save_handler,
+            sender=BimsDocument
+        )
+        reconnect_source_reference_signals()
 
     def handle_error(self, row, message):
         pass
@@ -292,6 +274,36 @@ class OccurrenceProcessor(object):
 
         longitude = DataCSVUpload.row_value(record, LONGITUDE)
         latitude = DataCSVUpload.row_value(record, LATITUDE)
+
+        park_name = DataCSVUpload.row_value(record, PARK_OR_MPA_NAME)
+
+        if not longitude and not latitude and park_name:
+            wfs_url = preferences.SiteSetting.park_wfs_url
+            layer_name = preferences.SiteSetting.park_wfs_layer_name
+            attribute_key = preferences.SiteSetting.park_wfs_attribute_key
+            attribute_value = park_name
+
+            if park_name in self.park_centroid:
+                latitude = self.park_centroid[park_name][0]
+                longitude = self.park_centroid[park_name][1]
+            else:
+                park_centroid = get_feature_centroid(
+                    wfs_url,
+                    layer_name,
+                    attribute_key=attribute_key,
+                    attribute_value=attribute_value
+                )
+                if park_centroid:
+                    latitude = park_centroid[0]
+                    longitude = park_centroid[1]
+                    self.park_centroid[park_name] = park_centroid
+                else:
+                    self.handle_error(
+                        row=record,
+                        message='Park or MPA name does not exist in the database'
+                    )
+                    return None
+
         if not longitude or not latitude:
             self.handle_error(
                 row=record,

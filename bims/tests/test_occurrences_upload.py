@@ -165,9 +165,16 @@ class TestCollectionUpload(TestCase):
     @mock.patch.object(SiteSetting, 'default_data_source', new_callable=mock.PropertyMock)
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.occurrences_upload.OccurrenceProcessor.update_location_site_context')
-    def test_csv_upload(self, mock_finish, mock_update_location_context, mock_default_data_source):
+    @mock.patch('bims.scripts.occurrences_upload.get_feature_centroid')
+    def test_csv_upload(self,
+                        mock_get_feature_centroid,
+                        mock_update_location_context,
+                        mock_finish,
+                        mock_default_data_source):
         mock_finish.return_value = None
         mock_default_data_source.return_value = "fbis"
+
+        mock_get_feature_centroid.return_value = (1, 1)
 
         taxonomy_1 = TaxonomyF.create(
             canonical_name='Achnanthes eutrophila',
@@ -240,3 +247,5 @@ class TestCollectionUpload(TestCase):
         )
         self.assertEqual(bio.count(), 1)
         self.assertEqual(bio.first().site.legacy_river_name, 'User River Name 2')
+        mock_get_feature_centroid.assert_called_once_with(
+            'https://maps.kartoza.com/geoserver/wfs', '', attribute_key='', attribute_value='test')

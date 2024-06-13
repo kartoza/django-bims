@@ -89,3 +89,6 @@ SURVEY_DATA = {
     WATER_TURBIDITY: 'Water turbidity',
     EMBEDDEDNESS: 'Embeddedness'
 }
+
+# Sanparks
+PARK_OR_MPA_NAME = 'Park or MPA name'

@@ -56,17 +56,28 @@ def get_feature_info_from_wms(
     return None
 
 
-def get_feature_centroid(lat, lon, wfs_url, layer_name):
+def get_feature_centroid(wfs_url, layer_name, attribute_key=None, attribute_value=None, lat=None, lon=None):
     """
-    Get the centroid of a WFS layer feature intersecting with the given lat/lon coordinates using Django GIS.
+    Get the centroid of a WFS layer feature intersecting with the given attribute key/value or lat/lon
 
-    :param lat: Latitude of the point.
-    :param lon: Longitude of the point.
     :param wfs_url: URL of the WFS service.
     :param layer_name: Name of the layer to query.
+    :param attribute_key: Attribute key to filter the feature.
+    :param attribute_value: Attribute value to filter the feature.
+    :param lat: Latitude of the point (optional if attribute_key and attribute_value are provided).
+    :param lon: Longitude of the point (optional if attribute_key and attribute_value are provided).
     :return: A tuple containing the centroid's latitude and longitude or None if no feature is found.
     """
-    # Construct WFS request with spatial filter (CQL_FILTER) for GeoJSON format
+    if (lat is None or lon is None) and (attribute_key is None or attribute_value is None):
+        raise ValueError("Either lat/lon or attribute_key/attribute_value must be provided.")
+
+    # Construct CQL_FILTER based on provided parameters
+    if attribute_key and attribute_value:
+        cql_filter = f"{attribute_key} = '{attribute_value}'"
+    else:
+        cql_filter = f"INTERSECTS(geom, POINT({lon} {lat}))"
+
+    # Construct WFS request with the CQL_FILTER for GeoJSON format
     params = {
         'service': 'WFS',
         'version': '2.0.0',
@@ -74,7 +85,7 @@ def get_feature_centroid(lat, lon, wfs_url, layer_name):
         'typeName': layer_name,
         'outputFormat': 'application/json',
         'srsName': 'EPSG:4326',
-        'CQL_FILTER': f"INTERSECTS(geom, POINT({lon} {lat}))"
+        'CQL_FILTER': cql_filter
     }
 
     try:
@@ -86,7 +97,7 @@ def get_feature_centroid(lat, lon, wfs_url, layer_name):
             centroid = geometry.centroid
             return centroid.y, centroid.x
         else:
-            print("No feature found at the provided coordinates.")
+            print("No feature found with the provided parameters.")
             return None
     except requests.RequestException as e:
         print(f"Error fetching the WFS data: {e}")
