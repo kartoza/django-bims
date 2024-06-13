@@ -83,7 +83,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
 
     def get_common_name(self, obj):
         vernacular_names = list(
-            obj.vernacular_names.filter(language='eng').values_list('name', flat=True))
+            obj.vernacular_names.filter(language__istartswith='en').values_list('name', flat=True))
         if len(vernacular_names) == 0:
             return ''
         else:
