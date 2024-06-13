@@ -82,8 +82,12 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
         return obj.scientific_name
 
     def get_common_name(self, obj):
-        vernacular_names = obj.vernacular_names.all()
-        return vernacular_names[0] if vernacular_names else 'Unknown'
+        vernacular_names = list(
+            obj.vernacular_names.filter(language='eng').values_list('name', flat=True))
+        if len(vernacular_names) == 0:
+            return ''
+        else:
+            return vernacular_names[0]
 
     def get_origin(self, obj):
         if obj.origin:

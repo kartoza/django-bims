@@ -203,6 +203,7 @@ class Taxonomy(AbstractValidation):
         blank=True
     )
 
+
     def save_json_data(self, json_field):
         max_allowed = 10
         attempt = 0

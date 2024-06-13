@@ -111,7 +111,8 @@ from bims.models import (
     SamplingEffortMeasure,
     TaxonGroupTaxonomy,
     TaxonomyUpdateProposal,
-    TaxonomyUpdateReviewer
+    TaxonomyUpdateReviewer,
+    CITESListingInfo
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1879,6 +1880,7 @@ class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
         'taxonomy',
         'is_validated'
     )
+    search_fields = ('taxonomy__scientific_name', 'taxonomy__canonical_name')
 
 
 class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
@@ -1904,6 +1906,14 @@ class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):
         'reviewer',
         'status'
     )
+
+
+@admin.register(CITESListingInfo)
+class CITESListingInfoAdmin(admin.ModelAdmin):
+    list_display = ('appendix', 'effective_at', 'taxonomy')
+    list_filter = ('appendix', 'effective_at', 'taxonomy')
+    search_fields = ('annotation', 'taxonomy__name')
+    raw_id_fields = ('taxonomy',)
 
 
 # Re-register GeoNode's Profile page
