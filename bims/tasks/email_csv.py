@@ -55,6 +55,8 @@ def send_csv_via_email(
         df = pd.read_csv(csv_file, encoding='ISO-8859-1', on_bad_lines='warn')
         excel_file_path = os.path.splitext(csv_file)[0] + '.xlsx'
         df.to_excel(excel_file_path, index=False)
+        download_request.request_file = excel_file_path
+        download_request.save()
         extension = 'xlsx'
         download_file_path = excel_file_path
         email_template = 'excel_download/excel_created'
@@ -72,7 +74,7 @@ def send_csv_via_email(
         ctx
     )
     msg = EmailMultiAlternatives(
-        subject,
+        subject.strip(),
         message,
         settings.DEFAULT_FROM_EMAIL,
         [user.email])
