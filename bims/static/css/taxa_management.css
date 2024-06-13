@@ -257,3 +257,7 @@ ul.pagination li.current a {
     position: fixed;
     z-index: 999999;
 }
+.side-panel {
+    height: 100%;
+    overflow-y: auto;
+}

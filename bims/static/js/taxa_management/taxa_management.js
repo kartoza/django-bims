@@ -371,6 +371,8 @@ export const taxaManagement = (() => {
                 {"data": "import_date"},
                 {
                     "data": "tag_list",
+                    "sortable": false,
+                    "searchable": false,
                     "render": function (data) {
                         return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
                     }
