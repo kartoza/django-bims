@@ -121,7 +121,7 @@
     width: -webkit-fill-available;
 }
 
-.download-as-csv, .download-chem-csv, .download-gbif-ids {
+.download-as-csv, .download-chem-csv, .download-gbif-ids, .download-checklist {
     text-transform: none;
     font-size: 10pt;
 }

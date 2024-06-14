@@ -126,11 +126,14 @@ class ChecklistSerializer(SerializerContextCache):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return ''
-        return ','.join(
-            list(set(
-                bio.values_list(
-                    'source_reference__source_name', flat=True)))
-        )
+        bio = bio.distinct('source_reference')
+        try:
+            source_data = []
+            for collection in bio:
+                source_data.append(str(collection.source_reference))
+            return ','.join(source_data)
+        except TypeError:
+            return ''
 
     def get_confidence(self, obj: Taxonomy):
         return ''
@@ -175,6 +178,7 @@ class ChecklistSerializer(SerializerContextCache):
     class Meta:
         model = Taxonomy
         fields = [
+            'id',
             'kingdom',
             'phylum',
             'class_name',

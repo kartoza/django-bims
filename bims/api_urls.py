@@ -1,5 +1,6 @@
 from django.urls import re_path, path
 
+from bims.api_views.checklist import DownloadChecklistAPIView
 from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
@@ -115,7 +116,6 @@ from bims.api_views.download_request import (
     DownloadRequestApi
 )
 from bims.api_views.wetland_data import WetlandDataApiView
-from bims.api_views.email_csv import TestSendEmail
 from bims.views.cites import TaxaCitesStatusAPIView
 
 urlpatterns = [
@@ -338,6 +338,8 @@ urlpatterns = [
         ),
     re_path(r'^gbif-ids/download/$',
         GbifIdsDownloader.as_view()),
+    re_path(r'^checklist/download/$',
+        DownloadChecklistAPIView.as_view()),
     path('download-layer-data/<int:layer_id>/<str:query_filter>/',
         DownloadLayerData.as_view(),
         name='download-layer-data'),
@@ -353,9 +355,6 @@ urlpatterns = [
     path('wetland-data/<str:lat>/<str:lon>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),
-    path('test-email/',
-         TestSendEmail.as_view(),
-         name='test-email'),
     path('taxa-cites-status/',
          TaxaCitesStatusAPIView.as_view(),
          name='taxa-cites-status'),
