@@ -15,6 +15,23 @@ from bims.tasks.checklist import download_checklist
 from bims.tasks.email_csv import send_csv_via_email
 
 
+CSV_HEADER_TITLE = {
+    'class_name': 'Class',
+    'scientific_name': 'Accepted Scientific name and authority',
+    'cites_listing': 'CITES listing'
+}
+
+
+def get_custom_header(fieldnames, header_title_dict):
+    custom_header = []
+    for field in fieldnames:
+        if field in header_title_dict:
+            custom_header.append(header_title_dict[field])
+        else:
+            custom_header.append(field.replace('_', ' ').capitalize())
+    return custom_header
+
+
 def get_serializer_keys(serializer_class):
     return list(serializer_class().get_fields().keys())
 
@@ -48,14 +65,17 @@ def generate_checklist(download_request_id):
         'checklists', f'checklist_{download_request_id}.csv')
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
-    fieldnames = get_serializer_keys(ChecklistSerializer)
+    fieldnames = [key for key in get_serializer_keys(ChecklistSerializer) if key != 'id']
+    custom_header = get_custom_header(fieldnames, CSV_HEADER_TITLE)
+
     written_taxa_ids = set()
 
     with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         if not written_taxa_ids:
-            writer.writeheader()
+            # Manually write header using writerow
+            writer.writerow(dict(zip(fieldnames, custom_header)))
 
         for start in range(0, collection_records.count(), batch_size):
             batch = collection_records[start:start + batch_size]
@@ -85,8 +105,9 @@ def process_batch(batch, writer, written_taxa_ids):
         taxon_serializer = ChecklistSerializer(taxa, many=True)
 
         for taxon in taxon_serializer.data:
-            writer.writerow(taxon)
             written_taxa_ids.add(taxon['id'])
+            del taxon['id']
+            writer.writerow(taxon)
 
 
 class DownloadChecklistAPIView(APIView):

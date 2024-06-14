@@ -3,7 +3,7 @@ import csv
 import zipfile
 
 from celery import shared_task
-from django.db import connection
+from openpyxl import load_workbook
 
 from bims.utils.domain import get_current_domain
 
@@ -57,6 +57,21 @@ def send_csv_via_email(
         df = pd.read_csv(csv_file, encoding='ISO-8859-1', on_bad_lines='warn')
         excel_file_path = os.path.splitext(csv_file)[0] + '.xlsx'
         df.to_excel(excel_file_path, index=False)
+
+        workbook = load_workbook(excel_file_path)
+        worksheet = workbook.active
+
+        for col in worksheet.columns:
+            max_length = 0
+            column = col[0].column_letter
+            header = col[0].value
+            if header:
+                max_length = len(header)
+            adjusted_width = (max_length + 2)
+            worksheet.column_dimensions[column].width = adjusted_width
+
+        workbook.save(excel_file_path)
+
         download_request.request_file = excel_file_path
         download_request.save()
         extension = 'xlsx'
