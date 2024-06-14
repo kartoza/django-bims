@@ -13,7 +13,7 @@ def send_csv_via_email(
         user_id,
         csv_file,
         file_name='OccurrenceData',
-        approved=False,
+        approved=None,
         download_request_id=None):
     """
     Send an email to requesting user with csv file attached
@@ -25,7 +25,6 @@ def send_csv_via_email(
     :return:
     """
     from preferences import preferences
-    from django.contrib.sites.models import Site
     from django.template.loader import render_to_string
     from django.core.mail import EmailMultiAlternatives
     from django.contrib.auth import get_user_model
@@ -38,16 +37,19 @@ def send_csv_via_email(
     extension = 'csv'
     download_file_path = csv_file
 
-    if not approved and download_request_id:
+    if download_request_id:
         try:
             download_request = DownloadRequest.objects.get(
                 id=download_request_id
             )
-            download_request.request_category = file_name
-            download_request.request_file = csv_file
-            download_request.save()
+            approved = download_request.approved
         except DownloadRequest.DoesNotExist:
             pass
+
+    if download_request and not download_request.request_file:
+        download_request.request_category = file_name
+        download_request.request_file = csv_file
+        download_request.save()
 
     email_template = 'csv_download/csv_created'
     if download_request and download_request.resource_type == DownloadRequest.XLS:
@@ -60,6 +62,9 @@ def send_csv_via_email(
         extension = 'xlsx'
         download_file_path = excel_file_path
         email_template = 'excel_download/excel_created'
+
+    if not approved and approved is not None:
+        return False
 
     ctx = {
         'username': user.username,

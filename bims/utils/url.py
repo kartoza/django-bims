@@ -1,3 +1,5 @@
+from urllib.parse import urlparse, parse_qs
+
 
 def remove_params_from_uri(params, uri):
     formatted_uri = uri
@@ -30,3 +32,15 @@ def remove_params_from_uri(params, uri):
                 param_string + param_value,
                 param_string)
     return formatted_uri
+
+
+def parse_url_to_filters(url):
+    parsed_url = urlparse(url)
+    fragment = parsed_url.fragment
+    if '?' in fragment:
+        query_string = fragment.split('?', 1)[1]
+    else:
+        query_string = fragment
+    query_params = parse_qs(query_string)
+    filters = {key: value[0] if len(value) == 1 else value for key, value in query_params.items()}
+    return filters

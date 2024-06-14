@@ -6,6 +6,8 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
 from django.http import Http404, HttpResponseRedirect
+
+from bims.tasks import send_csv_via_email
 from geonode.people.models import Profile
 from bims.models.download_request import DownloadRequest
 from bims.permissions.api_permission import (
@@ -44,7 +46,17 @@ class DownloadRequestListView(
                 download_request = DownloadRequest.objects.get(
                     id=int(approved_id)
                 )
-                download_request.processing = True
+                if download_request.request_file:
+                    send_csv_via_email.delay(
+                        user_id=download_request.requester.id,
+                        csv_file=download_request.request_file.path,
+                        file_name=download_request.request_category,
+                        approved=approved,
+                        download_request_id=download_request.id
+                    )
+                else:
+                    download_request.processing = True
+
                 download_request.approved = True
                 download_request.rejected = False
                 download_request.save()
