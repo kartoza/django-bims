@@ -1,12 +1,18 @@
 import csv
 import os
 from django.conf import settings
+from django.http import Http404
+from preferences import preferences
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from bims.api_views.search import CollectionSearch
 from bims.models.taxonomy import Taxonomy
 from bims.models.download_request import DownloadRequest
 from bims.serializers.checklist_serializer import ChecklistSerializer
 from bims.utils.url import parse_url_to_filters
+from bims.tasks.checklist import download_checklist
+from bims.tasks.email_csv import send_csv_via_email
 
 
 def get_serializer_keys(serializer_class):
@@ -32,22 +38,10 @@ def generate_checklist(download_request_id):
         return False
 
     filters = parse_url_to_filters(download_request.dashboard_url)
+
     search = CollectionSearch(filters)
-
-    # returns queryset of collection_records
-    collection_records = search.process_search()
-    taxa = Taxonomy.objects.filter(
-        id__in=list(
-            collection_records.values_list(
-                'taxonomy_id',
-                flat=True)
-        )
-    )
-
-    taxon_serializer = ChecklistSerializer(
-        taxa,
-        many=True
-    )
+    batch_size = 1000
+    collection_records = search.process_search().distinct('taxonomy')
 
     csv_file_path = os.path.join(
         settings.MEDIA_ROOT,
@@ -55,12 +49,17 @@ def generate_checklist(download_request_id):
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     fieldnames = get_serializer_keys(ChecklistSerializer)
-    with open(csv_file_path, 'w', newline='', encoding='utf-8') as csvfile:
+    written_taxa_ids = set()
+
+    with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        writer.writeheader()
-        for taxon in taxon_serializer.data:
-            writer.writerow(taxon)
+        if not written_taxa_ids:
+            writer.writeheader()
+
+        for start in range(0, collection_records.count(), batch_size):
+            batch = collection_records[start:start + batch_size]
+            process_batch(batch, writer, written_taxa_ids)
 
     # Save file path to download_request
     download_request.processing = False
@@ -68,3 +67,59 @@ def generate_checklist(download_request_id):
     download_request.save()
 
     return True
+
+
+def process_batch(batch, writer, written_taxa_ids):
+    """
+    Process a batch of collection records and write unique taxa to the CSV file.
+    Args:
+        batch (QuerySet): A batch of collection records.
+        writer (csv.DictWriter): CSV writer object.
+        written_taxa_ids (set): Set of already written taxa IDs to avoid duplication.
+    """
+    record_taxonomy_ids = batch.values_list('taxonomy_id', flat=True)
+    unique_taxonomy_ids = set(record_taxonomy_ids) - written_taxa_ids
+
+    if unique_taxonomy_ids:
+        taxa = Taxonomy.objects.filter(id__in=unique_taxonomy_ids)
+        taxon_serializer = ChecklistSerializer(taxa, many=True)
+
+        for taxon in taxon_serializer.data:
+            writer.writerow(taxon)
+            written_taxa_ids.add(taxon['id'])
+
+
+class DownloadChecklistAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        auto_approved = not preferences.SiteSetting.enable_download_request_approval
+        download_request_id = self.request.POST.get(
+            'downloadRequestId', None)
+
+        if not download_request_id:
+            raise Http404('Missing download request id')
+
+        download_request = DownloadRequest.objects.get(
+            id=download_request_id
+        )
+
+        if download_request.request_file and download_request.approved:
+            send_csv_via_email.delay(
+                user_id=self.request.user.id,
+                csv_file=download_request.request_file.path,
+                file_name='Checklist',
+                download_request_id=download_request_id
+            )
+        else:
+            if auto_approved and not download_request.approved:
+                download_request.approved = True
+                download_request.save()
+
+            download_checklist.delay(
+                download_request_id,
+                auto_approved,
+                download_request.requester.id)
+
+        return Response({
+            'status': 'processing',
+        })

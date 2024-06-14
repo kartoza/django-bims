@@ -1,4 +1,4 @@
-function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true) {
+function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true, on_hidden = null) {
   const $downloadPopup = $('#download-popup');
   if(resource_type === 'CSV'){
     $downloadPopup.find('#data-format').show()
@@ -42,8 +42,10 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
       data: postData,
       success: function (data) {
         callback(data['download_request_id']);
-        $downloadPopup.modal('hide');
-        $submitDownloadPopup.prop('disabled', false);
+        setTimeout(function () {
+          $downloadPopup.modal('hide');
+          $submitDownloadPopup.prop('disabled', false);
+        }, 500)
       }, error: function (jqXHR, textStatus, errorThrown) {
         let errorMessage = "Error submitting download request.";
         if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
@@ -61,6 +63,9 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
   // Remove events
   $downloadPopup.on('hidden.bs.modal', function () {
     $submitDownloadPopup.off('click');
-    $downloadPopup.off('hidden.bs.modal')
+    $downloadPopup.off('hidden.bs.modal');
+    if (on_hidden) {
+      on_hidden();
+    }
   })
 }

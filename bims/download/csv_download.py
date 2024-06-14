@@ -18,6 +18,7 @@ from bims.models.notification import (
     get_recipients_for_notification, DOWNLOAD_REQUEST
 )
 from bims.utils.domain import get_current_domain
+from bims.tasks.send_notification import send_mail_notification
 
 
 class CsvDownload(APIView):
@@ -115,25 +116,24 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
     subject = render_to_string(
         '{0}_subject.txt'.format(email_template),
         ctx
-    )
+    ).strip()
     if not approval_needed:
         message = render_to_string(
             '{}_message_without_approval.txt'.format(email_template),
             ctx
-        )
+        ).strip()
     else:
         message = render_to_string(
             '{}_message.txt'.format(email_template),
             ctx
-        )
-    msg = EmailMultiAlternatives(
+        ).strip()
+
+    send_mail_notification.delay(
         subject,
         message,
         settings.DEFAULT_FROM_EMAIL,
         recipients
     )
-    msg.content_subtype = 'html'
-    msg.send()
 
 
 def send_rejection_csv(user, rejection_message = ''):

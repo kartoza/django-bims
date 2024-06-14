@@ -53,6 +53,7 @@ define([
         },
         dashboardData: null,
         csvDownloadGbifIdsUrl: '/api/gbif-ids/download/',
+        checklistDownloadUrl: '/api/checklist/download/',
         events: {
             'click .close-dashboard': 'closeDashboard',
             'click #export-locationsite-map': 'exportLocationsiteMap',
@@ -66,6 +67,7 @@ define([
             'click #chem-graph-export': 'downloadChemGraphs',
             'click .btn-html-img': 'convertToPNG',
             'click .download-gbif-ids' : 'downloadGBIfIds',
+            'click .download-checklist' : 'downloadChecklist',
             'change .dashboard-data-frequency': 'frequencyChanged'
         },
         initialize: function (options) {
@@ -210,11 +212,13 @@ define([
                     self.fetchData(data, true);
                     self.currentFiltersUrl = '?' + data;
                     self.csvDownloadGbifIdsUrl += '?' + data;
+                    self.checklistDownloadUrl += '?' + data;
                 } else {
                     self.chemCsvDownloadUrl += self.apiParameters(filterParameters);
                     self.csvDownloadEmailUrl += self.apiParameters(filterParameters);
                     self.currentFiltersUrl = self.apiParameters(filterParameters);
                     self.csvDownloadGbifIdsUrl += self.apiParameters(filterParameters);
+                    self.checklistDownloadUrl += self.apiParameters(filterParameters)
                     self.fetchData(self.apiParameters(filterParameters).substr(1), false);
                     Shared.Router.updateUrl('site-detail/' + self.apiParameters(filterParameters).substr(1), true);
                 }
@@ -781,7 +785,60 @@ define([
             button.html(name);
             button.prop('disabled', false);
         },
+        downloadChecklist: function (e) {
+            let csvName = 'Checklist';
+            let button = $(e.target);
+            let self = this;
+            let name = button.html();
 
+            let alertModalBody = $('#alertModalBody');
+            button.html('Processing...');
+            button.prop('disabled', true);
+
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.')
+                $('#alertModal').modal({
+                    'keyboard': false,
+                    'backdrop': 'static'
+                }).on('hidden.bs.modal', function () {
+                    button.html(name);
+                    button.prop('disabled', false);
+                });
+            } else {
+                showDownloadPopup('CSV', csvName, function (downloadRequestId) {
+                    let url = self.checklistDownloadUrl;
+                    $.ajax({
+                        url: url,
+                        dataType: 'json',
+                        type: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfmiddlewaretoken
+                        },
+                        data: {
+                            'downloadRequestId': downloadRequestId
+                        },
+                        success: function (data) {
+                            $('#alertModal').modal({
+                                'keyboard': false,
+                                'backdrop': 'static'
+                            });
+                            if (data['status'] === 'failed') {
+                                let errorMessage = 'Unexpected Error'
+                                if (data['message']) {
+                                    errorMessage = data['message']
+                                }
+                                alertModalBody.html('ERROR : ' + errorMessage);
+                            } else {
+                                alertModalBody.html(downloadRequestMessage);
+                            }
+                            button.html(name);
+                            button.prop('disabled', false);
+                        }
+                    });
+                }, false, function () {
+                })
+            }
+        },
         downloadGBIfIds: function (e){
             let csv_name = 'GBIF ids'
             let button = $(e.target);

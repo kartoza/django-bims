@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 def download_checklist(download_request_id, send_email=False, user_id=None):
     from bims.utils.celery import memcache_lock
     from bims.api_views.checklist import generate_checklist
+    from bims.tasks.email_csv import send_csv_via_email
+    from bims.models.download_request import DownloadRequest
 
     def process_checklist():
         try:
@@ -18,7 +20,16 @@ def download_checklist(download_request_id, send_email=False, user_id=None):
             if status:
                 # send email here
                 if send_email and user_id:
-                    pass
+                    download_request = DownloadRequest.objects.get(
+                        id=download_request_id
+                    )
+                    send_csv_via_email(
+                        user_id,
+                        download_request.request_file.path,
+                        download_request.request_category,
+                        download_request.approved,
+                        download_request.id
+                    )
             return status
         except Exception as e:
             logger.error(f"Error generating checklist for request {download_request_id}: {e}")
