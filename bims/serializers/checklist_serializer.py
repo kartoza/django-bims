@@ -130,7 +130,10 @@ class ChecklistSerializer(SerializerContextCache):
         try:
             source_data = []
             for collection in bio:
-                source_data.append(str(collection.source_reference))
+                if collection.source_reference:
+                    source_data.append(
+                        str(collection.source_reference)
+                    )
             return ','.join(source_data)
         except TypeError:
             return ''
@@ -170,9 +173,9 @@ class ChecklistSerializer(SerializerContextCache):
             taxonomy=obj
         ).order_by('appendix')
         if cites_listing_info:
-            return list(cites_listing_info.values_list(
+            return ','.join(list(cites_listing_info.values_list(
                 'appendix', flat=True
-            ))
+            )))
         return ''
 
     class Meta:
