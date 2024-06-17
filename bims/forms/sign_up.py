@@ -28,6 +28,8 @@ class CustomSignupForm(SignupForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.organization = self.cleaned_data['organization']
+        if 'username' in self.cleaned_data:
+            user.username = self.cleaned_data["username"]
         user.save()
         bims_profile, created = Profile.objects.get_or_create(
             user=user
