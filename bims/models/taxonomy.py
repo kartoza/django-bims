@@ -45,6 +45,7 @@ class TaxonomyField(models.CharField):
 
 
 class Taxonomy(AbstractValidation):
+
     CATEGORY_CHOICES = (
         (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
         (ORIGIN_CATEGORIES['native'], 'Native'),
