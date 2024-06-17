@@ -6,6 +6,7 @@ from django.views.generic import RedirectView
 from django.views.generic import TemplateView
 
 from bims.api_views.unpublished_data import UnpublishedData
+from bims.views.download_occurrence_template import download_occurrence_template
 from bims.views.physico_chemical_upload import PhysicoChemicalUploadView
 from bims.views.proxy import proxy_request
 
@@ -250,6 +251,9 @@ urlpatterns = [
     re_path(r'^download-taxa-template/',
         download_taxa_template,
         name='download-taxa-template'),
+    re_path(r'^download-occurrence-template/',
+        download_occurrence_template,
+        name='download-occurrence-template'),
     re_path(r'^water-temperature-form/$',
         WaterTemperatureView.as_view(),
         name='water-temperature-form'),

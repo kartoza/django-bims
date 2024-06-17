@@ -181,6 +181,8 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         new_expert_ids = self.request.POST.getlist('taxon-group-experts')
         gbif_species = self.request.POST.get('gbif-species', None)
         parent_taxon_id = self.request.POST.get('parent-taxon', None)
+        taxa_upload_template = self.request.FILES.get('taxa_upload_template', None)
+        occurrence_upload_template = self.request.FILES.get('occurrence_upload_template', None)
 
         if module_id:
             # Update existing module
@@ -202,6 +204,12 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
 
         if module_logo:
             taxon_group.logo = module_logo
+
+        if taxa_upload_template:
+            taxon_group.taxa_upload_template = taxa_upload_template
+
+        if occurrence_upload_template:
+            taxon_group.occurrence_upload_template = occurrence_upload_template
 
         TaxonExtraAttribute.objects.filter(taxon_group=taxon_group).exclude(
             name__in=extra_attributes).delete()
