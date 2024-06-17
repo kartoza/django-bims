@@ -29,13 +29,7 @@
                     <div class="help-block-space"></div>
                     <strong>You can download the template here :</strong>
                     {% block download_example_button %}
-                        {% if preferences.SiteSetting.occurrence_upload_template %}
-                            <a href="{{ preferences.SiteSetting.occurrence_upload_template.url }}"
-                               download="{{ preferences.SiteSetting.occurrence_upload_template.name }}">Download Template</a>
-                        {% else %}
-                            <a href="{% static "data/data_example.csv" %}"
-                               download="occurrence_template_file.csv">Download Template</a>
-                        {% endif %}
+                         <a href="#" onclick="download_template()">Download Template</a>
                     {% endblock %}
 
                     {% if not upload_sessions %}
@@ -209,6 +203,11 @@
 
         const updateUrl = "/api/upload-status/";
         let currentSessionId = 0;
+        
+        function download_template() {
+            const taxonGroupId = $('#taxon-group').val();
+            window.open('/download-occurrence-template?taxon_group=' + taxonGroupId);
+        }
 
         const updateProgress = (id, $elm) => {
             setTimeout(function () {

@@ -22,6 +22,10 @@ def download_taxa_template(request):
     if taxon_group_id:
         try:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+
+            if taxon_group.taxa_upload_template:
+                taxa_template = taxon_group.taxa_upload_template
+
             taxon_group_name = taxon_group.name + '_'
             taxon_extra_attributes = list(TaxonExtraAttribute.objects.filter(
                 taxon_group=taxon_group
