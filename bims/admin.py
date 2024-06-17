@@ -34,6 +34,8 @@ from django_json_widget.widgets import JSONEditorWidget
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
+from bims.tasks.cites_info import fetch_and_save_cites_listing
+from bims.helpers.list import chunk_list
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -1120,9 +1122,16 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'accepted_taxonomy'
     )
 
-    actions = ['merge_taxa', 'update_taxa', 'fetch_common_names']
+    actions = ['merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing']
 
     inlines = [TaxonImagesInline]
+
+    def fetch_cites_listing(self, request, queryset):
+        taxa_ids = list(queryset.values_list('id', flat=True))
+        chunk_size = 1000
+        for chunk in chunk_list(taxa_ids, chunk_size):
+            fetch_and_save_cites_listing.delay(chunk)
+        self.message_user(request, "CITES data fetching initiated for selected taxa.")
 
     def fetch_common_names(self, request, queryset):
         taxa_ids = list(queryset.values_list('id', flat=True))

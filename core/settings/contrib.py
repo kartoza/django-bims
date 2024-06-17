@@ -301,7 +301,9 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.SearchProcess',
     'flatpages.FlatPage',
     'td_biblio.author',
-    'django_celery_results.TaskResult'
+    'django_celery_results.TaskResult',
+    'bims.DownloadRequest',
+    'bims.Survey'
 ]
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True

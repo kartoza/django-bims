@@ -35,6 +35,10 @@ def get_cites_listing_data(taxon_name: str):
 
     # Extract CITES listing information
     cites_listings = taxon_concept.get('cites_listings', [])
+
+    if len(cites_listings) == 0:
+        return False, {"error": "No CITES listing found for this species."}
+
     cites_listing_info = [
         {
             'appendix': listing.get('appendix'),

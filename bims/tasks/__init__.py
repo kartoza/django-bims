@@ -16,6 +16,7 @@ from bims.tasks.taxa import *  # noqa
 from bims.tasks.harvest_gbif_species import *  # noqa
 from bims.tasks.location_site_summary import *  # noqa
 from bims.tasks.checklist import *  # noqa
+from bims.tasks.cites_info import fetch_and_save_cites_listing
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')
