@@ -133,6 +133,22 @@ class TaxonGroup(models.Model):
         help_text='Used to fetch species from GBIF'
     )
 
+    taxa_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for taxa data upload'
+        )
+    )
+
+    occurrence_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for occurrence data upload'
+        )
+    )
+
     class Meta:
         ordering = ('display_order',)
         permissions = (

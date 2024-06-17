@@ -198,8 +198,6 @@ export const taxaSidebar = (() => {
             taxaGroups, moduleId
         )
         const filteredTaxaGroups = filterTaxaGroups(taxaGroups, moduleId)
-
-        console.log(filteredTaxaGroups)
         let selectHTML = $(
             '<select class="form-control" name="parent-taxon" id="parent-taxon-select"></select>');
         selectHTML.append($('<option>').val('').text('Select a Parent Taxon'));
@@ -211,6 +209,16 @@ export const taxaSidebar = (() => {
             selectHTML.val(selectedParent.id).change()
         }
         $('#parent-taxon-module-container').html(selectHTML);
+
+        // Upload template
+        let taxaUploadTemplate = _element.find('.taxon-group-title').data('taxa-upload-template');
+        $editTaxonGroupModal.find('#taxa-upload-template-link').attr('href', taxaUploadTemplate);
+        $editTaxonGroupModal.find('#taxa-upload-template-link').text(taxaUploadTemplate.split('/').pop());
+
+        let occurrenceUploadTemplate = _element.find('.taxon-group-title').data('occurrence-upload-template');
+        $editTaxonGroupModal.find('#occurrence-upload-template-link').attr('href', occurrenceUploadTemplate);
+        $editTaxonGroupModal.find('#occurrence-upload-template-link').text(occurrenceUploadTemplate.split('/').pop());
+
 
         return false;
     }
@@ -292,6 +300,7 @@ export const taxaSidebar = (() => {
 
         let url = '/api/update-taxon-group/';
         $(e.target).find('.btn-submit').prop('disabled', true);
+        $(e.target).find('.btn-submit-text').html('');
         $(e.target).find('.loading-btn').show();
         $.ajax({
             type: 'POST',
@@ -305,6 +314,7 @@ export const taxaSidebar = (() => {
                 location.reload();
             },
             error: function (data) {
+                $(e.target).find('.btn-submit-text').html('Save');
                 console.log("error");
                 console.log(data);
             }

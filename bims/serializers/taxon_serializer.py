@@ -1,6 +1,7 @@
 import json
 from collections.abc import Iterable
 
+from preferences import preferences
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from rest_framework import serializers
@@ -314,6 +315,24 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     validated_count = serializers.SerializerMethodField()
     unvalidated_count = serializers.SerializerMethodField()
+    taxa_upload_template = serializers.SerializerMethodField()
+    occurrence_upload_template = serializers.SerializerMethodField()
+
+    def get_taxa_upload_template(self, obj: TaxonGroup):
+        if not obj.taxa_upload_template:
+            if preferences.SiteSetting.taxonomic_upload_template:
+                return preferences.SiteSetting.taxonomic_upload_template.url
+        else:
+            return obj.taxa_upload_template.url
+        return ''
+
+    def get_occurrence_upload_template(self, obj: TaxonGroup):
+        if not obj.occurrence_upload_template:
+            if preferences.SiteSetting.occurrence_upload_template:
+                return preferences.SiteSetting.occurrence_upload_template.url
+        else:
+            return obj.occurrence_upload_template.url
+        return ''
 
     def get_children(self, obj: TaxonGroup):
         children = TaxonGroup.objects.filter(parent=obj)
@@ -395,4 +414,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',
-                  'experts', 'children']
+                  'experts', 'children',
+                  'taxa_upload_template', 'occurrence_upload_template']
