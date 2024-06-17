@@ -141,9 +141,6 @@ class Profile(models.Model):
         attempt = 0
         is_dictionary = False
 
-        if not self.signup_source_site:
-            self.signup_source_site = Site.objects.get_current()
-
         while not is_dictionary and attempt < max_allowed:
             if not self.data:
                 break

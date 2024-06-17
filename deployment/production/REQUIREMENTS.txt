@@ -10,7 +10,7 @@ requests>=2.23.0
 pytz
 # support special characters
 
-django-allauth==0.54.0
+django-allauth==0.63.3
 
 # Django Easy Audit
 # https://github.com/soynatan/django-easy-audit

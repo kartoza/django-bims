@@ -18,14 +18,15 @@ def user_signed_up_(request, user, **kwargs):
     user_email = user.email
 
     # Try to change the username
-    new_username = '{first_name}_{last_name}'.format(
-        first_name=user.first_name.lower(),
-        last_name=user.last_name.lower()
-    )
+    if not user.username:
+        new_username = '{first_name}_{last_name}'.format(
+            first_name=user.first_name.lower(),
+            last_name=user.last_name.lower()
+        )
 
-    if not Profile.objects.filter(username=new_username).exists():
-        user.username = new_username
-        user.save()
+        if not Profile.objects.filter(username=new_username).exists():
+            user.username = new_username
+            user.save()
 
     username = user.username
 
