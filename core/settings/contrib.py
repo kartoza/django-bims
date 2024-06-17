@@ -138,6 +138,23 @@ TENANT_APPS = (
     'pesticide',
 )
 
+MIDDLEWARE = (
+    'django_tenants.middleware.main.TenantMainMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
+    'dj_pagination.middleware.PaginationMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+)
+
+
 TESTING = sys.argv[1:2] == ['test']
 if not TESTING and not on_travis:
     SHARED_APPS += (
@@ -155,11 +172,6 @@ INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in S
 TENANT_MODEL = "tenants.Client"
 TENANT_DOMAIN_MODEL = "tenants.Domain"
 
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_FORMS = {
-    'signup': 'bims.forms.CustomSignupForm',
-}
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
 if os.environ.get('SENTRY_KEY'):
     import sentry_sdk
@@ -263,10 +275,6 @@ DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = True
 # Defines whether to log URL requests made to the project
 DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
 
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 LOGIN_REDIRECT_URL = "/"
 
 
@@ -308,7 +316,6 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True
 
-ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 
 LOGGING = {
     'version': 1,
@@ -375,10 +382,7 @@ ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
 # Set institutionID default value
 INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')
 
-ACCOUNT_APPROVAL_REQUIRED = True
-SOCIALACCOUNT_AUTO_SIGNUP = True
-ACCOUNT_ADAPTER = 'bims.adapters.account_adapter.AccountAdapter'
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+
 CELERY_TASK_PROTOCOL = 1
 
 REST_FRAMEWORK = {
@@ -498,6 +502,17 @@ LOGOUT_URL = '/accounts/logout/'
 # CKEDITOR CONFIGURATIONS
 CKEDITOR_UPLOAD_PATH = 'ckeditor/'
 
-
+ACCOUNT_APPROVAL_REQUIRED = True
+ACCOUNT_ADAPTER = 'bims.adapters.account_adapter.AccountAdapter'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_FORMS = {
+    'signup': 'bims.forms.CustomSignupForm',
+}
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+
 CELERY_RESULT_BACKEND = 'django-db'

@@ -516,31 +516,10 @@ TEMPLATES = [
     },
 ]
 
-MIDDLEWARE = (
-    'django_tenants.middleware.main.TenantMainMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.contrib.sites.middleware.CurrentSiteMiddleware',
-    'dj_pagination.middleware.PaginationMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-)
-
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
 # Security stuff
 SESSION_EXPIRED_CONTROL_ENABLED = ast.literal_eval(os.environ.get('SESSION_EXPIRED_CONTROL_ENABLED', 'True'))
-
-if SESSION_EXPIRED_CONTROL_ENABLED:
-    # This middleware checks for ACCESS_TOKEN validity and if expired forces
-    # user logout
-    MIDDLEWARE += \
-            ('geonode.security.middleware.SessionControlMiddleware',)
 
 SESSION_COOKIE_SECURE = ast.literal_eval(os.environ.get('SESSION_COOKIE_SECURE', 'False'))
 CSRF_COOKIE_SECURE = ast.literal_eval(os.environ.get('CSRF_COOKIE_SECURE', 'False'))
@@ -552,14 +531,6 @@ SECURE_BROWSER_XSS_FILTER = ast.literal_eval(os.environ.get('SECURE_BROWSER_XSS_
 SECURE_SSL_REDIRECT = ast.literal_eval(os.environ.get('SECURE_SSL_REDIRECT', 'False'))
 SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '3600'))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = ast.literal_eval(os.environ.get('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'True'))
-
-# Replacement of the default authentication backend in order to support
-# permissions per object.
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'guardian.backends.ObjectPermissionBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
 
 # 1 day expiration time by default
 ACCESS_TOKEN_EXPIRE_SECONDS = int(os.getenv('ACCESS_TOKEN_EXPIRE_SECONDS', '86400'))
@@ -620,13 +591,6 @@ THEME_ACCOUNT_CONTACT_EMAIL = os.getenv(
 # GeoNode specific settings
 #
 # per-deployment settings should go here
-
-# Login and logout urls override
-LOGIN_URL = os.getenv('LOGIN_URL', '{}account/login/'.format(SITEURL))
-LOGOUT_URL = os.getenv('LOGOUT_URL', '{}account/logout/'.format(SITEURL))
-
-ACCOUNT_LOGIN_REDIRECT_URL = os.getenv('LOGIN_REDIRECT_URL', SITEURL)
-ACCOUNT_LOGOUT_REDIRECT_URL = os.getenv('LOGOUT_REDIRECT_URL', SITEURL)
 
 # Backend
 DEFAULT_WORKSPACE = os.getenv('DEFAULT_WORKSPACE', 'geonode')
@@ -838,9 +802,6 @@ if HAYSTACK_SEARCH:
 DISPLAY_ORIGINAL_DATASET_LINK = ast.literal_eval(
     os.getenv('DISPLAY_ORIGINAL_DATASET_LINK', 'True'))
 
-ACCOUNT_NOTIFY_ON_PASSWORD_CHANGE = ast.literal_eval(
-    os.getenv('ACCOUNT_NOTIFY_ON_PASSWORD_CHANGE', 'False'))
-
 # gravatar settings
 AUTO_GENERATE_AVATAR_SIZES = (
     20, 30, 32, 40, 50, 65, 70, 80, 100, 140, 200, 240
@@ -874,19 +835,6 @@ API_LIMIT_PER_PAGE = int(os.getenv('API_LIMIT_PER_PAGE', '200'))
 API_INCLUDE_REGIONS_COUNT = ast.literal_eval(
     os.getenv('API_INCLUDE_REGIONS_COUNT', 'False'))
 
-# Settings for RECAPTCHA plugin
-RECAPTCHA_ENABLED = ast.literal_eval(os.environ.get('RECAPTCHA_ENABLED', 'False'))
-
-if RECAPTCHA_ENABLED:
-    ACCOUNT_SIGNUP_FORM_CLASS = os.getenv("ACCOUNT_SIGNUP_FORM_CLASS",
-                                          'geonode.people.forms.AllauthReCaptchaSignupForm')
-    """
-     In order to generate reCaptcha keys, please see:
-      - https://pypi.org/project/django-recaptcha/#installation
-      - https://pypi.org/project/django-recaptcha/#local-development-and-functional-testing
-    """
-    RECAPTCHA_PUBLIC_KEY = os.getenv("RECAPTCHA_PUBLIC_KEY", 'geonode_RECAPTCHA_PUBLIC_KEY')
-    RECAPTCHA_PRIVATE_KEY = os.getenv("RECAPTCHA_PRIVATE_KEY", 'geonode_RECAPTCHA_PRIVATE_KEY')
 
 GEONODE_CATALOGUE_METADATA_XSL = ast.literal_eval(os.getenv('GEONODE_CATALOGUE_METADATA_XSL', 'True'))
 
@@ -1189,22 +1137,6 @@ MAP_CLIENT_USE_CROSS_ORIGIN_CREDENTIALS = ast.literal_eval(os.getenv(
     'False'
 ))
 
-ACCOUNT_OPEN_SIGNUP = ast.literal_eval(os.environ.get('ACCOUNT_OPEN_SIGNUP', 'True'))
-ACCOUNT_APPROVAL_REQUIRED = ast.literal_eval(
-    os.getenv('ACCOUNT_APPROVAL_REQUIRED', 'False')
-)
-# ACCOUNT_ADAPTER = 'geonode.people.adapters.LocalAccountAdapter'
-ACCOUNT_AUTHENTICATION_METHOD = os.environ.get('ACCOUNT_AUTHENTICATION_METHOD', 'username_email')
-ACCOUNT_CONFIRM_EMAIL_ON_GET = ast.literal_eval(os.environ.get('ACCOUNT_CONFIRM_EMAIL_ON_GET', 'True'))
-ACCOUNT_EMAIL_REQUIRED = ast.literal_eval(os.environ.get('ACCOUNT_EMAIL_REQUIRED', 'True'))
-ACCOUNT_EMAIL_VERIFICATION = os.environ.get('ACCOUNT_EMAIL_VERIFICATION', 'none')
-
-# Since django-allauth 0.43.0.
-ACCOUNT_SIGNUP_REDIRECT_URL = os.environ.get('ACCOUNT_SIGNUP_REDIRECT_URL', os.getenv('SITEURL', _default_siteurl))
-ACCOUNT_LOGIN_ATTEMPTS_LIMIT = int(os.getenv('ACCOUNT_LOGIN_ATTEMPTS_LIMIT', '3'))
-ACCOUNT_MAX_EMAIL_ADDRESSES = int(os.getenv('ACCOUNT_MAX_EMAIL_ADDRESSES', '2'))
-
-# INVITATIONS_ADAPTER = ACCOUNT_ADAPTER
 
 # Choose thumbnail generator -- this is the default generator
 THUMBNAIL_GENERATOR = "geonode.layers.utils.create_gs_thumbnail_geonode"

@@ -108,10 +108,11 @@ class AccountAdapter(LocalAccountAdapter):
             raise ValidationError('Sign up failed!')
 
     def save_user(self, request, user, form, commit=True):
-        recaptcha_token = request.POST.get('recaptcha_token', None)
-        if not recaptcha_token:
-            raise ValidationError('Sign up failed!')
-        self._verify_recaptcha(recaptcha_token)
+        if not settings.DEBUG:
+            recaptcha_token = request.POST.get('recaptcha_token', None)
+            if not recaptcha_token:
+                raise ValidationError('Sign up failed!')
+            self._verify_recaptcha(recaptcha_token)
         user = super(LocalAccountAdapter, self).save_user(
             request, user, form, commit=commit)
         if settings.ACCOUNT_APPROVAL_REQUIRED:
