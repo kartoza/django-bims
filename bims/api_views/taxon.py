@@ -17,6 +17,7 @@ from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
 from bims.models.taxonomy import Taxonomy
+from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
@@ -49,7 +50,7 @@ class TaxonDetail(APIView):
         try:
             taxonomic_data = {
                 TaxonomicRank[taxonomy.rank].value.lower():
-                    taxonomy.scientific_name
+                    taxonomy.canonical_name
             }
             taxonomic_rank_values.append(taxonomic_data)
         except KeyError:
@@ -64,7 +65,7 @@ class TaxonDetail(APIView):
 
         taxon = self.get_object(pk)
 
-        serializer = TaxonSerializer(taxon)
+        serializer = TaxonDetailSerializer(taxon)
         data = serializer.data
 
         records = BiologicalCollectionRecord.objects.filter(

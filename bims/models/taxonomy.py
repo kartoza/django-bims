@@ -345,12 +345,28 @@ class Taxonomy(AbstractValidation):
         return self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
 
     @property
+    def sub_genus_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBGENUS.name)
+
+    @property
     def species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
 
     @property
     def sub_species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SUBSPECIES.name)
+
+    @property
+    def sub_family_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBFAMILY.name)
+
+    @property
+    def tribe_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.TRIBE.name)
+
+    @property
+    def sub_tribe_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBTRIBE.name)
 
     @property
     def variety_name(self):

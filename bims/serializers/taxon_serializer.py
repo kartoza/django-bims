@@ -8,7 +8,6 @@ from rest_framework import serializers
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal, TaxonomyUpdateReviewer
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup
-from bims.utils.gbif import get_vernacular_names
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
 
@@ -37,6 +36,10 @@ class TaxonSerializer(serializers.ModelSerializer):
     genus = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
     biographic_distribution = serializers.SerializerMethodField()
+    DT_RowId = serializers.SerializerMethodField()
+
+    def get_DT_RowId(self, obj: Taxonomy):
+        return f'row_{obj.id}'
 
     def get_biographic_distribution(self, obj: Taxonomy):
         return ''

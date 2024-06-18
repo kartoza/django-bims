@@ -1,6 +1,7 @@
 import { taxaSidebar } from './taxa_sidebar.js';
 import { taxaTable } from "./taxa_table.js";
 import { addNewTaxon} from "./add_new_taxon.js";
+import { taxonDetail } from "./taxon_detail.js";
 
 let taxaData = [];
 let orderField = {
@@ -180,6 +181,10 @@ export const taxaManagement = (() => {
         modal.modal('show');
     }
 
+    function formatLoadingMessage() {
+        return `<div style="padding-left:50px;">Loading...</div>`;
+    }
+
     const getTaxaList = (url) => {
         taxaUrlList = url;
         loading.show();
@@ -294,14 +299,13 @@ export const taxaManagement = (() => {
                         $.each(response.results, function (index, data) {
                             let name = data.canonical_name || data.scientific_name;
                             let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
-                            let commonNameHTML = data.common_name ? ` <span class="badge badge-info">${data.common_name}</span><br/>` : '';
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
                             let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
                             let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
-                            data.nameHTML = name + commonNameHTML + taxonomicStatusHTML + '<br/>' + gbifHTML + iucnHTML + validatedHTML;
+                            data.nameHTML = name + taxonomicStatusHTML + '<br/>' + gbifHTML + iucnHTML + validatedHTML;
 
                             if (userCanEditTaxon || isExpert) {
                                 let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
@@ -331,6 +335,12 @@ export const taxaManagement = (() => {
                 });
             },
             "columns": [
+                 {
+                    class: 'dt-control',
+                    orderable: false,
+                    data: null,
+                    defaultContent: '',
+                },
                 {
                     "data": "canonical_name",
                     "render": function (data, type, row) {
@@ -342,7 +352,7 @@ export const taxaManagement = (() => {
                 {"data": "genus", "className": "min-width-100"},
                 {"data": "species", "className": "min-width-100"},
                 {"data": "author", "className": "min-width-100"},
-                {"data": "biographic_distribution", "className": "min-width-100"},
+                {"data": "biographic_distribution", "className": "min-width-100", "sortable": false},
                 {"data": "rank", "className": "min-width-100"},
                 {"data": "iucn_status_full_name", "orderData": [2], "orderField": "iucn_status__category"},
                 // {"data": "origin_name"},
@@ -373,6 +383,55 @@ export const taxaManagement = (() => {
             "pageLength": initialPageSize,
             "pagingType": "simple_numbers",
             "searching": false
+        });
+
+        const detailRows = [];
+        const taxonCache = {};
+
+        // Event listener for detail rows
+        table.on('click', 'tbody td.dt-control', async function (event) {
+            let tr = event.target.closest('tr');
+            let row = table.row(tr);
+            let idx = detailRows.indexOf(tr.id);
+
+            if (row.child.isShown()) {
+                tr.classList.remove('details');
+                row.child.hide();
+                detailRows.splice(idx, 1);
+            } else {
+                tr.classList.add('details');
+
+                if (!taxonCache[tr.id]) {
+                    row.child(formatLoadingMessage()).show();
+
+                    try {
+                        let response = await fetch(`/api/taxon/${tr.id.replace('row_', '')}`);
+                        let data = await response.json();
+                        taxonCache[tr.id] = data;
+                        row.child(taxonDetail.formatDetailTaxon(data)).show();
+                    } catch (error) {
+                        console.error('Error fetching taxon data:', error);
+                        row.child('<div style="padding-left:50px; color: red;">Failed to load data</div>').show();
+                        return;
+                    }
+                } else {
+                    row.child(taxonDetail.formatDetailTaxon(taxonCache[tr.id])).show();
+                }
+
+                if (idx === -1) {
+                    detailRows.push(tr.id);
+                }
+            }
+        });
+
+        // Redraw event to open details for stored rows
+        table.on('draw', () => {
+            detailRows.forEach((id) => {
+                let el = document.querySelector('#' + id + ' td.dt-control');
+                if (el) {
+                    el.dispatchEvent(new Event('click', { bubbles: true }));
+                }
+            });
         });
 
         $("#add-taxon-input").on("keydown", function(event) {

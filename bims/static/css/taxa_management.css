@@ -250,13 +250,29 @@ ul.pagination li.current a {
 .min-width-150 {
     min-width: 150px;
 }
-table.dataTable tbody tr:nth-child(odd)>.dtfc-fixed-end {
-    background-color: color(srgb 0.949 0.949 0.9491) !important;
-}
 table {
     font-size: 11pt;
 }
 .action-icon {
     padding-left: 5px;
     padding-right: 5px;
+}
+
+.dt-header {
+    padding: 10px;
+    background-color: var(--main-accent-color);
+}
+
+.dt-item {
+    padding: 10px;
+}
+
+.dt-column {
+    padding: 0 15px;
+    width: 300px;
+    border: 1px solid white;
+}
+
+[data-dt-row] {
+    background-color: rgba(213, 213, 213, 0.64) !important;
 }
