@@ -33,6 +33,22 @@ class TaxonSerializer(serializers.ModelSerializer):
     canonical_name = serializers.SerializerMethodField()
     rank = serializers.SerializerMethodField()
     can_be_validated = serializers.SerializerMethodField()
+    family = serializers.SerializerMethodField()
+    genus = serializers.SerializerMethodField()
+    species = serializers.SerializerMethodField()
+    biographic_distribution = serializers.SerializerMethodField()
+
+    def get_biographic_distribution(self, obj: Taxonomy):
+        return ''
+
+    def get_genus(self, obj: Taxonomy):
+        return obj.genus_name
+
+    def get_family(self, obj: Taxonomy):
+        return obj.family_name
+
+    def get_species(self, obj: Taxonomy):
+        return obj.species_name
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

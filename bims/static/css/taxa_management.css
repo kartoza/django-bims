@@ -167,29 +167,6 @@ ul.pagination li.current a {
     max-height: 100vh; /* Sets the height to be the same as the viewport */
 }
 
-.taxa-table .table {
-    width: 100%; /* Ensures the table takes the full width */
-    table-layout: fixed; /* This helps in keeping the column widths consistent */
-    border-collapse: collapse;
-}
-
-.taxa-table thead,
-.taxa-table tbody tr {
-    display: table;
-    width: 100%;
-    table-layout: fixed; /* Ensures consistent column widths */
-}
-
-.taxa-table tbody {
-    display: block;
-    overflow-x: hidden;
-    overflow-y: auto; /* Scrollable tbody */
-    max-height: calc(100vh - 325px);
-    max-height: -o-calc(100vh - 325px); /* opera */
-    max-height: -webkit-calc(100vh - 325px); /* google, safari */
-    max-height: -moz-calc(100vh - 325px); /* firefox */
-}
-
 #collapseFilter {
     z-index: 1050;
 }
@@ -260,4 +237,26 @@ ul.pagination li.current a {
 .side-panel {
     height: 100%;
     overflow-y: auto;
+}
+.min-width-50 {
+    min-width: 50px;
+}
+.min-width-75 {
+    min-width: 75px;
+}
+.min-width-100 {
+    min-width: 100px;
+}
+.min-width-150 {
+    min-width: 150px;
+}
+table.dataTable tbody tr:nth-child(odd)>.dtfc-fixed-end {
+    background-color: color(srgb 0.949 0.949 0.9491) !important;
+}
+table {
+    font-size: 11pt;
+}
+.action-icon {
+    padding-left: 5px;
+    padding-right: 5px;
 }

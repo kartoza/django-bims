@@ -180,30 +180,6 @@ export const taxaManagement = (() => {
         modal.modal('show');
     }
 
-    const popupCenter = ({url, title, w, h}) => {
-        // Fixes dual-screen position                             Most browsers      Firefox
-        const dualScreenLeft = window.screenLeft !==  undefined ? window.screenLeft : window.screenX;
-        const dualScreenTop = window.screenTop !==  undefined   ? window.screenTop  : window.screenY;
-
-        const width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
-        const height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
-
-        const systemZoom = width / window.screen.availWidth;
-        const left = (width - w) / 2 / systemZoom + dualScreenLeft
-        const top = (height - h) / 2 / systemZoom + dualScreenTop
-        const newWindow = window.open(url, title,
-            `
-      scrollbars=yes,
-      width=${w / systemZoom}, 
-      height=${h / systemZoom}, 
-      top=${top}, 
-      left=${left}
-      `
-        )
-
-        if (window.focus) newWindow.focus();
-    }
-
     const getTaxaList = (url) => {
         taxaUrlList = url;
         loading.show();
@@ -220,6 +196,13 @@ export const taxaManagement = (() => {
             "serverSide": true,
             "ordering": true,
             "order": [],
+            "scrollX": true,
+            "fixedColumns": {
+                "start": 0,
+                "end": 1
+            },
+            scrollY: 'calc(100vh - 325px)',
+            "scrollCollapse": true,
             "initComplete": function(settings, json) {
                 let columnIdx = settings.aoColumns.findIndex(col => col.data === (initialSortOrder ? initialSortOrder : 'canonical_name'));
                 let initialOrder = [columnIdx, initialSortBy.includes('-') ? 'desc' : 'asc'];
@@ -311,17 +294,14 @@ export const taxaManagement = (() => {
                         $.each(response.results, function (index, data) {
                             let name = data.canonical_name || data.scientific_name;
                             let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
-                            let scientificNameHTML = `<br/><span style="font-size: 9pt">${data.scientific_name}</span><br/>`;
                             let commonNameHTML = data.common_name ? ` <span class="badge badge-info">${data.common_name}</span><br/>` : '';
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
-                            let dividerHTML = (data.gbif_key || data.iucn_redlist_id) ?
-                                '<div style="border-top: 1px solid black; margin-top: 5px; margin-bottom: 5px;"></div>' : '';
                             let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
                             let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
-                            data.nameHTML = name + scientificNameHTML + commonNameHTML + taxonomicStatusHTML + dividerHTML + gbifHTML + iucnHTML + validatedHTML;
+                            data.nameHTML = name + commonNameHTML + taxonomicStatusHTML + '<br/>' + gbifHTML + iucnHTML + validatedHTML;
 
                             if (userCanEditTaxon || isExpert) {
                                 let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
@@ -355,23 +335,30 @@ export const taxaManagement = (() => {
                     "data": "canonical_name",
                     "render": function (data, type, row) {
                         return row.nameHTML;
-                    }
+                    },
+                    "className": "min-width-100"
                 },
-                {"data": "rank"},
+                {"data": "family", "className": "min-width-100"},
+                {"data": "genus", "className": "min-width-100"},
+                {"data": "species", "className": "min-width-100"},
+                {"data": "author", "className": "min-width-100"},
+                {"data": "biographic_distribution", "className": "min-width-100"},
+                {"data": "rank", "className": "min-width-100"},
                 {"data": "iucn_status_full_name", "orderData": [2], "orderField": "iucn_status__category"},
-                {"data": "origin_name"},
-                {"data": "endemism_name", "orderData": [4], "orderField": "endemism__name"},
-                {
-                    "data": "total_records",
-                    "render": function (data, type, row) {
-                        let searchUrl = `/map/#search/${row.canonical_name}/taxon=&search=${row.canonical_name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
-                        return `${data} <a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a>`;
-                    }
-                },
-                {"data": "import_date"},
+                // {"data": "origin_name"},
+                // {"data": "endemism_name", "orderData": [4], "orderField": "endemism__name"},
+                // {
+                //     "data": "total_records",
+                //     "render": function (data, type, row) {
+                //         let searchUrl = `/map/#search/${row.canonical_name}/taxon=&search=${row.canonical_name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
+                //         return `${data} <a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a>`;
+                //     }
+                // },
+                {"data": "import_date", "className": "min-width-100"},
                 {
                     "data": "tag_list",
                     "sortable": false,
+                    "className": "min-width-100",
                     "searchable": false,
                     "render": function (data) {
                         return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
