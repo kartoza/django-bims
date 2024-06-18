@@ -354,7 +354,7 @@ export const taxaManagement = (() => {
                 {"data": "author", "className": "min-width-100"},
                 {"data": "biographic_distribution", "className": "min-width-100", "sortable": false},
                 {"data": "rank", "className": "min-width-100"},
-                {"data": "iucn_status_full_name", "orderData": [2], "orderField": "iucn_status__category"},
+                {"data": "iucn_status_full_name", "orderData": [8], "orderField": "iucn_status__category"},
                 // {"data": "origin_name"},
                 // {"data": "endemism_name", "orderData": [4], "orderField": "endemism__name"},
                 // {

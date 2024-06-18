@@ -3,12 +3,10 @@ import ast
 import logging
 
 from django.contrib.auth import get_user_model
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import transaction
-from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
-from django.db.models import Count
+from django.http import Http404
+from django.db.models import Count, Case, Value, When, F, CharField
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import UserPassesTestMixin
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -22,7 +20,7 @@ from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from bims.models import TaxonGroup, VernacularName, TaxonGroupTaxonomy
+from bims.models import TaxonGroup, VernacularName
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
@@ -466,6 +464,19 @@ class TaxaList(LoginRequiredMixin, APIView):
                 taxon_list = taxon_list.annotate(
                     total_records=Count('biologicalcollectionrecord')
                 ).order_by(order)
+            elif 'family' in order or 'species' in order or 'genus' in order:
+                rank_name = order.split('-')[-1]
+
+                taxon_list = taxon_list.annotate(
+                    **{rank_name: F(f'hierarchical_data__{rank_name}_name')}
+                ).annotate(
+                        order_priority=Case(
+                            When(**{f"{rank_name}__isnull": False}, then=Value(0)),
+                            When(**{f"{rank_name}__exact": ''}, then=Value(1)),
+                            default=Value(1),
+                            output_field=CharField(),
+                        )
+                    ).order_by('order_priority', order, 'id')
             elif 'origin' not in order:
                 taxon_list = taxon_list.order_by(order)
             else:
