@@ -38,7 +38,7 @@
         </div>
         <!-- Recursive Include for Children -->
         {% if taxon_group.children %}
-            <ul style="padding-left: 10px; margin-top: 10px; padding-right: 0;">
+            <ul style="padding-left: 0px; margin-top: 10px; padding-right: 0;">
                 {% for child in taxon_group.children %}
                     {% include "_taxongroup_item.html" with taxon_group=child %}
                 {% endfor %}
