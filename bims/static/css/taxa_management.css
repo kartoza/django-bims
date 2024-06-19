@@ -295,3 +295,7 @@ table {
 #dt-length-0 {
     margin-right: 5px;
 }
+
+#taxaTable {
+    margin-left: 0 !important;
+}
