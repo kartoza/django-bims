@@ -16,14 +16,8 @@ class AppConfig(AppConfig):
 
         installed_apps = []
 
-        # Fix python 3 compatibility
-        try:
-            basestring
-        except NameError:
-            basestring = str
-
         for app in settings.INSTALLED_APPS:
-            if isinstance(app, basestring):
+            if isinstance(app, str):
                 installed_apps.append(app)
 
         settings.INSTALLED_APPS = installed_apps
