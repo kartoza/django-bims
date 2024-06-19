@@ -20,6 +20,8 @@
                     <div class="taxon-group-badge">
                         <span id="taxon_group_validated_{{ taxon_group.id }}">{{ taxon_group.validated_count }}</span> Validated
                     </div>
+                </div>
+                <div>
                     {% if taxon_group.unvalidated_count > 0 %}
                     <div class="taxon-group-badge">
                         <span id="taxon_group_unvalidated_{{ taxon_group.id }}">{{ taxon_group.unvalidated_count }}</span> Unvalidated
