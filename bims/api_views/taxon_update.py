@@ -22,6 +22,7 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
         endemism = taxon.endemism
     proposal = TaxonomyUpdateProposal.objects.create(
         original_taxonomy=taxon,
+        author=data.get('author', taxon.author),
         taxon_group=taxon_group,
         status='pending',
         rank=data.get('rank', taxon.rank),
@@ -52,6 +53,7 @@ def update_taxon_proposal(
         id=proposal.id
     ).update(
         status='pending',
+        author=data.get('author', proposal.author),
         rank=data.get('rank', proposal.rank),
         scientific_name=data.get(
             'scientific_name', proposal.scientific_name),
