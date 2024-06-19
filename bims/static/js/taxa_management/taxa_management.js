@@ -234,7 +234,7 @@ export const taxaManagement = (() => {
                     if (!taxaData) return false;
                     let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
                     if (data) {
-                        editTaxonClicked(data);
+                        window.location.href = `/taxonomy/edit/${selectedTaxonGroup}/${data.id}/?next=${location.href}`;
                     }
                 });
 
