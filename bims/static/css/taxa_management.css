@@ -49,11 +49,17 @@ ul.pagination li.current a {
     list-style-type: none;
 }
 
+#sortable li:hover {
+    background-color: rgba(222, 222, 222, 0.55);
+}
+
 #sortable li {
+    border-radius: 5px;
     margin: 3px 3px 3px 0;
     padding: 10px;
     width: 100%;
-    background-color: rgba(222, 222, 222, 0.31);
+    background-color: rgba(222, 222, 222, 0.25);
+    border-color: rgba(222, 222, 222, 0.70);
 }
 
 #sortable li .row {
@@ -82,10 +88,11 @@ ul.pagination li.current a {
     font-size: 10pt;
     padding: 0 5px;
     margin-left: 5px;
+    height: fit-content;
 }
 
 .selected {
-    border-color: #179f90;
+    border-color: rgba(23, 159, 144, 0.35);
     background-color: #179f9026 !important;
 }
 
@@ -270,9 +277,21 @@ table {
 .dt-column {
     padding: 0 15px;
     width: 300px;
-    border: 1px solid white;
+    border: 1px solid rgba(213, 213, 213, 0.70);
 }
 
 [data-dt-row] {
-    background-color: rgba(213, 213, 213, 0.64) !important;
+    background-color: rgba(213, 213, 213, 0.25) !important;
+}
+
+[data-dt-row] td {
+    box-shadow:inset 0 0 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.taxon-group-name {
+    font-size: 12pt;
+}
+
+#dt-length-0 {
+    margin-right: 5px;
 }

@@ -41,7 +41,7 @@
     {% endif %}
     <div class="list-form container-fluid">
         <div class="row" style="height: 100%">
-            <div class="col-3 side-panel">
+            <div class="col-2 side-panel">
                 <ul id="sortable">
                     {% for taxa_group in taxa_groups %}
                         {% include "_taxongroup_item.html" with taxon_group=taxa_group %}
@@ -53,7 +53,7 @@
                     </div>
                 {% endif %}
             </div>
-            <div class="col-9 list-content">
+            <div class="col-10 list-content">
                 <div class="dashboard-title">
                     {% if selected_taxon_group %}
                         <h2>{{ selected_taxon_group.name }}</h2>
