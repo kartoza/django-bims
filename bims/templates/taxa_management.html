@@ -154,11 +154,19 @@
                                             </div>
                                             <div class="form-group row">
                                                 <label for="validated" class="col-sm-2 col-form-label">Validated</label>
-                                                <div class="col-sm-10">
-                                                    <select id="validated" class="form-control" style="width: 100%">
-                                                        <option value="True">True</option>
-                                                        <option value="False">False</option>
-                                                    </select>
+                                                <div class="col-sm-10 d-flex">
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="validated" id="validatedTrue" value="True">
+                                                        <label class="form-check-label" for="validatedTrue">
+                                                            Yes
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline">
+                                                        <input class="form-check-input" type="radio" name="validated" id="validatedFalse" value="False">
+                                                        <label class="form-check-label" for="validatedFalse">
+                                                            No
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="form-group row">
