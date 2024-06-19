@@ -36,7 +36,11 @@ class TaxonSerializer(serializers.ModelSerializer):
     genus = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
     biographic_distribution = serializers.SerializerMethodField()
+    author = serializers.SerializerMethodField()
     DT_RowId = serializers.SerializerMethodField()
+
+    def get_author(self, obj: Taxonomy):
+        return self.get_proposed_or_current(obj, 'author')
 
     def get_DT_RowId(self, obj: Taxonomy):
         return f'row_{obj.id}'
@@ -67,12 +71,17 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_proposed_or_current(self, obj, field, original_value=''):
         proposal = self.get_pending_proposal(obj)
+        proposal_value = ''
         if not original_value:
-            original_value = str(getattr(obj, field))
+            original_data = getattr(obj, field)
+            original_value = str(original_data if original_data else '').strip()
+        if proposal:
+            proposal_data = getattr(proposal, field)
+            proposal_value = str(proposal_data if proposal_data else '').strip()
         return (
             f"{original_value} → "
-            f"{getattr(proposal, field)}"
-            if proposal and original_value != str(getattr(proposal, field))
+            f"{proposal_value}"
+            if proposal and original_value != proposal_value
             else original_value
         )
 
