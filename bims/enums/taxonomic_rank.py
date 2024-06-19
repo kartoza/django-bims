@@ -6,6 +6,7 @@ class TaxonomicRank(Enum):
     SUBSPECIES = 'Sub Species'
     SPECIES = 'Species'
     GENUS = 'Genus'
+    SUBGENUS = 'Sub Genus'
     FAMILY = 'Family'
     SUPERFAMILY = 'Super Family'
     ORDER = 'Order'
@@ -20,6 +21,8 @@ class TaxonomicRank(Enum):
     SUBFAMILY = 'Sub Family'
     VARIETY = 'Variety'
     FORMA = 'Forma'
+    TRIBE = 'Tribe'
+    SUBTRIBE = 'Sub Tribe'
 
     @staticmethod
     def hierarchy():
@@ -34,6 +37,7 @@ class TaxonomicRank(Enum):
             TaxonomicRank.SUPERFAMILY,
             TaxonomicRank.FAMILY,
             TaxonomicRank.GENUS,
+            TaxonomicRank.SUBGENUS,
             TaxonomicRank.SPECIES,
             TaxonomicRank.SUBSPECIES,
             TaxonomicRank.VARIETY
