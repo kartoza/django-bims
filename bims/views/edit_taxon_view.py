@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import UpdateView
@@ -15,7 +14,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'edit_taxon.html'
     model = Taxonomy
     pk_url_kwarg = 'id'
-    fields = ['tags', 'canonical_name', 'rank', 'author']
+    fields = ['tags', 'canonical_name', 'rank', 'author', 'iucn_status']
     success_url = '/taxa_management/'
 
     def get_object(self, queryset=None):
@@ -34,6 +33,9 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['rank_choices'] = self.model._meta.get_field('rank').choices
+        context['iucn_status_choices'] = IUCNStatus.objects.all().distinct(
+            'category', 'national'
+        )
         context['next'] = self.request.GET.get('next', '')
         return context
 
@@ -119,4 +121,4 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         next_path = self.request.POST.get('next')
         if next_path:
             return next_path
-        return reverse('taxa_management')
+        return reverse('taxa-management')

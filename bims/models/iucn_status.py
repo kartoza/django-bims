@@ -70,7 +70,9 @@ class IUCNStatus(models.Model):
         choices_dict = {}
         for choice, value in self.CATEGORY_CHOICES:
             choices_dict[choice] = value
-        return choices_dict[self.category]
+        if self.category in choices_dict:
+            return choices_dict[self.category]
+        return self.category
 
     def __str__(self):
         return u'%s' % self.category
