@@ -20,7 +20,7 @@ from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
-from bims.models import TaxonGroup, VernacularName
+from bims.models import TaxonGroup, VernacularName, TaxonGroupTaxonomy
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
@@ -297,7 +297,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.save()
 
             # Check if it's a new taxonomy
-            if not taxonomy.validated:
+            if not TaxonGroupTaxonomy.objects.filter(
+                    taxonomy=taxonomy,
+                    taxongroup=taxon_group,
+                    is_validated=True).exists():
                 taxonomy.owner = self.request.user
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)

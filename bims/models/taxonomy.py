@@ -15,6 +15,7 @@ from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.iucn_status import IUCNStatus
 from bims.models.endemism import Endemism
+from bims.utils.domain import get_current_domain
 from bims.utils.iucn import get_iucn_status
 from bims.models.vernacular_name import VernacularName
 from bims.models.notification import (
@@ -408,8 +409,9 @@ class Taxonomy(AbstractValidation):
 
     def send_new_taxon_email(self, taxon_group_id=None):
         from bims.models import TaxonGroup
+        from bims.tasks.send_notification import send_mail_notification
 
-        current_site = Site.objects.get_current()
+        current_site = get_current_domain()
         recipients = get_recipients_for_notification(NEW_TAXONOMY)
         taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
         email_body = render_to_string(
@@ -420,13 +422,11 @@ class Taxonomy(AbstractValidation):
                 'taxon_group': taxon_group
             }
         )
-        msg = EmailMultiAlternatives(
-            '[{}] New Taxonomy email notification'.format(current_site),
-            email_body,
-            settings.DEFAULT_FROM_EMAIL,
-            recipients
-        )
-        msg.send()
+        subject = '[{}] New Taxonomy email notification'.format(current_site)
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = recipients
+
+        send_mail_notification.delay(subject, email_body, from_email, recipient_list)
 
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
