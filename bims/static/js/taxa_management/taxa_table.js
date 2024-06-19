@@ -116,13 +116,16 @@ export const taxaTable = (() => {
             $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
             url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
         }
+
+        let validated = 'True'
         if (urlParams.get('validated')) {
-            const validated = urlParams.get('validated');
-            if (url) {
-                url += `&validated=${validated}`;
-                $('#validated').val(validated);
-            }
+            validated = urlParams.get('validated');
         }
+        if (url) {
+            url += `&validated=${validated}`;
+        }
+        $(`input[name="validated"][value="${validated}"]`).prop('checked', true);
+
         if (urlParams.get('taxon')) {
             taxonName = urlParams.get('taxon');
             if (url) {
@@ -256,7 +259,7 @@ export const taxaTable = (() => {
         })
         urlParams = insertParam('parent', parent.join(), true, false, urlParams);
 
-        const validated = $('#validated').find(":selected").val();
+        const validated = $('input[name="validated"]:checked').val();
         urlParams = insertParam('validated', validated, true, false, urlParams);
 
         const tags = $('#tag-filters').val();
