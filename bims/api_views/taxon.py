@@ -356,6 +356,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         origins = list(filter(None, origins))
         tags = request.GET.get('tags', '').split(',')
         tags = list(filter(None, tags))
+        tag_filter_type = request.GET.get('tagFT', 'OR')
         cons_status = request.GET.get('cons_status', '').split(',')
         cons_status = list(filter(None, cons_status))
         endemism = request.GET.get('endemism', '').split(',')
@@ -418,9 +419,13 @@ class TaxaList(LoginRequiredMixin, APIView):
                 canonical_name__icontains=taxon_name
             )
         if tags:
-            taxon_list = taxon_list.filter(
-                tags__name__in=tags
-            ).distinct()
+            if tag_filter_type == 'AND':
+                for tag in tags:
+                    taxon_list = taxon_list.filter(tags__name=tag)
+            else:
+                taxon_list = taxon_list.filter(
+                    tags__name__in=tags
+                ).distinct()
         if validated:
             try:
                 validated = ast.literal_eval(validated.replace('/', ''))

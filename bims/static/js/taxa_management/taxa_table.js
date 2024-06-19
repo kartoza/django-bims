@@ -126,6 +126,15 @@ export const taxaTable = (() => {
         }
         $(`input[name="validated"][value="${validated}"]`).prop('checked', true);
 
+        let tagFilterType = 'OR';
+        if (urlParams.get('tagFT')) {
+            tagFilterType = urlParams.get('tagFT');
+        }
+        if (url) {
+            url += `&tagFT=${tagFilterType}`;
+        }
+        $(`input[name="tag-filter-type"][value="${tagFilterType}"]`).prop('checked', true);
+
         if (urlParams.get('taxon')) {
             taxonName = urlParams.get('taxon');
             if (url) {
@@ -261,6 +270,9 @@ export const taxaTable = (() => {
 
         const validated = $('input[name="validated"]:checked').val();
         urlParams = insertParam('validated', validated, true, false, urlParams);
+
+        const tagFilterType = $('input[name="tag-filter-type"]:checked').val();
+        urlParams = insertParam('tagFT', tagFilterType, true, false, urlParams);
 
         const tags = $('#tag-filters').val();
         urlParams = insertParam('tags', tags, true, false, urlParams);
