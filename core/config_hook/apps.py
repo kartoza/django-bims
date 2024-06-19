@@ -11,6 +11,8 @@ class AppConfig(AppConfig):
         super(AppConfig, self).ready()
         # check settings
         from django.conf import settings
+        from bims.utils.add_index import add_indexes_for_taxonomy
+        add_indexes_for_taxonomy()
 
         installed_apps = []
 

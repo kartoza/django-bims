@@ -21,7 +21,7 @@ from bims.models.notification import (
     get_recipients_for_notification,
     NEW_TAXONOMY
 )
-from django.db.models import JSONField
+from django.db.models import JSONField, OuterRef, Subquery
 
 ORIGIN_CATEGORIES = {
     'non-native': 'alien',
@@ -63,6 +63,7 @@ class Taxonomy(AbstractValidation):
         ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
         ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
     }
+
     tags = TaggableManager(
         blank=True,
     )
@@ -204,6 +205,11 @@ class Taxonomy(AbstractValidation):
         blank=True
     )
 
+    hierarchical_data = JSONField(
+        verbose_name='Hierarchical Data',
+        null=True,
+        blank=True
+    )
 
     def save_json_data(self, json_field):
         max_allowed = 10
@@ -232,6 +238,19 @@ class Taxonomy(AbstractValidation):
         if self.additional_data and 'fetch_gbif' in self.additional_data:
             update_taxon_with_gbif = True
             del self.additional_data['fetch_gbif']
+        if not self.hierarchical_data:
+            self.hierarchical_data = {
+                'family_name': self.get_taxon_rank_name(TaxonomicRank.FAMILY.name),
+                'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
+                'species_name': self.get_taxon_rank_name(TaxonomicRank.SPECIES.name),
+            }
+        elif 'family_name' not in self.hierarchical_data:
+            self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
+        elif 'species_name' not in self.hierarchical_data:
+            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
+        elif 'genus_name' not in self.hierarchical_data:
+            self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
+
         super(Taxonomy, self).save(*args, **kwargs)
 
         if update_taxon_with_gbif:
@@ -345,12 +364,28 @@ class Taxonomy(AbstractValidation):
         return self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
 
     @property
+    def sub_genus_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBGENUS.name)
+
+    @property
     def species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
 
     @property
     def sub_species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SUBSPECIES.name)
+
+    @property
+    def sub_family_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBFAMILY.name)
+
+    @property
+    def tribe_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.TRIBE.name)
+
+    @property
+    def sub_tribe_name(self):
+        return self.get_taxon_rank_name(TaxonomicRank.SUBTRIBE.name)
 
     @property
     def variety_name(self):
