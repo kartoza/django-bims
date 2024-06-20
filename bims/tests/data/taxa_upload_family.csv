@@ -1,6 +1,6 @@
 ﻿Taxon Rank,Kingdom,Phylum,Class,Order,Family,Genus,Species,SubSpecies,Taxon,Accepted Taxon,Taxonomic status,Scientific name and authority,Common Name,Origin,Endemism,Conservation status global,Conservation status national,lentic,On GBIF,Lakes (Y/N),Author(s)
 Kingdom,Animalia,,,,,,,,Animalia,,accepted,Animalia,,,,,,,No,,
 Phylum,Animalia,Annelida,,,,,,,Annelida,,accepted,Annelida,,,,,,,No,,
-Class,Animalia,Annelida,Oligochaeta,,,,,,Oligochaeta,,accepted,Oligochaeta,Earthworm,Native,Unknown,Not evaluated,,,No,,
+Class,Animalia,Annelida,Oligochaeta,,,,,,Oligochaeta,,accepted,Oligochaeta,"Earthworm (eng), Earthworm2, ミミズ (jpn)",Native,Unknown,Not evaluated,,,No,,
 Family,Animalia,Arthropoda,Insecta,Trichoptera,Ecnomidae,,,,Ecnomidae,,accepted,Ecnomidae,trattnattsländor,Unknown,Unknown,Not evaluated,,Y,No,Y,Dimas 1789
 Family,Animalia,Arthropoda,Insecta,Trichoptera,Ecnomidae2,,,,Ecnomidae2,Ecnomidae,synonym,Ecnomidae2,"test1,test2,test3",Unknown,Unknown,Not evaluated,,,No,,

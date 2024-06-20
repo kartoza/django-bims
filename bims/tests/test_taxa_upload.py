@@ -58,8 +58,25 @@ class TestTaxaUpload(FastTenantTestCase):
 
         self.assertTrue(
             VernacularName.objects.filter(
-                name='test1',
-                taxonomy__canonical_name__icontains='Ecnomidae2'
+                name='Earthworm',
+                language='eng',
+                taxonomy__canonical_name__icontains='Oligochaeta'
+            )
+        )
+
+        self.assertTrue(
+            VernacularName.objects.filter(
+                name='Earthworm2',
+                language='eng',
+                taxonomy__canonical_name__icontains='Oligochaeta'
+            )
+        )
+
+        self.assertTrue(
+            VernacularName.objects.filter(
+                name='ミミズ',
+                language='jpn',
+                taxonomy__canonical_name__icontains='Oligochaeta'
             )
         )
 
