@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from django import template
-from django.contrib.sites.models import Site
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from preferences import preferences
@@ -93,3 +92,8 @@ def current_version():
 @register.filter
 def space_separated(value):
     return f"{value:,}".replace(',', ' ')
+
+
+@register.simple_tag
+def is_debug():
+    return settings.DEBUG
