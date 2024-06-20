@@ -82,19 +82,23 @@ class TaxaProcessor(object):
         common_names = common_name_value.split(',')
         for common_name in common_names:
             common_name = common_name.strip()
-            try:
-                vernacular_name, _ = VernacularName.objects.get_or_create(
-                    name=common_name,
-                    language='en',
-                    is_upload=True
-                )
-            except VernacularName.MultipleObjectsReturned:
-                vernacular_name = VernacularName.objects.filter(
-                    name=common_name,
-                    language='en',
-                    is_upload=True
-                )[0]
-            vernacular_names.append(vernacular_name)
+            match = re.match(r'^(.*?)(?: \((\w+)\))?$', common_name)
+            if match:
+                name = match.group(1)
+                language = match.group(2) if match.group(2) else 'eng'
+                try:
+                    vernacular_name, _ = VernacularName.objects.get_or_create(
+                        name=name,
+                        language=language,
+                        is_upload=True
+                    )
+                except VernacularName.MultipleObjectsReturned:
+                    vernacular_name = VernacularName.objects.filter(
+                        name=name,
+                        language=language,
+                        is_upload=True
+                    )[0]
+                vernacular_names.append(vernacular_name)
         return vernacular_names
 
     def origin(self, row):
