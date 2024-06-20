@@ -185,6 +185,26 @@ export const taxaManagement = (() => {
         return `<div style="padding-left:50px;">Loading...</div>`;
     }
 
+    function getColumnMapping(dataTable) {
+        let columns = dataTable.settings().init().columns;
+        let columnMapping = {};
+        columns.forEach((column, index) => {
+            columnMapping[column.data] = index;
+        });
+        return columnMapping;
+    }
+
+    function updateSortIcon(columnIndex, sortDirection) {
+        let headerCell = $('#taxaTable_wrapper thead th').eq(columnIndex);
+        headerCell.removeClass('dt-ordering-asc dt-ordering-desc');
+        if (sortDirection === 'asc') {
+            headerCell.addClass('dt-ordering-asc');
+        } else if (sortDirection === 'desc') {
+            headerCell.addClass('dt-ordering-desc');
+        }
+    }
+
+
     const getTaxaList = (url) => {
         taxaUrlList = url;
         loading.show();
@@ -196,6 +216,8 @@ export const taxaManagement = (() => {
         let initialStart = (initialPage - 1) * 20;
 
         $('.download-button-container').show();
+        let tableInitialized = false;
+
         let table = $('#taxaTable').DataTable({
             "processing": true,
             "serverSide": true,
@@ -209,9 +231,15 @@ export const taxaManagement = (() => {
             scrollY: 'calc(100vh - 325px)',
             "scrollCollapse": true,
             "initComplete": function(settings, json) {
-                let columnIdx = settings.aoColumns.findIndex(col => col.data === (initialSortOrder ? initialSortOrder : 'canonical_name'));
-                let initialOrder = [columnIdx, initialSortBy.includes('-') ? 'desc' : 'asc'];
-                this.api().order(initialOrder).draw(false);
+                if (!tableInitialized) {
+                    let columnIdx = settings.aoColumns.findIndex(col => col.data === (initialSortOrder ? initialSortOrder : 'canonical_name'));
+                    let initialOrder = [columnIdx, initialSortBy.includes('-') ? 'desc' : 'asc'];
+                    this.api().order(initialOrder);
+                    let columnMapping = getColumnMapping(table);
+                    let columnIndex = columnMapping[initialSortOrder];
+                    updateSortIcon(columnIndex, initialSortBy.includes('-') ? 'desc' : 'asc');
+                    tableInitialized = true;
+                }
             },
             "drawCallback": function (settings) {
                 $(".dropdown-action").each(function () {
@@ -346,7 +374,7 @@ export const taxaManagement = (() => {
                     "render": function (data, type, row) {
                         return row.nameHTML;
                     },
-                    "className": "min-width-100"
+                    "className": "min-width-150"
                 },
                 {"data": "family", "className": "min-width-100"},
                 {"data": "genus", "className": "min-width-100"},
