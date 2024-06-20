@@ -106,17 +106,6 @@ class TaxaProcessor(object):
             return ''
         return ORIGIN_CATEGORIES[origin_value.lower()]
 
-    def parent_rank(self, rank):
-        """
-        Return rank of parent
-        :param rank: current rank
-        :return: rank of parent
-        """
-        try:
-            return ALL_TAXON_RANKS[ALL_TAXON_RANKS.index(rank.upper()) - 1]
-        except Exception:  # noqa
-            return 'KINGDOM'
-
     def validate_parents(self, taxon, row):
         """
         Validating parent data from taxon,
@@ -129,33 +118,33 @@ class TaxaProcessor(object):
         max_try = 15
         current_try = 1
         while parent and current_try < max_try:
-            parent_rank = self.parent_rank(taxon.rank)
-            if 'SUB' in parent_rank:
-                parent_rank = self.parent_rank(parent_rank)
+            taxon_parent_rank = parent_rank(taxon.rank)
             try:
                 csv_data = DataCSVUpload.row_value(
-                    row, parent_rank.capitalize())
-                if parent_rank.capitalize() == SPECIES:
+                    row, taxon_parent_rank.capitalize())
+                if taxon_parent_rank == SPECIES:
                     csv_data = DataCSVUpload.row_value(
                         row, GENUS) + ' ' + csv_data
             except KeyError:
                 parent = parent.parent
                 continue
             while not csv_data and current_try < max_try:
-                parent_rank = self.parent_rank(parent_rank)
+                taxon_parent_rank = parent_rank(taxon_parent_rank)
                 csv_data = DataCSVUpload.row_value(
-                    row, parent_rank.capitalize())
+                    row, taxon_parent_rank)
                 current_try += 1
             if (
                     csv_data not in parent.canonical_name and
                     csv_data not in parent.legacy_canonical_name or
-                    self.rank_name(parent) != parent_rank
+                    self.rank_name(parent) != taxon_parent_rank.upper()
             ):
                 print('Different parent for {}'.format(str(taxon)))
-                parent_taxon = self.get_parent(
-                    row, current_rank=parent_rank.capitalize())
-                print('Updated to {}'.format(str(parent_taxon)))
-                taxon.parent = parent_taxon
+                taxon_parent = self.get_parent(
+                    row,
+                    current_rank=taxon_parent_rank.upper()
+                )
+                print('Updated to {}'.format(str(taxon_parent)))
+                taxon.parent = taxon_parent
                 taxon.save()
             taxon = parent
             parent = parent.parent
@@ -461,6 +450,15 @@ class TaxaProcessor(object):
                 origin_data = self.origin(row)
                 if origin_data:
                     taxonomy.origin = origin_data
+
+                # -- Author(s)
+                authors = DataCSVUpload.row_value(row, AUTHORS)
+                if authors:
+                    taxonomy.author = authors
+                    if authors not in scientific_name:
+                        taxonomy.scientific_name = (
+                            f'{scientific_name} {authors}'
+                        )
 
                 # -- Tags
                 # Check Y Values

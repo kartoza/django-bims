@@ -80,6 +80,14 @@ class TestTaxaUpload(FastTenantTestCase):
         )
 
         self.assertTrue(
+            Taxonomy.objects.filter(
+                canonical_name='Ecnomidae',
+                scientific_name__icontains='Dimas 1789',
+                author='Dimas 1789'
+            ).exists()
+        )
+
+        self.assertTrue(
             TaxonGroupTaxonomy.objects.filter(
                 taxonomy__canonical_name='Ecnomidae',
                 taxongroup=self.taxon_group,
