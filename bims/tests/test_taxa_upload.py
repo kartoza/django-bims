@@ -91,6 +91,24 @@ class TestTaxaUpload(FastTenantTestCase):
         self.assertTrue(
             Taxonomy.objects.get(
                 canonical_name='Ecnomidae'
+            ).biographic_distributions.filter(
+                name='ANT',
+                doubtful=False
+            ).exists()
+        )
+
+        self.assertTrue(
+            Taxonomy.objects.get(
+                canonical_name='Ecnomidae'
+            ).biographic_distributions.filter(
+                name='AT',
+                doubtful=True
+            ).exists()
+        )
+
+        self.assertTrue(
+            Taxonomy.objects.get(
+                canonical_name='Ecnomidae'
             ).tags.filter(
                 name='Lakes'
             ).exists()

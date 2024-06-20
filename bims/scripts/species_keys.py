@@ -35,6 +35,10 @@ SYNONYM = 'Synonym'
 ACCEPTED_TAXON = 'Accepted Taxon'
 SUBGENUS = 'Sub Genus'
 AUTHORS = 'Author(s)'
+BIOGRAPHIC_DISTRIBUTIONS = [
+    'ANT', 'AT', 'AU', 'NA',
+    'NT', 'OL', 'PA', 'PAC'
+]
 
 PARENT_RANKS = {
     'KINGDOM': None,

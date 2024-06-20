@@ -13,7 +13,7 @@ from bims.models import (
     IUCNStatus,
     IUCN_CATEGORIES,
     VernacularName,
-    ORIGIN_CATEGORIES, TaxonGroupTaxonomy
+    ORIGIN_CATEGORIES, TaxonTag
 )
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names
@@ -464,15 +464,29 @@ class TaxaProcessor(object):
                             f'{scientific_name} {authors}'
                         )
 
-                # -- Tags
+                # -- Tags | Biographic distribution tags
                 # Check Y Values
                 for key in row:
-                    if DataCSVUpload.row_value(row, key) == 'Y':
+                    row_value = DataCSVUpload.row_value(row, key)
+                    if row_value.upper() == 'Y' or row_value == '?':
                         # Remove (Y/N) or (y/n) from the key if present
                         tag_key = re.sub(r'\(y/n\)', '',
                                          key,
                                          flags=re.IGNORECASE).strip()
-                        taxonomy.tags.add(tag_key)
+                        if key in BIOGRAPHIC_DISTRIBUTIONS:
+                            try:
+                                taxon_tag, _ = TaxonTag.objects.get_or_create(
+                                    name=tag_key,
+                                    doubtful=row_value == '?'
+                                )
+                            except TaxonTag.MultipleObjectsReturned:
+                                taxon_tag = TaxonTag.objects.filter(
+                                    name=tag_key,
+                                    doubtful=row_value == '?'
+                                ).first()
+                            taxonomy.biographic_distributions.add(taxon_tag)
+                        elif row_value != '?':
+                            taxonomy.tags.add(tag_key)
 
                 # -- Additional data
                 taxonomy.additional_data = json.dumps(row)
