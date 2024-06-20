@@ -224,6 +224,7 @@ export const taxaManagement = (() => {
             "ordering": true,
             "order": [],
             "scrollX": true,
+            "autoWidth": false,
             "fixedColumns": {
                 "start": 0,
                 "end": 1
