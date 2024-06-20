@@ -5,6 +5,7 @@ from django.contrib.sites.models import Site
 from django.core.mail.message import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from taggit.managers import TaggableManager
+from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
 
 from bims.models.validation import AbstractValidation
 from django.db import models
@@ -31,6 +32,34 @@ ORIGIN_CATEGORIES = {
     'non-native: invasive': 'alien-invasive',
     'non-native: non-invasive': 'alien-non-invasive'
 }
+
+
+class TaxonTag(TagBase):
+    name = models.CharField(
+        verbose_name="A taxon tag name",
+        unique=False,
+        max_length=100
+    )
+    doubtful = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Taxonomy Tag"
+        verbose_name_plural = "Taxonomy Tags"
+
+
+class CustomTaggedTaxonomy(TaggedItemBase):
+    content_object = models.ForeignKey(
+        'Taxonomy',
+        on_delete=models.CASCADE)
+    tag = models.ForeignKey(
+        TaxonTag,
+        on_delete=models.CASCADE,
+        related_name="%(app_label)s_%(class)s_items",
+    )
+
+    class Meta:
+        verbose_name = "Custom Tagged Taxonomy"
+        verbose_name_plural = "Custom Tagged Taxa"
 
 
 class TaxonomyField(models.CharField):
@@ -66,6 +95,12 @@ class Taxonomy(AbstractValidation):
     }
 
     tags = TaggableManager(
+        blank=True,
+    )
+
+    biographic_distributions = TaggableManager(
+        through=CustomTaggedTaxonomy,
+        related_name='bio_distribution',
         blank=True,
     )
 
