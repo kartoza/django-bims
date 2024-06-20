@@ -5,6 +5,7 @@ from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 from mock import mock
 
+from bims.models import TaxonGroupTaxonomy
 from bims.scripts.taxa_upload import TaxaCSVUpload
 from bims.tests.model_factories import (
     UploadSessionF,
@@ -60,6 +61,30 @@ class TestTaxaUpload(FastTenantTestCase):
                 name='test1',
                 taxonomy__canonical_name__icontains='Ecnomidae2'
             )
+        )
+
+        self.assertTrue(
+            Taxonomy.objects.get(
+                canonical_name='Ecnomidae'
+            ).tags.filter(
+                name='lentic'
+            ).exists()
+        )
+
+        self.assertTrue(
+            Taxonomy.objects.get(
+                canonical_name='Ecnomidae'
+            ).tags.filter(
+                name='Lakes'
+            ).exists()
+        )
+
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy__canonical_name='Ecnomidae',
+                taxongroup=self.taxon_group,
+                is_validated=True
+            ).exists()
         )
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')

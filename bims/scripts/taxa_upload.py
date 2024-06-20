@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import re
 
 from bims.models.taxon_group import TaxonGroup
 
@@ -420,7 +421,12 @@ class TaxaProcessor(object):
                 )
 
                 # -- Add to taxon group
-                taxon_group.taxonomies.add(taxonomy)
+                taxon_group.taxonomies.add(
+                    taxonomy,
+                    through_defaults={
+                        'is_validated': True
+                    }
+                )
 
                 # -- Endemism
                 endemism = self.endemism(row)
@@ -456,6 +462,16 @@ class TaxaProcessor(object):
                 if origin_data:
                     taxonomy.origin = origin_data
 
+                # -- Tags
+                # Check Y Values
+                for key in row:
+                    if DataCSVUpload.row_value(row, key) == 'Y':
+                        # Remove (Y/N) or (y/n) from the key if present
+                        tag_key = re.sub(r'\(y/n\)', '',
+                                         key,
+                                         flags=re.IGNORECASE).strip()
+                        taxonomy.tags.add(tag_key)
+
                 # -- Additional data
                 taxonomy.additional_data = json.dumps(row)
 
@@ -469,14 +485,6 @@ class TaxaProcessor(object):
                     taxonomy.accepted_taxonomy = accepted_taxon
 
                 taxonomy.validated = True
-
-                TaxonGroupTaxonomy.objects.update_or_create(
-                    taxongroup=taxon_group,
-                    taxonomy=taxonomy,
-                    defaults={
-                        'is_validated': True
-                    }
-                )
 
                 taxonomy.save()
                 self.finish_processing_row(row, taxonomy)
