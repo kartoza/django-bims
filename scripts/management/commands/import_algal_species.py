@@ -1,6 +1,6 @@
 import copy
 from scripts.management.commands.import_species import (
-    Command as BaseCommand, ALL_TAXON_RANKS
+    Command as BaseCommand
 )
 from bims.models import Endemism, TaxonGroup, TaxonomicGroupCategory
 

@@ -7,6 +7,8 @@ import logging
 from django.db.models import signals
 from django.utils.dateparse import parse_date
 from django.conf import settings
+
+from bims.scripts.species_keys import ALL_TAXON_RANKS
 from scripts.management.csv_command import CsvCommand
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif
@@ -50,19 +52,6 @@ TAXON_RANKS = [
     GENUS,
     SPECIES,
     SUBSPECIES
-]
-ALL_TAXON_RANKS = [
-    'KINGDOM',
-    'PHYLUM',
-    'CLASS',
-    'SUBCLASS',
-    'ORDER',
-    'SUBORDER',
-    'FAMILY',
-    'SUBFAMILY',
-    'GENUS',
-    'SPECIES',
-    'SUBSPECIES'
 ]
 
 
