@@ -11,6 +11,7 @@ module.exports = {
   entry: {
     main: ['./static/react/js/main.jsx'],
     AddSourceReferenceView: ['./static/react/js/AddSourceReferenceView.jsx'],
+    taxa_management: ['./static/js/taxa_management/taxa_management.js']
   },
 
   output: {
@@ -35,7 +36,8 @@ module.exports = {
             options: {
               plugins: [
                  '@babel/syntax-class-properties',
-                 '@babel/proposal-class-properties'
+                 '@babel/proposal-class-properties',
+                  '@babel/plugin-transform-runtime'
               ],
               presets: [
                 '@babel/preset-env',
