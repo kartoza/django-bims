@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+from preferences import preferences
 from django import template
 from django.conf import settings
 from django.utils.safestring import mark_safe
-from preferences import preferences
+import subprocess
 
 from bims.utils.domain import get_current_domain
 
@@ -45,34 +46,32 @@ def filename(value):
 
 @register.simple_tag
 def current_version():
-    try:
-        from git import Repo
-    except ImportError:
-        return 'latest'
+    repo_path = preferences.SiteSetting.github_repo_path
 
-    from datetime import datetime
+    if not repo_path:
+        return '-'
+
+    # Configure Git to consider the directory safe
     try:
-        repo = Repo(preferences.SiteSetting.github_repo_path)
+        subprocess.check_call(['git', 'config', '--global', '--add', 'safe.directory', repo_path])
+    except subprocess.CalledProcessError as e:
+        return f"Error setting safe directory: {e}"
+
+    try:
+        commit = subprocess.check_output(
+            ['git', '-C', repo_path, 'log', '-n', '1', '--pretty=tformat:%H']
+        ).strip().decode()
     except Exception as e:  # noqa
         return '-'
-    try:
-        tag = next(
-            (tag for tag in repo.tags if tag.commit == repo.head.commit), None
-        )
-    except ValueError:
-        tag = None
-    version = tag.name if tag else ''
+
+    # version = tag.name if tag else ''
+    version = ''
     if not version:
         try:
-            version = repo.head.commit.hexsha if repo.head.commit else ''
-            version_text = '{commit} ({date})'.format(
-                commit=version[:8],
-                date=(
-                    datetime.fromtimestamp(
-                        repo.head.commit.committed_date).strftime(
-                        '%Y-%m-%d'
-                    ) if repo.head.commit else ''
-                )
+            version_text = (
+                subprocess.check_output(
+                    ['git', '-C', repo_path, 'log', '-n', '1', '--pretty=tformat:%h-%ad', '--date=short']
+                ).strip().decode()
             )
         except BrokenPipeError:
             version = '-'
@@ -82,7 +81,7 @@ def current_version():
             '<a target="_blank" '
             'href="https://github.com/kartoza/django-bims/commit/{commit}">'
             '{version_text}</a>'.format(
-                commit=version,
+                commit=commit,
                 version_text=version_text
             )
         )
