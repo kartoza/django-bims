@@ -125,6 +125,10 @@ def import_data_task(self, module, limit=10):
                     task.start_index = start_index
                     task.save()
 
+                    if task.log_text.count('\n') > 10:
+                        task.log_text = '\n'.join(task.log_text.split('\n')[-10:])
+                        task.save()
+
                 if not task.cancel:
                     task.in_progress = False
                     task.save()
