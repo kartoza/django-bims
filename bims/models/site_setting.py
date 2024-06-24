@@ -288,6 +288,12 @@ class SiteSetting(Preferences):
         default=''
     )
 
+    virtual_museum_token = models.CharField(
+        max_length=200,
+        blank=True,
+        default=''
+    )
+
     homepage_redirect_url = models.CharField(
         max_length=128,
         default='',

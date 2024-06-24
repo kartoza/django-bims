@@ -19,7 +19,8 @@ class CeleryStatus(APIView):
 
         json_response = {
             'task_id': task_id,
-            'state': task.state
+            'state': task.state,
+            'result': str(task.result)
         }
 
         if session == 'upload':

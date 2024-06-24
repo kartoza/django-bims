@@ -66,3 +66,4 @@ from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateReviewer
 )
 from bims.models.cites_listing_info import CITESListingInfo
+from bims.models.import_task import ImportTask
