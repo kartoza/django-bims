@@ -6,6 +6,7 @@
 from django.db import models
 from django.dispatch import receiver
 from colorfield.fields import ColorField
+from ordered_model.models import OrderedModel
 
 SENSITIVE_STATUS = ['CR', 'EN', 'VU']
 IUCN_CATEGORIES = {
@@ -14,40 +15,48 @@ IUCN_CATEGORIES = {
     'vulnerable': 'VU',
     'endangered': 'EN',
     'critically endangered': 'CR',
+    'critically endangered, possibly extinct': 'CR PE',
     'extinct in the wild': 'EW',
     'extinct': 'EX',
     'regionally extinct': 'RE',
-    'critically endangered, possibly extinct': 'CE',
     'critically rare': 'CA',
     'rare': 'RA',
+    'declining': 'D',
     'data deficient': 'DD',
-    'data deficient - insufficient information': 'DI',
-    'data deficient - taxonomically problematic': 'DT',
-    'not evaluated': 'NE'
+    'data deficient - insufficient information': 'DDD',
+    'data deficient - taxonomically problematic': 'DDT',
+    'not evaluated': 'NE',
+    'conservation dependent': 'LR/cd',
+    'near threatened - legacy': 'LR/nt',
+    'least concern - legacy': 'LR/lc',
 }
 
 
-class IUCNStatus(models.Model):
+class IUCNStatus(OrderedModel):
     """IUCN status model."""
     CATEGORY_CHOICES = (
-        (IUCN_CATEGORIES['least concern'], 'Least concern'),
-        (IUCN_CATEGORIES['near threatened'], 'Near threatened'),
+        (IUCN_CATEGORIES['least concern'], 'Least Concern'),
+        (IUCN_CATEGORIES['near threatened'], 'Near Threatened'),
         (IUCN_CATEGORIES['vulnerable'], 'Vulnerable'),
         (IUCN_CATEGORIES['endangered'], 'Endangered'),
-        (IUCN_CATEGORIES['critically endangered'], 'Critically endangered'),
-        (IUCN_CATEGORIES['extinct in the wild'], 'Extinct in the wild'),
-        (IUCN_CATEGORIES['extinct'], 'Extinct'),
-        (IUCN_CATEGORIES['data deficient'], 'Data deficient'),
-        (IUCN_CATEGORIES['not evaluated'], 'Not evaluated'),
-        (IUCN_CATEGORIES['regionally extinct'], 'Regionally Extinct'),
+        (IUCN_CATEGORIES['critically endangered'], 'Critically Endangered'),
         (IUCN_CATEGORIES['critically endangered, possibly extinct'],
          'Critically Endangered, Possibly Extinct'),
+        (IUCN_CATEGORIES['extinct in the wild'], 'Extinct in the Wild'),
+        (IUCN_CATEGORIES['extinct'], 'Extinct'),
+        (IUCN_CATEGORIES['regionally extinct'], 'Regionally Extinct'),
         (IUCN_CATEGORIES['critically rare'], 'Critically Rare'),
         (IUCN_CATEGORIES['rare'], 'Rare'),
+        (IUCN_CATEGORIES['declining'], 'Declining'),
+        (IUCN_CATEGORIES['data deficient'], 'Data Deficient'),
         (IUCN_CATEGORIES['data deficient - insufficient information'],
          'Data Deficient - Insufficient Information'),
         (IUCN_CATEGORIES['data deficient - taxonomically problematic'],
          'Data Deficient - Taxonomically Problematic'),
+        (IUCN_CATEGORIES['not evaluated'], 'Not Evaluated'),
+        (IUCN_CATEGORIES['conservation dependent'], 'Conservation Dependent'),
+        (IUCN_CATEGORIES['near threatened - legacy'], 'Near Threatened - Legacy'),
+        (IUCN_CATEGORIES['least concern - legacy'], 'Least Concern - Legacy'),
     )
 
     category = models.CharField(
@@ -83,6 +92,7 @@ class IUCNStatus(models.Model):
         app_label = 'bims'
         verbose_name_plural = 'IUCN Status'
         verbose_name = 'IUCN Status'
+        ordering = ['order']
 
 
 @receiver(models.signals.pre_save, sender=IUCNStatus)
