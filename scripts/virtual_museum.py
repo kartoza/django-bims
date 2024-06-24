@@ -11,6 +11,7 @@ import requests
 from preferences import preferences
 
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.models.import_task import ImportTask
 
 from bims.models.taxon_group import TaxonGroup
 
@@ -167,6 +168,8 @@ class VirtualMuseumHarvester(object):
     notes = ''
     file_date = ''
     taxon_group_module = ''
+    task_id = None
+    task = None
 
     def __init__(self, **kwargs):
         super(VirtualMuseumHarvester, self).__init__()
@@ -190,6 +193,8 @@ class VirtualMuseumHarvester(object):
                 self.file_date
             )
         )
+        if self.task_id:
+            self.task = ImportTask.objects.get(id=self.task_id)
 
     def download_csv_data(self, start_index: int = 0, limit: int = 10):
         """
@@ -281,6 +286,7 @@ class VirtualMuseumHarvester(object):
                             ORDER: row.data['order'],
                             FAMILY: row.data['family'],
                             GENUS: row.data['genus'],
+                            AUTHORS: row.data['scientificNameAuthorship'],
                             SCIENTIFIC_NAME: (
                                 f'{row.data["scientificName"]} '
                                 f'{row.data["scientificNameAuthorship"]}'),
@@ -332,6 +338,8 @@ class VirtualMuseumHarvester(object):
         :param ingest_occurrences: fetch and ingest occurrences data
         """
         zip_file = self.download_csv_data(start_index, limit)
+        logger.info(f'Downloaded file : {zip_file}')
+
         occurrences, species = self.parse_vm_data(zip_file)
 
         logger.info(f'Total downloaded occurrences : '

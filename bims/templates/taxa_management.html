@@ -5,7 +5,6 @@
 {% block subtitle %}
     Taxa management
 {% endblock %}
-{% is_debug as debug %}
 
 {% block head %}
 
@@ -770,10 +769,11 @@
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
     <script src="{% static "js/non_requirejs/helpers.js" %}"></script>
     <script src="{% static "js/non_requirejs/multi_author_select.js" %}"></script>
+    {% is_debug as debug %}
     {% if debug %}
-        <script type="module" src="{% static "js/taxa_management/taxa_management.js" %}"></script>
+    <script type="module" src="{% static "js/taxa_management/taxa_management.js" %}"></script>
     {% else %}
-        {% render_bundle 'taxa_management' %}
+    {% render_bundle 'taxa_management' %}
     {% endif %}
     <script src="{% static "js/non_requirejs/tag_select.js" %}"></script>
 {% endblock %}

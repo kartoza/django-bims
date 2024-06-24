@@ -22,7 +22,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 DATABASES = {
     'default': {
         'ENGINE': 'django_tenants.postgresql_backend',
-        'NAME': 'app',
+        'NAME': 'gis',
         'USER': 'docker',
         'PASSWORD': 'docker',
         'HOST': 'db',
@@ -57,3 +57,4 @@ CACHES = {
         'REVERSE_KEY_FUNCTION': 'django_tenants.cache.reverse_key',
     }
 }
+
