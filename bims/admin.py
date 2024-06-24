@@ -114,7 +114,8 @@ from bims.models import (
     TaxonGroupTaxonomy,
     TaxonomyUpdateProposal,
     TaxonomyUpdateReviewer,
-    CITESListingInfo
+    CITESListingInfo,
+    ImportTask
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -1923,6 +1924,13 @@ class CITESListingInfoAdmin(admin.ModelAdmin):
     list_filter = ('appendix', 'effective_at', 'taxonomy')
     search_fields = ('annotation', 'taxonomy__name')
     raw_id_fields = ('taxonomy',)
+
+
+@admin.register(ImportTask)
+class ImportTaskAdmin(admin.ModelAdmin):
+    list_display = ('celery_task_id', 'in_progress', 'created_at', 'updated_at')
+    list_filter = ('in_progress', 'created_at', 'updated_at')
+    search_fields = ('celery_task_id',)
 
 
 # Re-register GeoNode's Profile page

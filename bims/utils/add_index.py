@@ -30,7 +30,6 @@ def add_indexes_for_taxonomy():
                """)
                 column_exists = cursor.fetchone()[0]
                 if column_exists:
-                    print(f'column hierarchical_data exists in {schema_name}')
                     # Create the index if it does not exist
                     cursor.execute(f"""
                         DO $$

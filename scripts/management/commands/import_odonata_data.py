@@ -57,6 +57,13 @@ class Command(BaseCommand):
             default='Odonate Adults',
             help='Module Name'
         )
+        parser.add_argument(
+            '-tid',
+            '--task-id',
+            dest='task_id',
+            default='',
+            help='Task Id'
+        )
 
     def handle(self, *args, **options):
         self.api_token = options.get('token', '')
@@ -70,13 +77,16 @@ class Command(BaseCommand):
         logger.info('Harvesting Odonata data from VM...')
         start_index = options.get('start_index', 0)
         limit = options.get('limit', 10)
+        task_id = options.get('task_id', None)
 
         harvester = VirtualMuseumHarvester(
             api_token=self.api_token,
             module_name=self.module_name,
             base_api_url=self.base_api_url,
             source_name=self.source_name,
-            taxon_group_module=options.get('module_name'))
+            taxon_group_module=options.get('module_name'),
+            task_id=task_id
+        )
         harvester.harvest(
             start_index=start_index,
             limit=limit,
