@@ -14,9 +14,7 @@ python manage.py migrate sites --noinput
 python manage.py migrate --noinput
 python manage.py gruntserver
 python manage.py collectstatic --noinput
-python manage.py update_site_domain
-python manage.py add_default_location_site_view
-python manage.py add_location_site_view_geoserver
+python manage.py create_or_update_iucn_status
 popd
 
 exec "$@"

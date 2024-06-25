@@ -364,9 +364,11 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         obj.save()
 
 
-class IUCNStatusAdmin(admin.ModelAdmin):
-    list_display = ('get_category_display', 'sensitive',
+class IUCNStatusAdmin(OrderedModelAdmin):
+    list_display = ('id', 'get_category_display', 'move_up_down_links',
+                    'order', 'sensitive',
                     'iucn_colour', 'national', 'total_species')
+    ordering = ('order',)
 
     list_filter = (
         'national',
