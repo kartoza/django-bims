@@ -391,10 +391,14 @@ $(function () {
                 $input.unbind();
             }
         });
+        if (!$('#selected-source-reference').val()) {
+            isError = true;
+            alertMessage = 'You must select a source reference <br/>';
+        }
         if ($('.observed:checkbox:checked').length === 0) {
             if (!chemicalCollectionRecordCount) {
                 isError = true;
-                alertMessage = 'You must at least add one collection data';
+                alertMessage += 'You must at least add one collection data';
             }
         } else {
             let alertDiv = $('.alert-danger');

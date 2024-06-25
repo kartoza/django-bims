@@ -12,9 +12,6 @@
                <textarea class="form-control" id="selected-source-reference" name="source_reference_title" disabled>{% if source_reference %}({{ source_reference.0.reference_type }}) - {{ source_reference.0 }}{% endif %}</textarea>
                <input type="hidden" id="selected-source-reference-id" name="source_reference" {% if source_reference %}value="{{ source_reference.0.id }}"{% endif %}>
            </div>
-            {% if source_reference %}
-                <button class="btn btn-primary" style="font-size: 13px; margin-top: 10px;" id="clear-source-reference">Clear</button>
-            {% endif %}
        </div>
    </div>
 
@@ -150,7 +147,13 @@
 
     $('.add-source-reference').click(function () {
       const urlParams = new URLSearchParams(window.location.search);
-      window.location.href = '/add-source-reference/?next=' + window.location.pathname + '?siteId=' + urlParams.get('siteId');
+      let nextUrl = window.location.pathname + '?siteId=' + urlParams.get('siteId');
+      if (urlParams.get('module')) {
+          nextUrl += '&' + urlParams.get('module');
+      }
+      let encodedNextUrl = encodeURIComponent(nextUrl);
+
+      window.location.href = '/add-source-reference/?next=' + encodedNextUrl;
     })
 
     function getSourceReferenceList() {
@@ -218,8 +221,7 @@
 
     $('#clear-source-reference').click(function (e) {
       e.preventDefault();
-      $('#selected-source-reference').val('');
-      $('#selected-source-reference-id').val('');
+      alert('test');
     })
 
     $(document).ready(function () {

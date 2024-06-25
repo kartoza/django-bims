@@ -1,6 +1,10 @@
+import json
+
 from django.views.generic import View
 from django.db.models import Q
 from django.db.models.functions import Length
+
+from bims.models import SourceReference
 from bims.models.biotope import Biotope
 from bims.models.sampling_method import SamplingMethod
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -165,12 +169,10 @@ class SiteVisitBaseView(View):
 
     def source_reference(self):
         """Get existing source reference"""
-        source_reference_records = self.collection_records.exclude(
+        return SourceReference.objects.filter(
+            id__in=self.collection_records.exclude(
             source_reference__isnull=True
-        )
-        if source_reference_records.exists():
-            return source_reference_records[0].source_reference
-        return None
+        ).values_list('source_reference', flat=True))
 
     def get_context_data(self, **kwargs):
         context = super(SiteVisitBaseView, self).get_context_data(**kwargs)

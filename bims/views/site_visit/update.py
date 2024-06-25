@@ -6,6 +6,7 @@ from dateutil.parser import parse
 from django.contrib.auth import get_user_model
 from preferences import preferences
 
+from bims.models import SourceReference
 from bims.models.taxonomy import Taxonomy
 from django.views.generic.edit import UpdateView
 from django.urls import reverse
@@ -106,11 +107,17 @@ class SiteVisitUpdateView(
         abundance_type = form.data.get('abundance_type', None)
         end_embargo_date = form.data.get('end_embargo_date', None)
         wetland_indicator_status = form.data.get('wetland_indicator_status', None)
+        source_reference = form.data.get('source_reference', None)
         owner = None
         collector_user = None
         record_type_str = self._form_data(
             form, 'record_type', ''
         )
+
+        if source_reference:
+            source_reference = SourceReference.objects.get(
+                id=source_reference
+            )
 
         if end_embargo_date:
             end_embargo_date = parse(
@@ -205,7 +212,8 @@ class SiteVisitUpdateView(
                 wetland_indicator_status=wetland_indicator_status,
                 record_type=record_type,
                 sampling_effort_link=sampling_effort_measure,
-                end_embargo_date=end_embargo_date
+                end_embargo_date=end_embargo_date,
+                source_reference=source_reference
             )
 
             # Remove deleted collection records
@@ -267,7 +275,8 @@ class SiteVisitUpdateView(
                                 record_type=record_type,
                                 hydroperiod=hydroperiod,
                                 wetland_indicator_status=wetland_indicator_status,
-                                end_embargo_date=end_embargo_date
+                                end_embargo_date=end_embargo_date,
+                                source_reference=source_reference,
                             )
                         )
                         if status:
@@ -392,14 +401,8 @@ class SiteVisitUpdateView(
             'location_site': self.object.site,
             'form': 'site-visit-form'
         })
-        source_reference_url = reverse('source-reference-form') + (
-            '?session={session}&identifier={identifier}&next={next}'.format(
-                session=session_uuid,
-                next='/site-visit/detail/{}/'.format(self.object.id),
-                identifier=self.session_identifier
-            )
-        )
-        redirect_url = source_reference_url
+        next_url = '/site-visit/detail/{}/'.format(self.object.id)
+        redirect_url = next_url
         if (
                 'river' in self.object.site.ecosystem_type.lower() or
                 preferences.SiteSetting.default_data_source == 'fbis'
@@ -407,6 +410,6 @@ class SiteVisitUpdateView(
             redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
                 base_url=reverse('abiotic-form'),
                 survey_id=self.object.id,
-                next=source_reference_url
+                next=next_url
             )
         return redirect_url

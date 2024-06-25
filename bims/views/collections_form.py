@@ -600,6 +600,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
     def post(self, request, *args, **kwargs):
         post_data = request.POST.dict()
         post_data['source_site'] = Site.objects.get_current().id
+        post_data['source_reference_id'] = request.POST.get('source_reference')
         survey = add_survey_occurrences(
             self, post_data, request.FILES.get('site-image', None))
 
@@ -617,17 +618,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
                 id=self.request.user.id
             )
         )
-        source_reference_url = (
-            '{base_url}?session={session}&'
-            'identifier={identifier}&next={next}'.format(
-                base_url=reverse('source-reference-form'),
-                session=session_uuid,
-                identifier=self.session_identifier,
-                next=next_url
-            )
-        )
-
-        redirect_url = source_reference_url
+        redirect_url = next_url
 
         # Create a survey
         if (
@@ -637,7 +628,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
             redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
                 base_url=reverse('abiotic-form'),
                 survey_id=self.survey.id,
-                next=source_reference_url
+                next=next_url
             )
 
         self.extra_post(request.POST)

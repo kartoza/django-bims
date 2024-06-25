@@ -15,6 +15,7 @@ from geonode.base.models import HierarchicalKeyword, TaggedContentItem
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
+from urllib.parse import unquote
 
 
 from bims.utils.user import get_user_from_name
@@ -700,7 +701,11 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
         context['params'] = {
             'reference_type': json.dumps(reference_type)
         }.items()
-        context['past_url'] = self.request.GET.get('next')
+        encoded_next_url = self.request.GET.get('next', '')
+        next_url = ''
+        if encoded_next_url:
+            next_url = unquote(encoded_next_url)
+        context['past_url'] = next_url
         return context
 
     def form_valid(self, form):
