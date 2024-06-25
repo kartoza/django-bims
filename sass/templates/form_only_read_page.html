@@ -131,13 +131,13 @@
             <div class="col-sm-10">
                 <div class="source-reference-wrapper">
                     {% if source_reference %}
-                        <div style="font-weight: bold">{{ source_reference.reference_type }}</div>
-                        {% if source_reference.reference_type == 'Published report or thesis' or source_reference.reference_type == 'Peer-reviewed scientific article' %}
-                            <div>{{ source_reference.authors }} |
-                                {{ source_reference.year }} |
-                                {{ source_reference.title }}</div>
+                        <div style="font-weight: bold">{{ source_reference.0.reference_type }}</div>
+                        {% if source_reference.reference_type == 'Published report or thesis' or source_reference.0.reference_type == 'Peer-reviewed scientific article' %}
+                            <div>{{ source_reference.0.authors }} |
+                                {{ source_reference.0.year }} |
+                                {{ source_reference.0.title }}</div>
                         {% else %}
-                            <div>{{ source_reference }}</div>
+                            <div>{{ source_reference.0 }}</div>
                         {% endif %}
                     {% endif %}
                 </div>

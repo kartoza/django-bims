@@ -15,6 +15,13 @@ $('#submit').click(function () {
             scrollTop: 0}, 500);
         return false;
     }
+    if (!$('#selected-source-reference').val()) {
+        $frontendAlert.html('You must select a source reference').show();
+        $('html, body').animate({
+            scrollTop: 0}, 500);
+        $('#cancel-submit').click();
+        return false;
+    }
     submitButton.addClass('disabled');
     let submitMessage = submitButton.data('message');
     if (submitMessage) {

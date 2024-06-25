@@ -27,7 +27,7 @@ from django.conf import settings
 
 from geonode.people.models import Profile
 
-from bims.models import BaseMapLayer
+from bims.models import BaseMapLayer, SourceReference
 from bims.models.location_site import (
     LocationSite,
     location_site_post_save_handler
@@ -191,6 +191,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         }
         updated_site_visit_taxon = []
         updated_site_visit_biotope_taxon = []
+        source_reference = post_dictionary.get('source_reference', None)
+        if source_reference:
+            source_reference = SourceReference.objects.get(id=source_reference)
+
         for post_key, abundance in post_dictionary.items():
             if 'taxon_list' not in post_key:
                 continue
@@ -275,6 +279,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.source_collection = self.source_collection
                 # Set correct owner
                 site_visit_taxon.owner = site_visit.owner
+                site_visit_taxon.source_reference = source_reference
+
                 end_embargo_date = post_dictionary.get('end_embargo_date', None)
                 if end_embargo_date:
                     site_visit_taxon.end_embargo_date = libdatetime.strptime(
@@ -506,14 +512,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             'location_site': site_visit.location_site.name,
             'form': 'sass-form'
         })
-        source_reference_url = reverse('source-reference-form') + (
-            '?session={session}&identifier={identifier}&next={next}'.format(
-                session=session_uuid,
-                next=next_url,
-                identifier=self.session_identifier
-            )
-        )
-        redirect_url = source_reference_url
+        redirect_url = next_url
 
         if (
                 'river' in survey.site.ecosystem_type.lower() or
@@ -522,7 +521,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
                 base_url=reverse('abiotic-form'),
                 survey_id=survey.id,
-                next=source_reference_url
+                next=next_url
             )
 
         clear_finished_search_in_background(get_tenant(request))
@@ -702,8 +701,9 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             site_visit_taxon = SiteVisitTaxon.objects.filter(
                 site_visit=self.site_visit, source_reference__isnull=False)
             if site_visit_taxon.exists():
-                source_reference = site_visit_taxon[0].source_reference
-                context['source_reference'] = source_reference
+                context['source_reference'] = SourceReference.objects.filter(
+                    id__in=site_visit_taxon.values_list('source_reference', flat=True)
+                )
                 context['end_embargo_date'] = site_visit_taxon.first().end_embargo_date
         else:
             owner = self.request.user
