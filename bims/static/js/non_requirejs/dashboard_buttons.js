@@ -35,8 +35,8 @@ function dashboardClose(e, storageKey = '') {
         } catch (e) {
             window.location.href = '/map/';
         }
-    } else if (previousUrl.indexOf('source-reference-form') > -1) {
-        window.history.go(-7);
+    } else if (previousUrl.indexOf('/abiotic/?') > -1) {
+        window.history.go(-6);
     } else {
         window.history.back();
     }
