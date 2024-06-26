@@ -3,7 +3,7 @@ import ast
 
 from django.contrib.sites.models import Site
 from django.views.generic.list import ListView
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.contrib.auth import get_user_model
 from django.db.models import Subquery, OuterRef
 from bims.models.survey import Survey
@@ -47,7 +47,8 @@ class SiteVisitListView(ListView):
 
         # Base queryset
         qs = super(SiteVisitListView, self).get_queryset().filter(
-            biological_collection_record__isnull=False
+            Q(biological_collection_record__isnull=False) |
+            Q(chemical_collection_record__isnull=False)
         )
 
         if search_filters:
