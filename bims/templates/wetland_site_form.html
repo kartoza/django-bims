@@ -91,11 +91,6 @@
                                class="btn btn-info">Add {% if module.singular_name %}{{ module.singular_name }}{% else %}{{ module.name }}{% endif %} data</a>
                         {% endfor %}
 
-                        {% if preferences.SiteSetting.enable_sass %}
-                            <a href="/sass/{{ site_id }}/"
-                               class="btn btn-info">Add SASS data</a>
-                        {% endif %}
-
                         {% if preferences.SiteSetting.enable_water_temperature %}
                             <a href="/water-temperature-form/?siteId={{ site_id }}"
                                class="btn btn-info">Add water temperature
