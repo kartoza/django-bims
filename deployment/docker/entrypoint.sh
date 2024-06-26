@@ -14,7 +14,7 @@ python manage.py migrate sites --noinput
 python manage.py migrate --noinput
 python manage.py gruntserver
 python manage.py collectstatic --noinput
-python manage.py create_or_update_iucn_status
+# python manage.py create_or_update_iucn_status
 popd
 
 exec "$@"
