@@ -256,8 +256,13 @@
                             </td>
                             <td>{{ site_visit.total }}</td>
                             <td>
-                                <a href="{% if site_visit_sass %}/sass/view/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/detail/{{ site_visit.id }}/{% endif %}"
-                                   class="btn btn-primary btn-sm btn-action" title="View"><i class="fa fa-eye" aria-hidden="true"></i> </a>
+                                <a href="javascript:void(0)"
+                                   class="btn btn-primary btn-sm btn-action view-link" title="View"
+                                   data-url-sass="/sass/view/{{ site_visit.sass_site_visit.id }}"
+                                   data-url-regular="/site-visit/detail/{{ site_visit.id }}"
+                                   data-condition="{% if site_visit_sass %}true{% else %}false{% endif %}">
+                                    <i class="fa fa-eye" aria-hidden="true"></i>
+                                </a>
                                 {% if user.is_superuser or site_visit.owner == user or site_visit.collector_user == user %}
                                     {% if not site_visit.ready_for_validation  %}
                                     <a href="{% if site_visit_sass %}/sass/update/{{ site_visit.sass_site_visit.id }}/{% else %}/site-visit/update/{{ site_visit.id }}/{% endif %}"
@@ -342,6 +347,20 @@
     <script src="{% static "js/utils/insert_param_to_url.js" %}"></script>
 
     <script>
+        document.querySelectorAll('.view-link').forEach(function(link) {
+            link.addEventListener('click', function() {
+                localStorage.removeItem('site-visit-list');
+                localStorage.setItem('site-visit-list', window.location.href);
+        
+                var isSass = this.getAttribute('data-condition') === 'true';
+                var url = isSass ? this.getAttribute('data-url-sass') : this.getAttribute('data-url-regular');
+                
+                var nextParam = encodeURIComponent(window.location.pathname + window.location.search);
+                url += '?next=' + nextParam;
+        
+                window.location.href = url;
+            });
+        });
         const sourceCollection = {{ source_collection | safe }};
         function dashboardClose(e) {
             let previousUrl = '/map'

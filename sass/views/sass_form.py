@@ -3,6 +3,7 @@ import time
 import uuid
 from datetime import datetime as libdatetime
 
+from django.utils.safestring import mark_safe
 from django_tenants.utils import get_tenant
 from preferences import preferences
 
@@ -307,6 +308,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
     def create_or_get_survey(site_visit):
         """Get or create a site survey form SASS site visit"""
         survey = None
+        created = False
 
         # Check duplicate data
         existing_surveys = Survey.objects.filter(
@@ -340,12 +342,13 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
 
         # Create one
         if not survey:
+            created = True
             survey = Survey.objects.create(
                 owner=site_visit.owner,
                 date=site_visit.site_visit_date,
                 site=site_visit.location_site
             )
-        return survey
+        return survey, created
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
@@ -401,6 +404,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 pass
 
         new_site_visit = not sass_id and site_id
+        survey_created = False
         if new_site_visit:
             survey = Survey.objects.create(
                 site_id=site_id,
@@ -416,7 +420,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 pk=sass_id
             )
             # Get or create a survey
-            survey = self.create_or_get_survey(
+            survey, survey_created = self.create_or_get_survey(
                 site_visit
             )
             self.sass_version = site_visit.sass_version
@@ -492,18 +496,23 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         signals.post_save.connect(
             location_site_post_save_handler,
         )
-        if site_id:
-            next_url = '{base_url}?{querystring}'.format(
-                base_url=reverse('sass-form-page', kwargs={
-                    'site_id': site_id, }),
-                querystring='sass_created_id={}'.format(
-                    site_visit.id
+
+        next_url = self.request.POST.get('next', '')
+        if not next_url:
+            if site_id:
+                next_url = '{base_url}?{querystring}'.format(
+                    base_url=reverse('sass-form-page',
+                                     kwargs={
+                                         'site_id': site_id, }),
+                    querystring='sass_created_id={}'.format(
+                        site_visit.id
+                    )
                 )
-            )
-        else:
-            next_url = (
-                reverse('sass-update-page', kwargs={'sass_id': sass_id})
-            )
+            else:
+                next_url = (
+                    reverse('sass-view-page',
+                            kwargs={'sass_id': sass_id})
+                )
 
         session_uuid = '%s' % uuid.uuid4()
         self.add_last_session(request, session_uuid, {
@@ -514,8 +523,9 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         })
         redirect_url = next_url
 
+        ecosystem_type = survey.site.ecosystem_type if survey.site.ecosystem_type else ''
         if (
-                'river' in survey.site.ecosystem_type.lower() or
+                'river' in ecosystem_type.lower() or
                 preferences.SiteSetting.default_data_source == 'fbis'
         ):
             redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
@@ -525,6 +535,14 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             )
 
         clear_finished_search_in_background(get_tenant(request))
+
+        if not survey_created:
+            link = f'<a href="/sass/view/{site_visit.id}/" target="_blank">View details</a>'
+            messages.success(
+                self.request,
+                mark_safe(f'SASS record updated successfully. {link}.'),
+                extra_tags='site_visit_validation'
+            )
 
         return HttpResponseRedirect(redirect_url)
 
@@ -666,6 +684,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         context = super(SassFormView, self).get_context_data(**kwargs)
 
         sass_created_id = self.request.GET.get('sass_created_id', None)
+        context['next'] = self.request.GET.get('next', '')
         if sass_created_id:
             try:
                 sass_created = SiteVisit.objects.get(

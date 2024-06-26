@@ -46,7 +46,9 @@ class SiteVisitListView(ListView):
             del search_filters['o']
 
         # Base queryset
-        qs = super(SiteVisitListView, self).get_queryset().all()
+        qs = super(SiteVisitListView, self).get_queryset().filter(
+            biological_collection_record__isnull=False
+        )
 
         if search_filters:
             search = CollectionSearch(search_filters)
