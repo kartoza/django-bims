@@ -5,6 +5,7 @@ function dashboardClose(e, storageKey = '') {
     }
     if (storageKey) {
         let lastMap = localStorage.getItem(storageKey);
+        localStorage.removeItem(storageKey);
         if (lastMap) {
             window.location.href = lastMap;
             return
@@ -43,15 +44,8 @@ function dashboardClose(e, storageKey = '') {
 }
 
 $(function () {
-   $('.dashboard-close').click((e) => dashboardClose(e, ''));
-});
-
-$(function () {
-   $('.site-form-close').click((e) => dashboardClose(e, ''));
-});
-
-$(function () {
+    $('.dashboard-close').click((e) => dashboardClose(e, ''));
+    $('.site-form-close').click((e) => dashboardClose(e, ''));
+    $('.sass-form-edit-close').click((e) => dashboardClose(e, 'site-visit-list'));
     $('.upload-form-close').click((e) => dashboardClose(e, 'last-map-upload'));
 });
-
-
