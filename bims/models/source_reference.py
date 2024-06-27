@@ -492,6 +492,7 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def authors(self):
+        return '-'
         return format_authors(self.author_list)
 
     def link_template(self):

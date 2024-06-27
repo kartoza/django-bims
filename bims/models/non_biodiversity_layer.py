@@ -92,13 +92,6 @@ class NonBiodiversityLayer(OrderedModel):
         help_text="The site this record is first associated with."
     )
 
-    additional_sites = models.ManyToManyField(
-        to=Site,
-        related_name='non_bio_layer_additional_sites',
-        blank=True,
-        help_text='Additional sites where this layer will be displayed.'
-    )
-
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""

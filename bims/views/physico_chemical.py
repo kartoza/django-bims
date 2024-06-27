@@ -62,9 +62,13 @@ class PhysicoChemicalView(UserPassesTestMixin, TemplateView):
         except BaseMapLayer.DoesNotExist:
             context['bing_key'] = ''
 
-        for chem in Chem.objects.filter(
-                show_in_abiotic_list=True
-        ).order_by(Lower('chem_description')):
+        chems = Chem.objects.filter(
+            show_in_abiotic_list=True
+        ).order_by(
+            Lower('chem_description')
+        ).select_related('chem_unit')
+
+        for chem in chems:
             value = 0
             record_id = None
             if self.update_form:

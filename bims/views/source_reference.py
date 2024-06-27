@@ -12,7 +12,6 @@ from django.http import Http404
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
 from geonode.base.models import HierarchicalKeyword, TaggedContentItem
-from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from urllib.parse import unquote

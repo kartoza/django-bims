@@ -58,3 +58,25 @@ CACHES = {
     }
 }
 
+INSTALLED_APPS += ['debug_toolbar',]
+
+MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+    '192.168.1.159',
+    '192.168.1.1'
+]
+
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS += [ip[:-1] + "1" for ip in ips]
+
+
+def show_toolbar(request):
+    return True
+
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': show_toolbar,
+}
