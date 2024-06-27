@@ -2,7 +2,6 @@
 """
 core.settings.contrib
 """
-from core.settings.utils import ensure_unique_app_labels
 from .base import *  # noqa
 # Override base settings from geonode
 from .legacy_geonode_settings import *
@@ -175,9 +174,13 @@ TENANT_DOMAIN_MODEL = "tenants.Domain"
 
 if os.environ.get('SENTRY_KEY'):
     import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from bims.utils.sentry import before_send
     sentry_sdk.init(
         dsn=os.environ.get('SENTRY_KEY'),
+        integrations=[DjangoIntegration()],
         traces_sample_rate=1.0,
+        before_send=before_send,
     )
 
 # workaround to get flatpages picked up in installed apps.

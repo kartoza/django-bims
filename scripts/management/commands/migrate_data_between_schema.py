@@ -251,7 +251,7 @@ def migrate_theme(source_site, new_tenant_schema):
     _migrate(
         NonBiodiversityLayer,
         NonBiodiversityLayer.objects.filter(
-            Q(source_site=source_site) | Q(additional_sites=source_site)
+            source_site=source_site
         ),
         new_tenant_schema
     )
