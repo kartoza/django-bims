@@ -33,8 +33,10 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['rank_choices'] = self.model._meta.get_field('rank').choices
-        context['iucn_status_choices'] = IUCNStatus.objects.all().distinct(
-            'category', 'national'
+        context['iucn_status_choices'] = IUCNStatus.objects.filter(
+            national=False
+        ).distinct(
+            'order', 'category', 'national'
         )
         context['next'] = self.request.GET.get('next', '')
         return context
