@@ -836,6 +836,8 @@ define([
                         }
                     });
                 }, false, function () {
+                    button.html('Download checklist');
+                    button.prop('disabled', false);
                 })
             }
         },
