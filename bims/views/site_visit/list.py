@@ -3,9 +3,11 @@ import ast
 
 from django.contrib.sites.models import Site
 from django.views.generic.list import ListView
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 from django.contrib.auth import get_user_model
 from django.db.models import Subquery, OuterRef
+from preferences import preferences
+
 from bims.models.survey import Survey
 from bims.enums.ecosystem_type import (
     ECOSYSTEM_RIVER,
@@ -45,10 +47,13 @@ class SiteVisitListView(ListView):
             order = search_filters['o']
             del search_filters['o']
 
-        # Base queryset
+        default_data_source = preferences.SiteSetting.default_data_source
+
         qs = super(SiteVisitListView, self).get_queryset().filter(
-            Q(biological_collection_record__isnull=False) |
-            Q(chemical_collection_record__isnull=False)
+            Q(biological_collection_record__isnull=False,
+                biological_collection_record__source_collection=default_data_source
+            ) |
+            Q(chemical_collection_record__isnull=False),
         )
 
         if search_filters:
@@ -80,7 +85,6 @@ class SiteVisitListView(ListView):
                 del search_filters['validated']
 
             if search_filters:
-                search = CollectionSearch(search_filters)
                 self.collection_results = search.process_search()
                 qs = qs.filter(
                     id__in=self.collection_results.values('survey')

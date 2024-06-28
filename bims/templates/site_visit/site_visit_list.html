@@ -187,12 +187,6 @@
                                id="site_code" placeholder="" name="site_code" value="{% if site_code %}{{ site_code }}{% else %}{% endif %}"
                                required>
                     </div>
-                    <div class="filter-title">Source Collection</div>
-                    <div class="filter-value">
-                        <select class="form-control form-control-sm source-collection-select">
-                            <option>All</option>
-                        </select>
-                    </div>
                     <div class="filter-title">Module</div>
                     <div class="filter-value">
                         <select class="form-control form-control-sm module-select">
@@ -221,7 +215,6 @@
                         <th scope="col" style="width:10em">Site code <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_code"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_code"></i></th>
                         <th scope="col" style="width:20em">Site description <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_description"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_description"></i></th>
                         <th scope="col">Sampling date <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="date"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-date"></i></th>
-                        <th scope="col">Source collection</th>
                         <th scope="col">Owner</th>
                         <th scope="col">Total occurrences <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="total"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-total"></i></th>
                         <th scope="col">Actions</th>
@@ -247,8 +240,6 @@
                                 {% endif %}
                             </td>
                             <td>{{ site_visit.date|date:'Y-m-d' }}</td>
-                            <td>
-                                {% if site_visit.source_collection %}{{ site_visit.source_collection|upper }}{% endif %}</td>
                             <td>
                                 {% if site_visit.source_collection.upper != 'GBIF' %}
                                     <a href="/profile/{{ site_visit.owner.username }}/">{{ site_visit.owner.get_full_name }}</a>
