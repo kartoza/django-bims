@@ -6,4 +6,4 @@ wrapt==1.16.0
 
 # pdb plus plus
 pdbpp
-
+django-debug-toolbar==4.4.2
