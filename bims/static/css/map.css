@@ -2950,3 +2950,16 @@ div:hover::-webkit-scrollbar {
     background-color: rgba(var(--secondary-accent-color), 1);
     color: white;
 }
+
+.btn-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.equal-height {
+    display: flex;
+    align-items: stretch;
+}
+.equal-height button {
+    flex: 1;
+}
