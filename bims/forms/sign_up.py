@@ -1,6 +1,7 @@
 from allauth.account.forms import SignupForm
 from django import forms
 from bims.models import Profile
+from bims.models.profile import Role
 
 
 class CustomSignupForm(SignupForm):
@@ -18,11 +19,19 @@ class CustomSignupForm(SignupForm):
         label='Organization/Institution',
         required=True
     )
-    role = forms.ChoiceField(
-        choices=Profile.ROLE_CHOICES,
-        initial='citizen',
+    role = forms.ModelChoiceField(
+        queryset=Role.objects.all().order_by('order'),
         required=True
     )
+
+    def __init__(self, *args, **kwargs):
+        super(CustomSignupForm, self).__init__(*args, **kwargs)
+        try:
+            first_role = Role.objects.all().order_by('order').first()
+            if first_role:
+                self.fields['role'].initial = first_role
+        except Role.DoesNotExist:
+            pass
 
     def custom_signup(self, request, user):
         user.first_name = self.cleaned_data['first_name']
@@ -37,3 +46,5 @@ class CustomSignupForm(SignupForm):
         bims_profile.role = self.cleaned_data['role']
         bims_profile.save()
         return user
+
+

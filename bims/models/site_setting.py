@@ -108,12 +108,14 @@ class SiteSetting(Preferences):
 
     recaptcha_site_key = models.CharField(
         default='',
-        max_length=150
+        max_length=150,
+        blank=True
     )
 
     recaptcha_secret_key = models.CharField(
         default='',
-        max_length=150
+        max_length=150,
+        blank=True
     )
 
     iucn_api_key = models.CharField(
@@ -121,7 +123,8 @@ class SiteSetting(Preferences):
         default='',
         help_text=(
             'Token key for IUCN api'
-        )
+        ),
+        blank=True
     )
 
     disclaimer_form_text = models.CharField(
