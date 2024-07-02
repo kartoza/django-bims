@@ -18,7 +18,8 @@ from bims.tasks.email_csv import send_csv_via_email
 CSV_HEADER_TITLE = {
     'class_name': 'Class',
     'scientific_name': 'Accepted Scientific name and authority',
-    'cites_listing': 'CITES listing'
+    'cites_listing': 'CITES listing',
+    'park_or_mpa_name': 'Park or MPA name'
 }
 
 
@@ -62,7 +63,8 @@ def generate_checklist(download_request_id):
 
     csv_file_path = os.path.join(
         settings.MEDIA_ROOT,
-        'checklists', f'checklist_{download_request_id}.csv')
+        'checklists',
+        f'checklist_{download_request_id}.csv')
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     fieldnames = [key for key in get_serializer_keys(ChecklistSerializer) if key != 'id']

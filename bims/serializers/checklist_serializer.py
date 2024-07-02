@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
 from bims.models import TaxonGroupTaxonomy, CITESListingInfo
@@ -25,6 +27,9 @@ class ChecklistSerializer(SerializerContextCache):
     sources = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
     confidence = serializers.SerializerMethodField()
+    park_or_mpa_name = serializers.SerializerMethodField()
+    creation_date = serializers.SerializerMethodField()
+    dataset = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -45,6 +50,10 @@ class ChecklistSerializer(SerializerContextCache):
             )
             return taxon_name
         return '-'
+
+    def get_creation_date(self, obj: Taxonomy):
+        today = datetime.today()
+        return today.strftime('%d/%m/%Y')
 
     def get_bio_data(self, obj: Taxonomy):
         if not hasattr(self, '_bio_data_cache'):
@@ -122,6 +131,20 @@ class ChecklistSerializer(SerializerContextCache):
             return ''
         return bio.order_by('collection_date').last().collection_date.year
 
+    def get_dataset(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        if bio.filter(source_collection__iexact='gbif').exists():
+            dataset_names = list(bio.values_list(
+                'additional_data__datasetName',
+                flat=True
+            ))
+            dataset_names = [name for name in dataset_names if name is not None]
+            if dataset_names:
+                return ','.join(set(dataset_names))
+        return '-'
+
     def get_sources(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
         if not bio.exists():
@@ -138,8 +161,13 @@ class ChecklistSerializer(SerializerContextCache):
         except TypeError:
             return ''
 
+    # TODO
     def get_confidence(self, obj: Taxonomy):
         return ''
+
+    # TODO
+    def get_park_or_mpa_name(self, obj: Taxonomy):
+        return '-'
 
     def get_origin(self, obj: Taxonomy):
         origin_categories = dict(Taxonomy.CATEGORY_CHOICES)
@@ -197,5 +225,8 @@ class ChecklistSerializer(SerializerContextCache):
             'national_conservation_status',
             'sources',
             'cites_listing',
-            'confidence'
+            'confidence',
+            'park_or_mpa_name',
+            'creation_date',
+            'dataset'
         ]
