@@ -1,9 +1,11 @@
 from datetime import datetime
 
+from django.db.models import F
 from rest_framework import serializers
 
 from bims.models import TaxonGroupTaxonomy, CITESListingInfo
 from bims.models.taxonomy import Taxonomy
+from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
@@ -165,8 +167,18 @@ class ChecklistSerializer(SerializerContextCache):
     def get_confidence(self, obj: Taxonomy):
         return ''
 
-    # TODO
     def get_park_or_mpa_name(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return '-'
+        if bio.exclude(source_collection__iexact='gbif').exists():
+            park_names = list(bio.annotate(
+                    park_name=F(f'additional_data__{PARK_OR_MPA_NAME}')
+                ).values_list('park_name', flat=True)
+            )
+            park_names = [name for name in park_names if name is not None]
+            if park_names:
+                return ','.join(set(park_names))
         return '-'
 
     def get_origin(self, obj: Taxonomy):

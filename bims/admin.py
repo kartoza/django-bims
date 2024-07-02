@@ -487,7 +487,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'record_type__name',
         'sampling_method',
         'ecosystem_type',
-        'source_site'
+        'source_site',
+        'source_collection'
     )
     search_fields = (
         'taxonomy__scientific_name',
