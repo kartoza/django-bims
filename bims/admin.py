@@ -120,7 +120,7 @@ from bims.models import (
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
-from bims.models.profile import Profile as BimsProfile
+from bims.models.profile import Profile as BimsProfile, Role
 from bims.utils.gbif import search_exact_match, get_species, suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
@@ -584,7 +584,6 @@ class BimsProfileAdmin(admin.ModelAdmin):
         'first_name',
         'last_name',
         'qualifications',
-        'role',
         'sass_accredited_date_from',
         'sass_accredited_date_to']
     search_fields = (
@@ -1920,6 +1919,19 @@ class CITESListingInfoAdmin(admin.ModelAdmin):
     list_filter = ('appendix', 'effective_at', 'taxonomy')
     search_fields = ('annotation', 'taxonomy__name')
     raw_id_fields = ('taxonomy',)
+
+
+class RoleAdminForm(forms.ModelForm):
+    class Meta:
+        model = Role
+        fields = ['display_name']
+
+
+@admin.register(Role)
+class RoleAdmin(OrderedModelAdmin):
+    list_display = ('display_name', 'move_up_down_links')
+    ordering = ('order',)
+    form = RoleAdminForm
 
 
 @admin.register(ImportTask)
