@@ -11,6 +11,10 @@ class SiteSetting(Preferences):
             'rbis',
             'RBIS (Catchment + Province ID + District ID + Site count)'
         ),
+        (
+            'sanparks',
+            'SANPARKS (1st three park name + 1st two site description + site count)'
+        )
     )
     site_notice = models.TextField(
         null=True,
@@ -326,3 +330,11 @@ class SiteSetting(Preferences):
         default='',
         blank=True
     )
+
+    @property
+    def project_name(self):
+        if self.default_data_source:
+            return self.default_data_source.lower()
+        if self.site_code_generator:
+            return self.site_code_generator.lower()
+        return 'bims'
