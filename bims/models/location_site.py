@@ -585,7 +585,8 @@ def generate_site_code(
             site_name_length = 3
         if project_name in ['bims', 'sanparks'] and (site_name or site_description):
             catchment_site_code = site_name[:site_name_length].upper()
-            catchment_site_code += site_description[:2].upper()
+            if project_name == 'bims':
+                catchment_site_code += site_description[:2].upper()
         elif location_site:
             catchment_site_code += location_site.name[:site_name_length].upper()
             catchment_site_code += location_site.site_description[:4].upper()
