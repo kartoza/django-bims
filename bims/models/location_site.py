@@ -558,23 +558,12 @@ def generate_site_code(
         wetland_catchment,
         open_waterbody_catchment
     )
-    from bims.models.site_setting import SiteSetting
     from preferences import preferences
     site_code = ''
     catchment_site_code = ''
     catchments_data = {}
-    catchment_generator_method = ''
-
-    if location_site and location_site.source_site:
-        site_setting = SiteSetting.objects.filter(
-            sites__in=[location_site.source_site.id]
-        ).first()
-        if site_setting:
-            catchment_generator_method = site_setting.site_code_generator
-    if not catchment_generator_method:
-        catchment_generator_method = preferences.SiteSetting.site_code_generator
-
-    if catchment_generator_method == 'fbis':
+    project_name = preferences.SiteSetting.project_name
+    if project_name == 'fbis':
         if ecosystem_type.lower() == 'wetland':
             wetland_data = location_site.additional_data if (
                 location_site and
@@ -593,7 +582,7 @@ def generate_site_code(
                 lon=lon,
                 river_name=river_name
             )
-    elif catchment_generator_method == 'rbis':
+    elif project_name == 'rbis':
         catchment_site_code, catchments_data = rbis_catchment_generator(
             location_site=location_site,
             lat=lat,
@@ -602,11 +591,14 @@ def generate_site_code(
     else:
         site_name = kwargs.get('site_name', '')
         site_description = kwargs.get('site_desc', '')
-        if catchment_generator_method == 'bims' and (site_name or site_description):
-            catchment_site_code = site_name[:2].upper()
+        site_name_length = 2
+        if project_name == 'sanparks':
+            site_name_length = 3
+        if project_name in ['bims', 'sanparks'] and (site_name or site_description):
+            catchment_site_code = site_name[:site_name_length].upper()
             catchment_site_code += site_description[:2].upper()
         elif location_site:
-            catchment_site_code += location_site.name[:2].upper()
+            catchment_site_code += location_site.name[:site_name_length].upper()
             catchment_site_code += location_site.site_description[:4].upper()
 
     site_code += catchment_site_code
