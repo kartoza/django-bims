@@ -67,7 +67,6 @@ class OccurrenceProcessor(object):
 
     site_ids = []
     module_group = None
-    source_site = None
     # Whether the script should also fetch location context after ingesting
     # collection data
     fetch_location_context = True
@@ -277,6 +276,10 @@ class OccurrenceProcessor(object):
 
         park_name = DataCSVUpload.row_value(record, PARK_OR_MPA_NAME)
 
+        accuracy_of_coordinates = DataCSVUpload.row_value(
+            record, ACCURACY_OF_COORDINATES
+        )
+
         if not longitude and not latitude and park_name:
             wfs_url = preferences.SiteSetting.park_wfs_url
             layer_name = preferences.SiteSetting.park_wfs_layer_name
@@ -399,6 +402,8 @@ class OccurrenceProcessor(object):
                 wetland_name=user_wetland_name
             )
             location_site.site_code = site_code
+        if accuracy_of_coordinates:
+            location_site.accuracy_of_locality = accuracy_of_coordinates
         location_site.save()
         return location_site
 
@@ -795,15 +800,33 @@ class OccurrenceProcessor(object):
             sampling_date
         )
 
+        species_name = DataCSVUpload.row_value(
+            row, VERBATUM_NAME
+        )
+
+        if not species_name:
+            species_name = DataCSVUpload.row_value(
+                row, SPECIES_NAME
+            )
+
+        certainty_of_identification = DataCSVUpload.row_value(
+            row, CERTAINTY_OF_IDENTIFICATION
+        )
+
+        date_accuracy = DataCSVUpload.row_value(
+            row, DATE_ACCURACY
+        )
+
         record = None
         fields = {
             'site': location_site,
-            'original_species_name': DataCSVUpload.row_value(
-                row, SPECIES_NAME),
+            'original_species_name': species_name,
             'collection_date': sampling_date,
             'taxonomy': taxonomy,
             'collector_user': collector,
-            'validated': True
+            'validated': True,
+            'accuracy_of_identification': certainty_of_identification,
+            'date_accuracy': date_accuracy
         }
         if uuid_value:
             uuid_without_hyphen = uuid_value.replace('-', '')
@@ -856,13 +879,6 @@ class OccurrenceProcessor(object):
         record.additional_data = json.dumps(row)
         record.validated = True
 
-        # -- Assigning source site
-        if not record.source_site and self.source_site:
-            record.source_site = self.source_site
-        elif record.source_site and self.source_site:
-            record.additional_observation_sites.add(
-                self.source_site.id)
-
         record.save()
 
         if not str(record.site.id) in self.site_ids:
@@ -884,7 +900,6 @@ class OccurrencesCSVUpload(DataCSVUpload, OccurrenceProcessor):
 
     def process_row(self, row):
         self.module_group = self.upload_session.module_group
-        self.source_site = self.upload_session.source_site
         self.process_data(row)
 
     def handle_error(self, row, message):
