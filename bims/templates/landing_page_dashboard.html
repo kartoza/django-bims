@@ -47,18 +47,16 @@
         let totalSiteVisit = 0;
         let alienInvasive = 0;
         let alienNonInvasive = 0;
-        let unspecified = 0;
+        let unspecified = 0;        
+        
+        let cons_labels = [];
+        let chart_data = {};
 
-        let ce = 'Critically endangered'
-        let dd = 'Data deficient'
-        let en = 'Endangered'
-        let lc = 'Least concern'
-        let nt = 'Near threatened'
-        let ne = 'Not evaluated'
-        let vu = 'Vulnerable'
-        let cons_labels = [
-            dd, ne, lc, nt, vu, en ,ce
-        ]
+        if (moduleData.hasOwnProperty('conservation-status')) {
+            cons_labels = Object.keys(moduleData['conservation-status'])
+            chart_data = moduleData['conservation-status']
+        }
+
         let ce_data = 0
         let dd_data = 0
         let en_data = 0
@@ -66,28 +64,6 @@
         let nt_data = 0
         let ne_data = 0
         let vu_data = 0
-
-        if (moduleData.hasOwnProperty(ce)) {
-            ce_data += moduleData[ce];
-        }
-        if (moduleData.hasOwnProperty(dd)) {
-            dd_data += moduleData[dd];
-        }
-        if (moduleData.hasOwnProperty(en)) {
-            en_data += moduleData[en];
-        }
-        if (moduleData.hasOwnProperty(lc)) {
-            lc_data += moduleData[lc];
-        }
-        if (moduleData.hasOwnProperty(nt)) {
-            nt_data += moduleData[nt];
-        }
-        if (moduleData.hasOwnProperty(ne)) {
-            ne_data += moduleData[ne];
-        }
-        if (moduleData.hasOwnProperty(vu)) {
-            vu_data += moduleData[vu];
-        }
 
         if (moduleData.hasOwnProperty('total')) {
             totalRecords += moduleData['total'];
@@ -150,7 +126,7 @@
         let moduleChartDataset = {
             labels: cons_labels,
             datasets: [{
-                data: [dd_data, ne_data, lc_data, nt_data, vu_data, en_data, ce_data],
+                data: Object.values(chart_data),
                 backgroundColor: [
                     '#D7CD47',
                     '#39B2A3',
