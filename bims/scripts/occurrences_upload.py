@@ -67,7 +67,6 @@ class OccurrenceProcessor(object):
 
     site_ids = []
     module_group = None
-    source_site = None
     # Whether the script should also fetch location context after ingesting
     # collection data
     fetch_location_context = True
@@ -277,6 +276,12 @@ class OccurrenceProcessor(object):
 
         park_name = DataCSVUpload.row_value(record, PARK_OR_MPA_NAME)
 
+        accuracy_of_coordinates = DataCSVUpload.row_value(
+            record, ACCURACY_OF_COORDINATES
+        )
+        if not accuracy_of_coordinates:
+            accuracy_of_coordinates = 100
+
         if not longitude and not latitude and park_name:
             wfs_url = preferences.SiteSetting.park_wfs_url
             layer_name = preferences.SiteSetting.park_wfs_layer_name
@@ -287,22 +292,39 @@ class OccurrenceProcessor(object):
                 latitude = self.park_centroid[park_name][0]
                 longitude = self.park_centroid[park_name][1]
             else:
-                park_centroid = get_feature_centroid(
-                    wfs_url,
-                    layer_name,
-                    attribute_key=attribute_key,
-                    attribute_value=attribute_value
-                )
-                if park_centroid:
-                    latitude = park_centroid[0]
-                    longitude = park_centroid[1]
-                    self.park_centroid[park_name] = park_centroid
+                # Check if there is already site with the same park name
+                site = LocationSite.objects.filter(
+                    name=park_name
+                ).first()
+                if site:
+                    latitude = site.latitude
+                    longitude = site.longitude
+                    self.park_centroid[site.name] = [latitude, longitude]
+                    # Check if site with same park name and accuracy of coordinates exists
+                    site = LocationSite.objects.filter(
+                        name=park_name,
+                        accuracy_of_locality=int(accuracy_of_coordinates)
+                    ).exclude(site_code='').first()
+                    if site:
+                        # Return existing site
+                        return site
                 else:
-                    self.handle_error(
-                        row=record,
-                        message='Park or MPA name does not exist in the database'
+                    park_centroid = get_feature_centroid(
+                        wfs_url,
+                        layer_name,
+                        attribute_key=attribute_key,
+                        attribute_value=attribute_value
                     )
-                    return None
+                    if park_centroid:
+                        latitude = park_centroid[0]
+                        longitude = park_centroid[1]
+                        self.park_centroid[park_name] = park_centroid
+                    else:
+                        self.handle_error(
+                            row=record,
+                            message='Park or MPA name does not exist in the database'
+                        )
+                        return None
 
         if not longitude or not latitude:
             self.handle_error(
@@ -312,8 +334,8 @@ class OccurrenceProcessor(object):
             return None
 
         try:
-            latitude = float(DataCSVUpload.row_value(record, LATITUDE))
-            longitude = float(DataCSVUpload.row_value(record, LONGITUDE))
+            latitude = float(latitude)
+            longitude = float(longitude)
         except ValueError:
             self.handle_error(
                 row=record,
@@ -334,6 +356,8 @@ class OccurrenceProcessor(object):
             location_site_name = DataCSVUpload.row_value(record, LOCATION_SITE)
         elif wetland_name:
             location_site_name = wetland_name
+        elif park_name:
+            location_site_name = park_name
 
         # Find existing location site by data source site code
         data_source = preferences.SiteSetting.default_data_source.upper()
@@ -396,9 +420,15 @@ class OccurrenceProcessor(object):
                 lat=location_site.latitude,
                 lon=location_site.longitude,
                 ecosystem_type=location_site.ecosystem_type,
-                wetland_name=user_wetland_name
+                wetland_name=user_wetland_name,
+                **{
+                    'site_desc': site_description,
+                    'site_name': location_site_name
+                }
             )
             location_site.site_code = site_code
+        if accuracy_of_coordinates:
+            location_site.accuracy_of_locality = int(accuracy_of_coordinates)
         location_site.save()
         return location_site
 
@@ -758,6 +788,10 @@ class OccurrenceProcessor(object):
             record_type = RecordType.objects.filter(
                 name__iexact=record_type
             ).first()
+            if not record_type:
+                record_type = RecordType.objects.create(
+                    name=record_type
+                )
         else:
             record_type = None
         optional_data['record_type'] = record_type
@@ -795,15 +829,48 @@ class OccurrenceProcessor(object):
             sampling_date
         )
 
+        species_name = DataCSVUpload.row_value(
+            row, VERBATUM_NAME
+        )
+
+        if not species_name:
+            species_name = DataCSVUpload.row_value(
+                row, SPECIES_NAME
+            )
+
+        certainty_of_identification = DataCSVUpload.row_value(
+            row, CERTAINTY_OF_IDENTIFICATION
+        )
+
+        date_accuracy = DataCSVUpload.row_value(
+            row, DATE_ACCURACY
+        )
+
+        data_type = DataCSVUpload.row_value(
+            row, DATA_TYPE
+        )
+        if data_type:
+            data_type = data_type.lower()
+            if 'public' in data_type:
+                data_type = 'public'
+            elif 'private' in data_type:
+                data_type = 'private'
+            elif 'sensitive' in data_type:
+                data_type = 'sensitive'
+            else:
+                data_type = ''
+
         record = None
         fields = {
             'site': location_site,
-            'original_species_name': DataCSVUpload.row_value(
-                row, SPECIES_NAME),
+            'original_species_name': species_name,
             'collection_date': sampling_date,
             'taxonomy': taxonomy,
             'collector_user': collector,
-            'validated': True
+            'validated': True,
+            'accuracy_of_identification': certainty_of_identification,
+            'date_accuracy': date_accuracy.lower() if date_accuracy else '',
+            'data_type': data_type
         }
         if uuid_value:
             uuid_without_hyphen = uuid_value.replace('-', '')
@@ -856,13 +923,6 @@ class OccurrenceProcessor(object):
         record.additional_data = json.dumps(row)
         record.validated = True
 
-        # -- Assigning source site
-        if not record.source_site and self.source_site:
-            record.source_site = self.source_site
-        elif record.source_site and self.source_site:
-            record.additional_observation_sites.add(
-                self.source_site.id)
-
         record.save()
 
         if not str(record.site.id) in self.site_ids:
@@ -884,7 +944,6 @@ class OccurrencesCSVUpload(DataCSVUpload, OccurrenceProcessor):
 
     def process_row(self, row):
         self.module_group = self.upload_session.module_group
-        self.source_site = self.upload_session.source_site
         self.process_data(row)
 
     def handle_error(self, row, message):

@@ -210,17 +210,6 @@ class LocationSite(AbstractValidation):
         default=HYDROGEOMORPHIC_NONE,
         choices=HYDROGEOMORPHIC_CHOICES
     )
-    additional_observation_sites = models.ManyToManyField(
-        to=Site,
-        related_name='location_site_additional_observation_sites',
-        blank=True,
-        help_text="List of sites where this location site has also been observed. "
-                  "This attribute allows for recording multiple observation locations beyond "
-                  "the primary source site. For instance, if an occurrence is recorded at the "
-                  "main location 'FBIS' and is also observed at 'SanParks', "
-                  "this field facilitates linking the location site to 'SanParks' as "
-                  "an additional observation site."
-    )
 
     @property
     def location_site_identifier(self):
@@ -596,7 +585,8 @@ def generate_site_code(
             site_name_length = 3
         if project_name in ['bims', 'sanparks'] and (site_name or site_description):
             catchment_site_code = site_name[:site_name_length].upper()
-            catchment_site_code += site_description[:2].upper()
+            if project_name == 'bims':
+                catchment_site_code += site_description[:2].upper()
         elif location_site:
             catchment_site_code += location_site.name[:site_name_length].upper()
             catchment_site_code += location_site.site_description[:4].upper()
