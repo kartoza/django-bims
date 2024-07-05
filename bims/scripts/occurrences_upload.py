@@ -860,6 +860,10 @@ class OccurrenceProcessor(object):
             else:
                 data_type = ''
 
+        identified_by = DataCSVUpload.row_value(
+            row, IDENTIFIED_BY
+        )
+
         record = None
         fields = {
             'site': location_site,
@@ -870,7 +874,8 @@ class OccurrenceProcessor(object):
             'validated': True,
             'accuracy_of_identification': certainty_of_identification,
             'date_accuracy': date_accuracy.lower() if date_accuracy else '',
-            'data_type': data_type
+            'data_type': data_type,
+            'identified_by': identified_by if identified_by else ''
         }
         if uuid_value:
             uuid_without_hyphen = uuid_value.replace('-', '')

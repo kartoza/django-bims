@@ -384,6 +384,14 @@ class BiologicalCollectionRecord(AbstractValidation):
         help_text='Indicate if date is accurate or artificial'
     )
 
+    identified_by = models.CharField(
+        max_length=300,
+        blank=True,
+        default='',
+        help_text='Name of the person who identified the species',
+        verbose_name='Identifier',
+    )
+
     @property
     def data_name(self):
         return self.original_species_name
