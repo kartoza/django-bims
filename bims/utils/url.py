@@ -37,7 +37,6 @@ def remove_params_from_uri(params, uri):
 def parse_url_to_filters(url):
     parsed_url = urlparse(url)
     fragment = parsed_url.fragment
-    print(fragment)
     if '?' in fragment:
         query_string = fragment.split('?', 1)[1]
     else:
