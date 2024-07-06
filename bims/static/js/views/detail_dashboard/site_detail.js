@@ -805,7 +805,7 @@ define([
                     button.prop('disabled', false);
                 });
             } else {
-                showDownloadPopup('CSV', csvName, function (downloadRequestId) {
+                showDownloadPopup('PDF', csvName, function (downloadRequestId) {
                     let url = self.checklistDownloadUrl;
                     $.ajax({
                         url: url,
