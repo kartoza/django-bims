@@ -1,0 +1,16 @@
+{% load i18n %}
+You have received the following notice from {{ current_site }}:
+
+<p>
+{% trans "A new download request has been created " %} :
+</p>
+<p>
+Requester : {{ username }}
+</p>
+<p>
+Request date : {{ date_request }}
+</p>
+<p></p>
+<p>
+{% trans "Approve or decline the request by following this link" %}: http://{{ current_site }}/download-request/
+</p>

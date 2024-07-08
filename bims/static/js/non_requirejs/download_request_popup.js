@@ -2,8 +2,13 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
   const $downloadPopup = $('#download-popup');
   if(resource_type === 'CSV'){
     $downloadPopup.find('#data-format').show()
+    $downloadPopup.find('#data-format-pdf').hide()
+  } else if (resource_type === 'PDF') {
+    $downloadPopup.find('#data-format').hide()
+    $downloadPopup.find('#data-format-pdf').show()
   } else {
     $downloadPopup.find('#data-format').hide()
+    $downloadPopup.find('#data-format-pdf').hide()
   }
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');

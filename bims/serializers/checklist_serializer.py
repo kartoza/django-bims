@@ -10,7 +10,78 @@ from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 
-class ChecklistSerializer(SerializerContextCache):
+class ChecklistBaseSerializer(SerializerContextCache):
+    def get_bio_data(self, obj: Taxonomy):
+        if not hasattr(self, '_bio_data_cache'):
+            self._bio_data_cache = {}
+        if obj.id not in self._bio_data_cache:
+            bio_records = BiologicalCollectionRecord.objects.filter(taxonomy=obj)
+            self._bio_data_cache[obj.id] = bio_records
+        return self._bio_data_cache[obj.id]
+
+    def clean_text(self, text):
+        if text is None:
+            return ''
+        # Remove or replace unwanted characters
+        cleaned_text = text.replace('\n', ' ').replace('\r', ' ')
+        return cleaned_text
+
+
+class ChecklistPDFSerializer(ChecklistBaseSerializer):
+
+    common_name = serializers.SerializerMethodField()
+    threat_status = serializers.SerializerMethodField()
+    sources = serializers.SerializerMethodField()
+    scientific_name = serializers.SerializerMethodField()
+
+    def get_scientific_name(self, obj: Taxonomy):
+        return self.clean_text(obj.scientific_name)
+
+    def get_common_name(self, obj: Taxonomy):
+        vernacular_names = list(
+            obj.vernacular_names.filter(
+                language__istartswith='en'
+            ).values_list('name', flat=True))
+        if len(vernacular_names) == 0:
+            return ''
+        else:
+            return ', '.join(
+                list(
+                    set([name.capitalize() for name in vernacular_names]))
+            )
+
+    def get_threat_status(self, obj: Taxonomy):
+        if obj.iucn_status:
+            return obj.iucn_status.category
+        return 'NE'
+
+    def get_sources(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        if bio.filter(source_collection__iexact='gbif').exists():
+            dataset_names = list(bio.values_list(
+                'additional_data__datasetName',
+                flat=True
+            ))
+            dataset_names = [name for name in dataset_names if name is not None]
+            if dataset_names:
+                return ', '.join(set(dataset_names))
+        return '-'
+
+    class Meta:
+        model = Taxonomy
+        fields = [
+            'id',
+            'scientific_name',
+            'common_name',
+            'threat_status',
+            'sources'
+        ]
+
+
+
+class ChecklistSerializer(ChecklistBaseSerializer):
     """
     Serializer for checklist
     """
@@ -56,14 +127,6 @@ class ChecklistSerializer(SerializerContextCache):
     def get_creation_date(self, obj: Taxonomy):
         today = datetime.today()
         return today.strftime('%d/%m/%Y')
-
-    def get_bio_data(self, obj: Taxonomy):
-        if not hasattr(self, '_bio_data_cache'):
-            self._bio_data_cache = {}
-        if obj.id not in self._bio_data_cache:
-            bio_records = BiologicalCollectionRecord.objects.filter(taxonomy=obj)
-            self._bio_data_cache[obj.id] = bio_records
-        return self._bio_data_cache[obj.id]
 
     def get_taxon_group_taxon_data(self, obj: Taxonomy):
         taxon_group_id = self.context.get('taxon_group_id', None)
