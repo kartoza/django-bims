@@ -109,3 +109,7 @@ def is_fada_site():
     if project_name:
         return project_name.lower() == 'fada'
     return False
+
+@register.filter
+def get_attr(obj, attr_name):
+    return getattr(obj, attr_name)

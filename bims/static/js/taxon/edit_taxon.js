@@ -22,14 +22,15 @@ function formatTaxaSelection (taxa) {
     return taxa.text;
 }
 
-const taxaAutoComplete = $('#taxa-auto-complete').select2({
+$('.taxa-auto-complete').select2({
     ajax: {
         url: '/species-autocomplete/',
         dataType: 'json',
         data: function (params) {
             return {
                 term: params.term,
-                taxonGroupId: taxonGroupId
+                taxonGroupId: taxonGroupId,
+                exclude: taxonId
             }
         },
         processResults: function (data) {
@@ -46,13 +47,45 @@ const taxaAutoComplete = $('#taxa-auto-complete').select2({
     theme: "classic"
 });
 
-if (parent) {
-    let option = new Option(parent, parentId, true, true);
-    taxaAutoComplete.append(option).trigger('change');
-    taxaAutoComplete.trigger({
-        type: 'select2:select',
-        params: {
-            data: {}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const taxonomicStatus = document.getElementById('taxonomic_status');
+    const acceptedTaxonField = document.getElementById('accepted-taxon-field');
+
+    function toggleAcceptedTaxonField() {
+        if (taxonomicStatus.value === 'SYNONYM') {
+            acceptedTaxonField.style.display = 'flex';
+        } else {
+            acceptedTaxonField.style.display = 'none';
         }
-    });
-}
+    }
+
+    toggleAcceptedTaxonField();
+
+    taxonomicStatus.addEventListener('change', toggleAcceptedTaxonField);
+
+    if (parent) {
+        let option = new Option(parent, parentId, true, true);
+        let parentTaxon = $('#parent-taxon');
+        parentTaxon.append(option).trigger('change');
+        parentTaxon.trigger({
+            type: 'select2:select',
+            params: {
+                data: {}
+            }
+        });
+    }
+
+    if (acceptedTaxonomy) {
+        let option = new Option(acceptedTaxonomy, acceptedTaxonomyId, true, true);
+        let acceptedTaxon = $('#accepted-taxon');
+        acceptedTaxon.append(option).trigger('change');
+        acceptedTaxon.trigger({
+            type: 'select2:select',
+            params: {
+                data: {}
+            }
+        });
+    }
+
+});

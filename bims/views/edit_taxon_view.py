@@ -14,7 +14,16 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'edit_taxon.html'
     model = Taxonomy
     pk_url_kwarg = 'id'
-    fields = ['tags', 'canonical_name', 'rank', 'author', 'iucn_status', 'parent']
+    fields = [
+        'tags',
+        'canonical_name',
+        'rank',
+        'author',
+        'iucn_status',
+        'parent',
+        'taxonomic_status',
+        'accepted_taxonomy'
+    ]
     success_url = '/taxa_management/'
 
     def get_object(self, queryset=None):
@@ -40,6 +49,19 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             'order', 'category', 'national'
         )
         context['next'] = self.request.GET.get('next', '')
+        context['taxon_ranks'] = [
+            {'rank': 'Kingdom', 'field': 'kingdom_name'},
+            {'rank': 'Phylum', 'field': 'phylum_name'},
+            {'rank': 'Class', 'field': 'class_name'},
+            {'rank': 'Order', 'field': 'order_name'},
+            {'rank': 'Family', 'field': 'family_name'},
+            {'rank': 'Subfamily', 'field': 'sub_family_name'},
+            {'rank': 'Tribe', 'field': 'tribe_name'},
+            {'rank': 'Subtribe', 'field': 'sub_tribe_name'},
+            {'rank': 'Genus', 'field': 'genus_name'},
+            {'rank': 'Species', 'field': 'species_name'},
+            {'rank': 'Subspecies', 'field': 'sub_species_name'}
+        ]
         return context
 
     def test_func(self):
