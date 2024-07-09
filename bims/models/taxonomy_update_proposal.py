@@ -109,6 +109,8 @@ class TaxonomyUpdateProposal(Taxonomy):
                 'taxonomic_status',
                 'endemism',
                 'iucn_status',
+                'accepted_taxonomy',
+                'parent',
                 'origin']
             for field in fields_to_update:
                 setattr(
