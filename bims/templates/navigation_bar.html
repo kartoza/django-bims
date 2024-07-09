@@ -1,4 +1,5 @@
 {% load site %}
+{% is_fada_site as fada_site %}
 
 <nav class="navbar navbar-expand-md fixed-top">
     <div class="container">
@@ -19,18 +20,20 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                    <a class="nav-link" href="/map">Explore</a>
-                </li>
-                <li class="nav-item active dropdown">
-                    <a class="nav-link dropdown-toggle" href="#"
-                       id="dropdown01" data-toggle="dropdown"
-                       aria-haspopup="true" aria-expanded="false">Data</a>
-                    <div class="dropdown-menu" aria-labelledby="dropdown01">
-                        <a class="dropdown-item" href="/source-references/">Source References</a>
-                        <a class="dropdown-item" href="/site-visit/list/">Site Visits</a>
-                    </div>
-                </li>
+                {% if not fada_site %}
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/map">Explore</a>
+                    </li>
+                    <li class="nav-item active dropdown">
+                        <a class="nav-link dropdown-toggle" href="#"
+                           id="dropdown01" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">Data</a>
+                        <div class="dropdown-menu" aria-labelledby="dropdown01">
+                            <a class="dropdown-item" href="/source-references/">Source References</a>
+                            <a class="dropdown-item" href="/site-visit/list/">Site Visits</a>
+                        </div>
+                    </li>
+                {% endif %}
                 {%  if preferences.SiteSetting.blog_page_link %}
                  <li class="nav-item active">
                     <a class="nav-link" href="{{ preferences.SiteSetting.blog_page_link }}">News</a>
@@ -73,25 +76,36 @@
                            aria-haspopup="true" aria-expanded="false">{{ user.first_name }}</a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown01">
                             <a class="dropdown-item" href="/profile/">Profile</a>
-                            <a class="dropdown-item" href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a>
+                            {% if not fada_site %}
+                                <a class="dropdown-item" href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a>
+                            {% endif %}
                             <div class="dropdown-divider"></div>
                             {% if user.is_superuser %}
                                 <div class="text-sm">Upload</div>
                                 <a class="dropdown-item" href="/upload-taxa/">Taxonomic Data</a>
-                                <a class="dropdown-item" href="/upload-collections/">Occurrence Data</a>
-                                <a class="dropdown-item" href="/upload-physico-chemical/">Physico-chemical Data</a>
+                                {% if not fada_site %}
+                                    <a class="dropdown-item" href="/upload-collections/">Occurrence Data</a>
+                                    <a class="dropdown-item" href="/upload-physico-chemical/">Physico-chemical Data</a>
+                                {% endif %}
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="/harvest-collections/">Harvest From GBIF</a>
+                                {% if not fada_site %}
+                                    <a class="dropdown-item" href="/harvest-collections/">Harvest From GBIF</a>
+                                {% endif %}
                                 <a class="dropdown-item" href="/harvest-species/">Harvest Species</a>
-                                <a class="dropdown-item" href="/location-site-form/add/">Add Site</a>
-                                <a class="dropdown-item" href="/dashboard-management/">Edit Dashboard</a>
+                                {% if not fada_site %}
+                                    <a class="dropdown-item" href="/location-site-form/add/">Add Site</a>
+                                    <a class="dropdown-item" href="/dashboard-management/">Edit Dashboard</a>
+                                {% endif %}
                                 <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
                                 <a class="dropdown-item" href="/download-request/">Download Requests</a>
-                                <a class="dropdown-item" href="/site-visit/list/?&inReview=True">Validate Records</a>
+                                {% if not fada_site %}
+                                    <a class="dropdown-item" href="/site-visit/list/?&inReview=True">Validate Records</a>
+                                {% endif %}
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="/admin/">Admin Page</a>
-                                <a class="dropdown-item" href="/backups-management">Backups</a>
-                                <a class="dropdown-item" href="/summary-report">Summary Report</a>
+                                {% if not fada_site %}
+                                    <a class="dropdown-item" href="/summary-report">Summary Report</a>
+                                {% endif %}
                             {% elif user.is_staff %}
                                 <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
                                 <a class="dropdown-item" href="/admin/">Admin Page</a>
