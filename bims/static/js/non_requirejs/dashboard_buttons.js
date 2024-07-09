@@ -31,6 +31,10 @@ function dashboardClose(e, storageKey = '') {
         return true;
     }
     if (previousUrl === '') {
+        if (params.includes('next=')) {
+            window.location.href = ('' + window.location.href).split('?next=').at(-1)
+            return
+        }
         try {
             window.location.href = '/map/#site/siteIdOpen=' + siteId;
         } catch (e) {
