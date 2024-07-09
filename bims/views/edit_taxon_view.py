@@ -14,7 +14,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     template_name = 'edit_taxon.html'
     model = Taxonomy
     pk_url_kwarg = 'id'
-    fields = ['tags', 'canonical_name', 'rank', 'author', 'iucn_status']
+    fields = ['tags', 'canonical_name', 'rank', 'author', 'iucn_status', 'parent']
     success_url = '/taxa_management/'
 
     def get_object(self, queryset=None):
@@ -33,6 +33,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['rank_choices'] = self.model._meta.get_field('rank').choices
+        context['taxon_group_id'] = self.kwargs.get('taxon_group_id', '')
         context['iucn_status_choices'] = IUCNStatus.objects.filter(
             national=False
         ).distinct(
@@ -95,10 +96,16 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     iucn_status=iucn_status,
                     endemism=endemism
                 )
+                # If superuser then approve the proposal
                 TaxonGroupTaxonomy.objects.filter(
                     taxonomy=taxon,
                     taxongroup=taxon_group
-                ).update(is_validated=False)
+                ).update(
+                    is_validated=self.request.user.is_superuser
+                )
+                if self.request.user.is_superuser:
+                    proposal.approve(self.request.user)
+
                 messages.success(
                     self.request,
                     'Taxonomy update proposal created successfully')

@@ -12,7 +12,15 @@
           rel="stylesheet">
     <link rel="stylesheet"
           href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <link rel="stylesheet"
+          href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/site_form.css" %}" rel="stylesheet">
+    <script>
+        const taxonGroupId = "{{ taxon_group_id }}";
+        const parent = {% if object.parent %}"{{ object.parent.canonical_name }} ({{ object.parent.rank }})"{% else %}null{% endif %}
+        const parentId = {% if object.parent %}{{ object.parent.id }}{% else %}null{% endif %}
+    </script>
 {% endblock %}
 
 {% block body_content %}
@@ -25,7 +33,7 @@
         <div class="body-form container">
             <div class="dashboard-title">
                 <h2>
-                    Edit {{ object.canonical_name }}
+                    Edit {{ object.canonical_name }} ({{ object.rank }})
                     <div class="site-form-close">
                         <i class="fa fa-times" aria-hidden="true"></i>
                     </div>
@@ -34,7 +42,7 @@
 
             <div class="form-group row">
                 <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
-                    Canonical Name
+                    Name
                 </label>
                 <div class="col-sm-10">
                     <input type="text" name="canonical_name" id="canonical_name"
@@ -57,13 +65,22 @@
             </div>
 
             <div class="form-group row">
+                <label for="rank" class="col-sm-2 col-form-label col-form-label">
+                    Parent
+                </label>
+                <div class="col-sm-10">
+                    <select id="taxa-auto-complete" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
+                </div>
+            </div>
+
+            <div class="form-group row">
                 <label for="author" class="col-sm-2 col-form-label col-form-label">
                     Author
                 </label>
                 <div class="col-sm-10">
                     <input type="text" name="author" id="author"
                            class="form-control form-control-sm"
-                           placeholder="" value="{{ object.author }}" >
+                           placeholder="" value="{% if object.author %}{{ object.author }}{% endif %}" >
                 </div>
             </div>
 
@@ -132,11 +149,13 @@
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
     <script src="{% static "js/libs/jquery.validate.min.js" %}"></script>
     <script src="{% static "js/libs/additional-methods.min.js" %}"></script>
     <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
+    <script src="{% static "js/taxon/edit_taxon.js" %}"></script>
 
     <script>
         const checkbox = document.getElementById('disclaimerCheck');
