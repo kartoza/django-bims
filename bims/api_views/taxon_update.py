@@ -20,6 +20,15 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
         iucn_status = taxon.iucn_status
     if not endemism:
         endemism = taxon.endemism
+    taxonomic_status = (
+        data.get('taxonomic_status', 'ACCEPTED')
+    )
+    if taxonomic_status.lower() == 'accepted':
+        accepted_taxonomy = None
+    else:
+        accepted_taxonomy = (
+            data.get('accepted_taxonomy', taxon.accepted_taxonomy),
+        )
     proposal = TaxonomyUpdateProposal.objects.create(
         original_taxonomy=taxon,
         author=data.get('author', taxon.author),
@@ -33,7 +42,10 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
         origin=data.get('origin', taxon.origin),
         iucn_status=iucn_status,
         endemism=endemism,
-        taxon_group_under_review=taxon_group
+        taxon_group_under_review=taxon_group,
+        taxonomic_status=taxonomic_status,
+        accepted_taxonomy=accepted_taxonomy,
+        parent=data.get('parent', taxon.parent),
     )
     return proposal
 

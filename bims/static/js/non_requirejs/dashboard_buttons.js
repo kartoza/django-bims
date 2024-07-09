@@ -32,7 +32,7 @@ function dashboardClose(e, storageKey = '') {
     }
     if (previousUrl === '') {
         if (params.includes('next=')) {
-            window.location.href = ('' + window.location.href).split('?next=').at(-1)
+            window.location.href = url.searchParams.get('next');
             return
         }
         try {
