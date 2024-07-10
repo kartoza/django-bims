@@ -16,7 +16,7 @@ LOGGING_LOG_SQL = DEBUG
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'django_tenants.postgresql_backend',
         'NAME': 'gis',
         'USER': 'docker',
         'PASSWORD': 'docker',

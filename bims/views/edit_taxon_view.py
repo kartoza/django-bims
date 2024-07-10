@@ -32,12 +32,11 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             pk=self.kwargs['id'],
             taxongroup__id=self.kwargs['taxon_group_id']
         )
-        if self.is_taxon_edited(taxon):
-            return TaxonomyUpdateProposal.objects.get(
-                original_taxonomy=taxon,
-                status='pending'
-            )
-        return taxon
+        proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=taxon,
+            status='pending'
+        ).first()
+        return proposal or taxon
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -99,10 +98,18 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             iucn_status = None
             endemism = None
             try:
-                iucn_status = IUCNStatus.objects.get(category=data.get('iucn_status'))
+                iucn_status = IUCNStatus.objects.get(
+                    category=data.get('iucn_status'),
+                    national=False
+                )
             except IUCNStatus.DoesNotExist:
                 if taxon.iucn_status:
                     iucn_status = taxon.iucn_status
+            except IUCNStatus.MultipleObjectsReturned:
+                iucn_status = IUCNStatus.objects.get(
+                    category=data.get('iucn_status'),
+                    national=False
+                ).first()
 
             try:
                 endemism = Endemism.objects.get(name=data.get('endemism'))
@@ -110,7 +117,12 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 if taxon.endemism:
                     endemism = taxon.endemism
 
-            if not taxon_edited:
+            proposal = TaxonomyUpdateProposal.objects.filter(
+                original_taxonomy=taxon,
+                status='pending'
+            ).first()
+
+            if not proposal:
                 proposal = create_taxon_proposal(
                     taxon=taxon,
                     data=data,
@@ -118,24 +130,17 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     iucn_status=iucn_status,
                     endemism=endemism
                 )
-                # If superuser then approve the proposal
                 TaxonGroupTaxonomy.objects.filter(
                     taxonomy=taxon,
                     taxongroup=taxon_group
                 ).update(
-                    is_validated=self.request.user.is_superuser
+                    is_validated=False
                 )
-                if self.request.user.is_superuser:
-                    proposal.approve(self.request.user)
 
                 messages.success(
                     self.request,
                     'Taxonomy update proposal created successfully')
             else:
-                proposal = TaxonomyUpdateProposal.objects.filter(
-                    original_taxonomy=taxon,
-                    status='pending'
-                ).first()
                 update_taxon_proposal(
                     proposal=proposal,
                     data=data,
@@ -145,6 +150,10 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 messages.success(
                     self.request,
                     'Taxonomy updated successfully')
+
+        # The proposal is automatically approved if the user is a superuser
+        if proposal and self.request.user.is_superuser:
+            proposal.approve(self.request.user)
 
         return redirect(self.get_success_url())
 
