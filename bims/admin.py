@@ -1903,6 +1903,9 @@ class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
         'canonical_name',
         'status'
     )
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.distinct()
 
 
 class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):

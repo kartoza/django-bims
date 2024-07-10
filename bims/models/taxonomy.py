@@ -265,38 +265,6 @@ class Taxonomy(AbstractValidation):
                 attempt += 1
         return json_data
 
-    def save(self, *args, **kwargs):
-        update_taxon_with_gbif = False
-        if self.gbif_data:
-            self.gbif_data = self.save_json_data(self.gbif_data)
-        if self.additional_data:
-            self.additional_data = self.save_json_data(self.additional_data)
-        if self.additional_data and 'fetch_gbif' in self.additional_data:
-            update_taxon_with_gbif = True
-            del self.additional_data['fetch_gbif']
-        if not self.hierarchical_data:
-            self.hierarchical_data = {
-                'family_name': self.get_taxon_rank_name(TaxonomicRank.FAMILY.name),
-                'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
-                'species_name': self.get_taxon_rank_name(TaxonomicRank.SPECIES.name),
-            }
-        elif 'family_name' not in self.hierarchical_data:
-            self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
-        elif 'species_name' not in self.hierarchical_data:
-            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
-        elif 'genus_name' not in self.hierarchical_data:
-            self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
-
-        super(Taxonomy, self).save(*args, **kwargs)
-
-        if update_taxon_with_gbif:
-            from bims.utils.fetch_gbif import fetch_all_species_from_gbif
-            fetch_all_species_from_gbif(
-                species=self.scientific_name,
-                parent=self.parent,
-                gbif_key=self.gbif_key,
-                fetch_vernacular_names=True)
-
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
@@ -359,7 +327,7 @@ class Taxonomy(AbstractValidation):
         limit = 20
         current_try = 0
         _taxon = self
-        _parent = _taxon.parent
+        _parent = _taxon.parent if _taxon.parent else None
         _rank = _taxon.rank
         while (
                 _parent and _rank
@@ -369,7 +337,7 @@ class Taxonomy(AbstractValidation):
             current_try += 1
             _taxon = _parent
             _rank = _taxon.rank
-            _parent = _taxon.parent
+            _parent = _taxon.parent if _taxon.parent else None
 
         if _rank == rank:
             return _taxon.canonical_name
