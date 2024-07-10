@@ -157,13 +157,13 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                     endemism = taxon.endemism
 
             if not taxon_edited:
-                # proposal = create_taxon_proposal(
-                #     taxon=taxon,
-                #     data=data,
-                #     taxon_group=taxon_group,
-                #     iucn_status=iucn_status,
-                #     endemism=endemism
-                # )
+                proposal = create_taxon_proposal(
+                    taxon=taxon,
+                    data=data,
+                    taxon_group=taxon_group,
+                    iucn_status=iucn_status,
+                    endemism=endemism
+                )
                 TaxonGroupTaxonomy.objects.filter(
                     taxonomy=taxon,
                     taxongroup=taxon_group
