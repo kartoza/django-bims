@@ -60,8 +60,10 @@ class TaxonomyUpdateProposal(Taxonomy):
             TaxonomyUpdateReviewer.objects.update_or_create(
                 taxonomy_update_proposal=self,
                 reviewer=reviewer,
-                status='rejected',
-                comments=comments
+                defaults={
+                    'status': 'rejected',
+                    'comments': comments
+                }
             )
             self.save()
             TaxonGroupTaxonomy.objects.filter(
@@ -89,7 +91,9 @@ class TaxonomyUpdateProposal(Taxonomy):
         TaxonomyUpdateReviewer.objects.update_or_create(
             taxonomy_update_proposal=self,
             reviewer=reviewer,
-            status='approved'
+            defaults={
+                'status': 'approved'
+            }
         )
         top_level_taxon_group = self.taxon_group.get_top_level_parent()
 
