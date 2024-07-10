@@ -206,6 +206,7 @@ def download_csv_taxa_list(request):
         return HttpResponseForbidden('Not logged in')
 
     taxon_group_id = request.GET.get('taxonGroup')
+    download_request_id = request.GET.get('downloadRequestId', '')
     taxon_group = TaxonGroup.objects.get(
         id=taxon_group_id
     )
@@ -241,7 +242,8 @@ def download_csv_taxa_list(request):
             request.GET.dict(),
             csv_file=path_file,
             filename=filename,
-            user_id=request.user.id
+            user_id=request.user.id,
+            download_request_id=download_request_id
         )
 
     return JsonResponse({
