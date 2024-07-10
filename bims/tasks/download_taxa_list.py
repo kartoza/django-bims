@@ -7,7 +7,7 @@ from celery import shared_task
 logger = logging.getLogger(__name__)
 
 
-def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
+def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, download_request_id=''):
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
     from bims.tasks.email_csv import send_csv_via_email
     from bims.api_views.taxon import TaxaList
@@ -58,14 +58,15 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id):
             user_id=user.id,
             csv_file=csv_file_path,
             file_name=filename,
-            approved=True
+            approved=True,
+            download_request_id=download_request_id
         )
     except UserModel.DoesNotExist:
         pass
 
 
 @shared_task(name='bims.tasks.download_csv_taxa_list', queue='update')
-def download_csv_taxa_list(request, csv_file, filename, user_id):
+def download_csv_taxa_list(request, csv_file, filename, user_id, download_request_id=''):
     from bims.utils.celery import memcache_lock
     lock_id = '{0}-lock-{1}'.format(
         filename,
@@ -75,7 +76,7 @@ def download_csv_taxa_list(request, csv_file, filename, user_id):
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
             return process_download_csv_taxa_list(
-                request, csv_file, filename, user_id
+                request, csv_file, filename, user_id, download_request_id
             )
     logger.info(
         'Csv %s is already being processed by another worker',

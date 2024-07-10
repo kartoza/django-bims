@@ -50,6 +50,7 @@ export const taxaManagement = (() => {
         addNewTaxon.init(selectedTaxonGroup)
 
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
+        $('#download-csv').on('click', handleDownloadCsv)
 
         if (userCanEditTaxonGroup) {
             $sortable.sortable({
@@ -77,7 +78,6 @@ export const taxaManagement = (() => {
             });
         }
 
-        $('#download-csv').on('click', handleDownloadCsv)
     }
 
     function handleSubmitEditTaxon(event) {
@@ -107,14 +107,18 @@ export const taxaManagement = (() => {
     }
 
     function handleDownloadCsv(e) {
-
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
-        showDownloadPopup('REPORT', 'Taxa List', function () {
+        showDownloadPopup('REPORT', 'Taxa List', function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
-            fetch(taxaUrlList.replace('/api/taxa-list/', '/download-csv-taxa-list/'))
+            let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-csv-taxa-list/')
+            if (!downloadUrl.includes('?')) {
+                downloadUrl += '?';
+            }
+            downloadUrl += '&downloadRequestId=' + downloadRequestId
+            fetch(downloadUrl)
                 .then((resp) => {
                     $target.prop('disabled', false);
                     $target.html(targetHtml);
