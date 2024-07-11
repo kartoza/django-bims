@@ -1901,11 +1901,12 @@ class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
         'original_taxonomy',
         'scientific_name',
         'canonical_name',
-        'status'
+        'status',
+        'created_at'
     )
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.distinct()
+    autocomplete_fields = (
+        'vernacular_names',
+    )
 
 
 class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):
