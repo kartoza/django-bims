@@ -1,10 +1,28 @@
 from django.db import models
 from django.conf import settings
-from bims.models.taxonomy import Taxonomy
+from taggit.managers import TaggableManager
+from taggit.models import TaggedItemBase
+
+from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, CustomTaggedTaxonomy, TaxonTag
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
 
-class TaxonomyUpdateProposal(Taxonomy):
+class CustomTaggedUpdateTaxonomy(TaggedItemBase):
+    content_object = models.ForeignKey(
+        'TaxonomyUpdateProposal',
+        on_delete=models.CASCADE)
+    tag = models.ForeignKey(
+        TaxonTag,
+        on_delete=models.CASCADE,
+        related_name="%(app_label)s_%(class)s_items",
+    )
+
+    class Meta:
+        verbose_name = "Custom Tagged Taxonomy"
+        verbose_name_plural = "Custom Tagged Taxa"
+
+
+class TaxonomyUpdateProposal(AbstractTaxonomy):
     # Status of the proposal (e.g., pending, approved, rejected)
     status = models.CharField(
         max_length=20,
@@ -14,6 +32,75 @@ class TaxonomyUpdateProposal(Taxonomy):
             ('rejected', 'Rejected')
         ],
         default='pending'
+    )
+
+    tags = TaggableManager(
+        blank=True,
+        related_name='taxonomy_proposal_tags'
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='taxonomy_proposal_owner'
+    )
+
+    biographic_distributions = TaggableManager(
+        through=CustomTaggedUpdateTaxonomy,
+        related_name='taxonomy_proposal_bio_distribution',
+        blank=True,
+    )
+
+    vernacular_names = models.ManyToManyField(
+        to='VernacularName',
+        related_name='%(class)s_vernacular_names',
+        blank=True,
+    )
+
+    parent = models.ForeignKey(
+        verbose_name='Parent',
+        to='bims.Taxonomy',
+        on_delete=models.SET_NULL,
+        related_name='%(class)s_parent',
+        null=True,
+        blank=True
+    )
+
+    national_conservation_status = models.ForeignKey(
+        'IUCNStatus',
+        models.SET_NULL,
+        related_name='%(class)s_national_conservation_status',
+        verbose_name='National Conservation Status',
+        null=True,
+        blank=True,
+    )
+
+    iucn_status = models.ForeignKey(
+        'IUCNStatus',
+        models.SET_NULL,
+        related_name='%(class)s_iucn_status',
+        verbose_name='Global Red List Status (IUCN)',
+        null=True,
+        blank=True,
+    )
+
+    endemism = models.ForeignKey(
+        'Endemism',
+        models.SET_NULL,
+        related_name='%(class)s_endemism',
+        verbose_name='Endemism',
+        null=True,
+        blank=True
+    )
+
+    accepted_taxonomy = models.ForeignKey(
+        related_name='taxonomy_update_proposal_accepted_taxonomy',
+        to='bims.Taxonomy',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
     )
 
     original_taxonomy = models.ForeignKey(
@@ -45,14 +132,16 @@ class TaxonomyUpdateProposal(Taxonomy):
     reviewers = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
         blank=True,
-        through='TaxonomyUpdateReviewer'
+        through='TaxonomyUpdateReviewer',
+        related_name='taxonomy_update_proposals_reviewers',
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'taxonomy_update_proposal'
+        db_table = 'bims_taxonomy_update_proposal'
+        # unique_together = ('original_taxonomy', 'taxon_group', 'status')
 
     def reject_data(self, reviewer: settings.AUTH_USER_MODEL, comments: str = ''):
         if self.status == 'pending':
@@ -115,11 +204,15 @@ class TaxonomyUpdateProposal(Taxonomy):
                 'iucn_status',
                 'accepted_taxonomy',
                 'parent',
+                'tags',
                 'origin']
             for field in fields_to_update:
-                setattr(
-                    self.original_taxonomy,
-                    field, getattr(self, field))
+                if field == 'tags':
+                    self.original_taxonomy.tags.set(getattr(self, field).all())
+                else:
+                    setattr(
+                        self.original_taxonomy,
+                        field, getattr(self, field))
             self.original_taxonomy.save()
             self.status = 'approved'
             self.save()
