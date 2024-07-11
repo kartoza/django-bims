@@ -187,6 +187,15 @@
 {% endblock %}
 
 {% block foot %}
+    
+    <script>
+        let tagList = [];
+        {% if object.tags.all.count > 0 %}
+        {% for tag in object.tags.all %}
+        tagList.push('{{ tag }}');
+        {% endfor %}
+        {% endif %}
+    </script>
 
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>

@@ -5,6 +5,7 @@ from django.db.models import Q, Count
 from django.http import HttpResponseRedirect, Http404
 
 from bims.models import Profile
+from bims.models.profile import Role
 from bims.models.survey import Survey
 from bims.models.location_site import LocationSite
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -33,7 +34,15 @@ class ProfileView(DetailView):
         if not Profile.objects.filter(user=profile).exists():
             Profile.objects.create(user=profile)
 
-        profile.bims_profile.role = self.request.POST.get('role', '')
+        role = self.request.POST.get('role', '')
+        if role:
+            role_obj, created = Role.objects.get_or_create(
+                name=role
+            )
+            if created:
+                role_obj.display_name = role.replace('_', ' ').title()
+                role_obj.save()
+            profile.bims_profile.role = role_obj
         profile.bims_profile.save()
         profile.save()
 

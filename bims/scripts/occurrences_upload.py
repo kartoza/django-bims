@@ -783,14 +783,14 @@ class OccurrenceProcessor(object):
             optional_data['abundance_type'] = abundance_type
 
         # -- Record type
-        record_type = DataCSVUpload.row_value(row, RECORD_TYPE)
-        if record_type:
+        record_type_str = DataCSVUpload.row_value(row, RECORD_TYPE)
+        if record_type_str:
             record_type = RecordType.objects.filter(
-                name__iexact=record_type
+                name__iexact=record_type_str
             ).first()
             if not record_type:
                 record_type = RecordType.objects.create(
-                    name=record_type
+                    name=record_type_str
                 )
         else:
             record_type = None
@@ -872,7 +872,9 @@ class OccurrenceProcessor(object):
             'taxonomy': taxonomy,
             'collector_user': collector,
             'validated': True,
-            'accuracy_of_identification': certainty_of_identification,
+            'accuracy_of_identification': (
+                certainty_of_identification if certainty_of_identification else 100
+            ),
             'date_accuracy': date_accuracy.lower() if date_accuracy else '',
             'data_type': data_type,
             'identified_by': identified_by if identified_by else ''
