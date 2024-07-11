@@ -102,7 +102,6 @@ def is_debug():
 @register.simple_tag
 def is_fada_site():
     project_name = get_cache('project_name', '')
-    print(project_name)
     if not project_name:
         project_name = preferences.SiteSetting.project_name
     set_cache('project_name', project_name)

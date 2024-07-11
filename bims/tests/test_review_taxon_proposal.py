@@ -121,8 +121,6 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         ).first()
         taxon = Taxonomy.objects.filter(
             canonical_name='New Taxon1'
-        ).exclude(
-            id=proposal.id
         ).first()
         self.assertIsNotNone(
             taxon

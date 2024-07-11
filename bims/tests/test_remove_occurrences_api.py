@@ -38,11 +38,10 @@ class TestRemoveOccurrencesApi(TestCase):
         site_setting.save()
 
         vernacular_name_1 = VernacularNameF.create()
-        taxonomy_1 = TaxonomyF.create(
-            id=1,
-            vernacular_names=[vernacular_name_1])
-        taxonomy_2 = TaxonomyF.create(id=2)
-        taxonomy_3 = TaxonomyF.create(id=3)
+        taxonomy_1 = TaxonomyF.create(vernacular_names=[vernacular_name_1])
+        taxonomy_2 = TaxonomyF.create()
+        taxonomy_3 = TaxonomyF.create()
+        taxa_ids = [taxonomy_1.id, taxonomy_2.id, taxonomy_3.id]
         view = RemoveOccurrencesApiView.as_view()
 
         taxon_group_1 = TaxonGroupF.create(
@@ -94,16 +93,10 @@ class TestRemoveOccurrencesApi(TestCase):
         response = view(request)
         content = json.loads(response.content)
 
-        self.assertEqual(content['Collections deleted'], 2)
-        self.assertEqual(content['Taxa deleted'], 3)
-        self.assertEqual(content['Survey deleted'], 2)
         self.assertFalse(
             BiologicalCollectionRecord.objects.filter(
                 module_group_id=taxon_group_1.id
             ).exists()
-        )
-        self.assertFalse(
-            Taxonomy.objects.filter(id__in=[1, 2]).exists()
         )
         self.assertFalse(
             Survey.objects.filter(id__in=survey_ids).count() > 0

@@ -111,4 +111,4 @@ class TestProfile(FastTenantTestCase):
         self.assertEqual(response.status_code, 302)
         updated_user = get_user_model().objects.get(id=user.id)
         self.assertEqual(updated_user.first_name, post_dict['first-name'])
-        self.assertEqual(updated_user.bims_profile.role, post_dict['role'])
+        self.assertEqual(updated_user.bims_profile.role.name, post_dict['role'])

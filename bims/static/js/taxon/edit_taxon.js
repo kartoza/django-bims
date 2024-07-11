@@ -88,5 +88,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (tagList.length > 0) {
+        const tagAutoComplete = $('#taxa-tag-auto-complete');
+        tagAutoComplete.empty().val(null).trigger('change');
+        const tagIds = [];
+        tagList.forEach(tag => {
+            let newOption = new Option(tag, tag, false, false);
+            tagAutoComplete.append(newOption);
+            tagIds.push(tag);
+        });
+        tagAutoComplete.val(tagIds).trigger('change');
+    }
+
 });
 
