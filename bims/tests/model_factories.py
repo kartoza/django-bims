@@ -229,7 +229,7 @@ class TaxonomyF(factory.django.DjangoModelFactory):
         model = Taxonomy
         django_get_or_create = ('id',)
 
-    id = factory.Sequence(lambda n: n)
+    id = factory.Sequence(lambda n: n + 1)
     iucn_status = factory.SubFactory(IUCNStatusF)
     scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
     canonical_name = factory.Sequence(lambda n: u'Canonical name %s' % n)
@@ -300,15 +300,31 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
                 )
 
 
-class TaxonomyUpdateProposalF(TaxonomyF):
+class TaxonomyUpdateProposalF(factory.django.DjangoModelFactory):
     """
     Taxonomy update proposal
     """
     class Meta:
         model = TaxonomyUpdateProposal
+        django_get_or_create = ('id',)
 
+    id = factory.Sequence(lambda n: n + 1)
+    iucn_status = factory.SubFactory(IUCNStatusF)
+    scientific_name = factory.Sequence(lambda n: u'Scientific name %s' % n)
+    canonical_name = factory.Sequence(lambda n: u'Canonical name %s' % n)
     taxon_group = factory.SubFactory(TaxonGroupF)
     original_taxonomy = factory.SubFactory(TaxonomyF)
+
+    @factory.post_generation
+    def vernacular_names(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build, do nothing.
+            return
+
+        if extracted:
+            # A list of groups were passed in, use them
+            for vernacular_name in extracted:
+                self.vernacular_names.add(vernacular_name)
 
 
 @factory.django.mute_signals(signals.post_save)
