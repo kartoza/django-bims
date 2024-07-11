@@ -9,7 +9,7 @@ export const addNewTaxon = (() => {
 
     function showNewTaxonForm(taxonName) {
         let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
-        speciesAutoComplete($newTaxonFamilyInput, '&rank=family').then(value => {
+        speciesAutoComplete($newTaxonFamilyInput, '&rank=family&taxonGroupId=' + selectedTaxonGroup).then(value => {
             $newTaxonFamilyIdInput.val(value);
         })
         $newTaxonNameInput.val(capitalizedTaxonName);

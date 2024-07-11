@@ -208,6 +208,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 'origin']
             for field in fields_to_update:
                 if field == 'tags':
+                    self.original_taxonomy.tags.clear()
                     self.original_taxonomy.tags.set(getattr(self, field).all())
                 else:
                     setattr(
