@@ -147,7 +147,15 @@
                 <div class="col-sm-10">
                     <select name="iucn_status" id="iucn_status" class="form-control form-control-sm">
                         {% for iucn_status in iucn_status_choices %}
-                            <option value="{{ iucn_status.id }}" {% if iucn_status == object.iucn_status %}selected{% endif %}>{{ iucn_status.get_status }}</option>
+                            <option value="{{ iucn_status.id }}"
+                                    {% if object.iucn_status %}
+                                        {% if iucn_status == object.iucn_status %}selected{% endif %}
+                                    {% else %}
+                                        {% if iucn_status.category == 'NE' %}
+                                            selected
+                                        {% endif %}
+                                    {% endif %}
+                            >{{ iucn_status.get_status }}</option>
                         {% endfor %}
                     </select>
                 </div>

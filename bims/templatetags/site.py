@@ -111,4 +111,7 @@ def is_fada_site():
 
 @register.filter
 def get_attr(obj, attr_name):
-    return getattr(obj, attr_name)
+    try:
+        return getattr(obj, attr_name)
+    except AttributeError:
+        return ''

@@ -96,6 +96,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         data['tags'] = self.request.POST.getlist('tags')
 
+        new_proposal = False
+
         with transaction.atomic():
             iucn_status = None
             endemism = None
@@ -139,6 +141,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     is_validated=False
                 )
 
+                new_proposal = True
+
                 messages.success(
                     self.request,
                     'Taxonomy update proposal created successfully')
@@ -154,7 +158,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     'Taxonomy updated successfully')
 
         # The proposal is automatically approved if the user is a superuser
-        if proposal and self.request.user.is_superuser:
+        if proposal and self.request.user.is_superuser and new_proposal:
             proposal.approve(self.request.user)
 
         return redirect(self.get_success_url())

@@ -411,9 +411,13 @@
                             </thead>
                             <tbody>
                             <tr>
-                                <td><input type="text" class="form-control new-taxon-family-name" placeholder="Family">
-                                    <input type="hidden" class="new-taxon-family-id"></td>
-                                <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+                                    <select name="newTaxonFamilyName" class="new-taxon-family-name form-control" data-add-new-tag="false" style="width: 100%"></select>
+                                    <input type="hidden" class="new-taxon-family-id">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name">
+                                </td>
                                 <td>
 
                                     <div>
@@ -773,7 +777,7 @@
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/underscore@1.13.6/underscore-umd-min.js"></script>
-    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+   <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
 
     <script src="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/fc-5.0.1/fh-4.0.1/datatables.min.js"></script>
     <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>
