@@ -74,26 +74,14 @@ class TaxonomyField(models.CharField):
         super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
-class Taxonomy(AbstractValidation):
-
+class AbstractTaxonomy(AbstractValidation):
     CATEGORY_CHOICES = (
-        (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
-        (ORIGIN_CATEGORIES['native'], 'Native'),
-        (ORIGIN_CATEGORIES['unknown'], 'Unknown'),
-        (ORIGIN_CATEGORIES['non-native: invasive'], 'Non-native: invasive'),
-        (
-            ORIGIN_CATEGORIES['non-native: non-invasive'],
-            'Non-native: non-invasive'
-        )
+        ('non-native', 'Non-Native'),
+        ('native', 'Native'),
+        ('unknown', 'Unknown'),
+        ('non-native: invasive', 'Non-native: invasive'),
+        ('non-native: non-invasive', 'Non-native: non-invasive')
     )
-    CATEGORY_CHOICES_DICT = {
-        ORIGIN_CATEGORIES['non-native']: 'Non-Native',
-        ORIGIN_CATEGORIES['native']: 'Native',
-        ORIGIN_CATEGORIES['unknown']: 'Unknown',
-        ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
-        ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
-    }
-
     tags = TaggableManager(
         blank=True,
     )
@@ -246,6 +234,29 @@ class Taxonomy(AbstractValidation):
         null=True,
         blank=True
     )
+
+    class Meta:
+        abstract = True
+
+
+class Taxonomy(AbstractTaxonomy):
+    CATEGORY_CHOICES = (
+        (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
+        (ORIGIN_CATEGORIES['native'], 'Native'),
+        (ORIGIN_CATEGORIES['unknown'], 'Unknown'),
+        (ORIGIN_CATEGORIES['non-native: invasive'], 'Non-native: invasive'),
+        (
+            ORIGIN_CATEGORIES['non-native: non-invasive'],
+            'Non-native: non-invasive'
+        )
+    )
+    CATEGORY_CHOICES_DICT = {
+        ORIGIN_CATEGORIES['non-native']: 'Non-Native',
+        ORIGIN_CATEGORIES['native']: 'Native',
+        ORIGIN_CATEGORIES['unknown']: 'Unknown',
+        ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
+        ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
+    }
 
     def save_json_data(self, json_field):
         max_allowed = 10

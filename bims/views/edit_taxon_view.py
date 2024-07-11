@@ -94,6 +94,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         data = form.cleaned_data
 
+        data['tags'] = self.request.POST.getlist('tags')
+
         with transaction.atomic():
             iucn_status = None
             endemism = None
