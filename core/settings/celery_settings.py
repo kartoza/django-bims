@@ -39,6 +39,15 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour='1', minute='0'),
         'args': ('anurans', 100)
     },
+    'reset_caches': {
+        'task': 'bims.tasks.reset_caches',
+        'schedule': 300,
+        'options': {
+            'expires': 14,
+            'retry': False,
+            'queue': 'update'
+        }
+    }
 }
 
 CELERY_TIMEZONE = 'UTC'

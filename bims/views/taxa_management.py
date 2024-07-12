@@ -9,7 +9,9 @@ from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from bims.models.taxon_group import TaxonGroup
+
+from bims.cache import get_cache, set_cache
+from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
@@ -41,12 +43,17 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         site = get_current_site(self.request)
         selected = self.request.GET.get('selected')
-        taxa_groups_query = TaxonGroup.objects.filter(
-            category='SPECIES_MODULE',
-            parent__isnull=True
-        ).order_by('display_order')
-        context['taxa_groups'] = TaxonGroupSerializer(
-            taxa_groups_query, many=True).data
+        taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
+        if taxon_group_cache:
+            context['taxa_groups'] = taxon_group_cache
+        else:
+            taxa_groups_query = TaxonGroup.objects.filter(
+                category='SPECIES_MODULE',
+                parent__isnull=True
+            ).order_by('display_order')
+            context['taxa_groups'] = TaxonGroupSerializer(
+                taxa_groups_query, many=True).data
+            set_cache(TAXON_GROUP_CACHE, context['taxa_groups'])
         context['selected_taxon_group'] = None
         if selected:
             try:
@@ -62,10 +69,6 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             ).first()
 
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
-        context['source_collections'] = list(
-            BiologicalCollectionRecord.objects.all().values_list(
-                'source_collection', flat=True).distinct()
-        )
         context['taxon_rank'] = [
             rank.name for rank in TaxonomicRank
             if rank in (TaxonomicRank.GENUS, TaxonomicRank.SPECIES)

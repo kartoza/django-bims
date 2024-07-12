@@ -117,6 +117,7 @@ from bims.api_views.download_request import (
 )
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
+from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 
 urlpatterns = [
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -370,4 +371,7 @@ urlpatterns = [
     path('harvesting-geocontext-logs/',
          GetGeocontextLogLinesView.as_view(),
          name='get_log_lines'),
+    path('taxon-group-validated/<int:id>/',
+         TaxonGroupTotalValidated.as_view(),
+         name='taxon-group-total-validated'),
 ]

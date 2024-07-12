@@ -49,12 +49,18 @@ class TaxonSerializer(serializers.ModelSerializer):
         return ''
 
     def get_genus(self, obj: Taxonomy):
+        if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
+            return obj.hierarchical_data['genus_name']
         return obj.genus_name
 
     def get_family(self, obj: Taxonomy):
+        if obj.hierarchical_data and 'family_name' in obj.hierarchical_data:
+            return obj.hierarchical_data['family_name']
         return obj.family_name
 
     def get_species(self, obj: Taxonomy):
+        if obj.hierarchical_data and 'species_name' in obj.hierarchical_data:
+            return obj.hierarchical_data['species_name']
         return obj.species_name
 
     def __init__(self, *args, **kwargs):
@@ -70,11 +76,14 @@ class TaxonSerializer(serializers.ModelSerializer):
         return self.taxonomy_proposals.get(obj.id)
 
     def get_proposed_or_current(self, obj, field, original_value=''):
-        proposal = self.get_pending_proposal(obj)
-        proposal_value = ''
+        validated = self.context.get('validated', False)
         if not original_value:
             original_data = getattr(obj, field)
             original_value = str(original_data if original_data else '').strip()
+        if validated:
+            return original_value
+        proposal = self.get_pending_proposal(obj)
+        proposal_value = ''
         if proposal:
             proposal_data = getattr(proposal, field)
             proposal_value = str(proposal_data if proposal_data else '').strip()
@@ -148,6 +157,9 @@ class TaxonSerializer(serializers.ModelSerializer):
         return self.get_proposed_or_current(obj, 'rank')
 
     def get_can_be_validated(self, obj: Taxonomy):
+        validated = self.context.get('validated', False)
+        if validated:
+            return False
         taxon_group_id = self.context.get('taxon_group_id', None)
         user_id = self.context.get('user', None)
         if taxon_group_id:
@@ -167,7 +179,6 @@ class TaxonSerializer(serializers.ModelSerializer):
                 )
 
             return can_be_validated
-        return False
 
     def get_validated(self, obj: Taxonomy):
         taxon_group_id = self.context.get('taxon_group_id', None)
@@ -253,7 +264,7 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Taxonomy
-        exclude = ('gbif_data', 'vernacular_names')
+        exclude = ('gbif_data', 'vernacular_names', 'iucn_data', 'hierarchical_data')
 
 
 class TaxonExportSerializer(serializers.ModelSerializer):
@@ -393,36 +404,10 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         return len(unique_taxonomy_ids)
 
     def get_unvalidated_count(self, obj: TaxonGroup):
-        unique_taxonomy_ids = set()
-
-        def collect_taxonomy_ids(taxon_group):
-            taxonomies = taxon_group.taxonomies.filter(
-                taxongrouptaxonomy__is_validated=False
-            ).values_list('id', flat=True)
-            unique_taxonomy_ids.update(taxonomies)
-            children = TaxonGroup.objects.filter(
-                parent=taxon_group)
-            for child in children:
-                collect_taxonomy_ids(child)
-
-        collect_taxonomy_ids(obj)
-        return len(unique_taxonomy_ids)
+        return 0
 
     def get_validated_count(self, obj: TaxonGroup):
-        unique_taxonomy_ids = set()
-
-        def collect_taxonomy_ids(taxon_group):
-            taxonomies = taxon_group.taxonomies.filter(
-                taxongrouptaxonomy__is_validated=True
-            ).values_list('id', flat=True)
-            unique_taxonomy_ids.update(taxonomies)
-            children = TaxonGroup.objects.filter(
-                parent=taxon_group)
-            for child in children:
-                collect_taxonomy_ids(child)
-
-        collect_taxonomy_ids(obj)
-        return len(unique_taxonomy_ids)
+        return 0
 
     def get_extra_attributes(self, obj):
         return list(
