@@ -10,6 +10,7 @@ export const taxaSidebar = (() => {
 
     let currentRemoveModuleName = '';
     let selectedTaxonGroup = '';
+    let updateTaxonGroup = null;
 
     function findGbifTaxonomyByTaxonGroupId(parentId, groups) {
         let item = groups.find(item => item.id === parentId && item.gbif_parent_species);
@@ -109,9 +110,12 @@ export const taxaSidebar = (() => {
         }
         $('.ui-state-default').removeClass('selected');
         $elm.addClass('selected');
-        selectedTaxonGroup = $elm.data('id');
-        $('#taxon-name-input').val('');
-        insertParam('selected', selectedTaxonGroup);
+        if (updateTaxonGroup) {
+            updateTaxonGroup($elm.data('id'));
+        }
+        // selectedTaxonGroup = $elm.data('id');
+        // $('#taxon-name-input').val('');
+        // insertParam('selected', selectedTaxonGroup);
     }
 
     function allTaxaGroups(groups) {
@@ -366,7 +370,7 @@ export const taxaSidebar = (() => {
         });
     }
 
-    function init(_selectedTaxonGroup) {
+    function init(_updateTaxonGroup, _selectedTaxonGroup) {
         $addNewModuleBtn.on('click', handleAddNewModuleSelected)
         $taxonGroupCard.on('click', handleTaxonGroupSelected)
         $updateBtn.on('click', handleUpdateTaxonGroupSelected)
@@ -381,9 +385,11 @@ export const taxaSidebar = (() => {
         })
 
         selectedTaxonGroup = _selectedTaxonGroup
+        updateTaxonGroup = _updateTaxonGroup
     }
 
     return {
         init,
+        allTaxaGroups
     };
 })();

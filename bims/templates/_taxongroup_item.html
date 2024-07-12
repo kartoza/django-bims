@@ -6,8 +6,8 @@
                     <img src="{{ taxon_group.logo }}"/>
                 {% endif %}
             </div>
-            <div class="col-sm-9">
-                <div class="taxon-group-title" data-extra-attributes="{{ taxon_group.extra_attributes }}" 
+            <div class="col-sm-9" style="padding-right: 0">
+                <div class="taxon-group-title" data-extra-attributes="{{ taxon_group.extra_attributes }}"
                      data-taxa-upload-template="{{ taxon_group.taxa_upload_template }}"
                      data-occurrence-upload-template="{{ taxon_group.occurrence_upload_template }}"
                 >
@@ -18,15 +18,10 @@
                 </div>
                 <div style="display: flex;">
                     <div class="taxon-group-badge">
-                        <span id="taxon_group_validated_{{ taxon_group.id }}">{{ taxon_group.validated_count }}</span> Validated
+                        <span id="taxon_group_validated_{{ taxon_group.id }}">···</span> Validated
                     </div>
                 </div>
                 <div>
-                    {% if taxon_group.unvalidated_count > 0 %}
-                    <div class="taxon-group-badge">
-                        <span id="taxon_group_unvalidated_{{ taxon_group.id }}">{{ taxon_group.unvalidated_count }}</span> Unvalidated
-                    </div>
-                    {% endif %}
                 </div>
                 {% if perms.bims.change_taxongroup %}
                     <div style="margin-top: 3px">

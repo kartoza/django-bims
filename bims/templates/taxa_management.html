@@ -19,7 +19,7 @@
     <link href="{% static "css/taxa_management.css" %}" rel="stylesheet">
     <link href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/fc-5.0.1/fh-4.0.1/datatables.min.css" rel="stylesheet">
     <script>
-        const sourceCollection = {{ source_collections | safe }};
+        const sourceCollection = '';
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
         const isExpert = {% if is_expert %}true{% else %}false{% endif %}

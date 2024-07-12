@@ -30,7 +30,27 @@ export const taxaManagement = (() => {
 
     let selectedTaxonGroup = '';
 
+    function getTaxonGroupValidatedCount() {
+        const allTaxaGroups = taxaSidebar.allTaxaGroups(JSON.parse(JSON.stringify(taxaGroups)));
+        for (let taxaGroup of allTaxaGroups) {
+            $.ajax({
+                url: '/api/taxon-group-validated/' + taxaGroup.id + '/',
+                headers: {"X-CSRFToken": csrfToken},
+                type: 'GET',
+                success: function (response) {
+                    $('#taxon_group_validated_' + taxaGroup.id).text(response.total_validated);
+                    if (response.total_unvalidated > 0) {
+                        $('#taxon_group_validated_' + taxaGroup.id).parent().after($('<div class="taxon-group-badge">\n' +
+                            `<span id="taxon_group_unvalidated_${taxaGroup.id}">${response.total_unvalidated}</span> Unvalidated\n` +
+                            '</div>'))
+                    }
+                }
+            });
+        }
+    }
+
     function init() {
+        loading.hide();
         if (!urlParams.get('selected')) {
             selectedTaxonGroup = $($('#sortable').children()[0]).data('id');
             if (selectedTaxonGroup) {
@@ -41,13 +61,11 @@ export const taxaManagement = (() => {
             selectedTaxonGroup = urlParams.get('selected');
         }
 
-        if (typeof selectedTaxonGroup === 'undefined') {
-            loading.hide();
-        }
-
-        taxaSidebar.init(selectedTaxonGroup)
+        taxaSidebar.init(updateTaxonGroup, selectedTaxonGroup)
         taxaTable.init(getTaxaList, selectedTaxonGroup)
         addNewTaxon.init(selectedTaxonGroup)
+
+        getTaxonGroupValidatedCount();
 
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
         $('#download-csv').on('click', handleDownloadCsv)
@@ -159,32 +177,6 @@ export const taxaManagement = (() => {
         return results;
     }
 
-
-    const editTaxonClicked = (data) => {
-        const template = _.template($('#editTaxonForm').html());
-        data['taxon_group_id'] = selectedTaxonGroup;
-        const taxonData = getValuesAfterArrow(data);
-        const form = template(taxonData);
-        const modal = $('#editTaxonModal');
-
-        modal.find('.modal-body').html(form);
-
-        modal.find('#rank-options').val(taxonData['rank'])
-        modal.find('#cons-status-options').val(taxonData['iucn_status_name'])
-        modal.find('#origin-options').val(taxonData['origin'])
-        modal.find('#endemism-options').val(taxonData['endemism_name'])
-
-        onEditTaxonFormChanged(modal.find('#rank-options'));
-        onEditTaxonFormChanged(modal.find('#cons-status-options'));
-        onEditTaxonFormChanged(modal.find('#origin-options'));
-        onEditTaxonFormChanged(modal.find('#endemism-options'));
-        onEditTaxonFormChanged(modal.find('#scientific_name'), 'input');
-        onEditTaxonFormChanged(modal.find('#canonical_name'), 'input');
-
-        $saveTaxonBtn.attr('disabled', true);
-        modal.modal('show');
-    }
-
     function formatLoadingMessage() {
         return `<div style="padding-left:50px;">Loading...</div>`;
     }
@@ -208,10 +200,34 @@ export const taxaManagement = (() => {
         }
     }
 
+    function replaceTaxonGroup(url, newTaxonGroup) {
+        return url.replace(/(taxonGroup=)\d+/, `$1${newTaxonGroup}`);
+    }
+
+    function updateTaxonGroup(taxonGroupId) {
+        let table = $('#taxaTable').DataTable();
+        table.destroy();
+        let newParams = new URLSearchParams(window.location.search);
+        newParams.set('selected', taxonGroupId);
+
+        if (newParams) {
+            let urlParams = new URLSearchParams(newParams);
+            let currentUrl = new URL(window.location);
+            for (let param of urlParams.entries()) {
+                currentUrl.searchParams.set(param[0], param[1]);
+            }
+            window.history.pushState({}, '', currentUrl);
+        }
+
+        let taxaUrlParams = new URLSearchParams(taxaUrlList)
+        if (taxaUrlParams.get('taxonGroup') !== newParams.get('selected')) {
+            taxaUrlList = replaceTaxonGroup(taxaUrlList, newParams.get('selected'))
+        }
+        getTaxaList(taxaUrlList, newParams);
+    }
 
     const getTaxaList = (url) => {
         taxaUrlList = url;
-        loading.show();
         let urlParams = new URLSearchParams(window.location.search);
         let initialPage = urlParams.get('page') ? parseInt(urlParams.get('page')) : 1;
         let initialPageSize = urlParams.get('page_size') ? parseInt(urlParams.get('page_size')) : 25;
@@ -331,7 +347,6 @@ export const taxaManagement = (() => {
                         taxaData = response.results;
                         $.each(response.results, function (index, data) {
                             let name = data.canonical_name || data.scientific_name;
-                            let searchUrl = `/map/#search/${name}/taxon=&search=${name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
                             let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';

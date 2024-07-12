@@ -531,11 +531,13 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_list = self.get_taxa_by_parameters(request)
         self.pagination_class.page_size = request.GET.get('page_size', 20)
         page = self.paginate_queryset(taxon_list)
+        validated = ast.literal_eval(request.GET.get('validated', 'True'))
         if page is not None:
             serializer = self.get_paginated_response(
                 TaxonSerializer(page, many=True, context={
                     'taxon_group_id': request.GET.get('taxonGroup', None),
-                    'user': request.user.id
+                    'user': request.user.id,
+                    'validated': validated
                 }).data)
         else:
             serializer = TaxonSerializer(
