@@ -5,7 +5,7 @@ import logging
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.http import Http404
-from django.db.models import Count, Case, Value, When, F, CharField
+from django.db.models import Count, Case, Value, When, F, CharField, Prefetch
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
-from bims.models.taxonomy import Taxonomy
+from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
@@ -366,6 +366,15 @@ class TaxaList(LoginRequiredMixin, APIView):
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
+        biodiversity_distributions = (
+            request.GET.get('bD', '').split(',')
+        )
+        biodiversity_distributions = (
+            list(filter(None, biodiversity_distributions))
+        )
+        biodiversity_distributions_filter_type = (
+            request.GET.get('bDFT', 'OR')
+        )
 
         if order == 'endemism_name':
             order = 'endemism__name'
@@ -419,12 +428,28 @@ class TaxaList(LoginRequiredMixin, APIView):
                 canonical_name__icontains=taxon_name
             )
         if tags:
+            taxon_list = taxon_list.prefetch_related(
+                'tags',
+            )
             if tag_filter_type == 'AND':
                 for tag in tags:
                     taxon_list = taxon_list.filter(tags__name=tag)
             else:
                 taxon_list = taxon_list.filter(
                     tags__name__in=tags
+                ).distinct()
+        if biodiversity_distributions:
+            taxon_list = taxon_list.prefetch_related(
+                'biographic_distributions'
+            )
+            if biodiversity_distributions_filter_type == 'AND':
+                for b_tag in biodiversity_distributions:
+                    taxon_list = taxon_list.filter(
+                        customtaggedtaxonomy__tag__name=b_tag
+                    )
+            else:
+                taxon_list = taxon_list.filter(
+                    customtaggedtaxonomy__tag__name__in=biodiversity_distributions
                 ).distinct()
         if validated:
             try:
@@ -553,10 +578,16 @@ class TaxaList(LoginRequiredMixin, APIView):
 class TaxonTagAutocompleteAPIView(APIView):
     def get(self, request, format=None):
         query = request.query_params.get('q', '')
-        taxonomy_tags = Tag.objects.filter(
-            taxonomy__isnull=False,
-            name__icontains=query
-        ).distinct()[:10]
+        biographic = ast.literal_eval(request.query_params.get('biographic', 'False'))
+        if biographic:
+            taxonomy_tags = TaxonTag.objects.filter(
+                name__icontains=query
+            ).distinct()[:10]
+        else:
+            taxonomy_tags = Tag.objects.filter(
+                taxonomy__isnull=False,
+                name__icontains=query
+            ).distinct()[:10]
         serializer = TagSerializer(taxonomy_tags, many=True)
         return Response(serializer.data)
 

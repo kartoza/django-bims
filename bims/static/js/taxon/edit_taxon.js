@@ -100,5 +100,17 @@ document.addEventListener('DOMContentLoaded', function() {
         tagAutoComplete.val(tagIds).trigger('change');
     }
 
+    if (biographicDistributions.length > 0) {
+        const bDAutoComplete = $('#biographic-tag-auto-complete');
+        bDAutoComplete.empty().val(null).trigger('change');
+        const tagIds = [];
+        biographicDistributions.forEach(tag => {
+            let newOption = new Option(tag, tag, false, false);
+            bDAutoComplete.append(newOption);
+            tagIds.push(tag);
+        });
+        bDAutoComplete.val(tagIds).trigger('change');
+    }
+
 });
 

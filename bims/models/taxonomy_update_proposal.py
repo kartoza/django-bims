@@ -205,11 +205,16 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 'accepted_taxonomy',
                 'parent',
                 'tags',
+                'biographic_distributions',
                 'origin']
             for field in fields_to_update:
                 if field == 'tags':
                     self.original_taxonomy.tags.clear()
                     self.original_taxonomy.tags.set(getattr(self, field).all())
+                elif field == 'biographic_distributions':
+                    self.original_taxonomy.biographic_distributions.clear()
+                    self.original_taxonomy.biographic_distributions.set(
+                        getattr(self, field).all())
                 else:
                     setattr(
                         self.original_taxonomy,

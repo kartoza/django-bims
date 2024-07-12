@@ -35,7 +35,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     family = serializers.SerializerMethodField()
     genus = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
-    biographic_distribution = serializers.SerializerMethodField()
+    biographic_distributions = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
     DT_RowId = serializers.SerializerMethodField()
 
@@ -45,8 +45,8 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_DT_RowId(self, obj: Taxonomy):
         return f'row_{obj.id}'
 
-    def get_biographic_distribution(self, obj: Taxonomy):
-        return ''
+    def get_biographic_distributions(self, obj: Taxonomy):
+        return u", ".join(o.name for o in obj.biographic_distributions.all())
 
     def get_genus(self, obj: Taxonomy):
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:

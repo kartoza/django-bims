@@ -26,6 +26,7 @@ from bims.api_views.non_biodiversity_layer import (
     NonBiodiversityLayerList, DownloadLayerData
 )
 from bims.api_views.search_module import SearchModuleAPIView
+
 from bims.api_views.taxon import (
     TaxonDetail,
     FindTaxon,

@@ -205,6 +205,7 @@ export const taxaManagement = (() => {
     }
 
     function updateTaxonGroup(taxonGroupId) {
+        selectedTaxonGroup = taxonGroupId;
         let table = $('#taxaTable').DataTable();
         table.destroy();
         let newParams = new URLSearchParams(window.location.search);
@@ -287,27 +288,27 @@ export const taxaManagement = (() => {
                     }
                 });
 
-                $('.add-tag').off('click').on('click', function (event) {
-                    event.preventDefault();
-                    if (!taxaData) return false;
-                    let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
-                    $('#addTagModal').modal({keyboard: false});
-                    $('#addTagModal').find('.save-tag').data('taxonomy-id', data.id);
-                    let tagsString = data.tag_list;
-                    let tagsArray = tagsString.split(',').filter(n => n);
-                    let formattedTags = tagsArray.map(tag => ({id: tag, text: tag, name: tag}));
-                    const tagAutoComplete = $('#taxa-tag-auto-complete');
-                    tagAutoComplete.empty().val(null).trigger('change');
-                    if (tagsArray.length > 0) {
-                        const tagIds = [];
-                        tagsArray.forEach(tag => {
-                            let newOption = new Option(tag, tag, false, false);
-                            tagAutoComplete.append(newOption);
-                            tagIds.push(tag);
-                        });
-                        tagAutoComplete.val(tagIds).trigger('change');
-                    }
-                });
+                // $('.add-tag').off('click').on('click', function (event) {
+                //     event.preventDefault();
+                //     if (!taxaData) return false;
+                //     let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
+                //     $('#addTagModal').modal({keyboard: false});
+                //     $('#addTagModal').find('.save-tag').data('taxonomy-id', data.id);
+                //     let tagsString = data.tag_list;
+                //     let tagsArray = tagsString.split(',').filter(n => n);
+                //     let formattedTags = tagsArray.map(tag => ({id: tag, text: tag, name: tag}));
+                //     const tagAutoComplete = $('#taxa-tag-auto-complete');
+                //     tagAutoComplete.empty().val(null).trigger('change');
+                //     if (tagsArray.length > 0) {
+                //         const tagIds = [];
+                //         tagsArray.forEach(tag => {
+                //             let newOption = new Option(tag, tag, false, false);
+                //             tagAutoComplete.append(newOption);
+                //             tagIds.push(tag);
+                //         });
+                //         tagAutoComplete.val(tagIds).trigger('change');
+                //     }
+                // });
 
                 $('.remove-taxon-from-group').off('click').on('click', function (event) {
                     taxaTable.handleRemoveTaxonFromGroup($(this).parent().data('id'));
@@ -400,7 +401,11 @@ export const taxaManagement = (() => {
                 {"data": "genus", "className": "min-width-100"},
                 {"data": "species", "className": "min-width-100"},
                 {"data": "author", "className": "min-width-100"},
-                {"data": "biographic_distribution", "className": "min-width-100", "sortable": false},
+                {"data": "biographic_distributions", "className": "min-width-100", "sortable": false,
+                    "render": function (data) {
+                        return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
+                    }
+                },
                 {"data": "rank", "className": "min-width-100"},
                 {"data": "iucn_status_full_name", "orderData": [8], "orderField": "iucn_status__category"},
                 // {"data": "origin_name"},
