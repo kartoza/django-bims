@@ -158,8 +158,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     'Taxonomy updated successfully')
 
         # The proposal is automatically approved if the user is a superuser
-        # if proposal and self.request.user.is_superuser and new_proposal:
-        #     proposal.approve(self.request.user)
+        if proposal and self.request.user.is_superuser and new_proposal:
+            proposal.approve(self.request.user)
 
         return redirect(self.get_success_url())
 
