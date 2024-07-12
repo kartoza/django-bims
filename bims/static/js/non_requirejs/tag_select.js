@@ -22,6 +22,8 @@ function formatTagSelection (tag) {
     return $(`<span class="tag_result" data-tag-id="${tagName}">${tagName}</span>`);
 }
 
+let selectResults = []
+
 $(document).ready(function () {
     $('.tag-auto-complete').select2({
         ajax: {
@@ -31,19 +33,21 @@ $(document).ready(function () {
             data: function (params) {
                 return {
                     q: params.term,
+                    biographic: (($(this).data('placeholder') || '').includes('biographic') ? 'True' : 'False')
                 };
             },
             processResults: function (data, params) {
+                selectResults = data.map(_data => ({
+                    id: _data.name,
+                    name: _data.name
+                }));
                 return {
-                    results: data.map(_data => { return {
-                        'id': _data.name,
-                        'name': _data.name
-                    }}),
+                    results: selectResults,
                 };
             },
             cache: true
         },
-        placeholder: 'Search for a Tag',
+        placeholder: $(this).data('placeholder') || 'Search for a tag',
         minimumInputLength: 3,
         templateResult: formatTag,
         templateSelection: formatTagSelection,
@@ -59,15 +63,18 @@ $(document).ready(function () {
             }
 
             let exists = false;
-            this.$element.find('option').each(function(){
-                if ($.trim($(this).text()).toUpperCase() === term.toUpperCase()) {
+            selectResults.forEach(function(tag){
+                if (tag.name.toUpperCase() === term.toUpperCase()) {
                     exists = true;
                     return false;
                 }
             });
 
+
+            console.log('exists', exists, selectResults)
+
             if (exists) {
-                return null;
+                return false;
             }
 
             return {
@@ -76,7 +83,6 @@ $(document).ready(function () {
                 newTag: true
             };
         }
-
     });
     $('.save-tag').click(function () {
         let taxonomyId = $(this).data('taxonomy-id');

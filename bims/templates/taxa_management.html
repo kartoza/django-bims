@@ -172,6 +172,28 @@
                                                 </div>
                                             </div>
                                             <div class="form-group row">
+                                                <label for="biographic-distributions-auto-complete" class="col-sm-2 col-form-label">Biographic distributions</label>
+                                                <div class="col-sm-10 d-flex flex-column">
+                                                    <select id="biographic-distributions-filters"
+                                                            data-placeholder="Search for a biographic distribution"
+                                                            name="biographic-distributions-auto-complete"
+                                                            class="tag-auto-complete form-control" multiple="multiple"
+                                                            style="width: 100%"></select>
+                                                    <div class="d-flex">
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="radio" name="biographic-distributions-filter-type"
+                                                                   id="biographic-distribution-filter-or" value="OR" checked>
+                                                            <label class="form-check-label" for="biographic-distribution-filter-or">OR</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="radio" name="biographic-distributions-filter-type"
+                                                                   id="biographic-distribution-and" value="AND">
+                                                            <label class="form-check-label" for="biographic-distribution-and">AND</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
                                                 <label for="tag-auto-complete" class="col-sm-2 col-form-label">Tags</label>
                                                 <div class="col-sm-10 d-flex flex-column">
                                                     <select id="tag-filters" name="tag-auto-complete"

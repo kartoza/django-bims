@@ -55,7 +55,10 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
             proposal.tags.set(data.get('tags'))
         else:
             proposal.tags.clear()
-        proposal.biographic_distributions.set(taxon.biographic_distributions.all())
+        if data.get('biographic_distributions'):
+            proposal.biographic_distributions.set(data.get('biographic_distributions'))
+        else:
+            proposal.biographic_distributions.clear()
         proposal.save()
 
     return proposal

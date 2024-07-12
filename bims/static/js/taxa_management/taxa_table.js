@@ -135,6 +135,15 @@ export const taxaTable = (() => {
         }
         $(`input[name="tag-filter-type"][value="${tagFilterType}"]`).prop('checked', true);
 
+        let bDFilterType = 'OR';
+        if (urlParams.get('bDFT')) {
+            bDFilterType = urlParams.get('bDFT');
+        }
+        if (url) {
+            url += `&bDFT=${bDFilterType}`;
+        }
+        $(`input[name="biographic-distributions-filter-type"][value="${bDFilterType}"]`).prop('checked', true);
+
         if (urlParams.get('taxon')) {
             taxonName = urlParams.get('taxon');
             if (url) {
@@ -186,6 +195,26 @@ export const taxaTable = (() => {
             filterSelected['tags'] = tagsArray;
             totalAllFilters += tagsArray.length;
             url += `&tags=${urlParams.get('tags')}`;
+        }
+        if (urlParams.get('bD')) {
+            const bDArray = urlParams.get('bD').split(',');
+            const bDAutoComplete = $('#biographic-distributions-filters');
+            bDAutoComplete.empty();
+            bDAutoComplete.val(null).trigger('change');
+            if (bDArray.length > 0) {
+                const tagIds = []
+                bDArray.forEach(tag => {
+                    let newOption = new Option(
+                        tag, tag, false, false);
+                    bDAutoComplete.append(newOption);
+                    tagIds.push(tag);
+                });
+                bDAutoComplete.val(tagIds);
+                bDAutoComplete.trigger('change');
+            }
+            filterSelected['bD'] = bDArray;
+            totalAllFilters += bDArray.length;
+            url += `&bD=${urlParams.get('bD')}`;
         }
         if (urlParams.get('endemism')) {
             const endemismArray = urlParams.get('endemism').split(',');
@@ -276,6 +305,12 @@ export const taxaTable = (() => {
 
         const tags = $('#tag-filters').val();
         urlParams = insertParam('tags', tags, true, false, urlParams);
+
+        const biographicDistributions = $('#biographic-distributions-filters').val();
+        urlParams = insertParam('bD', biographicDistributions, true, false, urlParams);
+
+        const bdFilterType = $('input[name="biographic-distributions-filter-type"]:checked').val();
+        urlParams = insertParam('bDFT', bdFilterType, true, false, urlParams);
 
         document.location.search = urlParams;
     }

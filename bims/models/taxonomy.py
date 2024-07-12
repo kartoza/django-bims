@@ -90,6 +90,7 @@ class AbstractTaxonomy(AbstractValidation):
         through=CustomTaggedTaxonomy,
         related_name='bio_distribution',
         blank=True,
+        verbose_name='Biographic Distributions'
     )
 
     gbif_key = models.IntegerField(

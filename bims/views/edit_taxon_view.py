@@ -95,6 +95,9 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         data = form.cleaned_data
 
         data['tags'] = self.request.POST.getlist('tags')
+        data['biographic_distributions'] = (
+            self.request.POST.getlist('biographic_distributions')
+        )
 
         new_proposal = False
 
