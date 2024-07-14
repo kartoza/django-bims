@@ -256,7 +256,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
         taxon_group_id = self.request.POST.get('taxonGroupId', None)
-        author_name = self.request.POST.get('authorName', None)
+        author_name = self.request.POST.get('authorName', '')
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         family = None
@@ -289,11 +289,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             response['taxon_name'] = taxonomy.canonical_name
 
             if author_name:
-                if author_name.isnumeric():
-                    user = User.objects.get(id=int(author_name))
-                else:
-                    user = get_user(author_name)
-                taxonomy.collector_user = user
+                taxonomy.author = author_name
                 taxonomy.save()
 
             # Check if it's a new taxonomy
@@ -320,7 +316,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 parent=taxonomy.parent,
                 taxonomic_status=taxonomy.taxonomic_status,
                 legacy_canonical_name=taxonomy.legacy_canonical_name,
-                taxon_group_under_review=taxon_group
+                taxon_group_under_review=taxon_group,
+                author=author_name,
             )
 
         return Response(response)
