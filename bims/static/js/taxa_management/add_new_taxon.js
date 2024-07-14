@@ -14,7 +14,7 @@ export const addNewTaxon = (() => {
         })
         $newTaxonNameInput.val(capitalizedTaxonName);
         $taxonForm.show();
-        const authorAutoComplete = $('.author-auto-complete');
+        const authorAutoComplete = $('#author-auto-complete');
         authorAutoComplete.empty();
         authorAutoComplete.val(null).trigger('change');
     }
@@ -148,7 +148,7 @@ export const addNewTaxon = (() => {
 
     function handleAddNewTaxon(event) {
         let $rank = $taxonForm.find('.new-taxon-rank');
-        let $author = $taxonForm.find('.author-auto-complete');
+        let $author = $taxonForm.find('#author-auto-complete');
         const familyId = $newTaxonFamilyIdInput.val();
         if (!familyId) {
             alert("Missing family");
@@ -176,7 +176,7 @@ export const addNewTaxon = (() => {
         });
         const authorAutoComplete = $('.author-auto-complete');
         authorAutoComplete.select2({
-            width: 200,
+            width: '100%',
             ajax: {
                 url: '/author-autocomplete/',
                 dataType: 'json',
@@ -187,7 +187,6 @@ export const addNewTaxon = (() => {
                     };
                 },
                 processResults: function (data) {
-                    console.log(data)
                     if (data && data !== 'fail') {
 
                     }

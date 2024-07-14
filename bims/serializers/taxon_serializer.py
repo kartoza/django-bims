@@ -79,14 +79,14 @@ class TaxonSerializer(serializers.ModelSerializer):
         validated = self.context.get('validated', False)
         if not original_value:
             original_data = getattr(obj, field)
-            original_value = str(original_data if original_data else '').strip()
+            original_value = str(original_data if original_data else '')
         if validated:
             return original_value
         proposal = self.get_pending_proposal(obj)
         proposal_value = ''
         if proposal:
             proposal_data = getattr(proposal, field)
-            proposal_value = str(proposal_data if proposal_data else '').strip()
+            proposal_value = str(proposal_data if proposal_data else '')
         return (
             f"{original_value} → "
             f"{proposal_value}"

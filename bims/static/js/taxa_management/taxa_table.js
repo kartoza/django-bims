@@ -11,6 +11,21 @@ export const taxaTable = (() => {
     let url = '';
     let selectedTaxonGroup = '';
 
+    function convertAuthorStringToArray(authorString) {
+        authorString = decodeURIComponent(authorString)
+        // Split the string by comma between quotes
+        const regex = /"([^"]+)"/g;
+        const authorsArray = [];
+        let match;
+
+        while ((match = regex.exec(authorString)) !== null) {
+            // Decode the author string
+            authorsArray.push(decodeURIComponent(match[1]));
+        }
+
+        return authorsArray;
+    }
+
 
     function init(getTaxaList, _selectedTaxonGroup) {
         selectedTaxonGroup = _selectedTaxonGroup;
@@ -216,6 +231,26 @@ export const taxaTable = (() => {
             totalAllFilters += bDArray.length;
             url += `&bD=${urlParams.get('bD')}`;
         }
+        if (urlParams.get('author')) {
+            const authorArray = convertAuthorStringToArray(urlParams.get('author'));
+            const authorAutoComplete = $('#author-filters');
+            authorAutoComplete.empty();
+            authorAutoComplete.val(null).trigger('change');
+            if (authorArray.length > 0) {
+                const tagIds = []
+                authorArray.forEach(tag => {
+                    let newOption = new Option(
+                        tag, tag, false, false);
+                    authorAutoComplete.append(newOption);
+                    tagIds.push(tag);
+                });
+                authorAutoComplete.val(tagIds);
+                authorAutoComplete.trigger('change');
+            }
+            filterSelected['author'] = authorArray;
+            totalAllFilters += authorArray.length;
+            url += `&author=${urlParams.get('author')}`;
+        }
         if (urlParams.get('endemism')) {
             const endemismArray = urlParams.get('endemism').split(',');
             $('#endemism-filters').val(endemismArray);
@@ -279,14 +314,17 @@ export const taxaTable = (() => {
             return data['text'];
         })
         let urlParams = insertParam('ranks', ranks.join(), true, false);
-        const origins = $('#origin-filters').select2('data').map(function(data) {
-            return data['id'];
-        })
-        urlParams = insertParam('origins', origins.join(), true, false, urlParams);
-        const endemism = $('#endemism-filters').select2('data').map(function(data) {
-            return data['text'];
-        })
-        urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
+        try {
+            const origins = $('#origin-filters').select2('data').map(function(data) {
+                return data['id'];
+            })
+            urlParams = insertParam('origins', origins.join(), true, false, urlParams);
+            const endemism = $('#endemism-filters').select2('data').map(function(data) {
+                return data['text'];
+            })
+            urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
+        } catch (e) {
+        }
         const consStatus = $('#cons-status-filters').select2('data').map(function(data) {
             return data['id'];
         })
@@ -311,6 +349,9 @@ export const taxaTable = (() => {
 
         const bdFilterType = $('input[name="biographic-distributions-filter-type"]:checked').val();
         urlParams = insertParam('bDFT', bdFilterType, true, false, urlParams);
+
+        const author = $('#author-filters').val().map(a => `"${a}"`).join(',');
+        urlParams = insertParam('author', encodeURIComponent(author), true, false, urlParams);
 
         document.location.search = urlParams;
     }

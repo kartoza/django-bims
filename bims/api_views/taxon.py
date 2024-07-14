@@ -1,6 +1,7 @@
 # coding=utf8
 import ast
 import logging
+import re
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -328,6 +329,13 @@ class TaxaPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
 
 
+def split_authors(author_string):
+    regex = r'"(.*?)"'
+    matches = re.findall(regex, author_string)
+    decoded_matches = [match for match in matches]
+    return decoded_matches
+
+
 class TaxaList(LoginRequiredMixin, APIView):
     """Returns list of taxa filtered by taxon group"""
     pagination_class = TaxaPagination
@@ -363,6 +371,11 @@ class TaxaList(LoginRequiredMixin, APIView):
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
+        author_names = request.GET.get('author', '')
+        authors = []
+        if author_names:
+            authors = split_authors(author_names)
+
         biodiversity_distributions = (
             request.GET.get('bD', '').split(',')
         )
@@ -395,6 +408,11 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxongroup__id__in=taxon_group_ids,
             taxongrouptaxonomy__is_rejected=False,
         ).distinct().order_by('canonical_name')
+
+        if len(authors) > 0:
+            taxon_list = taxon_list.filter(
+                author__in=authors
+            )
 
         if parent_ids:
             parents = taxon_list.filter(id__in=parent_ids)
