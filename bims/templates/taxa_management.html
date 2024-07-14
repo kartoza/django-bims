@@ -31,6 +31,7 @@
 {% endblock %}
 
 {% block body_content %}
+    {% is_fada_site as fada_site %}
     <div class="loading">
         <img src="/static/img/small-loading.svg"
              width="150"
@@ -111,7 +112,7 @@
                                             </div>
                                             <div class="form-group row">
                                                 <label for="staticEmail"
-                                                       class="col-sm-2 col-form-label">Cons. Status (Global)</label>
+                                                       class="col-sm-2 col-form-label">Cons. Status</label>
                                                 <div class="col-sm-10">
                                                     <select id="cons-status-filters" class="select-multiple"
                                                             name="states[]" multiple="multiple"
@@ -122,6 +123,20 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                            <div class="form-group row">
+                                                <label for="author"
+                                                       class="col-sm-2 col-form-label">Author(s)</label>
+                                                <div class="col-sm-10 d-flex flex-column">
+                                                    <select id="author-filters"
+                                                            name="authorName"
+                                                            style="width: 100%"
+                                                            class="author-auto-complete form-control"
+                                                            data-add-new-tag="false"
+                                                            multiple="multiple"
+                                                    ></select>
+                                                </div>
+                                            </div>
+                                            {% if not fada_site %}
                                             <div class="form-group row">
                                                 <label for="staticEmail"
                                                        class="col-sm-2 col-form-label">Origin</label>
@@ -148,6 +163,7 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                            {% endif %}
                                             <div class="form-group row">
                                                 <label for="parentTaxa" class="col-sm-2 col-form-label">Parent Taxonomy</label>
                                                 <div class="col-sm-10">
