@@ -160,30 +160,6 @@ export const addNewTaxon = (() => {
         $newTaxonFamilyIdInput.val("")
     }
 
-    function formatAuthor (tag) {
-        if (tag.loading) {
-            return tag.text;
-        }
-        let $container = $(
-            "<div class='select2-result-repository clearfix'>" +
-            "<div class='select2-result-repository__meta'>" +
-            "<div class='select2-result-repository__title'></div>" +
-            "</div>" +
-            "</div>"
-        );
-        if (tag.newTag) {
-            $container.find(".select2-result-repository__title").text(`Add new author : ${tag.text}`);
-        } else {
-            $container.find(".select2-result-repository__title").text(tag.name);
-        }
-        return $container;
-    }
-
-    function formatAuthorSelection (tag) {
-        const tagName = tag.text || tag.name;
-        return $(`<span class="tag_result" data-tag-id="${tagName}">${tagName}</span>`);
-    }
-
     function init(_selectedTaxonGroup) {
         selectedTaxonGroup = _selectedTaxonGroup
 
@@ -202,7 +178,7 @@ export const addNewTaxon = (() => {
         authorAutoComplete.select2({
             width: 200,
             ajax: {
-                url: '/user-autocomplete/',
+                url: '/author-autocomplete/',
                 dataType: 'json',
                 delay: 250,
                 data: function (params) {
@@ -210,11 +186,15 @@ export const addNewTaxon = (() => {
                         term: params.term,
                     };
                 },
-                processResults: function (data, params) {
+                processResults: function (data) {
+                    console.log(data)
+                    if (data && data !== 'fail') {
+
+                    }
                     return {
-                        results: data.map(_data => { return {
-                            'id': _data.id,
-                            'name': _data.first_name + ' ' + _data.last_name
+                        results: data.map(item => { return {
+                            id: item.author,
+                            text: item.author
                         }}),
                     };
                 },
@@ -223,8 +203,8 @@ export const addNewTaxon = (() => {
             allowClear: true,
             placeholder: 'Search for an Author',
             minimumInputLength: 3,
-            templateResult: formatAuthor,
-            templateSelection: formatAuthorSelection,
+            templateResult: (item) => item.text,
+            templateSelection: (item) => item.text,
             tags: true,
             createTag: function (params) {
                 if (!this.$element.data('add-new-tag')) {
