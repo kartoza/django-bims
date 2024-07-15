@@ -372,6 +372,10 @@ class TaxaList(LoginRequiredMixin, APIView):
         validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
         author_names = request.GET.get('author', '')
+        family_name = request.GET.get('family', '')
+        genus_name = request.GET.get('genus', '')
+        species_name = request.GET.get('species', '')
+
         authors = []
         if author_names:
             authors = split_authors(author_names)
@@ -442,6 +446,19 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if family_name:
+            taxon_list = taxon_list.filter(
+                hierarchical_data__family_name__icontains=family_name
+            )
+        if genus_name:
+            taxon_list = taxon_list.filter(
+                hierarchical_data__genus_name__icontains=genus_name
+            )
+        if species_name:
+            taxon_list = taxon_list.filter(
+                hierarchical_data__species_name__icontains=species_name
+            )
+
         if tags:
             taxon_list = taxon_list.prefetch_related(
                 'tags',
