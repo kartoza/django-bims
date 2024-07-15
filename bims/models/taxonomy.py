@@ -23,7 +23,7 @@ from bims.models.notification import (
     get_recipients_for_notification,
     NEW_TAXONOMY
 )
-from django.db.models import JSONField, OuterRef, Subquery
+from django.db.models import JSONField, OuterRef, Subquery, signals
 
 ORIGIN_CATEGORIES = {
     'non-native': 'alien',
@@ -440,10 +440,10 @@ class Taxonomy(AbstractTaxonomy):
             }
         elif 'family_name' not in self.hierarchical_data:
             self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
-        elif 'species_name' not in self.hierarchical_data:
-            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
         elif 'genus_name' not in self.hierarchical_data:
             self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
+        elif 'species_name' not in self.hierarchical_data:
+            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
 
         super(Taxonomy, self).save(*args, **kwargs)
 
@@ -626,3 +626,5 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
         excluded_taxon=preferred_taxon
     )
     return preferred_taxon
+
+
