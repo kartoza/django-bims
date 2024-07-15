@@ -100,14 +100,15 @@ export const taxaTable = (() => {
             theme: "classic"
         });
 
-        $('#taxa-auto-complete').select2({
+        $('.taxon-auto-complete').select2({
             ajax: {
                 url: '/species-autocomplete/',
                 dataType: 'json',
                 data: function (params) {
                     return {
                         term: params.term,
-                        taxonGroupId: urlParams.get('selected')
+                        taxonGroupId: urlParams.get('selected'),
+                        rank: $(this).data('rank')
                     }
                 },
                 processResults: function (data) {
@@ -279,6 +280,27 @@ export const taxaTable = (() => {
                 totalAllFilters += 1;
             }
         }
+
+        for (const taxaRank of ['family', 'genus', 'species']) {
+            if (urlParams.get(taxaRank)) {
+                const filterArray = urlParams.get(taxaRank).split(',');
+                const autoComplete = $(`#${taxaRank}-auto-complete`);
+                filterSelected[taxaRank] = filterArray;
+
+                for (const taxaFilterValue of filterArray) {
+                    let option = new Option(
+                        `${taxaFilterValue} (${taxaRank.toUpperCase()})`, taxaFilterValue, true, true);
+                    autoComplete.append(option).trigger('change');
+                    autoComplete.trigger({
+                        type: 'select2:select',
+                    });
+
+                }
+                totalAllFilters += filterArray.length;
+                url += `&${taxaRank}=${urlParams.get(taxaRank)}`;
+            }
+        }
+
         if (urlParams.get('parent')) {
             const parentArray = urlParams.get('parent').split(',');
             const taxaAutoComplete = $('#taxa-auto-complete');
@@ -330,10 +352,11 @@ export const taxaTable = (() => {
         })
         urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
 
-        const parent = $('#taxa-auto-complete').select2('data').map(function(data) {
-            return data['id'];
-        })
-        urlParams = insertParam('parent', parent.join(), true, false, urlParams);
+        for (const taxaRank of ['family', 'genus', 'species']) {
+            urlParams = insertParam(taxaRank, $(`#${taxaRank}-auto-complete`).select2('data').map(function(data) {
+                return data['species'] ? data['species'] : data['id'];
+            }), true, false, urlParams);
+        }
 
         const validated = $('input[name="validated"]:checked').val();
         urlParams = insertParam('validated', validated, true, false, urlParams);
