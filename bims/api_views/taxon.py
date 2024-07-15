@@ -375,6 +375,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         family_name = request.GET.get('family', '')
         genus_name = request.GET.get('genus', '')
         species_name = request.GET.get('species', '')
+
         authors = []
         if author_names:
             authors = split_authors(author_names)
