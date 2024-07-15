@@ -39,6 +39,7 @@ BIOGRAPHIC_DISTRIBUTIONS = [
     'ANT', 'AT', 'AU', 'NA',
     'NT', 'OL', 'PA', 'PAC'
 ]
+REFERENCES = 'References'
 
 PARENT_RANKS = {
     'KINGDOM': None,

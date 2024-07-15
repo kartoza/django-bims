@@ -1,16 +1,15 @@
 import json
+from datetime import date
 
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.core.mail.message import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
 
+from bims.models.source_reference import SourceReference
 from bims.models.validation import AbstractValidation
 from django.db import models
 from django.dispatch import receiver
-from django.utils import timezone
 
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
@@ -217,7 +216,7 @@ class AbstractTaxonomy(AbstractValidation):
     )
 
     import_date = models.DateField(
-        default=timezone.now().date,
+        default=date.today,
         blank=True,
         null=True,
     )
@@ -234,6 +233,14 @@ class AbstractTaxonomy(AbstractValidation):
         verbose_name='Hierarchical Data',
         null=True,
         blank=True
+    )
+
+    source_reference = models.ForeignKey(
+        SourceReference,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='%(class)s_source_reference',
     )
 
     class Meta:
