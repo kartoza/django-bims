@@ -4,10 +4,11 @@ from celery import shared_task
 from bims.scripts.species_keys import *  # noqa
 TAXA_FILE_HEADERS = [
     TAXON_RANK,
-    TAXON,
-    SCIENTIFIC_NAME,
     ORIGIN,
-    ENDEMISM
+    ENDEMISM,
+    KINGDOM,
+    FAMILY,
+    GENUS
 ]
 
 

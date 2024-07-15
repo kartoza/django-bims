@@ -107,7 +107,6 @@ export const taxaTable = (() => {
                 data: function (params) {
                     return {
                         term: params.term,
-                        taxonGroupId: urlParams.get('selected'),
                         rank: $(this).data('rank')
                     }
                 },

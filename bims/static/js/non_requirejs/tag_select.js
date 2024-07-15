@@ -48,7 +48,7 @@ $(document).ready(function () {
             cache: true
         },
         placeholder: $(this).data('placeholder') || 'Search for a tag',
-        minimumInputLength: 3,
+        minimumInputLength: 2,
         templateResult: formatTag,
         templateSelection: formatTagSelection,
         tags: true,
