@@ -9,6 +9,8 @@ class BimsAppConfig(AppConfig):
         from easyaudit.signals.model_signals import m2m_changed
         is_ready = True
         def easy_audit_m2m_changed(sender, instance, action, reverse, model, pk_set, using, **kwargs):
+            if not pk_set:
+                return
             if len(list(pk_set)) == 0:
                 return
             return m2m_changed(

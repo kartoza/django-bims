@@ -22,14 +22,15 @@ def easy_audit_callback(
     delta = model_delta(old_model, instance)
     all_changes = []
 
-    for field, changes in delta.items():
-        old_value, new_value = changes
-        if old_value == 'None' and new_value == '':
-            all_changes.append(False)
-            continue
-        if field == 'hierarchical_data':
-            all_changes.append(False)
-            continue
-        all_changes.append(True)
+    if delta:
+        for field, changes in delta.items():
+            old_value, new_value = changes
+            if old_value == 'None' and new_value == '':
+                all_changes.append(False)
+                continue
+            if field == 'hierarchical_data':
+                all_changes.append(False)
+                continue
+            all_changes.append(True)
 
     return any(all_changes)

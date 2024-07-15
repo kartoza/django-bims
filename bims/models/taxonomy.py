@@ -217,7 +217,7 @@ class AbstractTaxonomy(AbstractValidation):
     )
 
     import_date = models.DateField(
-        default=timezone.now,
+        default=timezone.now().date,
         blank=True,
         null=True,
     )
