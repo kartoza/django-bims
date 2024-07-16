@@ -62,5 +62,5 @@ class Migration(migrations.Migration):
             old_name='hydroperiod_link',
             new_name='hydroperiod',
         ),
-        migrations.RunPython(add_hydroperiod_and_wetland_indicator_status)
+        #migrations.RunPython(add_hydroperiod_and_wetland_indicator_status)
     ]
