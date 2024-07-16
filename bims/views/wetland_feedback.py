@@ -10,6 +10,7 @@ from bims.models.notification import (
     get_recipients_for_notification,
     WETLAND_ISSUE_CREATED
 )
+from bims.utils.domain import get_current_domain
 
 
 class WetlandFeedbackView(LoginRequiredMixin, View):
@@ -30,7 +31,7 @@ class WetlandFeedbackView(LoginRequiredMixin, View):
 
         ctx = {
             'username': self.request.user.email,
-            'current_site': Site.objects.get_current(),
+            'current_site': get_current_domain(),
             'issue': issue,
             'issue_type': issue_type,
             'description': description,
