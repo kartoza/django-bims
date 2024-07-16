@@ -21,5 +21,4 @@ class Migration(migrations.Migration):
             name='order',
             field=models.IntegerField(blank=True, null=True),
         ),
-	migrations.RunPython(forwards),
     ]
