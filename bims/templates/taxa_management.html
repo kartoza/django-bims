@@ -27,6 +27,10 @@
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
         const taxaGroups = {{ taxa_groups_json | safe }};
+        let currentSelectedTaxonGroup = "";
+        {% if selected_taxon_group %}
+        currentSelectedTaxonGroup = "{{ selected_taxon_group.id }}";
+        {% endif %}
     </script>
 {% endblock %}
 
