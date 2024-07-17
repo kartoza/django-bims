@@ -113,9 +113,11 @@ export const taxaSidebar = (() => {
         if (updateTaxonGroup) {
             updateTaxonGroup($elm.data('id'));
         }
-        // selectedTaxonGroup = $elm.data('id');
-        // $('#taxon-name-input').val('');
-        // insertParam('selected', selectedTaxonGroup);
+        selectedTaxonGroup = $elm.data('id');
+        $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
+        $('#taxon-name-input').val('');
+        currentSelectedTaxonGroup = selectedTaxonGroup;
+
     }
 
     function allTaxaGroups(groups) {

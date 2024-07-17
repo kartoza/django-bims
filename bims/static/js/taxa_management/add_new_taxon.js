@@ -9,7 +9,7 @@ export const addNewTaxon = (() => {
 
     function showNewTaxonForm(taxonName) {
         let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
-        speciesAutoComplete($newTaxonFamilyInput, '&rank=family&taxonGroupId=' + selectedTaxonGroup).then(value => {
+        speciesAutoComplete($newTaxonFamilyInput, '&rank=family&taxonGroupId=' + currentSelectedTaxonGroup).then(value => {
             $newTaxonFamilyIdInput.val(value);
         })
         $newTaxonNameInput.val(capitalizedTaxonName);
@@ -24,7 +24,7 @@ export const addNewTaxon = (() => {
             'gbifKey': gbifKey,
             'taxonName': name,
             'rank': rank,
-            'taxonGroupId': selectedTaxonGroup,
+            'taxonGroupId': currentSelectedTaxonGroup,
             'authorName': authorName
         };
         if (familyId) {
@@ -55,7 +55,7 @@ export const addNewTaxon = (() => {
             type: 'POST',
             data: {
                 'taxaIds': JSON.stringify([taxaId]),
-                'taxonGroupId': selectedTaxonGroup,
+                'taxonGroupId': currentSelectedTaxonGroup,
             },
             success: function (response) {
                 insertParam('validated', 'False', false, true);
@@ -94,7 +94,7 @@ export const addNewTaxon = (() => {
                 stored = fontAwesomeIcon('times', 'red');
             }
             let action = '';
-            if (!taxonGroupIds.includes(parseInt(selectedTaxonGroup))) {
+            if (!taxonGroupIds.includes(parseInt(currentSelectedTaxonGroup))) {
                 action = (`<button
                 type="button"
                 class="btn btn-success add-taxon-btn"
@@ -132,7 +132,7 @@ export const addNewTaxon = (() => {
 
         // Show response list
         $.ajax({
-            url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&taxonGroupId=${selectedTaxonGroup}`,
+            url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&taxonGroupId=${currentSelectedTaxonGroup}`,
             type: 'get',
             dataType: 'json',
             success: function (data) {

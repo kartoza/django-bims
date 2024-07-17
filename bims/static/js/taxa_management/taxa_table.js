@@ -127,9 +127,9 @@ export const taxaTable = (() => {
 
     function handleUrlParameters() {
         let taxonName = '';
-        if (selectedTaxonGroup) {
-            $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
-            url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
+        if (currentSelectedTaxonGroup) {
+            $('#sortable').find(`[data-id="${currentSelectedTaxonGroup}"]`).addClass('selected');
+            url = `/api/taxa-list/?taxonGroup=${currentSelectedTaxonGroup}`
         }
 
         let validated = 'True'
@@ -306,7 +306,7 @@ export const taxaTable = (() => {
             filterSelected['parent'] = parentArray;
             $.ajax({
                 type: 'GET',
-                url: `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&id=${urlParams.get('parent')}`,
+                url: `/api/taxa-list/?taxonGroup=${currentSelectedTaxonGroup}&id=${urlParams.get('parent')}`,
             }).then(function (data) {
                 // create the option and append to Select2
                 if (data.length === 0) return false;
@@ -417,7 +417,7 @@ export const taxaTable = (() => {
      $('#confirmButton').click(function() {
         let id = $('#confirmationModal').data('id');
         $.ajax({
-            url: approveUrl + id + '/' + selectedTaxonGroup + '/',
+            url: approveUrl + id + '/' + currentSelectedTaxonGroup + '/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'PUT',
             data: {
@@ -446,7 +446,7 @@ export const taxaTable = (() => {
         const id = modal.data('id');
         const rejectionMessage = modal.find('.rejection-message').val();
         $.ajax({
-            url: rejectUrl + id + '/' + selectedTaxonGroup + '/',
+            url: rejectUrl + id + '/' + currentSelectedTaxonGroup + '/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'PUT',
             data: {
@@ -465,14 +465,14 @@ export const taxaTable = (() => {
     }
 
     function removeTaxonFromTaxonGroup(taxaId) {
-        let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
+        let $taxonGroupCard = $(`#taxon_group_${currentSelectedTaxonGroup}`);
         $.ajax({
             url: '/api/remove-taxa-from-taxon-group/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'POST',
             data: {
                 'taxaIds': JSON.stringify([taxaId]),
-                'taxonGroupId': selectedTaxonGroup
+                'taxonGroupId': currentSelectedTaxonGroup
             },
             success: function (response) {
                 $taxonGroupCard.html(response['taxonomy_count']);
