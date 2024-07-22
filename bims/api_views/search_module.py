@@ -170,7 +170,7 @@ class SearchModule(CollectionSearch):
         # Get order_by
         order_by = self.get_request_data('orderBy', 'name')
         valid_order = [
-            'total', '-total', 'name', '-name', 'total_survey', '-total_survey'
+            'name', '-name',
         ]
         if order_by not in valid_order:
             order_by = 'name'

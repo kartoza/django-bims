@@ -102,7 +102,7 @@ define([
                     }
                 }
             } else {
-                $('.occurrence-sort').hide();
+                $('#sortby-select').val("name").change();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
                         document.getElementById(container).style.display = 'none';
