@@ -29,6 +29,8 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
         accepted_taxonomy = (
             data.get('accepted_taxonomy', taxon.accepted_taxonomy),
         )
+        if isinstance(accepted_taxonomy, tuple) and len(accepted_taxonomy) > 0:
+            accepted_taxonomy = accepted_taxonomy[0]
 
     proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
         original_taxonomy=taxon,
