@@ -57,7 +57,6 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Genus</strong></div>
-                                <div class="col-6">${data.genus}</div>
                                 <div class="col-6">${data.rank == 'GENUS' && data.accepted_taxonomy_name ? data.accepted_taxonomy_name : data.genus}</div>
                             </div>
                             <div class="dt-item col-12 row">
