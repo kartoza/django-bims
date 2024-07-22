@@ -303,7 +303,7 @@ class OccurrenceProcessor(object):
                     # Check if site with same park name and accuracy of coordinates exists
                     site = LocationSite.objects.filter(
                         name=park_name,
-                        accuracy_of_locality=int(accuracy_of_coordinates)
+                        accuracy_of_coordinates=accuracy_of_coordinates
                     ).exclude(site_code='').first()
                     if site:
                         # Return existing site
@@ -428,7 +428,7 @@ class OccurrenceProcessor(object):
             )
             location_site.site_code = site_code
         if accuracy_of_coordinates:
-            location_site.accuracy_of_locality = int(accuracy_of_coordinates)
+            location_site.accuracy_of_coordinates = accuracy_of_coordinates
         location_site.save()
         return location_site
 
@@ -872,8 +872,8 @@ class OccurrenceProcessor(object):
             'taxonomy': taxonomy,
             'collector_user': collector,
             'validated': True,
-            'accuracy_of_identification': (
-                certainty_of_identification if certainty_of_identification else 100
+            'certainty_of_identification': (
+                certainty_of_identification if certainty_of_identification else ''
             ),
             'date_accuracy': date_accuracy.lower() if date_accuracy else '',
             'data_type': data_type,

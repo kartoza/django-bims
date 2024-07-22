@@ -10,13 +10,13 @@
             document.getElementById('id_canonical_name').value = canonicalName;
             document.getElementById('id_taxonomic_status').value = taxonomicStatus;
             document.getElementById('id_gbif_key').value = key;
-            let container = document.getElementById("id_additional_data");
-            let containerValue = {}
-            if (container.value !== 'null' && container.value !== '') {
-                containerValue = JSON.parse(container.value);
-            }
-            containerValue['fetch_gbif'] = true;
-            container.value = JSON.stringify(containerValue);
+            {#let container = document.getElementById("id_additional_data");#}
+            {#let containerValue = {}#}
+            {#if (container.value !== 'null' && container.value !== '') {#}
+            {#    containerValue = JSON.parse(container.value);#}
+            {#}#}
+            {#containerValue['fetch_gbif'] = true;#}
+            {#container.value = JSON.stringify(containerValue);#}
         }
 
         (function($) {
