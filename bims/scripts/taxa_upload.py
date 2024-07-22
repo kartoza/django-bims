@@ -200,8 +200,11 @@ class TaxaProcessor(object):
                 csv_data = DataCSVUpload.row_value(
                     row, taxon_parent_rank.capitalize())
                 if taxon_parent_rank == SPECIES:
-                    csv_data = DataCSVUpload.row_value(
-                        row, GENUS) + ' ' + csv_data
+                    genus = DataCSVUpload.row_value(
+                        row, GENUS)
+                    if genus not in csv_data:
+                        csv_data = DataCSVUpload.row_value(
+                            row, GENUS) + ' ' + csv_data
             except KeyError:
                 parent = parent.parent
                 continue
@@ -218,7 +221,7 @@ class TaxaProcessor(object):
                 print('Different parent for {}'.format(str(taxon)))
                 taxon_parent = self.get_parent(
                     row,
-                    current_rank=taxon_parent_rank.upper()
+                    current_rank=PARENT_RANKS.get(taxon_parent_rank.upper(), '')
                 )
                 print('Updated to {}'.format(str(taxon_parent)))
                 taxon.parent = taxon_parent
@@ -227,7 +230,7 @@ class TaxaProcessor(object):
             parent = parent.parent
             if self.rank_name(taxon) != 'KINGDOM' and not parent:
                 parent = self.get_parent(
-                    row, current_rank=taxon.rank.capitalize()
+                    row, current_rank=PARENT_RANKS.get(taxon.rank.upper(), '')
                 )
                 if parent:
                     taxon.parent = parent
@@ -278,7 +281,9 @@ class TaxaProcessor(object):
         if not taxon_name:
             return None
         if current_rank == SPECIES:
-            taxon_name = DataCSVUpload.row_value(row, GENUS) + ' ' + taxon_name
+            genus_name = DataCSVUpload.row_value(row, GENUS)
+            if genus_name not in taxon_name:
+                taxon_name = DataCSVUpload.row_value(row, GENUS) + ' ' + taxon_name
         if current_rank == VARIETY:
             taxon_name = (
                     DataCSVUpload.row_value(row, GENUS) + ' ' +
@@ -290,7 +295,7 @@ class TaxaProcessor(object):
             taxon_name,
             current_rank.upper()
         )
-        while not taxon.gbif_key or not taxon.parent or taxon.parent.rank != 'KINGDOM':
+        while not taxon.gbif_key or not taxon.parent and taxon.parent.rank != 'KINGDOM':
             parent_rank_name = parent_rank(current_rank)
             if not parent_rank_name:
                 break
@@ -452,8 +457,8 @@ class TaxaProcessor(object):
 
             # Taxonomy found or created then validate it
             if taxonomy:
-                if not taxonomy.parent:
-                    taxonomy.parent = self.get_parent(row, parent_rank(rank))
+                if not taxonomy.parent and parent:
+                    taxonomy.parent = parent
 
             # Data from GBIF couldn't be found, so add it manually
             if not taxonomy:
