@@ -1115,7 +1115,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     raw_id_fields = (
         'parent',
-        'accepted_taxonomy'
+        'accepted_taxonomy',
+        'source_reference'
     )
 
     actions = ['merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing']

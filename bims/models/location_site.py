@@ -298,12 +298,15 @@ class LocationSite(AbstractValidation):
         )
         LOGGER.info('Request url : {}'.format(url))
 
-        r = requests.get(url)
-        if r.status_code != 200:
-            message = (
-                    'Request to url %s got %s [%s], can not update location '
-                    'context document.' % (url, r.status_code, r.reason))
-            LOGGER.info(message)
+        try:
+            r = requests.get(url)
+            if r.status_code != 200:
+                message = (
+                        'Request to url %s got %s [%s], can not update location '
+                        'context document.' % (url, r.status_code, r.reason))
+                LOGGER.info(message)
+                return None
+        except requests.exceptions.SSLError:
             return None
 
         return json.dumps(r.json())
