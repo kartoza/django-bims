@@ -54,6 +54,7 @@ def send_csv_via_email(
     email_template = 'csv_download/csv_created'
     if download_request and download_request.resource_type == DownloadRequest.PDF:
         email_template = 'pdf_download/pdf_created'
+        extension = 'pdf'
     if download_request and download_request.resource_type == DownloadRequest.XLS:
         import pandas as pd
         df = pd.read_csv(csv_file, encoding='ISO-8859-1', on_bad_lines='warn')

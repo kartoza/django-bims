@@ -10,6 +10,7 @@ from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models import JSONField
+from django.contrib.contenttypes.models import ContentType
 
 from preferences import preferences
 from bims.models.location_site import LocationSite
@@ -34,6 +35,11 @@ class BiologicalCollectionQuerySet(models.QuerySet):
         unique_source_references = []
         is_doc = False
         for col in self:
+            try:
+                col.source_reference
+            except ContentType.DoesNotExist:
+                continue
+
             try:
                 title = col.source_reference.title
                 authors = col.source_reference.authors

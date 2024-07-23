@@ -28,6 +28,9 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
     if (resource_type === 'CSV') {
       resource_type = $('#download-format').val()
     }
+    if (resource_type === 'PDF') {
+      resource_type = $('#download-format-pdf').val()
+    }
     let postData = {
       purpose: $downloadPurpose.val(),
       dashboard_url: window.location.href,

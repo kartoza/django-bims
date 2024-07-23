@@ -246,7 +246,9 @@ define([
                         }
                     }
 
-                    self.currentModule = data['modules'].join();
+                    if (typeof data['modules'] !== 'undefined') {
+                        self.currentModule = data['modules'].join();
+                    }
                     self.dashboardData = data;
 
                     // Check dashboard configuration
@@ -254,9 +256,9 @@ define([
                     let dashboardHeader = self.$el.find('.dashboard-header');
 
                     if (data['is_multi_sites']) {
-                        dashboardHeader.html('Multiple Sites Dashboard - ' + data['modules'].join());
+                        dashboardHeader.html('Multiple Sites Dashboard - ' + self.currentModule);
                     } else {
-                        dashboardHeader.html('Single Site - ' + data['modules'].join());
+                        dashboardHeader.html('Single Site - ' + self.currentModule);
                     }
                     // Remove default height for chart containers
                     $('#species-ssdd-occurrences-line-chart').css("height", "")
@@ -269,7 +271,7 @@ define([
                     if (Object.keys(data['dashboard_configuration']).length !== 0) {
 
                         let $moduleDashboardWrapper = $(
-                            `<div class="container grid-stack dashboard-wrapper-${data['modules'].join()}" style="padding-right: 40px !important;"></div>`
+                            `<div class="container grid-stack dashboard-wrapper-${self.currentModule}" style="padding-right: 40px !important;"></div>`
                         );
                         self.currentDashbordWrapper = $moduleDashboardWrapper;
                         $dashboardWrapper.before($moduleDashboardWrapper);

@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 
 from bims.api_views.search import CollectionSearch
 from bims.models.taxonomy import Taxonomy
+from bims.utils.domain import get_current_domain
 from bims.models.download_request import DownloadRequest
 from bims.serializers.checklist_serializer import (
     ChecklistSerializer,
@@ -70,23 +71,34 @@ def generate_checklist(download_request_id):
     search = CollectionSearch(filters)
     batch_size = 1000
     collection_records = search.process_search().distinct('taxonomy')
+    module_name = ''
+
+    if collection_records.count() > 0:
+        module_name = collection_records.values_list(
+            'module_group__name',
+            flat=True
+        )[0]
 
     if (
         download_request.resource_type and
         download_request.resource_type.lower() == 'pdf'
     ):
         return generate_pdf_checklist(
-            download_request, collection_records, batch_size)
+            download_request, module_name, collection_records, batch_size)
     else:
         return generate_csv_checklist(
-            download_request, collection_records, batch_size)
+            download_request, module_name, collection_records, batch_size)
 
 
-def generate_csv_checklist(download_request, collection_records, batch_size):
+def generate_csv_checklist(download_request, module_name, collection_records, batch_size):
+    site_domain_name = get_current_domain()
+
+    module_name = collection_records.values_list('taxon_group')[0]
+
     csv_file_path = os.path.join(
         settings.MEDIA_ROOT,
         'checklists',
-        f'checklist_{download_request.id}.csv')
+        f'{site_domain_name}_checklist_{module_name}_{download_request.id}.csv')
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     fieldnames = [key for key in get_serializer_keys(ChecklistSerializer) if key != 'id']
@@ -107,16 +119,18 @@ def generate_csv_checklist(download_request, collection_records, batch_size):
 
     download_request.processing = False
     download_request.request_file = csv_file_path
+    download_request.request_category = f'{module_name} Checklist'
     download_request.save()
 
     return True
 
 
-def generate_pdf_checklist(download_request, collection_records, batch_size):
+def generate_pdf_checklist(download_request, module_name, collection_records, batch_size):
+    site_domain_name = get_current_domain()
     pdf_file_path = os.path.join(
         settings.MEDIA_ROOT,
         'checklists',
-        f'checklist_{download_request.id}.pdf')
+        f'{site_domain_name}_checklist_{module_name}_{download_request.id}.pdf')
     os.makedirs(os.path.dirname(pdf_file_path), exist_ok=True)
 
     written_taxa_ids = set()
@@ -151,19 +165,22 @@ def generate_pdf_checklist(download_request, collection_records, batch_size):
         ('BACKGROUND', (0, 0), (-1, 0), '#0D3511'),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 11),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 5),
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
     ])
 
-    data = [['Scientific Name', 'Common Name', 'Threat Status', 'Sources']] + all_taxa
+    data = [
+               ['Accepted Scientific name and authority',
+                'Common Name',
+                'Threat Status',
+                'Sources']] + all_taxa
     table_width = doc.width
     col_widths = [table_width * 0.35, table_width * 0.30, table_width * 0.15, table_width * 0.30]
 
@@ -175,6 +192,7 @@ def generate_pdf_checklist(download_request, collection_records, batch_size):
 
     download_request.processing = False
     download_request.request_file = pdf_file_path
+    download_request.request_category = f'{module_name} Checklist'
     download_request.save()
 
     return True

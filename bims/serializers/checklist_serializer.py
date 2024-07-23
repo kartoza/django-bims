@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F
+from django.contrib.contenttypes import models
 from rest_framework import serializers
 
 from bims.models import TaxonGroupTaxonomy, CITESListingInfo
@@ -218,10 +219,13 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         try:
             source_data = []
             for collection in bio:
-                if collection.source_reference:
-                    source_data.append(
-                        str(collection.source_reference)
-                    )
+                try:
+                    if collection.source_reference:
+                        source_data.append(
+                            str(collection.source_reference)
+                        )
+                except ContentType.DoesNotExist:
+                    continue
             return ','.join(source_data)
         except TypeError:
             return ''
