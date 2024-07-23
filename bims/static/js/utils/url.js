@@ -2,37 +2,60 @@ define(['backbone', 'utils/class'], function (Backbone, UtilClass) {
     return UtilClass.extend({
         initialize: function () {
         },
-        // CASE
-        // 1.  -> anchor/param=paramVal
-        // 2. # -> anchor/param=paramVal
-        // 3. #anchor/param=notParamVal -> anchor/param=paramVal
-        // 4. #notAnchor/notParam=1&param=notParamVal -> notAnchor/notParam=1&param=paramVal
         updateUrlParams: function (url, anchor, param, paramVal) {
-            url = url.split('#');
-            if (url.length > 1) {
-                if (url[1] === '') {
-                    url = '';
+            let parts = url.split('#');
+            let baseUrl = parts[0];
+            let hash = parts[1] || '';
+
+            let newAnchor = anchor;
+            let paramString = param + '=' + paramVal;
+
+            if (hash) {
+                let anchorParts = hash.split('/');
+                if (anchorParts[0] === anchor) {
+                    // CASE 3: #anchor/param=notParamVal -> anchor/param=paramVal
+                    let paramsPart = anchorParts[1] || '';
+                    let paramsArray = paramsPart.split('&');
+                    let paramFound = false;
+
+                    for (let i = 0; i < paramsArray.length; i++) {
+                        if (paramsArray[i].startsWith(param + '=')) {
+                            paramsArray[i] = paramString;
+                            paramFound = true;
+                            break;
+                        }
+                    }
+
+                    if (!paramFound) {
+                        paramsArray.push(paramString);
+                    }
+
+                    newAnchor += '/' + paramsArray.join('&');
                 } else {
-                    url = '#' + url[1];
+                    // CASE 4: #notAnchor/notParam=1&param=notParamVal -> notAnchor/notParam=1&param=paramVal
+                    let paramsArray = hash.split('&');
+                    let paramFound = false;
+
+                    for (let i = 0; i < paramsArray.length; i++) {
+                        if (paramsArray[i].startsWith(param + '=')) {
+                            paramsArray[i] = paramString;
+                            paramFound = true;
+                            break;
+                        }
+                    }
+
+                    if (!paramFound) {
+                        paramsArray.push(paramString);
+                    }
+
+                    newAnchor = paramsArray.join('&');
                 }
             } else {
-                url = '';
+                // CASE 1 & 2
+                newAnchor = anchor + '/' + paramString;
             }
 
-            if (url === '') { // CASE 1 & 2
-                return anchor + '/' + param + '=' + paramVal;
-            }
-
-            if (url.indexOf(param) > -1 && url.indexOf('&') > -1) {
-                let regex = new RegExp("(" + param + "=).*(&)");
-                let newUrl = url.replace(regex, '$1' + paramVal + '$2');
-                if (newUrl.indexOf('#') > -1) { // http://test.com/#anchor/param=paramVal
-                    newUrl = newUrl.split('#')[1]; // anchor/param=paramVal
-                }
-                return newUrl
-            }
-
-            return anchor + '/' + param + '=' + paramVal;
+            return newAnchor;
         }
     });
 });

@@ -274,9 +274,7 @@ define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol
                         filterParameters['siteIdOpen'] = data['id'];
                     }
                     let updatedUrl = Shared.UrlUtil.updateUrlParams(window.location.href, 'site', 'siteIdOpen', data['id']);
-                    if (updatedUrl) {
-                        Shared.Router.updateUrl(updatedUrl, false);
-                    }
+                    // TODO : update current url
 
                     if (data['geometry']) {
                         let feature = {
