@@ -62,8 +62,10 @@ class TaxaProcessor(object):
 
     def conservation_status(self, row, global_cons = False):
         """Processing conservation status"""
+        national = False
         if global_cons:
-            cons_status = DataCSVUpload.row_value(row, CONSERVATION_STATUS)
+            cons_status = DataCSVUpload.row_value(
+                row, CONSERVATION_STATUS)
             if not cons_status:
                 cons_status = DataCSVUpload.row_value(
                     row, CONSERVATION_STATUS_GLOBAL)
@@ -72,10 +74,18 @@ class TaxaProcessor(object):
         else:
             cons_status = DataCSVUpload.row_value(
                 row, CONSERVATION_STATUS_NATIONAL)
+            national = True
         if cons_status:
-            iucn_status, _ = IUCNStatus.objects.get_or_create(
-                category=IUCN_CATEGORIES[cons_status.lower()]
-            )
+            try:
+                iucn_status, _ = IUCNStatus.objects.get_or_create(
+                    category=IUCN_CATEGORIES[cons_status.lower()],
+                    national=national
+                )
+            except IUCNStatus.MultipleObjectsReturned:
+                iucn_status = IUCNStatus.objects.filter(
+                    category=IUCN_CATEGORIES[cons_status.lower()],
+                    national=national
+                ).first()
             return iucn_status
         else:
             return None
@@ -313,6 +323,7 @@ class TaxaProcessor(object):
 
     def process_data(self, row, taxon_group: TaxonGroup):
         """Processing row of the csv files"""
+
         taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
         taxon_name = DataCSVUpload.row_value(row, TAXON)
         accepted_taxon = None
@@ -462,8 +473,13 @@ class TaxaProcessor(object):
 
             # Data from GBIF couldn't be found, so add it manually
             if not taxonomy:
+                max_try = 10
+                current_try = 0
                 parent_name = parent_rank(rank)
-                while not DataCSVUpload.row_value(row, parent_name) and parent_name != KINGDOM:
+                while (
+                    not DataCSVUpload.row_value(row, parent_name) and parent_name != KINGDOM and current_try < max_try
+                ):
+                    current_try += 1
                     parent_name = parent_rank(parent_name)
 
                 parent = self.get_parent(row, parent_name)
