@@ -13,7 +13,8 @@ from bims.tests.model_factories import (
     UserF,
     TaxonomyF,
     Taxonomy,
-    VernacularName
+    VernacularName,
+    IUCNStatusF
 )
 
 test_data_directory = os.path.join(
@@ -29,6 +30,21 @@ class TestTaxaUpload(FastTenantTestCase):
             first_name='tester'
         )
         self.taxonomy = TaxonomyF.create()
+
+        IUCNStatusF.create(
+            category='NE',
+            national=True
+        )
+
+        IUCNStatusF.create(
+            category='NE',
+            national=False
+        )
+
+        IUCNStatusF.create(
+            category='NE',
+            national=False
+        )
 
         with open(os.path.join(
             test_data_directory, 'taxa_upload_family.csv'
@@ -93,7 +109,6 @@ class TestTaxaUpload(FastTenantTestCase):
                 canonical_name='Ecnomidae'
             ).biographic_distributions.filter(
                 name='ANT',
-                doubtful=False
             ).exists()
         )
 
@@ -101,8 +116,7 @@ class TestTaxaUpload(FastTenantTestCase):
             Taxonomy.objects.get(
                 canonical_name='Ecnomidae'
             ).biographic_distributions.filter(
-                name='AT',
-                doubtful=True
+                name='AT (?)',
             ).exists()
         )
 
