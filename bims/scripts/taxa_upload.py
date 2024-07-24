@@ -287,33 +287,56 @@ class TaxaProcessor(object):
         return parent
 
     def get_parent(self, row, current_rank=GENUS):
+        # Retrieve the taxon name based on the current rank from the row data
         taxon_name = DataCSVUpload.row_value(row, current_rank)
         if not taxon_name:
             return None
+
+        # Handle concatenation for SPECIES rank
         if current_rank == SPECIES:
             genus_name = DataCSVUpload.row_value(row, GENUS)
             if genus_name not in taxon_name:
-                taxon_name = DataCSVUpload.row_value(row, GENUS) + ' ' + taxon_name
+                taxon_name = genus_name + ' ' + taxon_name
+
+        # Handle concatenation for VARIETY rank
         if current_rank == VARIETY:
-            taxon_name = (
-                    DataCSVUpload.row_value(row, GENUS) + ' ' +
-                    DataCSVUpload.row_value(row, SPECIES) + ' ' +
-                    DataCSVUpload.row_value(row, VARIETY)
-            )
+            genus_name = DataCSVUpload.row_value(row, GENUS)
+            species_name = DataCSVUpload.row_value(row, SPECIES)
+            if species_name not in taxon_name:
+                taxon_name = species_name + ' ' + taxon_name
+            if genus_name not in taxon_name:
+                taxon_name = genus_name + ' ' + taxon_name
+
+        # Fetch the taxon using the constructed taxon name and current rank
         taxon = self.get_taxonomy(
             taxon_name,
             taxon_name,
             current_rank.upper()
         )
-        while not taxon.gbif_key or not taxon.parent and taxon.parent.rank != 'KINGDOM':
+
+        # If the taxon already has a parent, return it
+        if taxon.parent and taxon.parent.rank:
+            return taxon
+
+        # Loop to find and assign the parent taxon until the conditions are met
+        while not taxon.gbif_key or (taxon.parent and taxon.parent.rank != 'KINGDOM'):
+            # Exit the loop if the current taxon rank is 'KINGDOM'
+            if taxon.rank == 'KINGDOM':
+                break
+
+            # Determine the parent rank name
             parent_rank_name = parent_rank(current_rank)
             if not parent_rank_name:
                 break
+
+            # Recursively get the parent taxon
             parent = self.get_parent(row, parent_rank_name)
             if parent:
                 taxon.parent = parent
                 taxon.save()
                 break
+
+            # Update the current rank for the next iteration
             current_rank = parent_rank_name
 
         return taxon
