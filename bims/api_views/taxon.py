@@ -260,9 +260,12 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         author_name = self.request.POST.get('authorName', '')
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
-        family = None
+        parent = None
         if family_id:
-            family = Taxonomy.objects.get(id=int(family_id))
+            parent = Taxonomy.objects.get(id=int(family_id))
+        parent_id = self.request.POST.get('parentId', None)
+        if parent_id:
+            parent = Taxonomy.objects.get(id=int(parent_id))
         if gbif_key:
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
@@ -277,12 +280,23 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             )
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-            taxon_group.taxonomies.add(taxonomy)
+            taxon_group.taxonomies.add(
+                taxonomy,
+                through_defaults={
+                    'is_validated': False
+                }
+            )
         else:
             if taxon_group:
                 try:
                     taxon_group = TaxonGroup.objects.get(name=taxon_group)
-                    taxon_group.taxonomies.add(taxonomy)
+                    taxon_group.taxonomies.add(
+                        taxonomy,
+                        through_defaults={
+                            'is_validated': False
+                        }
+                    )
+                    taxon_group_id = taxon_group.id
                 except TaxonGroup.DoesNotExist:
                     pass
         if taxonomy:
@@ -302,8 +316,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)
 
-            if family:
-                taxonomy.parent = family
+            if parent:
+                taxonomy.parent = parent
                 taxonomy.save()
 
         with transaction.atomic():
