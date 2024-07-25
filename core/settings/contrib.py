@@ -40,6 +40,7 @@ SHARED_APPS = (
     'grappelli',
     'django_tenants',
     'tenants',
+    'django_dbconn_retry',
 
     'colorfield',
     'polymorphic',
