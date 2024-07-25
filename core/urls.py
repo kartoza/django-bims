@@ -36,7 +36,6 @@ urlpatterns = [
     re_path(r'^bibliography/',
         include(('td_biblio.urls', 'bibliography'),
                 namespace = 'td_biblio')),
-    re_path(r'^', include('example.urls')),
 
     # prometheus monitoring
     # re_path(r'', include('django_prometheus.urls')),
@@ -48,15 +47,6 @@ urlpatterns = [
         TemplateView.as_view(template_name='site_index.html'),
         name='home'),
 ]
-
-# for geonode_pattern in geonode_urlpatterns:
-#     try:
-#         if 'admin' in geonode_pattern.app_dict:
-#             geonode_urlpatterns.remove(geonode_pattern)
-#     except AttributeError:
-#         continue
-#
-# urlpatterns += geonode_urlpatterns
 
 urlpatterns += [
     re_path('^admin/', admin.site.urls),

@@ -68,7 +68,8 @@ def download_collection_records(
         path_file,
         request,
         send_email=False,
-        user_id=None
+        user_id=None,
+        process_id=None
 ):
     from django.contrib.auth import get_user_model
     from bims.serializers.bio_collection_serializer import (

@@ -977,6 +977,26 @@ class SearchProcessAdmin(admin.ModelAdmin):
         'category',
         'finished')
 
+    def delete_model(self, request, obj):
+        if obj.locked:
+            self.message_user(
+                request,
+                "This record is locked and cannot be deleted.",
+                level='warning')
+        else:
+            super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            if obj.locked:
+                self.message_user(
+                    request,
+                    f"Record with ID {obj.id} is locked and cannot be deleted.",
+                    level='warning')
+        queryset = queryset.filter(locked=False)
+        if queryset:
+            super().delete_queryset(request, queryset)
+
 
 class PageviewAdmin(admin.ModelAdmin):
     date_hierarchy = 'view_time'

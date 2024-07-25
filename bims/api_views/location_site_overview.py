@@ -172,8 +172,7 @@ class MultiLocationSitesBackgroundOverview(BimsApiView):
 
         search_process, created = get_or_create_search_process(
             search_type=SITES_SUMMARY,
-            query=search_uri,
-            site=Site.objects.get_current()
+            query=search_uri
         )
         results = search_process.get_file_if_exits()
         if results:
