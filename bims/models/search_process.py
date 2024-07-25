@@ -2,6 +2,7 @@
 """Search process model definition.
 
 """
+import logging
 import os
 import json
 import errno
@@ -23,6 +24,8 @@ TAXON_SUMMARY = 'taxon_summary'
 SEARCH_PROCESSING = 'processing'
 SEARCH_FINISHED = 'finished'
 SEARCH_FAILED = 'failed'
+
+logger = logging.getLogger(__name__)
 
 
 def format_search_result_raw_query(raw_query):
@@ -50,6 +53,20 @@ def format_search_result_raw_query(raw_query):
     return query_string
 
 
+class SearchProcessQuerySet(models.QuerySet):
+    def delete(self, *args, **kwargs):
+        locked_objects = self.filter(locked=True)
+        if locked_objects.exists():
+            for obj in locked_objects:
+                logger.warning(f"Attempted to delete locked SearchProcess with ID {obj.id}")
+        unlocked_objects = self.filter(locked=False)
+        return super(SearchProcessQuerySet, unlocked_objects).delete(*args, **kwargs)
+
+class SearchProcessManager(models.Manager):
+    def get_queryset(self):
+        return SearchProcessQuerySet(self.model, using=self._db)
+
+
 class SearchProcess(models.Model):
     """Search process model
     """
@@ -59,6 +76,7 @@ class SearchProcess(models.Model):
         (SITES_SUMMARY, 'Site Summary'),
         (TAXON_SUMMARY, 'Taxon Summary'),
     )
+    objects = SearchProcessManager()
 
     file_path = models.CharField(
         blank=True,
@@ -84,6 +102,9 @@ class SearchProcess(models.Model):
         null=True,
         blank=True
     )
+    locked = models.BooleanField(
+        default=False
+    )
     site = models.ForeignKey(
         Site,
         on_delete=models.CASCADE,
@@ -99,6 +120,12 @@ class SearchProcess(models.Model):
         blank=True,
         null=True,
     )
+
+    def delete(self, *args, **kwargs):
+        if self.locked:
+            logger.warning(f"Attempted to delete locked SearchProcess with ID {self.id}")
+        else:
+            super(SearchProcess, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         super(SearchProcess, self).save(*args, **kwargs)

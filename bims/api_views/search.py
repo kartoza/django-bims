@@ -60,7 +60,6 @@ class CollectionSearchAPIView(BimsApiView):
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
-            requester=request.user
         )
 
         if self.is_cached():

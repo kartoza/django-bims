@@ -102,8 +102,7 @@ class LocationSitesSummary(APIView):
 
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
-            query=search_uri,
-            requester=self.request.user
+            query=search_uri
         )
 
         if not use_cached:
