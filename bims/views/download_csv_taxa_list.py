@@ -83,7 +83,9 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
 
     def get_common_name(self, obj):
         vernacular_names = list(
-            obj.vernacular_names.filter(language__istartswith='en').values_list('name', flat=True))
+            obj.vernacular_names.filter(
+                language__istartswith='en'
+            ).values_list('name', flat=True))
         if len(vernacular_names) == 0:
             return ''
         else:
@@ -157,47 +159,49 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
         super(TaxaCSVSerializer, self).__init__(*args, **kwargs)
         self.context['headers'] = []
         self.context['additional_data'] = []
+        self.context['tags'] = []
 
-    def to_representation(self, instance):
-        result = super(
-            TaxaCSVSerializer, self).to_representation(
-            instance)
+    def _ensure_headers(self, keys):
         if 'headers' not in self.context:
-            self.context['headers'] = list(result.keys())
+            self.context['headers'] = list(keys)
 
+    def _add_additional_attributes(self, instance, result):
         taxon_group = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            taxonomies__in=[instance]).first()
+            taxonomies__in=[instance]
+        ).first()
 
         if taxon_group:
             taxon_extra_attributes = TaxonExtraAttribute.objects.filter(
                 taxon_group=taxon_group
             )
-            if taxon_extra_attributes.exists():
-                for taxon_extra_attribute in taxon_extra_attributes:
-                    taxon_attribute_name = taxon_extra_attribute.name
-                    if taxon_attribute_name not in self.context['headers']:
-                        self.context['headers'].append(taxon_attribute_name)
-                    try:
-                        if (
-                            taxon_attribute_name == 'Growth form'
-                        ):
-                            if (
-                                taxon_attribute_name not in
-                                    instance.additional_data or
-                                    instance.additional_data[
-                                        taxon_attribute_name] == ''
-                            ):
-                                taxon_attribute_name = 'Growth Form'
-                        if taxon_attribute_name in instance.additional_data:
-                            result[taxon_attribute_name] = (
-                                instance.additional_data[taxon_attribute_name]
-                            )
-                        else:
-                            result[taxon_attribute_name] = ''
-                    except TypeError:
-                        result[taxon_attribute_name] = ''
+            for taxon_extra_attribute in taxon_extra_attributes:
+                attribute_name = taxon_extra_attribute.name
+                if attribute_name not in self.context['headers']:
+                    self.context['headers'].append(attribute_name)
+                if instance.additional_data:
+                    result[attribute_name] = (
+                        instance.additional_data.get(attribute_name, '')
+                    )
 
+    def _add_tags(self, instance, result):
+        all_tags = list(instance.tags.all()) + list(instance.biographic_distributions.all())
+        for tag in all_tags:
+            tag_name = tag.name.strip()
+            tag_value = 'Y'
+            if '(?)' in tag_name:
+                tag_value = '?'
+                tag_name = tag_name.replace('(?)', '').strip()
+            if tag_name not in self.context['headers']:
+                self.context['headers'].append(tag_name)
+                self.context['tags'].append(tag_name)
+            result[tag_name] = tag_value
+
+    def to_representation(self, instance):
+        result = super().to_representation(instance)
+        self._ensure_headers(result.keys())
+        self._add_additional_attributes(instance, result)
+        self._add_tags(instance, result)
         return result
 
 

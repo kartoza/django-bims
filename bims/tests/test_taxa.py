@@ -1,9 +1,12 @@
 from django.test import TestCase
+
+from bims.enums import TaxonomicGroupCategory
 from bims.tests.model_factories import (
     TaxonomyF, BiologicalCollectionRecordF, TaxonGroupF, VernacularNameF
 )
 from bims.utils.fetch_gbif import merge_taxa_data
-from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup
+from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup, IUCNStatus, TaxonExtraAttribute
+from bims.views.download_csv_taxa_list import TaxaCSVSerializer
 
 
 class TestTaxaHelpers(TestCase):
@@ -86,3 +89,68 @@ class TestTaxaHelpers(TestCase):
             Taxonomy.objects.get(id=taxa_2.id).vernacular_names.all().count(),
             3
         )
+
+
+class TaxaCSVSerializerTest(TestCase):
+    def setUp(self):
+        self.taxon_group = TaxonGroupF.create(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name)
+
+        self.vernacular_name = VernacularNameF(
+            name='Human',
+            language='en'
+        )
+        self.taxonomy = TaxonomyF.create(
+            rank='SPECIES',
+            canonical_name='Homo sapiens',
+            scientific_name='Homo sapiens Linnaeus',
+            endemism=None,
+            iucn_status=IUCNStatus.objects.create(category='LC'),
+            national_conservation_status=IUCNStatus.objects.create(category='NT'),
+            gbif_key='12345',
+            additional_data={'Growth form': 'Tree'},
+            vernacular_names=(self.vernacular_name,)
+        )
+        self.taxonomy.tags.add('freshwater', 'testing')
+        self.taxonomy.biographic_distributions.add('ANT', 'TEST (?)')
+
+        self.taxon_group.taxonomies.add(self.taxonomy)
+        self.taxon_extra_attribute = TaxonExtraAttribute.objects.create(
+            taxon_group=self.taxon_group,
+            name='Growth form'
+        )
+
+    def test_serializer_fields(self):
+        serializer = TaxaCSVSerializer(instance=self.taxonomy)
+        serialized_data = serializer.data
+
+        expected_fields = [
+            'taxon_rank', 'kingdom', 'phylum', 'class_name', 'order', 'family', 'genus', 'species',
+            'sub_species', 'taxon', 'scientific_name_and_authority', 'common_name', 'origin',
+            'endemism', 'conservation_status_global', 'conservation_status_national', 'on_gbif', 'gbif_link',
+            'Growth form', 'freshwater', 'testing', 'ANT'
+        ]
+
+        for field in expected_fields:
+            self.assertIn(field, serialized_data)
+
+    def test_serializer_values(self):
+        serializer = TaxaCSVSerializer(instance=self.taxonomy)
+        serialized_data = serializer.data
+
+        self.assertEqual(serialized_data['taxon_rank'], 'Species')
+        self.assertEqual(serialized_data['species'], 'Homo sapiens')
+        self.assertEqual(serialized_data['taxon'], 'Homo sapiens')
+        self.assertEqual(serialized_data['scientific_name_and_authority'], 'Homo sapiens Linnaeus')
+        self.assertEqual(serialized_data['common_name'], 'Human')
+        self.assertEqual(serialized_data['endemism'], 'Unknown')
+        self.assertEqual(serialized_data['conservation_status_global'], 'Least Concern')
+        self.assertEqual(serialized_data['conservation_status_national'], 'Near Threatened')
+        self.assertEqual(serialized_data['on_gbif'], 'Yes')
+        self.assertEqual(serialized_data['gbif_link'], 'https://www.gbif.org/species/12345')
+        self.assertEqual(serialized_data['Growth form'], 'Tree')
+        self.assertEqual(serialized_data['freshwater'], 'Y')
+        self.assertEqual(serialized_data['testing'], 'Y')
+        self.assertEqual(serialized_data['ANT'], 'Y')
+        self.assertEqual(serialized_data['TEST'], '?')
+        self.assertTrue(len(serializer.context.get('tags')) > 0)
