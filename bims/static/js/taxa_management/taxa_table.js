@@ -107,7 +107,8 @@ export const taxaTable = (() => {
                 data: function (params) {
                     return {
                         term: params.term,
-                        rank: $(this).data('rank')
+                        rank: $(this).data('rank'),
+                        taxonGroupId: currentSelectedTaxonGroup
                     }
                 },
                 processResults: function (data) {

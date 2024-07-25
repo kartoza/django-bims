@@ -451,7 +451,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="container new-taxon-form" style="margin-top: 15px; display: none">
+                    <div class="container new-taxon-form" style="margin-top: 15px;">
                         <div class="alert alert-info" role="alert">
                             Whilst the system will accept taxa that are not listed in GBIF,
                             you should use the capability only for taxa where the classification is partly unresolved.
@@ -462,7 +462,7 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 25%">Family</th>
+                                    <th scope="col" style="width: 25%">Parent</th>
                                     <th scope="col" style="width: 25%">Taxon Name</th>
                                     <th scope="col" style="width: 25%">Author</th>
                                     <th scope="col" style="width: 25%">Rank</th>
@@ -472,8 +472,8 @@
                             <tbody>
                             <tr>
                                 <td>
-                                    <select name="newTaxonFamilyName" class="new-taxon-family-name form-control" data-add-new-tag="false" style="width: 100%"></select>
-                                    <input type="hidden" class="new-taxon-family-id">
+                                    <select name="newTaxonFamilyName" class="taxon-auto-complete form-control" id="new-taxon-parent" style="width: 100%"></select>
+                                    <input type="hidden" class="new-taxon-parent-id">
                                 </td>
                                 <td>
                                     <input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name">
@@ -486,8 +486,10 @@
                                 </td>
                                 <td>
                                     <select class="form-control new-taxon-rank">
-                                        {% for rank in taxon_rank %}
+                                        {% for rank in all_ranks %}
+                                            {% if rank != 'DOMAIN' %}
                                             <option value="{{ rank }}" {% if rank == 'SPECIES' %}selected{% endif %}>{{ rank }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -500,7 +502,7 @@
                             </tr>
                             <tr>
                                 <td style="border-top-width: 0"><span class="text-muted" style="font-size: 10pt; font-style: italic">
-                                    This is an autocomplete search, if the family does not exist in the system, please add it first.</span>
+                                    This is an autocomplete search, if the taxon does not exist in the system, please add it first.</span>
                                 </td>
                             </tr>
                             </tbody>

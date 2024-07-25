@@ -1,25 +1,28 @@
 export const addNewTaxon = (() => {
-    const $newTaxonFamilyIdInput = $('.new-taxon-family-id');
+    const $newTaxonParentIdInput = $('.new-taxon-parent-id');
     const $newTaxonFamilyInput = $('.new-taxon-family-name');
+    const $newTaxonParent = $('#new-taxon-parent');
     const $taxonForm = $('.new-taxon-form');
     const $addNewTaxonBtn = $taxonForm.find('.add-new-taxon-btn');
     const $newTaxonNameInput = $('#new-taxon-name');
 
     let selectedTaxonGroup = '';
 
+
     function showNewTaxonForm(taxonName) {
         let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
-        speciesAutoComplete($newTaxonFamilyInput, '&rank=family&taxonGroupId=' + currentSelectedTaxonGroup).then(value => {
-            $newTaxonFamilyIdInput.val(value);
-        })
         $newTaxonNameInput.val(capitalizedTaxonName);
+        $newTaxonParentIdInput.val($newTaxonParent.val())
         $taxonForm.show();
         const authorAutoComplete = $('#author-auto-complete');
         authorAutoComplete.empty();
         authorAutoComplete.val(null).trigger('change');
+
+        $newTaxonParent.empty();
+        $newTaxonParent.val(null).trigger('change');
     }
 
-    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId = "", authorName = "") {
+    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, parentId = "", authorName = "") {
         let postData = {
             'gbifKey': gbifKey,
             'taxonName': name,
@@ -27,8 +30,8 @@ export const addNewTaxon = (() => {
             'taxonGroupId': currentSelectedTaxonGroup,
             'authorName': authorName
         };
-        if (familyId) {
-            postData['familyId'] = familyId
+        if (parentId) {
+            postData['parentId'] = parentId
         }
         let table = $('.find-taxon-table');
         table.hide();
@@ -149,18 +152,27 @@ export const addNewTaxon = (() => {
     function handleAddNewTaxon(event) {
         let $rank = $taxonForm.find('.new-taxon-rank');
         let $author = $taxonForm.find('#author-auto-complete');
-        const familyId = $newTaxonFamilyIdInput.val();
-        if (!familyId) {
-            alert("Missing family");
+        const parentId = $newTaxonParent.val();
+        if (!parentId) {
+            alert("Missing parent");
             return
         }
-        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, familyId, $author.val());
+        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val());
         $taxonForm.hide();
         $newTaxonFamilyInput.val("")
-        $newTaxonFamilyIdInput.val("")
+        $newTaxonParentIdInput.val("")
     }
 
     function init(_selectedTaxonGroup) {
+
+        $('#addNewTaxonModal').on('shown.bs.modal', function (e) {
+            const authorAutoComplete = $('#author-auto-complete');
+            authorAutoComplete.empty();
+            authorAutoComplete.val(null).trigger('change');
+
+            $newTaxonParent.empty();
+            $newTaxonParent.val(null).trigger('change');
+        });
         selectedTaxonGroup = _selectedTaxonGroup
 
         $('#find-taxon-button').on('click', handleFindTaxonButton)
