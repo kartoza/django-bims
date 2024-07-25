@@ -3,6 +3,7 @@ import csv
 import zipfile
 
 from celery import shared_task
+from django.db import DatabaseError, connection, InterfaceError
 from openpyxl import load_workbook
 
 from bims.utils.domain import get_current_domain
@@ -49,7 +50,12 @@ def send_csv_via_email(
     if download_request and not download_request.request_file:
         download_request.request_category = file_name
         download_request.request_file = csv_file
-        download_request.save()
+        try:
+            download_request.save()
+        except (DatabaseError, InterfaceError):
+            # Attempt to reconnect and save again
+            connection.connect()
+            download_request.save()
 
     email_template = 'csv_download/csv_created'
     if download_request and download_request.resource_type == DownloadRequest.PDF:
