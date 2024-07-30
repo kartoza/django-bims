@@ -93,8 +93,6 @@ def generate_checklist(download_request_id):
 def generate_csv_checklist(download_request, module_name, collection_records, batch_size):
     site_domain_name = get_current_domain()
 
-    module_name = collection_records.values_list('taxon_group')[0]
-
     csv_file_path = os.path.join(
         settings.MEDIA_ROOT,
         'checklists',
