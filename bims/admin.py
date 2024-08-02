@@ -1941,7 +1941,7 @@ class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):
 @admin.register(CITESListingInfo)
 class CITESListingInfoAdmin(admin.ModelAdmin):
     list_display = ('appendix', 'effective_at', 'taxonomy')
-    list_filter = ('appendix', 'effective_at', 'taxonomy')
+    list_filter = ('appendix', 'effective_at')
     search_fields = ('annotation', 'taxonomy__name')
     raw_id_fields = ('taxonomy',)
 
