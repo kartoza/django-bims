@@ -28,6 +28,7 @@ from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_csv_taxa_list as download_csv_taxa_list_task
 )
+from bims.models.cites_listing_info import CITESListingInfo
 
 
 class TaxaCSVSerializer(serializers.ModelSerializer):
@@ -50,6 +51,22 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     conservation_status_national = serializers.SerializerMethodField()
     on_gbif = serializers.SerializerMethodField()
     gbif_link = serializers.SerializerMethodField()
+    cites_listing = serializers.SerializerMethodField()
+
+    def get_cites_listing(self, obj: Taxonomy):
+        cites_listing_info = CITESListingInfo.objects.filter(
+            taxonomy=obj
+        )
+        if cites_listing_info.exists():
+            return ','.join(list(cites_listing_info.values_list(
+                'appendix', flat=True
+            )))
+        if obj.additional_data:
+            if 'CITES Listing' in obj.additional_data:
+                return obj.additional_data['CITES Listing']
+            if 'Cites Listing' in obj.additional_data:
+                return obj.additional_data['Cites Listing']
+        return ''
 
     def get_taxon_rank(self, obj):
         return obj.rank.capitalize()
@@ -152,8 +169,11 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'conservation_status_global',
             'conservation_status_national',
             'on_gbif',
-            'gbif_link'
+            'gbif_link',
+            'cites_listing'
         )
+
+
 
     def __init__(self, *args, **kwargs):
         super(TaxaCSVSerializer, self).__init__(*args, **kwargs)
@@ -177,6 +197,8 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             )
             for taxon_extra_attribute in taxon_extra_attributes:
                 attribute_name = taxon_extra_attribute.name
+                if attribute_name.lower().strip() == 'cites listing':
+                    continue
                 if attribute_name not in self.context['headers']:
                     self.context['headers'].append(attribute_name)
                 if instance.additional_data:
