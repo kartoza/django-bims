@@ -31,6 +31,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
+from bims.admins.site_setting import SiteSettingAdmin
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
@@ -2009,7 +2010,7 @@ admin.site.register(SpatialScale, SpatialScaleAdmin)
 admin.site.register(SpatialScaleGroup, SpatialScaleGroupAdmin)
 admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SiteImage, SiteImageAdmin)
-admin.site.register(SiteSetting, PreferencesAdmin)
+admin.site.register(SiteSetting, SiteSettingAdmin)
 admin.site.register(GeocontextSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
