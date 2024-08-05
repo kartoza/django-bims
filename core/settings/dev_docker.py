@@ -21,7 +21,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_tenants.postgresql_backend',
+        'ENGINE': 'bims.database_backend',
         'NAME': 'gis',
         'USER': 'docker',
         'PASSWORD': 'docker',

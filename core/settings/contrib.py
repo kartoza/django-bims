@@ -260,10 +260,6 @@ STATICFILES_DIRS = [
     absolute_path('pesticide', 'static'),
 ]
 
-MIDDLEWARE += (
-    'bims.middleware.VisitorTrackingMiddleware',
-)
-
 # for middleware in MIDDLEWARE_CLASSES:
 #     if middleware not in MIDDLEWARE:
 #         MIDDLEWARE += (middleware,)
