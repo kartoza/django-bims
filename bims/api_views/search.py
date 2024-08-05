@@ -626,6 +626,7 @@ class CollectionSearch(object):
 
         if self.filtered_taxa_records is not None:
             filters['taxonomy__in'] = self.filtered_taxa_records
+            bio = bio.select_related('taxonomy')
 
         if filters:
             filters['taxonomy__isnull'] = False
@@ -722,11 +723,15 @@ class CollectionSearch(object):
         spatial_filters = self.spatial_filter
         if spatial_filters:
             if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
+                filtered_location_sites = LocationSite.objects.select_related(
+                    'locationcontextgroup'
+                ).filter(
                     spatial_filters
                 )
             else:
-                filtered_location_sites = filtered_location_sites.filter(
+                filtered_location_sites = filtered_location_sites.select_related(
+                    'locationcontextgroup'
+                ).filter(
                     spatial_filters
                 )
 
@@ -903,6 +908,8 @@ class CollectionSearch(object):
     def get_summary_data(self):
         if not self.collection_records:
             self.process_search()
+        else:
+            self.start_time = time.time()
 
         # Get order_by
         order_by = self.get_request_data('orderBy', 'name')
