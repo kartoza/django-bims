@@ -233,6 +233,13 @@ class CollectionSearch(object):
         else:
             return None
 
+    def invasions(self):
+        invasions_query = self.get_request_data('invasions')
+        if invasions_query:
+            return invasions_query.split(',')
+        else:
+            return None
+
     @property
     def reference_category(self):
         return self.parse_request_json('referenceCategory')
@@ -412,16 +419,23 @@ class CollectionSearch(object):
         else:
             return False
 
-    def filter_taxa_records(self, query_dict):
+    def filter_taxa_records(self, query_dict, select_related=None):
         """
         Filter taxa records
         :param query_dict: dict of query
         """
         if self.filtered_taxa_records is None:
-            self.filtered_taxa_records = Taxonomy.objects.filter(
+            taxa = Taxonomy.objects
+            if select_related:
+                taxa = taxa.select_related(select_related)
+            self.filtered_taxa_records = taxa.filter(
                 **query_dict
             )
         else:
+            if select_related:
+                self.filtered_taxa_records = self.filtered_taxa_records.select_related(
+                    select_related
+                )
             self.filtered_taxa_records = self.filtered_taxa_records.filter(
                 **query_dict
             )
@@ -575,8 +589,14 @@ class CollectionSearch(object):
             self.filter_taxa_records(
                 {
                     'endemism__in': endemism_list
-                }
+                },
+                'endemism'
             )
+        invasions = self.invasions()
+        if invasions:
+            self.filter_taxa_records({
+                'invasion__id__in': invasions
+            }, 'invasion')
         if self.taxon_id:
             self.filter_taxa_records({
                 'id__in': self.taxon_id

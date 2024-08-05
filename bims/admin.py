@@ -116,7 +116,8 @@ from bims.models import (
     TaxonomyUpdateProposal,
     TaxonomyUpdateReviewer,
     CITESListingInfo,
-    ImportTask
+    ImportTask,
+    Invasion
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -363,6 +364,11 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         if obj.owner and not request.user.is_superuser:
             pass
         obj.save()
+
+
+class InvasionAdmin(OrderedModelAdmin):
+    ordering = ('order',)
+    list_display = ('id', 'move_up_down_links', 'category')
 
 
 class IUCNStatusAdmin(OrderedModelAdmin):
@@ -2086,4 +2092,8 @@ admin.site.register(
 admin.site.register(
     TaxonomyUpdateReviewer,
     TaxonomyUpdateReviewerAdmin
+)
+admin.site.register(
+    Invasion,
+    InvasionAdmin
 )
