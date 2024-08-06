@@ -16,7 +16,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
             const parameterKeys = [
                 'taxon', 'months', 'siteId', 'search', 'collector',
                 'category', 'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory',
-                'boundary', 'reference', 'endemic', 'conservationStatus', 'spatialFilter',
+                'boundary', 'reference', 'endemic', 'invasions', 'conservationStatus', 'spatialFilter',
                 'taxon', 'validated', 'modules', 'sourceCollection', 'ecologicalCategory',
                 'module', 'rank', 'orderBy', 'siteIdOpen', 'polygon',
                 'dst', 'ecosystemType'

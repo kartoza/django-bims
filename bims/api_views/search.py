@@ -234,11 +234,7 @@ class CollectionSearch(object):
             return None
 
     def invasions(self):
-        invasions_query = self.get_request_data('invasions')
-        if invasions_query:
-            return invasions_query.split(',')
-        else:
-            return None
+        return self.parse_request_json('invasions')
 
     @property
     def reference_category(self):
@@ -251,6 +247,8 @@ class CollectionSearch(object):
         if categories and 'alien' in categories:
             categories.append('alien-non-invasive')
             categories.append('alien-invasive')
+            if 'non-native' not in categories:
+                categories.append('non-native')
         return categories
 
     @property
@@ -528,6 +526,11 @@ class CollectionSearch(object):
 
         if self.site_ids:
             filters['site__in'] = self.site_ids
+        invasions = self.invasions()
+        if invasions:
+            self.filter_taxa_records({
+                'invasion__id__in': invasions
+            }, 'invasion')
         if self.categories:
             self.filter_taxa_records(
                 {
@@ -592,11 +595,6 @@ class CollectionSearch(object):
                 },
                 'endemism'
             )
-        invasions = self.invasions()
-        if invasions:
-            self.filter_taxa_records({
-                'invasion__id__in': invasions
-            }, 'invasion')
         if self.taxon_id:
             self.filter_taxa_records({
                 'id__in': self.taxon_id

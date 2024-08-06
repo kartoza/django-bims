@@ -5,6 +5,7 @@ from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
 )
+from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
 from bims.api_views.reference import DeleteRecordsByReferenceId
 # from rest_framework.documentation import include_docs_urls
@@ -231,6 +232,9 @@ urlpatterns = [
     re_path(r'^endemism-list/$',
         EndemismList.as_view(),
         name='endemism-list'),
+    re_path(r'^invasions-list/$',
+        InvasionsList.as_view(),
+        name='invasions-list'),
     re_path(r'^spatial-scale-filter-list/$',
         SpatialScaleFilterList.as_view(),
         name='spatial-scale-filter-list'),
