@@ -9,7 +9,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', '
             "&boundary=<%= boundary %>&userBoundary=<%= userBoundary %>" +
             "&referenceCategory=<%= referenceCategory %>" +
             "&spatialFilter=<%= encodeURIComponent(spatialFilter) %>" +
-            "&reference=<%= reference %>&endemic=<%= endemic %>&conservationStatus=<%= conservationStatus %>" +
+            "&reference=<%= reference %>&endemic=<%= endemic %>&invasions=<%= invasions %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>&sourceCollection=<%= sourceCollection %>" +
             "&module=<%= module %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
             "&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>&polygon=<%= polygon %>&dst=<%= dst %>&ecosystemType=<%= ecosystemType %>",
@@ -35,6 +35,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', '
         GetFeatureRequested: false,
         SidePanelOpen: false,
         EndemismList: [],
+        InvasiveList: [],
         CurrentState: {
             FETCH_CLUSTERS: false,
             SEARCH: false,

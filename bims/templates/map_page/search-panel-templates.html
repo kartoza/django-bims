@@ -239,7 +239,7 @@
         <div id="origin-and-endemism-container">
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
-                    ORIGIN AND ENDEMISM<i
+                    ORIGIN, ENDEMISM AND INVASION<i
                         class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
                         class="fa fa-angle-down pull-right filter-icon-arrow"></i>
                 </div>
@@ -250,7 +250,10 @@
                     <input class="origin-checkbox" type="checkbox" value="indigenous" name="category-value" style="display: none" id="indigenous"/>
                     <input class="origin-checkbox" type="checkbox" value="translocated" name="category-value" style="display: none" id="translocated"/>
                     <div class="smaller-font btn-group btn-group-sm">
-                        <button id="non-native-origin-btn" type="button" class="btn origin-btn btn-secondary">Non-Native</button>
+                        <button id="non-native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-toggle="dropdown">Non-Native</button>
+                        <div class="non-native-origin-dropdown dropdown-menu origin-menu" aria-labelledby="non-native-origin-btn">
+                            <div class="dropdown-item invasive-dropdown-item" data-invasive-value="all-invasive"><input id="all-invasive-checkbox" class="invasive-checkbox" type="checkbox"> All non-native </div>
+                        </div>
                     </div>
                     <div class="smaller-font btn-group btn-group-sm" role="group" aria-label="First group">
                         <button id="native-origin-btn" type="button" class="btn origin-btn btn-secondary dropdown-toggle" data-origin="indigenous" data-toggle="dropdown">Native</button>

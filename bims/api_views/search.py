@@ -233,6 +233,9 @@ class CollectionSearch(object):
         else:
             return None
 
+    def invasions(self):
+        return self.parse_request_json('invasions')
+
     @property
     def reference_category(self):
         return self.parse_request_json('referenceCategory')
@@ -244,6 +247,8 @@ class CollectionSearch(object):
         if categories and 'alien' in categories:
             categories.append('alien-non-invasive')
             categories.append('alien-invasive')
+            if 'non-native' not in categories:
+                categories.append('non-native')
         return categories
 
     @property
@@ -412,16 +417,23 @@ class CollectionSearch(object):
         else:
             return False
 
-    def filter_taxa_records(self, query_dict):
+    def filter_taxa_records(self, query_dict, select_related=None):
         """
         Filter taxa records
         :param query_dict: dict of query
         """
         if self.filtered_taxa_records is None:
-            self.filtered_taxa_records = Taxonomy.objects.filter(
+            taxa = Taxonomy.objects
+            if select_related:
+                taxa = taxa.select_related(select_related)
+            self.filtered_taxa_records = taxa.filter(
                 **query_dict
             )
         else:
+            if select_related:
+                self.filtered_taxa_records = self.filtered_taxa_records.select_related(
+                    select_related
+                )
             self.filtered_taxa_records = self.filtered_taxa_records.filter(
                 **query_dict
             )
@@ -514,6 +526,11 @@ class CollectionSearch(object):
 
         if self.site_ids:
             filters['site__in'] = self.site_ids
+        invasions = self.invasions()
+        if invasions:
+            self.filter_taxa_records({
+                'invasion__id__in': invasions
+            }, 'invasion')
         if self.categories:
             self.filter_taxa_records(
                 {
@@ -575,7 +592,8 @@ class CollectionSearch(object):
             self.filter_taxa_records(
                 {
                     'endemism__in': endemism_list
-                }
+                },
+                'endemism'
             )
         if self.taxon_id:
             self.filter_taxa_records({
@@ -606,6 +624,7 @@ class CollectionSearch(object):
 
         if self.filtered_taxa_records is not None:
             filters['taxonomy__in'] = self.filtered_taxa_records
+            bio = bio.select_related('taxonomy')
 
         if filters:
             filters['taxonomy__isnull'] = False
@@ -702,11 +721,15 @@ class CollectionSearch(object):
         spatial_filters = self.spatial_filter
         if spatial_filters:
             if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
+                filtered_location_sites = LocationSite.objects.select_related(
+                    'locationcontextgroup'
+                ).filter(
                     spatial_filters
                 )
             else:
-                filtered_location_sites = filtered_location_sites.filter(
+                filtered_location_sites = filtered_location_sites.select_related(
+                    'locationcontextgroup'
+                ).filter(
                     spatial_filters
                 )
 
@@ -883,6 +906,8 @@ class CollectionSearch(object):
     def get_summary_data(self):
         if not self.collection_records:
             self.process_search()
+        else:
+            self.start_time = time.time()
 
         # Get order_by
         order_by = self.get_request_data('orderBy', 'name')

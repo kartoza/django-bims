@@ -23,6 +23,7 @@ define([
         selectedEcologicalConditions: [],
         filtersReady: {
             'endemism': false,
+            'invasions': false,
             'collector': false,
             'study-reference': false,
             'referenceCategory': false
@@ -33,6 +34,7 @@ define([
         initialSelectedReferenceCategory: [],
         initialSelectedSourceCollection: [],
         initialSelectedEndemic: [],
+        initialSelectedInvasions: [],
         initialSelectedModules: [],
         currentSort: null,
         defaultSort: 'name',
@@ -47,7 +49,7 @@ define([
             'click .search-reset': 'clearSearch',
             'click .origin-btn': 'handleOriginBtnClick',
             'click .endemic-dropdown-item': 'handleEndemicDropdown',
-            'click #non-native-origin-btn': 'handleNonNativeClicked',
+            'click .invasive-dropdown-item': 'handleInvasiveDropdown',
             'click .clear-origin-filter': 'handleClearOriginClicked',
             'click .clear-conservation-filter': 'handleClearConservationClicked',
             'click .ecological-condition': 'handleEcologicalConditionClicked',
@@ -170,6 +172,7 @@ define([
             this.$el.find('.source-collection-wrapper').append(this.sourceCollectionView.render().$el);
 
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
+            var nonNativeOriginDropdown = self.$el.find('.non-native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
 
             filterParameters['orderBy'] = this.currentSort;
@@ -225,6 +228,37 @@ define([
                     }
                     Shared.EndemismList = endemismList;
                     self.filtersReady['endemism'] = true;
+                }
+            });
+
+            $.ajax({
+                type: 'GET',
+                url: '/api/invasions-list/',
+                dataType: 'json',
+                success: function (data) {
+
+                    const invasiveList = [];
+                    for (let i = 0; i < data.length; i++) {
+                        let checked = '';
+                        if ($.inArray(data[i][0] + '', self.initialSelectedInvasions) > -1) {
+                            checked = 'checked';
+                        }
+                        let invasiveLabel = data[i][1].replace(/ *\([^)]*\) */g, "");
+                        let liElement = $(`<div class="dropdown-item invasive-dropdown-item" style="padding-left: 10px; cursor: pointer" data-invasive-value="${data[i][0]}">` +
+                            `<input class="invasive-checkbox" name="invasive-value" type="checkbox" value="${data[i][0]}" ${checked}>` +
+                            `<span> ${invasiveLabel} </span></div>`);
+                        nonNativeOriginDropdown.append(liElement);
+                        if (data[i][2]) {
+                            liElement.popover({
+                                content: data[i][2],
+                                trigger: 'hover',
+                                placement: 'top'
+                            });
+                        }
+                        invasiveList.push(data[i][0])
+                    }
+                    Shared.InvasiveList = invasiveList;
+                    self.filtersReady['invasions'] = true;
                 }
             });
 
@@ -462,6 +496,19 @@ define([
             }
             filterParameters['endemic'] = endemicValue;
             self.highlightPanel('#origin-filter-wrapper', endemicValue.length > 0 || categoryValue.length > 0);
+
+            // Invasions filter
+            let invasionsValue = [];
+            $('input[name=invasive-value]:checked').each(function () {
+                invasionsValue.push($(this).val())
+            });
+            if (invasionsValue.length === 0) {
+                invasionsValue = '';
+            } else {
+                invasionsValue = JSON.stringify(invasionsValue);
+            }
+            filterParameters['invasions'] = invasionsValue;
+            self.highlightPanel('#origin-filter-wrapper', invasionsValue.length > 0 || categoryValue.length > 0);
 
             // Conservation status filter
             filterParameters['conservationStatus'] = this.getSelectedConservationStatus();
@@ -755,6 +802,53 @@ define([
                 target.addClass('selected');
             }
         },
+        handleInvasiveDropdown: function (e) {
+            e.stopPropagation();
+            let target = $(e.target);
+            if (target.hasClass('invasive-checkbox')) {
+                if (target.is(':checked')) {
+                    target.prop('checked', false);
+                } else {
+                    target.prop('checked', true);
+                }
+                target = target.parent();
+            }
+            let maxTry = 10
+            let currentTry = 1
+
+            while (!target.hasClass('invasive-dropdown-item') && currentTry < maxTry) {
+                target = target.parent();
+            }
+
+            let invasiveValue = target.data('invasive-value');
+            let inputCheckbox = target.find('input');
+
+            if (invasiveValue === 'all-invasive') {
+                if (inputCheckbox.is(":checked")) {
+                    inputCheckbox.prop('checked', false);
+                    target.parent().find('.invasive-checkbox').prop('checked', false);
+                } else {
+                    target.parent().find('.invasive-checkbox').prop('checked', true);
+                    inputCheckbox.prop('checked', true);
+                }
+            } else {
+                $('#all-invasive-checkbox').prop('checked', false);
+                if (inputCheckbox.is(":checked")) {
+                    inputCheckbox.prop('checked', false);
+                } else {
+                    inputCheckbox.prop('checked', true);
+                }
+            }
+
+            var atLeastOneIsChecked = $('.non-native-origin-dropdown').find('.invasive-checkbox:checked').length > 0;
+            if (atLeastOneIsChecked) {
+                $('#alien').prop('checked', true);
+                $('#non-native-origin-btn').addClass('selected');
+            } else {
+                $('#alien').prop('checked', false);
+                $('#non-native-origin-btn').removeClass('selected');
+            }
+        },
         handleEndemicDropdown: function (e) {
             e.stopPropagation();
             var target = $(e.target);
@@ -885,6 +979,16 @@ define([
                     $('#native-origin-btn').addClass('selected');
                 }
             }
+
+            // Endemic
+            self.initialSelectedInvasions = [];
+            if (allFilters.hasOwnProperty('invasions')) {
+                self.initialSelectedInvasions = JSON.parse(allFilters['invasions']);
+                if (self.initialSelectedInvasions.length > 0) {
+                    $('#non-native-origin-btn').addClass('selected');
+                }
+            }
+
 
             // Reference category
             self.initialSelectedReferenceCategory = [];

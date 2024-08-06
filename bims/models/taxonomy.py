@@ -92,6 +92,13 @@ class AbstractTaxonomy(AbstractValidation):
         verbose_name='Biographic Distributions'
     )
 
+    invasion = models.ForeignKey(
+        'bims.Invasion',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+
     gbif_key = models.IntegerField(
         verbose_name='GBIF Key',
         null=True,

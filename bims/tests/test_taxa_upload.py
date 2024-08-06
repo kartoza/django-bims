@@ -144,6 +144,13 @@ class TestTaxaUpload(FastTenantTestCase):
             ).exists()
         )
 
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                invasion__category='Category 1a invasive',
+                origin='alien',
+            ).exists()
+        )
+
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
     def test_taxa_upload_variety_and_forma(self, mock_fetch_all_species_from_gbif, mock_finish):
