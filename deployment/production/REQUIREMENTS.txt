@@ -97,4 +97,3 @@ celery==5.3.6
 django-celery-results==2.5.1
 django-tenants==3.6.1
 tenant-schemas-celery==2.2.0
-git+https://github.com/dimasciput/django-dbconn-retry.git

@@ -39,7 +39,7 @@ REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
 REPLICAS = extract_replicas(REPLICA_ENV_VAR)
 for index, replica in enumerate(REPLICAS, start=1):
     DATABASES[f'replica_{index}'] = {
-        'ENGINE': os.getenv('DB_ENGINE', 'django_tenants.postgresql_backend'),
+        'ENGINE': 'bims.database_backend',
         'NAME': replica['NAME'],
         'USER': replica['USER'],
         'PASSWORD': replica['PASSWORD'],
@@ -73,7 +73,7 @@ if DEBUG and not TESTING:
         'debug_toolbar',
     ]
 
-    MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+    # MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
 
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda request: True,

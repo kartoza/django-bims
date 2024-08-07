@@ -3,7 +3,7 @@ import csv
 import zipfile
 
 from celery import shared_task
-from django.db import DatabaseError, connection, OperationalError
+from django.db import DatabaseError, connection, OperationalError, connections
 from openpyxl import load_workbook
 
 from bims.utils.domain import get_current_domain
@@ -54,7 +54,8 @@ def send_csv_via_email(
             download_request.save()
         except (DatabaseError, OperationalError):
             # Attempt to reconnect and save again
-            connection.connect()
+            if not connections['default'].is_usable():
+                connections['default'].connect()
             download_request.save()
 
     email_template = 'csv_download/csv_created'
