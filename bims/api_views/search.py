@@ -8,6 +8,7 @@ import ast
 import logging
 from functools import reduce
 
+from django.contrib.auth import get_user_model
 from preferences import preferences
 
 from bims.models.chemical_record import ChemicalRecord
@@ -60,6 +61,7 @@ class CollectionSearchAPIView(BimsApiView):
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
+            requester=self.request.user
         )
 
         if self.is_cached():
@@ -634,12 +636,40 @@ class CollectionSearch(object):
 
         requester_id = self.parameters.get('requester', None)
 
+        is_sensitive_data_access_allowed = False
+        is_private_data_access_allowed = False
+        try:
+            requester = get_user_model().objects.get(id=requester_id)
+            is_requester_staff = requester.is_staff or requester.is_superuser
+            user_groups = requester.groups.values_list('name', flat=True)
+            if is_requester_staff:
+                is_private_data_access_allowed = True
+            if 'SensitiveDataGroup' in user_groups:
+                is_sensitive_data_access_allowed = True
+            if 'PrivateDataGroup' in user_groups:
+                is_private_data_access_allowed = True
+        except get_user_model().DoesNotExist:
+            pass
+
+        bio = bio.select_related('owner')
+
         bio = bio.filter(
             Q(owner_id=requester_id) |
             Q(
                 Q(end_embargo_date__lte=datetime.date.today()) |
                 Q(end_embargo_date__isnull=True)
             )
+        )
+
+        accessible_data_types = ['public']
+        if is_sensitive_data_access_allowed:
+            accessible_data_types.append('sensitive')
+        if is_private_data_access_allowed:
+            accessible_data_types.append('private')
+
+        bio = bio.filter(
+            Q(data_type='') |
+            Q(data_type__in=accessible_data_types)
         )
 
         # Filter collection record with SASS Accreditation status

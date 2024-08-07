@@ -489,7 +489,6 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
     )
     list_filter = (
         ('collection_date', DateRangeFilter),
-        'taxonomy',
         'taxonomy__origin',
         'record_type__name',
         'sampling_method',
