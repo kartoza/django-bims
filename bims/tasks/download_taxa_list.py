@@ -12,6 +12,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from bims.api_views.taxon import TaxaList
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
     from bims.tasks import send_csv_via_email
+    from bims.models.download_request import DownloadRequest
 
     class RequestGet:
         def __init__(self, get_data):
@@ -22,6 +23,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
 
     # Get the taxa list based on request parameters
     taxa_list = TaxaList.get_taxa_by_parameters(request_get)
+    total_taxa = taxa_list.count()
 
     tag_titles = []
 
@@ -52,6 +54,8 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     headers = list(sample_serializer.data.keys())
     updated_headers = update_headers(headers)
 
+    progress = 1
+
     # Write data to CSV
     with open(csv_file_path, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -63,10 +67,25 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
             row = serializer.data
             writer.writerow([value for key, value in row.items()])
 
+            if progress % 10 == 0 and download_request_id:
+                download_request = DownloadRequest.objects.get(
+                    id=download_request_id
+                )
+                download_request.progress = f'{progress}/{total_taxa}'
+                download_request.save()
+
+            progress += 1
+
     # Send the CSV file via email
     UserModel = get_user_model()
     try:
         user = UserModel.objects.get(id=user_id)
+        if download_request_id:
+            DownloadRequest.objects.filter(
+                id=download_request_id
+            ).update(
+                progress=f'{total_taxa}/{total_taxa}'
+            )
         send_csv_via_email(
             user_id=user.id,
             csv_file=csv_file_path,
