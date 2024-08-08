@@ -277,12 +277,19 @@ class ChecklistSerializer(ChecklistBaseSerializer):
 
     def get_cites_listing(self, obj: Taxonomy):
         cites_listing_info = CITESListingInfo.objects.filter(
-            taxonomy=obj
-        ).order_by('appendix')
-        if cites_listing_info:
+            taxonomy_id=obj.id
+        )
+        if cites_listing_info.exists():
             return ','.join(list(cites_listing_info.values_list(
                 'appendix', flat=True
             )))
+        if obj.additional_data:
+            if 'CITES Listing' in obj.additional_data:
+                return obj.additional_data['CITES Listing']
+            if 'Cites listing' in obj.additional_data:
+                return obj.additional_data['Cites listing']
+            if 'CITES listing' in obj.additional_data:
+                return obj.additional_data['CITES listing']
         return ''
 
     class Meta:

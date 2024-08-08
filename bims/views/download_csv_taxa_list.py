@@ -64,8 +64,10 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
         if obj.additional_data:
             if 'CITES Listing' in obj.additional_data:
                 return obj.additional_data['CITES Listing']
-            if 'Cites Listing' in obj.additional_data:
-                return obj.additional_data['Cites Listing']
+            if 'Cites listing' in obj.additional_data:
+                return obj.additional_data['Cites listing']
+            if 'CITES listing' in obj.additional_data:
+                return obj.additional_data['CITES listing']
         return ''
 
     def get_taxon_rank(self, obj):

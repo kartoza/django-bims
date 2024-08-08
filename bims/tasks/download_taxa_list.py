@@ -41,7 +41,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
             if header == 'Sub species':
                 header = 'SubSpecies'
             if header.lower().strip() == 'cites_listing':
-                header = 'CITES Listing'
+                header = 'CITES listing'
             _updated_headers.append(header)
         return _updated_headers
 
