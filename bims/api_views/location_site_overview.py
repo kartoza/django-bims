@@ -1,5 +1,6 @@
 import hashlib
 import json
+import time
 from collections import OrderedDict
 
 from django.contrib.sites.models import Site
@@ -61,20 +62,25 @@ class LocationSiteOverviewData(object):
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         ).order_by('display_order')
 
+        collection_results = collection_results.select_related(
+            'taxonomy', 'taxonomy__endemism', 'taxonomy__iucn_status', 'site_visit'
+        )
+        location_site_ids = set()
+        taxonomy_ids = set()
         for group in groups:
-            group_data = dict()
+            group_data = {}
             try:
                 group_data[self.GROUP_ICON] = get_thumbnail(
                     group.logo, 'x50', crop='center'
                 ).name
             except ValueError:
                 pass
-            group_data[self.MODULE] = group.id
 
+            group_data[self.MODULE] = group.id
             biodiversity_data[group.name] = group_data
-            group_records = collection_results.filter(
-                module_group=group
-            )
+
+            group_records = collection_results.filter(module_group=group)
+            group_records_count = group_records.count()
 
             if group_records.count() > 0 and not self.is_sass_exist:
                 try:
@@ -91,36 +97,36 @@ class LocationSiteOverviewData(object):
                 except:  # noqa
                     self.is_sass_exist = False
 
-            group_data[self.GROUP_OCCURRENCES] = group_records.count()
+            group_data[self.GROUP_OCCURRENCES] = group_records_count
+            location_site_ids.update(group_records.values_list('site', flat=True))
+            taxonomy_ids.update(group_records.values_list('taxonomy', flat=True))
+
             group_data[self.GROUP_SITES] = LocationSite.objects.filter(
-                id__in=group_records.values('site')
+                id__in=location_site_ids
             ).count()
+
             group_data[self.GROUP_NUM_OF_TAXA] = Taxonomy.objects.filter(
-                id__in=group_records.values('taxonomy')
+                id__in=taxonomy_ids
             ).count()
-            group_data[self.GROUP_ENDEMISM] = list(group_records.annotate(
-                name=Case(When(taxonomy__endemism__isnull=False,
-                               then=F('taxonomy__endemism__name')),
-                          default=Value('Unknown'))
-            ).values(
-                'name'
-            ).annotate(
-                count=Count('name')
-            ).values(
-                'name', 'count'
-            ).order_by('name'))
+
+            endemism_counts = group_records.annotate(
+                name=Case(
+                    When(
+                        taxonomy__endemism__isnull=False,
+                        then=F('taxonomy__endemism__name')),
+                    default=Value('Unknown')
+                )
+            ).values('name').annotate(count=Count('name')).order_by('name')
+
+            group_data[self.GROUP_ENDEMISM] = list(endemism_counts)
 
             group_origins = group_records.annotate(
-                name=Case(When(taxonomy__origin='',
-                               then=Value('Unknown')),
-                          default=F('taxonomy__origin'))
-            ).values(
-                'name'
-            ).annotate(
-                count=Count('name')
-            ).values(
-                'name', 'count'
-            ).order_by('name')
+                name=Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    default=F('taxonomy__origin')
+                )
+            ).values('name').annotate(count=Count('name')).order_by('name')
+
             if group_origins:
                 category = dict(Taxonomy.CATEGORY_CHOICES)
                 for group_origin in group_origins:
@@ -131,16 +137,14 @@ class LocationSiteOverviewData(object):
             all_cons_status = group_records.filter(
                 taxonomy__iucn_status__national=False
             ).annotate(
-                name=Case(When(taxonomy__iucn_status__isnull=False,
-                               then=F('taxonomy__iucn_status__category')),
-                          default=Value('Not evaluated'))
-            ).values(
-                'name'
-            ).annotate(
-                count=Count('name')
-            ).values(
-                'name', 'count'
-            ).order_by('name')
+                name=Case(
+                    When(
+                        taxonomy__iucn_status__isnull=False,
+                        then=F('taxonomy__iucn_status__category')),
+                    default=Value('Not evaluated')
+                )
+            ).values('name').annotate(count=Count('name')).order_by('name')
+
             if all_cons_status:
                 category = dict(IUCNStatus.CATEGORY_CHOICES)
                 for cons_status in all_cons_status:
@@ -149,7 +153,6 @@ class LocationSiteOverviewData(object):
             group_data[self.GROUP_CONS_STATUS] = list(all_cons_status)
 
         return biodiversity_data
-
 
 class MultiLocationSitesOverview(APIView, LocationSiteOverviewData):
 
@@ -216,6 +219,7 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
             raise Http404
 
     def get(self, request):
+        start_time = time.time()
         self.search_filters = dict(request.GET)
         if not request.user.is_anonymous:
             self.search_filters['requester'] = request.user.id
@@ -239,4 +243,6 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
         serializer = LocationSiteDetailSerializer(
             location_site)
         response_data.update(serializer.data)
+        end_time = time.time()
+        response_data['duration'] = end_time - start_time
         return Response(response_data)

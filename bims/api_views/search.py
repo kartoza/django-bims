@@ -476,7 +476,7 @@ class CollectionSearch(object):
                 'biologicalcollectionrecord__isnull': False
             })
         elif self.search_query:
-            bio = collection_records_by_site.filter(
+            bio = collection_records_by_site.select_related('taxonomy').filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
                 Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
                   self.search_query) |
@@ -505,7 +505,7 @@ class CollectionSearch(object):
                 )
             if not bio.exists():
                 # Search by vernacular names
-                bio = collection_records_by_site.filter(
+                bio = collection_records_by_site.select_related('taxonomy').filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
@@ -626,13 +626,12 @@ class CollectionSearch(object):
 
         if self.filtered_taxa_records is not None:
             filters['taxonomy__in'] = self.filtered_taxa_records
-            bio = bio.select_related('taxonomy')
 
         if filters:
             filters['taxonomy__isnull'] = False
             bio_filtered = True
 
-        bio = bio.filter(**filters)
+        bio = bio.select_related('taxonomy').filter(**filters)
 
         requester_id = self.parameters.get('requester', None)
 

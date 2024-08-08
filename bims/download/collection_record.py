@@ -41,6 +41,9 @@ def write_to_csv(headers: list,
             if header == 'sub_species':
                 formatted_headers.append('SubSpecies')
                 continue
+            if header.lower().strip() == 'cites_listing':
+                formatted_headers.append('CITES listing')
+                continue
             header = header.replace('_or_', '/')
             if not header.isupper():
                 header = header.replace('_', ' ').capitalize()
@@ -78,8 +81,32 @@ def download_collection_records(
     from bims.api_views.search import CollectionSearch
     from bims.models import BiologicalCollectionRecord
     from bims.tasks.email_csv import send_csv_via_email
+    from preferences import preferences
 
+    project_name = preferences.SiteSetting.project_name
+
+    exclude_fields = []
     headers = []
+
+    if project_name.lower() == 'sanparks':
+        exclude_fields = [
+            'user_river_name',
+            'river_name',
+            'user_wetland_name',
+            'wetland_name',
+            'user_geomorphological_zone',
+            'hydroperiod',
+            'wetland_indicator_status',
+            'broad_biotope',
+            'specific_biotope',
+            'substratum',
+            'analyst',
+            'analyst_institute',
+            'sampling_effort_measure',
+            'sampling_effort_value',
+            'abundance_value',
+            'abundance_measure'
+        ]
 
     def get_download_request(request_id):
         try:
@@ -93,7 +120,10 @@ def download_collection_records(
         bio_serializer = (
             BioCollectionOneRowSerializer(
                 rows, many=True,
-                context={'header': header})
+                context={
+                    'header': header,
+                    'exclude_fields': exclude_fields
+                })
         )
         bio_data = bio_serializer.data
         if len(header) == 0:
