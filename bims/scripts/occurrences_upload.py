@@ -1,3 +1,4 @@
+import csv
 import uuid
 import json
 import logging
@@ -71,6 +72,7 @@ class OccurrenceProcessor(object):
     # collection data
     fetch_location_context = True
     park_centroid = {}
+    parks_data = {}
 
     def start_process(self):
         signals.post_save.disconnect(
@@ -283,48 +285,71 @@ class OccurrenceProcessor(object):
             accuracy_of_coordinates = 100
 
         if not longitude and not latitude and park_name:
+            park_mpa_csv_file = preferences.SiteSetting.park_layer_csv
             wfs_url = preferences.SiteSetting.park_wfs_url
             layer_name = preferences.SiteSetting.park_wfs_layer_name
             attribute_key = preferences.SiteSetting.park_wfs_attribute_key
             attribute_value = park_name
 
-            if park_name in self.park_centroid:
-                latitude = self.park_centroid[park_name][0]
-                longitude = self.park_centroid[park_name][1]
-            else:
-                # Check if there is already site with the same park name
-                site = LocationSite.objects.filter(
-                    name=park_name
-                ).first()
-                if site:
-                    latitude = site.latitude
-                    longitude = site.longitude
-                    self.park_centroid[site.name] = [latitude, longitude]
-                    # Check if site with same park name and accuracy of coordinates exists
-                    site = LocationSite.objects.filter(
-                        name=park_name,
-                        accuracy_of_coordinates=accuracy_of_coordinates
-                    ).exclude(site_code='').first()
-                    if site:
-                        # Return existing site
-                        return site
+            if park_mpa_csv_file:
+                if not self.parks_data:
+                    with open(park_mpa_csv_file.path, mode='r') as file:
+                        reader = csv.DictReader(file, delimiter=',')
+                        for row in reader:
+                            _park_name = row['Park_Name']
+                            lat = float(row['x'])
+                            lon = float(row['y'])
+                            self.parks_data[_park_name] = {
+                                'lat': lat,
+                                'lon': lon
+                            }
+                if park_name in self.parks_data:
+                    latitude = self.parks_data[park_name]['lat']
+                    longitude = self.parks_data[park_name]['lat']
                 else:
-                    park_centroid = get_feature_centroid(
-                        wfs_url,
-                        layer_name,
-                        attribute_key=attribute_key,
-                        attribute_value=attribute_value
+                    self.handle_error(
+                        row=record,
+                        message='Park or MPA name does not exist in the database'
                     )
-                    if park_centroid:
-                        latitude = park_centroid[0]
-                        longitude = park_centroid[1]
-                        self.park_centroid[park_name] = park_centroid
+                    return None
+            else:
+                if park_name in self.park_centroid:
+                    latitude = self.park_centroid[park_name][0]
+                    longitude = self.park_centroid[park_name][1]
+                else:
+                    # Check if there is already site with the same park name
+                    site = LocationSite.objects.filter(
+                        name=park_name
+                    ).first()
+                    if site:
+                        latitude = site.latitude
+                        longitude = site.longitude
+                        self.park_centroid[site.name] = [latitude, longitude]
+                        # Check if site with same park name and accuracy of coordinates exists
+                        site = LocationSite.objects.filter(
+                            name=park_name,
+                            accuracy_of_coordinates=accuracy_of_coordinates
+                        ).exclude(site_code='').first()
+                        if site:
+                            # Return existing site
+                            return site
                     else:
-                        self.handle_error(
-                            row=record,
-                            message='Park or MPA name does not exist in the database'
+                        park_centroid = get_feature_centroid(
+                            wfs_url,
+                            layer_name,
+                            attribute_key=attribute_key,
+                            attribute_value=attribute_value
                         )
-                        return None
+                        if park_centroid:
+                            latitude = park_centroid[0]
+                            longitude = park_centroid[1]
+                            self.park_centroid[park_name] = park_centroid
+                        else:
+                            self.handle_error(
+                                row=record,
+                                message='Park or MPA name does not exist in the database'
+                            )
+                            return None
 
         if not longitude or not latitude:
             self.handle_error(
