@@ -296,16 +296,23 @@ class OccurrenceProcessor(object):
                     with open(park_mpa_csv_file.path, mode='r') as file:
                         reader = csv.DictReader(file, delimiter=',')
                         for row in reader:
-                            _park_name = row['Park_Name']
+                            _park_name = (
+                                row['Park_Name'].strip().lower()
+                            )
                             lat = float(row['x'])
                             lon = float(row['y'])
                             self.parks_data[_park_name] = {
                                 'lat': lat,
                                 'lon': lon
                             }
-                if park_name in self.parks_data:
-                    latitude = self.parks_data[park_name]['lat']
-                    longitude = self.parks_data[park_name]['lat']
+                park_name_low = park_name.strip().lower()
+                if park_name_low in self.parks_data:
+                    latitude = self.parks_data[
+                        park_name_low
+                    ]['lat']
+                    longitude = self.parks_data[
+                        park_name_low
+                    ]['lat']
                 else:
                     self.handle_error(
                         row=record,

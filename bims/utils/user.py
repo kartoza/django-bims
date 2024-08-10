@@ -3,6 +3,9 @@ from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from django.db.models import Q
 
+from geonode.people.models import Profile
+from bims.models.profile import Profile as BimsProfile
+
 
 def get_user_from_name(first_name, last_name):
     """
@@ -16,7 +19,6 @@ def get_user_from_name(first_name, last_name):
     User = get_user_model()
     try:
         if last_name.strip():
-            print(last_name)
             user = User.objects.get(
                 Q(last_name__iexact=last_name),
                 Q(first_name__iexact=first_name) |
@@ -26,7 +28,7 @@ def get_user_from_name(first_name, last_name):
             user = User.objects.get(
                 Q(first_name__iexact=first_name)
             )
-    except User.DoesNotExist:
+    except (User.DoesNotExist, Profile.DoesNotExist, BimsProfile.DoesNotExist):
         username = slugify('{first_name} {last_name}'.format(
             first_name=first_name,
             last_name=last_name
