@@ -48,6 +48,8 @@ class LocationSiteOverviewData(object):
     search_filters = None
     is_sass_exist = False
 
+    search_process = None
+
     def biodiversity_data(self):
         if not self.search_filters:
             return {}
@@ -175,7 +177,8 @@ class MultiLocationSitesBackgroundOverview(BimsApiView):
 
         search_process, created = get_or_create_search_process(
             search_type=SITES_SUMMARY,
-            query=search_uri
+            query=search_uri,
+            requester=self.request.user
         )
         results = search_process.get_file_if_exits()
         if results:
