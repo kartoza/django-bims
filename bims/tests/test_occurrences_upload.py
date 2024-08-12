@@ -1,7 +1,11 @@
+import io
 import os
 import mock
 import json
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django_tenants.test.cases import FastTenantTestCase
+from preferences import preferences
 from django.db.models import Q
 from django.test import TestCase, override_settings
 from django.core.files import File
@@ -60,7 +64,7 @@ def mocked_doi_loader(
     return ''
 
 
-class TestCollectionUpload(TestCase):
+class TestCollectionUpload(FastTenantTestCase):
     document_link = 'site/document/11'
     owner = None
     reference_title = 'title'
@@ -160,19 +164,32 @@ class TestCollectionUpload(TestCase):
         )
 
     @override_settings(GEOCONTEXT_URL="test.gecontext.com")
-    @mock.patch('requests.get', mock.Mock(
-        side_effect=mocked_location_context_data))
-    @mock.patch.object(SiteSetting, 'default_data_source', new_callable=mock.PropertyMock)
+    @mock.patch('requests.get', mock.Mock(side_effect=mocked_location_context_data))
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.occurrences_upload.OccurrenceProcessor.update_location_site_context')
     @mock.patch('bims.scripts.occurrences_upload.get_feature_centroid')
     def test_csv_upload(self,
                         mock_get_feature_centroid,
                         mock_update_location_context,
-                        mock_finish,
-                        mock_default_data_source):
+                        mock_finish):
+
+        site_setting = preferences.SiteSetting
+
+        if not site_setting:
+            site_setting = SiteSetting.objects.create()
+
+        if site_setting:
+            csv_content = b"Park_Name,x,y\nPark A,34.0522,-118.2437\nPark B,36.1699,-115.1398\n"
+            csv_file = SimpleUploadedFile(
+                "park_data.csv",
+                csv_content,
+                content_type="text/csv"
+            )
+            site_setting.default_data_source = 'fbis'
+            site_setting.park_layer_csv = csv_file
+            site_setting.save()
+
         mock_finish.return_value = None
-        mock_default_data_source.return_value = "fbis"
 
         mock_get_feature_centroid.return_value = (1, 1)
 
@@ -247,5 +264,8 @@ class TestCollectionUpload(TestCase):
         )
         self.assertEqual(bio.count(), 1)
         self.assertEqual(bio.first().site.legacy_river_name, 'User River Name 2')
-        mock_get_feature_centroid.assert_called_once_with(
-            'https://maps.kartoza.com/geoserver/wfs', '', attribute_key='', attribute_value='test')
+        self.assertTrue(
+            BiologicalCollectionRecord.objects.filter(
+                site__name='Park A'
+            ).exists()
+        )

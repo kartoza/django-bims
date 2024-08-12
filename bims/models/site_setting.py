@@ -331,6 +331,12 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    park_layer_csv = models.FileField(
+        null=True,
+        blank=True,
+        upload_to='park_layer_csv/'
+    )
+
     @property
     def project_name(self):
         if self.default_data_source:
