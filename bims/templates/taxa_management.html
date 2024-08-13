@@ -36,6 +36,7 @@
 
 {% block body_content %}
     {% is_fada_site as fada_site %}
+
     <div class="loading">
         <img src="/static/img/small-loading.svg"
              width="150"
@@ -335,10 +336,11 @@
                 </div>
 
                 {% if perms.bims.change_taxonomy or is_expert %}
+                {% with preferences.SiteSetting.project_name as project_name %}
                 <div class="row-action" style="display: none">
                     <div class="btn-validated-container">
                         <div class="dropdown dropdown-action">
-                           <button class="btn btn-primary" type="button" id="validatedDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           <button class="btn btn-primary" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-ellipsis-v action-icon" aria-hidden="true"></i>
                             </button>
                             <div class="dropdown-menu" aria-labelledby="validatedDropdown">
@@ -348,6 +350,11 @@
                                 <a href="" class="dropdown-item edit-taxon" title="Edit">
                                     <i class="fa fa-pencil" aria-hidden="true"></i> Edit
                                 </a>
+                                {% if user.is_superuser and project_name == 'fbis' %}
+                                <a href="" class="dropdown-item edit-taxon-in-admin" title="Edit">
+                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit in Admin
+                                </a>
+                                {% endif %}
 {#                                <button class="dropdown-item add-tag" title="Manage tags">#}
 {#                                    <i class="fa fa-tags" aria-hidden="true"></i> Manage tags#}
 {#                                </button>#}
@@ -373,7 +380,7 @@
                         </div>
                     </div>
                 </div>
-
+                {% endwith %}
                 {% endif %}
 
             </div>
