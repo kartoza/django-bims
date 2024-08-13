@@ -46,10 +46,7 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
         if len(vernacular_names) == 0:
             return ''
         else:
-            return ', '.join(
-                list(
-                    set([name.capitalize() for name in vernacular_names]))
-            )
+            return vernacular_names[0]
 
     def get_threat_status(self, obj: Taxonomy):
         if obj.iucn_status:
@@ -232,6 +229,15 @@ class ChecklistSerializer(ChecklistBaseSerializer):
 
     # TODO
     def get_confidence(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        if bio.exclude(certainty_of_identification='').exists():
+            return (
+                bio.exclude(
+                    certainty_of_identification=''
+                ).first().certainty_of_identification
+            )
         return ''
 
     def get_park_or_mpa_name(self, obj: Taxonomy):
@@ -303,6 +309,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'family',
             'scientific_name',
             'synonyms',
+            'rank',
             'common_name',
             'most_recent_record',
             'origin',

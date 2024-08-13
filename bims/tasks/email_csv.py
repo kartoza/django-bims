@@ -111,7 +111,7 @@ def send_csv_via_email(
     zip_folder = os.path.join(
         settings.MEDIA_ROOT, settings.PROCESSED_CSV_PATH, user.username)
     if not os.path.exists(zip_folder):
-        os.mkdir(zip_folder)
+        os.makedirs(zip_folder)
     zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(download_file_path, f'{file_name}.{extension}')

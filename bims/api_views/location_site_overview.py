@@ -67,9 +67,9 @@ class LocationSiteOverviewData(object):
         collection_results = collection_results.select_related(
             'taxonomy', 'taxonomy__endemism', 'taxonomy__iucn_status', 'site_visit'
         )
-        location_site_ids = set()
-        taxonomy_ids = set()
         for group in groups:
+            location_site_ids = set()
+            taxonomy_ids = set()
             group_data = {}
             try:
                 group_data[self.GROUP_ICON] = get_thumbnail(

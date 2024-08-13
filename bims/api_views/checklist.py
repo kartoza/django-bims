@@ -2,7 +2,6 @@ import csv
 import os
 from django.conf import settings
 from django.http import Http404
-from django.template.loader import render_to_string
 from preferences import preferences
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -14,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bims.api_views.search import CollectionSearch
+from bims.enums import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
 from bims.utils.domain import get_current_domain
 from bims.models.download_request import DownloadRequest
@@ -140,7 +140,13 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
         unique_taxonomy_ids = set(record_taxonomy_ids) - written_taxa_ids
 
         if unique_taxonomy_ids:
-            taxa = Taxonomy.objects.filter(id__in=unique_taxonomy_ids)
+            taxa = Taxonomy.objects.filter(
+                id__in=unique_taxonomy_ids
+            ).filter(
+                rank__in=[
+                    TaxonomicRank.SPECIES.name,
+                    TaxonomicRank.SUBSPECIES.name]
+            )
             taxon_serializer = ChecklistPDFSerializer(taxa, many=True)
             for taxon in taxon_serializer.data:
                 written_taxa_ids.add(taxon['id'])
