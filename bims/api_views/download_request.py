@@ -1,4 +1,7 @@
+from datetime import datetime, timedelta
+
 from django.contrib.sites.models import Site
+from django.utils.timezone import make_aware
 from preferences import preferences
 import ast
 
@@ -56,6 +59,35 @@ class DownloadRequestApi(APIView):
         approval_needed = (
             preferences.SiteSetting.enable_download_request_approval
         )
+
+        if resource_type in ['CSV', 'PDF', 'XLS']:
+            # Check unfinished big download tasks e.g. download occurrences or taxa list
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            start_date = today - timedelta(days=5)
+            start_date = make_aware(start_date)
+            end_date = make_aware(today + timedelta(days=1))
+
+            download_requests = DownloadRequest.objects.filter(
+                resource_name__in=['Occurrence Data', 'Taxa List'],
+                resource_type__in=['CSV', 'PDF', 'XLS'],
+                requester=self.request.user,
+                request_date__range=(start_date, end_date),
+            )
+            for download_request in download_requests:
+                progress = download_request.progress
+                try:
+                    completed, total = progress.split('/')
+                    completed = int(completed)
+                    total = int(total)
+
+                    if completed < total:
+                        return Response(
+                            {'error':
+                                 'There are still ongoing download requests. '
+                                 'Please wait for them to complete before trying again.'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+                except ValueError:
+                    continue
 
         if not resource_name or not resource_type or not purpose:
             raise Http404('Missing required field.')
