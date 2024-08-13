@@ -288,6 +288,30 @@ export const taxaManagement = (() => {
                     }
                 });
 
+                $('.edit-taxon-in-admin').off('click').on('click', function(event) {
+                    event.preventDefault();
+                    if (!taxaData) return false;
+
+                    let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
+                    if (data) {
+                        let width = 800;
+                        let height = 600;
+                        let left = (screen.width / 2) - (width / 2);
+                        let top = (screen.height / 2) - (height / 2);
+                        let adminUrl = `/admin/bims/taxonomy/${data.id}/change/?_popup=1`;
+                        let popup = window.open(adminUrl, 'EditTaxonAdmin', `width=${width},height=${height},top=${top},left=${left}`);
+
+                        let popupInterval = setInterval(function() {
+                            if (popup.closed) {
+                                clearInterval(popupInterval);
+                                if (window.wasFormSaved) {
+                                    window.location.reload();
+                                }
+                            }
+                        }, 500);
+                    }
+                });
+
                 // $('.add-tag').off('click').on('click', function (event) {
                 //     event.preventDefault();
                 //     if (!taxaData) return false;

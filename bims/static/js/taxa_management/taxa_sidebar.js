@@ -115,7 +115,6 @@ export const taxaSidebar = (() => {
         }
         selectedTaxonGroup = $elm.data('id');
         $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
-        $('#taxon-name-input').val('');
         currentSelectedTaxonGroup = selectedTaxonGroup;
 
     }
