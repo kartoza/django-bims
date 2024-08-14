@@ -65,7 +65,7 @@ class LocationSiteOverviewData(object):
         ).order_by('display_order')
 
         collection_results = collection_results.select_related(
-            'taxonomy', 'taxonomy__endemism', 'taxonomy__iucn_status', 'site_visit'
+            'taxonomy', 'taxonomy__endemism', 'taxonomy__iucn_status'
         )
         for group in groups:
             location_site_ids = set()
