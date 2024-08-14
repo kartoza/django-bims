@@ -215,9 +215,8 @@ class ModuleSummary(APIView):
                 last_login__isnull=False
             ).aggregate(total_users=Count('id')),
             {'total_uploads': upload_counts},
-            DownloadRequest.objects.filter(
-                request_category__icontains='occurrence')
-            .aggregate(total_downloads=Count('id'))
+            DownloadRequest.objects.all().aggregate(
+                total_downloads=Count('id'))
         )
 
         return {key: value for d in counts for key, value in d.items()}
