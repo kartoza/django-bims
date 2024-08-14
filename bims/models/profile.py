@@ -95,7 +95,7 @@ class Profile(models.Model):
     )
 
     def get_role_display(self):
-        return self.role.name if self.role else '-'
+        return self.role.display_name if self.role else '-'
 
     @property
     def first_name(self):
