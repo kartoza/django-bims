@@ -94,6 +94,9 @@ class Profile(models.Model):
         help_text="The source site where the user signed up. For tracking user registration origins."
     )
 
+    def get_role_display(self):
+        return self.role.name if self.role else '-'
+
     @property
     def first_name(self):
         if self.user:
