@@ -430,6 +430,7 @@ export const taxaManagement = (() => {
                         return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
                     }
                 },
+                {"data": "common_name", "className": "min-width-100", "sortable": false},
                 {"data": "rank", "className": "min-width-100"},
                 {"data": "iucn_status_full_name", "orderData": [8], "orderField": "iucn_status__category"},
                 // {"data": "origin_name"},
