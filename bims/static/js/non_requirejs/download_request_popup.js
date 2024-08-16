@@ -1,9 +1,18 @@
+function isInt(value) {
+  return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value))
+}
+
 function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true, on_hidden = null) {
   const $downloadPopup = $('#download-popup');
   if(resource_type === 'CSV'){
     $downloadPopup.find('#data-format').show()
+    $downloadPopup.find('#data-format-pdf').hide()
+  } else if (resource_type === 'PDF') {
+    $downloadPopup.find('#data-format').hide()
+    $downloadPopup.find('#data-format-pdf').show()
   } else {
     $downloadPopup.find('#data-format').hide()
+    $downloadPopup.find('#data-format-pdf').hide()
   }
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
@@ -14,14 +23,17 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
   const url = '/api/download-request/';
 
   let urlParams = new URLSearchParams(window.location.href.replace('/taxon', '/&taxon'))
-  let taxon_id = urlParams.get('taxon');
-  let site_id = urlParams.get('siteId');
+  let taxon_id = isInt(urlParams.get('taxon')) ? urlParams.get('taxon') : null;
+  let site_id = isInt(urlParams.get('siteId')) ? urlParams.get('siteId') : null;
   let survey_id = urlParams.get('survey');
 
   $submitDownloadPopup.on('click', function () {
     $submitDownloadPopup.prop('disabled', true);
     if (resource_type === 'CSV') {
       resource_type = $('#download-format').val()
+    }
+    if (resource_type === 'PDF') {
+      resource_type = $('#download-format-pdf').val()
     }
     let postData = {
       purpose: $downloadPurpose.val(),

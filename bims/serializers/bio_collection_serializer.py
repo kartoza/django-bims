@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 
+from bims.models import CITESListingInfo
 from bims.models.chem import Chem
 from preferences import preferences
 from rest_framework import serializers
@@ -154,6 +155,7 @@ class BioCollectionOneRowSerializer(
     ecosystem_type = serializers.SerializerMethodField()
     hydroperiod = serializers.SerializerMethodField()
     wetland_indicator_status = serializers.SerializerMethodField()
+    cites_listing = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -219,8 +221,13 @@ class BioCollectionOneRowSerializer(
     def __init__(self, *args, **kwargs):
         super(BioCollectionOneRowSerializer, self).__init__(*args, **kwargs)
         self.context['chem_records_cached'] = {}
+        exclude_fields = self.context.get('exclude_fields', [])
         if 'header' not in self.context:
             self.context['header'] = []
+
+        for field in exclude_fields:
+            if field in self.fields:
+                self.fields.pop(field)
 
     def chem_data(self, obj, chem):
         return chem
@@ -300,6 +307,23 @@ class BioCollectionOneRowSerializer(
 
     def get_site_code(self, obj):
         return obj.site.site_code
+
+    def get_cites_listing(self, obj: BiologicalCollectionRecord):
+        cites_listing_info = CITESListingInfo.objects.filter(
+            taxonomy_id=obj.taxonomy.id
+        )
+        if cites_listing_info.exists():
+            return ','.join(list(cites_listing_info.values_list(
+                'appendix', flat=True
+            )))
+        if obj.taxonomy.additional_data:
+            if 'CITES Listing' in obj.taxonomy.additional_data:
+                return obj.taxonomy.additional_data['CITES Listing']
+            if 'Cites listing' in obj.taxonomy.additional_data:
+                return obj.taxonomy.additional_data['Cites listing']
+            if 'CITES listing' in obj.taxonomy.additional_data:
+                return obj.taxonomy.additional_data['CITES listing']
+        return ''
 
     def get_user_site_code(self, obj):
         return obj.site.legacy_site_code
@@ -683,7 +707,8 @@ class BioCollectionOneRowSerializer(
             'rights_holder',
             'recorded_by',
             'decision_support_tool',
-            'record_type'
+            'record_type',
+            'cites_listing'
         ]
 
     def to_representation(self, instance: BiologicalCollectionRecord):
@@ -935,6 +960,8 @@ class BioCollectionOneRowSerializer(
             if taxon_extra_attributes.exists():
                 for taxon_extra_attribute in taxon_extra_attributes:
                     taxon_attribute_name = taxon_extra_attribute.name
+                    if taxon_attribute_name.lower().strip() == 'cites listing':
+                        continue
                     key_title = taxon_attribute_name.lower().replace(' ', '_')
                     cache_key = '{id}-{extra_id}'.format(
                         id=instance.taxonomy.id,

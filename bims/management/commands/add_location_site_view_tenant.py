@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def create_sql_query(self, view_name, query, schema_name):
         sql = (
-            'CREATE OR REPLACE VIEW {schema_name}.{view_name} AS {sql_raw}'.
+            'CREATE OR REPLACE VIEW {view_name} AS {sql_raw}'.
             format(
                 schema_name=schema_name,
                 view_name=view_name,
@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         schema_name = options.get('schema_name')
-        view_name = f'default_{schema_name}_location_site_cluster'
+        view_name = f'{schema_name}.default_location_site_cluster'
         query = (
             f'SELECT {schema_name}.bims_locationsite.id AS site_id,'
             f'{schema_name}.bims_locationsite.geometry_point, {schema_name}.bims_locationsite.name, {schema_name}.bims_locationsite.ecosystem_type '

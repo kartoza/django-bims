@@ -8,6 +8,7 @@ from django.contrib.gis.db import models
 from django.contrib.sites.models import Site
 from django.dispatch import receiver
 
+from bims.cache import get_cache, delete_cache, set_cache
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.permissions.generate_permission import generate_permission
 from bims.utils.decorator import prevent_recursion
@@ -16,6 +17,8 @@ from bims.utils.decorator import prevent_recursion
 TAXON_GROUP_LEVEL_1 = 'level_1'
 TAXON_GROUP_LEVEL_2 = 'level_2'
 TAXON_GROUP_LEVEL_3 = 'level_3'
+
+TAXON_GROUP_CACHE = 'TGC'
 
 
 class TaxonGroup(models.Model):
@@ -263,6 +266,19 @@ def add_permission_to_parent(taxon_group: TaxonGroup, permission: Permission):
         group.permissions.add(permission)
 
 
+def cache_taxon_groups_data(delete_first=False):
+    from bims.serializers.taxon_serializer import TaxonGroupSerializer
+    taxa_groups_query = TaxonGroup.objects.filter(
+        category='SPECIES_MODULE',
+        parent__isnull=True
+    ).order_by('display_order')
+    taxon_groups_data = TaxonGroupSerializer(
+        taxa_groups_query, many=True).data
+    if delete_first:
+        delete_cache(TAXON_GROUP_CACHE)
+    set_cache(TAXON_GROUP_CACHE, taxon_groups_data)
+
+
 @receiver(models.signals.post_save)
 @prevent_recursion
 def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
@@ -274,6 +290,10 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
 
     module_summary_api = ModuleSummary()
     module_summary_api.call_summary_data_in_background()
+
+    taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
+    if taxon_group_cache:
+        cache_taxon_groups_data(delete_first=True)
 
     if not instance.site:
         return

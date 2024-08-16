@@ -64,55 +64,12 @@ function createSummaryChart(data){
     let bColor;
     let labels = [];
     let dataChart = [];
-
-
     if(data.hasOwnProperty('conservation-status')){
-        let lc = 0;
-        let nt = 0;
-        let vu = 0;
-        let en = 0;
-        let dd = 0;
-        let ne = 0;
-        let ce = 0;
-
-        let anuraData = data['conservation-status'];
-
-        if (anuraData.hasOwnProperty('Least concern')) {
-            lc += anuraData['Least concern'];
-        }
-        if (anuraData.hasOwnProperty('Near threatened')) {
-            nt += anuraData['Near threatened'];
-        }
-        if (anuraData.hasOwnProperty('Vulnerable')) {
-            vu += anuraData['Vulnerable'];
-        }
-        if (anuraData.hasOwnProperty('Endangered')) {
-            en += anuraData['Endangered'];
-        }
-        if (anuraData.hasOwnProperty('Not evaluated')) {
-            ne += anuraData['Not evaluated'];
-        }
-        if (anuraData.hasOwnProperty('Critically endangered')) {
-            ce += anuraData['Critically endangered'];
-        }
-        if (anuraData.hasOwnProperty('Data deficient')) {
-            dd += anuraData['Data deficient'];
-        }
-
-        labels = ["Data deficient", "Not evaluated", "Least concern", "Near threatened", "Vulnerable", "Endangered", "Critically endangered"],
-            dataChart = [dd, ne, lc, nt, vu, en, ce];
-        bColor = [
-            '#D7CD47',
-            '#39B2A3',
-            '#17766B',
-            '#2C495A',
-            '#525351',
-            '#8D2641',
-            '#641f30',
-        ];
+        labels = Object.keys(data['conservation-status']['chart_data'])
+        dataChart = Object.values(data['conservation-status']['chart_data']);
+        bColor = data['conservation-status']['colors'];
     }
     else if(data.hasOwnProperty('endemism')){
-
         for (let key in data['endemism']) {
             dataChart.push(data['endemism'][key]);
             labels.push(key)
@@ -126,7 +83,6 @@ function createSummaryChart(data){
             '#17766B',
             '#2C495A'
         ];
-        console.log(bColor)
     }
 
     else if (data.hasOwnProperty('division')) {

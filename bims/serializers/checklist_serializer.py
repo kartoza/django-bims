@@ -1,12 +1,85 @@
+from datetime import datetime
+
+from django.db.models import F
+from django.contrib.contenttypes import models
 from rest_framework import serializers
 
 from bims.models import TaxonGroupTaxonomy, CITESListingInfo
 from bims.models.taxonomy import Taxonomy
+from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 
-class ChecklistSerializer(SerializerContextCache):
+class ChecklistBaseSerializer(SerializerContextCache):
+    def get_bio_data(self, obj: Taxonomy):
+        if not hasattr(self, '_bio_data_cache'):
+            self._bio_data_cache = {}
+        if obj.id not in self._bio_data_cache:
+            bio_records = BiologicalCollectionRecord.objects.filter(taxonomy=obj)
+            self._bio_data_cache[obj.id] = bio_records
+        return self._bio_data_cache[obj.id]
+
+    def clean_text(self, text):
+        if text is None:
+            return ''
+        # Remove or replace unwanted characters
+        cleaned_text = text.replace('\n', ' ').replace('\r', ' ')
+        return cleaned_text
+
+
+class ChecklistPDFSerializer(ChecklistBaseSerializer):
+
+    common_name = serializers.SerializerMethodField()
+    threat_status = serializers.SerializerMethodField()
+    sources = serializers.SerializerMethodField()
+    scientific_name = serializers.SerializerMethodField()
+
+    def get_scientific_name(self, obj: Taxonomy):
+        return self.clean_text(obj.scientific_name)
+
+    def get_common_name(self, obj: Taxonomy):
+        vernacular_names = list(
+            obj.vernacular_names.filter(
+                language__istartswith='en'
+            ).values_list('name', flat=True))
+        if len(vernacular_names) == 0:
+            return ''
+        else:
+            return vernacular_names[0]
+
+    def get_threat_status(self, obj: Taxonomy):
+        if obj.iucn_status:
+            return obj.iucn_status.category
+        return 'NE'
+
+    def get_sources(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        if bio.filter(source_collection__iexact='gbif').exists():
+            dataset_names = list(bio.values_list(
+                'additional_data__datasetName',
+                flat=True
+            ))
+            dataset_names = [name for name in dataset_names if name is not None]
+            if dataset_names:
+                return ', '.join(set(dataset_names))
+        return '-'
+
+    class Meta:
+        model = Taxonomy
+        fields = [
+            'id',
+            'scientific_name',
+            'common_name',
+            'threat_status',
+            'sources'
+        ]
+
+
+
+class ChecklistSerializer(ChecklistBaseSerializer):
     """
     Serializer for checklist
     """
@@ -25,6 +98,9 @@ class ChecklistSerializer(SerializerContextCache):
     sources = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
     confidence = serializers.SerializerMethodField()
+    park_or_mpa_name = serializers.SerializerMethodField()
+    creation_date = serializers.SerializerMethodField()
+    dataset = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -46,13 +122,9 @@ class ChecklistSerializer(SerializerContextCache):
             return taxon_name
         return '-'
 
-    def get_bio_data(self, obj: Taxonomy):
-        if not hasattr(self, '_bio_data_cache'):
-            self._bio_data_cache = {}
-        if obj.id not in self._bio_data_cache:
-            bio_records = BiologicalCollectionRecord.objects.filter(taxonomy=obj)
-            self._bio_data_cache[obj.id] = bio_records
-        return self._bio_data_cache[obj.id]
+    def get_creation_date(self, obj: Taxonomy):
+        today = datetime.today()
+        return today.strftime('%d/%m/%Y')
 
     def get_taxon_group_taxon_data(self, obj: Taxonomy):
         taxon_group_id = self.context.get('taxon_group_id', None)
@@ -122,6 +194,20 @@ class ChecklistSerializer(SerializerContextCache):
             return ''
         return bio.order_by('collection_date').last().collection_date.year
 
+    def get_dataset(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        if bio.filter(source_collection__iexact='gbif').exists():
+            dataset_names = list(bio.values_list(
+                'additional_data__datasetName',
+                flat=True
+            ))
+            dataset_names = [name for name in dataset_names if name is not None]
+            if dataset_names:
+                return ','.join(set(dataset_names))
+        return '-'
+
     def get_sources(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
         if not bio.exists():
@@ -130,16 +216,43 @@ class ChecklistSerializer(SerializerContextCache):
         try:
             source_data = []
             for collection in bio:
-                if collection.source_reference:
-                    source_data.append(
-                        str(collection.source_reference)
-                    )
+                try:
+                    if collection.source_reference:
+                        source_data.append(
+                            str(collection.source_reference)
+                        )
+                except ContentType.DoesNotExist:
+                    continue
             return ','.join(source_data)
         except TypeError:
             return ''
 
+    # TODO
     def get_confidence(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        if bio.exclude(certainty_of_identification='').exists():
+            return (
+                bio.exclude(
+                    certainty_of_identification=''
+                ).first().certainty_of_identification
+            )
         return ''
+
+    def get_park_or_mpa_name(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return '-'
+        if bio.exclude(source_collection__iexact='gbif').exists():
+            park_names = list(bio.annotate(
+                    park_name=F(f'additional_data__{PARK_OR_MPA_NAME}')
+                ).values_list('park_name', flat=True)
+            )
+            park_names = [name for name in park_names if name is not None]
+            if park_names:
+                return ','.join(set(park_names))
+        return '-'
 
     def get_origin(self, obj: Taxonomy):
         origin_categories = dict(Taxonomy.CATEGORY_CHOICES)
@@ -170,12 +283,19 @@ class ChecklistSerializer(SerializerContextCache):
 
     def get_cites_listing(self, obj: Taxonomy):
         cites_listing_info = CITESListingInfo.objects.filter(
-            taxonomy=obj
-        ).order_by('appendix')
-        if cites_listing_info:
+            taxonomy_id=obj.id
+        )
+        if cites_listing_info.exists():
             return ','.join(list(cites_listing_info.values_list(
                 'appendix', flat=True
             )))
+        if obj.additional_data:
+            if 'CITES Listing' in obj.additional_data:
+                return obj.additional_data['CITES Listing']
+            if 'Cites listing' in obj.additional_data:
+                return obj.additional_data['Cites listing']
+            if 'CITES listing' in obj.additional_data:
+                return obj.additional_data['CITES listing']
         return ''
 
     class Meta:
@@ -189,6 +309,7 @@ class ChecklistSerializer(SerializerContextCache):
             'family',
             'scientific_name',
             'synonyms',
+            'rank',
             'common_name',
             'most_recent_record',
             'origin',
@@ -197,5 +318,8 @@ class ChecklistSerializer(SerializerContextCache):
             'national_conservation_status',
             'sources',
             'cites_listing',
-            'confidence'
+            'confidence',
+            'park_or_mpa_name',
+            'creation_date',
+            'dataset'
         ]

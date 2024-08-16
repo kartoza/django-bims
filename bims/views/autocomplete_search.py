@@ -175,6 +175,24 @@ def user_autocomplete(request):
     mime_type = 'application/json'
     return HttpResponse(data, mime_type)
 
+
+def author_autocomplete(request):
+    q = request.GET.get('term', '').capitalize()
+    data = []
+    if not is_ajax(request) and len(q) < 2:
+        data = 'fail'
+    taxa = Taxonomy.objects.filter(
+        author__icontains=q
+    ).distinct('author')
+    if taxa.exists():
+        for taxon in taxa:
+            data.append({
+                'author': taxon.author
+            })
+    data = json.dumps(data)
+    return HttpResponse(data, 'application/json')
+
+
 def is_ajax(request):
     return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 

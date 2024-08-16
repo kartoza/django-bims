@@ -9,6 +9,25 @@ from django.contrib.sites.models import Site
 from django.db.models import JSONField
 from django.db import models
 from django.core.exceptions import ValidationError
+from ordered_model.models import OrderedModel
+
+
+class Role(OrderedModel):
+    name = models.CharField(
+        max_length=100, unique=True)
+    display_name = models.CharField(
+        max_length=100)
+
+    class Meta:
+        ordering = ('order',)
+
+    def __str__(self):
+        return self.display_name
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            self.name = self.display_name.lower().replace(' ', '_')
+        super().save(*args, **kwargs)
 
 
 class Profile(models.Model):
@@ -62,11 +81,10 @@ class Profile(models.Model):
     hide_bims_info = models.BooleanField(
         default=False
     )
-    role = models.CharField(
-        max_length=100,
-        choices=ROLE_CHOICES,
-        blank=True,
-        null=True,
+    role = models.ForeignKey(
+        'bims.Role',
+        on_delete=models.CASCADE,
+        null=True
     )
     signup_source_site = models.ForeignKey(
         Site,
@@ -75,6 +93,9 @@ class Profile(models.Model):
         blank=True,
         help_text="The source site where the user signed up. For tracking user registration origins."
     )
+
+    def get_role_display(self):
+        return self.role.display_name if self.role else '-'
 
     @property
     def first_name(self):

@@ -10,6 +10,7 @@ from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models import JSONField
+from django.contrib.contenttypes.models import ContentType
 
 from preferences import preferences
 from bims.models.location_site import LocationSite
@@ -34,6 +35,11 @@ class BiologicalCollectionQuerySet(models.QuerySet):
         unique_source_references = []
         is_doc = False
         for col in self:
+            try:
+                col.source_reference
+            except ContentType.DoesNotExist:
+                continue
+
             try:
                 title = col.source_reference.title
                 authors = col.source_reference.authors
@@ -157,6 +163,17 @@ class BiologicalCollectionRecord(AbstractValidation):
         (ABUNDANCE_TYPE_DENSITY_CELLS_ML, 'Density (cells/mL)'),
     )
 
+    DATA_TYPE_CHOICES = (
+        ('private', 'Private'),
+        ('public', 'Public'),
+        ('sensitive', 'Sensitive'),
+    )
+
+    DATE_ACCURACY_CHOICES = (
+        ('accurate', 'Accurate'),
+        ('artificial', 'Artificial'),
+    )
+
     site = models.ForeignKey(
         LocationSite,
         models.CASCADE,
@@ -180,18 +197,6 @@ class BiologicalCollectionRecord(AbstractValidation):
         help_text='Collector name in string value, this is useful for '
                   'collector values from GBIF and other third party sources',
         verbose_name='collector or observer',
-    )
-
-    additional_observation_sites = models.ManyToManyField(
-        to=Site,
-        related_name='additional_observation_sites',
-        blank=True,
-        help_text="List of sites where this biological occurrence has also been observed. "
-                  "This attribute allows for recording multiple observation locations beyond "
-                  "the primary source site. For instance, if an occurrence is recorded at the "
-                  "main location 'FBIS' and is also observed at 'SanParks', "
-                  "this field facilitates linking the occurrence to 'SanParks' as "
-                  "an additional observation site."
     )
 
     notes = models.TextField(
@@ -367,6 +372,30 @@ class BiologicalCollectionRecord(AbstractValidation):
         choices=ECOSYSTEM_TYPE_CHOICES,
         default='',
         null=True
+    )
+
+    data_type = models.CharField(
+        max_length=128,
+        blank=True,
+        choices=DATA_TYPE_CHOICES,
+        default='',
+        help_text='Specify data sharing level of this record'
+    )
+
+    date_accuracy = models.CharField(
+        max_length=64,
+        blank=True,
+        choices=DATE_ACCURACY_CHOICES,
+        default='',
+        help_text='Indicate if date is accurate or artificial'
+    )
+
+    identified_by = models.CharField(
+        max_length=300,
+        blank=True,
+        default='',
+        help_text='Name of the person who identified the species',
+        verbose_name='Identifier',
     )
 
     @property

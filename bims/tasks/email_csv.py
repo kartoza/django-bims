@@ -3,6 +3,7 @@ import csv
 import zipfile
 
 from celery import shared_task
+from django.db import DatabaseError, connection, OperationalError, connections
 from openpyxl import load_workbook
 
 from bims.utils.domain import get_current_domain
@@ -49,9 +50,18 @@ def send_csv_via_email(
     if download_request and not download_request.request_file:
         download_request.request_category = file_name
         download_request.request_file = csv_file
-        download_request.save()
+        try:
+            download_request.save()
+        except (DatabaseError, OperationalError):
+            # Attempt to reconnect and save again
+            if not connections['default'].is_usable():
+                connections['default'].connect()
+            download_request.save()
 
     email_template = 'csv_download/csv_created'
+    if download_request and download_request.resource_type == DownloadRequest.PDF:
+        email_template = 'pdf_download/pdf_created'
+        extension = 'pdf'
     if download_request and download_request.resource_type == DownloadRequest.XLS:
         import pandas as pd
         df = pd.read_csv(csv_file, encoding='ISO-8859-1', on_bad_lines='warn')
@@ -101,7 +111,7 @@ def send_csv_via_email(
     zip_folder = os.path.join(
         settings.MEDIA_ROOT, settings.PROCESSED_CSV_PATH, user.username)
     if not os.path.exists(zip_folder):
-        os.mkdir(zip_folder)
+        os.makedirs(zip_folder)
     zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(download_file_path, f'{file_name}.{extension}')

@@ -83,7 +83,12 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
                     legacy_canonical_name=taxonomy.legacy_canonical_name,
                     taxon_group_under_review=taxon_group
                 )
-        taxon_group.taxonomies.add(taxonomy)
+        taxon_group.taxonomies.add(
+            taxonomy,
+            through_defaults={
+                'is_validated': False
+            }
+        )
 
 
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):

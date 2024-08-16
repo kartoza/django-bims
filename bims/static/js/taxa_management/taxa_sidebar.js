@@ -10,6 +10,7 @@ export const taxaSidebar = (() => {
 
     let currentRemoveModuleName = '';
     let selectedTaxonGroup = '';
+    let updateTaxonGroup = null;
 
     function findGbifTaxonomyByTaxonGroupId(parentId, groups) {
         let item = groups.find(item => item.id === parentId && item.gbif_parent_species);
@@ -109,9 +110,13 @@ export const taxaSidebar = (() => {
         }
         $('.ui-state-default').removeClass('selected');
         $elm.addClass('selected');
+        if (updateTaxonGroup) {
+            updateTaxonGroup($elm.data('id'));
+        }
         selectedTaxonGroup = $elm.data('id');
-        $('#taxon-name-input').val('');
-        insertParam('selected', selectedTaxonGroup);
+        $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
+        currentSelectedTaxonGroup = selectedTaxonGroup;
+
     }
 
     function allTaxaGroups(groups) {
@@ -230,7 +235,7 @@ export const taxaSidebar = (() => {
         const _maxTries = 10;
         let _element = $(event.target);
         let _currentTry = 1
-        while (!_element.hasClass('ui-sortable-handle') && _currentTry < _maxTries) {
+        while (!_element.hasClass('ui-state-default') && _currentTry < _maxTries) {
             _element = _element.parent();
             _currentTry += 1;
         }
@@ -255,8 +260,16 @@ export const taxaSidebar = (() => {
         event.preventDefault();
         $removeModuleBtn.html('Processing...')
         $removeModuleBtn.attr('disabled', true)
-        const moduleId = $(e.target).data('module-id');
+        const moduleId = $(event.target).data('module-id');
         const url = `/api/remove-occurrences/?taxon_module=${moduleId}`
+
+        // Show the processing modal
+        $('#processingModal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: true
+        });
+
         $.ajax({
             type: 'GET',
             headers: {"X-CSRFToken": csrfToken},
@@ -264,12 +277,49 @@ export const taxaSidebar = (() => {
             cache: false,
             contentType: false,
             processData: false,
-            success: function () {
-                location.reload();
+            success: function (data) {
+                const taskId = data.task_id;
+                checkTaskStatus(taskId);
             },
             error: function (data) {
                 console.log("error");
                 console.log(data);
+                $removeModuleBtn.html('Remove Module');
+                $removeModuleBtn.attr('disabled', false);
+                // Hide the processing modal
+                $('#processingModal').modal('hide');
+            }
+        });
+    }
+
+    function checkTaskStatus(taskId) {
+        const url = `/api/celery-status/${taskId}/`;
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (data) {
+                if (data.state === 'PENDING' || data.state === 'STARTED') {
+                    setTimeout(function () {
+                        checkTaskStatus(taskId);
+                    }, 2000); // check again after 2 seconds
+                } else if (data.state === 'SUCCESS') {
+                    location.reload();
+                } else {
+                    console.log("Task failed or was revoked.");
+                    $removeModuleBtn.html('Remove Module');
+                    $removeModuleBtn.attr('disabled', false);
+                    // Hide the processing modal
+                    $('#processingModal').modal('hide');
+                }
+            },
+            error: function (data) {
+                console.log("error");
+                console.log(data);
+                $removeModuleBtn.html('Remove Module');
+                $removeModuleBtn.attr('disabled', false);
+                // Hide the processing modal
+                $('#processingModal').modal('hide');
             }
         });
     }
@@ -321,7 +371,7 @@ export const taxaSidebar = (() => {
         });
     }
 
-    function init(_selectedTaxonGroup) {
+    function init(_updateTaxonGroup, _selectedTaxonGroup) {
         $addNewModuleBtn.on('click', handleAddNewModuleSelected)
         $taxonGroupCard.on('click', handleTaxonGroupSelected)
         $updateBtn.on('click', handleUpdateTaxonGroupSelected)
@@ -336,9 +386,11 @@ export const taxaSidebar = (() => {
         })
 
         selectedTaxonGroup = _selectedTaxonGroup
+        updateTaxonGroup = _updateTaxonGroup
     }
 
     return {
         init,
+        allTaxaGroups
     };
 })();

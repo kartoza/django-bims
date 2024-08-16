@@ -1,34 +1,37 @@
 export const addNewTaxon = (() => {
-    const $newTaxonFamilyIdInput = $('.new-taxon-family-id');
+    const $newTaxonParentIdInput = $('.new-taxon-parent-id');
     const $newTaxonFamilyInput = $('.new-taxon-family-name');
+    const $newTaxonParent = $('#new-taxon-parent');
     const $taxonForm = $('.new-taxon-form');
     const $addNewTaxonBtn = $taxonForm.find('.add-new-taxon-btn');
     const $newTaxonNameInput = $('#new-taxon-name');
 
     let selectedTaxonGroup = '';
 
+
     function showNewTaxonForm(taxonName) {
         let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
-        speciesAutoComplete($newTaxonFamilyInput, '&rank=family').then(value => {
-            $newTaxonFamilyIdInput.val(value);
-        })
         $newTaxonNameInput.val(capitalizedTaxonName);
+        $newTaxonParentIdInput.val($newTaxonParent.val())
         $taxonForm.show();
-        const authorAutoComplete = $('.author-auto-complete');
+        const authorAutoComplete = $('#author-auto-complete');
         authorAutoComplete.empty();
         authorAutoComplete.val(null).trigger('change');
+
+        $newTaxonParent.empty();
+        $newTaxonParent.val(null).trigger('change');
     }
 
-    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, familyId = "", authorName = "") {
+    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, parentId = "", authorName = "") {
         let postData = {
             'gbifKey': gbifKey,
             'taxonName': name,
             'rank': rank,
-            'taxonGroupId': selectedTaxonGroup,
+            'taxonGroupId': currentSelectedTaxonGroup,
             'authorName': authorName
         };
-        if (familyId) {
-            postData['familyId'] = familyId
+        if (parentId) {
+            postData['parentId'] = parentId
         }
         let table = $('.find-taxon-table');
         table.hide();
@@ -55,7 +58,7 @@ export const addNewTaxon = (() => {
             type: 'POST',
             data: {
                 'taxaIds': JSON.stringify([taxaId]),
-                'taxonGroupId': selectedTaxonGroup,
+                'taxonGroupId': currentSelectedTaxonGroup,
             },
             success: function (response) {
                 insertParam('validated', 'False', false, true);
@@ -94,7 +97,7 @@ export const addNewTaxon = (() => {
                 stored = fontAwesomeIcon('times', 'red');
             }
             let action = '';
-            if (!taxonGroupIds.includes(parseInt(selectedTaxonGroup))) {
+            if (!taxonGroupIds.includes(parseInt(currentSelectedTaxonGroup))) {
                 action = (`<button
                 type="button"
                 class="btn btn-success add-taxon-btn"
@@ -132,7 +135,7 @@ export const addNewTaxon = (() => {
 
         // Show response list
         $.ajax({
-            url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&taxonGroupId=${selectedTaxonGroup}`,
+            url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&taxonGroupId=${currentSelectedTaxonGroup}`,
             type: 'get',
             dataType: 'json',
             success: function (data) {
@@ -148,43 +151,28 @@ export const addNewTaxon = (() => {
 
     function handleAddNewTaxon(event) {
         let $rank = $taxonForm.find('.new-taxon-rank');
-        let $author = $taxonForm.find('.author-auto-complete');
-        const familyId = $newTaxonFamilyIdInput.val();
-        if (!familyId) {
-            alert("Missing family");
+        let $author = $taxonForm.find('#author-auto-complete');
+        const parentId = $newTaxonParent.val();
+        if (!parentId) {
+            alert("Missing parent");
             return
         }
-        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, familyId, $author.val());
+        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val());
         $taxonForm.hide();
         $newTaxonFamilyInput.val("")
-        $newTaxonFamilyIdInput.val("")
-    }
-
-    function formatAuthor (tag) {
-        if (tag.loading) {
-            return tag.text;
-        }
-        let $container = $(
-            "<div class='select2-result-repository clearfix'>" +
-            "<div class='select2-result-repository__meta'>" +
-            "<div class='select2-result-repository__title'></div>" +
-            "</div>" +
-            "</div>"
-        );
-        if (tag.newTag) {
-            $container.find(".select2-result-repository__title").text(`Add new author : ${tag.text}`);
-        } else {
-            $container.find(".select2-result-repository__title").text(tag.name);
-        }
-        return $container;
-    }
-
-    function formatAuthorSelection (tag) {
-        const tagName = tag.text || tag.name;
-        return $(`<span class="tag_result" data-tag-id="${tagName}">${tagName}</span>`);
+        $newTaxonParentIdInput.val("")
     }
 
     function init(_selectedTaxonGroup) {
+
+        $('#addNewTaxonModal').on('shown.bs.modal', function (e) {
+            const authorAutoComplete = $('#author-auto-complete');
+            authorAutoComplete.empty();
+            authorAutoComplete.val(null).trigger('change');
+
+            $newTaxonParent.empty();
+            $newTaxonParent.val(null).trigger('change');
+        });
         selectedTaxonGroup = _selectedTaxonGroup
 
         $('#find-taxon-button').on('click', handleFindTaxonButton)
@@ -200,9 +188,9 @@ export const addNewTaxon = (() => {
         });
         const authorAutoComplete = $('.author-auto-complete');
         authorAutoComplete.select2({
-            width: 200,
+            width: '100%',
             ajax: {
-                url: '/user-autocomplete/',
+                url: '/author-autocomplete/',
                 dataType: 'json',
                 delay: 250,
                 data: function (params) {
@@ -210,11 +198,14 @@ export const addNewTaxon = (() => {
                         term: params.term,
                     };
                 },
-                processResults: function (data, params) {
+                processResults: function (data) {
+                    if (data && data !== 'fail') {
+
+                    }
                     return {
-                        results: data.map(_data => { return {
-                            'id': _data.id,
-                            'name': _data.first_name + ' ' + _data.last_name
+                        results: data.map(item => { return {
+                            id: item.author,
+                            text: item.author
                         }}),
                     };
                 },
@@ -223,8 +214,8 @@ export const addNewTaxon = (() => {
             allowClear: true,
             placeholder: 'Search for an Author',
             minimumInputLength: 3,
-            templateResult: formatAuthor,
-            templateSelection: formatAuthorSelection,
+            templateResult: (item) => item.text,
+            templateSelection: (item) => item.text,
             tags: true,
             createTag: function (params) {
                 if (!this.$element.data('add-new-tag')) {

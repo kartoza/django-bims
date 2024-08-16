@@ -21,7 +21,7 @@ STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_tenants.postgresql_backend',
+        'ENGINE': 'bims.database_backend',
         'NAME': 'gis',
         'USER': 'docker',
         'PASSWORD': 'docker',
@@ -33,14 +33,13 @@ DATABASES = {
         'DATABASE': 'default'
     }
 }
-
 ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
 
 REPLICA_ENV_VAR = os.getenv("DB_REPLICAS", "")
 REPLICAS = extract_replicas(REPLICA_ENV_VAR)
 for index, replica in enumerate(REPLICAS, start=1):
     DATABASES[f'replica_{index}'] = {
-        'ENGINE': os.getenv('DB_ENGINE', 'django_tenants.postgresql_backend'),
+        'ENGINE': 'bims.database_backend',
         'NAME': replica['NAME'],
         'USER': replica['USER'],
         'PASSWORD': replica['PASSWORD'],
@@ -58,9 +57,6 @@ CACHES = {
     }
 }
 
-INSTALLED_APPS += ['debug_toolbar',]
-
-MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
 
 INTERNAL_IPS = [
     '127.0.0.1',
@@ -71,12 +67,14 @@ INTERNAL_IPS = [
 import socket
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
 INTERNAL_IPS += [ip[:-1] + "1" for ip in ips]
+TESTING = sys.argv[1:2] == ['test']
+if DEBUG and not TESTING:
+    INSTALLED_APPS += [
+        'debug_toolbar',
+    ]
 
+    # MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
 
-def show_toolbar(request):
-    return True
-
-
-DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': show_toolbar,
-}
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+    }

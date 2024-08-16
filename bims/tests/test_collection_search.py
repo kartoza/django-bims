@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.db import connection
 from django.contrib.sites.models import Site
@@ -11,7 +12,7 @@ from bims.tests.model_factories import (
     TaxonomyF,
     LocationSiteF,
     RiverF,
-    VernacularNameF, UserF
+    VernacularNameF, UserF, GroupF
 )
 from bims.api_views.search import CollectionSearch
 
@@ -114,6 +115,97 @@ class TestCollectionSearch(TestCase):
         self.assertGreater(
             collection_results.count(),
             0
+        )
+
+    def test_search_with_data_type(self):
+        _user = UserF.create(is_superuser=False)
+        _staff = UserF.create(is_superuser=True)
+        try:
+            group = Group.objects.get(
+                name='SensitiveDataGroup'
+            )
+        except Group.DoesNotExist:
+            group = GroupF.create(
+                name='SensitiveDataGroup'
+            )
+        _user.groups.add(group)
+        BiologicalCollectionRecordF.create(
+            original_species_name='test981',
+            taxonomy=self.taxa,
+            source_site=Site.objects.get_current(),
+            site=self.site,
+            data_type='private'
+        )
+        BiologicalCollectionRecordF.create(
+            original_species_name='test982',
+            taxonomy=self.taxa,
+            source_site=Site.objects.get_current(),
+            site=self.site,
+            data_type='public'
+        )
+        filters = {
+            'search': 'test98',
+            'requester': _user.id
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+        with connection.cursor() as cursor:
+            raw_query = format_search_result_raw_query(search.location_sites_raw_query)
+            cursor.execute(raw_query)
+            result = cursor.fetchall()
+            self.assertEqual(
+                len(result),
+                1
+            )
+        self.assertEqual(
+            collection_results.count(),
+            1
+        )
+
+        try:
+            private_group = Group.objects.get(
+                name='PrivateDataGroup'
+            )
+        except Group.DoesNotExist:
+            private_group = GroupF.create(
+                name='PrivateDataGroup'
+            )
+        _user.groups.add(private_group)
+
+        # Staff
+        filters = {
+            'search': 'test98',
+            'requester': _staff.id
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+        with connection.cursor() as cursor:
+            raw_query = format_search_result_raw_query(search.location_sites_raw_query)
+            cursor.execute(raw_query)
+        self.assertEqual(
+            collection_results.count(),
+        2
+        )
+
+        BiologicalCollectionRecordF.create(
+            original_species_name='test983',
+            taxonomy=self.taxa,
+            source_site=Site.objects.get_current(),
+            site=self.site,
+            data_type='sensitive'
+        )
+        filters = {
+            'search': 'test98',
+            'requester': _user.id
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+        with connection.cursor() as cursor:
+            raw_query = format_search_result_raw_query(search.location_sites_raw_query)
+            cursor.execute(raw_query)
+        self.assertEqual(
+            collection_results.count(),
+            3
         )
 
     def test_search_embargo_data(self):

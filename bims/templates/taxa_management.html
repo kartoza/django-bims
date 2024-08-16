@@ -19,7 +19,7 @@
     <link href="{% static "css/taxa_management.css" %}" rel="stylesheet">
     <link href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/fc-5.0.1/fh-4.0.1/datatables.min.css" rel="stylesheet">
     <script>
-        const sourceCollection = {{ source_collections | safe }};
+        const sourceCollection = '';
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
         const isExpert = {% if is_expert %}true{% else %}false{% endif %}
@@ -27,10 +27,16 @@
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
         const taxaGroups = {{ taxa_groups_json | safe }};
+        let currentSelectedTaxonGroup = "";
+        {% if selected_taxon_group %}
+        currentSelectedTaxonGroup = "{{ selected_taxon_group.id }}";
+        {% endif %}
     </script>
 {% endblock %}
 
 {% block body_content %}
+    {% is_fada_site as fada_site %}
+
     <div class="loading">
         <img src="/static/img/small-loading.svg"
              width="150"
@@ -111,7 +117,7 @@
                                             </div>
                                             <div class="form-group row">
                                                 <label for="staticEmail"
-                                                       class="col-sm-2 col-form-label">Cons. Status (Global)</label>
+                                                       class="col-sm-2 col-form-label">Cons. Status</label>
                                                 <div class="col-sm-10">
                                                     <select id="cons-status-filters" class="select-multiple"
                                                             name="states[]" multiple="multiple"
@@ -122,6 +128,20 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                            <div class="form-group row">
+                                                <label for="author"
+                                                       class="col-sm-2 col-form-label">Author(s)</label>
+                                                <div class="col-sm-10 d-flex flex-column">
+                                                    <select id="author-filters"
+                                                            name="authorName"
+                                                            style="width: 100%"
+                                                            class="author-auto-complete form-control"
+                                                            data-add-new-tag="false"
+                                                            multiple="multiple"
+                                                    ></select>
+                                                </div>
+                                            </div>
+                                            {% if not fada_site %}
                                             <div class="form-group row">
                                                 <label for="staticEmail"
                                                        class="col-sm-2 col-form-label">Origin</label>
@@ -148,12 +168,31 @@
                                                     </select>
                                                 </div>
                                             </div>
+                                            {% endif %}
                                             <div class="form-group row">
-                                                <label for="parentTaxa" class="col-sm-2 col-form-label">Parent Taxonomy</label>
+                                                <label for="parentTaxa" class="col-sm-2 col-form-label">Family</label>
                                                 <div class="col-sm-10">
-                                                    <select id="taxa-auto-complete" class="taxa-auto-complete" style="width: 100%"></select>
+                                                    <select id="family-auto-complete" class="taxon-auto-complete" data-rank='family' style="width: 100%"></select>
                                                 </div>
                                             </div>
+                                            <div class="form-group row">
+                                                <label for="parentTaxa" class="col-sm-2 col-form-label">Genus</label>
+                                                <div class="col-sm-10">
+                                                    <select id="genus-auto-complete" class="taxon-auto-complete" data-rank='genus' style="width: 100%"></select>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="parentTaxa" class="col-sm-2 col-form-label">Species</label>
+                                                <div class="col-sm-10">
+                                                    <select id="species-auto-complete" class="taxon-auto-complete" data-rank='species' style="width: 100%"></select>
+                                                </div>
+                                            </div>
+{#                                            <div class="form-group row">#}
+{#                                                <label for="parentTaxa" class="col-sm-2 col-form-label">Parent Taxonomy</label>#}
+{#                                                <div class="col-sm-10">#}
+{#                                                    <select id="taxa-auto-complete" class="taxon-auto-complete" style="width: 100%"></select>#}
+{#                                                </div>#}
+{#                                            </div>#}
                                             <div class="form-group row">
                                                 <label for="validated" class="col-sm-2 col-form-label">Validated</label>
                                                 <div class="col-sm-10 d-flex">
@@ -168,6 +207,28 @@
                                                         <label class="form-check-label" for="validatedFalse">
                                                             No
                                                         </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-group row">
+                                                <label for="biographic-distributions-auto-complete" class="col-sm-2 col-form-label">Biographic distributions</label>
+                                                <div class="col-sm-10 d-flex flex-column">
+                                                    <select id="biographic-distributions-filters"
+                                                            data-placeholder="Search for a biographic distribution"
+                                                            name="biographic-distributions-auto-complete"
+                                                            class="tag-auto-complete form-control" multiple="multiple"
+                                                            style="width: 100%"></select>
+                                                    <div class="d-flex">
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="radio" name="biographic-distributions-filter-type"
+                                                                   id="biographic-distribution-filter-or" value="OR" checked>
+                                                            <label class="form-check-label" for="biographic-distribution-filter-or">OR</label>
+                                                        </div>
+                                                        <div class="form-check form-check-inline">
+                                                            <input class="form-check-input" type="radio" name="biographic-distributions-filter-type"
+                                                                   id="biographic-distribution-and" value="AND">
+                                                            <label class="form-check-label" for="biographic-distribution-and">AND</label>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -235,7 +296,8 @@
                                 <th scope="col">Genus</th>
                                 <th scope="col">Species</th>
                                 <th scope="col">Author(s)</th>
-                                <th scope="col">Biographic distribution</th>
+                                <th scope="col">Biographic distributions</th>
+                                <th scope="col">Common name</th>
                                 <th scope="col">Rank</th>
                                 <th scope="col">Cons. Status
                                 </th>
@@ -275,10 +337,11 @@
                 </div>
 
                 {% if perms.bims.change_taxonomy or is_expert %}
+                {% with preferences.SiteSetting.project_name as project_name %}
                 <div class="row-action" style="display: none">
                     <div class="btn-validated-container">
                         <div class="dropdown dropdown-action">
-                           <button class="btn btn-primary" type="button" id="validatedDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           <button class="btn btn-primary" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa fa-ellipsis-v action-icon" aria-hidden="true"></i>
                             </button>
                             <div class="dropdown-menu" aria-labelledby="validatedDropdown">
@@ -288,9 +351,14 @@
                                 <a href="" class="dropdown-item edit-taxon" title="Edit">
                                     <i class="fa fa-pencil" aria-hidden="true"></i> Edit
                                 </a>
-                                <button class="dropdown-item add-tag" title="Manage tags">
-                                    <i class="fa fa-tags" aria-hidden="true"></i> Manage tags
-                                </button>
+                                {% if user.is_superuser and project_name == 'fbis' %}
+                                <a href="" class="dropdown-item edit-taxon-in-admin" title="Edit">
+                                    <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit in Admin
+                                </a>
+                                {% endif %}
+{#                                <button class="dropdown-item add-tag" title="Manage tags">#}
+{#                                    <i class="fa fa-tags" aria-hidden="true"></i> Manage tags#}
+{#                                </button>#}
                             </div>
                         </div>
                     </div>
@@ -313,7 +381,7 @@
                         </div>
                     </div>
                 </div>
-
+                {% endwith %}
                 {% endif %}
 
             </div>
@@ -391,7 +459,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="container new-taxon-form" style="margin-top: 15px; display: none">
+                    <div class="container new-taxon-form" style="margin-top: 15px;">
                         <div class="alert alert-info" role="alert">
                             Whilst the system will accept taxa that are not listed in GBIF,
                             you should use the capability only for taxa where the classification is partly unresolved.
@@ -402,7 +470,7 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 25%">Family</th>
+                                    <th scope="col" style="width: 25%">Parent</th>
                                     <th scope="col" style="width: 25%">Taxon Name</th>
                                     <th scope="col" style="width: 25%">Author</th>
                                     <th scope="col" style="width: 25%">Rank</th>
@@ -411,9 +479,13 @@
                             </thead>
                             <tbody>
                             <tr>
-                                <td><input type="text" class="form-control new-taxon-family-name" placeholder="Family">
-                                    <input type="hidden" class="new-taxon-family-id"></td>
-                                <td><input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name"></td>
+                                <td>
+                                    <select name="newTaxonFamilyName" class="taxon-auto-complete form-control" id="new-taxon-parent" style="width: 100%"></select>
+                                    <input type="hidden" class="new-taxon-parent-id">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name">
+                                </td>
                                 <td>
 
                                     <div>
@@ -422,8 +494,10 @@
                                 </td>
                                 <td>
                                     <select class="form-control new-taxon-rank">
-                                        {% for rank in taxon_rank %}
+                                        {% for rank in all_ranks %}
+                                            {% if rank != 'DOMAIN' %}
                                             <option value="{{ rank }}" {% if rank == 'SPECIES' %}selected{% endif %}>{{ rank }}</option>
+                                            {% endif %}
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -436,7 +510,7 @@
                             </tr>
                             <tr>
                                 <td style="border-top-width: 0"><span class="text-muted" style="font-size: 10pt; font-style: italic">
-                                    This is an autocomplete search, if the family does not exist in the system, please add it first.</span>
+                                    This is an autocomplete search, if the taxon does not exist in the system, please add it first.</span>
                                 </td>
                             </tr>
                             </tbody>
@@ -582,6 +656,19 @@
                 </div>
             </div>
             </form>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="processingModal" tabindex="-1" role="dialog" aria-labelledby="processingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="processingModalLabel">Processing</h5>
+                </div>
+                <div class="modal-body">
+                    Please wait, the process is running...
+                </div>
+            </div>
         </div>
     </div>
 
@@ -760,7 +847,7 @@
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/underscore@1.13.6/underscore-umd-min.js"></script>
-    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+   <script src="https://code.jquery.com/ui/1.13.3/jquery-ui.js"></script>
 
     <script src="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/fc-5.0.1/fh-4.0.1/datatables.min.js"></script>
     <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>

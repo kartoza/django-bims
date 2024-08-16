@@ -2,6 +2,7 @@
 import logging
 from celery import shared_task
 
+
 logger = logging.getLogger('bims')
 
 
@@ -9,6 +10,7 @@ logger = logging.getLogger('bims')
     name='sass.tasks.send_sass_email', queue='update')
 def send_sass_email(site_visit_id: int, user_id: int):
     from sass.models.site_visit import SiteVisit
+    from bims.utils.domain import get_current_domain
     from django.contrib.auth import get_user_model
     from django.contrib.sites.models import Site
     from django.template.loader import render_to_string
@@ -29,7 +31,7 @@ def send_sass_email(site_visit_id: int, user_id: int):
         'site_visit_date': site_visit.site_visit_date.strftime(
             '%m/%d/%Y'),
         'site_visit_id': site_visit.id,
-        'current_site': Site.objects.get_current()
+        'current_site': get_current_domain()
     }
     email_template = 'notifications/sass_created'
     subject = render_to_string(

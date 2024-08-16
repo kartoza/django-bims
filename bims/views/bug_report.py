@@ -11,6 +11,8 @@ from braces.views import LoginRequiredMixin
 from github import Github
 from preferences import preferences
 
+from bims.utils.domain import get_current_domain
+
 
 class BugReportView(LoginRequiredMixin, View):
     github_access_token = ''
@@ -61,7 +63,7 @@ class BugReportView(LoginRequiredMixin, View):
             {
                 'user_id': self.request.user.id,
                 'description': description.capitalize(),
-                'current_site': Site.objects.get_current(),
+                'current_site': get_current_domain(),
                 'additional_information': additional_information
             }
         )
@@ -82,7 +84,7 @@ class BugReportView(LoginRequiredMixin, View):
         admins = get_user_model().objects.filter(is_superuser=True)
         ctx = {
             'username': self.request.user.email,
-            'current_site': Site.objects.get_current(),
+            'current_site': get_current_domain(),
             'github_repo': self.github_repo,
             'ticket_number': ticket_number,
             'summary': summary

@@ -3,7 +3,6 @@ import csv
 from celery import shared_task
 FILE_HEADERS = [
     'UUID',
-    'Site description',
     'Latitude',
     'Longitude',
     'Sampling Date',
@@ -45,8 +44,7 @@ def collections_upload(session_id):
                 cleaned_headers = [clean_header(header) for header in original_headers]
 
                 cleaned_header_row = ','.join(cleaned_headers) + '\n'
-                if not all(header in cleaned_headers for header in FILE_HEADERS) or \
-                        not any(header in cleaned_headers for header in FILE_HEADERS_USER_SITE_CODE):
+                if not all(header in cleaned_headers for header in FILE_HEADERS):
                     error_message = (
                         'Header row does not follow the correct format'
                     )

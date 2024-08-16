@@ -8,6 +8,7 @@ import ast
 import logging
 from functools import reduce
 
+from django.contrib.auth import get_user_model
 from preferences import preferences
 
 from bims.models.chemical_record import ChemicalRecord
@@ -60,7 +61,7 @@ class CollectionSearchAPIView(BimsApiView):
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
-            requester=request.user
+            requester=self.request.user
         )
 
         if self.is_cached():
@@ -234,6 +235,9 @@ class CollectionSearch(object):
         else:
             return None
 
+    def invasions(self):
+        return self.parse_request_json('invasions')
+
     @property
     def reference_category(self):
         return self.parse_request_json('referenceCategory')
@@ -245,6 +249,8 @@ class CollectionSearch(object):
         if categories and 'alien' in categories:
             categories.append('alien-non-invasive')
             categories.append('alien-invasive')
+            if 'non-native' not in categories:
+                categories.append('non-native')
         return categories
 
     @property
@@ -413,16 +419,23 @@ class CollectionSearch(object):
         else:
             return False
 
-    def filter_taxa_records(self, query_dict):
+    def filter_taxa_records(self, query_dict, select_related=None):
         """
         Filter taxa records
         :param query_dict: dict of query
         """
         if self.filtered_taxa_records is None:
-            self.filtered_taxa_records = Taxonomy.objects.filter(
+            taxa = Taxonomy.objects
+            if select_related:
+                taxa = taxa.select_related(select_related)
+            self.filtered_taxa_records = taxa.filter(
                 **query_dict
             )
         else:
+            if select_related:
+                self.filtered_taxa_records = self.filtered_taxa_records.select_related(
+                    select_related
+                )
             self.filtered_taxa_records = self.filtered_taxa_records.filter(
                 **query_dict
             )
@@ -463,7 +476,7 @@ class CollectionSearch(object):
                 'biologicalcollectionrecord__isnull': False
             })
         elif self.search_query:
-            bio = collection_records_by_site.filter(
+            bio = collection_records_by_site.select_related('taxonomy').filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
                 Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
                   self.search_query) |
@@ -492,7 +505,7 @@ class CollectionSearch(object):
                 )
             if not bio.exists():
                 # Search by vernacular names
-                bio = collection_records_by_site.filter(
+                bio = collection_records_by_site.select_related('taxonomy').filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
@@ -515,6 +528,11 @@ class CollectionSearch(object):
 
         if self.site_ids:
             filters['site__in'] = self.site_ids
+        invasions = self.invasions()
+        if invasions:
+            self.filter_taxa_records({
+                'invasion__id__in': invasions
+            }, 'invasion')
         if self.categories:
             self.filter_taxa_records(
                 {
@@ -576,7 +594,8 @@ class CollectionSearch(object):
             self.filter_taxa_records(
                 {
                     'endemism__in': endemism_list
-                }
+                },
+                'endemism'
             )
         if self.taxon_id:
             self.filter_taxa_records({
@@ -612,9 +631,26 @@ class CollectionSearch(object):
             filters['taxonomy__isnull'] = False
             bio_filtered = True
 
-        bio = bio.filter(**filters)
+        bio = bio.select_related('taxonomy').filter(**filters)
 
         requester_id = self.parameters.get('requester', None)
+
+        is_sensitive_data_access_allowed = False
+        is_private_data_access_allowed = False
+        try:
+            requester = get_user_model().objects.get(id=requester_id)
+            is_requester_staff = requester.is_staff or requester.is_superuser
+            user_groups = requester.groups.values_list('name', flat=True)
+            if is_requester_staff:
+                is_private_data_access_allowed = True
+            if 'SensitiveDataGroup' in user_groups:
+                is_sensitive_data_access_allowed = True
+            if 'PrivateDataGroup' in user_groups:
+                is_private_data_access_allowed = True
+        except get_user_model().DoesNotExist:
+            pass
+
+        bio = bio.select_related('owner')
 
         bio = bio.filter(
             Q(owner_id=requester_id) |
@@ -622,6 +658,17 @@ class CollectionSearch(object):
                 Q(end_embargo_date__lte=datetime.date.today()) |
                 Q(end_embargo_date__isnull=True)
             )
+        )
+
+        accessible_data_types = ['public']
+        if is_sensitive_data_access_allowed:
+            accessible_data_types.append('sensitive')
+        if is_private_data_access_allowed:
+            accessible_data_types.append('private')
+
+        bio = bio.filter(
+            Q(data_type='') |
+            Q(data_type__in=accessible_data_types)
         )
 
         # Filter collection record with SASS Accreditation status
@@ -703,11 +750,15 @@ class CollectionSearch(object):
         spatial_filters = self.spatial_filter
         if spatial_filters:
             if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
+                filtered_location_sites = LocationSite.objects.select_related(
+                    'locationcontextgroup'
+                ).filter(
                     spatial_filters
                 )
             else:
-                filtered_location_sites = filtered_location_sites.filter(
+                filtered_location_sites = filtered_location_sites.select_related(
+                    'locationcontextgroup'
+                ).filter(
                     spatial_filters
                 )
 
@@ -884,6 +935,8 @@ class CollectionSearch(object):
     def get_summary_data(self):
         if not self.collection_records:
             self.process_search()
+        else:
+            self.start_time = time.time()
 
         # Get order_by
         order_by = self.get_request_data('orderBy', 'name')

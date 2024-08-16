@@ -4,9 +4,11 @@ from bims.models import BiologicalCollectionRecord, Survey
 from django.db.models import F
 from django.db import transaction, connection
 
+from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
+
 logger = logging.getLogger(__name__)
 
-BATCH_SIZE = 1000
+BATCH_SIZE = 100
 
 
 class Command(BaseCommand):
@@ -25,7 +27,9 @@ class Command(BaseCommand):
         schema_name = options.get('schema_name', '')
         if schema_name:
             connection.set_schema(schema_name)
+        disconnect_bims_signals()
         self.fix_collection_dates()
+        connect_bims_signals()
 
     def fix_collection_dates(self):
         mismatched_records = BiologicalCollectionRecord.objects.exclude(
@@ -38,10 +42,11 @@ class Command(BaseCommand):
         if record_count == 0:
             return
 
-        with transaction.atomic():
-            for start in range(0, record_count, BATCH_SIZE):
+        for start in range(0, record_count, BATCH_SIZE):
+            with transaction.atomic():
                 batch = mismatched_records[start:start + BATCH_SIZE]
                 self.process_batch(batch)
+            print('next batch')
 
     def process_batch(self, batch):
         for record in batch.iterator():

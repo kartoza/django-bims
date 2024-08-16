@@ -13,7 +13,8 @@ from bims.models.taxonomy import Taxonomy
 from bims.tests.model_factories import (
     TaxonomyF,
     TaxonGroupF,
-    TaxonomyUpdateProposalF
+    TaxonomyUpdateProposalF,
+    IUCNStatusF
 )
 
 User = get_user_model()
@@ -45,6 +46,7 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             rank='FAMILY',
             parent=self.parent
         )
+        self.iucn_status = IUCNStatusF.create()
 
     def test_superuser_approve_update_taxon(self):
         self.client.login(username='superuser', password='password')
@@ -119,8 +121,6 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         ).first()
         taxon = Taxonomy.objects.filter(
             canonical_name='New Taxon1'
-        ).exclude(
-            id=proposal.id
         ).first()
         self.assertIsNotNone(
             taxon
@@ -397,3 +397,35 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             comments='test'
         ).exists())
         self.client.logout()
+
+    def test_superuser_update_taxon(self):
+        self.client.login(username='superuser', password='password')
+
+        url = reverse('edit_taxon', kwargs={
+            'id': self.taxonomy.id,
+            'taxon_group_id': self.taxon_group.id
+        })
+
+        data = {
+            'canonical_name': 'Updated Taxon',
+            'rank': 'SPECIES',
+            'author': 'Updated Author',
+            'iucn_status': self.iucn_status.id,
+            'taxonomic_status': 'ACCEPTED',
+            'accepted_taxonomy': '',
+            'tags': [],
+            'parent': self.parent.id,
+        }
+
+        response = self.client.post(url, data)
+
+        # Refresh the taxon from the database
+        self.taxonomy.refresh_from_db()
+
+        # Verify the taxon was updated
+        self.assertEqual(self.taxonomy.canonical_name, 'Updated Taxon')
+
+        # Verify that the proposal was created and approved
+        proposal = TaxonomyUpdateProposal.objects.get(original_taxonomy=self.taxonomy)
+        self.assertIsNotNone(proposal)
+        self.assertEqual(proposal.status, 'approved')

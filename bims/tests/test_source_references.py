@@ -67,5 +67,5 @@ class TestSourceReferenceFilters(FastTenantTestCase):
             f'source_reference_filter_{self.tenant}',
             [
                 {'id': self.references[0].id, 'reference': f'- | {self.entry.publication_date.year} | Test', 'type': 'Peer-reviewed scientific article'},
-                {'id': self.references[1].id, 'reference': f' | 2024 | {self.document.source}', 'type': 'Published report or thesis'}]
+                {'id': self.references[1].id, 'reference': f'- | 2024 | {self.document.source}', 'type': 'Published report or thesis'}]
             , timeout=None)

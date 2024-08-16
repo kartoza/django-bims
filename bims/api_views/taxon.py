@@ -1,11 +1,12 @@
 # coding=utf8
 import ast
 import logging
+import re
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.http import Http404
-from django.db.models import Count, Case, Value, When, F, CharField
+from django.db.models import Count, Case, Value, When, F, CharField, Prefetch
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -14,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
-from bims.models.taxonomy import Taxonomy
+from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
@@ -256,12 +257,15 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
         taxon_group_id = self.request.POST.get('taxonGroupId', None)
-        author_name = self.request.POST.get('authorName', None)
+        author_name = self.request.POST.get('authorName', '')
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
-        family = None
+        parent = None
         if family_id:
-            family = Taxonomy.objects.get(id=int(family_id))
+            parent = Taxonomy.objects.get(id=int(family_id))
+        parent_id = self.request.POST.get('parentId', None)
+        if parent_id:
+            parent = Taxonomy.objects.get(id=int(parent_id))
         if gbif_key:
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
@@ -276,12 +280,23 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             )
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-            taxon_group.taxonomies.add(taxonomy)
+            taxon_group.taxonomies.add(
+                taxonomy,
+                through_defaults={
+                    'is_validated': False
+                }
+            )
         else:
             if taxon_group:
                 try:
                     taxon_group = TaxonGroup.objects.get(name=taxon_group)
-                    taxon_group.taxonomies.add(taxonomy)
+                    taxon_group.taxonomies.add(
+                        taxonomy,
+                        through_defaults={
+                            'is_validated': False
+                        }
+                    )
+                    taxon_group_id = taxon_group.id
                 except TaxonGroup.DoesNotExist:
                     pass
         if taxonomy:
@@ -289,11 +304,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             response['taxon_name'] = taxonomy.canonical_name
 
             if author_name:
-                if author_name.isnumeric():
-                    user = User.objects.get(id=int(author_name))
-                else:
-                    user = get_user(author_name)
-                taxonomy.collector_user = user
+                taxonomy.author = author_name
                 taxonomy.save()
 
             # Check if it's a new taxonomy
@@ -305,8 +316,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)
 
-            if family:
-                taxonomy.parent = family
+            if parent:
+                taxonomy.parent = parent
                 taxonomy.save()
 
         with transaction.atomic():
@@ -320,7 +331,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 parent=taxonomy.parent,
                 taxonomic_status=taxonomy.taxonomic_status,
                 legacy_canonical_name=taxonomy.legacy_canonical_name,
-                taxon_group_under_review=taxon_group
+                taxon_group_under_review=taxon_group,
+                author=author_name,
             )
 
         return Response(response)
@@ -329,6 +341,13 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
 class TaxaPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
+
+
+def split_authors(author_string):
+    regex = r'"(.*?)"'
+    matches = re.findall(regex, author_string)
+    decoded_matches = [match for match in matches]
+    return decoded_matches
 
 
 class TaxaList(LoginRequiredMixin, APIView):
@@ -366,6 +385,24 @@ class TaxaList(LoginRequiredMixin, APIView):
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
         order = request.GET.get('o', '')
+        author_names = request.GET.get('author', '')
+        family_name = request.GET.get('family', '')
+        genus_name = request.GET.get('genus', '')
+        species_name = request.GET.get('species', '')
+
+        authors = []
+        if author_names:
+            authors = split_authors(author_names)
+
+        biodiversity_distributions = (
+            request.GET.get('bD', '').split(',')
+        )
+        biodiversity_distributions = (
+            list(filter(None, biodiversity_distributions))
+        )
+        biodiversity_distributions_filter_type = (
+            request.GET.get('bDFT', 'OR')
+        )
 
         if order == 'endemism_name':
             order = 'endemism__name'
@@ -389,6 +426,11 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxongroup__id__in=taxon_group_ids,
             taxongrouptaxonomy__is_rejected=False,
         ).distinct().order_by('canonical_name')
+
+        if len(authors) > 0:
+            taxon_list = taxon_list.filter(
+                author__in=authors
+            )
 
         if parent_ids:
             parents = taxon_list.filter(id__in=parent_ids)
@@ -418,13 +460,42 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 canonical_name__icontains=taxon_name
             )
+        if family_name:
+            taxon_list = taxon_list.filter(
+                hierarchical_data__family_name__icontains=family_name
+            )
+        if genus_name:
+            taxon_list = taxon_list.filter(
+                hierarchical_data__genus_name__icontains=genus_name
+            )
+        if species_name:
+            taxon_list = taxon_list.filter(
+                hierarchical_data__species_name__icontains=species_name
+            )
+
         if tags:
+            taxon_list = taxon_list.prefetch_related(
+                'tags',
+            )
             if tag_filter_type == 'AND':
                 for tag in tags:
                     taxon_list = taxon_list.filter(tags__name=tag)
             else:
                 taxon_list = taxon_list.filter(
                     tags__name__in=tags
+                ).distinct()
+        if biodiversity_distributions:
+            taxon_list = taxon_list.prefetch_related(
+                'biographic_distributions'
+            )
+            if biodiversity_distributions_filter_type == 'AND':
+                for b_tag in biodiversity_distributions:
+                    taxon_list = taxon_list.filter(
+                        customtaggedtaxonomy__tag__name=b_tag
+                    )
+            else:
+                taxon_list = taxon_list.filter(
+                    customtaggedtaxonomy__tag__name__in=biodiversity_distributions
                 ).distinct()
         if validated:
             try:
@@ -531,11 +602,13 @@ class TaxaList(LoginRequiredMixin, APIView):
         taxon_list = self.get_taxa_by_parameters(request)
         self.pagination_class.page_size = request.GET.get('page_size', 20)
         page = self.paginate_queryset(taxon_list)
+        validated = ast.literal_eval(request.GET.get('validated', 'True'))
         if page is not None:
             serializer = self.get_paginated_response(
                 TaxonSerializer(page, many=True, context={
                     'taxon_group_id': request.GET.get('taxonGroup', None),
-                    'user': request.user.id
+                    'user': request.user.id,
+                    'validated': validated
                 }).data)
         else:
             serializer = TaxonSerializer(
@@ -551,10 +624,16 @@ class TaxaList(LoginRequiredMixin, APIView):
 class TaxonTagAutocompleteAPIView(APIView):
     def get(self, request, format=None):
         query = request.query_params.get('q', '')
-        taxonomy_tags = Tag.objects.filter(
-            taxonomy__isnull=False,
-            name__icontains=query
-        ).distinct()[:10]
+        biographic = ast.literal_eval(request.query_params.get('biographic', 'False'))
+        if biographic:
+            taxonomy_tags = TaxonTag.objects.filter(
+                name__icontains=query
+            ).distinct()[:10]
+        else:
+            taxonomy_tags = Tag.objects.filter(
+                taxonomy__isnull=False,
+                name__icontains=query
+            ).distinct()[:10]
         serializer = TagSerializer(taxonomy_tags, many=True)
         return Response(serializer.data)
 

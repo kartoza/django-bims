@@ -259,10 +259,6 @@ STATICFILES_DIRS = [
     absolute_path('pesticide', 'static'),
 ]
 
-MIDDLEWARE += (
-    'bims.middleware.VisitorTrackingMiddleware',
-)
-
 # for middleware in MIDDLEWARE_CLASSES:
 #     if middleware not in MIDDLEWARE:
 #         MIDDLEWARE += (middleware,)
@@ -277,6 +273,10 @@ DJANGO_EASY_AUDIT_WATCH_AUTH_EVENTS = True
 
 # Defines whether to log URL requests made to the project
 DJANGO_EASY_AUDIT_WATCH_REQUEST_EVENTS = False
+
+DJANGO_EASY_AUDIT_CRUD_DIFFERENCE_CALLBACKS = [
+    'bims.utils.easy_audit_callback',
+]
 
 LOGIN_REDIRECT_URL = "/"
 
@@ -314,7 +314,8 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'td_biblio.author',
     'django_celery_results.TaskResult',
     'bims.DownloadRequest',
-    'bims.Survey'
+    'bims.Survey',
+    'bims.TaxonomyUpdateProposal',
 ]
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True

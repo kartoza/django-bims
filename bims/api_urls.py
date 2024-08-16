@@ -6,6 +6,7 @@ from bims.api_views.geocontext import (
     GetGeocontextLogLinesView
 )
 from bims.api_views.minisass_observations import MiniSASSObservationsView
+from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
 from bims.api_views.reference import DeleteRecordsByReferenceId
 # from rest_framework.documentation import include_docs_urls
@@ -27,6 +28,7 @@ from bims.api_views.non_biodiversity_layer import (
     NonBiodiversityLayerList, DownloadLayerData
 )
 from bims.api_views.search_module import SearchModuleAPIView
+
 from bims.api_views.taxon import (
     TaxonDetail,
     FindTaxon,
@@ -118,6 +120,7 @@ from bims.api_views.download_request import (
 )
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
+from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 
 urlpatterns = [
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
@@ -230,6 +233,9 @@ urlpatterns = [
     re_path(r'^endemism-list/$',
         EndemismList.as_view(),
         name='endemism-list'),
+    re_path(r'^invasions-list/$',
+        InvasionsList.as_view(),
+        name='invasions-list'),
     re_path(r'^spatial-scale-filter-list/$',
         SpatialScaleFilterList.as_view(),
         name='spatial-scale-filter-list'),
@@ -373,5 +379,8 @@ urlpatterns = [
          name='get_log_lines'),
     path('minisass-observations/',
          MiniSASSObservationsView.as_view(),
-         name='minisass-observations')
+         name='minisass-observations'),
+    path('taxon-group-validated/<int:id>/',
+         TaxonGroupTotalValidated.as_view(),
+         name='taxon-group-total-validated'),
 ]

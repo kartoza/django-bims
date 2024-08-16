@@ -1,5 +1,7 @@
 from django.contrib.sites.models import Site
 import threading
+
+from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
@@ -13,7 +15,7 @@ from bims.models import (
 )
 from bims.models.taxonomy import Taxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache
+from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache, delete_cache
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
 
@@ -90,17 +92,26 @@ class ModuleSummary(APIView):
         """
         Returns origin summary data from the provided collections
         """
-        origin_data = dict(
-            collections.exclude(taxonomy__origin__exact='').values(
-                'taxonomy__origin').annotate(
-                count=Count('taxonomy__origin')
-            ).values_list('taxonomy__origin', 'count'))
+        origin_data = collections.annotate(
+            origin_value=Coalesce(
+                Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    default=F('taxonomy__origin')
+                ),
+                Value('Unknown')
+            )
+        ).values('origin_value').annotate(
+            count=Count('origin_value')
+        ).values_list('origin_value', 'count')
+
+        origin_data_dict = dict(origin_data)
         updated_origin_data = {}
         origin_category = dict(Taxonomy.CATEGORY_CHOICES)
-        for key in origin_data.keys():
-            updated_origin_data[origin_category[key]] = (
-                origin_data[key]
-            )
+
+        for key, count in origin_data_dict.items():
+            category_name = origin_category.get(key, 'Unknown')
+            updated_origin_data[category_name] = count
+
         return updated_origin_data
 
     def get_endemism_summary(self, collections):
@@ -148,16 +159,29 @@ class ModuleSummary(APIView):
             collections.annotate(
                 value=Case(When(taxonomy__iucn_status__isnull=False,
                                 then=F('taxonomy__iucn_status__category')),
-                           default=Value('Not evaluated'))
+                           default=Value('NE'))
             ).values('value').annotate(
                 count=Count('value')
             ).values_list('value', 'count')
         )
         iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
-        updated_summary = {}
+        iucn_status = IUCNStatus.objects.filter(
+            national=False
+        )
+        updated_summary = {
+            'chart_data': {},
+            'colors': []
+        }
         for key in summary_temp.keys():
             if key in iucn_category:
-                updated_summary[iucn_category[key]] = summary_temp[key]
+                updated_summary['chart_data'][iucn_category[key]] = summary_temp[key]
+                try:
+                    updated_summary['colors'].append(
+                        iucn_status.filter(category=key).first().colour
+                    )
+                except AttributeError:
+                    updated_summary['colors'].append('#000000')
+
         return updated_summary
 
     def general_summary_data(self):
@@ -191,9 +215,8 @@ class ModuleSummary(APIView):
                 last_login__isnull=False
             ).aggregate(total_users=Count('id')),
             {'total_uploads': upload_counts},
-            DownloadRequest.objects.filter(
-                request_category__icontains='occurrence')
-            .aggregate(total_downloads=Count('id'))
+            DownloadRequest.objects.all().aggregate(
+                total_downloads=Count('id'))
         )
 
         return {key: value for d in counts for key, value in d.items()}
@@ -221,6 +244,7 @@ class ModuleSummary(APIView):
         return module_summary
 
     def call_summary_data_in_background(self):
+        delete_cache(self._cache_key())
         background_thread = threading.Thread(
             target=self.summary_data,
         )

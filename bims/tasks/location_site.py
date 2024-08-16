@@ -46,7 +46,11 @@ def location_sites_overview(
             search_process.set_status(SEARCH_PROCESSING)
 
             overview_data = LocationSiteOverviewData()
+            if search_process.requester and 'requester' not in search_parameters:
+                search_parameters['requester'] = search_process.requester.id
+
             overview_data.search_filters = search_parameters
+
             results = dict()
             results[LocationSiteOverviewData.BIODIVERSITY_DATA] = (
                 overview_data.biodiversity_data()

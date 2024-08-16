@@ -59,7 +59,6 @@ class Command(BaseCommand):
                 id=dupe['site_id']
             )
             bio = BiologicalCollectionRecord.objects.filter(
-                Q(source_site_id=site_id) | Q(additional_observation_sites=site_id),
                 survey__in=surveys,
             )
             if bio.count() == 0:

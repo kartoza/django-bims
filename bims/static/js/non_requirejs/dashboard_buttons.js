@@ -1,3 +1,5 @@
+let closeClicked = false;
+
 function dashboardClose(e, storageKey = '') {
     let button = $(e.target);
     if (!button.hasClass('dashboard-close')) {
@@ -31,6 +33,10 @@ function dashboardClose(e, storageKey = '') {
         return true;
     }
     if (previousUrl === '') {
+        if (params.includes('next=')) {
+            window.location.href = url.searchParams.get('next');
+            return
+        }
         try {
             window.location.href = '/map/#site/siteIdOpen=' + siteId;
         } catch (e) {
@@ -39,13 +45,30 @@ function dashboardClose(e, storageKey = '') {
     } else if (previousUrl.indexOf('/abiotic/?') > -1) {
         window.history.go(-6);
     } else {
+        e.preventDefault();
         window.history.back();
+        closeClicked = true;
+        return true
     }
 }
 
-$(function () {
-    $('.dashboard-close').click((e) => dashboardClose(e, ''));
-    $('.site-form-close').click((e) => dashboardClose(e, ''));
-    $('.sass-form-edit-close').click((e) => dashboardClose(e, 'site-visit-list'));
-    $('.upload-form-close').click((e) => dashboardClose(e, 'last-map-upload'));
+$(document).ready(function () {
+    attachEventHandlers();
 });
+
+$(window).on('pageshow', function () {
+    attachEventHandlers();
+});
+
+function attachEventHandlers() {
+    $('.dashboard-close').off('click').on('click', (e) => dashboardClose(e, ''));
+    $('.site-form-close').off('click').on('click', (e) => dashboardClose(e, ''));
+    $('.sass-form-edit-close').off('click').on('click', (e) => dashboardClose(e, 'site-visit-list'));
+    $('.upload-form-close').off('click').on('click', (e) => dashboardClose(e, 'last-map-upload'));
+}
+
+window.onpopstate = function(event) {
+    if (closeClicked) {
+        window.history.back()
+    }
+};

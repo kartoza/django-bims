@@ -20,21 +20,49 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
         iucn_status = taxon.iucn_status
     if not endemism:
         endemism = taxon.endemism
-    proposal = TaxonomyUpdateProposal.objects.create(
+    taxonomic_status = (
+        data.get('taxonomic_status', 'ACCEPTED')
+    )
+    if taxonomic_status.lower() == 'accepted':
+        accepted_taxonomy = None
+    else:
+        accepted_taxonomy = (
+            data.get('accepted_taxonomy', taxon.accepted_taxonomy),
+        )
+        if isinstance(accepted_taxonomy, tuple) and len(accepted_taxonomy) > 0:
+            accepted_taxonomy = accepted_taxonomy[0]
+
+    proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
         original_taxonomy=taxon,
-        author=data.get('author', taxon.author),
         taxon_group=taxon_group,
         status='pending',
-        rank=data.get('rank', taxon.rank),
-        scientific_name=data.get(
-            'scientific_name', taxon.scientific_name),
-        canonical_name=data.get(
-            'canonical_name', taxon.canonical_name),
-        origin=data.get('origin', taxon.origin),
-        iucn_status=iucn_status,
-        endemism=endemism,
-        taxon_group_under_review=taxon_group
+        defaults={
+            'author': data.get('author', taxon.author),
+            'rank': data.get('rank', taxon.rank),
+            'scientific_name': data.get('scientific_name', taxon.scientific_name),
+            'canonical_name': data.get('canonical_name', taxon.canonical_name),
+            'origin': data.get('origin', taxon.origin),
+            'iucn_status': iucn_status,
+            'endemism': endemism,
+            'taxon_group_under_review': taxon_group,
+            'taxonomic_status': taxonomic_status,
+            'accepted_taxonomy': accepted_taxonomy,
+            'parent': data.get('parent', taxon.parent),
+            'hierarchical_data': taxon.hierarchical_data,
+            'gbif_data': taxon.gbif_data,
+        }
     )
+    if created:
+        if data.get('tags'):
+            proposal.tags.set(data.get('tags'))
+        else:
+            proposal.tags.clear()
+        if data.get('biographic_distributions'):
+            proposal.biographic_distributions.set(data.get('biographic_distributions'))
+        else:
+            proposal.biographic_distributions.clear()
+        proposal.save()
+
     return proposal
 
 
@@ -182,8 +210,7 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
     def test_func(self) -> bool:
         """
         Determines if the user has permission to review the taxonomy update proposal.
-        Superusers can review any proposal,
-        while other users must be experts of the taxon group.
+        Superusers can review any proposal, while other users must be experts of the taxon group.
 
         Returns:
             bool: True if the user has permission, False otherwise.
@@ -192,77 +219,104 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
         if user.is_superuser:
             return True
 
-        proposal_id = self.kwargs.get('taxonomy_update_proposal_id', None)
-        if proposal_id:
-            proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
-            if not proposal.taxon_group:
-                return False
-            taxon_group = proposal.taxon_group_under_review
-        else:
-            taxon_id = self.kwargs.get('taxon_id')
-            taxon_group_id = self.kwargs.get('taxon_group_id')
-            proposal, _ = TaxonomyUpdateProposal.objects.update_or_create(
-                original_taxonomy_id=taxon_id,
-                taxon_group_id=taxon_group_id,
-                defaults={
-                    'status': 'pending'
-                }
-            )
-            taxon_group = proposal.taxon_group_under_review
-
-        if not taxon_group:
+        proposal = self.get_proposal(
+            self.kwargs.get('taxonomy_update_proposal_id', None))
+        if not proposal or not proposal.taxon_group_under_review:
             return False
 
-        experts = taxon_group.experts.all()
-        return user in experts
+        return user in proposal.taxon_group_under_review.experts.all()
 
-    def handle_proposal(self, request, proposal_id, action) -> JsonResponse:
+    def get_proposal(self, proposal_id=None):
         """
-        Handles the approval or rejection of a taxonomy update
-        proposal based on the specified action.
+        Retrieves or creates a taxonomy update proposal based on the request parameters.
+
+        Returns:
+            TaxonomyUpdateProposal: The proposal instance or None if not found.
+        """
+        if proposal_id:
+            return get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
+
+        taxon_id = self.kwargs.get('taxon_id')
+        taxon_group_id = self.kwargs.get('taxon_group_id')
+        if taxon_id and taxon_group_id:
+            try:
+                proposal = TaxonomyUpdateProposal.objects.get(
+                    original_taxonomy_id=taxon_id,
+                    taxon_group_id=taxon_group_id,
+                    status='pending'
+                )
+            except TaxonomyUpdateProposal.DoesNotExist:
+                return None
+            return proposal
+
+        return None
+
+    def handle_action(self, request, proposal, action) -> str:
+        """
+        Handles the approval or rejection of a taxonomy update proposal based on the specified action.
 
         Parameters:
             request (HttpRequest): The request object.
-            proposal_id (int): The ID of the taxonomy update proposal.
+            proposal (TaxonomyUpdateProposal): The proposal instance.
             action (str): The action to perform ('approve' or 'reject').
 
         Returns:
-            JsonResponse: A response with the outcome message and HTTP status.
+            message: Message indicating the outcome of the action.
         """
-        proposal = get_object_or_404(TaxonomyUpdateProposal, pk=proposal_id)
         if action == 'approve':
             proposal.approve(request.user)
-            message = 'Taxonomy update proposal approved successfully'
+            message = 'Taxonomy update proposal approved successfully.'
         else:
             comments = request.data.get('comments', '')
             proposal.reject_data(request.user, comments)
-            message = 'Taxonomy update proposal rejected successfully'
-        return JsonResponse(
-            {'message': message},
-            status=status.HTTP_202_ACCEPTED)
+            message = 'Taxonomy update proposal rejected successfully.'
 
-    def handle_taxon_review(self, request, taxon_id, taxon_group_id, action) -> JsonResponse:
+        return message
+
+    def put(self,
+            request,
+            taxonomy_update_proposal_id=None,
+            taxon_id=None,
+            taxon_group_id=None) -> JsonResponse:
         """
-        Handles the approval or rejection of a taxonomy update
-        proposal based on the specified action.
+        Handles PUT requests to update the status of a taxonomy update proposal.
 
         Parameters:
             request (HttpRequest): The request object.
-            taxon_id (int): The ID of the taxon
-            taxon_group_id (int,): The ID of the taxon group
-            action (str): The action to perform ('approve' or 'reject').
+            taxonomy_update_proposal_id (int, optional): The ID of the taxonomy update proposal.
+            taxon_id (int, optional): The ID of the taxon, if provided.
+            taxon_group_id (int, optional): The ID of the taxon group, if provided.
 
         Returns:
             JsonResponse: A response with the outcome message and HTTP status.
         """
-        taxon_group = TaxonGroup.objects.get(
-            id=taxon_group_id
-        )
-        all_groups = taxon_group.get_all_children()
-        all_group_ids = [int(taxon_group_id)]
-        for group in all_groups:
-            if group.id not in all_group_ids:
-                all_group_ids.append(group.id)
+        action = request.data.get('action')
+        if action not in ['approve', 'reject']:
+            return JsonResponse(
+                {'message': 'Invalid action.'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        proposal = self.get_proposal(taxonomy_update_proposal_id)
+        if not proposal:
+            taxon_group = get_object_or_404(TaxonGroup, id=taxon_group_id)
+            proposal = self.create_or_find_proposal(taxon_id, taxon_group)
+
+        message = self.handle_action(request, proposal, action)
+        return JsonResponse(
+            {'message': message}, status=status.HTTP_202_ACCEPTED)
+
+    def create_or_find_proposal(self, taxon_id, taxon_group):
+        """
+        Creates or finds a taxonomy update proposal based on the taxon and taxon group.
+
+        Parameters:
+            taxon_id (int): The ID of the taxon.
+            taxon_group (TaxonGroup): The taxon group instance.
+
+        Returns:
+            TaxonomyUpdateProposal: The proposal instance.
+        """
+        all_group_ids = [taxon_group.id] + [group.id for group in taxon_group.get_all_children()]
 
         proposal = TaxonomyUpdateProposal.objects.filter(
             original_taxonomy_id=taxon_id,
@@ -277,42 +331,4 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
                 taxon_group=taxon_group,
             )
 
-        if action == 'approve':
-            proposal.approve(request.user)
-            message = 'Taxonomy update proposal approved successfully'
-        else:
-            comments = request.data.get('comments', '')
-            proposal.reject_data(request.user, comments)
-            message = 'Taxonomy update proposal rejected successfully'
-        return JsonResponse(
-            {'message': message},
-            status=status.HTTP_202_ACCEPTED)
-
-    def put(self, request, taxonomy_update_proposal_id=None, taxon_id=None, taxon_group_id=None) -> JsonResponse:
-        """
-        Handles PUT requests to update the status of a taxonomy update proposal.
-
-        Parameters:
-            request (HttpRequest): The request object.
-            taxonomy_update_proposal_id (int): The ID of the taxonomy update proposal.
-            taxon_id (int, optional): The ID of the taxon, if provided.
-            taxon_group_id (int, optional): The ID of the taxon group, if provided.
-        Returns:
-            JsonResponse: A response with the outcome message and HTTP status.
-        """
-        new_status = request.data.get('action')
-        if new_status not in ['approve', 'reject']:
-            return JsonResponse(
-                {'message': 'Invalid status'},
-                status=status.HTTP_400_BAD_REQUEST)
-
-        if taxon_id is not None and taxon_group_id is not None:
-            # Process the review for the specific taxon and taxon group
-            return self.handle_taxon_review(
-                request, taxon_id, taxon_group_id, new_status
-            )
-        else:
-            # Process the proposal review as before
-            return self.handle_proposal(
-                request, taxonomy_update_proposal_id, new_status
-            )
+        return proposal

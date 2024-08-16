@@ -11,6 +11,10 @@ class SiteSetting(Preferences):
             'rbis',
             'RBIS (Catchment + Province ID + District ID + Site count)'
         ),
+        (
+            'sanparks',
+            'SANPARKS (1st three park name + site count)'
+        )
     )
     site_notice = models.TextField(
         null=True,
@@ -108,12 +112,14 @@ class SiteSetting(Preferences):
 
     recaptcha_site_key = models.CharField(
         default='',
-        max_length=150
+        max_length=150,
+        blank=True
     )
 
     recaptcha_secret_key = models.CharField(
         default='',
-        max_length=150
+        max_length=150,
+        blank=True
     )
 
     iucn_api_key = models.CharField(
@@ -121,7 +127,8 @@ class SiteSetting(Preferences):
         default='',
         help_text=(
             'Token key for IUCN api'
-        )
+        ),
+        blank=True
     )
 
     disclaimer_form_text = models.CharField(
@@ -323,3 +330,17 @@ class SiteSetting(Preferences):
         default='',
         blank=True
     )
+
+    park_layer_csv = models.FileField(
+        null=True,
+        blank=True,
+        upload_to='park_layer_csv/'
+    )
+
+    @property
+    def project_name(self):
+        if self.default_data_source:
+            return self.default_data_source.lower()
+        if self.site_code_generator:
+            return self.site_code_generator.lower()
+        return 'bims'

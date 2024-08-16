@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils.safestring import mark_safe
 import subprocess
 
+from bims.cache import get_cache, set_cache
 from bims.utils.domain import get_current_domain
 
 register = template.Library()
@@ -96,3 +97,21 @@ def space_separated(value):
 @register.simple_tag
 def is_debug():
     return settings.DEBUG
+
+
+@register.simple_tag
+def is_fada_site():
+    project_name = get_cache('project_name', '')
+    if not project_name:
+        project_name = preferences.SiteSetting.project_name
+    set_cache('project_name', project_name)
+    if project_name:
+        return project_name.lower() == 'fada'
+    return False
+
+@register.filter
+def get_attr(obj, attr_name):
+    try:
+        return getattr(obj, attr_name)
+    except AttributeError:
+        return ''

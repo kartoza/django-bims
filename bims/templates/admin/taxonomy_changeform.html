@@ -3,6 +3,25 @@
 {% block submit_buttons_bottom %}
     {{ block.super }}
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.opener && window.name === 'EditTaxonAdmin') {
+                const saveButton = document.querySelector('input[name="_save"]');
+                if (saveButton) {
+                    saveButton.addEventListener('click', function() {
+                        event.preventDefault();
+                        window.opener.wasFormSaved = true;
+
+                        const form = saveButton.closest('form');
+                        form.submit();
+
+                        setTimeout(function() {
+                            window.close();
+                        }, 1000);
+                    });
+                }
+            }
+        });
+
         function comfirmGBIF(event, key, scientificName, canonicalName, taxonomicStatus) {
             // Get data from gbif
             event.preventDefault();
@@ -10,13 +29,13 @@
             document.getElementById('id_canonical_name').value = canonicalName;
             document.getElementById('id_taxonomic_status').value = taxonomicStatus;
             document.getElementById('id_gbif_key').value = key;
-            let container = document.getElementById("id_additional_data");
-            let containerValue = {}
-            if (container.value !== 'null' && container.value !== '') {
-                containerValue = JSON.parse(container.value);
-            }
-            containerValue['fetch_gbif'] = true;
-            container.value = JSON.stringify(containerValue);
+            {#let container = document.getElementById("id_additional_data");#}
+            {#let containerValue = {}#}
+            {#if (container.value !== 'null' && container.value !== '') {#}
+            {#    containerValue = JSON.parse(container.value);#}
+            {#}#}
+            {#containerValue['fetch_gbif'] = true;#}
+            {#container.value = JSON.stringify(containerValue);#}
         }
 
         (function($) {

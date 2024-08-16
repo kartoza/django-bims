@@ -1,16 +1,15 @@
 import json
+from datetime import date
 
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.core.mail.message import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
 
+from bims.models.source_reference import SourceReference
 from bims.models.validation import AbstractValidation
 from django.db import models
 from django.dispatch import receiver
-from django.utils import timezone
 
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
@@ -23,7 +22,7 @@ from bims.models.notification import (
     get_recipients_for_notification,
     NEW_TAXONOMY
 )
-from django.db.models import JSONField, OuterRef, Subquery
+from django.db.models import JSONField, OuterRef, Subquery, signals
 
 ORIGIN_CATEGORIES = {
     'non-native': 'alien',
@@ -74,26 +73,14 @@ class TaxonomyField(models.CharField):
         super(TaxonomyField, self).__init__(*args, **kwargs)
 
 
-class Taxonomy(AbstractValidation):
-
+class AbstractTaxonomy(AbstractValidation):
     CATEGORY_CHOICES = (
-        (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
-        (ORIGIN_CATEGORIES['native'], 'Native'),
-        (ORIGIN_CATEGORIES['unknown'], 'Unknown'),
-        (ORIGIN_CATEGORIES['non-native: invasive'], 'Non-native: invasive'),
-        (
-            ORIGIN_CATEGORIES['non-native: non-invasive'],
-            'Non-native: non-invasive'
-        )
+        ('non-native', 'Non-Native'),
+        ('native', 'Native'),
+        ('unknown', 'Unknown'),
+        ('non-native: invasive', 'Non-native: invasive'),
+        ('non-native: non-invasive', 'Non-native: non-invasive')
     )
-    CATEGORY_CHOICES_DICT = {
-        ORIGIN_CATEGORIES['non-native']: 'Non-Native',
-        ORIGIN_CATEGORIES['native']: 'Native',
-        ORIGIN_CATEGORIES['unknown']: 'Unknown',
-        ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
-        ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
-    }
-
     tags = TaggableManager(
         blank=True,
     )
@@ -102,6 +89,14 @@ class Taxonomy(AbstractValidation):
         through=CustomTaggedTaxonomy,
         related_name='bio_distribution',
         blank=True,
+        verbose_name='Biographic Distributions'
+    )
+
+    invasion = models.ForeignKey(
+        'bims.Invasion',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
 
     gbif_key = models.IntegerField(
@@ -228,7 +223,7 @@ class Taxonomy(AbstractValidation):
     )
 
     import_date = models.DateField(
-        default=timezone.now,
+        default=date.today,
         blank=True,
         null=True,
     )
@@ -247,101 +242,16 @@ class Taxonomy(AbstractValidation):
         blank=True
     )
 
-    def save_json_data(self, json_field):
-        max_allowed = 10
-        attempt = 0
-        is_dictionary = False
-        json_data = {}
-        if not json_field:
-            return json_data
-        while not is_dictionary and attempt < max_allowed:
-            if not json_field:
-                break
-            if isinstance(json_field, dict):
-                is_dictionary = True
-                json_data = json_field
-            else:
-                json_data = json.loads(json_field)
-                attempt += 1
-        return json_data
+    source_reference = models.ForeignKey(
+        SourceReference,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='%(class)s_source_reference',
+    )
 
-    def save(self, *args, **kwargs):
-        update_taxon_with_gbif = False
-        if self.gbif_data:
-            self.gbif_data = self.save_json_data(self.gbif_data)
-        if self.additional_data:
-            self.additional_data = self.save_json_data(self.additional_data)
-        if self.additional_data and 'fetch_gbif' in self.additional_data:
-            update_taxon_with_gbif = True
-            del self.additional_data['fetch_gbif']
-        if not self.hierarchical_data:
-            self.hierarchical_data = {
-                'family_name': self.get_taxon_rank_name(TaxonomicRank.FAMILY.name),
-                'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
-                'species_name': self.get_taxon_rank_name(TaxonomicRank.SPECIES.name),
-            }
-        elif 'family_name' not in self.hierarchical_data:
-            self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
-        elif 'species_name' not in self.hierarchical_data:
-            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
-        elif 'genus_name' not in self.hierarchical_data:
-            self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
-
-        super(Taxonomy, self).save(*args, **kwargs)
-
-        if update_taxon_with_gbif:
-            from bims.utils.fetch_gbif import fetch_all_species_from_gbif
-            fetch_all_species_from_gbif(
-                species=self.scientific_name,
-                parent=self.parent,
-                gbif_key=self.gbif_key,
-                fetch_vernacular_names=True)
-
-    # noinspection PyClassicStyleClass
     class Meta:
-        """Meta class for project."""
-        app_label = 'bims'
-        verbose_name_plural = 'Taxa'
-        verbose_name = 'Taxonomy'
-
-    def __unicode__(self):
-        return '%s - %s' % (
-            self.scientific_name,
-            self.rank
-        )
-
-    def __str__(self):
-        return '%s - %s' % (
-            self.scientific_name,
-            self.rank
-        )
-
-    def get_direct_children(self):
-        children = Taxonomy.objects.filter(
-            parent=self
-        )
-        return children
-
-    def get_all_children(self):
-        query = {}
-        parent = ''
-        or_condition = models.Q()
-        for i in range(6):  # species to class
-            parent += 'parent__'
-            query[parent + 'in'] = [self]
-        for key, value in query.items():
-            or_condition |= models.Q(**{key: value})
-        return Taxonomy.objects.filter(or_condition)
-
-    def parent_by_rank(self, rank):
-        taxon = self
-        current_rank = taxon.rank
-        while current_rank != rank and taxon.parent:
-            taxon = taxon.parent
-            current_rank = taxon.rank
-        if current_rank == rank:
-            return taxon
-        return None
+        abstract = True
 
     @property
     def data_name(self):
@@ -359,7 +269,7 @@ class Taxonomy(AbstractValidation):
         limit = 20
         current_try = 0
         _taxon = self
-        _parent = _taxon.parent
+        _parent = _taxon.parent if _taxon.parent else None
         _rank = _taxon.rank
         while (
                 _parent and _rank
@@ -369,7 +279,7 @@ class Taxonomy(AbstractValidation):
             current_try += 1
             _taxon = _parent
             _rank = _taxon.rank
-            _parent = _taxon.parent
+            _parent = _taxon.parent if _taxon.parent else None
 
         if _rank == rank:
             return _taxon.canonical_name
@@ -441,6 +351,123 @@ class Taxonomy(AbstractValidation):
         elif self.scientific_name:
             return self.scientific_name
         return '-'
+
+
+class Taxonomy(AbstractTaxonomy):
+    CATEGORY_CHOICES = (
+        (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
+        (ORIGIN_CATEGORIES['native'], 'Native'),
+        (ORIGIN_CATEGORIES['unknown'], 'Unknown'),
+        (ORIGIN_CATEGORIES['non-native: invasive'], 'Non-native: invasive'),
+        (
+            ORIGIN_CATEGORIES['non-native: non-invasive'],
+            'Non-native: non-invasive'
+        )
+    )
+    CATEGORY_CHOICES_DICT = {
+        ORIGIN_CATEGORIES['non-native']: 'Non-Native',
+        ORIGIN_CATEGORIES['native']: 'Native',
+        ORIGIN_CATEGORIES['unknown']: 'Unknown',
+        ORIGIN_CATEGORIES['non-native: invasive']: 'Non-native: invasive',
+        ORIGIN_CATEGORIES['non-native: non-invasive']: 'Non-native: non-invasive'
+    }
+
+    def save_json_data(self, json_field):
+        max_allowed = 10
+        attempt = 0
+        is_dictionary = False
+        json_data = {}
+        if not json_field:
+            return json_data
+        while not is_dictionary and attempt < max_allowed:
+            if not json_field:
+                break
+            if isinstance(json_field, dict):
+                is_dictionary = True
+                json_data = json_field
+            else:
+                json_data = json.loads(json_field)
+                attempt += 1
+        return json_data
+
+    # noinspection PyClassicStyleClass
+    class Meta:
+        """Meta class for project."""
+        app_label = 'bims'
+        verbose_name_plural = 'Taxa'
+        verbose_name = 'Taxonomy'
+
+    def __unicode__(self):
+        return '%s - %s' % (
+            self.scientific_name,
+            self.rank
+        )
+
+    def __str__(self):
+        return '%s - %s' % (
+            self.scientific_name,
+            self.rank
+        )
+
+    def get_direct_children(self):
+        children = Taxonomy.objects.filter(
+            parent=self
+        )
+        return children
+
+    def get_all_children(self):
+        query = {}
+        parent = ''
+        or_condition = models.Q()
+        for i in range(6):  # species to class
+            parent += 'parent__'
+            query[parent + 'in'] = [self]
+        for key, value in query.items():
+            or_condition |= models.Q(**{key: value})
+        return Taxonomy.objects.filter(or_condition)
+
+    def parent_by_rank(self, rank):
+        taxon = self
+        current_rank = taxon.rank
+        while current_rank != rank and taxon.parent:
+            taxon = taxon.parent
+            current_rank = taxon.rank
+        if current_rank == rank:
+            return taxon
+        return None
+
+
+    def save(self, *args, **kwargs):
+        update_taxon_with_gbif = False
+        if self.gbif_data:
+            self.gbif_data = self.save_json_data(self.gbif_data)
+        if self.additional_data:
+            self.additional_data = self.save_json_data(self.additional_data)
+        if self.additional_data and 'fetch_gbif' in self.additional_data:
+            update_taxon_with_gbif = True
+            del self.additional_data['fetch_gbif']
+        if not self.hierarchical_data:
+            self.hierarchical_data = {
+                'family_name': self.get_taxon_rank_name(TaxonomicRank.FAMILY.name),
+                'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
+                'species_name': self.get_taxon_rank_name(TaxonomicRank.SPECIES.name),
+            }
+        elif 'family_name' not in self.hierarchical_data:
+            self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
+        elif 'genus_name' not in self.hierarchical_data:
+            self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
+        elif 'species_name' not in self.hierarchical_data:
+            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
+
+        super(Taxonomy, self).save(*args, **kwargs)
+
+        if update_taxon_with_gbif:
+            from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+            fetch_all_species_from_gbif(
+                species=self.scientific_name,
+                parent=self.parent,
+                gbif_key=self.gbif_key,
+                fetch_vernacular_names=True)
 
     def send_new_taxon_email(self, taxon_group_id=None):
         from bims.models import TaxonGroup
@@ -613,3 +640,5 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
         excluded_taxon=preferred_taxon
     )
     return preferred_taxon
+
+

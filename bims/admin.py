@@ -31,6 +31,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
+from bims.admins.site_setting import SiteSettingAdmin
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
@@ -115,12 +116,13 @@ from bims.models import (
     TaxonomyUpdateProposal,
     TaxonomyUpdateReviewer,
     CITESListingInfo,
-    ImportTask
+    ImportTask,
+    Invasion
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
-from bims.models.profile import Profile as BimsProfile
+from bims.models.profile import Profile as BimsProfile, Role
 from bims.utils.gbif import search_exact_match, get_species, suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
@@ -364,6 +366,11 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         obj.save()
 
 
+class InvasionAdmin(OrderedModelAdmin):
+    ordering = ('order',)
+    list_display = ('id', 'move_up_down_links', 'category')
+
+
 class IUCNStatusAdmin(OrderedModelAdmin):
     list_display = ('id', 'get_category_display', 'move_up_down_links',
                     'order', 'sensitive',
@@ -482,12 +489,12 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
     )
     list_filter = (
         ('collection_date', DateRangeFilter),
-        'taxonomy',
         'taxonomy__origin',
         'record_type__name',
         'sampling_method',
         'ecosystem_type',
-        'source_site'
+        'source_site',
+        'source_collection'
     )
     search_fields = (
         'taxonomy__scientific_name',
@@ -583,7 +590,6 @@ class BimsProfileAdmin(admin.ModelAdmin):
         'first_name',
         'last_name',
         'qualifications',
-        'role',
         'sass_accredited_date_from',
         'sass_accredited_date_to']
     search_fields = (
@@ -977,6 +983,26 @@ class SearchProcessAdmin(admin.ModelAdmin):
         'category',
         'finished')
 
+    def delete_model(self, request, obj):
+        if obj.locked:
+            self.message_user(
+                request,
+                "This record is locked and cannot be deleted.",
+                level='warning')
+        else:
+            super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            if obj.locked:
+                self.message_user(
+                    request,
+                    f"Record with ID {obj.id} is locked and cannot be deleted.",
+                    level='warning')
+        queryset = queryset.filter(locked=False)
+        if queryset:
+            super().delete_queryset(request, queryset)
+
 
 class PageviewAdmin(admin.ModelAdmin):
     date_hierarchy = 'view_time'
@@ -1115,7 +1141,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     raw_id_fields = (
         'parent',
-        'accepted_taxonomy'
+        'accepted_taxonomy',
+        'source_reference'
     )
 
     actions = ['merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing']
@@ -1901,7 +1928,11 @@ class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
         'original_taxonomy',
         'scientific_name',
         'canonical_name',
-        'status'
+        'status',
+        'created_at'
+    )
+    autocomplete_fields = (
+        'vernacular_names',
     )
 
 
@@ -1916,9 +1947,22 @@ class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):
 @admin.register(CITESListingInfo)
 class CITESListingInfoAdmin(admin.ModelAdmin):
     list_display = ('appendix', 'effective_at', 'taxonomy')
-    list_filter = ('appendix', 'effective_at', 'taxonomy')
+    list_filter = ('appendix', 'effective_at')
     search_fields = ('annotation', 'taxonomy__name')
     raw_id_fields = ('taxonomy',)
+
+
+class RoleAdminForm(forms.ModelForm):
+    class Meta:
+        model = Role
+        fields = ['display_name']
+
+
+@admin.register(Role)
+class RoleAdmin(OrderedModelAdmin):
+    list_display = ('display_name', 'move_up_down_links')
+    ordering = ('order',)
+    form = RoleAdminForm
 
 
 @admin.register(ImportTask)
@@ -1971,7 +2015,7 @@ admin.site.register(SpatialScale, SpatialScaleAdmin)
 admin.site.register(SpatialScaleGroup, SpatialScaleGroupAdmin)
 admin.site.register(SamplingMethod, SamplingMethodAdmin)
 admin.site.register(SiteImage, SiteImageAdmin)
-admin.site.register(SiteSetting, PreferencesAdmin)
+admin.site.register(SiteSetting, SiteSettingAdmin)
 admin.site.register(GeocontextSetting, PreferencesAdmin)
 admin.site.register(ChemicalRecord, ChemicalRecordAdmin)
 admin.site.register(Chem, ChemAdmin)
@@ -2047,4 +2091,8 @@ admin.site.register(
 admin.site.register(
     TaxonomyUpdateReviewer,
     TaxonomyUpdateReviewerAdmin
+)
+admin.site.register(
+    Invasion,
+    InvasionAdmin
 )

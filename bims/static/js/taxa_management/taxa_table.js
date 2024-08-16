@@ -11,6 +11,21 @@ export const taxaTable = (() => {
     let url = '';
     let selectedTaxonGroup = '';
 
+    function convertAuthorStringToArray(authorString) {
+        authorString = decodeURIComponent(authorString)
+        // Split the string by comma between quotes
+        const regex = /"([^"]+)"/g;
+        const authorsArray = [];
+        let match;
+
+        while ((match = regex.exec(authorString)) !== null) {
+            // Decode the author string
+            authorsArray.push(decodeURIComponent(match[1]));
+        }
+
+        return authorsArray;
+    }
+
 
     function init(getTaxaList, _selectedTaxonGroup) {
         selectedTaxonGroup = _selectedTaxonGroup;
@@ -85,14 +100,15 @@ export const taxaTable = (() => {
             theme: "classic"
         });
 
-        $('#taxa-auto-complete').select2({
+        $('.taxon-auto-complete').select2({
             ajax: {
                 url: '/species-autocomplete/',
                 dataType: 'json',
                 data: function (params) {
                     return {
                         term: params.term,
-                        taxonGroupId: urlParams.get('selected')
+                        rank: $(this).data('rank'),
+                        taxonGroupId: currentSelectedTaxonGroup
                     }
                 },
                 processResults: function (data) {
@@ -112,9 +128,9 @@ export const taxaTable = (() => {
 
     function handleUrlParameters() {
         let taxonName = '';
-        if (selectedTaxonGroup) {
-            $('#sortable').find(`[data-id="${selectedTaxonGroup}"]`).addClass('selected');
-            url = `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}`
+        if (currentSelectedTaxonGroup) {
+            $('#sortable').find(`[data-id="${currentSelectedTaxonGroup}"]`).addClass('selected');
+            url = `/api/taxa-list/?taxonGroup=${currentSelectedTaxonGroup}`
         }
 
         let validated = 'True'
@@ -134,6 +150,15 @@ export const taxaTable = (() => {
             url += `&tagFT=${tagFilterType}`;
         }
         $(`input[name="tag-filter-type"][value="${tagFilterType}"]`).prop('checked', true);
+
+        let bDFilterType = 'OR';
+        if (urlParams.get('bDFT')) {
+            bDFilterType = urlParams.get('bDFT');
+        }
+        if (url) {
+            url += `&bDFT=${bDFilterType}`;
+        }
+        $(`input[name="biographic-distributions-filter-type"][value="${bDFilterType}"]`).prop('checked', true);
 
         if (urlParams.get('taxon')) {
             taxonName = urlParams.get('taxon');
@@ -187,6 +212,46 @@ export const taxaTable = (() => {
             totalAllFilters += tagsArray.length;
             url += `&tags=${urlParams.get('tags')}`;
         }
+        if (urlParams.get('bD')) {
+            const bDArray = urlParams.get('bD').split(',');
+            const bDAutoComplete = $('#biographic-distributions-filters');
+            bDAutoComplete.empty();
+            bDAutoComplete.val(null).trigger('change');
+            if (bDArray.length > 0) {
+                const tagIds = []
+                bDArray.forEach(tag => {
+                    let newOption = new Option(
+                        tag, tag, false, false);
+                    bDAutoComplete.append(newOption);
+                    tagIds.push(tag);
+                });
+                bDAutoComplete.val(tagIds);
+                bDAutoComplete.trigger('change');
+            }
+            filterSelected['bD'] = bDArray;
+            totalAllFilters += bDArray.length;
+            url += `&bD=${urlParams.get('bD')}`;
+        }
+        if (urlParams.get('author')) {
+            const authorArray = convertAuthorStringToArray(urlParams.get('author'));
+            const authorAutoComplete = $('#author-filters');
+            authorAutoComplete.empty();
+            authorAutoComplete.val(null).trigger('change');
+            if (authorArray.length > 0) {
+                const tagIds = []
+                authorArray.forEach(tag => {
+                    let newOption = new Option(
+                        tag, tag, false, false);
+                    authorAutoComplete.append(newOption);
+                    tagIds.push(tag);
+                });
+                authorAutoComplete.val(tagIds);
+                authorAutoComplete.trigger('change');
+            }
+            filterSelected['author'] = authorArray;
+            totalAllFilters += authorArray.length;
+            url += `&author=${urlParams.get('author')}`;
+        }
         if (urlParams.get('endemism')) {
             const endemismArray = urlParams.get('endemism').split(',');
             $('#endemism-filters').val(endemismArray);
@@ -215,13 +280,34 @@ export const taxaTable = (() => {
                 totalAllFilters += 1;
             }
         }
+
+        for (const taxaRank of ['family', 'genus', 'species']) {
+            if (urlParams.get(taxaRank)) {
+                const filterArray = urlParams.get(taxaRank).split(',');
+                const autoComplete = $(`#${taxaRank}-auto-complete`);
+                filterSelected[taxaRank] = filterArray;
+
+                for (const taxaFilterValue of filterArray) {
+                    let option = new Option(
+                        `${taxaFilterValue} (${taxaRank.toUpperCase()})`, taxaFilterValue, true, true);
+                    autoComplete.append(option).trigger('change');
+                    autoComplete.trigger({
+                        type: 'select2:select',
+                    });
+
+                }
+                totalAllFilters += filterArray.length;
+                url += `&${taxaRank}=${urlParams.get(taxaRank)}`;
+            }
+        }
+
         if (urlParams.get('parent')) {
             const parentArray = urlParams.get('parent').split(',');
             const taxaAutoComplete = $('#taxa-auto-complete');
             filterSelected['parent'] = parentArray;
             $.ajax({
                 type: 'GET',
-                url: `/api/taxa-list/?taxonGroup=${selectedTaxonGroup}&id=${urlParams.get('parent')}`,
+                url: `/api/taxa-list/?taxonGroup=${currentSelectedTaxonGroup}&id=${urlParams.get('parent')}`,
             }).then(function (data) {
                 // create the option and append to Select2
                 if (data.length === 0) return false;
@@ -250,23 +336,27 @@ export const taxaTable = (() => {
             return data['text'];
         })
         let urlParams = insertParam('ranks', ranks.join(), true, false);
-        const origins = $('#origin-filters').select2('data').map(function(data) {
-            return data['id'];
-        })
-        urlParams = insertParam('origins', origins.join(), true, false, urlParams);
-        const endemism = $('#endemism-filters').select2('data').map(function(data) {
-            return data['text'];
-        })
-        urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
+        try {
+            const origins = $('#origin-filters').select2('data').map(function(data) {
+                return data['id'];
+            })
+            urlParams = insertParam('origins', origins.join(), true, false, urlParams);
+            const endemism = $('#endemism-filters').select2('data').map(function(data) {
+                return data['text'];
+            })
+            urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
+        } catch (e) {
+        }
         const consStatus = $('#cons-status-filters').select2('data').map(function(data) {
             return data['id'];
         })
         urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
 
-        const parent = $('#taxa-auto-complete').select2('data').map(function(data) {
-            return data['id'];
-        })
-        urlParams = insertParam('parent', parent.join(), true, false, urlParams);
+        for (const taxaRank of ['family', 'genus', 'species']) {
+            urlParams = insertParam(taxaRank, $(`#${taxaRank}-auto-complete`).select2('data').map(function(data) {
+                return data['species'] ? data['species'] : data['id'];
+            }), true, false, urlParams);
+        }
 
         const validated = $('input[name="validated"]:checked').val();
         urlParams = insertParam('validated', validated, true, false, urlParams);
@@ -276,6 +366,15 @@ export const taxaTable = (() => {
 
         const tags = $('#tag-filters').val();
         urlParams = insertParam('tags', tags, true, false, urlParams);
+
+        const biographicDistributions = $('#biographic-distributions-filters').val();
+        urlParams = insertParam('bD', biographicDistributions, true, false, urlParams);
+
+        const bdFilterType = $('input[name="biographic-distributions-filter-type"]:checked').val();
+        urlParams = insertParam('bDFT', bdFilterType, true, false, urlParams);
+
+        const author = $('#author-filters').val().map(a => `"${a}"`).join(',');
+        urlParams = insertParam('author', encodeURIComponent(author), true, false, urlParams);
 
         document.location.search = urlParams;
     }
@@ -319,7 +418,7 @@ export const taxaTable = (() => {
      $('#confirmButton').click(function() {
         let id = $('#confirmationModal').data('id');
         $.ajax({
-            url: approveUrl + id + '/' + selectedTaxonGroup + '/',
+            url: approveUrl + id + '/' + currentSelectedTaxonGroup + '/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'PUT',
             data: {
@@ -348,7 +447,7 @@ export const taxaTable = (() => {
         const id = modal.data('id');
         const rejectionMessage = modal.find('.rejection-message').val();
         $.ajax({
-            url: rejectUrl + id + '/' + selectedTaxonGroup + '/',
+            url: rejectUrl + id + '/' + currentSelectedTaxonGroup + '/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'PUT',
             data: {
@@ -367,14 +466,14 @@ export const taxaTable = (() => {
     }
 
     function removeTaxonFromTaxonGroup(taxaId) {
-        let $taxonGroupCard = $(`#taxon_group_${selectedTaxonGroup}`);
+        let $taxonGroupCard = $(`#taxon_group_${currentSelectedTaxonGroup}`);
         $.ajax({
             url: '/api/remove-taxa-from-taxon-group/',
             headers: {"X-CSRFToken": csrfToken},
             type: 'POST',
             data: {
                 'taxaIds': JSON.stringify([taxaId]),
-                'taxonGroupId': selectedTaxonGroup
+                'taxonGroupId': currentSelectedTaxonGroup
             },
             success: function (response) {
                 $taxonGroupCard.html(response['taxonomy_count']);

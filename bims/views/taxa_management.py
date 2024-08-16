@@ -2,14 +2,16 @@
 """Taxa management view
 """
 import json
-import time
+from urllib.parse import urlencode
 
 from django.contrib.sites.shortcuts import get_current_site
-from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
+from django.urls import reverse
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from bims.models.taxon_group import TaxonGroup
+
+from bims.cache import get_cache, set_cache
+from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
@@ -21,28 +23,52 @@ from bims.serializers.taxon_serializer import TaxonGroupSerializer
 class TaxaManagementView(LoginRequiredMixin, TemplateView):
     template_name = 'taxa_management.html'
 
+    def remove_selected_param_from_url(self, request):
+        query_params = request.GET.copy()
+        query_params.pop('selected', None)
+        base_url = reverse('taxa-management')
+        new_url = f"{base_url}?{urlencode(query_params)}"
+        return HttpResponseRedirect(new_url)
+
+    def dispatch(self, request, *args, **kwargs):
+        selected = request.GET.get('selected')
+        if selected:
+            try:
+                TaxonGroup.objects.get(id=selected)
+            except TaxonGroup.DoesNotExist:
+                return self.remove_selected_param_from_url(request)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         site = get_current_site(self.request)
         selected = self.request.GET.get('selected')
-        taxa_groups_query = TaxonGroup.objects.filter(
-            category='SPECIES_MODULE',
-            parent__isnull=True
-        ).order_by('display_order')
-        context['taxa_groups'] = TaxonGroupSerializer(
-            taxa_groups_query, many=True).data
+        taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
+        if taxon_group_cache:
+            context['taxa_groups'] = taxon_group_cache
+        else:
+            taxa_groups_query = TaxonGroup.objects.filter(
+                category='SPECIES_MODULE',
+                parent__isnull=True
+            ).order_by('display_order')
+            context['taxa_groups'] = TaxonGroupSerializer(
+                taxa_groups_query, many=True).data
+            set_cache(TAXON_GROUP_CACHE, context['taxa_groups'])
         context['selected_taxon_group'] = None
         if selected:
-            context['selected_taxon_group'] = TaxonGroup.objects.get(
-                id=selected
-            )
-        else:
-            context['selected_taxon_group'] = TaxonGroup.objects.first()
+            try:
+                context['selected_taxon_group'] = TaxonGroup.objects.get(
+                    id=selected
+                )
+            except TaxonGroup.DoesNotExist:
+                pass
+
+        if not context['selected_taxon_group']:
+            context['selected_taxon_group'] = TaxonGroup.objects.filter(
+                category='SPECIES_MODULE',
+            ).first()
+
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
-        context['source_collections'] = list(
-            BiologicalCollectionRecord.objects.all().values_list(
-                'source_collection', flat=True).distinct()
-        )
         context['taxon_rank'] = [
             rank.name for rank in TaxonomicRank
             if rank in (TaxonomicRank.GENUS, TaxonomicRank.SPECIES)

@@ -372,3 +372,7 @@ h6 {
     background-color: #c1c1c1 !important;
     border-color: #ffffff !important;
 }
+
+.table-striped td {
+    vertical-align: middle;
+}
