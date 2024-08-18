@@ -48,6 +48,11 @@ class SiteSettingAdminForm(forms.ModelForm):
         required=False
     )
 
+    minisass_token = forms.CharField(
+        widget=forms.PasswordInput(render_value=True),
+        required=False
+    )
+
     def __init__(self, *args, **kwargs):
         super(SiteSettingAdminForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.pk:

@@ -9,7 +9,9 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
         miniSASSSelected: false,
         inWARDSelected: false,
         fetchingInWARDSData: false,
+        fetchingMiniSASS: false,
         inWARDSStationsUrl: "/bims_proxy/https://inwards.award.org.za/app_json/wq_stations.php",
+        miniSASSUrl: "/api/minisass-observations/",
         events: {
             'click .close-button': 'closeClicked',
             'click .update-search': 'updateSearch',
@@ -39,6 +41,22 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 image: image
             });
         },
+        miniSASSStyleFunction: function (feature) {
+            let properties = feature.getProperties();
+            let color = 'gray';
+            if (properties['color']) {
+                color = properties['color'];
+            } else {
+                color = '#1dc6c0';
+            }
+            let image = new ol.style.Circle({
+                radius: 5,
+                fill: new ol.style.Fill({color: color})
+            });
+            return new ol.style.Style({
+                image: image
+            });
+        },
         addInWARDSLayer: function () {
             this.inWARDSLayer = new ol.layer.Vector({
                 source: null,
@@ -48,44 +66,77 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             this.map.addLayer(this.inWARDSLayer);
         },
         addMiniSASSLayer: function () {
-            let options = {
-                url: '/bims_proxy/http://minisass.org/geoserver/wms',
-                params: {
-                    name: 'MiniSASS',
-                    layers: 'miniSASS:minisass_observations',
-                    format: 'image/png',
-                    getFeatureFormat: 'text/html'
-                }
-            };
-            this.miniSASSLayer = new ol.layer.Tile({
-                source: new ol.source.TileWMS(options)
+            this.miniSASSLayer = new ol.layer.Vector({
+                source: null,
+                style: this.miniSASSStyleFunction
             });
             this.miniSASSLayer.setVisible(false);
             this.map.addLayer(this.miniSASSLayer);
-            Shared.Dispatcher.trigger(
-                'layers:renderLegend',
-                options['params']['layers'],
-                options['params']['name'],
-                options['url'],
-                options['params']['layers'],
-                false
-            );
+        },
+        isValidCoordinate: function(coordinate) {
+          const [longitude, latitude] = coordinate;
+          if (
+            typeof longitude !== 'number' ||
+            typeof latitude !== 'number' ||
+            longitude < -180 ||
+            longitude > 180 ||
+            latitude < -90 ||
+            latitude > 90
+          ) {
+            return false;
+          }
+          return true;
         },
         toggleMiniSASSLayer: function (e) {
+            let self = this;
             this.miniSASSSelected = $(e.target).is(":checked");
             if (this.miniSASSSelected) {
                 this.miniSASSLayer.setVisible(true);
                 // Move layer to top
                 this.map.removeLayer(this.miniSASSLayer);
                 this.map.getLayers().insertAt(this.map.getLayers().getLength(), this.miniSASSLayer);
-                let mapLegend = $('#map-legend');
-                mapLegend.find(`[data-name='${this.miniSASSLayer.getSource().getParams()['layers']}']`).show();
-                if (!mapLegend.is('visible')) {
-                    Shared.Dispatcher.trigger('map:showMapLegends');
+
+                // Show fetching message
+                if (!this.fetchingMiniSASS) {
+                    let fetchingMessage = $('<span class="fetching" style="font-size: 10pt; font-style: italic"> (fetching)</span>');
+                    $(e.target).parent().find('.label').append(fetchingMessage);
+
+                    $.ajax({
+                        type: 'GET',
+                        url: this.miniSASSUrl,
+                        success: function (data) {
+                            let geojson = {
+                                "type": "FeatureCollection",
+                                "features": []
+                            }
+                            for(let i=0; i < data.length; i++) {
+                                let observation = data[i];
+                                let coordinate = [parseFloat(observation.longitude), parseFloat(observation.latitude)];
+                                if (self.isValidCoordinate(coordinate)) {
+                                    let properties = observation;
+                                    delete properties.longitude;
+                                    delete properties.latitude;
+                                    let feature = {
+                                        "type": "Feature",
+                                        "geometry": {"type": "Point", "coordinates": coordinate},
+                                        "properties": properties
+                                    }
+                                    geojson.features.push(feature);
+                                }
+                            }
+                            let source = new ol.source.Vector({
+                                features: (
+                                    new ol.format.GeoJSON()
+                                ).readFeatures(geojson, {featureProjection: 'EPSG:3857'})
+                            });
+                            self.miniSASSLayer.setSource(source);
+                            $(e.target).parent().find('.fetching').remove();
+                        }
+                    })
+                    this.fetchingMiniSASS = true;
                 }
             } else {
                 this.miniSASSLayer.setVisible(false);
-                $('#map-legend').find(`[data-name='${this.miniSASSLayer.getSource().getParams()['layers']}']`).hide();
             }
         },
         toggleInward: function (e) {
@@ -123,6 +174,68 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 self.inWARDSLayer.setVisible(false);
             }
         },
+        objectToTable: function (obj) {
+            // Create the table and the table body
+            let table = document.createElement('table');
+            let tbody = document.createElement('tbody');
+
+            function handleValue(value) {
+                if (value && typeof value === 'object') {
+                    try {
+                        // Attempt to convert the object to a string
+                        return JSON.stringify(value, getCircularReplacer(), 2);
+                    } catch (error) {
+                        // Fallback for objects that cannot be stringified
+                        return '[Circular]';
+                    }
+                } else {
+                    return value !== null ? value : 'null';
+                }
+            }
+
+            function getCircularReplacer() {
+                const seen = new WeakSet();
+                return (key, value) => {
+                    if (typeof value === "object" && value !== null) {
+                        if (seen.has(value)) {
+                            return "[Circular]";
+                        }
+                        seen.add(value);
+                    }
+                    return value;
+                };
+            }
+
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    let tr = document.createElement('tr');
+
+                    let tdKey = document.createElement('td');
+                    tdKey.textContent = key;
+                    tr.appendChild(tdKey);
+
+                    let tdValue = document.createElement('td');
+                    tdValue.textContent = handleValue(obj[key]);
+                    tr.appendChild(tdValue);
+
+                    tbody.appendChild(tr);
+                }
+            }
+
+            table.appendChild(tbody);
+
+            table.style.borderCollapse = 'collapse';
+            table.style.width = '100%';
+            table.style.margin = '20px 0';
+
+            let cells = table.querySelectorAll('td');
+            cells.forEach(cell => {
+                cell.style.border = '1px solid #ddd';
+                cell.style.padding = '8px';
+            });
+
+            return table;
+        },
         showFeatureInfo: function (lon, lat, siteExist = false, featureData = null) {
             if (!this.miniSASSSelected && !this.inWARDSelected) {
                 return false;
@@ -152,34 +265,25 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
 
             if (this.miniSASSSelected) {
                 const source = this.miniSASSLayer.getSource();
-                const getFeatureFormat = source.getParams()['getFeatureFormat'];
-                const layerName = source.getParams()['name'];
-                const queryLayer = source.getParams()['layers'];
-                let layerSource = source.getGetFeatureInfoUrl(
-                    coordinate,
-                    view.getResolution(),
-                    view.getProjection(),
-                    {'INFO_FORMAT': getFeatureFormat}
-                );
-                layerSource += '&QUERY_LAYERS=' + queryLayer;
-                $.ajax({
-                    type: 'POST',
-                    url: '/get_feature/',
-                    data: {
-                        'layerSource': layerSource
-                    },
-                    success: function (result) {
-                        if (!result) {
-                            return true;
-                        }
-                        const data = result['feature_data'];
-                        if (!data) return true;
+                const pixel = this.map.getPixelFromCoordinate(coordinate);
+                let minisassData = [];
+                self.map.forEachFeatureAtPixel(pixel, function(feature) {
+                    if (feature.getProperties().hasOwnProperty('minisass_ml_score')) {
+                        minisassData.push(feature.getProperties())
+                    }
+                    if (minisassData.length > 0) {
+                        let minisassDataTable = minisassData[0];
+                        delete minisassDataTable['geometry'];
+                        delete minisassDataTable['organisationtype'];
+                        delete minisassDataTable['images'];
+                        delete minisassDataTable['site'];
+                        const minisassTable = $(self.objectToTable(minisassDataTable));
                         self.showContentToSidePanel(
-                            lon, lat, layerName, data, siteExist, openSidePanel
+                            lon, lat, minisassData[0]['sitename'], minisassTable.prop('outerHTML'), siteExist, openSidePanel
                         )
-                        openSidePanel = true;
                     }
                 });
+
             }
         },
         showContentToSidePanel: function (lon, lat, panelTitle, panelContent, siteExist, openSidePanel = false) {

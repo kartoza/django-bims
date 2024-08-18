@@ -5,6 +5,7 @@ from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
 )
+from bims.api_views.minisass_observations import MiniSASSObservationsView
 from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
 from bims.api_views.reference import DeleteRecordsByReferenceId
@@ -376,6 +377,9 @@ urlpatterns = [
     path('harvesting-geocontext-logs/',
          GetGeocontextLogLinesView.as_view(),
          name='get_log_lines'),
+    path('minisass-observations/',
+         MiniSASSObservationsView.as_view(),
+         name='minisass-observations'),
     path('taxon-group-validated/<int:id>/',
          TaxonGroupTotalValidated.as_view(),
          name='taxon-group-total-validated'),
