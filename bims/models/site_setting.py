@@ -122,6 +122,11 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    minisass_token = models.CharField(
+        default='',
+        blank=True
+    )
+
     iucn_api_key = models.CharField(
         max_length=255,
         default='',
