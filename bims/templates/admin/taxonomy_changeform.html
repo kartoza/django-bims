@@ -19,6 +19,26 @@
                         }, 1000);
                     });
                 }
+
+                // Add a close button
+                const closeButton = document.createElement('a');
+                closeButton.textContent = 'Close';
+                closeButton.className = 'grp-button grp-default';
+                closeButton.style.marginLeft = '10px';
+
+                closeButton.style.backgroundColor = '#6e6e6e';
+                closeButton.style.backgroundImage = 'none';
+                closeButton.style.color = '#fff';
+                closeButton.style.borderColor = '#515151';
+
+                closeButton.addEventListener('click', function() {
+                    window.close();
+                });
+
+                // Insert the close button into the button container
+                if (saveButton) {
+                    saveButton.insertAdjacentElement('afterend', closeButton);
+                }
             }
         });
 
