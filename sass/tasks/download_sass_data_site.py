@@ -23,6 +23,7 @@ logger = logging.getLogger('bims')
 def download_sass_data_site_task(
         filename, filters, path_file, user_id, send_email = False):
     from bims.utils.celery import memcache_lock
+    from bims.models.download_request import DownloadRequest
 
     user = Profile.objects.get(id=user_id)
 
@@ -39,6 +40,9 @@ def download_sass_data_site_task(
                 'filters': filters
             }
             collection_records = search.process_search()
+            download_request_id = filters.get(
+                'downloadRequestId', ''
+            )
             site_visit_taxon = SiteVisitTaxon.objects.filter(
                 id__in=collection_records
             ).order_by('site_visit__site_visit_date')
@@ -55,6 +59,9 @@ def download_sass_data_site_task(
             for header in headers:
                 formatted_headers.append(header.replace('_', ' ').capitalize())
 
+            progress = 1
+            total_data = len(rows)
+
             with open(path_file, 'w') as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
@@ -65,6 +72,22 @@ def download_sass_data_site_task(
                     except ValueError:
                         writer.fieldnames = row.keys()
                         writer.writerow(row)
+
+                    if progress % 10 == 0 and download_request_id:
+                        download_request = DownloadRequest.objects.get(
+                            id=download_request_id
+                        )
+                        download_request.progress = f'{progress}/{total_data}'
+                        download_request.save()
+
+                    progress += 1
+
+            if download_request_id and total_data:
+                DownloadRequest.objects.filter(
+                    id=download_request_id
+                ).update(
+                    progress=f'{total_data}/{total_data}'
+                )
 
             if send_email:
                 send_csv_via_email(

@@ -11,8 +11,19 @@ def before_send(event, hint):
         exc_type, exc_value, tb = hint['exc_info']
         logging.info(f"Exception type: {exc_type}")
         logging.info(f"Exception value: {exc_value}")
+        log_entry = ''
 
-        if exc_value and str(exc_value) == "easy audit had a pre-save exception.":
+        if 'logentry' in event:
+            if 'message' in event['logentry']:
+                log_entry = event['logentry']['message']
+
+        if (
+                exc_value and
+                (
+                    "easy audit had a pre-save exception" in str(exc_value) or
+                    "easy audit had a pre-save exception" in log_entry
+                )
+        ):
             logging.info("Ignoring 'easy audit had a pre-save exception.' error")
             return None
 
@@ -21,3 +32,11 @@ def before_send(event, hint):
             return None
 
     return event
+
+
+def before_breadcrumb(crumb, hint):
+    if crumb.get('category') == 'http':
+        if crumb.get('data', {}).get('status_code') == 200:
+            return None
+
+    return crumb

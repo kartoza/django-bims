@@ -175,12 +175,14 @@ TENANT_DOMAIN_MODEL = "tenants.Domain"
 if os.environ.get('SENTRY_KEY'):
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
-    from bims.utils.sentry import before_send
+    from bims.utils.sentry import before_send, before_breadcrumb
     sentry_sdk.init(
         dsn=os.environ.get('SENTRY_KEY'),
         integrations=[DjangoIntegration()],
-        traces_sample_rate=1.0,
+        traces_sample_rate=0.2,
         before_send=before_send,
+        before_breadcrumb=before_breadcrumb,
+        environment='production'
     )
 
 # workaround to get flatpages picked up in installed apps.
