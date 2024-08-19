@@ -189,14 +189,14 @@ class TaxaProcessor(object):
         """Processing origin"""
         origin_value = DataCSVUpload.row_value(row, ORIGIN)
         if not origin_value:
-            return ''
+            return '', None
         if 'invasive' in origin_value.lower():
             invasive, _ = Invasion.objects.get_or_create(
                 category=origin_value
             )
             return ORIGIN_CATEGORIES['non-native'], invasive
         if origin_value.lower() not in ORIGIN_CATEGORIES:
-            return ''
+            return '', None
         return ORIGIN_CATEGORIES[origin_value.lower()], None
 
     def validate_parents(self, taxon, row):
