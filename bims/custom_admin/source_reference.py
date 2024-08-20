@@ -119,12 +119,6 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
                 messages.ERROR)
             return
 
-        elif source_type >= 2:
-            self.message_user(
-                request, 'Source references should have same type', messages.ERROR
-            )
-            return
-
         merge_source_references(primary_source_reference=verified.first(),
                                 source_reference_list=queryset)
 

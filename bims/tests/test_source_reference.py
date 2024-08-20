@@ -188,6 +188,7 @@ class TestSourceReferences(FastTenantTestCase):
             note='test', source=self.entry)
         database = SourceReferenceDatabaseF.create()
         document = SourceReferenceDocumentF.create()
+        unpublished = SourceReferenceF.create(note='unpublished')
         source_document_id = document.source.id
 
         BiologicalCollectionRecordF.create(
@@ -199,6 +200,9 @@ class TestSourceReferences(FastTenantTestCase):
         BiologicalCollectionRecordF.create(
             source_reference=document
         )
+        BiologicalCollectionRecordF.create(
+            source_reference=unpublished
+        )
         self.assertTrue(
             Document.objects.filter(id=source_document_id).exists()
         )
@@ -209,7 +213,7 @@ class TestSourceReferences(FastTenantTestCase):
             1
         )
         source_references = SourceReference.objects.filter(
-            id__in=[database.id, document.id]
+            id__in=[database.id, document.id, unpublished.id]
         )
         merge_source_references(
             primary_source_reference=biblio,
@@ -219,7 +223,7 @@ class TestSourceReferences(FastTenantTestCase):
             BiologicalCollectionRecord.objects.filter(
                 source_reference=biblio
             ).count(),
-            3
+            4
         )
         self.assertFalse(
             BiologicalCollectionRecord.objects.filter(
@@ -237,6 +241,11 @@ class TestSourceReferences(FastTenantTestCase):
         self.assertFalse(
             SourceReferenceDocument.objects.filter(
                 id=document.id
+            ).exists()
+        )
+        self.assertFalse(
+            SourceReference.objects.filter(
+                id=unpublished.id
             ).exists()
         )
 
