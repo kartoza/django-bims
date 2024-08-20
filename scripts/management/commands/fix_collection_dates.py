@@ -28,13 +28,19 @@ class Command(BaseCommand):
         if schema_name:
             connection.set_schema(schema_name)
         disconnect_bims_signals()
-        self.fix_collection_dates()
+        self.fix_collection_dates(schema_name)
         connect_bims_signals()
 
-    def fix_collection_dates(self):
+    def fix_collection_dates(self, schema_name):
         mismatched_records = BiologicalCollectionRecord.objects.exclude(
             collection_date=F('survey__date')
         )
+
+        record_count = mismatched_records.count()
+        logger.info(f'Found {record_count} records with mismatched dates')
+
+        if schema_name:
+            connection.set_schema(schema_name)
 
         record_count = mismatched_records.count()
         logger.info(f'Found {record_count} records with mismatched dates')
