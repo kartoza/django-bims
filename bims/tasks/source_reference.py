@@ -4,7 +4,9 @@ from django.core.cache import cache
 from django_tenants.utils import tenant_context, get_tenant_model, get_tenant
 
 
+
 def generate_source_reference_filter_by_site(tenant_id=None):
+    from bims.models.source_reference import PUBLISHED_REPORT
     if not tenant_id:
         for tenant in get_tenant_model().objects.all():
             with tenant_context(tenant):
@@ -21,7 +23,7 @@ def generate_source_reference_filter_by_site(tenant_id=None):
     for reference in references:
         if (
                 reference.reference_type == 'Peer-reviewed scientific article' or
-                reference.reference_type == 'Published report or thesis'
+                reference.reference_type == PUBLISHED_REPORT
         ):
             source = u'{authors} | {year} | {title}'.format(
                 authors=reference.authors,

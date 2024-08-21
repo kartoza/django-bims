@@ -19,6 +19,8 @@ from bims.helpers.remove_duplicates import remove_duplicates
 from bims.utils.decorator import prevent_recursion
 from bims.models.bims_document import BimsDocument, BimsDocumentAuthorship
 
+PUBLISHED_REPORT = 'Published book, report or thesis'
+
 
 def format_authors(users):
     """Format queryset of users to readable format"""
@@ -189,7 +191,7 @@ class SourceReference(PolymorphicModel):
         return self
 
     def is_published_report(self):
-        return self.reference_type == 'Published report or thesis'
+        return self.reference_type == PUBLISHED_REPORT
 
     def is_database(self):
         return self.reference_type == 'Database'
@@ -517,7 +519,7 @@ class SourceReferenceDocument(SourceReference):
 
     @property
     def reference_type(self):
-        return 'Published report or thesis'
+        return PUBLISHED_REPORT
 
     def __unicode__(self):
         return u'%s' % self.source
