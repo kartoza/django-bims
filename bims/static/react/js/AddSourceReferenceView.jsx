@@ -6,7 +6,7 @@ import update from "immutability-helper";
 
 
 const PEER_REVIEWED = 'Peer-reviewed scientific article'
-const PUBLISHED_REPORT = 'Published report or thesis'
+const PUBLISHED_REPORT = 'Published book, report or thesis'
 const DATABASE = 'Database'
 const UNPUBLISHED = 'Unpublished'
 const REPORT_SOURCE = ['doc_url', 'doc_file']

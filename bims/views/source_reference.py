@@ -22,7 +22,7 @@ from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
     SourceReferenceDatabase,
-    SourceReferenceDocument, DatabaseRecord
+    SourceReferenceDocument, DatabaseRecord, PUBLISHED_REPORT
 )
 from bims.serializers.source_reference_serializer import (
     SourceReferenceSerializer
@@ -175,7 +175,7 @@ class SourceReferenceListView(SourceReferenceList, ListView):
                 'selected': 'database' in self.type_filter
             },
             {
-                'title': 'Published report or thesis',
+                'title': 'Published book, report or thesis',
                 'count': data.instance_of(
                     SourceReferenceDocument
                 ).count(),
@@ -690,12 +690,12 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
             reference_type = [
                 'Unpublished',
                 'Database',
-                'Published report or thesis',
+                PUBLISHED_REPORT,
                 'Peer-reviewed scientific article'
             ]
         else:
             reference_type = [
-                'Published report or thesis',
+                PUBLISHED_REPORT
             ]
         context['params'] = {
             'reference_type': json.dumps(reference_type)
@@ -714,7 +714,9 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
         processed = False
         if 'database' in reference_type.lower():
             processed = self.handle_database_record(post_data=post_dict)
-        elif 'published report' in reference_type.lower():
+        elif (
+                'published book' in reference_type.lower() or
+                'published report' in reference_type.lower()):
             processed = self.handle_published_report(
                 post_data=post_dict,
                 file_data=file_dict
