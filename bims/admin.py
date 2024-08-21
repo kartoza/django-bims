@@ -32,6 +32,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django_json_widget.widgets import JSONEditorWidget
 
 from bims.admins.site_setting import SiteSettingAdmin
+from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
@@ -1848,8 +1849,42 @@ class TaxonImageAdmin(admin.ModelAdmin):
 
 
 class RecordTypeAdmin(OrderedModelAdmin):
-    list_display = ('name', 'is_hidden_in_form', 'move_up_down_links', 'order')
+    list_display = (
+        'name',
+        'verified',
+        'total_records',
+        'is_hidden_in_form',
+        'move_up_down_links',
+        'order',)
     ordering = ('order',)
+
+    def total_records(self, obj):
+        return BiologicalCollectionRecord.objects.filter(
+            record_type=obj
+        ).count()
+
+    total_records.short_description = 'Total Occurrences'
+
+    actions = ['merge_record_types']
+
+    def merge_record_types(self, request, queryset):
+        verified = queryset.filter(verified=True)
+        if queryset.count() <= 1:
+            self.message_user(
+                request, 'Need more than 1 record type', messages.ERROR
+            )
+            return
+        if not verified.exists():
+            self.message_user(
+                request, 'Missing verified record type', messages.ERROR)
+            return
+        merge_record_types(
+            primary_record_type=verified.first(),
+            record_type_list=queryset
+        )
+
+
+    merge_record_types.short_description = 'Merge record types'
 
 
 class WetlandIndicatorStatusAdmin(OrderedModelAdmin):

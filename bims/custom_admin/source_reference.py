@@ -100,8 +100,6 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
     def merge_source_references(self, request, queryset):
 
         verified = queryset.filter(verified=True)
-        source_type = queryset.values('polymorphic_ctype').distinct().count()
-
         if queryset.count() <= 1:
             self.message_user(
                 request, 'Need more than 1 source reference', messages.ERROR
