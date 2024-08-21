@@ -148,37 +148,38 @@ class OccurrenceProcessor(object):
         pass
 
     def parse_date(self, row):
-        # Parse date string to date object
-        # Raise value error if date string is not in a valid format
-        sampling_date = None
+        def try_parse_date(date_str, date_format):
+            try:
+                return datetime.strptime(date_str, date_format)
+            except ValueError:
+                return None
+
+        # Retrieve the date string from the row
         date_string = DataCSVUpload.row_value(row, SAMPLING_DATE)
         if not date_string:
             date_string = DataCSVUpload.row_value(row, SAMPLING_DATE_2)
-        if '-' in date_string:
-            try:
-                sampling_date = datetime.strptime(
-                    date_string, '%Y-%m-%d')
-            finally:
-                if not sampling_date:
-                    self.handle_error(
-                        row=row,
-                        message='Incorrect date format'
-                    )
+
+        # If date_string is still None, handle the error
+        if not date_string:
+            self.handle_error(row=row, message='Date string is missing')
+            return None
+
+        # Define possible date formats
+        date_formats = [
+            '%Y-%m-%d',
+            '%Y/%m/%d',
+            '%d/%m/%Y',
+        ]
+
+        # Attempt to parse the date string using the defined formats
+        for date_format in date_formats:
+            sampling_date = try_parse_date(date_string, date_format)
+            if sampling_date:
                 return sampling_date
-        else:
-            try:
-                sampling_date = datetime.strptime(
-                    date_string, '%Y/%m/%d')
-            except ValueError:
-                sampling_date = datetime.strptime(
-                    date_string, '%m/%d/%Y')
-            finally:
-                if not sampling_date:
-                    self.handle_error(
-                        row=row,
-                        message='Incorrect date format'
-                    )
-                return sampling_date
+
+        # If no valid format found, handle the error
+        self.handle_error(row=row, message='Incorrect date format')
+        return None
 
     def process_survey(self, record, location_site, sampling_date, collector):
         """Process survey data"""
