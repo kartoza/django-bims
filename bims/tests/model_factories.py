@@ -50,7 +50,8 @@ from bims.models import (
     UserBoundary,
     HarvestSession,
     TaxonomyUpdateProposal,
-    TaxonGroupTaxonomy
+    TaxonGroupTaxonomy,
+    RecordType
 )
 from sass.models import River
 
@@ -444,6 +445,13 @@ class BiotopeF(factory.django.DjangoModelFactory):
 class SourceReferenceF(factory.django.DjangoModelFactory):
     class Meta:
         model = SourceReference
+
+
+class RecordTypeF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RecordType
+
+    name = factory.Sequence(lambda n: 'record-type %s' % n)
 
 
 class SourceReferenceBibliographyF(factory.django.DjangoModelFactory):
