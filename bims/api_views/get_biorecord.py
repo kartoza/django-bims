@@ -66,7 +66,8 @@ class BioCollectionSummary(APIView):
 
         search_process, created = get_or_create_search_process(
             TAXON_SUMMARY,
-            query=request.build_absolute_uri()
+            query=request.build_absolute_uri(),
+            requester=self.request.user
         )
 
         if search_process.file_path:

@@ -100,9 +100,13 @@ class LocationSitesSummary(APIView):
         use_cached = ast.literal_eval(filters.get('cached', 'True'))
         state = 'STARTED'
 
+        if 'requester' not in filters:
+            filters['requester'] = self.request.user.id
+
         search_process, created = get_or_create_search_process(
             SITES_SUMMARY,
-            query=search_uri
+            query=search_uri,
+            requester=self.request.user
         )
 
         if not use_cached:
