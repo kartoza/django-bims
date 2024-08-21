@@ -146,6 +146,8 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                 rank__in=[
                     TaxonomicRank.SPECIES.name,
                     TaxonomicRank.SUBSPECIES.name]
+            ).order_by(
+                'scientific_name'
             )
             taxon_serializer = ChecklistPDFSerializer(taxa, many=True)
             for taxon in taxon_serializer.data:
