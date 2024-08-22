@@ -74,6 +74,7 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
                 TaxonomyUpdateProposal.objects.get_or_create(
                     original_taxonomy=taxonomy,
                     taxon_group=taxon_group,
+                    new_data=True,
                     status='pending',
                     scientific_name=taxonomy.scientific_name,
                     canonical_name=taxonomy.canonical_name,
