@@ -118,7 +118,8 @@ from bims.models import (
     TaxonomyUpdateReviewer,
     CITESListingInfo,
     ImportTask,
-    Invasion
+    Invasion,
+    FlatPageExtension
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -943,13 +944,6 @@ class NonBiodiversityLayerAdmin(OrderedModelAdmin):
         'move_up_down_links',)
     list_filter = ('wms_url',)
     ordering = ('order',)
-
-
-# flatpage ckeditor integration
-class FlatPageCustomAdmin(FlatPageAdmin):
-    formfield_overrides = {
-        models.TextField: {'widget': CKEditorUploadingWidget}
-    }
 
 
 class VisitorAdmin(admin.ModelAdmin):
@@ -2007,6 +2001,33 @@ class ImportTaskAdmin(admin.ModelAdmin):
     search_fields = ('celery_task_id',)
 
 
+class FlatPageExtensionInline(admin.StackedInline):
+    model = FlatPageExtension
+    can_delete = False
+    verbose_name_plural = 'Custom Options'
+    fk_name = 'flatpage'
+
+
+class ExtendedFlatPageAdmin(FlatPageAdmin):
+    inlines = (FlatPageExtensionInline,)
+
+    formfield_overrides = {
+        models.TextField: {
+            'widget': CKEditorUploadingWidget}
+    }
+
+    def show_in_navbar(self, instance):
+        return instance.extension.show_in_navbar
+    show_in_navbar.short_description = "Show in Navbar"
+    show_in_navbar.boolean = True
+
+    def display_order(self, instance):
+        return instance.extension.display_order
+    display_order.short_description = "Display Order"
+
+    list_display = ('title', 'url', 'show_in_navbar', 'display_order')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -2030,9 +2051,6 @@ admin.site.register(BiologicalCollectionRecord, BiologicalCollectionAdmin)
 
 admin.site.register(ShapefileUploadSession, ShapefileUploadSessionAdmin)
 admin.site.register(Shapefile, ShapefileAdmin)
-
-admin.site.unregister(FlatPage)
-admin.site.register(FlatPage, FlatPageCustomAdmin)
 
 admin.site.register(Visitor, VisitorAdmin)
 admin.site.register(Permission, PermissionAdmin)
@@ -2131,3 +2149,6 @@ admin.site.register(
     Invasion,
     InvasionAdmin
 )
+
+admin.site.unregister(FlatPage)
+admin.site.register(FlatPage, ExtendedFlatPageAdmin)
