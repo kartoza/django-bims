@@ -46,6 +46,28 @@
 
             <div class="form-group row">
                 <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Created at
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" disabled
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ object.import_date }}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Last modified
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" disabled
+                           class="form-control form-control-sm"
+                           placeholder="" value="{{ object.last_modified }}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
                     Taxon Name
                 </label>
                 <div class="col-sm-10">

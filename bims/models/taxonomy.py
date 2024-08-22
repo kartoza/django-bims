@@ -3,6 +3,7 @@ from datetime import date
 
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils.formats import date_format
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
 
@@ -23,6 +24,7 @@ from bims.models.notification import (
     NEW_TAXONOMY
 )
 from django.db.models import JSONField, OuterRef, Subquery, signals
+from easyaudit.models import CRUDEvent
 
 ORIGIN_CATEGORIES = {
     'non-native': 'alien',
@@ -351,6 +353,19 @@ class AbstractTaxonomy(AbstractValidation):
         elif self.scientific_name:
             return self.scientific_name
         return '-'
+
+    @property
+    def last_modified(self):
+        last_update_event = CRUDEvent.objects.filter(
+            object_id=self.id,
+            content_type__model=self._meta.model_name,
+            event_type=CRUDEvent.UPDATE
+        ).order_by('-datetime').first()
+
+        if last_update_event:
+            return date_format(
+                last_update_event.datetime, format='F j, Y', use_l10n=True)
+        return self.import_date
 
 
 class Taxonomy(AbstractTaxonomy):
