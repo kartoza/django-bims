@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.contrib.flatpages.models import FlatPage
 from preferences import preferences
 from django import template
 from django.conf import settings
@@ -115,3 +116,9 @@ def get_attr(obj, attr_name):
         return getattr(obj, attr_name)
     except AttributeError:
         return ''
+
+
+@register.simple_tag
+def get_navbar_flatpages():
+    return FlatPage.objects.filter(
+        extension__show_in_navbar=True).order_by('extension__display_order')
