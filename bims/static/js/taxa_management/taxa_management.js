@@ -378,7 +378,7 @@ export const taxaManagement = (() => {
                             let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
-                            data.nameHTML = name + taxonomicStatusHTML + '<br/>' + gbifHTML + iucnHTML + validatedHTML;
+                            data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML;
 
                             if (userCanEditTaxon || isExpert) {
                                 let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
@@ -424,6 +424,7 @@ export const taxaManagement = (() => {
                 {"data": "family", "className": "min-width-100"},
                 {"data": "genus", "className": "min-width-100"},
                 {"data": "species", "className": "min-width-100"},
+                {"data": "taxonomic_status", "className": "min-width-100"},
                 {"data": "author", "className": "min-width-100"},
                 {"data": "biographic_distributions", "className": "min-width-100", "sortable": false,
                     "render": function (data) {
