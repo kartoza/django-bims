@@ -6,7 +6,7 @@ import re
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.http import Http404
-from django.db.models import Count, Case, Value, When, F, CharField, Prefetch
+from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
@@ -388,7 +388,7 @@ class TaxaList(LoginRequiredMixin, APIView):
         cons_status = list(filter(None, cons_status))
         endemism = request.GET.get('endemism', '').split(',')
         endemism = list(filter(None, endemism))
-        taxon_name = request.GET.get('taxon', '')
+        taxon_name = request.GET.get('taxon', '').strip()
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
@@ -466,7 +466,8 @@ class TaxaList(LoginRequiredMixin, APIView):
             )
         if taxon_name:
             taxon_list = taxon_list.filter(
-                canonical_name__icontains=taxon_name
+                Q(canonical_name__icontains=taxon_name) |
+                Q(accepted_taxonomy__canonical_name__icontains=taxon_name)
             )
         if family_name:
             taxon_list = taxon_list.filter(
