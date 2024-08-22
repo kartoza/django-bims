@@ -4,7 +4,7 @@ import logging
 import re
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.http import Http404
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -273,11 +273,18 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 get_vernacular=True
             )
         elif taxon_name and rank:
-            taxonomy, created = Taxonomy.objects.get_or_create(
-                scientific_name=taxon_name,
-                canonical_name=taxon_name,
-                rank=rank
-            )
+            try:
+                taxonomy, created = Taxonomy.objects.get_or_create(
+                    scientific_name=taxon_name,
+                    canonical_name=taxon_name,
+                    rank=rank
+                )
+            except IntegrityError:
+                taxonomy = Taxonomy.objects.get(
+                    scientific_name=taxon_name,
+                    canonical_name=taxon_name,
+                    rank=rank
+                )
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
             taxon_group.taxonomies.add(
@@ -325,6 +332,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 original_taxonomy=taxonomy,
                 taxon_group=taxon_group,
                 status='pending',
+                new_data=True,
                 scientific_name=taxonomy.scientific_name,
                 canonical_name=taxonomy.canonical_name,
                 rank=taxonomy.rank,

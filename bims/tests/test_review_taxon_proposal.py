@@ -4,6 +4,7 @@ from django_tenants.test.client import TenantClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 
+from bims.api_views.taxon_group import add_taxa_to_taxon_group
 from bims.models import TaxonGroupTaxonomy
 from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal,
@@ -396,6 +397,50 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             reviewer__username='testuser',
             comments='test'
         ).exists())
+        self.client.logout()
+
+    def test_reject_new_taxon(self):
+        new_taxon_group = TaxonGroupF.create(
+            experts=(self.expert_user,)
+        )
+        add_taxa_to_taxon_group([
+            self.taxonomy.id
+        ], new_taxon_group.id)
+        taxonomy_update_proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=self.taxonomy,
+            taxon_group=new_taxon_group,
+            status='pending',
+        ).first()
+        self.assertTrue(taxonomy_update_proposal.new_data)
+        self.client.login(username='testuser', password='password')
+        url = reverse('review-taxon-proposal',
+                      kwargs={
+                          'taxonomy_update_proposal_id':
+                              taxonomy_update_proposal.pk
+                      })
+
+        response = self.client.put(url, {
+            'action': 'reject',
+            'comments': 'test'
+        }, content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertTrue(TaxonomyUpdateProposal.objects.filter(
+            status='rejected',
+            id=taxonomy_update_proposal.id,
+        ).exists())
+        self.assertTrue(TaxonomyUpdateReviewer.objects.filter(
+            taxonomy_update_proposal=taxonomy_update_proposal,
+            reviewer__username='testuser',
+            comments='test'
+        ).exists())
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=self.taxon_group,
+                taxonomy=self.taxonomy,
+                is_validated=True
+            ).exists()
+        )
         self.client.logout()
 
     def test_superuser_update_taxon(self):

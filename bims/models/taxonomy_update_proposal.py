@@ -34,6 +34,10 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         default='pending'
     )
 
+    new_data = models.BooleanField(
+        default=False
+    )
+
     tags = TaggableManager(
         blank=True,
         related_name='taxonomy_proposal_tags'
@@ -155,12 +159,18 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 }
             )
             self.save()
-            TaxonGroupTaxonomy.objects.filter(
-                taxongroup=self.taxon_group,
-                taxonomy=self.original_taxonomy,
-            ).update(
-                is_validated=True
-            )
+            if self.new_data:
+                TaxonGroupTaxonomy.objects.filter(
+                    taxongroup=self.taxon_group,
+                    taxonomy=self.original_taxonomy
+                ).delete()
+            else:
+                TaxonGroupTaxonomy.objects.filter(
+                    taxongroup=self.taxon_group,
+                    taxonomy=self.original_taxonomy,
+                ).update(
+                    is_validated=True
+                )
 
     def validate_taxon(self, taxon_group, taxonomy):
         TaxonGroupTaxonomy.objects.filter(
