@@ -1,10 +1,13 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
 from taggit.managers import TaggableManager
 from taggit.models import TaggedItemBase
 
-from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, CustomTaggedTaxonomy, TaxonTag
+from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, TaxonTag
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+from bims.tasks.send_notification import send_mail_notification
+from bims.utils.domain import get_current_domain
 
 
 class CustomTaggedUpdateTaxonomy(TaggedItemBase):
@@ -199,6 +202,28 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         if self.taxon_group_under_review:
             self.taxon_group_under_review = top_level_taxon_group
             self.save()
+
+        if top_level_taxon_group != self.taxon_group:
+            parent_expert = list(top_level_taxon_group.experts.values_list(
+                'email', flat=True
+            ))
+            superuser = list(
+                get_user_model().objects.filter(
+                    is_superuser=True).values_list('email', flat=True)
+            )
+            recipients = parent_expert if parent_expert else superuser
+            current_site = get_current_domain()
+            subject = '[{}] Taxon Validation Required'.format(current_site)
+            from_email = settings.DEFAULT_FROM_EMAIL
+            message = (f"Dear Validator,\n\nThe taxon '{self.original_taxonomy.canonical_name}' "
+                       f"has been validated by the current expert.\n\nIt now requires "
+                       f"validation to be added to the taxon group '{self.taxon_group.name}'.")
+            send_mail_notification.delay(
+                subject,
+                message,
+                from_email,
+                recipients
+            )
 
         # Only top level experts can approve data
         if top_level_taxon_group.experts.filter(
