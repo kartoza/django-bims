@@ -371,8 +371,16 @@ class TaxaProcessor(object):
         if not taxon_name:
             taxon_name = DataCSVUpload.row_value(row, rank.capitalize())
 
+        if rank == SPECIES:
+            genus_name = DataCSVUpload.row_value(row, GENUS).strip()
+            if genus_name not in taxon_name:
+                taxon_name = genus_name + ' ' + taxon_name.strip()
+
         try:
-            on_gbif = DataCSVUpload.row_value(row, ON_GBIF) != 'No'
+            on_gbif = (
+                DataCSVUpload.row_value(row, ON_GBIF).strip() and
+                DataCSVUpload.row_value(row, ON_GBIF) != 'No'
+            )
         except Exception:  # noqa
             if is_fada_site():
                 on_gbif = False
@@ -530,7 +538,9 @@ class TaxaProcessor(object):
                         parent=parent
                     )
                     if taxonomic_status:
-                        taxonomy.taxonomic_status = taxonomic_status
+                        taxonomy.taxonomic_status = (
+                            taxonomic_status.upper()
+                        )
 
             # -- Finish
             if taxonomy:
