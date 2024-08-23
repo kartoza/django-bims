@@ -1,4 +1,6 @@
-<li data-id="{{ taxon_group.id }}" data-name="{{ taxon_group.name }}" class="ui-state-default">
+{% load site %}
+{% is_user_expert user taxon_group.experts as user_is_expert %}
+<li data-id="{{ taxon_group.id }}" data-name="{{ taxon_group.name }}" class="ui-state-default {% if user_is_expert %}taxon-group-expert{% endif %}">
     <div>
         <div class="row">
             <div class="col-sm-2 img-container">
@@ -12,9 +14,12 @@
                      data-occurrence-upload-template="{{ taxon_group.occurrence_upload_template }}"
                 >
                     <span class="taxon-group-name">{{ taxon_group.name }}</span>
-                    <span class="btn btn-warning update-logo-btn">
-                        <i class="fa fa-pencil" aria-hidden="true"></i>
-                    </span>
+                    {% if user.is_superuser or user_is_expert %}
+                        <span class="btn btn-warning update-logo-btn">
+                            <i class="fa fa-pencil" aria-hidden="true"></i>
+                        </span>
+                    {% endif %}
+
                 </div>
                 <div style="display: flex;">
                     <div class="taxon-group-badge">

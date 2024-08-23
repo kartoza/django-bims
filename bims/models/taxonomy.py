@@ -484,6 +484,16 @@ class Taxonomy(AbstractTaxonomy):
                 gbif_key=self.gbif_key,
                 fetch_vernacular_names=True)
 
+    def get_experts_email(self, taxon_group, max_depth=10):
+        experts = set()
+        depth = 0
+        while taxon_group and depth < max_depth:
+            expert_email = taxon_group.experts.values_list('email', flat=True)
+            experts.update(expert_email)
+            taxon_group = taxon_group.parent
+            depth += 1
+        return list(experts)
+
     def send_new_taxon_email(self, taxon_group_id=None):
         from bims.models import TaxonGroup
         from bims.tasks.send_notification import send_mail_notification
@@ -491,6 +501,13 @@ class Taxonomy(AbstractTaxonomy):
         current_site = get_current_domain()
         recipients = get_recipients_for_notification(NEW_TAXONOMY)
         taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+
+        # Get experts
+        experts_email = self.get_experts_email(
+            taxon_group=taxon_group
+        )
+        recipients = list(set(experts_email + recipients))
+
         email_body = render_to_string(
             'notifications/taxonomy/added_message.txt',
             {

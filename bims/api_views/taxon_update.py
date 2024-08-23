@@ -221,6 +221,7 @@ class ReviewTaxonProposal(UserPassesTestMixin, APIView):
 
         proposal = self.get_proposal(
             self.kwargs.get('taxonomy_update_proposal_id', None))
+
         if not proposal or not proposal.taxon_group_under_review:
             return False
 

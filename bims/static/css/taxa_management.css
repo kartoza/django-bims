@@ -303,3 +303,15 @@ table {
 .form-check-inline {
     padding-left: 0 !important;
 }
+
+.taxon-group-expert {
+    background-color: rgb(245, 233, 213) !important;
+}
+
+.taxon-group-expert:hover {
+    background-color: rgb(241, 226, 204) !important;
+}
+
+.taxon-group-expert.selected {
+    background-color: rgb(237, 214, 174) !important;
+}

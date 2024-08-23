@@ -386,6 +386,8 @@ export const taxaManagement = (() => {
                                     $rowAction.find('.btn-validated-container').hide();
                                     if (data['can_be_validated']) {
                                         $rowAction.find('.btn-unvalidated-container').show();
+                                    } else {
+                                        $rowAction.find('.btn-unvalidated-container').hide();
                                     }
                                 } else {
                                     $rowAction.find('.btn-validated-container').show();
