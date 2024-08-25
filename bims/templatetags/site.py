@@ -122,3 +122,8 @@ def get_attr(obj, attr_name):
 def get_navbar_flatpages():
     return FlatPage.objects.filter(
         extension__show_in_navbar=True).order_by('extension__display_order')
+
+
+@register.simple_tag
+def is_user_expert(user, experts):
+    return any(expert['username'] == user.username for expert in experts)
