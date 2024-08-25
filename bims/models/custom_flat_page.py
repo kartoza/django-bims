@@ -14,6 +14,10 @@ class FlatPageExtension(models.Model):
     display_order = models.IntegerField(
         default=0,
         verbose_name="Display Order")
+    redirect_only = models.BooleanField(
+        default=False,
+        verbose_name="Redirect Only"
+    )
 
     class Meta:
         verbose_name = "Custom Flat Page"
