@@ -58,7 +58,13 @@
                 </li>
                 {% for page in navbar_flatpages %}
                     <li class="nav-item active">
-                        <a class="nav-link" href="/pages{{ page.url }}">{{ page.title }}</a>
+                        <a class="nav-link"
+                            {% if page.extension.redirect_only %}
+                            href="{{ page.url }}"
+                            {% else %}
+                            href="/pages{{ page.url }}"
+                            {% endif %}
+                        >{{ page.title }}</a>
                     </li>
                 {% endfor %}
                 {% if custom_theme.menu_items.all %}
