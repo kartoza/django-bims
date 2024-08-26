@@ -99,6 +99,15 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             self.request.POST.getlist('biographic_distributions')
         )
 
+        data['Taxonomic Comments'] = (
+            self.request.POST.get('additional_data__Taxonomic_Comments', ''))
+        data['Conservation Comments'] = (
+            self.request.POST.get('additional_data__Conservation_Comments', ''))
+        data['Biogeographic Comments'] = (
+            self.request.POST.get('additional_data__Biogeographic_Comments', ''))
+        data['Environmental Comments'] = (
+            self.request.POST.get('additional_data__Environmental_Comments', ''))
+
         new_proposal = False
 
         with transaction.atomic():

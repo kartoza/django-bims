@@ -296,6 +296,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 'parent',
                 'tags',
                 'biographic_distributions',
+                'additional_data',
                 'origin']
             for field in fields_to_update:
                 if field == 'tags':

@@ -271,12 +271,21 @@ table {
 }
 
 .dt-item {
+    border-bottom: 1px solid #dddddd;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     padding: 10px;
 }
 
 .dt-column {
     padding: 0 15px;
     width: 300px;
+    border: 1px solid rgba(213, 213, 213, 0.70);
+}
+
+.dt-full-column {
+    padding: 0 15px;
+    width: 900px;
     border: 1px solid rgba(213, 213, 213, 0.70);
 }
 
