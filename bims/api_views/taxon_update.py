@@ -15,7 +15,13 @@ from bims.models.taxonomy_update_proposal import (
 from bims.models.taxon_group import TaxonGroup
 
 
-def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemism=None):
+def create_taxon_proposal(
+        taxon,
+        taxon_group,
+        data={},
+        iucn_status=None,
+        endemism=None,
+        creator=None):
     if not iucn_status:
         iucn_status = taxon.iucn_status
     if not endemism:
@@ -50,6 +56,7 @@ def create_taxon_proposal(taxon, taxon_group, data={}, iucn_status=None, endemis
             'parent': data.get('parent', taxon.parent),
             'hierarchical_data': taxon.hierarchical_data,
             'gbif_data': taxon.gbif_data,
+            'collector_user': creator
         }
     )
     if created:
@@ -170,7 +177,8 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                     data=data,
                     taxon_group=taxon_group,
                     iucn_status=iucn_status,
-                    endemism=endemism
+                    endemism=endemism,
+                    creator=request.user
                 )
                 TaxonGroupTaxonomy.objects.filter(
                     taxonomy=taxon,

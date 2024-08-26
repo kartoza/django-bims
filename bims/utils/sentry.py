@@ -20,11 +20,18 @@ def before_send(event, hint):
         if (
                 exc_value and
                 (
-                    "easy audit had a pre-save exception" in str(exc_value) or
-                    "easy audit had a pre-save exception" in log_entry
+                    "easy audit had a pre_save exception" in str(exc_value) or
+                    "easy audit had a pre_save exception" in log_entry
                 )
         ):
-            logging.info("Ignoring 'easy audit had a pre-save exception.' error")
+            logging.info("Ignoring 'easy audit had a pre_save exception.' error")
+            return None
+
+        if (
+            exc_value and
+            '400 Client Error: Bad Request for url:' in str(exc_value)
+        ):
+            logging.info("Ignoring '400 Client Error: Bad Request for url:' error")
             return None
 
         if 'easyaudit.signals.model_signals' in str(exc_value):

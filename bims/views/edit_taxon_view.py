@@ -135,7 +135,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     data=data,
                     taxon_group=taxon_group,
                     iucn_status=iucn_status,
-                    endemism=endemism
+                    endemism=endemism,
+                    creator=self.request.user
                 )
                 TaxonGroupTaxonomy.objects.filter(
                     taxonomy=taxon,

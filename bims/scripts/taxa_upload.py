@@ -359,6 +359,10 @@ class TaxaProcessor(object):
 
         # Get rank
         rank = DataCSVUpload.row_value(row, TAXON_RANK)
+        rank = rank.capitalize()
+        if rank.startswith('Sub'):
+            rank = 'Sub' + rank[len('sub'):].capitalize()
+
         if not rank:
             rank = DataCSVUpload.row_value(row, 'Taxon rank')
         if not rank:
@@ -658,7 +662,9 @@ class TaxaProcessor(object):
                     taxonomy.canonical_name = taxon_name
 
                 if taxonomic_status:
-                    taxonomy.taxonomic_status = taxonomic_status
+                    taxonomy.taxonomic_status = (
+                        taxonomic_status.strip().upper()
+                    )
 
                 if accepted_taxon:
                     taxonomy.accepted_taxonomy = accepted_taxon

@@ -162,6 +162,61 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 }
             )
             self.save()
+
+            current_site = get_current_domain()
+            from_email = settings.DEFAULT_FROM_EMAIL
+
+            if self.collector_user:
+                recipients = [self.collector_user.email]
+                subject = '[{}] Taxon {} Submission Rejected'.format(
+                    current_site,
+                    'Addition' if self.new_data else 'Update'
+                )
+                message = (f"You have received the following notice from {current_site}:"
+                           f"\n\nThe following data was rejected:"
+                           f"\n{self.canonical_name}"
+                           f"\n\nAnd the reason for rejection:"
+                           f"\n{comments if comments else 'No specific reason provided.'}"
+                           f"\n\nPlease review the details and feel free to contact us if "
+                           f"you have any questions or need further assistance."
+                           )
+                send_mail_notification.delay(
+                    subject,
+                    message,
+                    from_email,
+                    recipients
+                )
+            # Also send the email to expert and superuser
+            staff_subject = '[{}] Taxon {} Submission Rejection Notification'.format(
+                current_site,
+                'Addition' if self.new_data else 'Update'
+            )
+
+            recipients = []
+            experts = self.taxon_group.get_all_experts()
+            for expert in experts:
+                if expert.email not in recipients:
+                    recipients.append(expert.email)
+            superusers = list(
+                get_user_model().objects.filter(
+                    is_superuser=True).values_list('email', flat=True)
+            )
+            recipients = list(set(superusers + recipients))
+            message_for_staff = (
+                f"Dear Staff/Expert,"
+                f"\n\nPlease be informed that a taxon at {current_site} has been rejected."
+                f"\n\nSubmission Details:"
+                f"\nTaxon Name: {self.canonical_name}"
+                f"\n\nReason for Rejection:"
+                f"\n{comments if comments else 'No specific reason provided.'}")
+
+            send_mail_notification.delay(
+                staff_subject,
+                message_for_staff,
+                from_email,
+                recipients
+            )
+
             if self.new_data:
                 TaxonGroupTaxonomy.objects.filter(
                     taxongroup=self.taxon_group,

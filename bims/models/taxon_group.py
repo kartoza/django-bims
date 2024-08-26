@@ -284,6 +284,7 @@ def cache_taxon_groups_data(delete_first=False):
 def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
 
     from bims.api_views.module_summary import ModuleSummary
+    from bims.tasks.taxon_group import update_taxon_group_cache
 
     if not issubclass(sender, TaxonGroup):
         return
@@ -293,7 +294,7 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
 
     taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
     if taxon_group_cache:
-        cache_taxon_groups_data(delete_first=True)
+        update_taxon_group_cache.delay(delete_first=True)
 
     if not instance.site:
         return
