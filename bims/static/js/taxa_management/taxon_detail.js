@@ -78,7 +78,35 @@ export const taxonDetail = (() => {
                         </div>
                     </div>
                 </div>           
-            </div>`;
+            </div>
+            <div class="container container-fluid" style="padding-left:40px;">
+                <div class="row">
+                    <div class="dt-full-column">
+                        <div class="row">
+                            <div class="col-12 text-white dt-header">
+                                Additional Information
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Taxonomic Comments</strong></div>
+                                <div class="col-8">${data.additional_data['Taxonomic comments'] || data.additional_data['Taxonomic Comments'] || ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Conservation Comments</strong></div>
+                                <div class="col-8">${data.additional_data['Conservation Comments'] || ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Biogeographic Comments</strong></div>
+                                <div class="col-8">${data.additional_data['Biogeographic Comments'] || ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Environmental Comments</strong></div>
+                                <div class="col-8">${data.additional_data['Environmental Comments'] || ''}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+`;
     }
 
     return {

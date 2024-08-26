@@ -38,6 +38,17 @@ def create_taxon_proposal(
         if isinstance(accepted_taxonomy, tuple) and len(accepted_taxonomy) > 0:
             accepted_taxonomy = accepted_taxonomy[0]
 
+    additional_data = taxon.additional_data
+    additional_data_to_check = [
+        'Taxonomic Comments',
+        'Conservation Comments',
+        'Biogeographic Comments',
+        'Environmental Comments'
+    ]
+    for additional_key in additional_data_to_check:
+        if data.get(additional_key):
+            additional_data[additional_key] = data.get(additional_key)
+
     proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
         original_taxonomy=taxon,
         taxon_group=taxon_group,
@@ -56,7 +67,8 @@ def create_taxon_proposal(
             'parent': data.get('parent', taxon.parent),
             'hierarchical_data': taxon.hierarchical_data,
             'gbif_data': taxon.gbif_data,
-            'collector_user': creator
+            'collector_user': creator,
+            'additional_data': additional_data
         }
     )
     if created:
