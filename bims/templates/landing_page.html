@@ -1,6 +1,7 @@
 {% extends 'main_base.html' %}
 {% load static %}
 {% load jsonify %}
+{% load site %}
 
 {% block subtitle %}
     Home
@@ -21,6 +22,8 @@
 {% endblock %}
 
 {% block body_content %}
+
+    {% is_fada_site as fada_site %}
     <div id="section-wrapper">
         <div id="header-wrapper">
             {% if custom_theme.carousels.all %}
@@ -28,6 +31,7 @@
                 {% include "carousel.html" %}
             </header>
             {% endif %}
+            {% if not fada_site %}
             <section class="biodiversity-data-container" style="position: relative;">
                 <div class="container">
                     <div class="row">
@@ -42,6 +46,7 @@
                     </div>
                 </div>
             </section>
+            {% endif %}
             {% if custom_theme.landing_page_sections %}
                 {% for landing_page_section in custom_theme.landing_page_sections.all %}
                     <section class="biodiversity-data-container custom-sections"

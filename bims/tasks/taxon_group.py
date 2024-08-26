@@ -95,3 +95,19 @@ def delete_occurrences_by_taxon_group(self, taxon_module_id):
 
     connect_bims_signals()
     return messages
+
+
+@shared_task(bind=True, name='bims.tasks.update_taxon_group_cache', queue='update')
+def update_taxon_group_cache(self, delete_first=False):
+    from bims.serializers.taxon_serializer import TaxonGroupSerializer
+    from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
+    from bims.cache import delete_cache, set_cache
+    taxa_groups_query = TaxonGroup.objects.filter(
+        category='SPECIES_MODULE',
+        parent__isnull=True
+    ).order_by('display_order')
+    taxon_groups_data = TaxonGroupSerializer(
+        taxa_groups_query, many=True).data
+    if delete_first:
+        delete_cache(TAXON_GROUP_CACHE)
+    set_cache(TAXON_GROUP_CACHE, taxon_groups_data)

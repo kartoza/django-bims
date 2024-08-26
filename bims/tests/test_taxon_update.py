@@ -19,7 +19,8 @@ class UpdateTaxonTest(FastTenantTestCase):
         self.client = TenantClient(self.tenant)
         self.expert_user = User.objects.create_user('testuser', 'test@example.com', 'password')
         self.normal_user = User.objects.create_user('normal_user',
-                                                    'normal_user@example.com', 'password')
+                                                    'normal_user@example.com',
+                                                    'password')
         self.superuser = User.objects.create_user(
             username='superuser',
             email='superuser@example.com',

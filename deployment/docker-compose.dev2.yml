@@ -1,0 +1,175 @@
+version: '3.7'
+volumes:
+  rabbitmq:
+  geoserver-datadir:
+x-common-django:
+  &default-common-django
+  build:
+    context: ../
+    dockerfile: deployment/docker/Dockerfile
+    target: dev
+  hostname: dev
+  command: ''
+  entrypoint: [ ]
+  environment:
+    - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
+    - APP_NAME=bims
+    - ASYNC_SIGNALS=True
+    - BROKER_URL=amqp://rabbitmq:5672
+    - CELERY_BROKER_URL=amqp://rabbitmq:5672
+    - C_FORCE_ROOT=1
+    - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
+    - ALLOWED_HOSTS=['*']
+    - DATABASE_HOST=db
+    - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+    - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+    - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+    - DATABASE_USERNAME=${POSTGRES_USER:-docker}
+    - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+    - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+    - GEOSERVER_LOCATION=http://geoserver/geoserver/
+    - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+    - GEOSERVER_PUBLIC_LOCATION=http://192.168.50.135:63305/geoserver/
+    - GEOSERVER_ADMIN_USER=${GEOSERVER_USERNAME:-admin}
+    - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_PASSWORD:-admingeoserver}
+    - MEDIA_ROOT=/home/web/media
+    - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+    - ROOT_URLCONF=core.urls
+    - SITEURL=http://localhost:63307/
+    - STATIC_ROOT=/home/web/static/static
+    - VIRTUAL_HOST=bims.kartoza.com
+    - VIRTUAL_PORT=8080
+    - PYTHONPATH=/home/web/django_project/
+  restart: unless-stopped
+  user: root
+  extra_hosts:
+    - 'localhost: 192.168.1.197'
+  volumes:
+    - ../../django-bims:/home/web/django_project
+    - ./static:/home/web/static:rw
+    - ./media:/home/web/media:rw
+
+services:
+
+  flower:
+    image: mher/flower
+    container_name: bims_dev_flower
+    command: celery --broker=amqp://rabbitmq:5672// flower
+    environment:
+      - FLOWER_PORT=${FLOWER_PORT:-5555}
+      - FLOWER_BASIC_AUTH=${FLOWER_USERNAME:-username}:${FLOWER_PASSWORD:-password}
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+
+  cache:
+    container_name: bims_dev_cache
+    image: memcached
+    profiles:
+      - dev
+    entrypoint:
+      - memcached
+      - -m 64
+
+  db:
+    container_name: bims_dev_db
+    profiles:
+      - dev
+    image: kartoza/postgis:15-3.3
+    shm_size: 1g
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_USER: ${POSTGRES_USER:-docker}
+      POSTGRES_PASS: ${POSTGRES_PASS:-docker}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
+    volumes:
+      - ./pg_fip/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+      - ./sql:/sql
+    ports:
+      - "6543:5432"
+
+  db-restore:
+    image: kartoza/postgis:15-3.3
+    profiles:
+      - dev
+    volumes:
+      - ./pg/postgres_data:/var/lib/postgresql
+      - ./backups:/backups
+      - ./restore-db.sh:/restore-db.sh
+      - ./revoke.sql:/revoke.sql
+    environment:
+      ALLOW_IP_RANGE: 0.0.0.0/0
+      POSTGRES_USER: ${POSTGRES_USER:-docker}
+      POSTGRES_PASS: ${POSTGRES_PASS:-docker}
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
+
+  geoserver:
+    container_name: bims_dev_geoserver
+    image: kartoza/geoserver:2.19.0
+    restart: unless-stopped
+    profiles:
+      - dev
+    environment:
+      HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+      HTTP_PORT: ${GEOSERVER_PORT:-63305}
+      GEOSERVER_ADMIN_USER: ${GEOSERVER_USERNAME:-admin}
+      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_PASSWORD:-admingeoserver}
+      DATABASE_URL: postgres://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+    depends_on:
+      - db
+    volumes:
+      - geoserver-datadir:/opt/geoserver/data_dir/
+    links:
+      - db
+    ports:
+      - "63305:8080"
+
+  rabbitmq:
+    container_name: bims_dev_rabbitmq
+    image: rabbitmq:3.7-alpine
+    profiles:
+      - dev
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    restart: on-failure
+
+  worker:
+    <<: *default-common-django
+    container_name: bims_dev_worker
+    image: bims-dev
+    hostname: worker
+    profiles:
+      - dev
+    links:
+      - db:db
+      - cache:cache
+      - rabbitmq:rabbitmq
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./scheduler-data:/home/scheduler-data
+    command: celery --app=bims.celery:app worker -Q search,update,geocontext -B -l debug
+
+  dev:
+    <<: *default-common-django
+    container_name: bims_dev_django
+    profiles:
+      - dev
+    depends_on:
+      - db
+      - rabbitmq
+      - worker
+      - smtp
+    ports:
+      # for django test server
+      - "63302:8080"
+      # for ssh
+      - "63303:22"
+
+  smtp:
+    image: catatnight/postfix
+    container_name: postfix
+    environment:
+      - maildomain=kartoza.com
+      - smtp_user=noreply:docker
