@@ -367,6 +367,28 @@ class AbstractTaxonomy(AbstractValidation):
                 last_update_event.datetime, format='F j, Y', use_l10n=True)
         return self.import_date
 
+    @property
+    def last_modified_by(self):
+        from bims.models.taxonomy_update_proposal import (
+            TaxonomyUpdateProposal
+        )
+        from easyaudit.models import CRUDEvent
+        taxon_proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=self
+        ).order_by('-id')
+        if taxon_proposal.exists():
+            return taxon_proposal.first().collector_user
+
+        crud_event = CRUDEvent.objects.filter(
+            content_type__model=self._meta.model_name,
+            object_id=self.id,
+            event_type=CRUDEvent.UPDATE
+        ).order_by('-datetime')
+
+        if crud_event.exists():
+            return crud_event.first().user
+
+        return None
 
 class Taxonomy(AbstractTaxonomy):
     CATEGORY_CHOICES = (

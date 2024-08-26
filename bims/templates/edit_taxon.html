@@ -68,6 +68,17 @@
 
             <div class="form-group row">
                 <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Last modified by
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" disabled
+                           class="form-control form-control-sm"
+                           placeholder="" value="{% if object.last_modified_by %}{{ object.last_modified_by }}{% else %}Admin{% endif %}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
                     Taxon Name
                 </label>
                 <div class="col-sm-10">
