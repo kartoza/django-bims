@@ -68,7 +68,7 @@ class TestTaxaUpload(FastTenantTestCase):
         self.assertTrue(
             Taxonomy.objects.filter(
                 canonical_name__icontains='Ecnomidae2',
-                taxonomic_status='synonym'
+                taxonomic_status__iexact='synonym'
             ).exists()
         )
 
@@ -93,6 +93,13 @@ class TestTaxaUpload(FastTenantTestCase):
                 name='ミミズ',
                 language='jpn',
                 taxonomy__canonical_name__icontains='Oligochaeta'
+            )
+        )
+
+        self.assertTrue(
+            VernacularName.objects.filter(
+                name='Animalia test2',
+                language='ind',
             )
         )
 

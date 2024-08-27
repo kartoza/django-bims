@@ -160,6 +160,12 @@ class TaxaProcessor(object):
         """Common name of species"""
         common_name_value = DataCSVUpload.row_value(row, COMMON_NAME)
         if not common_name_value:
+            common_name_value = DataCSVUpload.row_value(row, VERNACULAR_NAME)
+            vernacular_lang = DataCSVUpload.row_value(row, VERNACULAR_NAME_LANG)
+        else:
+            vernacular_lang = 'eng'
+
+        if not common_name_value:
             return None
 
         vernacular_names = []
@@ -169,7 +175,7 @@ class TaxaProcessor(object):
             match = re.match(r'^(.*?)(?: \((\w+)\))?$', common_name)
             if match:
                 name = match.group(1)
-                language = match.group(2) if match.group(2) else 'eng'
+                language = match.group(2) if match.group(2) else vernacular_lang
                 try:
                     vernacular_name, _ = VernacularName.objects.get_or_create(
                         name=name,

@@ -24,7 +24,6 @@ from bims.models.notification import (
     NEW_TAXONOMY
 )
 from django.db.models import JSONField, OuterRef, Subquery, signals
-from easyaudit.models import CRUDEvent
 
 ORIGIN_CATEGORIES = {
     'non-native': 'alien',
@@ -356,6 +355,7 @@ class AbstractTaxonomy(AbstractValidation):
 
     @property
     def last_modified(self):
+        from easyaudit.models import CRUDEvent
         last_update_event = CRUDEvent.objects.filter(
             object_id=self.id,
             content_type__model=self._meta.model_name,

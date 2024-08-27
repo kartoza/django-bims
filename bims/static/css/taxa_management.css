@@ -92,7 +92,7 @@ ul.pagination li.current a {
 }
 
 .selected {
-    border-color: rgba(23, 159, 144, 0.35);
+    border: 3px solid #179f9070 !important;
     background-color: #179f9026 !important;
 }
 

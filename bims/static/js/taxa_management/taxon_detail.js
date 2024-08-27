@@ -102,6 +102,18 @@ export const taxonDetail = (() => {
                                 <div class="col-4"><strong>Environmental Comments</strong></div>
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental Comments'] || '') : ''}</div>
                             </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Species Name References</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Species Name References'] || '') : ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Environmental References</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental References'] || '') : ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Conservation References</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation References'] || '') : ''}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
