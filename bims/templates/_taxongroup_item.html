@@ -8,7 +8,12 @@
                     <img src="{{ taxon_group.logo }}"/>
                 {% endif %}
             </div>
-            <div class="col-sm-9" style="padding-right: 0">
+            <div class="col-sm-9" style="padding-right: 0; position: relative;">
+                {% if user_is_expert %}
+                    <div style="position: absolute; top: 0; right: 0; margin-right: -10px">
+                        <i class="fa fa-id-badge" aria-hidden="true" style="color: #403d3d; font-size: 18px;" title="Expert"></i>
+                    </div>
+                {% endif %}
                 <div class="taxon-group-title" data-extra-attributes="{{ taxon_group.extra_attributes }}"
                      data-taxa-upload-template="{{ taxon_group.taxa_upload_template }}"
                      data-occurrence-upload-template="{{ taxon_group.occurrence_upload_template }}"

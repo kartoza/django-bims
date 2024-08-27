@@ -312,28 +312,6 @@ export const taxaManagement = (() => {
                     }
                 });
 
-                // $('.add-tag').off('click').on('click', function (event) {
-                //     event.preventDefault();
-                //     if (!taxaData) return false;
-                //     let data = taxaData.find(taxon => taxon.id === $(this).parent().data('id'));
-                //     $('#addTagModal').modal({keyboard: false});
-                //     $('#addTagModal').find('.save-tag').data('taxonomy-id', data.id);
-                //     let tagsString = data.tag_list;
-                //     let tagsArray = tagsString.split(',').filter(n => n);
-                //     let formattedTags = tagsArray.map(tag => ({id: tag, text: tag, name: tag}));
-                //     const tagAutoComplete = $('#taxa-tag-auto-complete');
-                //     tagAutoComplete.empty().val(null).trigger('change');
-                //     if (tagsArray.length > 0) {
-                //         const tagIds = [];
-                //         tagsArray.forEach(tag => {
-                //             let newOption = new Option(tag, tag, false, false);
-                //             tagAutoComplete.append(newOption);
-                //             tagIds.push(tag);
-                //         });
-                //         tagAutoComplete.val(tagIds).trigger('change');
-                //     }
-                // });
-
                 $('.remove-taxon-from-group').off('click').on('click', function (event) {
                     taxaTable.handleRemoveTaxonFromGroup($(this).parent().data('id'));
                 });
@@ -378,9 +356,9 @@ export const taxaManagement = (() => {
                             let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
-                            data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML;
+                            data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML + `<input type="hidden" class="proposal-id" value="${data.proposal_id}" />`;
 
-                            if (userCanEditTaxon || isExpert) {
+                            if (data['can_edit']) {
                                 let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
                                 if (!data['validated']) {
                                     $rowAction.find('.btn-validated-container').hide();
@@ -436,15 +414,6 @@ export const taxaManagement = (() => {
                 {"data": "common_name", "className": "min-width-100", "sortable": false},
                 {"data": "rank", "className": "min-width-100"},
                 {"data": "iucn_status_full_name", "orderData": [8], "orderField": "iucn_status__category"},
-                // {"data": "origin_name"},
-                // {"data": "endemism_name", "orderData": [4], "orderField": "endemism__name"},
-                // {
-                //     "data": "total_records",
-                //     "render": function (data, type, row) {
-                //         let searchUrl = `/map/#search/${row.canonical_name}/taxon=&search=${row.canonical_name}&sourceCollection=${JSON.stringify(sourceCollection)}`;
-                //         return `${data} <a href='${searchUrl}' target="_blank"><i class="fa fa-search" aria-hidden="true"></i></a>`;
-                //     }
-                // },
                 {"data": "import_date", "className": "min-width-100"},
                 {
                     "data": "tag_list",
@@ -468,10 +437,13 @@ export const taxaManagement = (() => {
 
         const detailRows = [];
         const taxonCache = {};
+        const taxonProposalCache = {};
 
         // Event listener for detail rows
         table.on('click', 'tbody td.dt-control', async function (event) {
             let tr = event.target.closest('tr');
+            let proposalId = $(this).closest('tr').find('.proposal-id').val();
+
             let row = table.row(tr);
             let idx = detailRows.indexOf(tr.id);
 
@@ -484,7 +456,6 @@ export const taxaManagement = (() => {
 
                 if (!taxonCache[tr.id]) {
                     row.child(formatLoadingMessage()).show();
-
                     try {
                         let response = await fetch(`/api/taxon/${tr.id.replace('row_', '')}`);
                         let data = await response.json();
@@ -497,6 +468,20 @@ export const taxaManagement = (() => {
                     }
                 } else {
                     row.child(taxonDetail.formatDetailTaxon(taxonCache[tr.id])).show();
+                }
+
+                if (proposalId && proposalId !== 'null') {
+                    try {
+                        let response = await fetch(`/api/taxon-proposal/${proposalId}`);
+                        let data = await response.json();
+                        let $tr = $(row.child())
+                        let $changes = $('<div class="taxon_proposal"><div>Updates</div></div>')
+                        $changes.append(taxonDetail.formatDetailTaxon(data))
+                        $tr.find('td').append($changes);
+                    } catch (error) {
+                        console.error('Error fetching taxon data:', error);
+                        return;
+                    }
                 }
 
                 if (idx === -1) {

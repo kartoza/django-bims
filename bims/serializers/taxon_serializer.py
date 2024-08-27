@@ -38,6 +38,13 @@ class TaxonSerializer(serializers.ModelSerializer):
     biographic_distributions = serializers.SerializerMethodField()
     author = serializers.SerializerMethodField()
     DT_RowId = serializers.SerializerMethodField()
+    proposal_id = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
+
+    def taxonomy_obj(self, obj):
+        if isinstance(obj, TaxonomyUpdateProposal):
+            return obj.original_taxonomy
+        return obj
 
     def get_author(self, obj: Taxonomy):
         return self.get_proposed_or_current(obj, 'author')
@@ -49,16 +56,25 @@ class TaxonSerializer(serializers.ModelSerializer):
         return u", ".join(o.name for o in obj.biographic_distributions.all())
 
     def get_genus(self, obj: Taxonomy):
+        validated = self.context.get('validated', False)
+        if not validated:
+            return obj.genus_name
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
             return obj.hierarchical_data['genus_name']
         return obj.genus_name
 
     def get_family(self, obj: Taxonomy):
+        validated = self.context.get('validated', False)
+        if not validated:
+            return obj.family_name
         if obj.hierarchical_data and 'family_name' in obj.hierarchical_data:
             return obj.hierarchical_data['family_name']
         return obj.family_name
 
     def get_species(self, obj: Taxonomy):
+        validated = self.context.get('validated', False)
+        if not validated:
+            return obj.species_name
         if obj.hierarchical_data and 'species_name' in obj.hierarchical_data:
             return obj.hierarchical_data['species_name']
         return obj.species_name
@@ -75,6 +91,14 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_pending_proposal(self, obj):
         return self.taxonomy_proposals.get(obj.id)
 
+    def get_proposal_id(self, obj):
+        validated = self.context.get('validated', False)
+        if not validated:
+            proposal = self.get_pending_proposal(obj)
+            if proposal:
+                return proposal.id
+        return None
+
     def get_proposed_or_current(self, obj, field, original_value=''):
         validated = self.context.get('validated', False)
         if not original_value:
@@ -90,7 +114,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         return (
             f"{original_value} → "
             f"{proposal_value}"
-            if proposal and original_value != proposal_value
+            if proposal and original_value.strip() != proposal_value.strip()
             else original_value
         )
 
@@ -113,6 +137,24 @@ class TaxonSerializer(serializers.ModelSerializer):
             except KeyError:
                 pass
         return origin_name
+
+    def get_can_edit(self, obj):
+        can_edit = self.context.get('can_edit', None)
+        if can_edit is None:
+            taxon_group_id = self.context.get('taxon_group_id', None)
+            user_id = self.context.get('user', None)
+            if not user_id or not taxon_group_id:
+                return None
+            can_edit = (
+                TaxonGroup.objects.filter(
+                    experts=user_id,
+                    id=taxon_group_id
+                ).exists() or
+                get_user_model().objects.get(id=user_id).is_superuser
+            )
+            self.context['can_edit'] = can_edit
+            return can_edit
+        return can_edit
 
     def get_iucn_status_full_name(self, obj):
         if obj.iucn_status:
@@ -164,19 +206,14 @@ class TaxonSerializer(serializers.ModelSerializer):
         user_id = self.context.get('user', None)
         if taxon_group_id:
             can_be_validated = TaxonomyUpdateProposal.objects.filter(
-                original_taxonomy=obj,
+                original_taxonomy=self.taxonomy_obj(obj),
                 taxon_group_under_review=taxon_group_id,
                 status='pending'
             ).exists()
 
             # Check if user can validate the taxon
             if can_be_validated and user_id:
-                return (
-                    TaxonGroup.objects.filter(
-                        experts=user_id,
-                        id=taxon_group_id
-                    ).exists()
-                )
+                return self.get_can_edit(obj)
 
             return can_be_validated
 
@@ -198,7 +235,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         if taxon_group_ids:
             return TaxonGroupTaxonomy.objects.filter(
                 taxongroup__in=taxon_group_ids,
-                taxonomy=obj,
+                taxonomy=self.taxonomy_obj(obj),
                 is_validated=True
             ).exists()
         return obj.validated
@@ -210,7 +247,7 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_total_records(self, obj):
         return BiologicalCollectionRecord.objects.filter(
-            taxonomy=obj,
+            taxonomy=self.taxonomy_obj(obj),
             source_site=Site.objects.get_current()
         ).count()
 
@@ -236,7 +273,8 @@ class TaxonSerializer(serializers.ModelSerializer):
                 'logo': taxon_group.logo.name,
                 'name': taxon_group.name
             }
-        taxon_module = obj.taxongroup_set.first()
+        taxonomy_obj = self.taxonomy_obj(obj)
+        taxon_module = taxonomy_obj.taxongroup_set.first()
         if taxon_module:
             return {
                 'logo': taxon_module.logo.name,

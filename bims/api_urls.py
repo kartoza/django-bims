@@ -36,7 +36,7 @@ from bims.api_views.taxon import (
     FindTaxon,
     AddNewTaxon,
     TaxaList,
-    TaxonTagAutocompleteAPIView, AddTagAPIView
+    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -157,6 +157,8 @@ urlpatterns = [
         name='location-sites-coordinate'),
     re_path(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
+    re_path(r'^taxon-proposal/(?P<pk>[0-9]+)/$',
+        TaxonProposalDetail.as_view()),
     re_path(r'^cluster/(?P<administrative_level>\w+)/$',
         ClusterList.as_view()),
     re_path(r'^collection/download/$',

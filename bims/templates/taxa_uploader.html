@@ -122,7 +122,11 @@
                     {% for upload_session in upload_sessions %}
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px">
+                                    {% if upload_session.module_group.logo %}
+                                    <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                    {% endif %}
+                                </div>
                                 <p>Uploaded at {{ upload_session.uploaded_at }}</p>
                                 <p class="card-text">Progress : <span class="progress-text">{% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</span></p>
                                 <div class="progress">
@@ -144,7 +148,11 @@
                     {% for upload_session in finished_sessions %}
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px"> <img src="{{ upload_session.module_group.logo.url }}" width="40"/> </div>
+                                <h5 class="card-title">CSV file {{ upload_session.process_file.name }}</h5> <div style="float: right; margin-top: -40px">
+                                    {% if upload_session.module_group.logo %}
+                                        <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                    {% endif %}
+                                </div>
                                 <p>Uploaded at {{ upload_session.uploaded_at }}</p>
                                 <p class="card-text">Result : {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
                                 {% if upload_session.error_file %}

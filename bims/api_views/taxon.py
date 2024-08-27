@@ -60,12 +60,16 @@ class TaxonDetail(APIView):
             )
         return taxonomic_rank_values
 
-    def get(self, request, pk, format=None):
-
+    def get_serializer_data(self, pk):
         taxon = self.get_object(pk)
 
         serializer = TaxonDetailSerializer(taxon)
-        data = serializer.data
+        return serializer.data
+
+    def get(self, request, pk, format=None):
+
+        taxon = self.get_object(pk)
+        data = self.get_serializer_data(pk)
 
         records = BiologicalCollectionRecord.objects.filter(
             taxonomy=taxon
@@ -90,7 +94,9 @@ class TaxonDetail(APIView):
         # Taxonomic rank tree
         taxonomic_rank = self.get_taxonomic_rank_values(taxon)
         for rank in taxonomic_rank:
-            data.update(rank)
+            rank_key = list(rank.keys())[0]
+            if rank_key not in data or data[rank_key] == '':
+                data.update(rank)
         common_names = []
         results = []
 
@@ -242,6 +248,21 @@ class FindTaxon(APIView):
                     })
 
         return Response(taxon_list)
+
+
+class TaxonProposalDetail(TaxonDetail):
+    def get_object(self, pk):
+        try:
+            update_proposal = TaxonomyUpdateProposal.objects.get(pk=pk)
+            return update_proposal.original_taxonomy
+        except TaxonomyUpdateProposal.DoesNotExist:
+            raise Http404
+
+    def get_serializer_data(self, pk):
+        serializer = TaxonDetailSerializer(
+            TaxonomyUpdateProposal.objects.get(pk=pk)
+        )
+        return serializer.data
 
 
 class AddNewTaxon(LoginRequiredMixin, APIView):
@@ -514,6 +535,14 @@ class TaxaList(LoginRequiredMixin, APIView):
                         taxongrouptaxonomy__is_validated=False,
                         taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
+
+                    rejected_taxa = list(TaxonomyUpdateProposal.objects.filter(
+                        taxon_group_id__in=taxon_group_ids,
+                        status='rejected'
+                    ).values_list('original_taxonomy_id', flat=True))
+
+                    if rejected_taxa:
+                        taxon_list = taxon_list.exclude(id__in=rejected_taxa)
                 else:
                     taxon_list = taxon_list.filter(
                         taxongrouptaxonomy__is_validated=True,
