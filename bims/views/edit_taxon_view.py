@@ -100,13 +100,13 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         )
 
         data['Taxonomic Comments'] = (
-            self.request.POST.get('additional_data__Taxonomic_Comments', ''))
+            self.request.POST.get('additional_data__Taxonomic_Comments', '')).strip()
         data['Conservation Comments'] = (
-            self.request.POST.get('additional_data__Conservation_Comments', ''))
+            self.request.POST.get('additional_data__Conservation_Comments', '')).strip()
         data['Biogeographic Comments'] = (
-            self.request.POST.get('additional_data__Biogeographic_Comments', ''))
+            self.request.POST.get('additional_data__Biogeographic_Comments', '')).strip()
         data['Environmental Comments'] = (
-            self.request.POST.get('additional_data__Environmental_Comments', ''))
+            self.request.POST.get('additional_data__Environmental_Comments', '')).strip()
 
         new_proposal = False
 

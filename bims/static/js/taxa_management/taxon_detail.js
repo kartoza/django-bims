@@ -88,19 +88,19 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Taxonomic Comments</strong></div>
-                                <div class="col-8">${data.additional_data['Taxonomic comments'] || data.additional_data['Taxonomic Comments'] || ''}</div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Taxonomic comments'] || data.additional_data['Taxonomic Comments'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Conservation Comments</strong></div>
-                                <div class="col-8">${data.additional_data['Conservation Comments'] || ''}</div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation Comments'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Biogeographic Comments</strong></div>
-                                <div class="col-8">${data.additional_data['Biogeographic Comments'] || ''}</div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Biogeographic Comments'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Environmental Comments</strong></div>
-                                <div class="col-8">${data.additional_data['Environmental Comments'] || ''}</div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental Comments'] || '') : ''}</div>
                             </div>
                         </div>
                     </div>

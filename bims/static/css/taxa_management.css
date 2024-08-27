@@ -324,3 +324,9 @@ table {
 .taxon-group-expert.selected {
     background-color: rgb(237, 214, 174) !important;
 }
+
+.taxon_proposal {
+    border-top: 1px solid color(srgb 0.0941 0.6266 0.5639);
+    margin-top: 20px;
+    padding-top: 10px;
+}
