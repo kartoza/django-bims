@@ -358,7 +358,7 @@ export const taxaManagement = (() => {
 
                             data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML + `<input type="hidden" class="proposal-id" value="${data.proposal_id}" />`;
 
-                            if (userCanEditTaxon || isExpert) {
+                            if (data['can_edit']) {
                                 let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
                                 if (!data['validated']) {
                                     $rowAction.find('.btn-validated-container').hide();

@@ -39,6 +39,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     DT_RowId = serializers.SerializerMethodField()
     proposal_id = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
 
     def taxonomy_obj(self, obj):
         if isinstance(obj, TaxonomyUpdateProposal):
@@ -137,6 +138,24 @@ class TaxonSerializer(serializers.ModelSerializer):
                 pass
         return origin_name
 
+    def get_can_edit(self, obj):
+        can_edit = self.context.get('can_edit', None)
+        if can_edit is None:
+            taxon_group_id = self.context.get('taxon_group_id', None)
+            user_id = self.context.get('user', None)
+            if not user_id or not taxon_group_id:
+                return None
+            can_edit = (
+                TaxonGroup.objects.filter(
+                    experts=user_id,
+                    id=taxon_group_id
+                ).exists() or
+                get_user_model().objects.get(id=user_id).is_superuser
+            )
+            self.context['can_edit'] = can_edit
+            return can_edit
+        return can_edit
+
     def get_iucn_status_full_name(self, obj):
         if obj.iucn_status:
             try:
@@ -194,12 +213,7 @@ class TaxonSerializer(serializers.ModelSerializer):
 
             # Check if user can validate the taxon
             if can_be_validated and user_id:
-                return (
-                    TaxonGroup.objects.filter(
-                        experts=user_id,
-                        id=taxon_group_id
-                    ).exists()
-                )
+                return self.get_can_edit(obj)
 
             return can_be_validated
 

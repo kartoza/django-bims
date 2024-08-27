@@ -535,6 +535,14 @@ class TaxaList(LoginRequiredMixin, APIView):
                         taxongrouptaxonomy__is_validated=False,
                         taxongrouptaxonomy__taxongroup__in=taxon_group_ids
                     )
+
+                    rejected_taxa = list(TaxonomyUpdateProposal.objects.filter(
+                        taxon_group_id__in=taxon_group_ids,
+                        status='rejected'
+                    ).values_list('original_taxonomy_id', flat=True))
+
+                    if rejected_taxa:
+                        taxon_list = taxon_list.exclude(id__in=rejected_taxa)
                 else:
                     taxon_list = taxon_list.filter(
                         taxongrouptaxonomy__is_validated=True,
