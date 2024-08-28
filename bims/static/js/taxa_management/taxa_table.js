@@ -259,6 +259,13 @@ export const taxaTable = (() => {
             totalAllFilters += endemismArray.length;
             url += `&endemism=${urlParams.get('endemism')}`;
         }
+        if (urlParams.get('taxonomic_status')) {
+            const taxonomicStatusArray = urlParams.get('taxonomic_status').split(',');
+            $('#taxonomic-status-filters').val(taxonomicStatusArray);
+            filterSelected['taxonomic_status'] = taxonomicStatusArray;
+            totalAllFilters += taxonomicStatusArray.length;
+            url += `&taxonomic_status=${urlParams.get('taxonomic_status')}`;
+        }
         if (urlParams.get('is_gbif')) {
             url += `&is_gbif=${urlParams.get('is_gbif')}`;
         }
@@ -345,6 +352,10 @@ export const taxaTable = (() => {
                 return data['text'];
             })
             urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
+            const taxonomicStatuses = $('#taxonomic-status-filters').select2('data').map(function(data) {
+                return data['text'];
+            })
+            urlParams = insertParam('taxonomic_status', taxonomicStatuses.join(), true, false, urlParams);
         } catch (e) {
         }
         const consStatus = $('#cons-status-filters').select2('data').map(function(data) {

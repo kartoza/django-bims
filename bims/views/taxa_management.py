@@ -80,6 +80,13 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             name='').values_list('name', flat=True).distinct()
         context['all_cons_status'] = [
             {'value': status[0], 'label': status[1]} for status in IUCNStatus.CATEGORY_CHOICES]
+        all_taxonomic_status = (
+            Taxonomy.objects.all().values_list('taxonomic_status', flat=True).distinct('taxonomic_status')
+        )
+        context['all_taxonomic_status'] = []
+        for taxonomic_status in all_taxonomic_status:
+            if taxonomic_status and taxonomic_status.upper() not in context['all_taxonomic_status']:
+                context['all_taxonomic_status'].append(taxonomic_status.upper())
         context['is_expert'] = self.request.user.is_superuser or self.is_user_expert_for_taxon(
             self.request.GET.get('selected'))
         return context

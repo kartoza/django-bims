@@ -409,6 +409,8 @@ class TaxaList(LoginRequiredMixin, APIView):
         cons_status = list(filter(None, cons_status))
         endemism = request.GET.get('endemism', '').split(',')
         endemism = list(filter(None, endemism))
+        taxonomic_status = request.GET.get('taxonomic_status', '').split(',')
+        taxonomic_status = list(filter(None, taxonomic_status))
         taxon_name = request.GET.get('taxon', '').strip()
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
@@ -491,6 +493,11 @@ class TaxaList(LoginRequiredMixin, APIView):
             taxon_list = taxon_list.filter(
                 endemism__name__in=endemism
             )
+        if len(taxonomic_status) > 0:
+            queries = Q()
+            for status in taxonomic_status:
+                queries |= Q(taxonomic_status__iexact=status)
+            taxon_list = taxon_list.filter(queries)
         if taxon_name:
             taxon_list = taxon_list.filter(
                 Q(canonical_name__icontains=taxon_name) |
