@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
+from bims.api_views.taxon_update import is_expert
 from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
@@ -655,12 +656,17 @@ class TaxaList(LoginRequiredMixin, APIView):
         page = self.paginate_queryset(taxon_list)
         validated = ast.literal_eval(request.GET.get('validated', 'True'))
         if page is not None:
+            taxon_group_id = request.GET.get('taxonGroup', None)
             serializer = self.get_paginated_response(
                 TaxonSerializer(page, many=True, context={
-                    'taxon_group_id': request.GET.get('taxonGroup', None),
+                    'taxon_group_id': taxon_group_id,
                     'user': request.user.id,
                     'validated': validated
                 }).data)
+            serializer.data['is_expert'] = is_expert(
+                self.request.user,
+                TaxonGroup.objects.get(id=taxon_group_id)
+            ) if taxon_group_id else False
         else:
             serializer = TaxonSerializer(
                 taxon_list,

@@ -273,10 +273,10 @@
                     </div>
                     <!-- Download button -->
                     <div class="float-right download-button-container"
-                         style="margin-top: -47px; display: none">
-                        {% if perms.bims.add_taxonomy or is_expert %}
+                         style="margin-top: -47px;">
                         <button id="add-taxon-btn"
                                 class="btn btn-outline-success" data-toggle="modal"
+                                style="display: none"
                                 data-target="#addNewTaxonModal">Add a taxon
                         </button>
                         <div class="btn-group">
@@ -289,7 +289,6 @@
                                 <a class="dropdown-item disabled" href="#" id="download-pdf">PDF Report</a>
                             </div>
                         </div>
-                        {% endif %}
                     </div>
                     <div class="taxa-table">
                         <table id="taxaTable" class="table stripe">
@@ -306,18 +305,9 @@
                                 <th scope="col">Biographic distributions</th>
                                 <th scope="col">Accepted Taxon</th>
                                 <th scope="col">Rank</th>
-{#                                <th scope="col">Origin#}
-{#                                </th>#}
-{#                                <th scope="col">Endemism#}
-{#                                </th>#}
-{#                                <th scope="col">Records#}
-{#                                </th>#}
-
                                 <th scope="col">
                                     {% if fada_site %}Environmental Information{% else %}Tags{% endif %}</th>
-                                {% if perms.bims.change_taxonomy or is_expert %}
-                                    <th scope="col"></th>
-                                {% endif %}
+                                <th scope="col"></th>
                             </tr>
                             </thead>
                             <tbody id="taxa-list"></tbody>
@@ -340,7 +330,6 @@
                     </div>
                 </div>
 
-                {% if perms.bims.change_taxonomy or is_expert %}
                 {% with preferences.SiteSetting.project_name as project_name %}
                 <div class="row-action" style="display: none">
                     <div class="btn-validated-container">
@@ -360,9 +349,6 @@
                                     <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit in Admin
                                 </a>
                                 {% endif %}
-{#                                <button class="dropdown-item add-tag" title="Manage tags">#}
-{#                                    <i class="fa fa-tags" aria-hidden="true"></i> Manage tags#}
-{#                                </button>#}
                             </div>
                         </div>
                     </div>
@@ -386,7 +372,6 @@
                     </div>
                 </div>
                 {% endwith %}
-                {% endif %}
 
             </div>
         </div>

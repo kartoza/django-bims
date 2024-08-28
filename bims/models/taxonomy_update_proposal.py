@@ -310,6 +310,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     setattr(
                         self.original_taxonomy,
                         field, getattr(self, field))
+            self.original_taxonomy.hierarchical_data = {}
             self.original_taxonomy.save()
             self.status = 'approved'
             self.save()

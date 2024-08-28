@@ -43,11 +43,20 @@ def create_taxon_proposal(
         'Taxonomic Comments',
         'Conservation Comments',
         'Biogeographic Comments',
-        'Environmental Comments'
+        'Environmental Comments',
+        'Taxonomic References',
+        'Conservation References',
+        'Biogeographic References',
+        'Environmental References'
     ]
     for additional_key in additional_data_to_check:
         if data.get(additional_key):
             additional_data[additional_key] = data.get(additional_key)
+
+    canonical_name = data.get('canonical_name', taxon.canonical_name)
+    if taxon.is_species:
+        if taxon.genus_name not in canonical_name:
+            canonical_name = taxon.genus_name + ' ' + canonical_name
 
     proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
         original_taxonomy=taxon,
@@ -57,7 +66,7 @@ def create_taxon_proposal(
             'author': data.get('author', taxon.author),
             'rank': data.get('rank', taxon.rank),
             'scientific_name': data.get('scientific_name', taxon.scientific_name),
-            'canonical_name': data.get('canonical_name', taxon.canonical_name),
+            'canonical_name': canonical_name,
             'origin': data.get('origin', taxon.origin),
             'iucn_status': iucn_status,
             'endemism': endemism,
@@ -65,7 +74,7 @@ def create_taxon_proposal(
             'taxonomic_status': taxonomic_status,
             'accepted_taxonomy': accepted_taxonomy,
             'parent': data.get('parent', taxon.parent),
-            'hierarchical_data': taxon.hierarchical_data,
+            'hierarchical_data': {},
             'gbif_data': taxon.gbif_data,
             'collector_user': creator,
             'additional_data': additional_data
@@ -114,6 +123,8 @@ def update_taxon_proposal(
 def is_expert(user, taxon_group):
     if user.is_superuser:
         return True
+    if not taxon_group:
+        return False
     return taxon_group.experts.filter(
         id=user.id
     ).exists()

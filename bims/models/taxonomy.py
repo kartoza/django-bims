@@ -339,6 +339,12 @@ class AbstractTaxonomy(AbstractValidation):
         self.get_taxon_rank_name(TaxonomicRank.VARIETY.name)
 
     @property
+    def taxon_name(self):
+        if self.is_species and self.genus_name:
+            return self.canonical_name.split(self.genus_name)[-1].strip()
+        return self.canonical_name
+
+    @property
     def is_species(self):
         return (
             self.rank == TaxonomicRank.SPECIES.name or
@@ -483,18 +489,24 @@ class Taxonomy(AbstractTaxonomy):
         if self.additional_data and 'fetch_gbif' in self.additional_data:
             update_taxon_with_gbif = True
             del self.additional_data['fetch_gbif']
+        species_name = ''
+        if not self.hierarchical_data or 'species_name' not in self.hierarchical_data:
+            species_name = self.species_name
+            genus_name = self.genus_name
+            if genus_name in species_name and genus_name:
+                species_name = species_name.split(genus_name)[-1].strip()
         if not self.hierarchical_data:
             self.hierarchical_data = {
                 'family_name': self.get_taxon_rank_name(TaxonomicRank.FAMILY.name),
                 'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
-                'species_name': self.get_taxon_rank_name(TaxonomicRank.SPECIES.name),
+                'species_name': species_name
             }
         elif 'family_name' not in self.hierarchical_data:
             self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
         elif 'genus_name' not in self.hierarchical_data:
             self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
         elif 'species_name' not in self.hierarchical_data:
-            self.hierarchical_data['species_name'] = self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
+            self.hierarchical_data['species_name'] = species_name
 
         super(Taxonomy, self).save(*args, **kwargs)
 

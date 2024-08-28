@@ -63,6 +63,8 @@ def get_html_for_radio_group_headings(column_count):
 
 @register.filter
 def value_by_key(d, key):
+    if not d:
+        return ''
     if key in d:
         return d[key]
     return ''

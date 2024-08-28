@@ -357,6 +357,12 @@ export const taxaManagement = (() => {
                     success: function (response) {
                         loading.hide();
                         taxaData = response.results;
+                        $('#add-taxon-btn').hide();
+
+                        if (response['is_expert']) {
+                            $('#add-taxon-btn').show();
+                        }
+
                         $.each(response.results, function (index, data) {
                             let name = data.canonical_name || data.scientific_name;
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
@@ -366,7 +372,6 @@ export const taxaManagement = (() => {
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
                             data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML + `<input type="hidden" class="proposal-id" value="${data.proposal_id}" />`;
-
                             if (data['can_edit']) {
                                 let $rowAction = $('.row-action').clone(true, true).removeClass('row-action');
                                 if (!data['validated']) {
