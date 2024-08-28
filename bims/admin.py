@@ -119,7 +119,8 @@ from bims.models import (
     CITESListingInfo,
     ImportTask,
     Invasion,
-    FlatPageExtension
+    FlatPageExtension,
+    TagGroup
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2028,6 +2029,10 @@ class ExtendedFlatPageAdmin(FlatPageAdmin):
     list_display = ('title', 'url', 'show_in_navbar', 'display_order')
 
 
+class TagGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'colour')
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -2152,3 +2157,4 @@ admin.site.register(
 
 admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
+admin.site.register(TagGroup, TagGroupAdmin)

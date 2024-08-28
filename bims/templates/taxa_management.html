@@ -298,20 +298,17 @@
                                 <th scope="col">Status</th>
                                 <th scope="col">Author(s)</th>
                                 <th scope="col">Biographic distributions</th>
-                                <th scope="col">Common name</th>
+                                <th scope="col">Accepted Taxon</th>
                                 <th scope="col">Rank</th>
-                                <th scope="col">Cons. Status
-                                </th>
 {#                                <th scope="col">Origin#}
 {#                                </th>#}
 {#                                <th scope="col">Endemism#}
 {#                                </th>#}
 {#                                <th scope="col">Records#}
 {#                                </th>#}
-                                <th scope="col">Created at
-                                </th>
-                                <th scope="col">Tags
-                                </th>
+
+                                <th scope="col">
+                                    {% if fada_site %}Environmental Information{% else %}Tags{% endif %}</th>
                                 {% if perms.bims.change_taxonomy or is_expert %}
                                     <th scope="col"></th>
                                 {% endif %}

@@ -5,6 +5,8 @@ from preferences import preferences
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
 from rest_framework import serializers
+from taggit.models import Tag
+
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal, TaxonomyUpdateReviewer
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup
@@ -40,6 +42,10 @@ class TaxonSerializer(serializers.ModelSerializer):
     DT_RowId = serializers.SerializerMethodField()
     proposal_id = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
+    taxonomic_status = serializers.SerializerMethodField()
+
+    def get_taxonomic_status(self, obj: Taxonomy):
+        return obj.taxonomic_status.upper()
 
     def taxonomy_obj(self, obj):
         if isinstance(obj, TaxonomyUpdateProposal):
@@ -73,15 +79,31 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_species(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
+        species_name = ''
         if not validated:
-            return obj.species_name
+            species_name = obj.species_name
         if obj.hierarchical_data and 'species_name' in obj.hierarchical_data:
-            return obj.hierarchical_data['species_name']
-        return obj.species_name
+            species_name = obj.hierarchical_data['species_name']
+        if not species_name:
+            species_name = obj.species_name
+
+        if species_name:
+            genus_name = self.get_genus(obj)
+            if genus_name in species_name:
+                try:
+                    species_name = (
+                        species_name.split(genus_name)[-1].strip()
+                    )
+                except ValueError:
+                    pass
+
+        return species_name
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.taxonomy_proposals = {}
+        self.context['tag_groups'] = {}
+
         if isinstance(self.instance, Iterable):
             self.taxonomy_proposals = {
                 obj.original_taxonomy_id: obj for obj in TaxonomyUpdateProposal.objects.filter(
@@ -260,7 +282,21 @@ class TaxonSerializer(serializers.ModelSerializer):
             return vernacular_names[0]
 
     def get_tag_list(self, obj):
-        return u", ".join(o.name for o in obj.tags.all())
+        tag_info = []
+        tag_groups = self.context.get('tag_groups', {})
+        for tag in obj.tags.all():
+            if tag.id in tag_groups:
+                tag_info.append(f"{tag_groups[tag.id]}")
+            else:
+                tag_groups = tag.tag_groups.all()
+                if tag_groups.exists():
+                    group = tag_groups.first()
+                    tag_info_data = f"{tag.name} ({group.colour})"
+                else:
+                    tag_info_data = tag.name
+                tag_info.append(tag_info_data)
+                self.context['tag_groups'][tag.id] = tag_info_data
+        return u", ".join(tag_info)
 
     def get_record_type(self, obj):
         return 'bio'
