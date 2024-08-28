@@ -343,6 +343,11 @@ export const taxaTable = (() => {
             return data['text'];
         })
         let urlParams = insertParam('ranks', ranks.join(), true, false);
+
+        const taxonomicStatuses = $('#taxonomic-status-filters').select2('data').map(function(data) {
+            return data['text'];
+        })
+        urlParams = insertParam('taxonomic_status', taxonomicStatuses.join(), true, false, urlParams);
         try {
             const origins = $('#origin-filters').select2('data').map(function(data) {
                 return data['id'];
@@ -352,11 +357,8 @@ export const taxaTable = (() => {
                 return data['text'];
             })
             urlParams = insertParam('endemism', endemism.join(), true, false, urlParams);
-            const taxonomicStatuses = $('#taxonomic-status-filters').select2('data').map(function(data) {
-                return data['text'];
-            })
-            urlParams = insertParam('taxonomic_status', taxonomicStatuses.join(), true, false, urlParams);
         } catch (e) {
+            console.log(e)
         }
         const consStatus = $('#cons-status-filters').select2('data').map(function(data) {
             return data['id'];
