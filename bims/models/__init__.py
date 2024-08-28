@@ -69,3 +69,4 @@ from bims.models.cites_listing_info import CITESListingInfo
 from bims.models.import_task import ImportTask
 from bims.models.invasion import Invasion
 from bims.models.custom_flat_page import FlatPageExtension
+from bims.models.tag_group import TagGroup

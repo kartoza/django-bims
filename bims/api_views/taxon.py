@@ -436,6 +436,12 @@ class TaxaList(LoginRequiredMixin, APIView):
         if order == 'endemism_name':
             order = 'endemism__name'
 
+        if 'accepted_taxonomy_name' in order:
+            order = order.replace(
+                'accepted_taxonomy_name',
+                'accepted_taxonomy__canonical_name'
+            )
+
         # Filter by parent
         parent_ids = request.GET.get('parent', '').split(',')
         parent_ids = list(filter(None, parent_ids))

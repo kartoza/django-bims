@@ -88,31 +88,47 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Taxonomic Comments</strong></div>
-                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Taxonomic comments'] || data.additional_data['Taxonomic Comments'] || '') : ''}</div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Taxonomic Comments'] || data.additional_data['Taxonomic comments'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
-                                <div class="col-4"><strong>Conservation Comments</strong></div>
-                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation Comments'] || '') : ''}</div>
+                                <div class="col-4"><strong>Taxonomic References</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Taxonomic References'] || data.additional_data['Species Name References'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Biogeographic Comments</strong></div>
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Biogeographic Comments'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
-                                <div class="col-4"><strong>Environmental Comments</strong></div>
-                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental Comments'] || '') : ''}</div>
+                                <div class="col-4"><strong>Biogeographic References</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Biogeographic References'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
-                                <div class="col-4"><strong>Species Name References</strong></div>
-                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Species Name References'] || '') : ''}</div>
+                                <div class="col-4"><strong>Environmental Comments</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental Comments'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Environmental References</strong></div>
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental References'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Conservation Comments</strong></div>
+                                <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation Comments'] || '') : ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Conservation References</strong></div>
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation References'] || '') : ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Author(s)</strong></div>
+                                <div class="col-8">${data.author}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Common Name</strong></div>
+                                <div class="col-8">${data.common_name !== 'Unknown' ? data.common_name : ''}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Conservation Status</strong></div>
+                                <div class="col-8">${data.iucn_status_full_name}</div>
                             </div>
                         </div>
                     </div>

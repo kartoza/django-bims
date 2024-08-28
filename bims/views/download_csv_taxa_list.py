@@ -91,8 +91,14 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     def get_family(self, obj):
         return obj.family_name
 
-    def get_species(self, obj):
-        return obj.species_name
+    def get_species(self, obj: Taxonomy):
+        species_name = obj.species_name
+        if species_name:
+            genus_name = obj.genus_name
+            if genus_name:
+                species_name = species_name.replace(genus_name, '')
+            return species_name.strip()
+        return species_name
 
     def get_taxon(self, obj):
         return obj.canonical_name

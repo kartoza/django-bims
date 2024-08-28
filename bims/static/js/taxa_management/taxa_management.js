@@ -227,6 +227,15 @@ export const taxaManagement = (() => {
         getTaxaList(taxaUrlList, newParams);
     }
 
+    const isColorDark = (hexColor) => {
+        hexColor = hexColor.replace('#', '');
+        const r = parseInt(hexColor.substring(0, 2), 16);
+        const g = parseInt(hexColor.substring(2, 4), 16);
+        const b = parseInt(hexColor.substring(4, 6), 16);
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        return luminance < 0.5;
+    }
+
     const getTaxaList = (url) => {
         taxaUrlList = url;
         let urlParams = new URLSearchParams(window.location.search);
@@ -411,17 +420,25 @@ export const taxaManagement = (() => {
                         return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
                     }
                 },
-                {"data": "common_name", "className": "min-width-100", "sortable": false},
+                {"data": "accepted_taxonomy_name", "className": "min-width-100"},
                 {"data": "rank", "className": "min-width-100"},
-                {"data": "iucn_status_full_name", "orderData": [8], "orderField": "iucn_status__category"},
-                {"data": "import_date", "className": "min-width-100"},
                 {
                     "data": "tag_list",
                     "sortable": false,
                     "className": "min-width-100",
                     "searchable": false,
                     "render": function (data) {
-                        return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
+                        return data.split(',').map(tag => {
+                            const match = tag.match(/(.*)\s+\((#[0-9A-Fa-f]{6})\)/);
+                            if (match) {
+                                const tagName = match[1].trim();
+                                const color = match[2];
+                                const textColor = isColorDark(color) ? 'white' : 'black';
+                                return `<span class="badge" style="background-color: ${color}; color: ${textColor};">${tagName}</span>`;
+                            } else {
+                                return `<span class="badge badge-info">${tag.trim()}</span>`;
+                            }
+                        }).join('');
                     }
                 },
                 {
@@ -438,6 +455,10 @@ export const taxaManagement = (() => {
         const detailRows = [];
         const taxonCache = {};
         const taxonProposalCache = {};
+
+        $(window).resize(function () {
+            table.columns.adjust().draw();
+        });
 
         // Event listener for detail rows
         table.on('click', 'tbody td.dt-control', async function (event) {
