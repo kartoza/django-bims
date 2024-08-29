@@ -924,6 +924,15 @@ class CustomUserAdmin(ProfileAdmin):
         return super(CustomUserAdmin, self).response_add(
             request, obj, post_url_continue)
 
+    def changelist_view(self, request, extra_context=None):
+        test = request.META['HTTP_REFERER'].split(request.META['PATH_INFO'])
+        if test[-1] and not test[-1].startswith('?'):
+            if 'signed_up' not in request.GET:
+                q = request.GET.copy()
+                q['signed_up'] = 'True'
+                request.GET = q
+                request.META['QUERY_STRING'] = request.GET.urlencode()
+        return super().changelist_view(request, extra_context=extra_context)
 
 class BaseMapLayerAdmin(OrderedModelAdmin):
     list_display = (
