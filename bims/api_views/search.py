@@ -123,8 +123,10 @@ class CollectionSearch(object):
     taxon_groups = TaxonGroup.objects.all()
     start_time = None
 
-    def __init__(self, parameters):
+    def __init__(self, parameters, requester_id=None):
         self.parameters = parameters
+        if requester_id:
+            self.parameters['requester'] = requester_id
         super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):

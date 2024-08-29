@@ -51,9 +51,9 @@ def generate_location_site_summary(
     search_process = SearchProcess.objects.get(id=search_process_id)
     times = {}
     filters = dict(filters)
-    if search_process.requester:
-        filters['requester'] = search_process.requester.id
-    search = CollectionSearch(filters)
+    search = CollectionSearch(
+        filters,
+        search_process.requester.id if search_process.requester else None)
 
     start_time = time.time()
     collection_results = search.process_search()
