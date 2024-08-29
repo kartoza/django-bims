@@ -61,8 +61,8 @@ class BioCollectionSummary(APIView):
     """Api to get biological collection summary data"""
 
     def get(self, request):
-        filters = request.GET
-        search = CollectionSearch(filters)
+        filters = request.GET.dict()
+        search = CollectionSearch(filters, self.request.user.id)
 
         search_process, created = get_or_create_search_process(
             TAXON_SUMMARY,
