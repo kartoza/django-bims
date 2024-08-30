@@ -2,7 +2,6 @@ import React from 'react';
 import '../css/SourceReference.scss';
 import DOI from "./components/DOI";
 import Author from "./components/Author";
-import update from "immutability-helper";
 
 
 const PEER_REVIEWED = 'Peer-reviewed scientific article'
@@ -59,11 +58,19 @@ class AddSourceReferenceView extends React.Component {
     // Update authors
     if (this.authorInput) {
       const authorIds = [];
+      const authorNames = [];
       for (let i=0; i < this.authorInput.state.authors.length; i++) {
         const author = this.authorInput.state.authors[i];
-        authorIds.push(author.id)
+        if (author.id) {
+          authorIds.push(author.id)
+        } else if (author.first_name) {
+          authorNames.push(`${author.first_name} ${author.last_name}`);
+        } else {
+          authorNames.push(author)
+        }
       }
       document.getElementById('author_ids').value = authorIds.join();
+      document.getElementById('author_names').value = authorNames.join();
     }
 
     if (this.doiInput && this.doiInput.state.entry) {
@@ -131,6 +138,7 @@ class AddSourceReferenceView extends React.Component {
       <form encType="multipart/form-data" name="source_reference_form" method="post" id="source_reference_form">
         <input type="hidden" name="csrfmiddlewaretoken" value={this.props.csrfToken} />
         <input type="hidden" name="author_ids" id="author_ids" />
+        <input type="hidden" name="author_names" id="author_names" />
         <div className="form-group">
           <label>Type</label>
           <select name="reference_type" className="form-control" value={this.state.selected_reference_type} onChange={this.handleChange}>
