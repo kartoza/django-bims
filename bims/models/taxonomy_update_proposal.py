@@ -297,6 +297,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 'tags',
                 'biographic_distributions',
                 'additional_data',
+                'vernacular_names',
                 'origin']
             for field in fields_to_update:
                 if field == 'tags':
@@ -305,6 +306,10 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 elif field == 'biographic_distributions':
                     self.original_taxonomy.biographic_distributions.clear()
                     self.original_taxonomy.biographic_distributions.set(
+                        getattr(self, field).all())
+                elif field == 'vernacular_names':
+                    self.original_taxonomy.vernacular_names.clear()
+                    self.original_taxonomy.vernacular_names.set(
                         getattr(self, field).all())
                 else:
                     setattr(
