@@ -606,6 +606,16 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
             self.object = source_reference
         return True
 
+    def get_user_from_string(self, user_string):
+        """Return user object from string of user name"""
+        first_name = user_string.split(' ')[0]
+        last_name = ' '.join(user_string.split(' ')[1:])
+        user = get_user_from_name(
+            first_name=first_name,
+            last_name=last_name
+        )
+        return user
+
     def handle_published_report(self, post_data, file_data):
         if (
             SourceReferenceDocument.objects.filter(
@@ -666,11 +676,22 @@ class AddSourceReferenceView(LoginRequiredMixin, CreateView):
         # Update authors
         try:
             author_ids = post_data.get('author_ids', None)
-            if author_ids:
+            author_names = post_data.get('author_names', None)
+            if author_ids or author_names:
                 bims_document.authors.clear()
+            if author_ids:
                 author_ids = author_ids.split(',')
                 for author_id in author_ids:
                     bims_document.authors.add(author_id)
+            if author_names:
+                author_names = author_names.split(',')
+                for author_name in author_names:
+                    author_user = self.get_user_from_string(
+                        author_name.strip()
+                    )
+                    bims_document.authors.add(
+                        author_user.id
+                    )
         except KeyError:
             pass
 
