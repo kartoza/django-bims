@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.models import TaxonGroupTaxonomy, IUCNStatus, Endemism
+from bims.models import TaxonGroupTaxonomy, IUCNStatus, Endemism, VernacularName
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal
@@ -89,6 +89,22 @@ def create_taxon_proposal(
             proposal.biographic_distributions.set(data.get('biographic_distributions'))
         else:
             proposal.biographic_distributions.clear()
+        common_name = data.get('common_name')
+        if common_name and taxon.common_name != common_name:
+            try:
+                common_name_obj, _ = VernacularName.objects.get_or_create(
+                    name=common_name,
+                    defaults={
+                        'language': 'eng'
+                    }
+                )
+            except VernacularName.MultipleObjectsReturned:
+                common_name_obj = VernacularName.objects.filter(
+                    name=common_name,
+                    language='eng'
+                ).first()
+            proposal.vernacular_names.clear()
+            proposal.vernacular_names.add(common_name_obj)
         proposal.save()
 
     return proposal

@@ -22,7 +22,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         'iucn_status',
         'parent',
         'taxonomic_status',
-        'accepted_taxonomy'
+        'accepted_taxonomy',
     ]
     success_url = '/taxa_management/'
 
@@ -94,6 +94,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         data = form.cleaned_data
 
+        data['common_name'] = self.request.POST.get('common_name', '')
         data['tags'] = self.request.POST.getlist('tags')
         data['biographic_distributions'] = (
             self.request.POST.getlist('biographic_distributions')

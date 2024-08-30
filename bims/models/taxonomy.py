@@ -259,6 +259,17 @@ class AbstractTaxonomy(AbstractValidation):
     def data_name(self):
         return self.canonical_name
 
+    @cached_property
+    def common_name(self):
+        vernacular_names = list(
+            self.vernacular_names.filter(
+                language__istartswith='en'
+            ).values_list('name', flat=True))
+        if len(vernacular_names) == 0:
+            return ''
+        else:
+            return vernacular_names[0]
+
     @property
     def taxon_class(self):
         if self.rank != TaxonomicRank.CLASS.name and self.parent:
