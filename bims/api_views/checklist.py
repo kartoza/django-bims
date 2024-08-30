@@ -70,7 +70,7 @@ def generate_checklist(download_request_id):
 
     search = CollectionSearch(filters)
     batch_size = 1000
-    collection_records = search.process_search().distinct('taxonomy')
+    collection_records = search.process_search()
     module_name = ''
 
     if collection_records.count() > 0:
@@ -102,6 +102,9 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
     fieldnames = [key for key in get_serializer_keys(ChecklistSerializer) if key != 'id']
     custom_header = get_custom_header(fieldnames, CSV_HEADER_TITLE)
 
+    taxonomy_collection_records = collection_records.distinct('taxonomy')
+    taxonomy_collection_records_count = taxonomy_collection_records.count()
+
     written_taxa_ids = set()
 
     with open(csv_file_path, 'a', newline='', encoding='utf-8') as csvfile:
@@ -111,10 +114,17 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
             # Manually write header using writerow
             writer.writerow(dict(zip(fieldnames, custom_header)))
 
-        for start in range(0, collection_records.count(), batch_size):
-            batch = collection_records[start:start + batch_size]
-            process_batch(batch, writer, written_taxa_ids)
+        for start in range(0, taxonomy_collection_records_count, batch_size):
+            batch = taxonomy_collection_records[start:start + batch_size]
+            process_batch(batch, writer, written_taxa_ids, collection_records)
+            download_request.progress = (
+                f'{start}/{taxonomy_collection_records_count}'
+            )
+            download_request.save()
 
+    download_request.progress = (
+        f'{taxonomy_collection_records_count}/{taxonomy_collection_records_count}'
+    )
     download_request.processing = False
     download_request.request_file = csv_file_path
     download_request.request_category = f'{module_name} Checklist'
@@ -134,8 +144,11 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     written_taxa_ids = set()
     all_taxa = []
 
-    for start in range(0, collection_records.count(), batch_size):
-        batch = collection_records[start:start + batch_size]
+    taxonomy_collection_records = collection_records.distinct('taxonomy')
+    taxonomy_collection_records_count = taxonomy_collection_records.count()
+
+    for start in range(0, taxonomy_collection_records_count, batch_size):
+        batch = taxonomy_collection_records[start:start + batch_size]
         record_taxonomy_ids = batch.values_list('taxonomy_id', flat=True)
         unique_taxonomy_ids = set(record_taxonomy_ids) - written_taxa_ids
 
@@ -159,6 +172,10 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                     Paragraph(taxon['threat_status'], getSampleStyleSheet()['Normal']),
                     Paragraph(taxon['sources'], getSampleStyleSheet()['Normal'])
                 ])
+        download_request.progress = (
+            f'{start}/{taxonomy_collection_records_count}'
+        )
+        download_request.save()
 
     # Generate the PDF
     doc = SimpleDocTemplate(
@@ -196,6 +213,9 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     elements.append(table)
     doc.build(elements)
 
+    download_request.progress = (
+        f'{taxonomy_collection_records_count}/{taxonomy_collection_records_count}'
+    )
     download_request.processing = False
     download_request.request_file = pdf_file_path
     download_request.request_category = f'{module_name} Checklist'
@@ -204,20 +224,27 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     return True
 
 
-def process_batch(batch, writer, written_taxa_ids):
+def process_batch(batch, writer, written_taxa_ids, collection_records):
     """
     Process a batch of collection records and write unique taxa to the CSV file.
     Args:
         batch (QuerySet): A batch of collection records.
         writer (csv.DictWriter): CSV writer object.
         written_taxa_ids (set): Set of already written taxa IDs to avoid duplication.
+        collection_records (QuerySet): Filtered collection records
     """
     record_taxonomy_ids = batch.values_list('taxonomy_id', flat=True)
     unique_taxonomy_ids = set(record_taxonomy_ids) - written_taxa_ids
 
     if unique_taxonomy_ids:
         taxa = Taxonomy.objects.filter(id__in=unique_taxonomy_ids)
-        taxon_serializer = ChecklistSerializer(taxa, many=True)
+        taxon_serializer = ChecklistSerializer(
+            taxa,
+            many=True,
+            context={
+                'collection_records': collection_records
+            }
+        )
 
         for taxon in taxon_serializer.data:
             written_taxa_ids.add(taxon['id'])
