@@ -103,6 +103,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     park_or_mpa_name = serializers.SerializerMethodField()
     creation_date = serializers.SerializerMethodField()
     dataset = serializers.SerializerMethodField()
+    occurrence_records = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -209,6 +210,12 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             if dataset_names:
                 return ','.join(set(dataset_names))
         return '-'
+
+    def get_occurrence_records(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return 0
+        return bio.count()
 
     def get_sources(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
@@ -322,5 +329,6 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'confidence',
             'park_or_mpa_name',
             'creation_date',
-            'dataset'
+            'dataset',
+            'occurrence_records'
         ]

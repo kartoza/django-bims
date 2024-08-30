@@ -4,6 +4,7 @@ from datetime import date
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.formats import date_format
+from django.utils.functional import cached_property
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
 
@@ -359,7 +360,7 @@ class AbstractTaxonomy(AbstractValidation):
             return self.scientific_name
         return '-'
 
-    @property
+    @cached_property
     def last_modified(self):
         from easyaudit.models import CRUDEvent
         last_update_event = CRUDEvent.objects.filter(
@@ -373,7 +374,7 @@ class AbstractTaxonomy(AbstractValidation):
                 last_update_event.datetime, format='F j, Y', use_l10n=True)
         return self.import_date
 
-    @property
+    @cached_property
     def last_modified_by(self):
         from bims.models.taxonomy_update_proposal import (
             TaxonomyUpdateProposal
