@@ -143,13 +143,14 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
 
     written_taxa_ids = set()
     all_taxa = []
+    common_names_and_count = {}
 
     taxonomy_collection_records = collection_records.distinct('taxonomy')
     taxonomy_collection_records_count = taxonomy_collection_records.count()
+    taxonomy_ids = list(taxonomy_collection_records.values_list('taxonomy_id', flat=True))
 
     for start in range(0, taxonomy_collection_records_count, batch_size):
-        batch = taxonomy_collection_records[start:start + batch_size]
-        record_taxonomy_ids = batch.values_list('taxonomy_id', flat=True)
+        record_taxonomy_ids = taxonomy_ids[start:start + batch_size]
         unique_taxonomy_ids = set(record_taxonomy_ids) - written_taxa_ids
 
         if unique_taxonomy_ids:
@@ -165,13 +166,32 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
             taxon_serializer = ChecklistPDFSerializer(taxa, many=True)
             for taxon in taxon_serializer.data:
                 written_taxa_ids.add(taxon['id'])
-                del taxon['id']
-                all_taxa.append([
+                common_name = taxon['common_name'].lower().strip()
+
+                taxon_entry = [
                     Paragraph(taxon['scientific_name'], getSampleStyleSheet()['Normal']),
                     Paragraph(taxon['common_name'], getSampleStyleSheet()['Normal']),
                     Paragraph(taxon['threat_status'], getSampleStyleSheet()['Normal']),
                     Paragraph(taxon['sources'], getSampleStyleSheet()['Normal'])
-                ])
+                ]
+
+                if common_name:
+                    if common_name not in common_names_and_count:
+                        common_names_and_count[common_name] = (taxon['occurrence_records'], len(all_taxa))
+                        all_taxa.append(taxon_entry)
+                    else:
+                        existing_occurrence_records, index = common_names_and_count[common_name]
+                        if taxon['occurrence_records'] > existing_occurrence_records:
+                            common_names_and_count[common_name] = (taxon['occurrence_records'], index)
+                            all_taxa[index] = taxon_entry
+                        else:
+                            all_taxa.append(taxon_entry)
+                else:
+                    all_taxa.append(taxon_entry)
+
+                del taxon['id']
+                del taxon['occurrence_records']
+
         download_request.progress = (
             f'{start}/{taxonomy_collection_records_count}'
         )
