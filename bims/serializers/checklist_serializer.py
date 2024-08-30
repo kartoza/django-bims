@@ -36,6 +36,13 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
     threat_status = serializers.SerializerMethodField()
     sources = serializers.SerializerMethodField()
     scientific_name = serializers.SerializerMethodField()
+    occurrence_records = serializers.SerializerMethodField()
+
+    def get_occurrence_records(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return 0
+        return bio.count()
 
     def get_scientific_name(self, obj: Taxonomy):
         return self.clean_text(obj.scientific_name)
@@ -76,7 +83,8 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
             'scientific_name',
             'common_name',
             'threat_status',
-            'sources'
+            'sources',
+            'occurrence_records'
         ]
 
 
