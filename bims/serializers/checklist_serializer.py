@@ -1,7 +1,7 @@
 from datetime import datetime
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
-from django.contrib.contenttypes import models
 from rest_framework import serializers
 
 from bims.models import TaxonGroupTaxonomy, CITESListingInfo
@@ -15,8 +15,10 @@ class ChecklistBaseSerializer(SerializerContextCache):
     def get_bio_data(self, obj: Taxonomy):
         if not hasattr(self, '_bio_data_cache'):
             self._bio_data_cache = {}
+        bio_context = self.context.get(
+            'collection_records', BiologicalCollectionRecord.objects.all())
         if obj.id not in self._bio_data_cache:
-            bio_records = BiologicalCollectionRecord.objects.filter(taxonomy=obj)
+            bio_records = bio_context.filter(taxonomy=obj)
             self._bio_data_cache[obj.id] = bio_records
         return self._bio_data_cache[obj.id]
 
@@ -227,7 +229,6 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         except TypeError:
             return ''
 
-    # TODO
     def get_confidence(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
         if not bio.exists():

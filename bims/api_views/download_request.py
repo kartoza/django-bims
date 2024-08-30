@@ -75,19 +75,20 @@ class DownloadRequestApi(APIView):
             )
             for download_request in download_requests:
                 progress = download_request.progress
-                try:
-                    completed, total = progress.split('/')
-                    completed = int(completed)
-                    total = int(total)
+                if progress:
+                    try:
+                        completed, total = progress.split('/')
+                        completed = int(completed)
+                        total = int(total)
 
-                    if completed < total:
-                        return Response(
-                            {'error':
-                                 'There are still ongoing download requests. '
-                                 'Please wait for them to complete before trying again.'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-                except ValueError:
-                    continue
+                        if completed < total:
+                            return Response(
+                                {'error':
+                                     'There are still ongoing download requests. '
+                                     'Please wait for them to complete before trying again.'},
+                                status=status.HTTP_401_UNAUTHORIZED)
+                    except ValueError:
+                        continue
 
         if not resource_name or not resource_type or not purpose:
             raise Http404('Missing required field.')
