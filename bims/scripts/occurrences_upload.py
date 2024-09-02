@@ -313,7 +313,7 @@ class OccurrenceProcessor(object):
                     ]['lat']
                     longitude = self.parks_data[
                         park_name_low
-                    ]['lat']
+                    ]['lon']
                 else:
                     self.handle_error(
                         row=record,
