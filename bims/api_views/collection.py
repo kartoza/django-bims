@@ -199,7 +199,7 @@ class CollectionDownloader(GetCollectionAbstract):
 
     def get(self, request):
         filters = request.GET
-        search = CollectionSearch(filters)
+        search = CollectionSearch(filters, request.user.id if not request.user.is_anonymous else None)
         file_type = request.GET.get('fileType', None)
         if not file_type:
             file_type = 'csv'
