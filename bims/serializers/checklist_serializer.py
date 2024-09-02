@@ -66,14 +66,30 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return ''
+        sources = []
         if bio.filter(source_collection__iexact='gbif').exists():
             dataset_names = list(bio.values_list(
                 'additional_data__datasetName',
                 flat=True
             ))
-            dataset_names = [name for name in dataset_names if name is not None]
-            if dataset_names:
-                return ', '.join(set(dataset_names))
+            sources = [name for name in dataset_names if name is not None]
+        bio = bio.distinct('source_reference')
+        try:
+            for collection in bio:
+                try:
+                    if (
+                        collection.source_reference and
+                        str(collection.source_reference) != 'Global Biodiversity Information Facility (GBIF)'
+                    ):
+                        sources.append(
+                            str(collection.source_reference)
+                        )
+                except ContentType.DoesNotExist:
+                    continue
+        except TypeError:
+            pass
+        if sources:
+            return ', '.join(set(sources))
         return '-'
 
     class Meta:

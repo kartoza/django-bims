@@ -175,7 +175,7 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                     Paragraph(taxon['sources'], getSampleStyleSheet()['Normal'])
                 ]
 
-                if common_name:
+                if common_name != '':
                     if common_name not in common_names_and_count:
                         common_names_and_count[common_name] = (taxon['occurrence_records'], len(all_taxa))
                         all_taxa.append(taxon_entry)
