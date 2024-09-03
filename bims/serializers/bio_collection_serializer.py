@@ -1,8 +1,8 @@
+import csv
 import json
 import logging
 import uuid
 
-from bims.models import CITESListingInfo
 from bims.models.chem import Chem
 from preferences import preferences
 from rest_framework import serializers
@@ -39,6 +39,7 @@ ORIGIN = {
 }
 
 logger = logging.getLogger(__name__)
+TEMPLATE_HEADER_KEYS = 'upload_template_headers'
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -896,6 +897,34 @@ class BioCollectionOneRowSerializer(
                 )
                 result.update(chem_record_data)
 
+        # Taxon attribute
+        taxon_group = instance.module_group
+
+        # Check template if exist, get data from additional data
+        if taxon_group.occurrence_upload_template:
+            if TEMPLATE_HEADER_KEYS not in self.context or not self.context[TEMPLATE_HEADER_KEYS]:
+                self.context[TEMPLATE_HEADER_KEYS] = []
+                try:
+                    with open(taxon_group.occurrence_upload_template.path, 'r', encoding='utf-8') as csvfile:
+                        reader = csv.DictReader(csvfile)
+                        upload_template_headers = reader.fieldnames
+                        for upload_template_header in upload_template_headers:
+                            if (
+                                upload_template_header.lower().replace(' ', '_')
+                                    not in self.context['header']
+                            ):
+                                self.context[TEMPLATE_HEADER_KEYS].append(
+                                    upload_template_header
+                                )
+                                self.context['header'].append(upload_template_header)
+                except FileNotFoundError:
+                    pass
+            if self.context[TEMPLATE_HEADER_KEYS]:
+                for upload_template_header in self.context[TEMPLATE_HEADER_KEYS]:
+                    result[upload_template_header] = instance.additional_data.get(
+                        upload_template_header, ''
+                    )
+
         geocontext_keys = (
             preferences.GeocontextSetting.geocontext_keys.split(',')
         )
@@ -930,9 +959,6 @@ class BioCollectionOneRowSerializer(
                      ),
                      args=[instance.id]
                  )])
-
-        # Taxon attribute
-        taxon_group = instance.module_group
 
         # Check DIVISION
         divisions = (
