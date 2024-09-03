@@ -236,6 +236,14 @@ class SiteSetting(Preferences):
         )
     )
 
+    allow_taxa_edit_in_admin = models.BooleanField(
+        default=False,
+        help_text=(
+            'Enable this to allow superusers to edit taxa directly from the '
+            'admin popup in the taxa management page'
+        )
+    )
+
     github_repo_path = models.CharField(
         default='',
         blank=True,
