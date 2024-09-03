@@ -641,10 +641,7 @@ class CollectionSearch(object):
         is_private_data_access_allowed = False
         try:
             requester = get_user_model().objects.get(id=requester_id)
-            is_requester_staff = requester.is_staff or requester.is_superuser
             user_groups = requester.groups.values_list('name', flat=True)
-            if is_requester_staff:
-                is_private_data_access_allowed = True
             if 'SensitiveDataGroup' in user_groups:
                 is_sensitive_data_access_allowed = True
             if 'PrivateDataGroup' in user_groups:
