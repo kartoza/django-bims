@@ -344,7 +344,7 @@
                                 <a href="" class="dropdown-item edit-taxon" title="Edit">
                                     <i class="fa fa-pencil" aria-hidden="true"></i> Edit
                                 </a>
-                                {% if user.is_superuser and project_name == 'fbis' %}
+                                {% if user.is_superuser and preferences.SiteSetting.allow_taxa_edit_in_admin %}
                                 <a href="" class="dropdown-item edit-taxon-in-admin" title="Edit">
                                     <i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit in Admin
                                 </a>
