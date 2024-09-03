@@ -1,5 +1,4 @@
 from django.db import models
-from bims.models.taxonomy import Taxonomy
 
 
 class CITESListingInfo(models.Model):
@@ -15,7 +14,7 @@ class CITESListingInfo(models.Model):
     annotation = models.TextField()
     effective_at = models.DateField()
     taxonomy = models.ForeignKey(
-        Taxonomy,
+        'bims.Taxonomy',
         on_delete=models.CASCADE,
         related_name='cites_listing_infos')
 

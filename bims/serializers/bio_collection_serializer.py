@@ -156,6 +156,7 @@ class BioCollectionOneRowSerializer(
     hydroperiod = serializers.SerializerMethodField()
     wetland_indicator_status = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
+    data_type = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -309,21 +310,7 @@ class BioCollectionOneRowSerializer(
         return obj.site.site_code
 
     def get_cites_listing(self, obj: BiologicalCollectionRecord):
-        cites_listing_info = CITESListingInfo.objects.filter(
-            taxonomy_id=obj.taxonomy.id
-        )
-        if cites_listing_info.exists():
-            return ','.join(list(cites_listing_info.values_list(
-                'appendix', flat=True
-            )))
-        if obj.taxonomy.additional_data:
-            if 'CITES Listing' in obj.taxonomy.additional_data:
-                return obj.taxonomy.additional_data['CITES Listing']
-            if 'Cites listing' in obj.taxonomy.additional_data:
-                return obj.taxonomy.additional_data['Cites listing']
-            if 'CITES listing' in obj.taxonomy.additional_data:
-                return obj.taxonomy.additional_data['CITES listing']
-        return ''
+        return obj.taxonomy.cites_listing
 
     def get_user_site_code(self, obj):
         return obj.site.legacy_site_code
@@ -645,6 +632,11 @@ class BioCollectionOneRowSerializer(
             return obj.record_type.name
         return '-'
 
+    def get_data_type(self, obj: BiologicalCollectionRecord):
+        if obj.data_type:
+            return obj.data_type.capitalize()
+        return 'Public'
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -708,7 +700,8 @@ class BioCollectionOneRowSerializer(
             'recorded_by',
             'decision_support_tool',
             'record_type',
-            'cites_listing'
+            'cites_listing',
+            'data_type'
         ]
 
     def to_representation(self, instance: BiologicalCollectionRecord):

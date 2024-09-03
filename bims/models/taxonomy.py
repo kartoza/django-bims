@@ -8,6 +8,7 @@ from django.utils.functional import cached_property
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
 
+from bims.models.cites_listing_info import CITESListingInfo
 from bims.models.source_reference import SourceReference
 from bims.models.validation import AbstractValidation
 from django.db import models
@@ -269,6 +270,24 @@ class AbstractTaxonomy(AbstractValidation):
             return ''
         else:
             return vernacular_names[0]
+
+    @cached_property
+    def cites_listing(self):
+        cites_listing_info = CITESListingInfo.objects.filter(
+            taxonomy_id=self.id
+        )
+        if cites_listing_info.exists():
+            return ','.join(list(cites_listing_info.values_list(
+                'appendix', flat=True
+            )))
+        if self.additional_data:
+            if 'CITES Listing' in self.additional_data:
+                return self.additional_data['CITES Listing']
+            if 'Cites listing' in self.additional_data:
+                return self.additional_data['Cites listing']
+            if 'CITES listing' in self.additional_data:
+                return self.additional_data['CITES listing']
+        return ''
 
     @property
     def taxon_class(self):
