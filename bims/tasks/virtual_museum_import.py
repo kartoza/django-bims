@@ -5,7 +5,6 @@ from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from django.core.management import call_command
 from django_tenants.utils import get_tenant_model, schema_context
-from django.db import transaction
 
 logger = get_task_logger(__name__)
 
@@ -20,13 +19,12 @@ def import_data_task(self, module, limit=10):
 
     TenantModel = get_tenant_model()
     tenants = TenantModel.objects.all().exclude(schema_name='public')
-
     for tenant in tenants:
         with schema_context(tenant.schema_name):
             api_token = preferences.SiteSetting.virtual_museum_token
             if not api_token:
                 logger.info(f"No virtual museum token found for {tenant.schema_name}.")
-                return
+                continue
             try:
                 # Check for in-progress tasks
                 running_tasks = ImportTask.objects.filter(
@@ -111,7 +109,7 @@ def import_data_task(self, module, limit=10):
                         call_command('import_odonata_data',
                                      start_index=start_index,
                                      limit=limit,
-                                     module_name='Odonates (adult)',
+                                     module_name='Invertebrates',
                                      token=api_token)
                     elif module == 'anurans':
                         call_command('import_frog_vm_data',
