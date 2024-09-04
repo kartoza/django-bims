@@ -86,6 +86,17 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             return species_name.strip()
         return species_name
 
+    def get_sub_species(self, obj: Taxonomy):
+        sub_species_name = obj.sub_species_name
+        if sub_species_name:
+            genus_name = obj.genus_name
+            if genus_name:
+                sub_species_name = sub_species_name.replace(genus_name, '', 1)
+            species_name = obj.species_name
+            if species_name:
+                sub_species_name = sub_species_name.replace(species_name, '', 1)
+        return sub_species_name
+
     def get_taxon(self, obj):
         return obj.canonical_name
 
@@ -139,9 +150,6 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
                 obj.gbif_key
             )
         return '-'
-
-    def get_sub_species(self, obj: Taxonomy):
-        return obj.sub_species_name
 
     class Meta:
         model = Taxonomy

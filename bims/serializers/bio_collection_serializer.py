@@ -412,12 +412,6 @@ class BioCollectionOneRowSerializer(
             'genus_name'
         )
 
-    def get_sub_species(self, obj: BiologicalCollectionRecord):
-        return self.taxon_name_by_rank(
-            obj,
-            'sub_species_name'
-        )
-
     def get_species(self, obj):
         species_name = self.taxon_name_by_rank(
             obj,
@@ -431,6 +425,23 @@ class BioCollectionOneRowSerializer(
             if genus_name:
                 species_name = species_name.replace(genus_name, '')
             return species_name.strip()
+        return '-'
+
+    def get_sub_species(self, obj: BiologicalCollectionRecord):
+        sub_species_name = self.taxon_name_by_rank(
+            obj,
+            'sub_species_name'
+        )
+        if sub_species_name:
+            genus = self.get_genus(obj)
+            if genus:
+                sub_species_name = sub_species_name.replace(genus, '', 1)
+
+            species = self.get_species(obj)
+            if species:
+                sub_species_name = sub_species_name.replace(species, '', 1)
+
+            return sub_species_name.strip()
         return '-'
 
     def get_kingdom(self, obj):
