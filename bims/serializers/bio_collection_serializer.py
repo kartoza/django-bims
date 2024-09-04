@@ -1,8 +1,8 @@
+import csv
 import json
 import logging
 import uuid
 
-from bims.models import CITESListingInfo
 from bims.models.chem import Chem
 from preferences import preferences
 from rest_framework import serializers
@@ -39,6 +39,7 @@ ORIGIN = {
 }
 
 logger = logging.getLogger(__name__)
+TEMPLATE_HEADER_KEYS = 'upload_template_headers'
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -896,6 +897,65 @@ class BioCollectionOneRowSerializer(
                 )
                 result.update(chem_record_data)
 
+        # Taxon attribute
+        taxon_group = instance.module_group
+
+        # Check if template headers exist, then process them
+        if TEMPLATE_HEADER_KEYS in self.context and self.context[TEMPLATE_HEADER_KEYS]:
+            if 'added_headers' not in self.context:
+                self.context['added_headers'] = set()
+
+            template_headers = list(
+                self.context[TEMPLATE_HEADER_KEYS])
+            headers_to_add = []
+
+            # Process template headers
+            for upload_template_header in template_headers:
+                normalized_header = upload_template_header.lower().replace(' ', '_')
+
+                # Skip 'author(s)'
+                if normalized_header == 'author(s)':
+                    continue
+
+                # Add to headers_to_add if it's not already in the context header
+                if (
+                        upload_template_header not in self.context['header'] and
+                        normalized_header not in self.context['header']
+                ):
+                    headers_to_add.append(upload_template_header)
+
+            # Extend the context header
+            self.context['header'].extend(headers_to_add)
+
+            self.context['added_headers'].update(headers_to_add)
+
+            # Handle the case where no new headers were added
+            if not headers_to_add:
+                headers_to_add = list(
+                    self.context['added_headers']
+                )
+
+            # Process the result dictionary
+            for upload_template_header in headers_to_add:
+                normalized_header = upload_template_header.lower().replace(' ', '_')
+
+                if normalized_header == 'author(s)':
+                    continue
+
+                result[upload_template_header] = (
+                    instance.additional_data.get(upload_template_header, '')
+                )
+
+                if upload_template_header == PARK_OR_MPA_NAME:
+                    result.pop('site_description', None)
+                    if 'site_description' in self.context['header']:
+                        self.context['header'].remove('site_description')
+                    if (
+                            result[upload_template_header] == '' and (
+                            instance.site.owner or instance.site.creator)
+                    ):
+                        result[upload_template_header] = instance.site.name
+
         geocontext_keys = (
             preferences.GeocontextSetting.geocontext_keys.split(',')
         )
@@ -930,9 +990,6 @@ class BioCollectionOneRowSerializer(
                      ),
                      args=[instance.id]
                  )])
-
-        # Taxon attribute
-        taxon_group = instance.module_group
 
         # Check DIVISION
         divisions = (

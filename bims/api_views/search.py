@@ -124,7 +124,7 @@ class CollectionSearch(object):
     start_time = None
 
     def __init__(self, parameters, requester_id=None):
-        self.parameters = parameters
+        self.parameters = dict(parameters)
         if requester_id:
             self.parameters['requester'] = requester_id
         super(CollectionSearch, self).__init__()
