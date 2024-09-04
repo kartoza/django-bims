@@ -5,6 +5,7 @@ import time
 import gc
 
 from bims.models.download_request import DownloadRequest
+from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -29,28 +30,31 @@ def queryset_iterator(qs, batch_size=500, gc_collect=True):
             gc.collect()
 
 
+HEADER_TITLES = {
+    'class_name': 'Class',
+    'sub_species': 'SubSpecies',
+    'cites_listing': 'CITES listing',
+    'park_or_mpa_name': PARK_OR_MPA_NAME,
+    'authors': 'Author(s)'
+}
+
+
+def format_header(header: str) -> str:
+    if header in HEADER_TITLES:
+        return HEADER_TITLES[header]
+    if header.lower() == 'uuid':
+        return header.upper()
+    header = header.replace('_or_', '/')
+    if not header[0].isupper():
+        header = header.replace('_', ' ').capitalize()
+    return header
+
+
 def write_to_csv(headers: list,
                  rows: list,
                  path_file: str,
                  current_csv_row: int = 0):
-    formatted_headers = []
-    if headers:
-        for header in headers:
-            if header == 'class_name':
-                header = 'class'
-            if header == 'sub_species':
-                formatted_headers.append('SubSpecies')
-                continue
-            if header.lower().strip() == 'cites_listing':
-                formatted_headers.append('CITES listing')
-                continue
-            header = header.replace('_or_', '/')
-            if not header.isupper():
-                header = header.replace('_', ' ').capitalize()
-            if header.lower() == 'uuid':
-                header = header.upper()
-            formatted_headers.append(header)
-
+    formatted_headers = [format_header(header) for header in headers]
     with open(path_file, 'a') as csv_file:
         if headers:
             writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
@@ -116,18 +120,23 @@ def download_collection_records(
         except DownloadRequest.DoesNotExist:
             return None
 
-    def write_batch_to_csv(header, rows, path_file, start_index):
+    def write_batch_to_csv(header, rows, path_file, start_index, upload_template_headers=[]):
         bio_serializer = (
             BioCollectionOneRowSerializer(
                 rows, many=True,
                 context={
                     'header': header,
-                    'exclude_fields': exclude_fields
+                    'exclude_fields': exclude_fields,
+                    'upload_template_headers': upload_template_headers
                 })
         )
         bio_data = bio_serializer.data
         if len(header) == 0:
             header = bio_serializer.context['header']
+            if upload_template_headers:
+                park_key = PARK_OR_MPA_NAME
+                if park_key in header:
+                    header.insert(1, header.pop(header.index(park_key)))
         csv_row = write_to_csv(
             header,
             bio_data,
@@ -160,6 +169,16 @@ def download_collection_records(
     if download_request and download_request.rejected:
         return
 
+    taxon_group = collection_results.first().module_group
+    upload_template_headers = []
+    if taxon_group.occurrence_upload_template:
+        try:
+            with open(taxon_group.occurrence_upload_template.path, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                upload_template_headers = reader.fieldnames
+        except FileNotFoundError:
+            upload_template_headers = []
+
     for obj in queryset_iterator(collection_results):
         collection_data.append(obj)
         if len(collection_data) >= record_number:
@@ -168,7 +187,8 @@ def download_collection_records(
                 headers,
                 collection_data,
                 path_file,
-                current_csv_row
+                current_csv_row,
+                upload_template_headers
             )
 
             logger.debug('Serialize time {0}:{1}: {2}'.format(
@@ -201,7 +221,9 @@ def download_collection_records(
             headers,
             collection_data,
             path_file,
-            current_csv_row)
+            current_csv_row,
+            upload_template_headers
+        )
         logger.debug('Serialize time {0}:{1}: {2}'.format(
             start_index,
             current_csv_row,
