@@ -695,13 +695,16 @@ class OccurrenceProcessor(object):
                 row, PRESENT))
 
         # -- Optional data - Habitat
-        if HABITAT in row and DataCSVUpload.row_value(row, HABITAT):
+        habitat_value = DataCSVUpload.row_value(row, HABITAT)
+        if HABITAT in row and habitat_value:
             habitat_choices = {
                 v: k for k, v in
                 BiologicalCollectionRecord.HABITAT_CHOICES
             }
+            if habitat_value in habitat_choices:
+                habitat_value = habitat_choices[habitat_value]
             optional_data['collection_habitat'] = (
-                habitat_choices[DataCSVUpload.row_value(row, HABITAT)]
+                habitat_value
             )
 
         # -- Optional data - Sampling method
