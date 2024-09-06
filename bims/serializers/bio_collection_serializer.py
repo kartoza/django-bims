@@ -265,7 +265,10 @@ class BioCollectionOneRowSerializer(
 
     def get_uuid(self, obj):
         if obj.uuid:
-            return str(uuid.UUID(obj.uuid))
+            try:
+                return str(uuid.UUID(obj.uuid))
+            except ValueError:
+                return obj.uuid
         return '-'
 
     def get_user_river_name(self, obj):
