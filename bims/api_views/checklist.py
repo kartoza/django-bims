@@ -172,7 +172,13 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                     TaxonomicRank.SPECIES.name,
                     TaxonomicRank.SUBSPECIES.name]
             )
-            taxon_serializer = ChecklistPDFSerializer(taxa, many=True)
+            taxon_serializer = ChecklistPDFSerializer(
+                taxa,
+                many=True,
+                context={
+                    'collection_records': collection_records
+                }
+            )
             for taxon in taxon_serializer.data:
                 written_taxa_ids.add(taxon['id'])
                 common_name = taxon['common_name'].lower().strip()
