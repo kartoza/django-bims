@@ -4,11 +4,43 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
 from rest_framework import serializers
 
-from bims.models import TaxonGroupTaxonomy, CITESListingInfo
+from bims.models import TaxonGroupTaxonomy
 from bims.models.taxonomy import Taxonomy
 from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models.dataset import Dataset
+
+
+def get_dataset_occurrences(occurrences):
+    dataset_keys = list(occurrences.values_list(
+        'additional_data__datasetKey',
+        flat=True
+    ))
+    if dataset_keys:
+        dataset_keys = list(set(dataset_keys))
+        datasets = Dataset.objects.filter(
+            uuid__in=dataset_keys
+        )
+        dataset_names = []
+        if datasets.exists():
+            for dataset in datasets:
+                dataset_names.append(
+                    dataset.abbreviation if dataset.abbreviation else dataset.name
+                )
+                dataset_keys.remove(str(dataset.uuid))
+        if dataset_keys:
+            dataset_names.extend(dataset_keys)
+        if len(dataset_names) > 0:
+            return list(set(dataset_names))
+    dataset_names = list(occurrences.values_list(
+        'additional_data__datasetName',
+        flat=True
+    ))
+    dataset_names = [name for name in dataset_names if name is not None]
+    if dataset_names:
+        return list(set(dataset_names))
+    return []
 
 
 class ChecklistBaseSerializer(SerializerContextCache):
@@ -28,6 +60,32 @@ class ChecklistBaseSerializer(SerializerContextCache):
         # Remove or replace unwanted characters
         cleaned_text = text.replace('\n', ' ').replace('\r', ' ')
         return cleaned_text
+
+    def get_sources(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+        sources = []
+        if bio.filter(source_collection__iexact='gbif').exists():
+            sources = get_dataset_occurrences(bio)
+        bio = bio.distinct('source_reference')
+        try:
+            for collection in bio:
+                try:
+                    if (
+                        collection.source_reference and
+                        str(collection.source_reference) != 'Global Biodiversity Information Facility (GBIF)'
+                    ):
+                        sources.append(
+                            str(collection.source_reference)
+                        )
+                except ContentType.DoesNotExist:
+                    continue
+        except TypeError:
+            pass
+        if sources:
+            return ', '.join(set(sources))
+        return '-'
 
 
 class ChecklistPDFSerializer(ChecklistBaseSerializer):
@@ -61,36 +119,6 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
         if obj.iucn_status:
             return obj.iucn_status.category
         return 'NE'
-
-    def get_sources(self, obj: Taxonomy):
-        bio = self.get_bio_data(obj)
-        if not bio.exists():
-            return ''
-        sources = []
-        if bio.filter(source_collection__iexact='gbif').exists():
-            dataset_names = list(bio.values_list(
-                'additional_data__datasetName',
-                flat=True
-            ))
-            sources = [name for name in dataset_names if name is not None]
-        bio = bio.distinct('source_reference')
-        try:
-            for collection in bio:
-                try:
-                    if (
-                        collection.source_reference and
-                        str(collection.source_reference) != 'Global Biodiversity Information Facility (GBIF)'
-                    ):
-                        sources.append(
-                            str(collection.source_reference)
-                        )
-                except ContentType.DoesNotExist:
-                    continue
-        except TypeError:
-            pass
-        if sources:
-            return ', '.join(set(sources))
-        return '-'
 
     class Meta:
         model = Taxonomy
@@ -126,7 +154,6 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     confidence = serializers.SerializerMethodField()
     park_or_mpa_name = serializers.SerializerMethodField()
     creation_date = serializers.SerializerMethodField()
-    dataset = serializers.SerializerMethodField()
     occurrence_records = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
@@ -221,44 +248,11 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             return ''
         return bio.order_by('collection_date').last().collection_date.year
 
-    def get_dataset(self, obj: Taxonomy):
-        bio = self.get_bio_data(obj)
-        if not bio.exists():
-            return ''
-        if bio.filter(source_collection__iexact='gbif').exists():
-            dataset_names = list(bio.values_list(
-                'additional_data__datasetName',
-                flat=True
-            ))
-            dataset_names = [name for name in dataset_names if name is not None]
-            if dataset_names:
-                return ','.join(set(dataset_names))
-        return '-'
-
     def get_occurrence_records(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return 0
         return bio.count()
-
-    def get_sources(self, obj: Taxonomy):
-        bio = self.get_bio_data(obj)
-        if not bio.exists():
-            return ''
-        bio = bio.distinct('source_reference')
-        try:
-            source_data = []
-            for collection in bio:
-                try:
-                    if collection.source_reference:
-                        source_data.append(
-                            str(collection.source_reference)
-                        )
-                except ContentType.DoesNotExist:
-                    continue
-            return ','.join(source_data)
-        except TypeError:
-            return ''
 
     def get_confidence(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
@@ -339,6 +333,5 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'confidence',
             'park_or_mpa_name',
             'creation_date',
-            'dataset',
             'occurrence_records'
         ]

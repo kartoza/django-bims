@@ -120,7 +120,8 @@ from bims.models import (
     ImportTask,
     Invasion,
     FlatPageExtension,
-    TagGroup
+    TagGroup,
+    Dataset
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2039,6 +2040,11 @@ class ExtendedFlatPageAdmin(FlatPageAdmin):
     list_display = ('title', 'url', 'show_in_navbar', 'display_order')
 
 
+class DatasetAdmin(admin.ModelAdmin):
+    list_display = ('uuid', 'name', 'abbreviation')
+    search_fields = ('uuid', 'name')
+
+
 class TagGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'colour')
 
@@ -2168,3 +2174,4 @@ admin.site.register(
 admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
+admin.site.register(Dataset, DatasetAdmin)
