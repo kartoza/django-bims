@@ -3,14 +3,13 @@ import uuid
 import json
 import logging
 
-from django.contrib.sites.models import Site
 from preferences import preferences
 
 from bims.scripts.collection_csv_keys import *  # noqa
 from datetime import datetime
 
 from django.contrib.gis.geos import Point
-from django.db.models import Q, signals
+from django.db.models import Q
 
 from bims.models import (
     LocationType,
@@ -19,35 +18,23 @@ from bims.models import (
     BiologicalCollectionRecord,
     SamplingMethod,
     Taxonomy,
-    SourceReference,
     ChemicalRecord,
     Chem,
     Biotope,
     BIOTOPE_TYPE_BROAD,
     BIOTOPE_TYPE_SPECIFIC,
     BIOTOPE_TYPE_SUBSTRATUM,
-    location_site_post_save_handler,
-    collection_post_save_handler,
-    SourceReferenceBibliography,
     Survey,
     SurveyData,
     SurveyDataOption,
     SurveyDataValue,
-    LocationContextGroup,
-    LocationContextFilter,
-    LocationContextFilterGroupOrder,
-    source_reference_post_save_handler,
-    SourceReferenceDatabase,
-    SourceReferenceDocument,
     Hydroperiod,
     WetlandIndicatorStatus,
     RecordType,
     AbundanceType,
     SamplingEffortMeasure,
-    BimsDocument,
-    location_context_post_save_handler, bims_document_post_save_handler, disconnect_source_reference_signals,
-    reconnect_source_reference_signals
 )
+from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
 from bims.utils.feature_info import get_feature_centroid
 from bims.utils.user import create_users_from_string
 from bims.scripts.data_upload import DataCSVUpload
@@ -75,31 +62,7 @@ class OccurrenceProcessor(object):
     parks_data = {}
 
     def start_process(self):
-        signals.post_save.disconnect(
-            collection_post_save_handler,
-            sender=BiologicalCollectionRecord
-        )
-        signals.post_save.disconnect(
-            location_site_post_save_handler,
-            sender=LocationSite
-        )
-        signals.post_save.disconnect(
-            location_context_post_save_handler,
-            sender=LocationContextGroup
-        )
-        signals.post_save.disconnect(
-            location_context_post_save_handler,
-            sender=LocationContextFilter
-        )
-        signals.post_save.disconnect(
-            location_context_post_save_handler,
-            sender=LocationContextFilterGroupOrder
-        )
-        signals.post_save.disconnect(
-            bims_document_post_save_handler,
-            sender=BimsDocument
-        )
-        disconnect_source_reference_signals()
+        disconnect_bims_signals()
 
     def update_location_site_context(self):
         update_location_context.delay(
@@ -115,31 +78,7 @@ class OccurrenceProcessor(object):
         # Update source reference filter
         generate_source_reference_filter()
 
-        signals.post_save.connect(
-            collection_post_save_handler,
-            sender=BiologicalCollectionRecord
-        )
-        signals.post_save.connect(
-            location_site_post_save_handler,
-            sender=LocationSite
-        )
-        signals.post_save.connect(
-            location_context_post_save_handler,
-            sender=LocationContextGroup
-        )
-        signals.post_save.connect(
-            location_context_post_save_handler,
-            sender=LocationContextFilter
-        )
-        signals.post_save.connect(
-            location_context_post_save_handler,
-            sender=LocationContextFilterGroupOrder
-        )
-        signals.post_save.connect(
-            bims_document_post_save_handler,
-            sender=BimsDocument
-        )
-        reconnect_source_reference_signals()
+        connect_bims_signals()
 
     def handle_error(self, row, message):
         pass

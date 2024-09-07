@@ -9,7 +9,7 @@ from django_tenants.utils import get_tenant_model, schema_context
 logger = get_task_logger(__name__)
 
 
-@shared_task(bind=True, queue='update')
+@shared_task(name='bims.tasks.import_data_task', bind=True, queue='update')
 def import_data_task(self, module, limit=10):
     from bims.models.import_task import ImportTask
     from preferences import preferences
@@ -32,8 +32,8 @@ def import_data_task(self, module, limit=10):
                     in_progress=True)
                 for task in running_tasks:
                     result = AsyncResult(task.celery_task_id)
-                    if result.status in ['PENDING', 'STARTED', 'RETRY']:
-                        logger.info(f"Found a running task for {module}, skipping new task.")
+                    if result.status in ['STARTED', 'RETRY']:
+                        logger.info(f"Found a running task for {module} : {result.status}, skipping new task.")
                         return
 
                 # Check if a task was completed this month
@@ -85,6 +85,8 @@ def import_data_task(self, module, limit=10):
 
                 while start_index < total_records:
                     task = ImportTask.objects.get(id=task.id)
+                    self.update_state(state='STARTED',
+                                      meta={'process': 'Harvesting virtual museum data'})
 
                     if task.cancel:
                         cancel_log = f"Task for {module} in schema {tenant.schema_name} was cancelled.\n"
