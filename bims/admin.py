@@ -1695,6 +1695,7 @@ class IngestedDataAdmin(admin.ModelAdmin):
         'datetime',
         'is_valid',
         'content_object',
+        'get_content_object_id',
         'category',
         'data_key'
     )
@@ -1711,6 +1712,11 @@ class IngestedDataAdmin(admin.ModelAdmin):
     search_fields = (
         'data_key',
     )
+
+    def get_content_object_id(self, obj):
+        return obj.content_object.id if obj.content_object else None
+
+    get_content_object_id.short_description = 'Content Object ID'
 
 
 class UploadSessionAdmin(admin.ModelAdmin):

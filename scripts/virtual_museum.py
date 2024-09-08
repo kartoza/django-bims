@@ -8,9 +8,11 @@ import zipfile
 from datetime import datetime
 
 import requests
+from django.contrib.gis.geos import Point
 from preferences import preferences
 
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+from bims.models.boundary import Boundary
 from bims.models.import_task import ImportTask
 
 from bims.models.taxon_group import TaxonGroup
@@ -105,49 +107,68 @@ class OccurrenceDarwinCore(OccurrenceProcessor):
         self.start_process()
         for occurrence in occurrence_data:
             try:
-                if IngestedData.objects.filter(
-                        data_key=occurrence['ALL_DATA']['eventID'],
-                        is_valid=False
-                ).exists():
-                    logger.info(f'{occurrence["ALL_DATA"]["eventID"]} '
-                                f'already exists, skipping...')
-                    continue
+                ingested_data = IngestedData.objects.filter(
+                    data_key=occurrence['ALL_DATA']['eventID'],
+                    is_valid=False,
+                )
+                if ingested_data.exists():
+                    if ingested_data.exclude(content_type__isnull=False).exists():
+                        logger.info(f'{occurrence["ALL_DATA"]["eventID"]} '
+                                    f'already exists, skipping...')
+                        continue
+                    else:
+                        ingested_data.delete()
             except KeyError:
                 logger.info(f'MISSING eventID - Skip')
                 continue
 
-            boundary_key = preferences.SiteSetting.boundary_key
-            if boundary_key:
-                url = (
-                    '{base_url}/api/v2/query?registry=service&key={key}&'
-                    'x={lon}&y={lat}&outformat=json'
-                ).format(
-                    base_url=get_key('GEOCONTEXT_URL'),
-                    key=boundary_key,
-                    lon=occurrence[LONGITUDE],
-                    lat=occurrence[LATITUDE]
-                )
-                try:
-                    response = requests.get(url)
-                    if response.status_code != 200:
-                        logger.info(
-                            f'The site is not within a valid border.'
-                        )
-                        continue
-                    else:
-                        response_json = json.loads(response.content)
-                        if response_json['value']:
-                            logger.info(
-                                f"Site is in {response_json['value']}"
-                            )
-                        else:
+            site_boundary = preferences.SiteSetting.site_boundary
+            if site_boundary:
+                site_point = Point(
+                    float(occurrence[LONGITUDE]),
+                    float(occurrence[LATITUDE]), srid=4326)
+                is_within_boundary = Boundary.objects.filter(
+                    id=site_boundary.id,
+                    geometry__contains=site_point,
+                ).exists()
+                if not is_within_boundary:
+                    logger.info(
+                        f'The site is not within a valid border.'
+                    )
+                    continue
+            else:
+                boundary_key = preferences.SiteSetting.boundary_key
+                if boundary_key:
+                    url = (
+                        '{base_url}/api/v2/query?registry=service&key={key}&'
+                        'x={lon}&y={lat}&outformat=json'
+                    ).format(
+                        base_url=get_key('GEOCONTEXT_URL'),
+                        key=boundary_key,
+                        lon=occurrence[LONGITUDE],
+                        lat=occurrence[LATITUDE]
+                    )
+                    try:
+                        response = requests.get(url)
+                        if response.status_code != 200:
                             logger.info(
                                 f'The site is not within a valid border.'
                             )
                             continue
-                except Exception as e:  # noqa
-                    logger.info(
-                        f'Unable to check boundary data from geocontext')
+                        else:
+                            response_json = json.loads(response.content)
+                            if response_json['value']:
+                                logger.info(
+                                    f"Site is in {response_json['value']}"
+                                )
+                            else:
+                                logger.info(
+                                    f'The site is not within a valid border.'
+                                )
+                                continue
+                    except Exception as e:  # noqa
+                        logger.info(
+                            f'Unable to check boundary data from geocontext')
 
             logger.info(f'Processing {occurrence}')
             self.process_data(occurrence)

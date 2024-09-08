@@ -46,7 +46,6 @@ SHARED_APPS = (
     'webpack_loader',
     'ckeditor_uploader',
     'django_admin_inline_paginator',
-    'django_celery_results',
 
     # Apps bundled with Django
     'modeltranslation',
@@ -111,6 +110,7 @@ SHARED_APPS = (
 )
 
 TENANT_APPS = (
+    'django_celery_results',
     'rest_framework',
     'rest_framework_gis',
     'allauth',
@@ -318,9 +318,12 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.DownloadRequest',
     'bims.Survey',
     'bims.TaxonomyUpdateProposal',
+    'bims.ImportTask',
+    'bims.IngestedData'
 ]
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True
+DJANGO_EASY_AUDIT_CHECK_IF_REQUEST_USER_EXISTS = False
 
 
 LOGGING = {
