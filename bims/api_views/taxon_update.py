@@ -39,6 +39,8 @@ def create_taxon_proposal(
             accepted_taxonomy = accepted_taxonomy[0]
 
     additional_data = taxon.additional_data
+    if not additional_data:
+        additional_data = {}
     additional_data_to_check = [
         'Taxonomic Comments',
         'Conservation Comments',
@@ -54,9 +56,13 @@ def create_taxon_proposal(
             additional_data[additional_key] = data.get(additional_key)
 
     canonical_name = data.get('canonical_name', taxon.canonical_name)
-    if taxon.is_species:
+    if taxon.rank.lower() == 'species':
         if taxon.genus_name not in canonical_name:
             canonical_name = taxon.genus_name + ' ' + canonical_name
+    elif taxon.rank.lower() == 'subspecies':
+        if taxon.full_species_name not in canonical_name:
+            canonical_name = taxon.full_species_name + ' ' + canonical_name
+    canonical_name = canonical_name.strip()
 
     proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
         original_taxonomy=taxon,

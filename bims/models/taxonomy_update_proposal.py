@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
@@ -254,11 +256,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         )
         top_level_taxon_group = self.taxon_group.get_top_level_parent()
 
-        if self.taxon_group_under_review:
-            self.taxon_group_under_review = top_level_taxon_group
-            self.save()
-
-        if top_level_taxon_group != self.taxon_group:
+        if top_level_taxon_group != self.taxon_group_under_review:
             parent_expert = list(top_level_taxon_group.experts.values_list(
                 'email', flat=True
             ))
@@ -272,59 +270,127 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
             from_email = settings.DEFAULT_FROM_EMAIL
             message = (f"Dear Validator,\n\nThe taxon '{self.original_taxonomy.canonical_name}' "
                        f"has been validated by the current expert.\n\nIt now requires "
-                       f"validation to be added to the taxon group '{self.taxon_group.name}'.")
+                       f"validation to be added to the taxon group '{top_level_taxon_group.name}'.")
             send_mail_notification.delay(
                 subject,
                 message,
                 from_email,
                 recipients
             )
-
-        # Only top level experts can approve data
-        if top_level_taxon_group.experts.filter(
-            id=reviewer.id
-        ).exists() or reviewer.is_superuser:
-            fields_to_update = [
-                'scientific_name',
-                'canonical_name',
-                'legacy_canonical_name',
-                'rank',
-                'taxonomic_status',
-                'endemism',
-                'iucn_status',
-                'accepted_taxonomy',
-                'parent',
-                'tags',
-                'biographic_distributions',
-                'additional_data',
-                'vernacular_names',
-                'origin']
-            for field in fields_to_update:
-                if field == 'tags':
-                    self.original_taxonomy.tags.clear()
-                    self.original_taxonomy.tags.set(getattr(self, field).all())
-                elif field == 'biographic_distributions':
-                    self.original_taxonomy.biographic_distributions.clear()
-                    self.original_taxonomy.biographic_distributions.set(
-                        getattr(self, field).all())
-                elif field == 'vernacular_names':
-                    self.original_taxonomy.vernacular_names.clear()
-                    self.original_taxonomy.vernacular_names.set(
-                        getattr(self, field).all())
-                else:
-                    setattr(
-                        self.original_taxonomy,
-                        field, getattr(self, field))
-            self.original_taxonomy.hierarchical_data = {}
-            self.original_taxonomy.save()
-            self.status = 'approved'
+            self.taxon_group_under_review = top_level_taxon_group
             self.save()
+        else:
+            # Only top level experts can approve data
+            if top_level_taxon_group.experts.filter(
+                id=reviewer.id
+            ).exists() or reviewer.is_superuser:
+                fields_to_update = [
+                    'scientific_name',
+                    'canonical_name',
+                    'legacy_canonical_name',
+                    'rank',
+                    'taxonomic_status',
+                    'endemism',
+                    'iucn_status',
+                    'accepted_taxonomy',
+                    'parent',
+                    'tags',
+                    'biographic_distributions',
+                    'additional_data',
+                    'vernacular_names',
+                    'origin']
+                for field in fields_to_update:
+                    if field == 'tags':
+                        self.original_taxonomy.tags.clear()
+                        self.original_taxonomy.tags.set(getattr(self, field).all())
+                    elif field == 'biographic_distributions':
+                        self.original_taxonomy.biographic_distributions.clear()
+                        self.original_taxonomy.biographic_distributions.set(
+                            getattr(self, field).all())
+                    elif field == 'vernacular_names':
+                        self.original_taxonomy.vernacular_names.clear()
+                        self.original_taxonomy.vernacular_names.set(
+                            getattr(self, field).all())
+                    else:
+                        setattr(
+                            self.original_taxonomy,
+                            field, getattr(self, field))
+                self.original_taxonomy.hierarchical_data = {}
+                self.original_taxonomy.save()
+                self.status = 'approved'
+                self.save()
 
-            self.validate_taxon(
-                self.taxon_group,
-                self.original_taxonomy
+                self.validate_taxon(
+                    self.taxon_group,
+                    self.original_taxonomy
+                )
+
+                self.send_success_emails(reviewer)
+                return
+
+    def send_success_emails(self, reviewer, comments: str = "",):
+        """
+        Send notification emails to the collector and staff upon successful validation.
+
+        Args:
+            reviewer (User, optional): User reviewing the taxon
+            comments (str, optional): Comments regarding the approval.
+        """
+        current_site = get_current_domain()
+        from_email = settings.DEFAULT_FROM_EMAIL
+
+        # Email to the collector
+        if self.collector_user:
+            submission_type = 'Addition' if self.new_data else 'Update'
+            collector_subject = f'[{current_site}] Taxon {submission_type} Submission Approved'
+            collector_message = (
+                f"Dear {self.collector_user.get_full_name()},\n\n"
+                f"Your submission for the taxon '{self.canonical_name}' "
+                f"has been successfully approved by "
+                f"the experts at {current_site}.\n\n"
             )
-            return
+            send_mail_notification.delay(
+                collector_subject,
+                collector_message,
+                from_email,
+                [self.collector_user.email]
+            )
+
+        # Email to staff and experts
+        staff_subject = (
+            f'[{current_site}] Taxon '
+            f'{"Addition" if self.new_data else "Update"} Submission Approved'
+        )
+
+        # Gather all expert emails
+        recipients = []
+        experts = self.taxon_group.get_all_experts()
+        for expert in experts:
+            if expert.email not in recipients:
+                recipients.append(expert.email)
+        superusers = list(
+            get_user_model().objects.filter(
+                is_superuser=True).values_list('email', flat=True)
+        )
+        recipients = list(set(superusers + recipients))
+
+        staff_message = (
+            f"Dear Staff/Expert,\n\n"
+            f"The taxon '{self.canonical_name}' has been successfully validated and "
+            f"approved at {current_site}.\n\n"
+            f"Submission Details:\n"
+            f"Taxon Name: {self.canonical_name}\n\n"
+            f"Taxon Group: {self.taxon_group.name}\n\n"
+            f"Approved by: {reviewer.get_full_name()}\n"
+            f"Date: {datetime.now().strftime('%Y-%m-%d')}\n\n"
+        )
+
+        send_mail_notification.delay(
+            staff_subject,
+            staff_message,
+            from_email,
+            recipients
+        )
 
 
 class TaxonomyUpdateReviewer(models.Model):

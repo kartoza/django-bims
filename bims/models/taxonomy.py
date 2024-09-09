@@ -345,6 +345,14 @@ class AbstractTaxonomy(AbstractValidation):
     def sub_genus_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SUBGENUS.name)
 
+    @cached_property
+    def full_species_name(self):
+        genus_name = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
+        species_name = self.species_name
+        if genus_name not in species_name:
+            return genus_name + ' ' + species_name
+        return species_name
+
     @property
     def species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
@@ -371,6 +379,8 @@ class AbstractTaxonomy(AbstractValidation):
 
     @property
     def taxon_name(self):
+        if self.rank.lower() == 'subspecies':
+            return self.canonical_name.split(self.full_species_name)[-1].strip()
         if self.is_species and self.genus_name:
             return self.canonical_name.split(self.genus_name)[-1].strip()
         return self.canonical_name

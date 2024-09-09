@@ -305,7 +305,20 @@ class TaxonSerializer(serializers.ModelSerializer):
         taxon_group_id = self.context.get('taxon_group_id', None)
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            if not TaxonGroupTaxonomy.objects.filter(
+                taxongroup_id=taxon_group_id,
+                taxonomy=obj
+            ).exists():
+                children = taxon_group.get_all_children()
+                children_ids = [child.id for child in children]
+                taxon_group_taxa = TaxonGroupTaxonomy.objects.filter(
+                    taxongroup_id__in=children_ids,
+                    taxonomy=obj
+                )
+                if taxon_group_taxa.exists():
+                    taxon_group = taxon_group_taxa.first().taxongroup
             return {
+                'id': taxon_group.id,
                 'logo': taxon_group.logo.name,
                 'name': taxon_group.name
             }
@@ -313,6 +326,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         taxon_module = taxonomy_obj.taxongroup_set.first()
         if taxon_module:
             return {
+                'id': taxon_module.id,
                 'logo': taxon_module.logo.name,
                 'name': taxon_module.name
             }
