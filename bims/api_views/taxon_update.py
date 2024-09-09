@@ -83,7 +83,8 @@ def create_taxon_proposal(
             'hierarchical_data': {},
             'gbif_data': taxon.gbif_data,
             'collector_user': creator,
-            'additional_data': additional_data
+            'additional_data': additional_data,
+            'gbif_key': data.get('gbif_key', taxon.gbif_key)
         }
     )
     if created:

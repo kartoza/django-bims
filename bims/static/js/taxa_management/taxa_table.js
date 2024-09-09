@@ -39,6 +39,12 @@ export const taxaTable = (() => {
         $('#apply-filters').on('click', handleFilters)
         $clearSearchBtn.on('click', handleClearFilters)
         $searchBtn.on('click', handleSearch)
+        document.getElementById("taxon-name-input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                $searchBtn.click()
+            }
+        });
         $rejectTaxonConfirmBtn.on('click', handleConfirmRejectTaxon)
 
         $('.sort-button').on('click', handleSortButtonClicked)
