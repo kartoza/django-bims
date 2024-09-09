@@ -295,6 +295,14 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 get_vernacular=True
             )
         elif taxon_name and rank:
+            if rank.lower() == 'species' and parent and parent.rank.lower() == 'genus':
+                if parent.canonical_name not in taxon_name:
+                    taxon_name = parent.canonical_name + ' ' + taxon_name
+            elif rank.lower() == 'subspecies' and parent and parent.rank.lower() == 'species':
+                species_name = parent.species_name
+                if species_name not in taxon_name:
+                    taxon_name = species_name + ' ' + taxon_name
+            taxon_name = taxon_name.strip()
             try:
                 taxonomy, created = Taxonomy.objects.get_or_create(
                     scientific_name=taxon_name,

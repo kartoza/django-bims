@@ -42,7 +42,15 @@ class TaxonDetailSerializer(TaxonSerializer):
         return ''
 
     def get_subspecies(self, obj: Taxonomy):
-        return obj.sub_species_name
+        sub_species_name = obj.sub_species_name
+        if sub_species_name:
+            genus_name = obj.genus_name
+            if genus_name:
+                sub_species_name = sub_species_name.replace(genus_name, '', 1).strip()
+            species_name = self.get_species(obj)
+            if species_name:
+                sub_species_name = sub_species_name.replace(species_name, '', 1).strip()
+        return sub_species_name
 
     def get_subgenus(self, obj: Taxonomy):
         return obj.sub_genus_name

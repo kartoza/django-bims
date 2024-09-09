@@ -345,6 +345,14 @@ class AbstractTaxonomy(AbstractValidation):
     def sub_genus_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SUBGENUS.name)
 
+    @cached_property
+    def full_species_name(self):
+        genus_name = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
+        species_name = self.species_name
+        if genus_name not in species_name:
+            return genus_name + ' ' + species_name
+        return species_name
+
     @property
     def species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)

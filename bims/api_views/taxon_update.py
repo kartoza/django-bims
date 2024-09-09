@@ -39,6 +39,8 @@ def create_taxon_proposal(
             accepted_taxonomy = accepted_taxonomy[0]
 
     additional_data = taxon.additional_data
+    if not additional_data:
+        additional_data = {}
     additional_data_to_check = [
         'Taxonomic Comments',
         'Conservation Comments',
