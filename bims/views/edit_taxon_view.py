@@ -24,6 +24,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         'parent',
         'taxonomic_status',
         'accepted_taxonomy',
+        'gbif_key'
     ]
     success_url = '/taxa_management/'
 

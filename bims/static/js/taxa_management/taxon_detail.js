@@ -130,6 +130,10 @@ export const taxonDetail = (() => {
                                 <div class="col-4"><strong>Conservation Status</strong></div>
                                 <div class="col-8">${data.iucn_status_full_name}</div>
                             </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>GBIF Key</strong></div>
+                                <div class="col-8">${data.gbif_key}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
