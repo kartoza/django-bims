@@ -27,7 +27,7 @@ class Dataset(models.Model):
         blank=True,
         help_text='Citation of the dataset'
     )
-    url = models.URLField(
+    url = models.CharField(
         blank=True,
         help_text='URL of the dataset'
     )
