@@ -379,6 +379,8 @@ class AbstractTaxonomy(AbstractValidation):
 
     @property
     def taxon_name(self):
+        if self.rank.lower() == 'subspecies':
+            return self.canonical_name.split(self.full_species_name)[-1].strip()
         if self.is_species and self.genus_name:
             return self.canonical_name.split(self.genus_name)[-1].strip()
         return self.canonical_name
