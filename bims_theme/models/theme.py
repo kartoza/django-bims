@@ -185,6 +185,11 @@ class CustomTheme(models.Model):
         null=True,
         help_text='Background image for login/logout page.'
     )
+    footer_background = models.ImageField(
+        blank=True,
+        null=True,
+        help_text='Background image for footer in landing page.'
+    )
     hide_site_visit = models.BooleanField(
         default=False,
         help_text='Hide site visit in the landing page'

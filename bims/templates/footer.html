@@ -4,6 +4,22 @@
         padding: 50px 0 65px;
         font-family: 'Roboto', 'Times New Roman', serif;
         font-weight: 300;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+    }
+
+    .footer-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-position: center center;
+        background-size: cover;
+        width: 100%;
+        height: auto;
+        background-repeat: no-repeat;
+        z-index: -1;
+        overflow: hidden;
     }
 
     footer .list-inline {
@@ -26,6 +42,9 @@
 <hr class="footer-hr" style="border-color: #c6c6c6"/>
 <!-- Footer -->
 <footer>
+    {% if custom_theme.footer_background %}
+        <img src="uploaded/{{ custom_theme.footer_background }}" alt="Footer background" class="footer-background">
+    {% endif %}
     <p class="copyright text-muted">{{ preferences.SiteSetting.copyright_text }} {% now 'Y' %}</p>
     <p class="copyright text-muted"> Version : {% current_version %} </p>
 </footer>
