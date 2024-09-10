@@ -167,6 +167,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
                 new_proposal = True
 
+                taxon.send_updated_taxon_email(taxon_group.id, self.request.user)
+
                 messages.success(
                     self.request,
                     'Taxonomy update proposal created successfully')

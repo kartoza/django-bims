@@ -3,11 +3,11 @@ You have received the following notice from {{ current_site }}:
 
 Dear Validator,
 
-A new Taxonomy has been submitted by {{ taxonomy.collector_user.username }}:
+The taxonomy has been updated by {{ creator.username }}:
 
 Taxonomy : {{ taxonomy.canonical_name }}
 Rank : {{ taxonomy.rank }}
 
-It now requires validation to be added to the taxon group, {{ taxon_group.name }}.
+It now requires validation to be updated in the taxon group, {{ taxon_group.name }}.
 
 {% trans "You can see the data by following this link" %}: http://{{ current_site }}/taxa-management/?&selected={{ taxon_group.id }}&validated=False

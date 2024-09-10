@@ -380,6 +380,9 @@ class AbstractTaxonomy(AbstractValidation):
     @property
     def taxon_name(self):
         if self.rank.lower() == 'subspecies':
+            canonical_names = self.canonical_name.split(' ')
+            if len(canonical_names) >= 3:
+                return canonical_names[-1]
             return self.canonical_name.split(self.full_species_name)[-1].strip()
         if self.is_species and self.genus_name:
             return self.canonical_name.split(self.genus_name)[-1].strip()
@@ -591,7 +594,36 @@ class Taxonomy(AbstractTaxonomy):
                 'taxon_group': taxon_group
             }
         )
-        subject = '[{}] New Taxonomy email notification'.format(current_site)
+        subject = '[{}] Taxon Validation Required'.format(current_site)
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = recipients
+
+        send_mail_notification.delay(subject, email_body, from_email, recipient_list)
+
+    def send_updated_taxon_email(self, taxon_group_id=None, creator=None):
+        from bims.models import TaxonGroup
+        from bims.tasks.send_notification import send_mail_notification
+
+        current_site = get_current_domain()
+        recipients = get_recipients_for_notification(NEW_TAXONOMY)
+        taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+
+        # Get experts
+        experts_email = self.get_experts_email(
+            taxon_group=taxon_group
+        )
+        recipients = list(set(experts_email + recipients))
+
+        email_body = render_to_string(
+            'notifications/taxonomy/updated_message.txt',
+            {
+                'taxonomy': self,
+                'current_site': current_site,
+                'taxon_group': taxon_group,
+                'creator': creator
+            }
+        )
+        subject = '[{}] Taxon Validation Required'.format(current_site)
         from_email = settings.DEFAULT_FROM_EMAIL
         recipient_list = recipients
 
