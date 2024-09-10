@@ -132,7 +132,7 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>GBIF Key</strong></div>
-                                <div class="col-8">${data.gbif_key}</div>
+                                <div class="col-8">${data.gbif_key ? data.gbif_key : ''}</div>
                             </div>
                         </div>
                     </div>

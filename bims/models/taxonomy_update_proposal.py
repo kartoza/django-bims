@@ -264,7 +264,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 get_user_model().objects.filter(
                     is_superuser=True).values_list('email', flat=True)
             )
-            recipients = parent_expert if parent_expert else superuser
+            recipients = list(set(parent_expert + superuser))
             current_site = get_current_domain()
             subject = '[{}] Taxon Validation Required'.format(current_site)
             from_email = settings.DEFAULT_FROM_EMAIL
