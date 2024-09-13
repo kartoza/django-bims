@@ -17,7 +17,7 @@
                 <div class="carousel-overlay" style="background-color: {{ header.overlay }}; opacity: {{ header.overlay_opacity }}"></div>
                 <div class="carousel-title" style="color: {{ header.color }}">
                     <div>
-                        <p class="carousel-title-text" style="font-weight: {{ header.text_style }}; text-align: {{ header.text_alignment }};">
+                        <p style="font-size: {{ header.title_font_size }}px; font-weight: {{ header.text_style }}; text-align: {{ header.text_alignment }}">
                             {{ header.title | linebreaksbr }}
                         </p>
                     </div>
@@ -44,30 +44,6 @@
                     <style>
                         .header-{{ header.id }} {
                             background-image: url("uploaded/{{ header.file }}");
-                        }
-                        .carousel-title-text {
-                            font-size: {{ header.title_font_size }}px !important;
-                            line-height: {{ header.title_font_size|add:5 }}px;
-                        }
-
-                        @media (min-width: 1200px) {
-                            .carousel-title-text {
-                                font-size: {{ header.title_font_size|add:5 }}px !important;
-                            }
-                        }
-
-                        @media (min-width: 768px) and (max-width: 1199px) {
-                            .carousel-title-text {
-                                font-size: {{ header.title_font_size|add:-30 }}px !important;
-                                line-height: {{ header.title_font_size|add:-30 }}px !important;
-                            }
-                        }
-
-                        @media (max-width: 767px) {
-                            .carousel-title-text {
-                                font-size: {{ header.title_font_size|add:-40 }}px !important;
-                                line-height: {{ header.title_font_size|add:-40 }}px !important;
-                            }
                         }
                     </style>
                 </div>
