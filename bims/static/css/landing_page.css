@@ -80,19 +80,13 @@ header.masthead {
 }
 
 .header-image {
-    background-position: center center;
-    background-size: contain;
-    -webkit-background-size: contain;
-    -moz-background-size: contain;
-    -o-background-size: contain;
+    background-position: center top;
+    background-size: cover;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
     background-attachment: scroll;
     height: 100%;
-    width: 100%;
-    background-repeat: no-repeat;
-}
-
-#header {
-    margin-top: 55px;
 }
 
 header.masthead hr {
