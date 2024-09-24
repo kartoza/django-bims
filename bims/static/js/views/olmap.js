@@ -279,7 +279,7 @@ define([
             if (siteVisible) {
                 let view = this.map.getView();
                 let queryLayer = layer['layer'].getSource().getParams()['LAYERS'];
-                let layerSource = layer['layer'].getSource().getGetFeatureInfoUrl(
+                let layerSource = layer['layer'].getSource().getFeatureInfoUrl(
                     e.coordinate,
                     view.getResolution(),
                     view.getProjection(),
@@ -577,7 +577,10 @@ define([
             this.$el.append(this.sidePanelView.render().$el);
 
             // add layer switcher
-            var layerSwitcher = new LayerSwitcher();
+            let layerSwitcher = new LayerSwitcher({
+                activationMode: 'click',
+                collapseLabel: ''
+            });
             this.map.addControl(layerSwitcher);
             $(layerSwitcher.element).addClass('layer-switcher-custom');
             $(layerSwitcher.element).attr('data-toggle', 'popover');
@@ -594,6 +597,12 @@ define([
                 $('.layer-switcher-custom').popover('enable');
             });
             this.mapControlPanel.addPanel($(layerSwitcher.element));
+
+            $(document).on('click', function (event) {
+                if (!$(event.target).closest('.layer-switcher-custom').length) {
+                    layerSwitcher.hidePanel();
+                }
+            });
 
             this.map.on('moveend', function (evt) {
                 self.mapMoved();
@@ -702,13 +711,7 @@ define([
             }
 
             // Add scaleline control
-            let scalelineControl = new ol.control.ScaleLine({
-                units: 'metric',
-                bar: true,
-                steps: 4,
-                text: true,
-                minWidth: 140
-            })
+            let scalelineControl = new ol.control.ScaleLine();
 
             let extent = defaultExtentMap.split(',');
             let newExtent = [];
@@ -716,6 +719,13 @@ define([
                 newExtent.push(parseFloat(extent[e]));
             }
             extent = ol.proj.transformExtent(newExtent, 'EPSG:4326', 'EPSG:3857');
+
+            // Create a popup overlay which will be used to display feature info
+            this.popup = new ol.Overlay({
+                element: document.getElementById('popup'),
+                positioning: 'bottom-center',
+                offset: [0, -10]
+            });
 
             this.map = new ol.Map({
                 target: 'map',
@@ -726,23 +736,15 @@ define([
                     minZoom: 5,
                     maxZoom: 19, // prevent zooming past 50m
                 }),
-                controls: ol.control.defaults({
-                    zoom: false
-                }).extend(
-                    [
-                        mousePositionControl,
-                        scalelineControl
-                    ])
+                controls: ol.control.defaults.defaults({ zoom: false }).extend([
+                    mousePositionControl,
+                    scalelineControl
+                ]),
+                overlays: [this.popup]
             });
 
             this.map.getView().fit(extent);
 
-            // Create a popup overlay which will be used to dispgitlay feature info
-            this.popup = new ol.Overlay({
-                element: document.getElementById('popup'),
-                positioning: 'bottom-center',
-                offset: [0, -10]
-            });
             this.map.addOverlay(this.popup);
 
             self.layers.addLayersToMap(self.map);

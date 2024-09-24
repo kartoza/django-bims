@@ -157,7 +157,7 @@ define([
                     )
                 }
                 self.mapLocationSite = new ol.Map({
-                    controls: ol.control.defaults().extend([
+                    controls: ol.control.defaults.defaults().extend([
                         new ol.control.ScaleLine()
                     ]),
                     layers: baseLayer,
@@ -168,7 +168,7 @@ define([
                     })
                 });
                 self.mapLocationSite.addLayer(self.siteTileLayer);
-                let graticule = new ol.Graticule({
+                let graticule = new ol.layer.Graticule({
                     strokeStyle: new ol.style.Stroke({
                         color: 'rgba(0,0,0,1)',
                         width: 1,

@@ -1,13 +1,13 @@
 require.config({
     paths: {
         jquery: 'libs/jquery/jquery-3.3.1.min',
-        ol: 'libs/openlayers-4.6.4/ol',
+        ol: 'libs/openlayers-10.2.0/ol',
         underscore: 'libs/underscore-1.8.3/underscore-min',
         backbone: 'libs/backbone-1.3.3/backbone-min',
         bootstrap: 'libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         select2: 'libs/select2/select2.min',
-        layerSwitcher: 'libs/ol-layerswitcher/ol-layerswitcher',
+        layerSwitcher: 'libs/ol-layerswitcher-4.1.2/ol-layerswitcher',
         olMapboxStyle: 'libs/ol-mapbox-style/olms',
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
         chartJs: 'libs/chart/Chart-2.7.2',
@@ -26,7 +26,7 @@ require.config({
     },
     shim: {
         ol: {
-            exports: ['ol']
+            exports: 'ol'
         },
         underscore: {
             exports: '_'

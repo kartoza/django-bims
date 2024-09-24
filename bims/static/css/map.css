@@ -2963,3 +2963,8 @@ div:hover::-webkit-scrollbar {
 .equal-height button {
     flex: 1;
 }
+
+.locationsite-map-wrapper {
+    width: 100%;
+    height: 300px; /* You can adjust the height as needed */
+}
