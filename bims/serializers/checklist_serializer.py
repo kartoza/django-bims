@@ -84,7 +84,7 @@ class ChecklistBaseSerializer(SerializerContextCache):
         except TypeError:
             pass
         if sources:
-            return ', '.join(set(sources))
+            return ', '.join(set(filter(None, sources)))
         return '-'
 
 
