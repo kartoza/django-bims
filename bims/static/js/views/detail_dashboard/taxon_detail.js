@@ -410,7 +410,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                     )
                 }
                 this.mapTaxaSite = new ol.Map({
-                    controls: ol.control.defaults().extend([
+                    controls: ol.control.defaults.defaults().extend([
                         new ol.control.ScaleLine()
                     ]),
                     layers: baseLayer,
@@ -420,7 +420,7 @@ define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSave
                         zoom: 2
                     })
                 });
-                var graticule = new ol.Graticule({
+                var graticule = new ol.layer.Graticule({
                     strokeStyle: new ol.style.Stroke({
                         color: 'rgba(0,0,0,1)',
                         width: 1,
