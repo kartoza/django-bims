@@ -961,17 +961,7 @@ define([
         downloadMap: function (fileType = 'png') {
             var that = this;
             var downloadMap = true;
-            that.map.once('postcompose', function (event) {
-                var canvas = event.context.canvas;
-                try {
-                    canvas.toBlob(function (blob) {
-                    })
-                }
-                catch (error) {
-                    $('#error-modal').modal('show');
-                    downloadMap = false
-                }
-            });
+
             that.map.renderSync();
 
             if (downloadMap) {
@@ -983,7 +973,7 @@ define([
                 $('.bug-report-wrapper').hide();
                 $('#wetland-map-feedback').hide();
                 $('.print-map-control').addClass('control-panel-selected');
-                that.whenMapIsReady(function () {
+                that.map.once('rendercomplete', function (event) {
                     var canvas = document.getElementsByClassName('map-wrapper');
                     var $mapWrapper = $('.map-wrapper');
                     var divHeight = $mapWrapper.height();
