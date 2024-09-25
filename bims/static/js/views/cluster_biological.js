@@ -1,4 +1,4 @@
-define(['backbone', 'models/cluster_biological', 'ol', 'shared'], function (Backbone, Cluster, ol, Shared) {
+define(['backbone', 'models/cluster_biological', 'shared'], function (Backbone, Cluster, Shared) {
     return Backbone.View.extend({
         initialize: function (options) {
             this.render();

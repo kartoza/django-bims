@@ -1,4 +1,4 @@
-define(['backbone', 'models/cluster', 'ol', 'shared', 'jquery'], function (Backbone, Cluster, ol, Shared, $) {
+define(['backbone', 'models/cluster', 'shared', 'jquery'], function (Backbone, Cluster, Shared, $) {
     return Backbone.View.extend({
         initialize: function (options) {
             this.render();

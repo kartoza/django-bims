@@ -1,4 +1,4 @@
-define(['backbone', 'ol', 'shared', 'underscore', 'jquery'], function (Backbone, ol, Shared, _, $) {
+define(['backbone', 'shared', 'underscore', 'jquery'], function (Backbone, Shared, _, $) {
     return Backbone.View.extend({
         template: _.template($('#validate-data-detail-container').html()),
         model: null,

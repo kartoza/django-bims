@@ -1,6 +1,6 @@
 define(['shared', 'backbone', 'underscore', 'jqueryUi',
-    'jquery', 'ol',
-    'views/user_boundary',], function (Shared, Backbone, _, jqueryUi, $, ol, UserBoundaryView) {
+    'jquery',
+    'views/user_boundary',], function (Shared, Backbone, _, jqueryUi, $, UserBoundaryView) {
     return Backbone.View.extend({
         template: _.template($('#lasso-control-panel-template').html()),
         isEmpty: true,

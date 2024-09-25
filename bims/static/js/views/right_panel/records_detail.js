@@ -1,4 +1,4 @@
-define(['backbone', 'ol', 'shared', 'underscore'], function (Backbone, ol, Shared, _) {
+define(['backbone', 'shared', 'underscore'], function (Backbone, Shared, _) {
     return Backbone.View.extend({
         taxonName: null,
         siteDetail: null,

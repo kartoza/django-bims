@@ -1,9 +1,8 @@
 define([
     'backbone',
-    'ol',
     'shared',
     'underscore',
-    'collections/source_collection'], function (Backbone, ol, Shared, _, SourceCollection) {
+    'collections/source_collection'], function (Backbone, Shared, _, SourceCollection) {
     return Backbone.View.extend({
         template: _.template($('#source-collection-template').html()),
         events: {

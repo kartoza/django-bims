@@ -2,7 +2,6 @@ define([
     'backbone',
     'underscore',
     'shared',
-    'ol',
     'noUiSlider',
     'collections/search_result',
     'views/search_panel',
@@ -11,7 +10,7 @@ define([
     'views/filter_panel/reference_category',
     'views/filter_panel/spatial_filter',
     'views/filter_panel/source_collection'
-], function (Backbone, _, Shared, ol, NoUiSlider, SearchResultCollection, SearchPanelView, $, Chosen,
+], function (Backbone, _, Shared, NoUiSlider, SearchResultCollection, SearchPanelView, $, Chosen,
              ReferenceCategoryView, SpatialFilterView, SourceCollectionView) {
 
     return Backbone.View.extend({

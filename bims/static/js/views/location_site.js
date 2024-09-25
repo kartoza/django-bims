@@ -1,4 +1,4 @@
-define(['backbone', 'models/location_site', 'ol', 'shared'], function (Backbone, LocationSite, ol, Shared) {
+define(['backbone', 'models/location_site', 'shared'], function (Backbone, LocationSite, Shared) {
     return Backbone.View.extend({
         id: 0,
         initialize: function (options) {

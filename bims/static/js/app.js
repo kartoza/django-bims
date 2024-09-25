@@ -1,14 +1,13 @@
 require.config({
     paths: {
         jquery: 'libs/jquery/jquery-3.3.1.min',
-        ol: 'libs/openlayers-10.2.0/ol',
         underscore: 'libs/underscore-1.8.3/underscore-min',
         backbone: 'libs/backbone-1.3.3/backbone-min',
         bootstrap: 'libs/bootstrap-4.0.0/js/bootstrap.bundle.min',
         jqueryUi: 'libs/jquery-ui-1.12.1/jquery-ui.min',
         select2: 'libs/select2/select2.min',
         layerSwitcher: 'libs/ol-layerswitcher-4.1.2/ol-layerswitcher',
-        olMapboxStyle: 'libs/ol-mapbox-style/olms',
+        // olMapboxStyle: 'libs/ol-mapbox-style/olms', // upgrade this
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
         chartJs: 'libs/chart/Chart-2.7.2',
         fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min',
@@ -25,9 +24,6 @@ require.config({
         jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min'
     },
     shim: {
-        ol: {
-            exports: 'ol'
-        },
         underscore: {
             exports: '_'
         },
@@ -46,14 +42,6 @@ require.config({
         },
         app: {
             deps: ['backbone']
-        },
-        layerSwitcher: {
-            deps: ['ol'],
-            exports: 'LayerSwitcher'
-        },
-        olMapboxStyle: {
-            deps: ['ol'],
-            exports: 'OlMapboxStyle'
         },
         gridStack: {
             deps: [

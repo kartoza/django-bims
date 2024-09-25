@@ -1,10 +1,9 @@
 define([
     'backbone',
-    'ol',
     'shared',
     'underscore',
     'views/right_panel/validate_data_detail',
-    'collections/validate_data'], function (Backbone, ol, Shared, _, ValidateDataDetail, ValidateDataCollection) {
+    'collections/validate_data'], function (Backbone, Shared, _, ValidateDataDetail, ValidateDataCollection) {
     return Backbone.View.extend({
         opened: false,
         currentPage: 1,

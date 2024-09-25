@@ -1,4 +1,4 @@
-define(['backbone', 'ol', 'shared', 'jquery'], function (Backbone, ol, Shared, $) {
+define(['backbone', 'shared', 'jquery'], function (Backbone, Shared, $) {
     return Backbone.View.extend({
         catchmentAreaBoundaryUrl: "/api/boundary/geojson?ids=",
         initialize: function () {

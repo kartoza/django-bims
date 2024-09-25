@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Backbone, _, $, ol, OlMapboxStyle) {
+define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
     return Backbone.View.extend({
         getVectorTileMapBoxStyle: function (url, styleUrl, layerName, attributions) {
             let tileGrid = ol.tilegrid.createXYZ({tileSize: 512, maxZoom: 14});
@@ -14,8 +14,8 @@ define(['backbone', 'underscore', 'jquery', 'ol', 'olMapboxStyle'], function (Ba
             if (styleUrl) {
                 fetch(styleUrl).then(function (response) {
                     response.json().then(function (glStyle) {
-                        OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
-                        });
+                        // OlMapboxStyle.applyStyle(layer, glStyle, layerName).then(function () {
+                        // });
                     });
                 });
             }

@@ -1,9 +1,8 @@
 define([
     'backbone',
-    'ol',
     'shared',
     'underscore',
-    'collections/reference_category'], function (Backbone, ol, Shared, _, ReferenceCategoryCollection) {
+    'collections/reference_category'], function (Backbone, Shared, _, ReferenceCategoryCollection) {
     return Backbone.View.extend({
         template: _.template($('#reference-category-template').html()),
         listWrapper: '',

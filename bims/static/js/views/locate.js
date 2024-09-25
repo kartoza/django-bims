@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'jquery', 'shared', 'ol'], function (Backbone, _, $, Shared, ol) {
+define(['backbone', 'underscore', 'jquery', 'shared'], function (Backbone, _, $, Shared) {
     return Backbone.View.extend({
         template: _.template($('#locate-coordinate-modal').html()),
         locateCoordinateModal: null,

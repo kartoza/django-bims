@@ -1,7 +1,6 @@
 define([
     'backbone',
     'underscore',
-    'ol',
     'jquery',
     'gridStack',
     'shared',
@@ -11,7 +10,6 @@ define([
 ], function (
     Backbone,
     _,
-    ol,
     $,
     gridStack,
     Shared,
