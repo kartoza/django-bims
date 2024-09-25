@@ -1,5 +1,5 @@
 define(['shared', 'backbone', 'underscore', 'jqueryUi',
-    'jquery', 'ol'], function (Shared, Backbone, _, jqueryUi, $, ol) {
+    'jquery'], function (Shared, Backbone, _, jqueryUi, $) {
     return Backbone.View.extend({
         template: _.template($('#third-party-layer-panel-template').html()),
         isEmpty: true,

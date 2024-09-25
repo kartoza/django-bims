@@ -1,4 +1,4 @@
-define(['backbone', 'ol', 'shared'], function (Backbone, ol, Shared) {
+define(['backbone', 'shared'], function (Backbone, Shared) {
     return Backbone.View.extend({
         id: 0,
         siteDetail: null,

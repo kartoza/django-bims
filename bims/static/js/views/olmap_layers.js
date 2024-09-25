@@ -1,4 +1,4 @@
-define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch', 'ol', 'views/layer_style'], function (Shared, Backbone, _, $, jqueryUI, jqueryTouch, ol, LayerStyle) {
+define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch', 'views/layer_style'], function (Shared, Backbone, _, $, jqueryUI, jqueryTouch, LayerStyle) {
     return Backbone.View.extend({
         // source of layers
         biodiversitySource: null,

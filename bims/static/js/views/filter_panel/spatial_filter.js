@@ -3,11 +3,10 @@ define([
     'underscore',
     'jquery',
     'shared',
-    'ol',
     'select2',
     'jquery.fileupload',
     'jquery.fileupload-process',
-    'jquery.fileupload-validate'], function (Backbone, _, $, Shared, ol, select2) {
+    'jquery.fileupload-validate'], function (Backbone, _, $, Shared, select2) {
     return Backbone.View.extend({
         template: _.template($('#spatial-filter-panel').html()),
         selectedPoliticalRegions: [],

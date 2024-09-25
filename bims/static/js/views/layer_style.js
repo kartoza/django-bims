@@ -1,4 +1,4 @@
-define(['backbone', 'underscore', 'jquery', 'ol'], function (Backbone, _, $, ol) {
+define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
     return Backbone.View.extend({
         maxCount: 500,
         maxRadius: 30,

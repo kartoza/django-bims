@@ -2,8 +2,7 @@ define([
     'backbone',
     'models/cluster_location_site',
     'views/cluster_location_site',
-    'shared',
-    'ol', 'jquery'], function (Backbone, ClusterModel, ClusterView, Shared, ol, $) {
+    'shared', 'jquery'], function (Backbone, ClusterModel, ClusterView, Shared, $) {
     return Backbone.Collection.extend({
         model: ClusterModel,
         apiParameters: _.template(Shared.SearchURLParametersTemplate),

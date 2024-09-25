@@ -1,4 +1,4 @@
-define(['backbone', 'ol', 'shared', 'chartJs', 'jquery'], function (Backbone, ol, Shared, ChartJs, $) {
+define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, ChartJs, $) {
     return Backbone.View.extend({
         id: 0,
         currentSpeciesSearchResult: [],

@@ -7,7 +7,6 @@ define([
     'collections/cluster_biological',
     'views/map_control_panel',
     'views/side_panel',
-    'ol',
     'jquery',
     'layerSwitcher',
     'views/olmap_basemap',
@@ -25,7 +24,7 @@ define([
     'jspdf'
 ], function (Backbone, _, Shared, LocationSiteCollection, ClusterCollection,
              ClusterBiologicalCollection, MapControlPanelView, SidePanelView,
-             ol, $, LayerSwitcher, Basemap, Layers, Geocontext,
+             $, LayerSwitcher, Basemap, Layers, Geocontext,
              LocationSiteDetail, TaxonDetail, RecordsDetail, MultipleLocationSitesDetail,
              BugReportView, WetlandMappingFeedbackView,
              TaxonDetailDashboard, SiteDetailedDashboard, HtmlToCanvas, jsPDF) {

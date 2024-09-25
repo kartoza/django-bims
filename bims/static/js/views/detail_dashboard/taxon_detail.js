@@ -1,6 +1,5 @@
-define(['backbone', 'ol', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'htmlToCanvas'], function (
+define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'htmlToCanvas'], function (
     Backbone,
-    ol,
     Shared,
     _,
     $,
