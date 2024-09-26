@@ -5,7 +5,6 @@ from datetime import date
 import json
 
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
-from django.contrib.sites.models import Site
 from django.http import HttpResponse
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
@@ -38,7 +37,6 @@ from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
 from bims.helpers.list import chunk_list
-from cloud_native_gis.forms import LayerUploadForm
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -46,7 +44,6 @@ from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
 from django_admin_inline_paginator.admin import TabularInlinePaginated
-from bims.tasks.layer_upload import import_layer_data
 
 from bims.models import (
     LocationType,
@@ -2057,30 +2054,6 @@ class TagGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'colour')
 
 
-@admin.action(description='Import data')
-def start_upload_data(modeladmin, request, queryset):
-    """Import data of layer."""
-    for layer in queryset:
-        import_layer_data.delay(layer.pk)
-
-
-class LayerUploadAdmin(admin.ModelAdmin):
-    """Layer admin."""
-
-    list_display = (
-        'created_at', 'created_by', 'layer', 'status', 'progress', 'note'
-    )
-    list_filter = ['layer', 'status']
-    actions = [start_upload_data]
-    form = LayerUploadForm
-
-    def get_form(self, request, *args, **kwargs):
-        """Return form."""
-        form = super(LayerUploadAdmin, self).get_form(request, *args, **kwargs)
-        form.user = request.user
-        return form
-
-
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -2207,5 +2180,3 @@ admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
 admin.site.register(Dataset, DatasetAdmin)
-# admin.site.unregister(LayerUpload)
-# admin.site.register(LayerUpload, LayerUploadAdmin)
