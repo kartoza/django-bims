@@ -32,6 +32,7 @@ urlpatterns = [
     re_path(r'^mobile/', include('mobile.urls')),
     re_path(r'^', include('bims_theme.urls')),
     re_path(r'^', include('pesticide.urls')),
+    re_path(r'^', include('cloud_native_gis.urls')),
     re_path(r'^sass/', include('sass.urls')),
     re_path(r'^bibliography/',
         include(('td_biblio.urls', 'bibliography'),

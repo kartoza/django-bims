@@ -264,6 +264,64 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 _isAdministrativeSelected
             );
         },
+        convertStylesToRules: function (inputStyles) {
+            const rules = [];
+
+            inputStyles.forEach((inputStyle) => {
+                let filter = [];
+                const filterType = inputStyle.filter ? inputStyle.filter[0] : null;
+
+                if (filterType) {
+                    if (['all', 'any', 'none'].includes(filterType)) {
+                        filter = [filterType === 'none' ? '!' : filterType];
+                        inputStyle.filter.slice(1).forEach((condition) => {
+                            if (condition[0] === '==') {
+                                const key = condition[1] === '$type' ? ['geometry-type'] : ['get', condition[1]];
+                                filter.push(['==', key, condition[2]]);
+                            }
+                        });
+                        if (filter.length === 2) {
+                            filter.push(filter[1]);
+                        }
+                    } else if (filterType === '==') {
+                        const key = inputStyle.filter[1] === '$type' ? ['geometry-type'] : ['get', inputStyle.filter[1]];
+                        filter = ['==', key, inputStyle.filter[2]];
+                    }
+                }
+
+                let style = {};
+                const paint = inputStyle.paint || {};
+
+                if (paint['fill-color']) {
+                    style['fill-color'] = paint['fill-color'];
+
+                    if (paint['fill-opacity']) {
+                        style['fill-color'] = style['fill-color'].replace(
+                            /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
+                            `rgba($1,$2,$3,${paint['fill-opacity']})`
+                        );
+                    }
+                }
+
+                if (paint['fill-outline-color']) {
+                    style['stroke-color'] = paint['fill-outline-color'];
+                }
+
+                rules.push({
+                    filter: filter,
+                    style: style,
+                });
+            });
+
+            rules.push({
+                else: true,
+                style: {
+                    'fill-color': 'rgba(0, 0, 0, 0)', // Transparent by default
+                },
+            });
+
+            return rules;
+        },
         addLayersToMap: function (map) {
             var self = this;
             this.map = map;
@@ -315,28 +373,47 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             defaultVisibility = value['default_visibility'];
                         }
                         Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
-                        var options = {
-                            url: '/bims_proxy/' + encodeURI(value.wms_url),
-                            params: {
-                                name: value.name,
-                                layers: value.wms_layer_name,
-                                format: value.wms_format,
-                                getFeatureFormat: value.get_feature_format,
-                                STYLES: value.layer_style
+                        let options = {};
+                        let tileLayer = null;
+                        let wmsUrl = value.wms_url;
+                        if (!value.native_layer_url) {
+                            options = {
+                                url: '/bims_proxy/' + encodeURI(value.wms_url),
+                                params: {
+                                    name: value.name,
+                                    layers: value.wms_layer_name,
+                                    format: value.wms_format,
+                                    getFeatureFormat: value.get_feature_format,
+                                    STYLES: value.layer_style
+                                }
                             }
-                        };
-
-                        var wmsUrl = value.wms_url;
-
-                        wmsUrl = wmsUrl.replace(/(^\w+:|^)\/\//, '').split('/');
-                        if (wmsUrl.length > 0) {
-                            wmsUrl = wmsUrl[0];
+                            wmsUrl = wmsUrl.replace(/(^\w+:|^)\/\//, '').split('/');
+                            if (wmsUrl.length > 0) {
+                                wmsUrl = wmsUrl[0];
+                            }
+                            tileLayer = new ol.layer.Tile({
+                                source: new ol.source.TileWMS(options),
+                            })
+                        } else {
+                            tileLayer = new ol.layer.VectorTile({
+                                title: value.name,
+                                source: new ol.source.VectorTile({
+                                    attributions: [''],
+                                    url: value.native_layer_url,
+                                    format: new ol.format.MVT(),
+                                }),
+                                maxZoom: 16,
+                                minZoom: 4,
+                                tileGrid: ol.tilegrid.createXYZ({
+                                    maxZoom: 16
+                                }),
+                                style: self.convertStylesToRules(value.native_layer_style.layers),
+                            })
                         }
 
+
                         self.initLayer(
-                            new ol.layer.Tile({
-                                source: new ol.source.TileWMS(options),
-                            }),
+                            tileLayer,
                             value.name,
                             value['wms_layer_name'], defaultVisibility, '', wmsUrl, value['enable_styles_selection']
                         );
@@ -480,11 +557,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // show/hide legend
             try {
                 const layer = this.layers[layerName];
-                const params = layer.layer.getSource().getParams();
-                if (siteCodeGeneratorMethod === 'fbis' && params.name === 'Rivers') {
-                    return;
+                if (!(layer.layer instanceof ol.layer.VectorTile)) {
+                    const params = layer.layer.getSource().getParams();
+                    if (siteCodeGeneratorMethod === 'fbis' && params.name === 'Rivers') {
+                        return;
+                    }
                 }
             } catch (e) {
+                console.error(e)
                 return;
             }
 
@@ -508,21 +588,33 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     try {
                         const layer = this.layers[layerName];
                         const source = layer.layer.getSource();
-                        const params = layer.layer.getSource().getParams();
-                        const layers = params.layers || params.LAYERS;
-                        const name = params.name || params.NAME;
-                        // Draw legend
-                        this.renderLegend(
-                            layerName,
-                            name,
-                            source.getUrls()[0],
-                            layers,
-                            false,
-                            params.STYLES
-                        );
-                        $legendElement = this.getLegendElement(layerName);
-                        this.legends[layerName] = $legendElement;
+                        if (!(layer.layer instanceof ol.layer.VectorTile)) {
+                            const params = layer.layer.getSource().getParams();
+                            const layers = params.layers || params.LAYERS;
+                            const name = params.name || params.NAME;
+                            // Draw legend
+                            this.renderLegend(
+                                layerName,
+                                name,
+                                source.getUrls()[0],
+                                layers,
+                                false,
+                                params.STYLES
+                            );
+                            $legendElement = this.getLegendElement(layerName);
+                            this.legends[layerName] = $legendElement;
+                        } else {
+                            this.renderVectorTileLegend(
+                                layerName,
+                                layerName,
+                                layer.layer,
+                                false,
+                            );
+                            $legendElement = this.getLegendElement(layerName);
+                            this.legends[layerName] = $legendElement;
+                        }
                     } catch (e) {
+                        console.error(e)
                     }
                 }
                 if ($legendElement.length > 0) {
@@ -588,6 +680,62 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 html += '>' +
                     content + '</div>';
                 $('#map-legend').prepend(html);
+            }
+        },
+        renderVectorTileLegend: function (id, name, vectorTileLayer, visibleDefault) {
+            if (typeof name === 'undefined') {
+                name = id;
+            }
+            const styles = vectorTileLayer.getStyle();
+            let legendHTML = '<div data-name="' + id + '" class="legend-row"';
+            if (!visibleDefault) {
+                legendHTML += ' style="display: none;"';
+            }
+
+            let content = '<b>' + name + '</b><br>';
+
+            function extractValuesFromFilter(filter) {
+                let values = [];
+                if (Array.isArray(filter)) {
+                    filter.forEach((item) => {
+                        if (Array.isArray(item) && item[0] === '==' && item.length === 3) {
+                            values.push(item[2]);
+                        }
+                    });
+                }
+                return values;
+            }
+
+            // Process each style rule to create legend items
+            if (Array.isArray(styles)) {
+                styles.forEach((rule) => {
+                    if (rule.style) {
+                        const fillColor = rule.style['fill-color'] || 'transparent';
+                        const strokeColor = rule.style['stroke-color'] || 'transparent';
+
+                        const values = extractValuesFromFilter(rule.filter);
+
+                        if (values.length === 0) {
+                            return true;
+                        }
+
+                        if (fillColor !== 'transparent') {
+                            content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
+                        }
+                        content += values[0] + '<br>';
+                    }
+                });
+            } else {
+                content += '<div>No styles available</div>';
+            }
+
+            // If an existing legend for this ID exists, update it; otherwise, add a new one
+            let existingLegend = this.getLegendElement(id);
+            if (existingLegend.length > 0) {
+                existingLegend.html(content);
+            } else {
+                legendHTML += '>' + content + '</div>';
+                $('#map-legend').prepend(legendHTML);
             }
         },
         renderLayersSelector: function (key, name, title, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
@@ -794,63 +942,82 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
                 if (layer['layer'].getVisible()) {
                     try {
-                        const queryLayer = layer['layer'].getSource().getParams()['layers'];
-                        if (queryLayer.indexOf('location_site_view') > -1) {
-                            return true;
-                        }
-                        const getFeatureFormat = layer['layer'].getSource().getParams()['getFeatureFormat'];
-                        const layerName = layer['layer'].getSource().getParams()['name'];
-                        console.log(layer['layer'].getSource())
-                        let layerSource = layer['layer'].getSource().getFeatureInfoUrl(
-                            coordinate,
-                            view.getResolution(),
-                            view.getProjection(),
-                            {'INFO_FORMAT': getFeatureFormat}
-                        );
-                        layerSource += '&QUERY_LAYERS=' + queryLayer;
-                        console.log(layerSource)
-                        Shared.GetFeatureXHRRequest.push($.ajax({
-                            type: 'POST',
-                            url: '/get_feature/',
-                            data: {
-                                'layerSource': layerSource,
-                                'layerName': layer.layerName
-                            },
-                            success: function (result) {
-                                // process properties
-                                const data = result['feature_data'];
-                                if (coordinate !== lastCoordinate || !data) {
-                                    return;
-                                }
-                                let linesData = data.split("\n");
-                                let properties = {};
+                        if (layer['layer'] instanceof ol.layer.VectorTile) {
+                            const pixel = that.map.getPixelFromCoordinate(coordinate);
+                            that.map.forEachFeatureAtPixel(pixel, function (feature, _layer) {
+                                if (_layer === layer['layer']) {
+                                    const properties = feature.getProperties();
+                                    delete properties.geometry;
 
-                                // reformat plain text to be dictionary
-                                // because qgis can't support info format json
-                                $.each(linesData, function (index, string) {
-                                    var couple = string.split(' = ');
-                                    if (couple.length !== 2) {
-                                        return true;
-                                    } else {
-                                        if (couple[0] === 'geom') {
-                                            return true;
-                                        }
-                                        properties[couple[0]] = couple[1];
+                                    if (!$.isEmptyObject(properties)) {
+                                        featuresInfo[layer_key] = {
+                                            'layerName': layer['layerTitle'],
+                                            'properties': properties,
+                                            'layerAttr': null,
+                                            'layerId': null,
+                                            'document': null,
+                                            'documentTitle': null
+                                        };
                                     }
-                                });
-                                if ($.isEmptyObject(properties)) {
-                                    return;
                                 }
-                                featuresInfo[layer_key] = {
-                                    'layerName': layer['layerTitle'],
-                                    'properties': properties,
-                                    'layerAttr': result['layer_attr'],
-                                    'layerId': result['layer_id'],
-                                    'document': result['document'],
-                                    'documentTitle': result['document_title']
-                                };
-                            },
-                        }));
+                            })
+                        } else {
+                            const queryLayer = layer['layer'].getSource().getParams()['layers'];
+                            if (queryLayer.indexOf('location_site_view') > -1) {
+                                return true;
+                            }
+                            const getFeatureFormat = layer['layer'].getSource().getParams()['getFeatureFormat'];
+                            const layerName = layer['layer'].getSource().getParams()['name'];
+                            let layerSource = layer['layer'].getSource().getFeatureInfoUrl(
+                                coordinate,
+                                view.getResolution(),
+                                view.getProjection(),
+                                {'INFO_FORMAT': getFeatureFormat}
+                            );
+                            layerSource += '&QUERY_LAYERS=' + queryLayer;
+                            Shared.GetFeatureXHRRequest.push($.ajax({
+                                type: 'POST',
+                                url: '/get_feature/',
+                                data: {
+                                    'layerSource': layerSource,
+                                    'layerName': layer.layerName
+                                },
+                                success: function (result) {
+                                    // process properties
+                                    const data = result['feature_data'];
+                                    if (coordinate !== lastCoordinate || !data) {
+                                        return;
+                                    }
+                                    let linesData = data.split("\n");
+                                    let properties = {};
+
+                                    // reformat plain text to be dictionary
+                                    // because qgis can't support info format json
+                                    $.each(linesData, function (index, string) {
+                                        var couple = string.split(' = ');
+                                        if (couple.length !== 2) {
+                                            return true;
+                                        } else {
+                                            if (couple[0] === 'geom') {
+                                                return true;
+                                            }
+                                            properties[couple[0]] = couple[1];
+                                        }
+                                    });
+                                    if ($.isEmptyObject(properties)) {
+                                        return;
+                                    }
+                                    featuresInfo[layer_key] = {
+                                        'layerName': layer['layerTitle'],
+                                        'properties': properties,
+                                        'layerAttr': result['layer_attr'],
+                                        'layerId': result['layer_id'],
+                                        'document': result['document'],
+                                        'documentTitle': result['document_title']
+                                    };
+                                },
+                            }));
+                        }
                     } catch (err) {
                         console.error(err)
                     }

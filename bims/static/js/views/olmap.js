@@ -396,8 +396,8 @@ define([
             if (features) {
                 $.each(features, function (index, feature) {
                     const geometry = feature.getGeometry();
+                    const properties = feature.getProperties();
                     const geometryType = geometry.getType();
-
                     if (geometryType === 'Point') {
                         featuresClickedResponseData = self.featureClicked(
                             feature, self.uploadDataState);
@@ -415,6 +415,9 @@ define([
                                 poiFound = true;
                             }
                         }
+                    } else if (geometryType === 'Polygon') {
+                        featuresData = properties;
+                        poiFound = false;
                     }
                 });
             }

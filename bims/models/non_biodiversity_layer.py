@@ -13,20 +13,38 @@ class NonBiodiversityLayer(OrderedModel):
         unique=True
     )
     wms_url = models.CharField(
-        max_length=256
+        max_length=256,
+        blank=True,
+        verbose_name='Url'
     )
     wms_layer_name = models.CharField(
-        max_length=128
+        max_length=128,
+        verbose_name='Layer name'
     )
     wms_format = models.CharField(
         max_length=64,
-        default='image/png'
+        default='image/png',
+        blank=True,
+        verbose_name='Layer format'
     )
     layer_style = models.CharField(
         max_length=256,
         default='',
         help_text='Leave blank to use default style',
-        blank=True
+        blank=True,
+        verbose_name='External layer style name'
+    )
+    native_layer = models.ForeignKey(
+        'cloud_native_gis.Layer',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+    native_layer_style = models.ForeignKey(
+        'cloud_native_gis.Style',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
     )
     default_visibility = models.BooleanField(
         default=False
@@ -35,7 +53,6 @@ class NonBiodiversityLayer(OrderedModel):
         max_length=100,
         default='text/plain'
     )
-
     csv_file = models.FileField(
         upload_to='non_biodiversity_layer_csv_file',
         null=True,
@@ -45,7 +62,6 @@ class NonBiodiversityLayer(OrderedModel):
                   'and "csv_attribute". This will also show the download '
                   'button in the attribute data panel.'
     )
-
     csv_attribute = models.CharField(
         max_length=128,
         null=True,
@@ -81,15 +97,6 @@ class NonBiodiversityLayer(OrderedModel):
         verbose_name='Enable styles selection',
         help_text='Check this box to show the styles selection '
                   'in the layer selector.'
-    )
-
-    source_site = models.ForeignKey(
-        Site,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        verbose_name="Source Site",
-        help_text="The site this record is first associated with."
     )
 
     # noinspection PyClassicStyleClass

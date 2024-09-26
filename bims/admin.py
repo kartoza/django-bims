@@ -38,6 +38,7 @@ from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
 from bims.helpers.list import chunk_list
+from cloud_native_gis.forms import LayerUploadForm
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -45,6 +46,7 @@ from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
 from django_admin_inline_paginator.admin import TabularInlinePaginated
+from bims.tasks.layer_upload import import_layer_data
 
 from bims.models import (
     LocationType,
@@ -134,6 +136,7 @@ from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
+from cloud_native_gis.models.layer_upload import LayerUpload
 
 
 class ExportCsvMixin:
@@ -952,7 +955,6 @@ class NonBiodiversityLayerAdmin(OrderedModelAdmin):
         'name',
         'wms_url',
         'wms_layer_name',
-        'source_site',
         'move_up_down_links',)
     list_filter = ('wms_url',)
     ordering = ('order',)
@@ -2055,6 +2057,30 @@ class TagGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'colour')
 
 
+@admin.action(description='Import data')
+def start_upload_data(modeladmin, request, queryset):
+    """Import data of layer."""
+    for layer in queryset:
+        import_layer_data.delay(layer.pk)
+
+
+class LayerUploadAdmin(admin.ModelAdmin):
+    """Layer admin."""
+
+    list_display = (
+        'created_at', 'created_by', 'layer', 'status', 'progress', 'note'
+    )
+    list_filter = ['layer', 'status']
+    actions = [start_upload_data]
+    form = LayerUploadForm
+
+    def get_form(self, request, *args, **kwargs):
+        """Return form."""
+        form = super(LayerUploadAdmin, self).get_form(request, *args, **kwargs)
+        form.user = request.user
+        return form
+
+
 # Re-register GeoNode's Profile page
 admin.site.unregister(Profile)
 admin.site.register(Profile, CustomUserAdmin)
@@ -2181,3 +2207,5 @@ admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
 admin.site.register(Dataset, DatasetAdmin)
+# admin.site.unregister(LayerUpload)
+# admin.site.register(LayerUpload, LayerUploadAdmin)
