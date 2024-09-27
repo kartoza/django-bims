@@ -69,7 +69,7 @@ dj-pagination==2.5.0
 django-mptt==0.14.0
 django-guardian==2.3.0
 djangorestframework-guardian==0.3.0
-django-cors-headers==3.5.0
+django-cors-headers==4.3.1
 django-invitations==2.0.0
 django-uuid-upload-path==1.0.0
 django-pipeline==2.1.0
@@ -97,3 +97,12 @@ celery==5.3.6
 django-celery-results==2.5.1
 django-tenants==3.6.1
 tenant-schemas-celery==2.2.0
+
+# Library to handle geospatial functions
+git+https://github.com/kartoza/CloudNativeGIS.git@bims
+
+GeoAlchemy2==0.15.1
+geopandas==0.14.4
+
+drf-nested-routers==0.93.5
+drf-yasg==1.21.7

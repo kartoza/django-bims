@@ -5,7 +5,6 @@ from datetime import date
 import json
 
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
-from django.contrib.sites.models import Site
 from django.http import HttpResponse
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
@@ -134,6 +133,7 @@ from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
+from cloud_native_gis.models.layer_upload import LayerUpload
 
 
 class ExportCsvMixin:
@@ -952,7 +952,6 @@ class NonBiodiversityLayerAdmin(OrderedModelAdmin):
         'name',
         'wms_url',
         'wms_layer_name',
-        'source_site',
         'move_up_down_links',)
     list_filter = ('wms_url',)
     ordering = ('order',)

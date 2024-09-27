@@ -107,6 +107,7 @@ SHARED_APPS = (
     'bims_theme',
     'mobile',
     'pesticide',
+    'cloud_native_gis',
 )
 
 TENANT_APPS = (
@@ -135,6 +136,7 @@ TENANT_APPS = (
     'bims_theme',
     'mobile',
     'pesticide',
+    'cloud_native_gis',
 )
 
 MIDDLEWARE = (

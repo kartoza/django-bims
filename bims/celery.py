@@ -5,6 +5,9 @@ from tenant_schemas_celery.app import CeleryApp as TenantAwareCeleryApp
 app = TenantAwareCeleryApp()
 
 app.config_from_object('django.conf:settings', namespace="CELERY")
+app.conf.update(
+    task_default_queue='update',
+)
 app.autodiscover_tasks()
 
 
