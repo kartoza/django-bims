@@ -20,7 +20,6 @@ from bims.tasks.cites_info import fetch_and_save_cites_listing
 from bims.tasks.virtual_museum_import import import_data_task
 from bims.tasks.taxon_group import delete_occurrences_by_taxon_group
 from bims.tasks.caches import reset_caches
-from bims.tasks.layer_upload import import_layer_data
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')
