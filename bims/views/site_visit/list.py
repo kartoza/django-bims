@@ -56,15 +56,12 @@ class SiteVisitListView(ListView):
             Q(chemical_collection_record__isnull=False),
         )
 
-        if search_filters:
-            search = CollectionSearch(search_filters)
+        if 'site_code' in search_filters:
+            search_filters['search'] = search_filters['site_code']
 
-            if 'site_code' in search_filters:
-                if search_filters['site_code']:
-                    qs = qs.filter(
-                        site__site_code=search_filters['site_code']
-                    )
-                del search_filters['site_code']
+        if search_filters:
+            search = CollectionSearch(search_filters, self.request.user.id)
+
             if 'collectors' in search_filters:
                 if search_filters['collectors']:
                     qs = qs.filter(
@@ -95,11 +92,12 @@ class SiteVisitListView(ListView):
             )
 
         qs = qs.annotate(
-            total=Count('biological_collection_record'),
+            total=Count('biological_collection_record', distinct=True),
             source_collection=Subquery(
                 BiologicalCollectionRecord.objects.filter(
                     survey__id=OuterRef('id')
-                ).values('source_collection')[:1])
+                ).values('source_collection')[:1]
+            )
         )
         return qs.order_by(order, 'id')
 
