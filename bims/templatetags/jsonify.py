@@ -65,6 +65,8 @@ def get_html_for_radio_group_headings(column_count):
 def value_by_key(d, key):
     if not d:
         return ''
+    if isinstance(d, list):
+        return d[key]
     if key in d:
         return d[key]
     return ''
