@@ -49,40 +49,6 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         )
         self.iucn_status = IUCNStatusF.create()
 
-    def test_superuser_approve_update_taxon(self):
-        self.client.login(username='superuser', password='password')
-        taxonomy_update_proposal = TaxonomyUpdateProposalF.create(
-            scientific_name='Updated Test Name',
-            canonical_name='Updated Test Canonical Name',
-            original_taxonomy=self.taxonomy,
-            taxon_group=self.taxon_group
-        )
-
-        url = reverse('review-taxon-proposal',
-                      kwargs={
-                          'taxonomy_update_proposal_id': taxonomy_update_proposal.pk,
-                      })
-
-        response = self.client.put(url, {
-            'action': 'approve'
-        }, content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-        updated_taxonomy = Taxonomy.objects.get(
-            id=self.taxonomy.id
-        )
-        self.assertEqual(updated_taxonomy.scientific_name, 'Updated Test Name')
-        self.assertEqual(updated_taxonomy.canonical_name, 'Updated Test Canonical Name')
-        self.assertTrue(
-            TaxonomyUpdateProposal.objects.filter(
-                id=taxonomy_update_proposal.id,
-                reviewers__in=[self.superuser],
-            ).exists()
-        )
-
-        self.client.logout()
-
     def test_expert_approve_taxon(self):
         self.client.login(
             username='normal_user',

@@ -34,7 +34,7 @@ class TestLayerUpload(FastTenantTestCase):
         self.client.login(username='testuser', password='password')
         valid_geojson_path = os.path.join(test_data_directory, 'geojson_test.json')
         with open(valid_geojson_path, 'rb') as geojson:
-            response = self.client.post(reverse('layer-upload-view'),
+            response = self.client.post(reverse('boundary-upload-view'),
                                         {
                                             'geojson_file': geojson,
                                             'name': 'boundary1'})

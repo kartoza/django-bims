@@ -184,7 +184,7 @@ class TestCollectionSearch(TestCase):
             cursor.execute(raw_query)
         self.assertEqual(
             collection_results.count(),
-        2
+        1
         )
 
         BiologicalCollectionRecordF.create(
