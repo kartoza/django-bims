@@ -23,59 +23,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         legends: {},
         wetlandLayer: 'kartoza:nwm6_beta_v3_20230714',
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
-        exampleStyle: {
-          "id": 1,
-          "name": "lines",
-          "zoom": 3,
-          "sources": {
-            "lines": {
-              "type": "geojson",
-              "data": ""
-            }
-          },
-          "layers": [
-            {
-              "id": "lines-1",
-              "type": "line",
-              "paint": {
-                "line-color": "rgba(249, 117, 0, 1)",
-                "line-width": 1
-              },
-              "filter": [
-                "any",
-                [
-                  "==",
-                  "NAME",
-                  "Kafue"
-                ]
-              ],
-              "source": "lines",
-              "source-layer": "default"
-            },
-            {
-              "id": "lines-2",
-              "type": "line",
-              "paint": {
-                "line-color": "rgba(255, 40, 40, 1)",
-                "line-width": 3
-              },
-              "filter": [
-                "any",
-                [
-                  "==",
-                  "NAME",
-                  "Zambezi"
-                ]
-              ],
-              "layout": {
-                "line-cap": "square"
-              },
-              "source": "lines",
-              "source-layer": "default"
-            }
-          ],
-          "version": 8
-        },
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
