@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import factory
 from django.db.models import signals
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.models.location_site import LocationSite
 from django.contrib.gis.geos import Point
@@ -22,14 +24,16 @@ from bims.models.record_type import RecordType
 from bims.models.abundance_type import AbundanceType
 
 
-class TestLocationSiteMobile(TestCase):
+class TestLocationSiteMobile(FastTenantTestCase):
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
 
     def test_get_nearest_location_sites_without_coord(self):
         api_url = (
             reverse('mobile-nearest-sites')
         )
-        client = APIClient()
-        res = client.get(api_url)
+        res = self.client.get(api_url)
         self.assertEqual(
             res.status_code, status.HTTP_404_NOT_FOUND
         )
@@ -46,8 +50,7 @@ class TestLocationSiteMobile(TestCase):
                 reverse('mobile-nearest-sites') +
                 '?lat=30.001&lon=-31.001'
         )
-        client = APIClient()
-        res = client.get(api_url)
+        res = self.client.get(api_url)
         self.assertEqual(
             res.status_code, status.HTTP_200_OK
         )
@@ -64,26 +67,28 @@ class TestLocationSiteMobile(TestCase):
                 reverse('mobile-nearest-sites') +
                 '?extent=22.554688,-32.402798,23.554688,-31.402798'
         )
-        client = APIClient()
-        res = client.get(api_url)
+        res = self.client.get(api_url)
         self.assertEqual(
             res.status_code, status.HTTP_200_OK
         )
         self.assertTrue(len(res.data) > 0)
 
 
-class TestAllTaxaAPI(TestCase):
+class TestAllTaxaAPI(FastTenantTestCase):
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+
     def test_get_all_taxa_without_module(self):
         api_url = (
             reverse('all-taxa')
         )
-        client = APIClient()
         user = UserF.create(is_superuser=True)
-        client.login(
+        self.client.login(
             username=user.username,
             password='password'
         )
-        res = client.get(api_url)
+        res = self.client.get(api_url)
         self.assertEqual(
             res.status_code,
             status.HTTP_404_NOT_FOUND)
@@ -100,13 +105,12 @@ class TestAllTaxaAPI(TestCase):
                 reverse('all-taxa') +
                 f'?module={taxon_group.id}'
         )
-        client = APIClient()
         user = UserF.create(is_superuser=True)
-        client.login(
+        self.client.login(
             username=user.username,
             password='password'
         )
-        res = client.get(api_url)
+        res = self.client.get(api_url)
         self.assertEqual(
             res.status_code, status.HTTP_200_OK
         )
@@ -116,9 +120,9 @@ class TestAllTaxaAPI(TestCase):
         )
 
 
-class TestChoicesApi(TestCase):
+class TestChoicesApi(FastTenantTestCase):
     def setUp(self) -> None:
-        self.client = APIClient()
+        self.client = TenantClient(self.tenant)
         user = UserF.create(is_superuser=True)
         self.client.login(
             username=user.username,
@@ -150,10 +154,10 @@ class TestChoicesApi(TestCase):
         )
 
 
-class TestAddSiteVisit(TestCase):
+class TestAddSiteVisit(FastTenantTestCase):
 
     def setUp(self) -> None:
-        self.client = APIClient()
+        self.client = TenantClient(self.tenant)
         self.user = UserF.create(is_superuser=True)
         self.client.login(
             username=self.user.username,
@@ -263,10 +267,10 @@ class TestAddSiteVisit(TestCase):
         ).exists())
 
 
-class TestAddLocationSite(TestCase):
+class TestAddLocationSite(FastTenantTestCase):
 
     def setUp(self) -> None:
-        self.client = APIClient()
+        self.client = TenantClient(self.tenant)
         self.user = UserF.create(is_superuser=True)
         self.client.login(
             username=self.user.username,
@@ -334,13 +338,13 @@ class TestAddLocationSite(TestCase):
 
     @factory.django.mute_signals(signals.pre_save, signals.post_save)
     def test_add_wetland_location_site(self):
-        self.post_data['ecosystem_type'] = 'wetland'
+        self.post_data['ecosystem_type'] = 'Wetland'
         self.post_data['wetland_name'] = 'na me'
-        self.post_data['wetland_data'] = {
+        self.post_data['wetland_data'] = json.dumps({
             'wetlid': 'TEST',
             'hgm_type': 'hydrogeomorphic',
             'quaternary': 'quaternary'
-        }
+        })
         res = self.client.post(
             self.api_url,
             data=self.post_data,
@@ -393,9 +397,9 @@ class TestAddLocationSite(TestCase):
         )
 
 
-class TestRiverName(TestCase):
+class TestRiverName(FastTenantTestCase):
     def setUp(self):
-        self.client = Client()
+        self.client = TenantClient(self.tenant)
         self.river = RiverF.create()
 
     @patch('mobile.api_views.river.fetch_river_name')

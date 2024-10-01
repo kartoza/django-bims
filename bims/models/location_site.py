@@ -410,18 +410,22 @@ class LocationSite(AbstractValidation):
             if isinstance(field, dict):
                 is_dictionary = True
             else:
-                field = json.loads(
-                    field
-                )
+                try:
+                    field = json.loads(
+                        field
+                    )
+                except json.decoder.JSONDecodeError:
+                    break
                 attempt += 1
         return field
 
     def save(self, *args, **kwargs):
         lon_lat_changed = False
 
-        self.additional_data = self.validate_json_field(
-            self.additional_data
-        )
+        if self.additional_data:
+            self.additional_data = self.validate_json_field(
+                self.additional_data
+            )
         self.location_context_document = self.validate_json_field(
             self.location_context_document
         )
