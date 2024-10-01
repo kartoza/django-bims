@@ -23,6 +23,59 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         legends: {},
         wetlandLayer: 'kartoza:nwm6_beta_v3_20230714',
         administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
+        exampleStyle: {
+          "id": 1,
+          "name": "lines",
+          "zoom": 3,
+          "sources": {
+            "lines": {
+              "type": "geojson",
+              "data": ""
+            }
+          },
+          "layers": [
+            {
+              "id": "lines-1",
+              "type": "line",
+              "paint": {
+                "line-color": "rgba(249, 117, 0, 1)",
+                "line-width": 1
+              },
+              "filter": [
+                "any",
+                [
+                  "==",
+                  "NAME",
+                  "Kafue"
+                ]
+              ],
+              "source": "lines",
+              "source-layer": "default"
+            },
+            {
+              "id": "lines-2",
+              "type": "line",
+              "paint": {
+                "line-color": "rgba(255, 40, 40, 1)",
+                "line-width": 3
+              },
+              "filter": [
+                "any",
+                [
+                  "==",
+                  "NAME",
+                  "Zambezi"
+                ]
+              ],
+              "layout": {
+                "line-cap": "square"
+              },
+              "source": "lines",
+              "source-layer": "default"
+            }
+          ],
+          "version": 8
+        },
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
@@ -264,63 +317,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 _isAdministrativeSelected
             );
         },
-        convertStylesToRules: function (inputStyles) {
-            const rules = [];
-
-            inputStyles.forEach((inputStyle) => {
-                let filter = [];
-                const filterType = inputStyle.filter ? inputStyle.filter[0] : null;
-
-                if (filterType) {
-                    if (['all', 'any', 'none'].includes(filterType)) {
-                        filter = [filterType === 'none' ? '!' : filterType];
-                        inputStyle.filter.slice(1).forEach((condition) => {
-                            if (condition[0] === '==') {
-                                const key = condition[1] === '$type' ? ['geometry-type'] : ['get', condition[1]];
-                                filter.push(['==', key, condition[2]]);
-                            }
-                        });
-                        if (filter.length === 2) {
-                            filter.push(filter[1]);
-                        }
-                    } else if (filterType === '==') {
-                        const key = inputStyle.filter[1] === '$type' ? ['geometry-type'] : ['get', inputStyle.filter[1]];
-                        filter = ['==', key, inputStyle.filter[2]];
-                    }
-                }
-
-                let style = {};
-                const paint = inputStyle.paint || {};
-
-                if (paint['fill-color']) {
-                    style['fill-color'] = paint['fill-color'];
-
-                    if (paint['fill-opacity']) {
-                        style['fill-color'] = style['fill-color'].replace(
-                            /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
-                            `rgba($1,$2,$3,${paint['fill-opacity']})`
-                        );
-                    }
-                }
-
-                if (paint['fill-outline-color']) {
-                    style['stroke-color'] = paint['fill-outline-color'];
-                }
-
-                rules.push({
-                    filter: filter,
-                    style: style,
-                });
-            });
-
-            rules.push({
-                else: true,
-                style: {
-                    'fill-color': 'rgba(0, 0, 0, 0)', // Transparent by default
-                },
-            });
-
-            return rules;
+        convertStyles: function (styles, name) {
+            styles['sources'] = {}
+            styles['sources'][name] = {
+                "type": "vector",
+                "data": "",
+            }
+            styles['name'] = name;
+            for (let i = 0; i < styles['layers'].length; i++) {
+                styles['layers'][i]['id'] = `${name}-${i}`;
+                styles['layers'][i]['source'] = name
+                styles['layers'][i]['minzoom'] = 0
+            }
+            return styles
         },
         addLayersToMap: function (map) {
             var self = this;
@@ -401,14 +410,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                     attributions: [''],
                                     url: value.native_layer_url,
                                     format: new ol.format.MVT(),
+                                    STYLES: value.native_layer_style
                                 }),
-                                maxZoom: 16,
-                                minZoom: 4,
-                                tileGrid: ol.tilegrid.createXYZ({
-                                    maxZoom: 16
-                                }),
-                                style: self.convertStylesToRules(value.native_layer_style.layers),
+                                STYLES: value.native_layer_style,
+                                tileGrid: ol.tilegrid.createXYZ(),
                             })
+                            olms.stylefunction(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name);
                         }
 
 
@@ -609,6 +616,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 layerName,
                                 layer.layer,
                                 false,
+                                layer.layer.values_.STYLES.layers
                             );
                             $legendElement = this.getLegendElement(layerName);
                             this.legends[layerName] = $legendElement;
@@ -682,11 +690,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $('#map-legend').prepend(html);
             }
         },
-        renderVectorTileLegend: function (id, name, vectorTileLayer, visibleDefault) {
+        renderVectorTileLegend: function (id, name, vectorTileLayer, visibleDefault, styles) {
             if (typeof name === 'undefined') {
                 name = id;
             }
-            const styles = vectorTileLayer.getStyle();
+
+            console.log(JSON.stringify(styles))
+
             let legendHTML = '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
                 legendHTML += ' style="display: none;"';
@@ -697,11 +707,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             function extractValuesFromFilter(filter) {
                 let values = [];
                 if (Array.isArray(filter)) {
-                    filter.forEach((item) => {
-                        if (Array.isArray(item) && item[0] === '==' && item.length === 3) {
-                            values.push(item[2]);
-                        }
-                    });
+                    // Check if the filter uses "any" or "all"
+                    if (filter[0] === 'any' || filter[0] === 'all') {
+                        filter.slice(1).forEach((item) => {
+                            if (Array.isArray(item) && item[0] === '==' && item.length === 3) {
+                                values.push(item[2]);
+                            }
+                        });
+                    } else if (filter[0] === '==' && filter.length === 3) {
+                        values.push(filter[2]);
+                    }
                 }
                 return values;
             }
@@ -709,9 +724,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             // Process each style rule to create legend items
             if (Array.isArray(styles)) {
                 styles.forEach((rule) => {
-                    if (rule.style) {
-                        const fillColor = rule.style['fill-color'] || 'transparent';
-                        const strokeColor = rule.style['stroke-color'] || 'transparent';
+                    if (rule.paint) {
+                        const fillColor = rule.paint['fill-color'] || 'transparent';
+                        const strokeColor = rule.paint['fill-outline-color'] || 'transparent';
+                        const lineColor = rule.paint['line-color'] || 'transparent';
+                        const lineWidth = rule.paint['line-width'] || 1;
 
                         const values = extractValuesFromFilter(rule.filter);
 
@@ -721,6 +738,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
                         if (fillColor !== 'transparent') {
                             content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
+                        } else if (lineColor !== 'transparent') {
+                            content += '<div style="display: inline-block; width: 20px; height: 20px; border-bottom: ' + (lineWidth * 2) + 'px solid ' + lineColor + '; margin-right: 5px;"></div>';
                         }
                         content += values[0] + '<br>';
                     }
