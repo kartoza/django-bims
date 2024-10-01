@@ -53,7 +53,6 @@ def extra_set_tenant_stuff(wrapper_class, tenant):
         try:
             tenant_replica_connection = connections[chosen_db_key]
             tenant_replica_connection.set_schema(tenant.schema_name)
-            print(f"changing replica schema to {tenant.schema_name}")
         except Exception:  # noqa
             return
 
