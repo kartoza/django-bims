@@ -1,6 +1,8 @@
 from dateutil.parser import parse
 from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.models.survey import Survey
 from bims.tests.model_factories import (
@@ -12,9 +14,9 @@ from sass.tests.model_factories import (
 )
 
 
-class TestSassFormView(TestCase):
+class TestSassFormView(FastTenantTestCase):
     def setUp(self):
-        pass
+        self.client = TenantClient(self.tenant)
 
     def test_update_sass(self):
         user = UserF.create()

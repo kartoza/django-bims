@@ -1,7 +1,8 @@
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
-FROM python:3.12.3-slim-bullseye as prod
-MAINTAINER Dimas Ciputra<dimas@kartoza.com>
+FROM python:3.12.3-slim-bookworm as prod
+MAINTAINER Dimas Ciputra <dimas@kartoza.com>
 
+# Set up directories
 RUN mkdir -p /usr/src/{app,geonode}
 
 WORKDIR /usr/src/app
@@ -10,46 +11,41 @@ WORKDIR /usr/src/app
 RUN echo "Updating apt-get" && \
     apt-get update && \
     echo "Installing build dependencies" && \
-    apt-get install -y gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++ && \
-    echo "Installing Pillow dependencies" && \
-    # RUN apt-get install -y NOTHING ?? It was probably added in other packages... ALPINE needed jpeg-dev zlib-dev && \
-    echo "Installing GDAL dependencies" && \
-    apt-get install -y libgdal-dev libcurl4-gnutls-dev librtmp-dev && \
-    echo "Installing healthceck dependencies" && \
-    apt-get install -y curl && \
+    apt-get install -y --no-install-recommends \
+    nodejs npm \
+    gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++ \
+    libgdal-dev libcurl4-gnutls-dev librtmp-dev curl git && \
     echo "Python server" && \
     pip install uwsgi && \
-    apt-get install -y git && \
-    echo "Node js" && \
-    curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh && \
-    bash nodesource_setup.sh && \
-    apt-get install -y nodejs && \
     echo "Removing build dependencies and cleaning up" && \
-    # TODO : cleanup apt-get with something like apt-get -y --purge autoremove gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++ && \
     apt-get -y --purge autoremove make libc-dev musl-dev g++ && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf ~/.cache/pip
 
-ADD deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
-RUN pip install -r /REQUIREMENTS.txt; pip install uwsgi
+# Add application requirements
+COPY deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
+RUN pip install --no-cache-dir -r /REQUIREMENTS.txt
 
-# Install grunt
-RUN npm --quiet -g install yuglify && npm install -g grunt-cli
-ADD deployment/docker/package.json /package.json
-ADD deployment/docker/Gruntfile.js /Gruntfile.js
-RUN cd / && npm install
+# Add and install Node.js dependencies
+COPY deployment/docker/package.json /package.json
+COPY deployment/docker/Gruntfile.js /Gruntfile.js
+RUN npm install
 
-#USER www-data
-ADD . /home/web/django_project
+# Add application source code
+COPY . /home/web/django_project
 WORKDIR /home/web/django_project
-RUN cd bims && npm install --quiet -g webpack@5.50.0 && npm install --quiet -g webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
 
-ADD deployment/docker/uwsgi.conf /uwsgi.conf
+# Install front-end build tools and run webpack
+RUN cd bims && npm install --quiet -g webpack@5.50.0 webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
 
-# Open port 8080 as we will be running our uwsgi socket on that
+# Add uWSGI configuration
+COPY deployment/docker/uwsgi.conf /uwsgi.conf
+
+# Expose port 8080 for uWSGI
 EXPOSE 8080
 
-ADD deployment/docker/entrypoint.sh /entrypoint.sh
+# Add and set entrypoint script
+COPY deployment/docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

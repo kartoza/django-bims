@@ -1,15 +1,18 @@
 from django.test import TestCase
 from django.contrib.sites.models import Site
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+
 from bims_theme.tests.model_factories import (
     CustomThemeF
 )
 from bims_theme.context_processor import bims_custom_theme
 
 
-class TestCustomTheme(TestCase):
+class TestCustomTheme(FastTenantTestCase):
 
     def setUp(self):
-        pass
+        self.client = TenantClient(self.tenant)
 
     def test_new_custom_theme(self):
         """Test add new custom theme"""

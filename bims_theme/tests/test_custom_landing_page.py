@@ -1,4 +1,7 @@
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
+
 from bims_theme.tests.model_factories import (
     CustomThemeF,
     PartnerF,
@@ -7,10 +10,10 @@ from bims_theme.tests.model_factories import (
 from bims_theme.context_processor import bims_custom_theme
 
 
-class TestCustomLandingPage(TestCase):
+class TestCustomLandingPage(FastTenantTestCase):
 
     def setUp(self):
-        pass
+        self.client = TenantClient(self.tenant)
 
     def test_add_carousel_to_custom_theme(self):
         carousel_1 = CarouselHeaderF.create(

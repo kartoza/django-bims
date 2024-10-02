@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase, RequestFactory
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.tests.model_factories import (
     LocationSiteF, LocationContextF, LocationContextGroupF
@@ -7,8 +9,9 @@ from bims.tests.model_factories import (
 from bims.models import BaseMapLayer
 
 
-class PesticideDashboardViewTest(TestCase):
+class PesticideDashboardViewTest(FastTenantTestCase):
     def setUp(self):
+        self.client = TenantClient(self.tenant)
         self.factory = RequestFactory()
         self.user = get_user_model().objects.create(
             username='testuser')

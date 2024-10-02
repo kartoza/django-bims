@@ -4,6 +4,8 @@ import factory
 from django.db.models import signals
 from django.conf import settings
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 from rest_framework.test import APIClient
 
 from bims.tests.model_factories import (
@@ -15,10 +17,10 @@ from sass.tests.model_factories import (
 )
 
 
-class TestDownloadSassView(TestCase):
+class TestDownloadSassView(FastTenantTestCase):
     def setUp(self) -> None:
         self.user = UserF.create()
-        self.client = APIClient()
+        self.client = TenantClient(self.tenant)
         self.csv_file = None
 
     def tearDown(self) -> None:
