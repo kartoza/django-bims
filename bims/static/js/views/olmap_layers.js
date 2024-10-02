@@ -642,8 +642,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 name = id;
             }
 
-            console.log(JSON.stringify(styles))
-
             let legendHTML = '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
                 legendHTML += ' style="display: none;"';
