@@ -18,7 +18,7 @@ def get_dataset_occurrences(occurrences):
         flat=True
     ))
     if dataset_keys:
-        dataset_keys = list(set(dataset_keys))
+        dataset_keys = list(filter(None, set(dataset_keys)))
         datasets = Dataset.objects.filter(
             uuid__in=dataset_keys
         )
@@ -76,9 +76,25 @@ class ChecklistBaseSerializer(SerializerContextCache):
                         collection.source_reference and
                         str(collection.source_reference) != 'Global Biodiversity Information Facility (GBIF)'
                     ):
-                        sources.append(
-                            str(collection.source_reference)
-                        )
+                        if collection.additional_data and 'Citation' in collection.additional_data:
+                            citation_name = collection.additional_data['Citation']
+                            if not Dataset.objects.filter(citation=citation_name).exists():
+                                Dataset.objects.create(
+                                    citation=citation_name,
+                                    abbreviation=citation_name,
+                                    name=str(collection.source_reference)
+                                )
+                            else:
+                                dataset = Dataset.objects.filter(citation=citation_name).first()
+                                if dataset.abbreviation != citation_name:
+                                    citation_name = dataset.abbreviation
+                            sources.append(
+                                citation_name
+                            )
+                        else:
+                            sources.append(
+                                str(collection.source_reference)
+                            )
                 except ContentType.DoesNotExist:
                     continue
         except TypeError:
