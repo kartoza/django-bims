@@ -27,6 +27,7 @@ COPY deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 RUN pip install --no-cache-dir -r /REQUIREMENTS.txt
 
 # Add and install Node.js dependencies
+RUN npm --quiet -g install yuglify && npm install -g grunt-cli
 COPY deployment/docker/package.json /package.json
 COPY deployment/docker/Gruntfile.js /Gruntfile.js
 RUN npm install
