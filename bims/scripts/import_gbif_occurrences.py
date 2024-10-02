@@ -4,19 +4,18 @@ from logging.handlers import RotatingFileHandler
 import requests
 import logging
 import datetime
-import simplejson
 from django.contrib.gis.geos import MultiPolygon
-from urllib3.exceptions import ProtocolError
 
 from bims.models.source_reference import DatabaseRecord
 
 from bims.models.location_site import generate_site_code
 from dateutil.parser import parse, ParserError
-from requests.exceptions import HTTPError
 from preferences import preferences
 from django.contrib.gis.geos import Point, GEOSGeometry
 from django.contrib.gis.db import models
 from django.contrib.gis.measure import D
+
+from bims.scripts.extract_dataset_keys import create_dataset_from_gbif
 from geonode.people.models import Profile
 from bims.models import (
     LocationSite,
@@ -24,10 +23,10 @@ from bims.models import (
     BiologicalCollectionRecord,
     collection_post_save_handler,
     HarvestSession, SourceReferenceDatabase,
-    Boundary
+    Boundary,
+    Dataset
 )
 from bims.utils.gbif import round_coordinates
-from bims.models.site_setting import SiteSetting
 
 logger = logging.getLogger('bims')
 
@@ -43,6 +42,7 @@ VERBATIM_LOCALITY_KEY = 'verbatimLocality'
 LOCALITY_KEY = 'locality'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 SPECIES_KEY = 'species'
+DATASET_KEY = 'datasetKey'
 MODIFIED_DATE_KEY = 'modified'
 LIMIT = 20
 
@@ -183,6 +183,12 @@ def process_gbif_response(json_result,
         reference = result.get(REFERENCE_KEY, '')
         species = result.get(SPECIES_KEY, None)
         collection_date = None
+        dataset_key = result.get(DATASET_KEY, None)
+
+        if dataset_key:
+            datasets = Dataset.objects.filter(uuid=dataset_key)
+            if not datasets.exists():
+                dataset, created = create_dataset_from_gbif(dataset_key)
 
         if event_date:
             try:

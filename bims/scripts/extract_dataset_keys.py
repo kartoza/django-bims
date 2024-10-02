@@ -26,6 +26,26 @@ def get_dataset_details_from_gbif(dataset_uuid):
         return None
 
 
+def create_dataset_from_gbif(dataset_key):
+    dataset_details = get_dataset_details_from_gbif(dataset_key)
+
+    dataset_name = dataset_details.get('title', '')
+    description = dataset_details.get('description', '')
+    citation = dataset_details.get('citation', '')
+    url = dataset_details.get('url', '')
+
+    dataset, created = Dataset.objects.update_or_create(
+        uuid=dataset_key,
+        defaults={
+            'name': dataset_name,
+            'description': description,
+            'citation': citation,
+            'url': url,
+        }
+    )
+    return dataset, created
+
+
 def extract_dataset_keys():
     bio = BiologicalCollectionRecord.objects.filter(
         source_collection='gbif'
@@ -45,20 +65,6 @@ def extract_dataset_keys():
                 f'with complete information: {dataset.name}')
             continue
 
-        dataset_details = get_dataset_details_from_gbif(dataset_key)
+        dataset, created = create_dataset_from_gbif(dataset_key)
 
-        dataset_name = dataset_details.get('title', '')
-        description = dataset_details.get('description', '')
-        citation = dataset_details.get('citation', '')
-        url = dataset_details.get('url', '')
-
-        dataset, created = Dataset.objects.update_or_create(
-            uuid=dataset_key,
-            defaults={
-                'name': dataset_name,
-                'description': description,
-                'citation': citation,
-                'url': url,
-            }
-        )
-        print(f'{dataset_key} - {dataset_name} - {created}')
+        print(f'{dataset_key} - {dataset.name}')
