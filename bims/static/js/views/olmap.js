@@ -403,7 +403,11 @@ define([
                             feature, self.uploadDataState);
                         poiFound = featuresClickedResponseData[0];
                         featuresData = featuresClickedResponseData[1];
-                        self.zoomToCoordinates(geometry.getCoordinates());
+                        console.log(featuresClickedResponseData, poiFound)
+                        try {
+                            self.zoomToCoordinates(geometry.getCoordinates());
+                        } catch (e) {
+                        }
                         // increase zoom level if it is clusters
                         if (feature.getProperties()['count'] &&
                             feature.getProperties()['count'] > 1) {
@@ -431,6 +435,9 @@ define([
             var properties = feature.getProperties();
             if (properties.hasOwnProperty('station')) {
                 return [false, feature];
+            }
+            if (properties.hasOwnProperty('score')) {
+                return [false, feature]
             }
 
             if (properties.hasOwnProperty('features')) {

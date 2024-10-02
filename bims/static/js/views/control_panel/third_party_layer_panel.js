@@ -66,12 +66,23 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
             this.map.addLayer(this.inWARDSLayer);
         },
         addMiniSASSLayer: function () {
-            this.miniSASSLayer = new ol.layer.Vector({
-                source: null,
-                style: this.miniSASSStyleFunction
+            this.miniSASSLayer = new ol.layer.VectorTile({
+              source: new ol.source.VectorTile({
+                format: new ol.format.MVT(),
+                url: '/bims_proxy/https://minisass.org/tiles/public.minisass_observations/{z}/{x}/{y}.pbf'
+              }),
+            tileGrid: ol.tilegrid.createXYZ(),
             });
             this.miniSASSLayer.setVisible(false);
             this.map.addLayer(this.miniSASSLayer);
+            fetch('https://raw.githubusercontent.com/kartoza/miniSASS/fa97e2a1682ba0926c4db0e1a8e24eabbd767a84/django_project/webmapping/styles/minisass_style_v1.json')
+              .then(response => response.json())
+              .then(styleJson => {
+                olms.applyStyle(this.miniSASSLayer, styleJson, "MiniSASS Observations");
+              })
+              .catch(error => {
+                console.error('Error fetching or applying style:', error);
+            });
         },
         isValidCoordinate: function(coordinate) {
           const [longitude, latitude] = coordinate;
@@ -87,6 +98,37 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
           }
           return true;
         },
+        renderMiniSASSLegend: function () {
+            let legendHTML = '<div id="minisass-legend" data-name="minisass-legend" class="legend-row"';
+            let content = '<b>MiniSASS</b><br>';
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_alarm.svg" width="20px" height="20px"></div>';
+            content += 'Unmodified (NATURAL condition) <br/>'
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_alarm_green_400.svg" width="20px" height="20px"></div>';
+            content += 'Largely natural/few modifications (GOOD condition) <br/>'
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_alarm_orange_a200.svg" width="20px" height="20px"></div>';
+            content += 'Moderately modified (FAIR condition) <br/>'
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_twitter.svg" width="20px" height="20px"></div>';
+            content += 'Largely modified (POOR condition) <br/>'
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_alarm_deep_purple_400.svg" width="20px" height="20px"></div>';
+            content += 'Seriously/critically modified(VERY POOR condition) <br/>'
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_settings.svg" width="20px" height="20px"></div>';
+            content += 'No groups present <br/>'
+
+            content += '<div style="display: inline-block; width: 20px; height: 20px; margin-right: 5px;"><img src="https://minisass.org/static/images/img_arrowdown.svg" width="20px" height="20px"></div>';
+            content += 'Exclamation mark: unverified <br/>'
+
+            legendHTML += '>' + content + '</div>';
+            $('#map-legend').prepend(legendHTML);
+        },
+        removeMiniSASSLegend: function () {
+            $('#minisass-legend').remove();
+        },
         toggleMiniSASSLayer: function (e) {
             let self = this;
             this.miniSASSSelected = $(e.target).is(":checked");
@@ -95,48 +137,10 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 // Move layer to top
                 this.map.removeLayer(this.miniSASSLayer);
                 this.map.getLayers().insertAt(this.map.getLayers().getLength(), this.miniSASSLayer);
-
-                // Show fetching message
-                if (!this.fetchingMiniSASS) {
-                    let fetchingMessage = $('<span class="fetching" style="font-size: 10pt; font-style: italic"> (fetching)</span>');
-                    $(e.target).parent().find('.label').append(fetchingMessage);
-
-                    $.ajax({
-                        type: 'GET',
-                        url: this.miniSASSUrl,
-                        success: function (data) {
-                            let geojson = {
-                                "type": "FeatureCollection",
-                                "features": []
-                            }
-                            for(let i=0; i < data.length; i++) {
-                                let observation = data[i];
-                                let coordinate = [parseFloat(observation.longitude), parseFloat(observation.latitude)];
-                                if (self.isValidCoordinate(coordinate)) {
-                                    let properties = observation;
-                                    delete properties.longitude;
-                                    delete properties.latitude;
-                                    let feature = {
-                                        "type": "Feature",
-                                        "geometry": {"type": "Point", "coordinates": coordinate},
-                                        "properties": properties
-                                    }
-                                    geojson.features.push(feature);
-                                }
-                            }
-                            let source = new ol.source.Vector({
-                                features: (
-                                    new ol.format.GeoJSON()
-                                ).readFeatures(geojson, {featureProjection: 'EPSG:3857'})
-                            });
-                            self.miniSASSLayer.setSource(source);
-                            $(e.target).parent().find('.fetching').remove();
-                        }
-                    })
-                    this.fetchingMiniSASS = true;
-                }
+                this.renderMiniSASSLegend();
             } else {
                 this.miniSASSLayer.setVisible(false);
+                this.removeMiniSASSLegend();
             }
         },
         toggleInward: function (e) {
@@ -263,27 +267,16 @@ define(['shared', 'backbone', 'underscore', 'jqueryUi',
                 openSidePanel = true;
             }
 
-            if (this.miniSASSSelected) {
-                const source = this.miniSASSLayer.getSource();
-                const pixel = this.map.getPixelFromCoordinate(coordinate);
-                let minisassData = [];
-                self.map.forEachFeatureAtPixel(pixel, function(feature) {
-                    if (feature.getProperties().hasOwnProperty('minisass_ml_score')) {
-                        minisassData.push(feature.getProperties())
-                    }
-                    if (minisassData.length > 0) {
-                        let minisassDataTable = minisassData[0];
-                        delete minisassDataTable['geometry'];
-                        delete minisassDataTable['organisationtype'];
-                        delete minisassDataTable['images'];
-                        delete minisassDataTable['site'];
-                        const minisassTable = $(self.objectToTable(minisassDataTable));
-                        self.showContentToSidePanel(
-                            lon, lat, minisassData[0]['sitename'], minisassTable.prop('outerHTML'), siteExist, openSidePanel
-                        )
-                    }
+            if (this.miniSASSSelected && featureData) {
+                let properties = featureData.getProperties()
+                const sortedProperties = {};
+                Object.keys(properties).sort().forEach(key => {
+                    sortedProperties[key] = properties[key];
                 });
-
+                const minisassTable = $(self.objectToTable(sortedProperties));
+                self.showContentToSidePanel(
+                    lon, lat, properties['site_name'], minisassTable.prop('outerHTML'), siteExist, openSidePanel
+                )
             }
         },
         showContentToSidePanel: function (lon, lat, panelTitle, panelContent, siteExist, openSidePanel = false) {
