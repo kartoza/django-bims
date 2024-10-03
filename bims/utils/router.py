@@ -83,9 +83,9 @@ class PrimaryReplicaRouter:
         Reads go to a randomly-chosen replica.
         """
         if settings.REPLICA_ENV_VAR:
-            chosen_replica_key = random.choice(
-                list(settings.DATABASES.keys())[1:])
-            return chosen_replica_key
+            available_databases = list(settings.DATABASES.keys())
+            chosen_db_key = random.choice(available_databases)
+            return chosen_db_key
         else:
             return PRIMARY
 
