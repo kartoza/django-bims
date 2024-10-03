@@ -103,7 +103,7 @@ def log_to_file_or_logger(log_file_path, message, is_error=False):
     Log messages to either a file or the logger.
     """
     logger = logging.getLogger('harvest_logger')
-    if not logger.handlers:
+    if not logger.handlers and log_file_path:
         setup_logger(log_file_path)
     if is_error:
         logger.error(message)
