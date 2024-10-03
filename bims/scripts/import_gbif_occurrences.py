@@ -103,11 +103,8 @@ def log_to_file_or_logger(log_file_path, message, is_error=False):
     Log messages to either a file or the logger.
     """
     logger = logging.getLogger('harvest_logger')
-    if not logger.handlers and log_file_path:
+    if not logger.handlers:
         setup_logger(log_file_path)
-    if log_file_path:
-        with open(log_file_path, 'a') as log_file:
-            log_file.write('{}'.format(message))
     if is_error:
         logger.error(message)
     else:
@@ -201,11 +198,16 @@ def process_gbif_response(json_result,
         site_point = Point(longitude, latitude, srid=4326)
 
         # Check nearest site based on site point and coordinate uncertainty
-        location_sites = LocationSite.objects.filter(
-            geometry_point__distance_lte=(
-                site_point,
-                D(m=coordinate_uncertainty))
-        )
+        if coordinate_uncertainty > 0:
+            location_sites = LocationSite.objects.filter(
+                geometry_point__distance_lte=(
+                    site_point,
+                    D(m=coordinate_uncertainty))
+            )
+        else:
+            location_sites = LocationSite.objects.filter(
+                geometry_point__equals=site_point
+            )
         if location_sites.exists():
             # Get first site
             location_site = location_sites[0]
@@ -214,24 +216,6 @@ def process_gbif_response(json_result,
             locality = result.get(LOCALITY_KEY, result.get(
                 VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY
             ))
-
-            # Check if site is in the correct border
-            site_boundary = preferences.SiteSetting.site_boundary
-            if site_boundary:
-                is_within_boundary = Boundary.objects.filter(
-                    id=site_boundary.id,
-                    geometry__contains=site_point,
-                ).exists()
-                if not is_within_boundary:
-                    log_to_file_or_logger(
-                        log_file,
-                        '{0},{1} :'
-                        ' The site is not within a valid border,'
-                        ' skip -- \n'.format(
-                            longitude, latitude
-                        )
-                    )
-                    continue
 
             location_type, status = LocationType.objects.get_or_create(
                 name='PointObservation',
