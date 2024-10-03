@@ -192,18 +192,38 @@ class TaxaProcessor(object):
         return vernacular_names
 
     def origin(self, row):
-        """Processing origin"""
+        """
+        Processes the origin information for a given row. Checks the origin and invasion
+        status and returns the appropriate category and invasion instance if applicable.
+
+        Args:
+            row (dict): A dictionary representing a row of data from a CSV upload.
+
+        Returns:
+            tuple: A tuple containing the origin category (str) and an Invasion instance (or None).
+        """
         origin_value = DataCSVUpload.row_value(row, ORIGIN)
+        invasion_category = DataCSVUpload.row_value(row, INVASION)
+        invasion_instance = None
+
+        # Handle invasion category if provided
+        if invasion_category:
+            invasion_instance, _ = Invasion.objects.get_or_create(category=invasion_category)
+
+        # If origin value is not provided, return default values
         if not origin_value:
-            return '', None
-        if 'invasive' in origin_value.lower():
-            invasive, _ = Invasion.objects.get_or_create(
-                category=origin_value
-            )
-            return ORIGIN_CATEGORIES['non-native'], invasive
+            return '', invasion_instance
+
+        # Check if origin indicates an invasive status without an explicit invasion category
+        if 'invasive' in origin_value.lower() and not invasion_category:
+            invasion_instance, _ = Invasion.objects.get_or_create(category=origin_value)
+            return ORIGIN_CATEGORIES['non-native'], invasion_instance
+
+        # Return the origin category if it exists in the predefined categories
         if origin_value.lower() not in ORIGIN_CATEGORIES:
-            return '', None
-        return ORIGIN_CATEGORIES[origin_value.lower()], None
+            return '', invasion_instance
+
+        return ORIGIN_CATEGORIES[origin_value.lower()], invasion_instance
 
     def validate_parents(self, taxon, row):
         """

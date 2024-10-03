@@ -361,8 +361,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 }),
                                 STYLES: value.native_layer_style,
                                 tileGrid: ol.tilegrid.createXYZ(),
+                                declutter: true,
                             })
-                            olms.stylefunction(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name);
+                            olms.applyStyle(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name);
                         }
 
 
