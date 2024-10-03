@@ -1,0 +1,260 @@
+{% extends 'main_base.html' %}
+{% load static %}
+
+{% block subtitle %}
+    Visualization Layer
+{% endblock %}
+
+{% block head %}
+
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+    <link href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <script>
+        const listNonBiodiversityLayerAPIUrl = '{% url "list-non-biodiversity-layer" %}';
+    </script>
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="body-form container" style="margin-top: 10px; padding-bottom: 10px; background-color: white">
+        <div class="dashboard-title">
+            <h2>
+                Visualization Layer
+                <div class="upload-form-close dashboard-close-button">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                </div>
+            </h2>
+        </div>
+        <div id="layer-cards" class="row" style="margin-top: 20px;">
+        </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <button id="add-visualization-layer-btn" class="btn btn-outline-success" data-toggle="modal" style="">
+                Add visualization layer
+            </button>
+        </div>
+    </div>
+
+    <div class="modal fade" id="selectLayerTypeModal" tabindex="-1" role="dialog" aria-labelledby="selectLayerTypeModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="selectLayerTypeModalLabel">Select Layer Type</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <button id="select-vector-tile" class="btn btn-outline-primary btn-block">Vector Tile</button>
+                    <button id="select-wms" class="btn btn-outline-primary btn-block">WMS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="layerDetailsModal" tabindex="-1" role="dialog" aria-labelledby="layerDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="layerDetailsModalLabel">Layer Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-layer-details">
+                <!-- Layer details will be dynamically inserted here -->
+            </div>
+             <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="save-layer-btn">Save Layer</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script type="text/template" id="layer-details-template">
+        <form id="layer-details-form">
+            <div class="form-group">
+                <label for="layerName">Name</label>
+                <input type="text" class="form-control" id="layerName" value="<%= name %>">
+            </div>
+            <% if (type === 'WMS') { %>
+            <div class="form-group">
+                <label for="wmsLayerName">WMS Layer Name</label>
+                <input type="text" class="form-control" id="wmsLayerName" value="<%= wmsLayerName %>">
+            </div>
+            <% } %>
+            <div class="form-group">
+                <label for="layerType">Type</label>
+                <input type="text" class="form-control" id="layerType" value="<%= type %>" readonly>
+            </div>
+            <% if (type === 'WMS') { %>
+            <div class="form-group">
+                <label for="wmsUrl">WMS URL</label>
+                <input type="text" class="form-control" id="wmsUrl" value="<%= wmsUrl %>">
+            </div>
+            <% } else { %>
+            <div class="form-group">
+                <label for="nativeLayerUrl">Layer URL</label>
+                <input type="text" class="form-control" id="nativeLayerUrl" value="<%= nativeLayerUrl %>" readonly>
+            </div>
+            <% } %>
+            <div class="form-group">
+                <label for="defaultVisibility">Default Visibility</label>
+                <input type="text" class="form-control" id="defaultVisibility" value="<%= defaultVisibility %>">
+            </div>
+            <div class="form-group">
+                <label for="getFeatureFormat">Get Feature Format</label>
+                <input type="text" class="form-control" id="getFeatureFormat" value="<%= getFeatureFormat %>">
+            </div>
+        </form>
+    </script>
+
+
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/utils/helpers.js' %}"></script>
+    <script type="module" src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+    <script>
+
+
+        $(document).ready(function() {
+            let selectedLayerType = '';
+
+            // Show the modal for selecting layer type
+            $('#add-visualization-layer-btn').on('click', function() {
+                $('#selectLayerTypeModal').modal('show');
+            });
+
+            // Handle layer type selection
+            $('#select-vector-tile').on('click', function() {
+                selectedLayerType = 'Vector Tile';
+                showLayerDetailsForm(selectedLayerType);
+            });
+
+            $('#select-wms').on('click', function() {
+                selectedLayerType = 'WMS';
+                showLayerDetailsForm(selectedLayerType);
+            });
+
+            function showLayerDetailsForm(type) {
+                // Close the selection modal
+                $('#selectLayerTypeModal').modal('hide');
+
+                const templateString = $('#layer-details-template').html();
+                const compiledTemplate = _.template(templateString);
+
+                const formHtml = compiledTemplate({
+                    name: '',
+                    type: type,
+                    wmsLayerName: '',
+                    wmsUrl: '',
+                    nativeLayerUrl: '',
+                    defaultVisibility: false,
+                    getFeatureFormat: 'text/plain'
+                });
+
+                $('#modal-layer-details').html(formHtml);
+
+                $('#layerDetailsModal').modal('show');
+            }
+
+            $('#save-layer-btn').on('click', function() {
+                const layerData = {
+                    name: $('#layerName').val(),
+                    type: selectedLayerType,
+                    wmsLayerName: selectedLayerType === 'WMS' ? $('#wmsLayerName').val() : '',
+                    wmsUrl: selectedLayerType === 'WMS' ? $('#wmsUrl').val() : '',
+                    nativeLayerUrl: selectedLayerType === 'Vector Tile' ? $('#nativeLayerUrl').val() : '',
+                    defaultVisibility: $('#defaultVisibility').val(),
+                    getFeatureFormat: $('#getFeatureFormat').val()
+                };
+
+                $('#layerDetailsModal').modal('hide');
+
+                // TODO: Add the logic to save the new layer to the server
+            });
+        });
+
+        $.ajax({
+            type: 'GET',
+            url: listNonBiodiversityLayerAPIUrl,
+            dataType: 'json',
+            success: function (data) {
+                const container = $('#layer-cards');
+                container.empty(); // Clear previous content
+
+                data.forEach(layer => {
+                    const layerType = layer.native_layer_url ? 'Vector Tile' : 'WMS';
+                    const badgeClass = layer.native_layer_url ? 'badge-success' : 'badge-primary';
+
+                    const card = `
+                        <div class="col-12 mb-3 draggable-card" id="layer-${layer.id}" data-id="${layer.id}">
+                            <div class="card">
+                                <div class="card-body position-relative">
+                                    <!-- Sort Icon -->
+                                    <i class="fa fa-arrows-v position-absolute" style="top: 10px; left: 10px; cursor: pointer;"></i>
+                                    <h5 class="card-title" style="font-weight: bold; margin-left: 15px;">${layer.name}</h5>
+                                    <div class="card-text" style="margin-left: 15px;">Layer name: ${layer.wms_layer_name}</div>
+                                    <span class="badge ${badgeClass} position-absolute" style="top: 10px; right: 10px;">${layerType}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    container.append(card);
+
+                    $(`#layer-${layer.id}`).on('click', function() {
+                        // Get the template string and compile it using Underscore
+                        const templateString = $('#layer-details-template').html();
+                        const compiledTemplate = _.template(templateString);
+
+                        // Populate the template with data
+                        const formHtml = compiledTemplate({
+                            name: layer.name,
+                            type: layerType,
+                            wmsLayerName: layer.wms_layer_name,
+                            wmsUrl: layer.wms_url,
+                            nativeLayerUrl: layer.native_layer_url,
+                            defaultVisibility: layer.default_visibility,
+                            getFeatureFormat: layer.get_feature_format || 'N/A'
+                        });
+
+                        // Clear the modal content and insert the form
+                        $('#modal-layer-details').html(formHtml);
+
+                        // Show the modal
+                        $('#layerDetailsModal').modal('show');
+                    });
+                });
+
+                // Make cards sortable
+                container.sortable({
+                    handle: '.fa-arrows-v',
+                    update: function(event, ui) {
+                        // Triggered when the order is updated
+                        const newOrder = $(this).sortable('toArray', { attribute: 'data-id' });
+                        console.log('New order:', newOrder);
+                        // Here, you can send the new order to the server if needed
+                    }
+                });
+
+
+            },
+            error: function () {
+                console.error('Failed to load layer data');
+            }
+        });
+    </script>
+
+{% endblock %}
