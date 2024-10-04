@@ -176,7 +176,7 @@ def download_collection_records(
             with open(taxon_group.occurrence_upload_template.path, 'r', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
                 upload_template_headers = reader.fieldnames
-        except FileNotFoundError:
+        except (FileNotFoundError, UnicodeDecodeError):
             upload_template_headers = []
 
     for obj in queryset_iterator(collection_results):
