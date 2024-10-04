@@ -38,6 +38,15 @@
 
             <div class="help-block-space"></div>
             <h3>Harvest GBIF species</h3>
+
+            {% if messages %}
+                <div class="alert alert-warning" role="alert">
+                    {% for message in messages %}
+                        <div>{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
             </div>
             <div class="modal-body">

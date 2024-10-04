@@ -15,7 +15,6 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
 from bims.models.harvest_session import HarvestSession
-from bims.models.boundary import Boundary
 
 logger = logging.getLogger(__name__)
 
@@ -510,6 +509,7 @@ def find_species_by_area(
             return
 
     def fetch_occurrences_by_area(geometry_string):
+        from bims.scripts.import_gbif_occurrences import API_BASE_URL
         facet_offset = 0
 
         while True:
@@ -530,6 +530,22 @@ def find_species_by_area(
                         'HUMAN_OBSERVATION',
                     ]
                 }
+
+                gbif_url = (
+                    f"{API_BASE_URL}?"
+                    f"{parent_species.rank.lower()}Key={parent_species.gbif_key}&"
+                    f"facet=acceptedTaxonKey&"
+                    f"facetLimit=100&"
+                    f"facetMinCount=1&"
+                    f"hasCoordinate=true&"
+                    f"hasGeospatialIssue=false&"
+                    f"basisOfRecord=HUMAN_OBSERVATION&"
+                    f"limit={0}&"
+                    f"geometry={geometry_string}&"
+                    f"facetOffset={facet_offset}&"
+                )
+
+                log_info(gbif_url)
 
                 occurrences_data = search(**params)
                 log_info(occurrences_data)
