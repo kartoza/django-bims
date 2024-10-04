@@ -361,7 +361,15 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         with transaction.atomic():
             taxonomy_data = model_to_dict(
                 taxonomy,
-                exclude=['id', 'vernacular_names', 'author', 'tags', 'biographic_distributions', 'owner', 'parent'])
+                exclude=[
+                    'id',
+                    'iucn_status',
+                    'vernacular_names',
+                    'author',
+                    'tags',
+                    'biographic_distributions',
+                    'owner',
+                    'parent'])
             taxonomy_update_proposal, created = (
                 TaxonomyUpdateProposal.objects.get_or_create(
                     original_taxonomy=taxonomy,
@@ -372,6 +380,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     parent=taxonomy.parent,
                     taxon_group_under_review=taxon_group,
                     author=author_name,
+                    iucn_status=taxonomy.iucn_status,
                     **taxonomy_data
                 )
             )
