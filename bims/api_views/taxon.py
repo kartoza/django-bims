@@ -5,6 +5,7 @@ import re
 
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
+from django.forms import model_to_dict
 from django.http import Http404
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -358,20 +359,34 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.save()
 
         with transaction.atomic():
-            TaxonomyUpdateProposal.objects.get_or_create(
-                original_taxonomy=taxonomy,
-                taxon_group=taxon_group,
-                status='pending',
-                new_data=True,
-                scientific_name=taxonomy.scientific_name,
-                canonical_name=taxonomy.canonical_name,
-                rank=taxonomy.rank,
-                parent=taxonomy.parent,
-                taxonomic_status=taxonomy.taxonomic_status,
-                legacy_canonical_name=taxonomy.legacy_canonical_name,
-                taxon_group_under_review=taxon_group,
-                author=author_name,
+            taxonomy_data = model_to_dict(
+                taxonomy,
+                exclude=[
+                    'id',
+                    'iucn_status',
+                    'vernacular_names',
+                    'author',
+                    'tags',
+                    'biographic_distributions',
+                    'owner',
+                    'parent'])
+            taxonomy_update_proposal, created = (
+                TaxonomyUpdateProposal.objects.get_or_create(
+                    original_taxonomy=taxonomy,
+                    taxon_group=taxon_group,
+                    status='pending',
+                    new_data=True,
+                    owner=taxonomy.owner,
+                    parent=taxonomy.parent,
+                    taxon_group_under_review=taxon_group,
+                    author=author_name,
+                    iucn_status=taxonomy.iucn_status,
+                    **taxonomy_data
+                )
             )
+            if created:
+                vernacular_names_instances = list(taxonomy.vernacular_names.all())
+                taxonomy_update_proposal.vernacular_names.set(vernacular_names_instances)
 
         return Response(response)
 

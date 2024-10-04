@@ -8,7 +8,6 @@ def harvest_gbif_species(session_id):
     from bims.utils.logger import log
     from bims.models import HarvestSession
     from bims.utils.gbif import find_species_by_area
-    from bims.enums import TaxonomicRank
 
     try:
         harvest_session = (
@@ -30,7 +29,7 @@ def harvest_gbif_species(session_id):
 
     parent_species = harvest_session.module_group.gbif_parent_species
 
-    taxa = find_species_by_area(
+    find_species_by_area(
         harvest_session.boundary_id,
         harvest_session=harvest_session,
         parent_species=parent_species,
