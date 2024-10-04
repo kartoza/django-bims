@@ -162,6 +162,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     common_name = serializers.SerializerMethodField()
     most_recent_record = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
+    invasion = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
     global_conservation_status = serializers.SerializerMethodField()
     national_conservation_status = serializers.SerializerMethodField()
@@ -307,6 +308,11 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             else ''
         )
 
+    def get_invasion(self, obj: Taxonomy):
+        if obj.invasion:
+            return obj.invasion.category
+        return ''
+
     def get_endemism(self, obj: Taxonomy):
         taxon_group_taxon = self.get_taxon_group_taxon_data(obj)
         if not taxon_group_taxon:
@@ -341,6 +347,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'common_name',
             'most_recent_record',
             'origin',
+            'invasion',
             'endemism',
             'global_conservation_status',
             'national_conservation_status',
