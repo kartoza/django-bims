@@ -85,7 +85,7 @@ class DownloadRequestListView(
 
         # -- Filter approved or rejected
         self.approved_or_rejected = self.request.GET.get(
-            'approved_or_rejected', None)
+            'approved_or_rejected', 'approved')
 
         # -- Requester
         requester = self.request.GET.get('requester', None)
