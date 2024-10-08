@@ -224,7 +224,11 @@ class ModuleSummary(APIView):
 
     def _cache_key(self):
         tenant = connection.tenant
-        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}_{tenant.name}'
+        try:
+            tenant_name = tenant.name
+        except AttributeError:
+            tenant_name = ''
+        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}_{tenant_name}'
 
     def summary_data(self):
         module_summary = dict()
