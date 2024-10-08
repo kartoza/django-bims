@@ -29,6 +29,9 @@ from bims.utils.decorator import prevent_recursion
 from bims.enums.ecosystem_type import (
     ECOSYSTEM_TYPE_CHOICES, HYDROGEOMORPHIC_NONE, HYDROGEOMORPHIC_CHOICES
 )
+from bims.utils.uuid import is_uuid
+from cloud_native_gis.models import Layer
+from cloud_native_gis.utils.geometry import query_features
 
 LOGGER = logging.getLogger(__name__)
 
@@ -278,13 +281,13 @@ class LocationSite(AbstractValidation):
                 'Can not update location context document because geocontext '
                 'url is None. Please set it.')
             return False, message
-        if not self.get_centroid():
+        if not self.longitude and not self.latitude:
             message = (
                 'Can not update location context document because centroid is '
                 'None. Please set it.')
             return False, message
-        longitude = self.get_centroid().x
-        latitude = self.get_centroid().y
+        longitude = self.longitude
+        latitude = self.latitude
 
         geocontext_group_url_format = (
             '{geocontext_url}/api/v2/query?registry=group&key={geocontext_group_key}&'
@@ -313,6 +316,39 @@ class LocationSite(AbstractValidation):
 
     def add_context_group(self, group_key):
         from bims.models import LocationContext
+
+        context_key = ''
+        if ':' in group_key:
+            group_key, context_key = group_key.split(':')
+
+        if is_uuid(group_key) and context_key:
+            layer = Layer.objects.filter(unique_id=group_key).first()
+            if layer:
+                feature_data = query_features(
+                    table_name=layer.query_table_name,
+                    field_names=[context_key],
+                    coordinates=[(self.longitude, self.latitude)],
+                    tolerance=10
+                )
+                context_group, _ = LocationContextGroup.objects.update_or_create(
+                    geocontext_group_key=group_key,
+                    key=group_key,
+                    defaults={
+                        'name': layer.name
+                    }
+                )
+                for result in feature_data['result']:
+                    if context_key in result['feature']:
+                        LocationContext.objects.update_or_create(
+                            site=self,
+                            group=context_group,
+                            defaults={
+                                'fetch_time': timezone.now(),
+                                'value': str(result['feature'][context_key])
+                            }
+                        )
+            return True, 'Added'
+
         geocontext_data_string = self.get_geocontext_group_data(group_key)
         try:
             geocontext_data = json.loads(geocontext_data_string)

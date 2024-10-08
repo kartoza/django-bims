@@ -45,5 +45,5 @@ def delete_cache(key):
     return cache.delete(key)
 
 
-def set_cache(key, value):
-    cache.set(key, value)
+def set_cache(key, value, timeout=None):
+    cache.set(key, value, timeout=timeout)

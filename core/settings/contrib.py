@@ -118,6 +118,7 @@ TENANT_APPS = (
     'allauth.account',
     'django.contrib.auth',
     'django.contrib.admin',
+    'django.contrib.flatpages',
     # tenant-specific apps
     'geonode.people',
     'geonode.base',

@@ -239,6 +239,9 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         site_setting_group_keys = (
             preferences.GeocontextSetting.geocontext_keys.split(',')
         )
+        site_setting_group_keys = [
+            group.split(':')[0] if ':' in group else group for group in site_setting_group_keys
+        ]
         groups = LocationContext.objects.filter(
             site=obj,
             group__geocontext_group_key__in=site_setting_group_keys
