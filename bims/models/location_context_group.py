@@ -21,6 +21,9 @@ class LocationContextGroup(models.Model):
     verified = models.BooleanField(
         default=False
     )
+    active = models.BooleanField(
+        default=False
+    )
     layer_name = models.CharField(
         max_length=255,
         blank=True,
