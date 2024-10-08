@@ -6,6 +6,7 @@ from django.views.generic import RedirectView
 from django.views.generic import TemplateView
 
 from bims.api_views.unpublished_data import UnpublishedData
+from bims.views.context_layers import ContextLayersView
 from bims.views.download_occurrence_template import download_occurrence_template
 from bims.views.edit_taxon_view import EditTaxonView
 from bims.views.physico_chemical_upload import PhysicoChemicalUploadView
@@ -304,6 +305,9 @@ urlpatterns = [
     path('taxonomy/edit/<int:taxon_group_id>/<int:id>/',
          EditTaxonView.as_view(),
          name='edit_taxon'),
+    path('context-layers/',
+        ContextLayersView.as_view(),
+        name='context-layers-view'),
 ]
 
 # Api urls

@@ -50,15 +50,15 @@
     "mini-css-extract-plugin": "^2.2.1",
     "object.values": "^1.0.3",
     "raw-loader": "^4.0.2",
-    "react": "^17.0.2",
+    "react": "^18.3.1",
     "react-autosuggest": "^10.1.0",
     "react-bootstrap": "^1.6.1",
     "react-confirm-alert": "^2.7.0",
-    "react-dom": "^17.0.2",
+    "react-dom": "^18.3.1",
     "react-rnd": "^10.3.4",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-test-renderer": "^17.0.2",
+    "react-test-renderer": "^18.3.1",
     "reactstrap": "^8.9.0",
     "sass": "^1.22.7",
     "sass-loader": "^12.1.0",
@@ -76,7 +76,6 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.24.7",
-    "react-hot-loader": "^4.13.1",
     "webpack-dev-server": "^4.7.3"
   }
 }
