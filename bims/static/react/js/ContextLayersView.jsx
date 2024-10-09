@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
+import '../css/ContextLayers.scss';
 import {createRoot} from "react-dom/client";
 import {ContextGroupDetailModal} from "./components/ContextGroupDetailModal";
 import {ContextGroupCard} from "./components/ContextGroupCard";
