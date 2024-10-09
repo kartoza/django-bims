@@ -1,6 +1,76 @@
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Button, Form, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
-import React, {useEffect, useState} from "react";
+import axios from "axios";
+
+
+export const AutocompleteInput = ({ groupValues, updateValue, url }) => {
+    const [autocompleteResults, setAutocompleteResults] = useState([]);
+    const [inputValue, setInputValue] = useState('')
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        setInputValue(groupValues.native_layer_name)
+    }, [groupValues.native_layer_name])
+
+    const handleAutocompleteInputChange = async (e) => {
+        const query = e.target.value;
+        setInputValue(query)
+        if (query.length > 2) {
+            try {
+                const response = await axios.get(`${url}?q=${query}`);
+                setAutocompleteResults(response.data);
+            } catch (error) {
+                console.error("Error fetching autocomplete results:", error);
+            }
+        } else {
+            setAutocompleteResults([]);
+        }
+    };
+
+    const handleInputSelect = () => {
+        if (inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }
+
+    const handleAutocompleteSelect = (layer) => {
+        updateValue(layer.unique_id, 'key');
+        updateValue(layer.unique_id, 'geocontext_group_key');
+        updateValue(layer.name, 'native_layer_name')
+        setInputValue(layer.name)
+
+        setAutocompleteResults([]);
+    };
+
+    return (
+        <div style={{ position: 'relative' }}>
+            <Input
+                type="text"
+                id="groupKey"
+                value={inputValue}
+                onChange={handleAutocompleteInputChange}
+                onClick={handleInputSelect}
+                placeholder="Start typing to search..."
+                innerRef={inputRef}
+            />
+            {autocompleteResults.length > 0 && (
+                <ul className="autocomplete-results">
+                    {autocompleteResults.map((layer) => (
+                        <li
+                            key={layer.id}
+                            onClick={() => handleAutocompleteSelect(layer)}
+                            className="autocomplete-item"
+                        >
+                            {layer.name}
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
 
 
 export const ContextGroupDetailModal = ({ show, handleClose, group, handleSave }) => {
@@ -8,6 +78,7 @@ export const ContextGroupDetailModal = ({ show, handleClose, group, handleSave }
     const [groupValues, setGroupValues] = useState({
         id: '',
         layer_name: '',
+        native_layer_name: '',
         name: '',
         key: '',
         active: false,
@@ -21,6 +92,7 @@ export const ContextGroupDetailModal = ({ show, handleClose, group, handleSave }
             setGroupValues({
                 id: group.id,
                 layer_name: group.layer_name ? group.layer_name : '',
+                native_layer_name: group.native_layer_name,
                 name: group.name,
                 key: group.key,
                 active: group.active,
@@ -62,7 +134,7 @@ export const ContextGroupDetailModal = ({ show, handleClose, group, handleSave }
                         />
                     </FormGroup>
                      {
-                        !group.is_native_layer || (
+                        !group.is_native_layer && (
                             <FormGroup>
                                 <Label for="groupKey">GeoContext Group Key</Label>
                                 <Input
@@ -76,13 +148,20 @@ export const ContextGroupDetailModal = ({ show, handleClose, group, handleSave }
                      }
 
                     <FormGroup>
-                        <Label for="groupKey">Service Key</Label>
-                        <Input
-                            type="text"
-                            id="groupKey"
-                            value={groupValues.key}
-                            onChange={(e) => updateValue(e.target.value, 'key')}
-                        />
+                        <Label for="groupKey">{group.is_native_layer ? 'Layer':'Service Key'}</Label>
+                        {group.is_native_layer ? (
+                            <AutocompleteInput
+                                groupValues={groupValues}
+                                updateValue={updateValue}
+                                url={'/api/cloud-native-layer-autocomplete/'}/>
+                        ) : (
+                            <Input
+                                type="text"
+                                id="groupKey"
+                                value={groupValues.key}
+                                onChange={(e) => updateValue(e.target.value, 'key')}
+                            />
+                        )}
                     </FormGroup>
 
                     <FormGroup>
@@ -101,7 +180,7 @@ export const ContextGroupDetailModal = ({ show, handleClose, group, handleSave }
                         </div>
                     </FormGroup>
                     {
-                        !group.is_native_layer || (
+                        !group.is_native_layer && (
                             <>
                             <FormGroup>
                                 <Label for="layerName">Layer Name</Label>

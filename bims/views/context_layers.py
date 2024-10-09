@@ -8,15 +8,30 @@ from bims.models.location_context_group import (
     LocationContextGroup
 )
 from bims.utils.uuid import is_uuid
+from cloud_native_gis.models import Layer
+from cloud_native_gis.serializer.layer import LayerSerializer
+
+
+class NativeLayerSerializer(LayerSerializer):
+    class Meta:
+        model = Layer
+        fields = '__all__'
 
 
 class LocationContextGroupSerializer(serializers.ModelSerializer):
 
     is_native_layer = serializers.SerializerMethodField()
+    native_layer_name = serializers.SerializerMethodField()
+
+    def get_native_layer_name(self, obj: LocationContextGroup):
+        if obj.key and is_uuid(obj.key):
+            layer = Layer.objects.get(unique_id=obj.key)
+            return layer.name
+        return ''
 
     def get_is_native_layer(self, obj: LocationContextGroup):
         if obj.key:
-            return not is_uuid(obj.key)
+            return is_uuid(obj.key)
         return False
 
     class Meta:
@@ -67,3 +82,16 @@ class ContextLayerGroup(SuperuserRequiredMixin, APIView):
             location_context_groups, many=True
         )
         return Response(context_group_data.data)
+
+
+class CloudNativeLayerAutoCompleteAPI(APIView):
+    def get(self, request, *args):
+        query = request.query_params.get('q', '')
+        layers = Layer.objects.filter(
+            name__icontains=query
+        )
+        serializer = NativeLayerSerializer(
+            layers, many=True, context={
+            'request': request
+        })
+        return Response(serializer.data)
