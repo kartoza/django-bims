@@ -351,19 +351,30 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 source: new ol.source.TileWMS(options),
                             })
                         } else {
-                            tileLayer = new ol.layer.VectorTile({
-                                title: value.name,
-                                source: new ol.source.VectorTile({
-                                    attributions: [''],
+                            let vectorSource = null;
+                            if (value.pmtiles) {
+                                vectorSource = new olpmtiles.PMTilesVectorSource({
+                                  url: value.pmtiles,
+                                  attributions: [value.attribution]
+                                });
+                            } else {
+                                vectorSource = new ol.source.VectorTile({
+                                    attributions: [value.attribution],
                                     url: value.native_layer_url,
                                     format: new ol.format.MVT(),
                                     STYLES: value.native_layer_style
-                                }),
+                                })
+                            }
+                            tileLayer = new ol.layer.VectorTile({
+                                title: value.name,
+                                source: vectorSource,
                                 STYLES: value.native_layer_style,
                                 tileGrid: ol.tilegrid.createXYZ(),
                                 declutter: true,
                             })
-                            olms.applyStyle(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name);
+                            olms.applyStyle(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name).catch((error) => {
+                                console.error('Failed to apply style:', error);
+                            });
                         }
 
 

@@ -21,7 +21,11 @@ class NonBiodiversityLayerList(APIView):
         return Response(
             NonBiodiversityLayerSerializer(
                 NonBiodiversityLayer.objects.all().order_by('order'),
-                many=True).data
+                many=True,
+                context={
+                    'request': request
+                }
+            ).data
         )
 
 
