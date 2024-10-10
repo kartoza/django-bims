@@ -14,12 +14,20 @@ RUN echo "Updating apt-get" && \
     apt-get install -y --no-install-recommends \
     nodejs npm \
     gcc make libc-dev musl-dev libpcre3 libpcre3-dev g++ \
-    libgdal-dev libcurl4-gnutls-dev librtmp-dev curl git && \
+    libgdal-dev gdal-bin \
+    libcurl4-gnutls-dev librtmp-dev curl git \
+    # Install dependencies for tippecanoe \
+    libprotobuf-dev protobuf-compiler zlib1g-dev && \
+    echo "Installing Tippecanoe" && \
+    git clone https://github.com/felt/tippecanoe.git /tmp/tippecanoe && \
+    cd /tmp/tippecanoe && \
+    make -j$(nproc) && make install && \
+    cd /usr/src/app && \
     echo "Python server" && \
     pip install uwsgi && \
     echo "Removing build dependencies and cleaning up" && \
     apt-get -y --purge autoremove make libc-dev musl-dev g++ && \
-    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/lib/apt/lists/* /tmp/tippecanoe && \
     rm -rf ~/.cache/pip
 
 # Add application requirements
@@ -79,7 +87,7 @@ RUN mkdir -p /opt/karma
 RUN npm install -g karma
 RUN cd / && npm install
 
-RUN apt-get install vim -y
+RUN apt-get install -y vim
 ADD karma.conf.docker.js /karma.conf.js
 
 # --------------------------------------------------------
@@ -92,4 +100,3 @@ EXPOSE 8080
 EXPOSE 22
 
 CMD ["/usr/sbin/sshd", "-D"]
-
