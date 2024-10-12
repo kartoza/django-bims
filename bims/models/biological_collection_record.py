@@ -270,7 +270,8 @@ class BiologicalCollectionRecord(AbstractValidation):
         help_text='Upstream id, e.g. Gbif key',
         max_length=200,
         blank=True,
-        default=''
+        default='',
+        db_index=True
     )
 
     uuid = models.CharField(

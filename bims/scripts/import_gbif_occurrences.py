@@ -132,11 +132,12 @@ def process_gbif_response(json_result,
                           origin,
                           log_file=None):
     """
-    Process GBIF API response.
+    Process GBIF API response using batch insertion.
     """
     if 'error' in json_result:
         log_to_file_or_logger(log_file, json_result['error'], is_error=True)
         return json_result['error'], 0
+
     source_collection = 'gbif'
     gbif_owner, _ = Profile.objects.get_or_create(
         username='GBIF',
@@ -152,23 +153,23 @@ def process_gbif_response(json_result,
         source=database_record
     )
 
-    for result in json_result['results']:
+    # List to hold records for bulk insertion
+    records_to_create = []
+    batch_size = 1000  # You can adjust the batch size based on your memory constraints
+
+    for index, result in enumerate(json_result['results'], start=1):
         # Prevent pulling FBIS data back down from GBIF
         if 'projectId' in result and result['projectId'].lower() == 'fbis':
             continue
+
         if session_id:
             if HarvestSession.objects.get(id=session_id).canceled:
                 log_to_file_or_logger(
                     log_file,
                     'Cancelled'
                 )
-
-                # reconnect post save handler
-                models.signals.post_save.connect(
-                    collection_post_save_handler,
-                    sender=BiologicalCollectionRecord
-                )
                 return 'Harvest session canceled', 0
+
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
         longitude = result.get(LON_KEY)
         latitude = result.get(LAT_KEY)
@@ -191,8 +192,7 @@ def process_gbif_response(json_result,
             try:
                 collection_date = parse(event_date)
             except ParserError:
-                logger.error(
-                    f'Date is not in the correct format')
+                logger.error('Date is not in the correct format')
                 continue
 
         site_point = Point(longitude, latitude, srid=4326)
@@ -208,6 +208,7 @@ def process_gbif_response(json_result,
             location_sites = LocationSite.objects.filter(
                 geometry_point__equals=site_point
             )
+
         if location_sites.exists():
             # Get first site
             location_site = location_sites[0]
@@ -237,67 +238,106 @@ def process_gbif_response(json_result,
                 location_site.site_code = site_code
                 location_site.save()
 
+        # Prepare additional data
+        additional_data = result
+        additional_data['fetch_from_gbif'] = True
+        additional_data['date_fetched'] = datetime.datetime.now().strftime(
+            '%Y-%m-%d %H:%M:%S'
+        )
 
+        # Create or update existing record
         try:
             collection_record = BiologicalCollectionRecord.objects.get(
                 upstream_id=upstream_id
             )
+            # Update existing record fields
+            collection_record.taxonomy = taxonomy
+            collection_record.source_reference = source_reference
+            collection_record.original_species_name = species
+            collection_record.collector = collector
+            collection_record.source_collection = source_collection
+            collection_record.institution_id = institution_code
+            collection_record.reference = reference
+            collection_record.module_group = taxon_group
+            collection_record.additional_data = additional_data
+            collection_record.collection_date = collection_date
+            collection_record.owner = gbif_owner
+            collection_record.validated = True
+
+            if habitat:
+                collection_record.collection_habitat = habitat.lower()
+            if origin:
+                for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                    if origin.lower() == category[1].lower():
+                        origin = category[0]
+                        break
+                collection_record.category = origin
+
+            collection_record.save()
+
             log_to_file_or_logger(
                 log_file,
-                '--- Update existing '
-                'collection record with upstream ID : {}\n'.
-                format(upstream_id)
+                f'--- Updated existing collection record with upstream ID: {upstream_id}\n'
             )
-        except BiologicalCollectionRecord.MultipleObjectsReturned:
-            collection_records = BiologicalCollectionRecord.objects.filter(
-                upstream_id=upstream_id
-            )
-            collection_record = collection_records.last()
-            collection_records.exclude(id=collection_record.id).delete()
+
         except BiologicalCollectionRecord.DoesNotExist:
-            log_to_file_or_logger(
-                log_file,
-                '--- Collection record created with upstream ID : {}\n'.
-                format(upstream_id),
-            )
-            collection_record = BiologicalCollectionRecord.objects.create(
+            # Prepare a new record for bulk creation
+            collection_record = BiologicalCollectionRecord(
                 upstream_id=upstream_id,
                 site=location_site,
                 taxonomy=taxonomy,
                 source_collection=source_collection,
                 source_reference=source_reference,
                 collection_date=collection_date,
-                owner=gbif_owner
+                owner=gbif_owner,
+                original_species_name=species,
+                collector=collector,
+                institution_id=institution_code,
+                reference=reference,
+                module_group=taxon_group,
+                validated=True,
+                additional_data=additional_data
             )
-        collection_record.taxonomy = taxonomy
-        collection_record.source_reference = source_reference
-        collection_record.original_species_name = species
-        collection_record.collector = collector
-        collection_record.source_collection = source_collection
-        collection_record.institution_id = institution_code
-        collection_record.reference = reference
-        collection_record.module_group = taxon_group
 
-        if habitat:
-            collection_record.collection_habitat = habitat.lower()
-        if origin:
-            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
-                if origin.lower() == category[1].lower():
-                    origin = category[0]
-                    break
-            collection_record.category = origin
-        collection_record.validated = True
-        additional_data = result
-        additional_data['fetch_from_gbif'] = True
-        additional_data['date_fetched'] = datetime.datetime.now().strftime(
-            '%Y-%m-%d %H:%M:%S'
-        )
-        collection_record.additional_data = additional_data
-        collection_record.save()
+            if habitat:
+                collection_record.collection_habitat = habitat.lower()
+            if origin:
+                for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                    if origin.lower() == category[1].lower():
+                        origin = category[0]
+                        break
+                collection_record.category = origin
+
+            records_to_create.append(collection_record)
+
+            log_to_file_or_logger(
+                log_file,
+                f'--- Prepared new collection record with upstream ID: {upstream_id}\n'
+            )
+
+        except BiologicalCollectionRecord.MultipleObjectsReturned:
+            collection_records = BiologicalCollectionRecord.objects.filter(
+                upstream_id=upstream_id
+            )
+            collection_record = collection_records.last()
+            collection_records.exclude(id=collection_record.id).delete()
+            log_to_file_or_logger(
+                log_file,
+                f'--- Resolved duplicate records for upstream ID: {upstream_id}\n'
+            )
+
+        # Bulk create records when batch size is reached
+        if len(records_to_create) >= batch_size:
+            BiologicalCollectionRecord.objects.bulk_create(records_to_create)
+            records_to_create.clear()  # Clear the list to free memory
+
+    # Insert any remaining records
+    if records_to_create:
+        BiologicalCollectionRecord.objects.bulk_create(records_to_create)
+        records_to_create.clear()
 
     log_to_file_or_logger(log_file,
-                          f"-- Total occurrences {json_result['count']} - "
-                          f"offset {json_result.get('offset', 0)} : \n")
+                          f"-- Processed {len(json_result['results'])} occurrences\n")
     return None, json_result['count']
 
 
@@ -412,8 +452,15 @@ def import_gbif_occurrences(
                 )
                 area += 1
                 message = fetch_and_process_gbif_data(offset, base_country_codes, geometry_str)
+                log_to_file_or_logger(
+                    log_file_path,
+                    message=message)
         else:
             message = fetch_and_process_gbif_data(offset, base_country_codes)
     except Exception as e:  # noqa
+        log_to_file_or_logger(
+              log_file_path,
+              message=str(e)
+          )
         return str(e)
     return message
