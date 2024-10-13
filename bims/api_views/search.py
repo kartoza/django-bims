@@ -34,6 +34,7 @@ from bims.models import (
     Endemism,
     LIST_SOURCE_REFERENCES,
     LocationSite,
+    LocationContextGroup,
     Survey,
     TaxonGroup
 )
@@ -366,34 +367,34 @@ class CollectionSearch(object):
     @property
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
-        spatial_filter_groups = []
+        spatial_filter_group_keys = []
         or_condition = Q()
         if not spatial_filters:
             return []
         for spatial_filter in spatial_filters:
             spatial_filter_splitted = spatial_filter.split(',')
             if 'group' in spatial_filter_splitted:
-                spatial_filter_groups.append(
+                spatial_filter_group_keys.append(
                     ','.join(spatial_filter.split(',')[1:])
                 )
             else:
                 if spatial_filter_splitted[0] != 'value':
                     continue
+                spatial_filter_group_id = LocationContextGroup.objects.filter(
+                    key=spatial_filter_splitted[1]
+                ).first().id
                 or_condition |= Q(**{
-                    'locationcontext__group__key':
-                        spatial_filter_splitted[1],
+                    'locationcontext__group':
+                        spatial_filter_group_id,
                     'locationcontext__value': ','.join(
                         spatial_filter_splitted[2:])})
-        if spatial_filter_groups:
+        if spatial_filter_group_keys:
+            spatial_filter_groups = LocationContextGroup.objects.filter(
+                key__in=list(set(spatial_filter_group_keys))
+            ).values_list('id', flat=True)
             or_condition |= Q(**{
-                'locationcontext__group__key__in':
+                'locationcontext__group__in':
                     spatial_filter_groups})
-            or_condition &= ~Q(**{
-                'locationcontext__value': 'None'
-            })
-            or_condition &= ~Q(**{
-                'locationcontext__value': ''
-            })
         return or_condition
 
     @property

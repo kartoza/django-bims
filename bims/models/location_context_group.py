@@ -58,3 +58,7 @@ class LocationContextGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+    indexes = [
+      models.Index(fields=['index']),
+    ]

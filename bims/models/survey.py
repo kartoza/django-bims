@@ -130,6 +130,9 @@ class Survey(AbstractValidation):
 
     class Meta:
         ordering = ('-date',)
+        indexes = [
+            models.Index(fields=['site', 'date', 'collector_user', 'owner']),
+        ]
 
 
 class SurveyData(models.Model):
