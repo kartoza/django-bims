@@ -10,6 +10,7 @@ from bims.models.source_reference import DatabaseRecord
 
 from bims.models.location_site import generate_site_code
 from dateutil.parser import parse, ParserError
+from bims.models.survey import Survey
 from preferences import preferences
 from django.contrib.gis.geos import Point, GEOSGeometry
 from django.contrib.gis.db import models
@@ -168,6 +169,10 @@ def process_gbif_response(json_result,
                     log_file,
                     'Cancelled'
                 )
+                models.signals.post_save.connect(
+                    collection_post_save_handler,
+                    sender=BiologicalCollectionRecord
+                )
                 return 'Harvest session canceled', 0
 
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
@@ -273,6 +278,23 @@ def process_gbif_response(json_result,
                         break
                 collection_record.category = origin
 
+            if not collection_record.survey and collection_record.collection_date:
+                try:
+                    survey, _ = Survey.objects.get_or_create(
+                        site=collection_record.site,
+                        date=collection_record.collection_date,
+                        collector_user=collection_record.collector_user,
+                        owner=collection_record.owner
+                    )
+                except Survey.MultipleObjectsReturned:
+                    survey = Survey.objects.filter(
+                        site=collection_record.site,
+                        date=collection_record.collection_date,
+                        collector_user=collection_record.collector_user,
+                        owner=collection_record.owner
+                    )[0]
+                collection_record.survey = survey
+
             collection_record.save()
 
             log_to_file_or_logger(
@@ -308,6 +330,27 @@ def process_gbif_response(json_result,
                         break
                 collection_record.category = origin
 
+            try:
+                survey, _ = Survey.objects.get_or_create(
+                    site=location_site,
+                    date=collection_date,
+                    collector_user=gbif_owner,
+                    owner=gbif_owner,
+                    defaults={
+                        'validated': True
+                    }
+                )
+            except Survey.MultipleObjectsReturned:
+                survey = Survey.objects.filter(
+                    site=location_site,
+                    date=collection_date,
+                    collector_user=gbif_owner,
+                    owner=gbif_owner
+                )[0]
+                survey.validated = True
+                survey.save()
+            collection_record.survey = survey
+
             records_to_create.append(collection_record)
 
             log_to_file_or_logger(
@@ -329,7 +372,7 @@ def process_gbif_response(json_result,
         # Bulk create records when batch size is reached
         if len(records_to_create) >= batch_size:
             BiologicalCollectionRecord.objects.bulk_create(records_to_create)
-            records_to_create.clear()  # Clear the list to free memory
+            records_to_create.clear()
 
     # Insert any remaining records
     if records_to_create:

@@ -380,7 +380,8 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True,
         choices=DATA_TYPE_CHOICES,
         default='',
-        help_text='Specify data sharing level of this record'
+        help_text='Specify data sharing level of this record',
+        db_index=True
     )
 
     date_accuracy = models.CharField(
@@ -413,6 +414,11 @@ class BiologicalCollectionRecord(AbstractValidation):
             ('can_validate_data', 'Can validate data'),
             ('can_add_single_occurrence', 'Can add single Occurrence'),
         )
+        indexes = [
+            models.Index(fields=['source_collection', 'taxonomy']),
+            models.Index(fields=['owner', 'end_embargo_date']),
+            models.Index(fields=['data_type'])
+        ]
 
     def on_post_save(self):
         if not self.taxonomy:

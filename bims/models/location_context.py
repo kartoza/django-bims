@@ -69,6 +69,11 @@ class LocationContext(models.Model):
     )
     objects = LocationContextManager()
 
+    class Meta:
+      indexes = [
+        models.Index(fields=['group', 'value']),
+      ]
+
 
 @receiver(models.signals.post_save, sender=LocationContext)
 @prevent_recursion
