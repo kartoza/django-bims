@@ -32,7 +32,7 @@ from bims.enums.geomorphological_zone import (
 )
 from bims.models import (
     LocationSite, LocationType, LocationContext, LocationContextGroup,
-    SiteImage, Survey, ChemicalRecord, BaseMapLayer, SITE_KEY
+    SiteImage, Survey, ChemicalRecord, BaseMapLayer, SITE_KEY, NonBiodiversityLayer
 )
 from sass.models import River
 from bims.utils.jsonify import json_loads_byteified
@@ -332,6 +332,24 @@ class LocationSiteFormView(TemplateView):
             category='SPECIES_MODULE'
         ).distinct()
         context['user_id'] = self.request.user.id
+
+        if preferences.SiteSetting.park_layer:
+            park_layer = preferences.SiteSetting.park_layer
+            context['park_layer_tiles'] = (
+                park_layer.absolute_pmtiles_url(self.request)
+            ).replace('pmtiles://', '')
+            non_biodiversity_layer = NonBiodiversityLayer.objects.filter(
+                native_layer=park_layer
+            )
+            if non_biodiversity_layer.exists():
+                context['park_layer_style'] = (
+                    json.dumps(non_biodiversity_layer.first().native_layer_style.style)
+                )
+            else:
+                context['park_layer_style'] = (
+                    json.dumps(park_layer.default_style.style)
+                )
+
         context.update(self.additional_context_data())
         return context
 
