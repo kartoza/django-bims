@@ -4,6 +4,7 @@ import '../css/ContextLayers.scss';
 import {createRoot} from "react-dom/client";
 import {ContextGroupDetailModal} from "./components/ContextGroupDetailModal";
 import {ContextGroupCard} from "./components/ContextGroupCard";
+import {Button} from "reactstrap";
 
 
 const ContextLayersView = (props) => {
@@ -108,6 +109,9 @@ const ContextLayersView = (props) => {
                 <label className="form-check-label" htmlFor="showOnlyActive">
                     Show only active
                 </label>
+                <div style={{ position: 'absolute', right: 0, marginTop: -27}}>
+                    <Button color={'primary'}>Add new</Button>
+                </div>
             </div>
             <div className="row">
                 {filteredGroups.map((group) => (
