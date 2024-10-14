@@ -1,6 +1,7 @@
 let map = null;
 let markerSource = null;
 let riversLayer = 'https://maps.kartoza.com/geoserver/wms';
+let parkLayer = null;
 
 const modal = `<!-- Modal -->
 <div id="error-modal" class="modal hide fade" tabindex="-1" role="dialog">
@@ -95,6 +96,22 @@ const mapOnClicked = (e) => {
     updateCoordinate(false);
 }
 
+const convertStyles = (styles, name) => {
+    styles = JSON.parse(styles)
+    styles['sources'] = {}
+    styles['sources'][name] = {
+        "type": "vector",
+        "data": "",
+    }
+    styles['name'] = name;
+    for (let i = 0; i < styles['layers'].length; i++) {
+        styles['layers'][i]['id'] = `${name}-${i}`;
+        styles['layers'][i]['source'] = name
+        styles['layers'][i]['minzoom'] = 0
+    }
+    return styles
+}
+
 $(function () {
     $('body').append(modal);
     let mapView = new ol.View({
@@ -145,6 +162,30 @@ $(function () {
             source: new ol.source.TileWMS(options)
         });
         map.addLayer(riverLayer);
+    }
+
+    if (parkLayerTiles) {
+        const vectorSource = new olpmtiles.PMTilesVectorSource({
+          url: parkLayerTiles,
+          attributions: ['']
+        });
+
+        parkLayer = new ol.layer.VectorTile({
+            title: parkLayerName,
+            source: vectorSource,
+            tileGrid: ol.tilegrid.createXYZ(),
+            declutter: true,
+        })
+
+        if (parkLayerStyle) {
+            olms.applyStyle(
+                parkLayer,
+                convertStyles(parkLayerStyle, parkLayerName), parkLayerName).catch((error) => {
+                    console.error('Failed to apply style:', error);
+                });
+        }
+
+        map.addLayer(parkLayer);
     }
 
     let biodiversityLayersOptions = {
@@ -309,6 +350,22 @@ let updateCoordinate = function (zoomToMap = true) {
     if (ecosystemType) {
         url += '&ecosystem=' + ecosystemType;
     }
+
+    if (parkLayerTiles && parkAttribute) {
+        const coordinate = ol.proj.transform(
+                [longitude, latitude], 'EPSG:4326', 'EPSG:3857');
+        const pixel = map.getPixelFromCoordinate(coordinate);
+        map.forEachFeatureAtPixel(pixel, function (feature, _layer) {
+            if (_layer === parkLayer) {
+                const properties = feature.getProperties();
+                if (properties.hasOwnProperty(parkAttribute)) {
+                    const layerValue = properties[parkAttribute];
+                    $('#site_name').val(layerValue);
+                }
+            }
+        })
+    }
+
     $.ajax({
         url: url,
         success: function (all_data) {

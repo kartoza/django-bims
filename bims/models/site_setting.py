@@ -332,12 +332,6 @@ class SiteSetting(Preferences):
         blank=True
     )
 
-    park_wfs_attribute_key = models.CharField(
-        max_length=200,
-        default='',
-        blank=True
-    )
-
     park_wfs_layer_name = models.CharField(
         max_length=200,
         default='',
@@ -348,6 +342,20 @@ class SiteSetting(Preferences):
         null=True,
         blank=True,
         upload_to='park_layer_csv/'
+    )
+
+    park_wfs_attribute_key = models.CharField(
+        max_length=200,
+        default='',
+        blank=True,
+        help_text='Park attribute key'
+    )
+
+    park_layer = models.ForeignKey(
+        'cloud_native_gis.Layer',
+        blank=True,
+        on_delete=models.SET_NULL,
+        null=True,
     )
 
     @property
