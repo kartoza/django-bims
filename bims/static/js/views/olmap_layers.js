@@ -667,18 +667,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     // Check if the filter uses "any" or "all"
                     if (filter[0] === 'any' || filter[0] === 'all') {
                         filter.slice(1).forEach((item) => {
-                            if (Array.isArray(item) && item[0] === '==' && item.length === 3) {
-                                values.push(item[2]);
+                            if (Array.isArray(item)) {
+                                if (item[0] === '==' && item.length === 3) {
+                                    values.push(item[2]);
+                                } else if ((item[0] === 'in' || item[0] === '!in') && item.length >= 3) {
+                                    values = values.concat(item.slice(2));
+                                }
                             }
                         });
                     } else if (filter[0] === '==' && filter.length === 3) {
                         values.push(filter[2]);
+                    } else if ((filter[0] === 'in' || filter[0] === '!in') && filter.length >= 3) {
+                        values = values.concat(filter.slice(2));
                     }
                 }
                 return values;
             }
-
-            // Process each style rule to create legend items
             if (Array.isArray(styles)) {
                 styles.forEach((rule) => {
                     if (rule.paint) {
@@ -690,22 +694,23 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         const values = extractValuesFromFilter(rule.filter);
 
                         if (values.length === 0) {
-                            return true;
+                            return; // Skip to the next iteration
                         }
 
-                        if (fillColor !== 'transparent') {
-                            content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
-                        } else if (lineColor !== 'transparent') {
-                            content += '<div style="display: inline-block; width: 20px; height: 20px; border-bottom: ' + (lineWidth * 2) + 'px solid ' + lineColor + '; margin-right: 5px;"></div>';
-                        }
-                        content += values[0] + '<br>';
+                        values.forEach((value) => {
+                            if (fillColor !== 'transparent') {
+                                content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
+                            } else if (lineColor !== 'transparent') {
+                                content += '<div style="display: inline-block; width: 20px; height: 20px; border-bottom: ' + (lineWidth * 2) + 'px solid ' + lineColor + '; margin-right: 5px;"></div>';
+                            }
+                            content += value + '<br>';
+                        });
                     }
                 });
             } else {
                 content += '<div>No styles available</div>';
             }
 
-            // If an existing legend for this ID exists, update it; otherwise, add a new one
             let existingLegend = this.getLegendElement(id);
             if (existingLegend.length > 0) {
                 existingLegend.html(content);
