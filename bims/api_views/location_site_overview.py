@@ -67,7 +67,6 @@ class LocationSiteOverviewData(object):
         ).order_by('display_order')
 
         for group in groups:
-            time.sleep(0.5)
             group_data = {}
             try:
                 group_data[self.GROUP_ICON] = get_thumbnail(
