@@ -147,10 +147,18 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
             for group_data in groups:
                 group_id = group_data.get('id')
                 new_group_order = group_data.get('group_display_order')
-                LocationContextFilterGroupOrder.objects.filter(
+                context_filter_group = LocationContextFilterGroupOrder.objects.filter(
                     filter_id=filter_id,
                     group_id=group_id
-                ).update(group_display_order=new_group_order)
+                )
+                if context_filter_group.exists():
+                    context_filter_group.update(group_display_order=new_group_order)
+                else:
+                    LocationContextFilterGroupOrder.objects.create(
+                        filter_id=filter_id,
+                        group_id=group_id,
+                        group_display_order=new_group_order
+                    )
 
         tenant_id = get_tenant(request).id
         generate_spatial_scale_filter.delay(tenant_id)
