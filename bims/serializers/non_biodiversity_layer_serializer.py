@@ -8,8 +8,16 @@ class NonBiodiversityLayerSerializer(serializers.ModelSerializer):
     """
     native_layer_url = serializers.SerializerMethodField()
     native_layer_style = serializers.SerializerMethodField()
+    native_layer_abstract = serializers.SerializerMethodField()
     pmtiles = serializers.SerializerMethodField()
     attribution = serializers.SerializerMethodField()
+
+    def get_native_layer_abstract(self, obj: NonBiodiversityLayer):
+        if not obj.native_layer:
+            return ''
+        if not obj.native_layer.abstract:
+            return ''
+        return obj.native_layer.abstract
 
     def get_pmtiles(self, obj: NonBiodiversityLayer):
         request = self.context.get('request', None)
