@@ -96,7 +96,7 @@ const ContextFilterView = (props) => {
             display_order: index + 1
         }));
 
-        updateOrder(updatedFilters, childContextGroups)
+        updateOrder(updatedFilters, [])
         setContextFilters(arrayMoveImmutable(contextFilters, oldIndex, newIndex))
     };
 
@@ -133,6 +133,18 @@ const ContextFilterView = (props) => {
              fetchContextGroups();
          }
          setSelectedFilter(contextFilter);
+    }
+
+    const handleRemoveGroup = (filter, group) => {
+        let groupId = group.group.id;
+        const updatedGroups = {
+            [filter.id]: filter.location_context_groups.map((group, index) => ({
+                id: group.group.id,
+                group_display_order: index + 1,
+                remove: group.group.id === groupId
+            }))
+        };
+        updateOrder({}, updatedGroups, true);
     }
 
     if (loading) {
@@ -182,10 +194,18 @@ const ContextFilterView = (props) => {
                                                     <div key={contextGroup.id}
                                                          className="context-group-item"
                                                     >
-                                                        <SortableKnob>
-                                                            <span><i className="bi bi-grip-vertical"></i></span>
-                                                        </SortableKnob>
-                                                        {contextGroup.group.name}
+                                                        <div>
+                                                            <SortableKnob>
+                                                                <span><i className="bi bi-grip-vertical"></i></span>
+                                                            </SortableKnob>
+                                                            {contextGroup.group.name}
+                                                            <Button color={'danger'} size={'sm'}
+                                                                    style={{float: 'right', right: 0, marginTop: -5}}
+                                                                    onClick={(e) => handleRemoveGroup(contextFilter, contextGroup)}
+                                                            >
+                                                                <i className="bi bi-trash"></i>
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </SortableItem>
                                             ))}
