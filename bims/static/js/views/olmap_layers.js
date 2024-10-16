@@ -304,6 +304,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             hashCurrentList);
                     }
                     $.each(data, function (index, value) {
+                        let source = '';
+                        let category = '';
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
                             var administrativeOrder = Shared.StorageUtil.getItemDict('Administrative', 'order');
                             if (!administrativeOrder) {
@@ -331,7 +333,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
                         let options = {};
                         let tileLayer = null;
-                        let wmsUrl = value.wms_url;
+                        source = value.wms_url;
                         if (!value.native_layer_url) {
                             options = {
                                 url: '/bims_proxy/' + encodeURI(value.wms_url),
@@ -343,15 +345,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                     STYLES: value.layer_style
                                 }
                             }
-                            wmsUrl = wmsUrl.replace(/(^\w+:|^)\/\//, '').split('/');
-                            if (wmsUrl.length > 0) {
-                                wmsUrl = wmsUrl[0];
+                            source = source.replace(/(^\w+:|^)\/\//, '').split('/');
+                            if (source.length > 0) {
+                                source = source[0];
                             }
                             tileLayer = new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options),
                             })
                         } else {
                             let vectorSource = null;
+                            category = 'nativeLayer';
+                            source = value.native_layer_abstract ? value.native_layer_abstract : '-';
                             if (value.pmtiles) {
                                 vectorSource = new olpmtiles.PMTilesVectorSource({
                                   url: value.pmtiles,
@@ -381,7 +385,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         self.initLayer(
                             tileLayer,
                             value.name,
-                            value['wms_layer_name'], defaultVisibility, '', wmsUrl, value['enable_styles_selection']
+                            value['wms_layer_name'],
+                            defaultVisibility,
+                            category,
+                            source,
+                            value['enable_styles_selection']
                         );
                     });
 
@@ -1248,8 +1256,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             let url_provider = layerProvider;
             let url_key = layerName;
+            let category = this.layers[layerKey].category;
             let source = this.layers[layerKey].source
-            var abstract_result = "";
+            let abstract_result = "";
+
+            if (category === 'nativeLayer') {
+                abstract_result = source;
+                if (!abstract_result || abstract_result === '-') {
+                    abstract_result = "Abstract information unavailable.";
+                }
+                layerSourceContainer.html(`
+                    <div class="layer-abstract cancel-sortable">
+                        ` + abstract_result + `
+                    </div>`);
+                return;
+            }
+
             $.ajax({
                 type: 'GET',
                 url: `/bims_proxy/http://${source}/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,

@@ -317,7 +317,7 @@ class DownloadChecklistAPIView(APIView):
                 download_request.approved = True
                 download_request.save()
 
-            download_checklist.delay(
+            download_checklist(
                 download_request_id,
                 auto_approved,
                 download_request.requester.id)
