@@ -20,3 +20,26 @@
 .autocomplete-item:hover {
     background-color: #f0f0f0;
 }
+
+.context-filter-header {
+    cursor: pointer;
+    font-weight: bold;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.context-group-box {
+    margin-left: 20px;
+    border-left: 2px solid #ddd;
+    margin-bottom: 10px;
+    background-color: white;
+}
+
+.context-group-item {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    padding: 10px;
+}

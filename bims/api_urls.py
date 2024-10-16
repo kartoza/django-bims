@@ -64,7 +64,7 @@ from bims.api_views.non_validated_record import GetNonValidatedRecords
 from bims.api_views.hide_popup_info_user import HidePopupInfoUser
 from bims.api_views.send_notification_to_validator import \
     SendNotificationValidation
-from bims.views.context_layers import ContextLayerGroup, CloudNativeLayerAutoCompleteAPI
+from bims.views.context_layers import ContextLayerGroup, CloudNativeLayerAutoCompleteAPI, ContextFilter
 from bims.views.locate import filter_farm_ids_view, get_farm_view
 from bims.api_views.user_boundary import (
     UserBoundaryList,
@@ -389,6 +389,9 @@ urlpatterns = [
     path('context-layer-group/',
          ContextLayerGroup.as_view(),
          name='context-layers-group'),
+    path('context-filter/',
+         ContextFilter.as_view(),
+         name='context-filter'),
     path('context-layer-group/<int:pk>/',
          ContextLayerGroup.as_view(),),
     path('cloud-native-layer-autocomplete/',
