@@ -3,6 +3,8 @@ import axios from "axios";
 import SortableList, {SortableItem, SortableKnob} from "react-easy-sort";
 import { arrayMoveImmutable } from "array-move";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import {Button, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
+import AddContextGroup from "./AddContextGroup";
 
 
 const ContextFilterView = (props) => {
@@ -12,24 +14,44 @@ const ContextFilterView = (props) => {
     const [filterText, setFilterText] = useState('');
     const [expandedGroups, setExpandedGroups] = useState({});
     const [childContextGroups, setChildContextGroups] = useState({});
+    const [isAddNewGroupModalOpen, setIsAddNewGroupModalOpen] = useState(false);
+    const [selectedFilter, setSelectedFilter] = useState(null);
+    const [contextGroups, setContextGroups] = useState([]);
 
-    const contextLayerGroupAPI = '/api/context-filter/';
+    const contextLayerFilterAPI = '/api/context-filter/';
+    const contextLayerGroupAPI = '/api/context-layer-group/';
 
-    const updateOrder = async (updatedFilters, updatedGroups) => {
+    const updateOrder = async (updatedFilters, updatedGroups, refresh=false) => {
         try {
             const data = {
                 filters: updatedFilters,
                 groups: updatedGroups
             };
-            await axios.put(contextLayerGroupAPI, data, {
+            await axios.put(contextLayerFilterAPI, data, {
                 headers: {
                     'X-CSRFToken': props.csrfToken,
                     'Content-Type': 'application/json'
                 }
             });
             console.log("Order updated successfully.");
+            if (refresh) {
+                setContextFilters([]);
+                fetchContextFilters();
+            }
         } catch (error) {
             console.error("Failed to update order:", error);
+        }
+    };
+
+    const fetchContextGroups = async () => {
+        setContextGroups([])
+        try {
+            const response = await axios.get(contextLayerGroupAPI);
+            setContextGroups(response.data);
+        } catch (error) {
+            console.error("Error fetching context groups:", error);
+            setError("Failed to load context groups");
+        } finally {
         }
     };
 
@@ -37,7 +59,7 @@ const ContextFilterView = (props) => {
         setContextFilters([]);
         try {
             setLoading(true);
-            const response = await axios.get(contextLayerGroupAPI);
+            const response = await axios.get(contextLayerFilterAPI);
             setContextFilters(response.data);
 
             // Default to expanded for all groups
@@ -74,7 +96,7 @@ const ContextFilterView = (props) => {
             display_order: index + 1
         }));
 
-        updateOrder(updatedFilters, childContextGroups)
+        updateOrder(updatedFilters, [])
         setContextFilters(arrayMoveImmutable(contextFilters, oldIndex, newIndex))
     };
 
@@ -99,6 +121,31 @@ const ContextFilterView = (props) => {
     const filteredContextFilters = contextFilters.filter(group =>
         group.title.toLowerCase().includes(filterText.toLowerCase())
     );
+
+    const toggleAddNewGropModal = () => {
+        setIsAddNewGroupModalOpen(!isAddNewGroupModalOpen)
+    }
+
+    const handleAddNewGroup = (e, contextFilter) => {
+         e.stopPropagation();
+         toggleAddNewGropModal();
+         if (contextGroups.length === 0) {
+             fetchContextGroups();
+         }
+         setSelectedFilter(contextFilter);
+    }
+
+    const handleRemoveGroup = (filter, group) => {
+        let groupId = group.group.id;
+        const updatedGroups = {
+            [filter.id]: filter.location_context_groups.map((group, index) => ({
+                id: group.group.id,
+                group_display_order: index + 1,
+                remove: group.group.id === groupId
+            }))
+        };
+        updateOrder({}, updatedGroups, true);
+    }
 
     if (loading) {
         return <div>Loading...</div>;
@@ -132,6 +179,12 @@ const ContextFilterView = (props) => {
                                         <span><i className="bi bi-grip-vertical"></i></span>
                                     </SortableKnob>
                                     {contextFilter.title}
+                                    <Button color={'success'} size={'sm'}
+                                            outline
+                                            onClick={(e) => handleAddNewGroup(e, contextFilter)}
+                                            style={{ float: 'right', right: 0, marginTop: -5 }}>
+                                        <i className="bi bi-plus"></i>
+                                    </Button>
                                 </div>
                                 {expandedGroups[contextFilter.id] && (
                                     <SortableList onSortEnd={( oldIndex, newIndex ) => onSortChild(contextFilter.id, oldIndex, newIndex)} draggedItemClassName={'dragged'}>
@@ -141,10 +194,18 @@ const ContextFilterView = (props) => {
                                                     <div key={contextGroup.id}
                                                          className="context-group-item"
                                                     >
-                                                        <SortableKnob>
-                                                            <span><i className="bi bi-grip-vertical"></i></span>
-                                                        </SortableKnob>
-                                                        {contextGroup.group.name}
+                                                        <div>
+                                                            <SortableKnob>
+                                                                <span><i className="bi bi-grip-vertical"></i></span>
+                                                            </SortableKnob>
+                                                            {contextGroup.group.name}
+                                                            <Button color={'danger'} size={'sm'}
+                                                                    style={{float: 'right', right: 0, marginTop: -5}}
+                                                                    onClick={(e) => handleRemoveGroup(contextFilter, contextGroup)}
+                                                            >
+                                                                <i className="bi bi-trash"></i>
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </SortableItem>
                                             ))}
@@ -156,6 +217,9 @@ const ContextFilterView = (props) => {
                     ))}
                 </SortableList>
             </div>
+
+            <AddContextGroup isOpen={isAddNewGroupModalOpen} selectedFilter={selectedFilter} toggle={toggleAddNewGropModal} updateOrder={updateOrder}/>
+
         </div>
     );
 }
