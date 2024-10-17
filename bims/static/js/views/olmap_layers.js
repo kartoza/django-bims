@@ -264,63 +264,19 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 _isAdministrativeSelected
             );
         },
-        convertStylesToRules: function (inputStyles) {
-            const rules = [];
-
-            inputStyles.forEach((inputStyle) => {
-                let filter = [];
-                const filterType = inputStyle.filter ? inputStyle.filter[0] : null;
-
-                if (filterType) {
-                    if (['all', 'any', 'none'].includes(filterType)) {
-                        filter = [filterType === 'none' ? '!' : filterType];
-                        inputStyle.filter.slice(1).forEach((condition) => {
-                            if (condition[0] === '==') {
-                                const key = condition[1] === '$type' ? ['geometry-type'] : ['get', condition[1]];
-                                filter.push(['==', key, condition[2]]);
-                            }
-                        });
-                        if (filter.length === 2) {
-                            filter.push(filter[1]);
-                        }
-                    } else if (filterType === '==') {
-                        const key = inputStyle.filter[1] === '$type' ? ['geometry-type'] : ['get', inputStyle.filter[1]];
-                        filter = ['==', key, inputStyle.filter[2]];
-                    }
-                }
-
-                let style = {};
-                const paint = inputStyle.paint || {};
-
-                if (paint['fill-color']) {
-                    style['fill-color'] = paint['fill-color'];
-
-                    if (paint['fill-opacity']) {
-                        style['fill-color'] = style['fill-color'].replace(
-                            /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
-                            `rgba($1,$2,$3,${paint['fill-opacity']})`
-                        );
-                    }
-                }
-
-                if (paint['fill-outline-color']) {
-                    style['stroke-color'] = paint['fill-outline-color'];
-                }
-
-                rules.push({
-                    filter: filter,
-                    style: style,
-                });
-            });
-
-            rules.push({
-                else: true,
-                style: {
-                    'fill-color': 'rgba(0, 0, 0, 0)', // Transparent by default
-                },
-            });
-
-            return rules;
+        convertStyles: function (styles, name) {
+            styles['sources'] = {}
+            styles['sources'][name] = {
+                "type": "vector",
+                "data": "",
+            }
+            styles['name'] = name;
+            for (let i = 0; i < styles['layers'].length; i++) {
+                styles['layers'][i]['id'] = `${name}-${i}`;
+                styles['layers'][i]['source'] = name
+                styles['layers'][i]['minzoom'] = 0
+            }
+            return styles
         },
         addLayersToMap: function (map) {
             var self = this;
@@ -348,6 +304,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             hashCurrentList);
                     }
                     $.each(data, function (index, value) {
+                        let source = '';
+                        let category = '';
                         if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
                             var administrativeOrder = Shared.StorageUtil.getItemDict('Administrative', 'order');
                             if (!administrativeOrder) {
@@ -375,7 +333,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
                         let options = {};
                         let tileLayer = null;
-                        let wmsUrl = value.wms_url;
+                        source = value.wms_url;
                         if (!value.native_layer_url) {
                             options = {
                                 url: '/bims_proxy/' + encodeURI(value.wms_url),
@@ -387,35 +345,51 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                     STYLES: value.layer_style
                                 }
                             }
-                            wmsUrl = wmsUrl.replace(/(^\w+:|^)\/\//, '').split('/');
-                            if (wmsUrl.length > 0) {
-                                wmsUrl = wmsUrl[0];
+                            source = source.replace(/(^\w+:|^)\/\//, '').split('/');
+                            if (source.length > 0) {
+                                source = source[0];
                             }
                             tileLayer = new ol.layer.Tile({
                                 source: new ol.source.TileWMS(options),
                             })
                         } else {
-                            tileLayer = new ol.layer.VectorTile({
-                                title: value.name,
-                                source: new ol.source.VectorTile({
-                                    attributions: [''],
+                            let vectorSource = null;
+                            category = 'nativeLayer';
+                            source = value.native_layer_abstract ? value.native_layer_abstract : '-';
+                            if (value.pmtiles) {
+                                vectorSource = new olpmtiles.PMTilesVectorSource({
+                                  url: value.pmtiles,
+                                  attributions: [value.attribution]
+                                });
+                            } else {
+                                vectorSource = new ol.source.VectorTile({
+                                    attributions: [value.attribution],
                                     url: value.native_layer_url,
                                     format: new ol.format.MVT(),
-                                }),
-                                maxZoom: 16,
-                                minZoom: 4,
-                                tileGrid: ol.tilegrid.createXYZ({
-                                    maxZoom: 16
-                                }),
-                                style: self.convertStylesToRules(value.native_layer_style.layers),
+                                    STYLES: value.native_layer_style
+                                })
+                            }
+                            tileLayer = new ol.layer.VectorTile({
+                                title: value.name,
+                                source: vectorSource,
+                                STYLES: value.native_layer_style,
+                                tileGrid: ol.tilegrid.createXYZ(),
+                                declutter: true,
                             })
+                            olms.applyStyle(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name).catch((error) => {
+                                console.error('Failed to apply style:', error);
+                            });
                         }
 
 
                         self.initLayer(
                             tileLayer,
                             value.name,
-                            value['wms_layer_name'], defaultVisibility, '', wmsUrl, value['enable_styles_selection']
+                            value['wms_layer_name'],
+                            defaultVisibility,
+                            category,
+                            source,
+                            value['enable_styles_selection']
                         );
                     });
 
@@ -609,6 +583,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 layerName,
                                 layer.layer,
                                 false,
+                                layer.layer.values_.STYLES.layers
                             );
                             $legendElement = this.getLegendElement(layerName);
                             this.legends[layerName] = $legendElement;
@@ -682,11 +657,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $('#map-legend').prepend(html);
             }
         },
-        renderVectorTileLegend: function (id, name, vectorTileLayer, visibleDefault) {
+        renderVectorTileLegend: function (id, name, vectorTileLayer, visibleDefault, styles) {
             if (typeof name === 'undefined') {
                 name = id;
             }
-            const styles = vectorTileLayer.getStyle();
+
             let legendHTML = '<div data-name="' + id + '" class="legend-row"';
             if (!visibleDefault) {
                 legendHTML += ' style="display: none;"';
@@ -697,39 +672,53 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             function extractValuesFromFilter(filter) {
                 let values = [];
                 if (Array.isArray(filter)) {
-                    filter.forEach((item) => {
-                        if (Array.isArray(item) && item[0] === '==' && item.length === 3) {
-                            values.push(item[2]);
-                        }
-                    });
+                    // Check if the filter uses "any" or "all"
+                    if (filter[0] === 'any' || filter[0] === 'all') {
+                        filter.slice(1).forEach((item) => {
+                            if (Array.isArray(item)) {
+                                if (item[0] === '==' && item.length === 3) {
+                                    values.push(item[2]);
+                                } else if ((item[0] === 'in' || item[0] === '!in') && item.length >= 3) {
+                                    values = values.concat(item.slice(2));
+                                }
+                            }
+                        });
+                    } else if (filter[0] === '==' && filter.length === 3) {
+                        values.push(filter[2]);
+                    } else if ((filter[0] === 'in' || filter[0] === '!in') && filter.length >= 3) {
+                        values = values.concat(filter.slice(2));
+                    }
                 }
                 return values;
             }
-
-            // Process each style rule to create legend items
             if (Array.isArray(styles)) {
                 styles.forEach((rule) => {
-                    if (rule.style) {
-                        const fillColor = rule.style['fill-color'] || 'transparent';
-                        const strokeColor = rule.style['stroke-color'] || 'transparent';
+                    if (rule.paint) {
+                        const fillColor = rule.paint['fill-color'] || 'transparent';
+                        const strokeColor = rule.paint['fill-outline-color'] || 'transparent';
+                        const lineColor = rule.paint['line-color'] || 'transparent';
+                        const lineWidth = rule.paint['line-width'] || 1;
 
                         const values = extractValuesFromFilter(rule.filter);
 
                         if (values.length === 0) {
-                            return true;
+                            return; // Skip to the next iteration
                         }
 
-                        if (fillColor !== 'transparent') {
-                            content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
-                        }
-                        content += values[0] + '<br>';
+                        values.forEach((value) => {
+                            if (fillColor !== 'transparent') {
+                                content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
+                            } else if (lineColor !== 'transparent') {
+                                content += '<div style="display: inline-block; width: 20px; height: 20px; border-bottom: ' + (lineWidth * 2) + 'px solid ' + lineColor + '; margin-right: 5px;"></div>';
+                            }
+                            content += value + '<br>';
+                        });
                     }
                 });
             } else {
                 content += '<div>No styles available</div>';
             }
 
-            // If an existing legend for this ID exists, update it; otherwise, add a new one
             let existingLegend = this.getLegendElement(id);
             if (existingLegend.length > 0) {
                 existingLegend.html(content);
@@ -1267,8 +1256,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             let url_provider = layerProvider;
             let url_key = layerName;
+            let category = this.layers[layerKey].category;
             let source = this.layers[layerKey].source
-            var abstract_result = "";
+            let abstract_result = "";
+
+            if (category === 'nativeLayer') {
+                abstract_result = source;
+                if (!abstract_result || abstract_result === '-') {
+                    abstract_result = "Abstract information unavailable.";
+                }
+                layerSourceContainer.html(`
+                    <div class="layer-abstract cancel-sortable">
+                        ` + abstract_result + `
+                    </div>`);
+                return;
+            }
+
             $.ajax({
                 type: 'GET',
                 url: `/bims_proxy/http://${source}/geoserver/${url_provider}/${url_key}/wms?request=getCapabilities`,

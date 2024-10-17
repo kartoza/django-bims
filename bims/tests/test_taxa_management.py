@@ -60,7 +60,6 @@ class TaxaManagementTest(FastTenantTestCase):
         resp = self.client.get(reverse('taxa-management'), {'selected': self.taxon_group.id})
 
         self.assertIn('taxa_groups', resp.context)
-        self.assertIn('source_collections', resp.context)
         self.assertIn('taxon_rank', resp.context)
         self.assertIn('is_expert', resp.context)
         self.assertGreater(

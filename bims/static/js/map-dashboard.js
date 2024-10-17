@@ -19,7 +19,7 @@ function createDashboardMap(map, coordinates) {
         )
     }
     map = new ol.Map({
-        controls: ol.control.defaults.defaults().extend([
+        controls: ol.control.defaults().extend([
             scaleLineControl
         ]),
         layers: baseLayer,

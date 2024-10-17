@@ -52,6 +52,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     on_gbif = serializers.SerializerMethodField()
     gbif_link = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
+    invasion = serializers.SerializerMethodField()
 
     def get_cites_listing(self, obj: Taxonomy):
         return obj.cites_listing
@@ -151,6 +152,11 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             )
         return '-'
 
+    def get_invasion(self, obj: Taxonomy):
+        if obj.invasion:
+            return obj.invasion.category
+        return ''
+
     class Meta:
         model = Taxonomy
         fields = (
@@ -168,6 +174,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'common_name',
             'origin',
             'endemism',
+            'invasion',
             'conservation_status_global',
             'conservation_status_national',
             'on_gbif',

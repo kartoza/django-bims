@@ -1,6 +1,8 @@
 import factory
 from django.db.models import signals
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from django_tenants.test.client import TenantClient
 
 from bims.tests.model_factories import (
     LocationSiteF,
@@ -12,10 +14,10 @@ from sass.tests.model_factories import (
 from sass.models import SiteVisit
 
 
-class TestSiteVisitFormView(TestCase):
+class TestSiteVisitFormView(FastTenantTestCase):
 
     def setUp(self):
-        pass
+        self.client = TenantClient(self.tenant)
 
     def test_site_visit_form_view(self):
         site = LocationSiteF.create()

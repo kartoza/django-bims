@@ -3,12 +3,14 @@ import json
 import time
 from collections import OrderedDict
 
+from braces.views import SuperuserRequiredMixin
 from django.contrib.sites.models import Site
+from django.db import connection
 
 from bims.models.search_process import SITES_SUMMARY, SEARCH_PROCESSING
 
 from bims.models.water_temperature import WaterTemperature
-from django.db.models import F, Value, Case, When, Count, Q
+from django.db.models import F, Value, Case, When, Count, Q, CharField
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from sorl.thumbnail import get_thumbnail
@@ -64,12 +66,7 @@ class LocationSiteOverviewData(object):
             category=TaxonomicGroupCategory.SPECIES_MODULE.name
         ).order_by('display_order')
 
-        collection_results = collection_results.select_related(
-            'taxonomy', 'taxonomy__endemism', 'taxonomy__iucn_status'
-        )
         for group in groups:
-            location_site_ids = set()
-            taxonomy_ids = set()
             group_data = {}
             try:
                 group_data[self.GROUP_ICON] = get_thumbnail(
@@ -82,91 +79,98 @@ class LocationSiteOverviewData(object):
             biodiversity_data[group.name] = group_data
 
             group_records = collection_results.filter(module_group=group)
+            group_records = group_records.annotate(
+                endemism_name=Case(
+                    When(taxonomy__endemism__isnull=False, then=F('taxonomy__endemism__name')),
+                    default=Value('Unknown'),
+                    output_field=CharField()
+                ),
+                origin_name=Case(
+                    When(taxonomy__origin='', then=Value('Unknown')),
+                    default=F('taxonomy__origin'),
+                    output_field=CharField()
+                ),
+                iucn_category=Case(
+                    When(
+                        taxonomy__iucn_status__isnull=False,
+                        then=F('taxonomy__iucn_status__category')
+                    ),
+                    default=Value('Not evaluated'),
+                    output_field=CharField()
+                )
+            )
             group_records_count = group_records.count()
 
-            if group_records.count() > 0 and not self.is_sass_exist:
+            if group_records_count > 0 and not self.is_sass_exist:
                 try:
                     if isinstance(
                             collection_results.first(),
                             SiteVisitTaxon):
                         self.is_sass_exist = group_records.filter(
                             site_visit__isnull=False
-                        ).count() > 0
+                        ).exists()
                     else:
                         self.is_sass_exist = group_records.filter(
                             sitevisittaxon__isnull=False
-                        ).count() > 0
+                        ).exists()
                 except:  # noqa
                     self.is_sass_exist = False
 
             group_data[self.GROUP_OCCURRENCES] = group_records_count
-            location_site_ids.update(group_records.values_list('site', flat=True))
-            taxonomy_ids.update(group_records.values_list('taxonomy', flat=True))
 
-            group_data[self.GROUP_SITES] = LocationSite.objects.filter(
-                id__in=location_site_ids
-            ).count()
+            aggregate_result = group_records.aggregate(
+                unique_site_count=Count('site_id', distinct=True),
+                unique_taxonomy_count=Count('taxonomy_id', distinct=True)
+            )
 
-            group_data[self.GROUP_NUM_OF_TAXA] = Taxonomy.objects.filter(
-                id__in=taxonomy_ids
-            ).count()
+            group_data[self.GROUP_SITES] = aggregate_result['unique_site_count']
+            group_data[self.GROUP_NUM_OF_TAXA] = aggregate_result['unique_taxonomy_count']
 
-            endemism_counts = group_records.annotate(
-                name=Case(
-                    When(
-                        taxonomy__endemism__isnull=False,
-                        then=F('taxonomy__endemism__name')),
-                    default=Value('Unknown')
-                )
-            ).values('name').annotate(count=Count('name')).order_by('name')
-
+            # Endemism counts
+            endemism_counts = group_records.values('endemism_name').annotate(
+                count=Count('endemism_name')
+            ).order_by('endemism_name')
             group_data[self.GROUP_ENDEMISM] = list(endemism_counts)
 
-            group_origins = group_records.annotate(
-                name=Case(
-                    When(taxonomy__origin='', then=Value('Unknown')),
-                    default=F('taxonomy__origin')
-                )
-            ).values('name').annotate(count=Count('name')).order_by('name')
-
+            # Origin counts
+            group_origins = group_records.values('origin_name').annotate(
+                count=Count('origin_name')
+            ).order_by('origin_name')
             if group_origins:
                 category = dict(Taxonomy.CATEGORY_CHOICES)
                 for group_origin in group_origins:
-                    if group_origin['name'] in category:
-                        group_origin['name'] = category[group_origin['name']]
+                    if group_origin['origin_name'] in category:
+                        group_origin['name'] = category[group_origin['origin_name']]
             group_data[self.GROUP_ORIGIN] = list(group_origins)
 
+            # Conservation status counts
             all_cons_status = group_records.filter(
                 taxonomy__iucn_status__national=False
-            ).annotate(
-                name=Case(
-                    When(
-                        taxonomy__iucn_status__isnull=False,
-                        then=F('taxonomy__iucn_status__category')),
-                    default=Value('Not evaluated')
-                )
-            ).values('name').annotate(count=Count('name')).order_by('name')
-
+            ).values('iucn_category').annotate(
+                count=Count('iucn_category')
+            ).order_by('iucn_category')
             if all_cons_status:
                 category = dict(IUCNStatus.CATEGORY_CHOICES)
                 for cons_status in all_cons_status:
-                    if cons_status['name'] in category:
-                        cons_status['name'] = category[cons_status['name']]
+                    if cons_status['iucn_category'] in category:
+                        cons_status['name'] = category[cons_status['iucn_category']]
             group_data[self.GROUP_CONS_STATUS] = list(all_cons_status)
 
         return biodiversity_data
 
-class MultiLocationSitesOverview(APIView, LocationSiteOverviewData):
+class MultiLocationSitesOverview(SuperuserRequiredMixin, APIView, LocationSiteOverviewData):
 
     def get(self, request):
         """
         Get overview data for multiple sites
         """
+        start_time = time.time()
         self.search_filters = request.GET
 
         response_data = dict()
         response_data[self.BIODIVERSITY_DATA] = self.biodiversity_data()
         response_data[self.SASS_EXIST] = self.is_sass_exist
+        response_data['duration'] = time.time() - start_time
         return Response(response_data)
 
 

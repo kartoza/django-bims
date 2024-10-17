@@ -1,7 +1,5 @@
 # coding=utf-8
-import json
 import logging
-import os
 
 from celery import shared_task
 from collections import OrderedDict
@@ -146,7 +144,7 @@ def generate_filters_in_all_schemas():
                 UPDATE_FILTERS_CACHE, False)
             if should_update_filters:
                 generate_filters.delay(tenant.id)
-                set_cache(UPDATE_FILTERS_CACHE, False)
+                cache.set(UPDATE_FILTERS_CACHE, False, timeout=None)
 
 
 @shared_task(

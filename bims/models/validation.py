@@ -67,7 +67,7 @@ class AbstractValidation(DataConfidenceScore):
         help_text=(
             'The date when the embargo on the data expires. '
             'After this date, the data will become public.'
-        )
+        ),
     )
 
     source_site = models.ForeignKey(

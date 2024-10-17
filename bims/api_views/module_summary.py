@@ -1,6 +1,7 @@
 from django.contrib.sites.models import Site
 import threading
 
+from django.db import connection
 from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -222,7 +223,12 @@ class ModuleSummary(APIView):
         return {key: value for d in counts for key, value in d.items()}
 
     def _cache_key(self):
-        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}'
+        tenant = connection.tenant
+        try:
+            tenant_name = tenant.name
+        except AttributeError:
+            tenant_name = ''
+        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}_{tenant_name}'
 
     def summary_data(self):
         module_summary = dict()

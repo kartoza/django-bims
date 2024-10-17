@@ -5,7 +5,7 @@ from datetime import date
 import json
 
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
@@ -25,7 +25,7 @@ from django.db import models
 from django.db.models import Q
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
-from django.urls import reverse
+from django.urls import reverse, path
 from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
@@ -239,6 +239,9 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         site_setting_group_keys = (
             preferences.GeocontextSetting.geocontext_keys.split(',')
         )
+        site_setting_group_keys = [
+            group.split(':')[0] if ':' in group else group for group in site_setting_group_keys
+        ]
         groups = LocationContext.objects.filter(
             site=obj,
             group__geocontext_group_key__in=site_setting_group_keys
@@ -2048,6 +2051,20 @@ class ExtendedFlatPageAdmin(FlatPageAdmin):
 class DatasetAdmin(admin.ModelAdmin):
     list_display = ('uuid', 'name', 'abbreviation')
     search_fields = ('uuid', 'name')
+    change_list_template = "admin/dataset_changelist.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('fetch-datasets/', self.fetch_datasets, name='fetch_datasets'),
+        ]
+        return custom_urls + urls
+
+    def fetch_datasets(self, request):
+        from bims.tasks.dataset import retrieve_datasets_from_gbif
+        retrieve_datasets_from_gbif.delay()
+        self.message_user(request, 'Fetching datasets in background')
+        return HttpResponseRedirect(reverse('admin:bims_dataset_changelist'))
 
 
 class TagGroupAdmin(admin.ModelAdmin):

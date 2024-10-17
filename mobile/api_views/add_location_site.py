@@ -1,4 +1,5 @@
 import copy
+import json
 from datetime import datetime
 
 import pytz
@@ -34,6 +35,11 @@ class AddLocationSiteView(APIView):
 
         if ecosystem_type == ECOSYSTEM_WETLAND:
             wetland_data = post_data.get('wetland_data', None)
+            if isinstance(wetland_data, str):
+                try:
+                    wetland_data = json.loads(wetland_data)
+                except json.decoder.JSONDecodeError:
+                    wetland_data = {}
             if wetland_data:
                 if 'hgm_type' in wetland_data:
                     post_data['hydrogeomorphic_type'] = wetland_data['hgm_type']

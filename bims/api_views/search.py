@@ -34,6 +34,7 @@ from bims.models import (
     Endemism,
     LIST_SOURCE_REFERENCES,
     LocationSite,
+    LocationContextGroup,
     Survey,
     TaxonGroup
 )
@@ -366,34 +367,34 @@ class CollectionSearch(object):
     @property
     def spatial_filter(self):
         spatial_filters = self.parse_request_json('spatialFilter')
-        spatial_filter_groups = []
+        spatial_filter_group_keys = []
         or_condition = Q()
         if not spatial_filters:
             return []
         for spatial_filter in spatial_filters:
             spatial_filter_splitted = spatial_filter.split(',')
             if 'group' in spatial_filter_splitted:
-                spatial_filter_groups.append(
+                spatial_filter_group_keys.append(
                     ','.join(spatial_filter.split(',')[1:])
                 )
             else:
                 if spatial_filter_splitted[0] != 'value':
                     continue
+                spatial_filter_group_id = LocationContextGroup.objects.filter(
+                    key=spatial_filter_splitted[1]
+                ).first().id
                 or_condition |= Q(**{
-                    'locationcontext__group__key':
-                        spatial_filter_splitted[1],
+                    'locationcontext__group':
+                        spatial_filter_group_id,
                     'locationcontext__value': ','.join(
                         spatial_filter_splitted[2:])})
-        if spatial_filter_groups:
+        if spatial_filter_group_keys:
+            spatial_filter_groups = LocationContextGroup.objects.filter(
+                key__in=list(set(spatial_filter_group_keys))
+            ).values_list('id', flat=True)
             or_condition |= Q(**{
-                'locationcontext__group__key__in':
+                'locationcontext__group__in':
                     spatial_filter_groups})
-            or_condition &= ~Q(**{
-                'locationcontext__value': 'None'
-            })
-            or_condition &= ~Q(**{
-                'locationcontext__value': ''
-            })
         return or_condition
 
     @property
@@ -421,23 +422,17 @@ class CollectionSearch(object):
         else:
             return False
 
-    def filter_taxa_records(self, query_dict, select_related=None):
+    def filter_taxa_records(self, query_dict):
         """
         Filter taxa records
         :param query_dict: dict of query
         """
         if self.filtered_taxa_records is None:
             taxa = Taxonomy.objects
-            if select_related:
-                taxa = taxa.select_related(select_related)
             self.filtered_taxa_records = taxa.filter(
                 **query_dict
             )
         else:
-            if select_related:
-                self.filtered_taxa_records = self.filtered_taxa_records.select_related(
-                    select_related
-                )
             self.filtered_taxa_records = self.filtered_taxa_records.filter(
                 **query_dict
             )
@@ -478,7 +473,7 @@ class CollectionSearch(object):
                 'biologicalcollectionrecord__isnull': False
             })
         elif self.search_query:
-            bio = collection_records_by_site.select_related('taxonomy').filter(
+            bio = collection_records_by_site.filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
                 Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
                   self.search_query) |
@@ -507,7 +502,7 @@ class CollectionSearch(object):
                 )
             if not bio.exists():
                 # Search by vernacular names
-                bio = collection_records_by_site.select_related('taxonomy').filter(
+                bio = collection_records_by_site.filter(
                     taxonomy__vernacular_names__name__icontains=
                     self.search_query
                 )
@@ -530,11 +525,12 @@ class CollectionSearch(object):
 
         if self.site_ids:
             filters['site__in'] = self.site_ids
+
         invasions = self.invasions()
         if invasions:
             self.filter_taxa_records({
                 'invasion__id__in': invasions
-            }, 'invasion')
+            })
         if self.categories:
             self.filter_taxa_records(
                 {
@@ -596,8 +592,7 @@ class CollectionSearch(object):
             self.filter_taxa_records(
                 {
                     'endemism__in': endemism_list
-                },
-                'endemism'
+                }
             )
         if self.taxon_id:
             self.filter_taxa_records({
@@ -633,7 +628,7 @@ class CollectionSearch(object):
             filters['taxonomy__isnull'] = False
             bio_filtered = True
 
-        bio = bio.select_related('taxonomy').filter(**filters)
+        bio = bio.filter(**filters)
 
         requester_id = self.parameters.get('requester', None)
 
@@ -648,8 +643,6 @@ class CollectionSearch(object):
                 is_private_data_access_allowed = True
         except get_user_model().DoesNotExist:
             pass
-
-        bio = bio.select_related('owner')
 
         bio = bio.filter(
             Q(owner_id=requester_id) |
@@ -749,15 +742,11 @@ class CollectionSearch(object):
         spatial_filters = self.spatial_filter
         if spatial_filters:
             if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.select_related(
-                    'locationcontextgroup'
-                ).filter(
+                filtered_location_sites = LocationSite.objects.filter(
                     spatial_filters
                 )
             else:
-                filtered_location_sites = filtered_location_sites.select_related(
-                    'locationcontextgroup'
-                ).filter(
+                filtered_location_sites = filtered_location_sites.filter(
                     spatial_filters
                 )
 
@@ -772,22 +761,9 @@ class CollectionSearch(object):
                 bio_filtered = True
 
         if self.modules:
-            # For Intersection methods :
-            if len(self.modules) > 1:
-                module_filter = []
-                for taxon_group in self.modules:
-                    module_filter.append(
-                        bio.filter(
-                            module_group__id=taxon_group
-                        ).values_list('site_id'))
-                intersections = module_filter[0].intersection(
-                    *module_filter[1:]
-                )
-                bio = bio.filter(site_id__in=intersections)
-            else:
-                bio = bio.filter(
-                    module_group__id__in=self.modules
-                )
+            bio = bio.filter(
+                module_group__id__in=self.modules
+            )
             bio_filtered = True
 
         if self.get_request_data('polygon'):
@@ -820,7 +796,7 @@ class CollectionSearch(object):
         ):
             bio = bio.filter(
                 site__in=filtered_location_sites
-            ).select_related()
+            )
             bio_filtered = True
 
         water_temperature = []
@@ -843,7 +819,7 @@ class CollectionSearch(object):
             if bio_filtered:
                 bio = bio.filter(
                     site__in=filtered_location_sites
-                ).select_related()
+                )
 
         if bio.exists() or water_temperature:
             location_sites_filter = LocationSite.objects.filter(

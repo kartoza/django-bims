@@ -4,6 +4,7 @@ from collections import deque
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.db.models import Q
 from django.http import HttpResponseRedirect
@@ -72,8 +73,6 @@ class HarvestGbifSpeciesView(
 
     def post(self, request, *args, **kwargs):
         taxon_group_id = request.POST.get('taxon_group', None)
-        taxon_group_logo = request.FILES.get('taxon_group_logo')
-        taxon_group_name = request.POST.get('taxon_group_name', '')
         boundary_id = request.POST.get('boundary', None)
         cancel = ast.literal_eval(request.POST.get(
             'cancel', 'False'
@@ -89,20 +88,24 @@ class HarvestGbifSpeciesView(
                 return HttpResponseRedirect(request.path_info)
             except (HarvestSession.DoesNotExist, ValueError):
                 pass
-        if taxon_group_logo and taxon_group_logo:
-            taxon_groups = TaxonGroup.objects.filter(
-                category='SPECIES_MODULE'
-            ).order_by('-display_order')
-            display_order = 1
-            if taxon_groups:
-                display_order = taxon_groups[0].display_order + 1
-            TaxonGroup.objects.create(
-                name=taxon_group_name,
-                logo=taxon_group_logo,
-                category='SPECIES_MODULE',
-                display_order=display_order
-            )
+
+        taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+        if not taxon_group.gbif_parent_species:
+            messages.error(
+                self.request,
+                'GBIF Species is missing. Please add it on the taxon management page.')
             return HttpResponseRedirect(request.path_info)
+
+        gbif_taxonomy = taxon_group.gbif_parent_species
+        if not gbif_taxonomy.gbif_key:
+            if gbif_taxonomy.gbif_data and 'key' in gbif_taxonomy.gbif_data:
+                gbif_taxonomy.gbif_key = gbif_taxonomy.gbif_data['key']
+                gbif_taxonomy.save()
+            else:
+                messages.error(
+                    self.request,
+                    f'GBIF key is missing for {taxon_group.gbif_parent_species}.')
+                return HttpResponseRedirect(request.path_info)
 
         harvest_session = HarvestSession.objects.create(
             harvester=request.user,
@@ -127,7 +130,8 @@ class HarvestGbifSpeciesView(
             os.mkdir(log_file_folder)
 
         with open(log_file_path, 'a+') as fi:
-            harvest_session.log_file = File(fi, name=os.path.basename(fi.name))
+            harvest_session.log_file = File(
+                fi, name=os.path.basename(fi.name))
             harvest_session.save()
 
         harvest_gbif_species.delay(harvest_session.id)

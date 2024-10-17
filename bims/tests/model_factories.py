@@ -51,7 +51,8 @@ from bims.models import (
     HarvestSession,
     TaxonomyUpdateProposal,
     TaxonGroupTaxonomy,
-    RecordType
+    RecordType,
+    Dataset
 )
 from sass.models import River
 
@@ -580,3 +581,13 @@ class SiteF(factory.django.DjangoModelFactory):
     name = factory.Sequence(lambda n: u'name %s' % n)
     domain = factory.Sequence(lambda n: u'domain %s' % n)
 
+
+class DatasetF(factory.django.DjangoModelFactory):
+    """
+    Dataset model factory
+    """
+    class Meta:
+        model = Dataset
+
+    name = factory.Sequence(lambda n: u'name %s' % n)
+    abbreviation = factory.Sequence(lambda n: u'abbreviation %s' % n)

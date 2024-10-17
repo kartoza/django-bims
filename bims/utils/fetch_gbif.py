@@ -331,6 +331,29 @@ def fetch_all_species_from_gbif(
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
+    # Validate parents
+    taxon_parent = taxonomy.parent
+    max_tries = 10
+    current_try = 0
+
+    # Traverse up the hierarchy to find a 'kingdom' or reach max tries
+    while current_try < max_tries and taxon_parent.parent and taxon_parent.rank.lower() != 'kingdom':
+        taxon_parent = taxon_parent.parent
+        current_try += 1
+
+    # If a 'kingdom' was not found within max tries
+    if taxon_parent.rank.lower() != 'kingdom' and current_try < max_tries:
+        parent_key = taxon_parent.gbif_data.get('parentKey')
+        if parent_key:
+            parent_taxonomy = fetch_all_species_from_gbif(
+                gbif_key=parent_key,
+                parent=None,
+                fetch_children=False
+            )
+            if parent_taxonomy:
+                taxon_parent.parent = parent_taxonomy
+                taxon_parent.save()
+
     # Check if there is an accepted key
     if (
         'acceptedKey' in species_data and

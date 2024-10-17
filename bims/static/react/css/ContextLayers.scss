@@ -1,0 +1,45 @@
+.autocomplete-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ddd;
+    background-color: white;
+    width: 95%; /* Make the width match the input field */
+    max-height: 150px; /* Control the maximum height */
+    overflow-y: auto; /* Add scroll if too many results */
+    position: absolute; /* Ensure the dropdown is positioned relative to the input */
+    z-index: 9999; /* Ensure it appears above other elements */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for better visibility */
+}
+
+.autocomplete-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background-color: #f0f0f0;
+}
+
+.context-filter-header {
+    cursor: pointer;
+    font-weight: bold;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.context-group-box {
+    margin-left: 20px;
+    border-left: 2px solid #ddd;
+    margin-bottom: 10px;
+    background-color: white;
+}
+
+.context-group-item {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    padding: 10px;
+}

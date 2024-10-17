@@ -69,6 +69,14 @@ class TestHarvestGbif(FastTenantTestCase):
     @mock.patch('requests.get', mock.Mock(
         side_effect=mocked_gbif_data))
     def test_harvest_gbif(self, mock_update_location_context):
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                owner__username='GBIF',
+                taxonomy=self.taxonomy,
+                source_reference__source_name='Global Biodiversity '
+                                              'Information Facility (GBIF)'
+            ).count(), 0
+        )
         status = import_gbif_occurrences(self.taxonomy)
         self.assertEqual(status, 'Finish')
         self.assertEqual(

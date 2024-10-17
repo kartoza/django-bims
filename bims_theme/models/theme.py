@@ -247,5 +247,8 @@ def disable_other(sender, instance, **kwargs):
 @receiver(post_delete, sender=CarouselHeader)
 def invalidate_cache(sender, instance, **kwargs):
     tenant = connection.tenant
-    tenant_name = str(tenant.name)
+    try:
+        tenant_name = str(tenant.name)
+    except AttributeError:
+        tenant_name = 'bims'
     cache.delete(THEME_CACHE_KEY + tenant_name)

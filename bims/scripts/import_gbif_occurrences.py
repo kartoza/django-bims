@@ -4,19 +4,19 @@ from logging.handlers import RotatingFileHandler
 import requests
 import logging
 import datetime
-import simplejson
 from django.contrib.gis.geos import MultiPolygon
-from urllib3.exceptions import ProtocolError
 
 from bims.models.source_reference import DatabaseRecord
 
 from bims.models.location_site import generate_site_code
 from dateutil.parser import parse, ParserError
-from requests.exceptions import HTTPError
+from bims.models.survey import Survey
 from preferences import preferences
 from django.contrib.gis.geos import Point, GEOSGeometry
 from django.contrib.gis.db import models
 from django.contrib.gis.measure import D
+
+from bims.scripts.extract_dataset_keys import create_dataset_from_gbif
 from geonode.people.models import Profile
 from bims.models import (
     LocationSite,
@@ -24,10 +24,10 @@ from bims.models import (
     BiologicalCollectionRecord,
     collection_post_save_handler,
     HarvestSession, SourceReferenceDatabase,
-    Boundary
+    Boundary,
+    Dataset
 )
 from bims.utils.gbif import round_coordinates
-from bims.models.site_setting import SiteSetting
 
 logger = logging.getLogger('bims')
 
@@ -43,6 +43,7 @@ VERBATIM_LOCALITY_KEY = 'verbatimLocality'
 LOCALITY_KEY = 'locality'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 SPECIES_KEY = 'species'
+DATASET_KEY = 'datasetKey'
 MODIFIED_DATE_KEY = 'modified'
 LIMIT = 20
 
@@ -105,9 +106,6 @@ def log_to_file_or_logger(log_file_path, message, is_error=False):
     logger = logging.getLogger('harvest_logger')
     if not logger.handlers and log_file_path:
         setup_logger(log_file_path)
-    if log_file_path:
-        with open(log_file_path, 'a') as log_file:
-            log_file.write('{}'.format(message))
     if is_error:
         logger.error(message)
     else:
@@ -135,11 +133,12 @@ def process_gbif_response(json_result,
                           origin,
                           log_file=None):
     """
-    Process GBIF API response.
+    Process GBIF API response using batch insertion.
     """
     if 'error' in json_result:
         log_to_file_or_logger(log_file, json_result['error'], is_error=True)
         return json_result['error'], 0
+
     source_collection = 'gbif'
     gbif_owner, _ = Profile.objects.get_or_create(
         username='GBIF',
@@ -155,23 +154,27 @@ def process_gbif_response(json_result,
         source=database_record
     )
 
-    for result in json_result['results']:
+    # List to hold records for bulk insertion
+    records_to_create = []
+    batch_size = 1000  # You can adjust the batch size based on your memory constraints
+
+    for index, result in enumerate(json_result['results'], start=1):
         # Prevent pulling FBIS data back down from GBIF
         if 'projectId' in result and result['projectId'].lower() == 'fbis':
             continue
+
         if session_id:
             if HarvestSession.objects.get(id=session_id).canceled:
                 log_to_file_or_logger(
                     log_file,
                     'Cancelled'
                 )
-
-                # reconnect post save handler
                 models.signals.post_save.connect(
                     collection_post_save_handler,
                     sender=BiologicalCollectionRecord
                 )
                 return 'Harvest session canceled', 0
+
         upstream_id = result.get(UPSTREAM_ID_KEY, None)
         longitude = result.get(LON_KEY)
         latitude = result.get(LAT_KEY)
@@ -183,23 +186,34 @@ def process_gbif_response(json_result,
         reference = result.get(REFERENCE_KEY, '')
         species = result.get(SPECIES_KEY, None)
         collection_date = None
+        dataset_key = result.get(DATASET_KEY, None)
+
+        if dataset_key:
+            datasets = Dataset.objects.filter(uuid=dataset_key)
+            if not datasets.exists():
+                dataset, created = create_dataset_from_gbif(dataset_key)
 
         if event_date:
             try:
                 collection_date = parse(event_date)
             except ParserError:
-                logger.error(
-                    f'Date is not in the correct format')
+                logger.error('Date is not in the correct format')
                 continue
 
         site_point = Point(longitude, latitude, srid=4326)
 
         # Check nearest site based on site point and coordinate uncertainty
-        location_sites = LocationSite.objects.filter(
-            geometry_point__distance_lte=(
-                site_point,
-                D(m=coordinate_uncertainty))
-        )
+        if coordinate_uncertainty > 0:
+            location_sites = LocationSite.objects.filter(
+                geometry_point__distance_lte=(
+                    site_point,
+                    D(m=coordinate_uncertainty))
+            )
+        else:
+            location_sites = LocationSite.objects.filter(
+                geometry_point__equals=site_point
+            )
+
         if location_sites.exists():
             # Get first site
             location_site = location_sites[0]
@@ -208,24 +222,6 @@ def process_gbif_response(json_result,
             locality = result.get(LOCALITY_KEY, result.get(
                 VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY
             ))
-
-            # Check if site is in the correct border
-            site_boundary = preferences.SiteSetting.site_boundary
-            if site_boundary:
-                is_within_boundary = Boundary.objects.filter(
-                    id=site_boundary.id,
-                    geometry__contains=site_point,
-                ).exists()
-                if not is_within_boundary:
-                    log_to_file_or_logger(
-                        log_file,
-                        '{0},{1} :'
-                        ' The site is not within a valid border,'
-                        ' skip -- \n'.format(
-                            longitude, latitude
-                        )
-                    )
-                    continue
 
             location_type, status = LocationType.objects.get_or_create(
                 name='PointObservation',
@@ -247,67 +243,144 @@ def process_gbif_response(json_result,
                 location_site.site_code = site_code
                 location_site.save()
 
+        # Prepare additional data
+        additional_data = result
+        additional_data['fetch_from_gbif'] = True
+        additional_data['date_fetched'] = datetime.datetime.now().strftime(
+            '%Y-%m-%d %H:%M:%S'
+        )
 
+        # Create or update existing record
         try:
             collection_record = BiologicalCollectionRecord.objects.get(
                 upstream_id=upstream_id
             )
+            # Update existing record fields
+            collection_record.taxonomy = taxonomy
+            collection_record.source_reference = source_reference
+            collection_record.original_species_name = species
+            collection_record.collector = collector
+            collection_record.source_collection = source_collection
+            collection_record.institution_id = institution_code
+            collection_record.reference = reference
+            collection_record.module_group = taxon_group
+            collection_record.additional_data = additional_data
+            collection_record.collection_date = collection_date
+            collection_record.owner = gbif_owner
+            collection_record.validated = True
+
+            if habitat:
+                collection_record.collection_habitat = habitat.lower()
+            if origin:
+                for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                    if origin.lower() == category[1].lower():
+                        origin = category[0]
+                        break
+                collection_record.category = origin
+
+            if not collection_record.survey and collection_record.collection_date:
+                try:
+                    survey, _ = Survey.objects.get_or_create(
+                        site=collection_record.site,
+                        date=collection_record.collection_date,
+                        collector_user=collection_record.collector_user,
+                        owner=collection_record.owner
+                    )
+                except Survey.MultipleObjectsReturned:
+                    survey = Survey.objects.filter(
+                        site=collection_record.site,
+                        date=collection_record.collection_date,
+                        collector_user=collection_record.collector_user,
+                        owner=collection_record.owner
+                    )[0]
+                collection_record.survey = survey
+
+            collection_record.save()
+
             log_to_file_or_logger(
                 log_file,
-                '--- Update existing '
-                'collection record with upstream ID : {}\n'.
-                format(upstream_id)
+                f'--- Updated existing collection record with upstream ID: {upstream_id}\n'
             )
-        except BiologicalCollectionRecord.MultipleObjectsReturned:
-            collection_records = BiologicalCollectionRecord.objects.filter(
-                upstream_id=upstream_id
-            )
-            collection_record = collection_records.last()
-            collection_records.exclude(id=collection_record.id).delete()
+
         except BiologicalCollectionRecord.DoesNotExist:
-            log_to_file_or_logger(
-                log_file,
-                '--- Collection record created with upstream ID : {}\n'.
-                format(upstream_id),
-            )
-            collection_record = BiologicalCollectionRecord.objects.create(
+            # Prepare a new record for bulk creation
+            collection_record = BiologicalCollectionRecord(
                 upstream_id=upstream_id,
                 site=location_site,
                 taxonomy=taxonomy,
                 source_collection=source_collection,
                 source_reference=source_reference,
                 collection_date=collection_date,
-                owner=gbif_owner
+                owner=gbif_owner,
+                original_species_name=species,
+                collector=collector,
+                institution_id=institution_code,
+                reference=reference,
+                module_group=taxon_group,
+                validated=True,
+                additional_data=additional_data
             )
-        collection_record.taxonomy = taxonomy
-        collection_record.source_reference = source_reference
-        collection_record.original_species_name = species
-        collection_record.collector = collector
-        collection_record.source_collection = source_collection
-        collection_record.institution_id = institution_code
-        collection_record.reference = reference
-        collection_record.module_group = taxon_group
 
-        if habitat:
-            collection_record.collection_habitat = habitat.lower()
-        if origin:
-            for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
-                if origin.lower() == category[1].lower():
-                    origin = category[0]
-                    break
-            collection_record.category = origin
-        collection_record.validated = True
-        additional_data = result
-        additional_data['fetch_from_gbif'] = True
-        additional_data['date_fetched'] = datetime.datetime.now().strftime(
-            '%Y-%m-%d %H:%M:%S'
-        )
-        collection_record.additional_data = additional_data
-        collection_record.save()
+            if habitat:
+                collection_record.collection_habitat = habitat.lower()
+            if origin:
+                for category in BiologicalCollectionRecord.CATEGORY_CHOICES:
+                    if origin.lower() == category[1].lower():
+                        origin = category[0]
+                        break
+                collection_record.category = origin
+
+            try:
+                survey, _ = Survey.objects.get_or_create(
+                    site=location_site,
+                    date=collection_date,
+                    collector_user=gbif_owner,
+                    owner=gbif_owner,
+                    defaults={
+                        'validated': True
+                    }
+                )
+            except Survey.MultipleObjectsReturned:
+                survey = Survey.objects.filter(
+                    site=location_site,
+                    date=collection_date,
+                    collector_user=gbif_owner,
+                    owner=gbif_owner
+                )[0]
+                survey.validated = True
+                survey.save()
+            collection_record.survey = survey
+
+            records_to_create.append(collection_record)
+
+            log_to_file_or_logger(
+                log_file,
+                f'--- Prepared new collection record with upstream ID: {upstream_id}\n'
+            )
+
+        except BiologicalCollectionRecord.MultipleObjectsReturned:
+            collection_records = BiologicalCollectionRecord.objects.filter(
+                upstream_id=upstream_id
+            )
+            collection_record = collection_records.last()
+            collection_records.exclude(id=collection_record.id).delete()
+            log_to_file_or_logger(
+                log_file,
+                f'--- Resolved duplicate records for upstream ID: {upstream_id}\n'
+            )
+
+        # Bulk create records when batch size is reached
+        if len(records_to_create) >= batch_size:
+            BiologicalCollectionRecord.objects.bulk_create(records_to_create)
+            records_to_create.clear()
+
+    # Insert any remaining records
+    if records_to_create:
+        BiologicalCollectionRecord.objects.bulk_create(records_to_create)
+        records_to_create.clear()
 
     log_to_file_or_logger(log_file,
-                          f"-- Total occurrences {json_result['count']} - "
-                          f"offset {json_result.get('offset', 0)} : \n")
+                          f"-- Processed {len(json_result['results'])} occurrences\n")
     return None, json_result['count']
 
 
@@ -422,8 +495,15 @@ def import_gbif_occurrences(
                 )
                 area += 1
                 message = fetch_and_process_gbif_data(offset, base_country_codes, geometry_str)
+                log_to_file_or_logger(
+                    log_file_path,
+                    message=message)
         else:
             message = fetch_and_process_gbif_data(offset, base_country_codes)
     except Exception as e:  # noqa
+        log_to_file_or_logger(
+              log_file_path,
+              message=str(e)
+          )
         return str(e)
     return message

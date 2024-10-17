@@ -18,7 +18,7 @@ def get_dataset_occurrences(occurrences):
         flat=True
     ))
     if dataset_keys:
-        dataset_keys = list(set(dataset_keys))
+        dataset_keys = list(filter(None, set(dataset_keys)))
         datasets = Dataset.objects.filter(
             uuid__in=dataset_keys
         )
@@ -76,9 +76,25 @@ class ChecklistBaseSerializer(SerializerContextCache):
                         collection.source_reference and
                         str(collection.source_reference) != 'Global Biodiversity Information Facility (GBIF)'
                     ):
-                        sources.append(
-                            str(collection.source_reference)
-                        )
+                        if collection.additional_data and 'Citation' in collection.additional_data:
+                            citation_name = collection.additional_data['Citation']
+                            if not Dataset.objects.filter(citation=citation_name).exists():
+                                Dataset.objects.create(
+                                    citation=citation_name,
+                                    abbreviation=citation_name,
+                                    name=str(collection.source_reference)
+                                )
+                            else:
+                                dataset = Dataset.objects.filter(citation=citation_name).first()
+                                if dataset.abbreviation != citation_name:
+                                    citation_name = dataset.abbreviation
+                            sources.append(
+                                citation_name
+                            )
+                        else:
+                            sources.append(
+                                str(collection.source_reference)
+                            )
                 except ContentType.DoesNotExist:
                     continue
         except TypeError:
@@ -146,6 +162,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     common_name = serializers.SerializerMethodField()
     most_recent_record = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
+    invasion = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
     global_conservation_status = serializers.SerializerMethodField()
     national_conservation_status = serializers.SerializerMethodField()
@@ -291,6 +308,11 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             else ''
         )
 
+    def get_invasion(self, obj: Taxonomy):
+        if obj.invasion:
+            return obj.invasion.category
+        return ''
+
     def get_endemism(self, obj: Taxonomy):
         taxon_group_taxon = self.get_taxon_group_taxon_data(obj)
         if not taxon_group_taxon:
@@ -326,6 +348,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'most_recent_record',
             'origin',
             'endemism',
+            'invasion',
             'global_conservation_status',
             'national_conservation_status',
             'sources',

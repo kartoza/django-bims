@@ -146,6 +146,9 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
         f'{site_domain_name}_checklist_{module_name}_{download_request.id}.pdf')
     os.makedirs(os.path.dirname(pdf_file_path), exist_ok=True)
 
+    if os.path.exists(pdf_file_path):
+        os.remove(pdf_file_path)
+
     written_taxa_ids = set()
     all_taxa = []
     common_names_and_count = {}
