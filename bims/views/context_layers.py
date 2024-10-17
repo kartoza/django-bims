@@ -70,7 +70,7 @@ class LocationFilterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LocationContextFilter
-        fields = '__all__'
+        exclude = ['site',]
 
 
 
@@ -130,6 +130,38 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
         )
         return Response(context_filter_data.data)
 
+    def post(self, request, *args):
+        data = request.data
+        serializer = LocationFilterSerializer(data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "message": "Filter created successfully.",
+                    "filter": serializer.data
+                 }, status=201)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def delete(self, request, *args):
+        filter_id = request.query_params.get('filter_id')
+
+        if not filter_id:
+            return Response({"error": "filter_id is required."}, status=400)
+
+        filter_to_delete = LocationContextFilter.objects.filter(
+            id=filter_id
+        )
+        if filter_to_delete.exists():
+            filter_to_delete.delete()
+            return Response({
+                "message": f"Filter {filter_id} deleted successfully."},
+                status=204)
+        else:
+            return Response({
+                "error": f"Filter with id {filter_id} not found."}, status=404)
+
     def put(self, request, *args):
         """Update the order of context filters and groups."""
         data = request.data
@@ -140,7 +172,8 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
         for filter_data in filters_data:
             filter_id = filter_data.get('id')
             new_order = filter_data.get('display_order')
-            LocationContextFilter.objects.filter(id=filter_id).update(display_order=new_order)
+            LocationContextFilter.objects.filter(
+                id=filter_id).update(display_order=new_order)
 
         # Update group order within each filter
         for filter_id, groups in groups_data.items():
@@ -156,7 +189,8 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
                     if remove:
                         context_filter_group.delete()
                     else:
-                        context_filter_group.update(group_display_order=new_group_order)
+                        context_filter_group.update(
+                            group_display_order=new_group_order)
                 else:
                     if not remove:
                         LocationContextFilterGroupOrder.objects.create(
@@ -168,7 +202,8 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
         tenant_id = get_tenant(request).id
         generate_spatial_scale_filter.delay(tenant_id)
 
-        return Response({"message": "Order updated successfully."}, status=200)
+        return Response(
+            {"message": "Order updated successfully."}, status=200)
 
 
 class CloudNativeLayerAutoCompleteAPI(APIView):
