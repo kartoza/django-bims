@@ -13,7 +13,7 @@ from bims.views.physico_chemical_upload import PhysicoChemicalUploadView
 from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
-from bims.views.spatial_layer import SpatialLayerUploadView
+from bims.views.spatial_layer import SpatialLayerUploadView, VisualizationLayerView
 from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
@@ -299,6 +299,9 @@ urlpatterns = [
     path('upload-spatial-layer/',
          SpatialLayerUploadView.as_view(),
          name='upload-spatial-layer-view'),
+    path('visualization-layer/',
+         VisualizationLayerView.as_view(),
+         name='visualization-layer-view'),
     path('upload-boundary/',
          BoundaryUploadView.as_view(),
          name='boundary-upload-view'),
