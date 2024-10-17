@@ -3,7 +3,7 @@ import axios from "axios";
 import SortableList, {SortableItem, SortableKnob} from "react-easy-sort";
 import { arrayMoveImmutable } from "array-move";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import {Button, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
+import {Button, Form, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
 import AddContextGroup from "./AddContextGroup";
 
 
@@ -17,6 +17,9 @@ const ContextFilterView = (props) => {
     const [isAddNewGroupModalOpen, setIsAddNewGroupModalOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState(null);
     const [contextGroups, setContextGroups] = useState([]);
+    const [isAddNewFilterModalOpen, setIsAddNewFilterModalOpen] = useState(false);
+    const [newFilterName, setNewFilterName] = useState('');
+    const [savingNewFilter, setSavingNewFilter] = useState(false);
 
     const contextLayerFilterAPI = '/api/context-filter/';
     const contextLayerGroupAPI = '/api/context-layer-group/';
@@ -40,6 +43,24 @@ const ContextFilterView = (props) => {
             }
         } catch (error) {
             console.error("Failed to update order:", error);
+        }
+    };
+
+    const deleteContextFilter = async (filterId) => {
+        try {
+            const deleteUrl = `${contextLayerFilterAPI}?filter_id=${filterId}`;
+            await axios.delete(deleteUrl, {
+                headers: {
+                    'X-CSRFToken': props.csrfToken
+                }
+            });
+            console.log(`Filter ${filterId} deleted successfully.`);
+
+            // Optionally, refresh the context filters after deletion
+            setContextFilters([]);
+            fetchContextFilters();
+        } catch (error) {
+            console.error(`Failed to delete filter ${filterId}:`, error);
         }
     };
 
@@ -79,6 +100,27 @@ const ContextFilterView = (props) => {
         }
     };
 
+    const createContextFilter = async (newFilter) => {
+        try {
+            const response = await axios.post(contextLayerFilterAPI, newFilter, {
+                headers: {
+                    'X-CSRFToken': props.csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log("New filter created successfully:", response.data.filter);
+
+            setIsAddNewFilterModalOpen(false);
+
+            setContextFilters([]);
+            fetchContextFilters();
+        } catch (error) {
+            console.error("Failed to create new filter:", error);
+        } finally {
+            setSavingNewFilter(false);
+        }
+    };
+
     useEffect(() => {
         fetchContextFilters();
     }, []);
@@ -96,7 +138,7 @@ const ContextFilterView = (props) => {
             display_order: index + 1
         }));
 
-        updateOrder(updatedFilters, [])
+        updateOrder(updatedFilters, {})
         setContextFilters(arrayMoveImmutable(contextFilters, oldIndex, newIndex))
     };
 
@@ -118,12 +160,29 @@ const ContextFilterView = (props) => {
         setFilterText(e.target.value);
     };
 
+    const handleSaveAddNewFilter = () => {
+        const newFilter = {
+            display_order: contextFilters.length + 1,
+            location_context_groups: [],
+            title: newFilterName
+        }
+        setSavingNewFilter(true);
+        createContextFilter(newFilter);
+    }
+
     const filteredContextFilters = contextFilters.filter(group =>
         group.title.toLowerCase().includes(filterText.toLowerCase())
     );
 
     const toggleAddNewGropModal = () => {
         setIsAddNewGroupModalOpen(!isAddNewGroupModalOpen)
+    }
+
+    const toggleAddNewFilterModal = () => {
+        if (!isAddNewFilterModalOpen) {
+            setNewFilterName('');
+        }
+        setIsAddNewFilterModalOpen(!isAddNewFilterModalOpen)
     }
 
     const handleAddNewGroup = (e, contextFilter) => {
@@ -133,6 +192,11 @@ const ContextFilterView = (props) => {
              fetchContextGroups();
          }
          setSelectedFilter(contextFilter);
+    }
+
+    const handleDeleteFilter = (e, contextFilter) => {
+        e.stopPropagation();
+        deleteContextFilter(contextFilter.id);
     }
 
     const handleRemoveGroup = (filter, group) => {
@@ -166,6 +230,11 @@ const ContextFilterView = (props) => {
                     className="form-control mb-2"
                 />
             </div>
+            <div>
+                <Button color={'success'} size={'sm'} style={{ marginBottom: 5 }} onClick={toggleAddNewFilterModal}>
+                    <i className="bi bi-plus"></i> Add new filter section
+                </Button>
+            </div>
             <div className="row">
                 <SortableList onSortEnd={onSortParent} className='context-filter-list col-md-12' draggedItemClassName={'dragged'}>
                     {filteredContextFilters.map((contextFilter) => (
@@ -184,6 +253,12 @@ const ContextFilterView = (props) => {
                                             onClick={(e) => handleAddNewGroup(e, contextFilter)}
                                             style={{ float: 'right', right: 0, marginTop: -5 }}>
                                         <i className="bi bi-plus"></i>
+                                    </Button>
+                                    <Button color={'danger'} size={'sm'}
+                                            outline
+                                            onClick={(e) => handleDeleteFilter(e, contextFilter)}
+                                            style={{float: 'right', right: 0, marginTop: -5, marginRight: 5}}>
+                                        <i className="bi bi-trash"></i>
                                     </Button>
                                 </div>
                                 {expandedGroups[contextFilter.id] && (
@@ -219,6 +294,29 @@ const ContextFilterView = (props) => {
             </div>
 
             <AddContextGroup isOpen={isAddNewGroupModalOpen} selectedFilter={selectedFilter} toggle={toggleAddNewGropModal} updateOrder={updateOrder}/>
+            <Modal isOpen={isAddNewFilterModalOpen} toggle={toggleAddNewFilterModal}>
+                <ModalHeader toggle={toggleAddNewFilterModal}>
+                    Add new filter section
+                </ModalHeader>
+                <ModalBody>
+                    <Form>
+                        <FormGroup>
+                            <Label for="filterName">
+                                Filter section name
+                            </Label>
+                            <Input value={newFilterName} onChange={e => setNewFilterName(e.target.value)}/>
+                        </FormGroup>
+                    </Form>
+                </ModalBody>
+                <ModalFooter>
+                <Button color="secondary" onClick={toggleAddNewFilterModal} disabled={savingNewFilter}>
+                    Close
+                </Button>
+                <Button color="primary" onClick={handleSaveAddNewFilter} disabled={!newFilterName || savingNewFilter}>
+                    {savingNewFilter ? 'Saving...' : 'Save'}
+                </Button>
+            </ModalFooter>
+            </Modal>
 
         </div>
     );
