@@ -283,7 +283,6 @@ export const taxaManagement = (() => {
         let initialSortBy = urlParams.get('o') ? (urlParams.get('o').includes('-') ? '-' : '') : '';
         let initialStart = (initialPage - 1) * 20;
 
-        console.log(taxaUrlList);
 
         $('.download-button-container').show();
         let tableInitialized = false;
