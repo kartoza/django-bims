@@ -16,7 +16,6 @@ const AddContextGroup = (props) => {
             setContextGroups(response.data);
         } catch (error) {
             console.error("Error fetching context groups:", error);
-            setError("Failed to load context groups");
         } finally {
         }
     };

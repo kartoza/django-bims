@@ -63,3 +63,7 @@ class SpatialLayerUploadView(SuperuserRequiredMixin, TemplateView):
             extra_tags='spatial_layer_upload')
 
         return HttpResponseRedirect(request.path_info)
+
+
+class VisualizationLayerView(TemplateView):
+    template_name = 'visualization_layers.html'
