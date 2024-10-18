@@ -2,6 +2,7 @@
 import csv
 import re
 
+from braces.views import SuperuserRequiredMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +11,7 @@ from bims.models.non_biodiversity_layer import NonBiodiversityLayer
 from bims.serializers.non_biodiversity_layer_serializer import (
     NonBiodiversityLayerSerializer
 )
+from cloud_native_gis.models import Style
 
 
 class NonBiodiversityLayerList(APIView):
@@ -85,3 +87,139 @@ class DownloadLayerData(APIView):
             message,
             data
         )
+
+
+class VisualizationLayers(SuperuserRequiredMixin, APIView):
+    def get(self, request, *args):
+        visualization_layers = (
+            NonBiodiversityLayer.objects.all().order_by(
+                'order')
+        )
+        visualization_layers_data = NonBiodiversityLayerSerializer(
+            visualization_layers, many=True, context={
+                'request': request
+            }
+        )
+        return Response(visualization_layers_data.data)
+
+    def post(self, request, *args):
+        data = request.data
+        layer_type = data.get('layer_type', 'wms')
+        name = data.get('name')
+        layer_id = data.get('layer_id')
+        layer_style = data.get('style_id')
+        wms_layer_url = data.get('wms_layer_url')
+        wms_layer_name = data.get('wms_layer_name')
+        abstract = data.get('abstract', '')
+        order = NonBiodiversityLayer.objects.all().count() + 1
+
+        if layer_type == 'native_layer':
+            non_biodiversity_layer = NonBiodiversityLayer.objects.create(
+                name=name,
+                wms_layer_name=name,
+                native_layer_id=int(layer_id),
+                native_layer_style_id=int(layer_style),
+                order=order
+            )
+            non_biodiversity_layer.native_layer.abstract = abstract
+            non_biodiversity_layer.native_layer.save()
+            return Response(
+                {
+                    "message": "layer created successfully.",
+                }, status=201)
+        elif layer_type == 'wms':
+            NonBiodiversityLayer.objects.create(
+                name=name,
+                wms_url=wms_layer_url,
+                wms_layer_name=wms_layer_name,
+                order=order
+            )
+            return Response(
+                {
+                    "message": "layer created successfully.",
+                }, status=201)
+        return Response('Error', status=400)
+
+    def delete(self, request, *args):
+        layer_id = request.query_params.get('id')
+
+        if not layer_id:
+            return Response({"error": "id is required."}, status=400)
+
+        layer = NonBiodiversityLayer.objects.filter(
+            id=layer_id
+        )
+        if layer.exists():
+            layer.delete()
+            return Response({
+                "message": f"Layer {id} deleted successfully."},
+                status=204)
+        else:
+            return Response({
+                "error": f"Layer with id {id} not found."}, status=404)
+
+    def put(self, request, *args):
+        """Update the order of visualization layers."""
+        data = request.data
+        layers_data = data.get('layers', [])
+
+        # Update filter order
+        for layer_data in layers_data:
+            layer_id = layer_data.get('id')
+            new_order = layer_data.get('display_order')
+            NonBiodiversityLayer.objects.filter(
+                id=layer_id).update(order=new_order)
+
+        if data.get('id'):
+            try:
+                layer_instance = NonBiodiversityLayer.objects.get(
+                    id=data.get('id'))
+                serializer = NonBiodiversityLayerSerializer(
+                    instance=layer_instance,
+                    data=request.data,
+                    partial=True,
+                    context={
+                        'request': request
+                    }
+                )
+                if serializer.is_valid():
+                    validated_data = serializer.validated_data
+                    layer_instance.name = validated_data.get(
+                        'name', layer_instance.name)
+                    layer_instance.order = validated_data.get(
+                        'order', layer_instance.order)
+                    layer_instance.wms_layer_name = validated_data.get(
+                        'wms_layer_name', layer_instance.wms_layer_name)
+                    layer_instance.wms_url = validated_data.get(
+                        'wms_url', layer_instance.wms_url)
+                    layer_instance.native_layer_id = data.get(
+                        'native_layer',
+                        layer_instance.native_layer.id if layer_instance.native_layer else None
+                    )
+                    layer_instance.native_layer_style_id = data.get(
+                        'native_layer_style',
+                        layer_instance.native_layer_style.id if layer_instance.native_layer_style else None
+                    )
+                    layer_instance.save()
+
+                    if layer_instance.native_layer:
+                        layer_instance.native_layer.abstract = data.get(
+                            'abstract', ''
+                        )
+                        layer_instance.native_layer.save()
+
+                    return Response(
+                        NonBiodiversityLayerSerializer(
+                            layer_instance,
+                            context={
+                                'request': request
+                            }
+                        ).data,
+                        status=200)
+                else:
+                    return Response(serializer.errors, status=400)
+            except NonBiodiversityLayer.DoesNotExist:
+                return Response({'error': 'Layer not found.'}, status=404)
+
+        return Response(
+            {"message": "Order updated successfully."}, status=200)

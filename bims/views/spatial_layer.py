@@ -66,4 +66,4 @@ class SpatialLayerUploadView(SuperuserRequiredMixin, TemplateView):
 
 
 class VisualizationLayerView(TemplateView):
-    template_name = 'visualization_layer.html'
+    template_name = 'visualization_layers.html'

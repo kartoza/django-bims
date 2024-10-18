@@ -25,7 +25,7 @@ from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
 )
 from bims.api_views.non_biodiversity_layer import (
-    NonBiodiversityLayerList, DownloadLayerData
+    NonBiodiversityLayerList, DownloadLayerData, VisualizationLayers
 )
 from bims.api_views.search_module import SearchModuleAPIView
 
@@ -392,6 +392,9 @@ urlpatterns = [
     path('context-filter/',
          ContextFilter.as_view(),
          name='context-filter'),
+    path('visualization-layers/',
+         VisualizationLayers.as_view(),
+         name='visualization-layers'),
     path('context-layer-group/<int:pk>/',
          ContextLayerGroup.as_view(),),
     path('cloud-native-layer-autocomplete/',

@@ -12,6 +12,7 @@ module.exports = {
     main: ['./static/react/js/main.jsx'],
     AddSourceReferenceView: ['./static/react/js/AddSourceReferenceView.jsx'],
     ContextLayersView: ['./static/react/js/ContextLayersView.jsx'],
+    VisualizationLayersView: ['./static/react/js/VisualizationLayersView.jsx'],
     taxa_management: ['./static/js/taxa_management/taxa_management.js']
   },
 
