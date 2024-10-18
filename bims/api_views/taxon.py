@@ -444,6 +444,8 @@ class TaxaList(LoginRequiredMixin, APIView):
         family_name = request.GET.get('family', '')
         genus_name = request.GET.get('genus', '')
         species_name = request.GET.get('species', '')
+        summary_only = request.GET.get('summary', 'False') == 'True'
+        taxon_group_ids = None
 
         authors = []
         if author_names:
@@ -474,19 +476,26 @@ class TaxaList(LoginRequiredMixin, APIView):
         id = request.GET.get('id', '')
         if id:
             return Taxonomy.objects.filter(id=id)
-        if not taxon_group_id:
-            raise Http404('Missing taxon group id')
-        try:
-            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-        except TaxonGroup.DoesNotExist:
-            raise Http404('Taxon group does not exist')
 
-        taxon_group_ids = TaxaList.get_descendant_group_ids(
-            taxon_group)
-        taxon_list = Taxonomy.objects.filter(
-            taxongroup__id__in=taxon_group_ids,
-            taxongrouptaxonomy__is_rejected=False,
-        ).distinct().order_by('canonical_name')
+        if taxon_group_id:
+            try:
+                taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            except TaxonGroup.DoesNotExist:
+                raise Http404('Taxon group does not exist')
+        else:
+            taxon_group = None
+
+        if taxon_group:
+            taxon_group_ids = TaxaList.get_descendant_group_ids(
+                taxon_group)
+            taxon_list = Taxonomy.objects.filter(
+                taxongroup__id__in=taxon_group_ids,
+                taxongrouptaxonomy__is_rejected=False,
+            ).distinct().order_by('canonical_name')
+        else:
+            taxon_list = Taxonomy.objects.filter(
+                taxongrouptaxonomy__is_rejected=False,
+            ).distinct().order_by('canonical_name')
 
         if len(authors) > 0:
             taxon_list = taxon_list.filter(
@@ -568,15 +577,20 @@ class TaxaList(LoginRequiredMixin, APIView):
             try:
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
-                    taxon_list = taxon_list.filter(
-                        taxongrouptaxonomy__is_validated=False,
-                        taxongrouptaxonomy__taxongroup__in=taxon_group_ids
-                    )
+                    validated_filters = {
+                        'taxongrouptaxonomy__is_validated': False,
+                    }
                 else:
-                    taxon_list = taxon_list.filter(
-                        taxongrouptaxonomy__is_validated=True,
-                        taxongrouptaxonomy__taxongroup__in=taxon_group_ids
-                    )
+                    validated_filters = {
+                        'taxongrouptaxonomy__is_validated': True,
+                    }
+                if taxon_group_ids:
+                    validated_filters[
+                        'taxongrouptaxonomy__taxongroup__in'
+                    ] = taxon_group_ids
+                taxon_list = taxon_list.filter(
+                    **validated_filters
+                )
             except ValueError:
                 pass
         if is_gbif:
@@ -605,7 +619,7 @@ class TaxaList(LoginRequiredMixin, APIView):
                     )
             except ValueError:
                 pass
-        if order:
+        if order and not summary_only:
             if 'total_records' in order:
                 taxon_list = taxon_list.annotate(
                     total_records=Count('biologicalcollectionrecord')
@@ -667,6 +681,14 @@ class TaxaList(LoginRequiredMixin, APIView):
 
     def get(self, request, *args):
         taxon_list = self.get_taxa_by_parameters(request)
+        summary_only = request.GET.get('summary', 'False') == 'True'
+
+        if summary_only:
+            return Response(list(TaxonGroupTaxonomy.objects.filter(
+                taxonomy__in=taxon_list
+            ).values('taxongroup', 'taxongroup__name').annotate(
+                total=Count('taxongroup'))))
+
         self.pagination_class.page_size = request.GET.get('page_size', 20)
         page = self.paginate_queryset(taxon_list)
         validated = ast.literal_eval(request.GET.get('validated', 'True'))

@@ -14,11 +14,13 @@ class TaxonGroupTaxonomy(models.Model):
     )
 
     is_validated = models.BooleanField(
-        default=False
+        default=False,
+        db_index=True
     )
 
     is_rejected = models.BooleanField(
-        default=False
+        default=False,
+        db_index=True
     )
 
     endemism = models.ForeignKey(
