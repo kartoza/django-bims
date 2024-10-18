@@ -315,7 +315,6 @@ export const taxaSidebar = (() => {
             },
             error: function (data) {
                 console.log("error");
-                console.log(data);
                 $removeModuleBtn.html('Remove Module');
                 $removeModuleBtn.attr('disabled', false);
                 // Hide the processing modal

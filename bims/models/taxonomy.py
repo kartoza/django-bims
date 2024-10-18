@@ -124,7 +124,8 @@ class AbstractTaxonomy(AbstractValidation):
         verbose_name='Canonical Name',
         max_length=200,
         null=True,
-        blank=True
+        blank=True,
+        db_index=True
     )
 
     legacy_canonical_name = models.CharField(

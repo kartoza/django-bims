@@ -236,7 +236,45 @@ export const taxaManagement = (() => {
         return luminance < 0.5;
     }
 
+    const findTaxaWithoutTaxonGroup = (url) => {
+        let urlObj = new URL(url, window.location.origin);
+        let params = new URLSearchParams(urlObj.search);
+
+        params.delete('taxonGroup');
+        let taxon = params.get('taxon');
+
+        urlObj.search = params.toString();
+
+        let updatedUrl = urlObj.toString();
+        if (taxon) {
+            // Only search taxa if there is search string
+            $.ajax({
+                url: updatedUrl + '&summary=True',
+                dataType: 'json',
+                success: function (data) {
+                    if (data.length > 0) {
+                        let warningDivs = $('<div>')
+                        for (let i=0; i < data.length; i++) {
+                            let warningDiv = $('<div>');
+                            warningDiv.append(
+                                `<div class="alert alert-warning" role="alert" style="cursor: pointer">
+                                    ${data[i].total} taxon found in ${data[i].taxongroup__name}. Click here to view the taxon group.
+                                </div>`
+                            )
+                            warningDiv.on('click', function () {
+                                $('#sortable').find(`[data-id="${data[i].taxongroup}"]`).click();
+                            })
+                            warningDivs.append(warningDiv);
+                        }
+                        $('.footer-warning').html(warningDivs)
+                    }
+                }
+            });
+        }
+    }
+
     const getTaxaList = (url) => {
+        $('.footer-warning').html('');
         taxaUrlList = url;
         let urlParams = new URLSearchParams(window.location.search);
         let initialPage = urlParams.get('page') ? parseInt(urlParams.get('page')) : 1;
@@ -244,6 +282,8 @@ export const taxaManagement = (() => {
         let initialSortOrder = urlParams.get('o') ? urlParams.get('o').replace('-', '') : 'canonical_name';
         let initialSortBy = urlParams.get('o') ? (urlParams.get('o').includes('-') ? '-' : '') : '';
         let initialStart = (initialPage - 1) * 20;
+
+        console.log(taxaUrlList);
 
         $('.download-button-container').show();
         let tableInitialized = false;
@@ -361,6 +401,11 @@ export const taxaManagement = (() => {
 
                         if (response['is_expert']) {
                             $('#add-taxon-btn').show();
+                        }
+
+                        if (response.count === 0) {
+                            // Find without taxon group id
+                            findTaxaWithoutTaxonGroup(url)
                         }
 
                         $.each(response.results, function (index, data) {
