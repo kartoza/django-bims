@@ -4,7 +4,9 @@ from django_tenants.utils import get_tenant
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from preferences import preferences
 
+from bims.models.geocontext_setting import GeocontextSetting
 from bims.models.location_context_group import (
     LocationContextGroup
 )
@@ -217,3 +219,130 @@ class CloudNativeLayerAutoCompleteAPI(APIView):
             'request': request
         })
         return Response(serializer.data)
+
+
+class LayerSummarySerializer(serializers.ModelSerializer):
+    attributes = serializers.SerializerMethodField()
+
+    def get_attributes(self, obj: Layer):
+        return obj.attribute_names
+    class Meta:
+        model = Layer
+        fields = [
+            'name', 'id', 'is_ready',
+            'unique_id', 'attributes']
+
+
+class LocationContextGroupSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationContextGroup
+        fields = [
+            'id', 'name', 'key', 'geocontext_group_key'
+        ]
+
+
+class ContextLayerKeys(SuperuserRequiredMixin, APIView):
+    """List all geocontext keys used to fetch spatial filters or native layer keys."""
+
+    def post(self, request, *args):
+        data = request.data
+        new_key = data.get('key', '')
+        geocontext_setting = GeocontextSetting.objects.get(
+            id=preferences.GeocontextSetting.id
+        )
+
+        context_keys = (
+            geocontext_setting.geocontext_keys.split(',')
+        )
+
+        if new_key not in context_keys:
+            context_keys.append(new_key)
+            geocontext_setting.geocontext_keys = ','.join(context_keys)
+            geocontext_setting.save()
+            return Response(
+                {
+                    "message": "Context key added successfully.",
+                }, status=201)
+        else:
+            return Response(
+                {
+                    "message": "Context key already exists.",
+                }
+                , status=400)
+
+    def delete(self, request, *args):
+        key = request.query_params.get('key')
+
+        if not key:
+            return Response({"error": "key is required."}, status=400)
+
+        geocontext_setting = GeocontextSetting.objects.get(
+            id=preferences.GeocontextSetting.id
+        )
+
+        context_keys = (
+            geocontext_setting.geocontext_keys.split(',')
+        )
+        if key in context_keys:
+            context_keys.remove(key)
+            geocontext_setting.geocontext_keys = ','.join(context_keys)
+            geocontext_setting.save()
+
+            return Response({
+                "message": f"Context key {key} deleted successfully."},
+                status=204)
+        else:
+            return Response({
+                "error": f"Context with key {key} not found."}, status=404)
+
+    def get(self, request, *args):
+        context_keys = (
+            preferences.GeocontextSetting.geocontext_keys.split(',')
+        )
+        context_key_data = []
+        for key in context_keys:
+            if ':' in key:
+                uuid_key = key.split(':')[0]
+                cloud_native_layer = Layer.objects.filter(
+                    unique_id=uuid_key
+                )
+                if cloud_native_layer.exists():
+                    layer_summary_data = (
+                        LayerSummarySerializer(
+                            cloud_native_layer.first(),
+                            many=False,
+                        ).data
+                    )
+                    layer_summary_data['attribute_used'] = (
+                        key.split(':')[-1].strip()
+                    )
+                    layer_summary_data['key'] = key
+                    layer_summary_data['type'] = 'native_layer'
+                    context_key_data.append(
+                        layer_summary_data
+                    )
+                    continue
+            else:
+                location_context_group = LocationContextGroup.objects.filter(
+                    geocontext_group_key=key
+                )
+                if location_context_group.exists():
+                    context_key_data.append({
+                        'key': key,
+                        'type': 'geocontext',
+                        'groups': (
+                            LocationContextGroupSummarySerializer(
+                                location_context_group,
+                                many=True
+                            ).data
+                        )
+                    })
+                    continue
+
+            context_key_data.append({
+                'key': key,
+                'type': 'geocontext'
+            })
+        return Response(
+            context_key_data
+        )
