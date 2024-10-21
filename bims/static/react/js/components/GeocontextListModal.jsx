@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
     Alert,
     Badge,
-    Button,
+    Button, ButtonGroup,
     Card,
     CardText,
     Form,
@@ -25,8 +25,14 @@ const GeocontextListModal = (props) => {
     const [newGeocontextKey, setNewGeocontextKey] = useState('');
 
     const [addNewError, setAddNewError] = useState('')
+    const [layerType, setLayerType] = useState('native_layer')
+    const [cloudNativeLayers, setCloudNativeLayers] = useState([])
+    const [selectedLayer, setSelectedLayer] = useState(null);
+
+    const layerAttributeRef = useRef(null);
 
     const apiUrl = '/api/context-layer-keys/';
+    const layersApiUrl = '/api/cloud-native-layers/';
 
     const fetchContextList = async () => {
         setContextData([]);
@@ -36,6 +42,21 @@ const GeocontextListModal = (props) => {
             setContextData(response.data);
         } catch (error) {
             console.error("Error fetching context data:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const fetchCloudNativeLayers = async () => {
+        setCloudNativeLayers([]);
+        try {
+            const response = await axios.get(layersApiUrl);
+            setCloudNativeLayers(response.data);
+            if (response.data.length > 0) {
+                setSelectedLayer(response.data[0]);
+            }
+        } catch (error) {
+            console.error("Error fetching layers data:", error);
         } finally {
             setLoading(false);
         }
@@ -57,9 +78,13 @@ const GeocontextListModal = (props) => {
     };
 
     const addNewContextKey = async (newKey) => {
+        let keyToAdd = newKey;
+        if (layerType === 'native_layer') {
+            keyToAdd = `${selectedLayer.unique_id}:${layerAttributeRef.current.value}`;
+        }
         try {
             await axios.post(apiUrl, {
-                    'key': newKey
+                    'key': keyToAdd,
                 },
                 {
                     headers: {
@@ -88,10 +113,20 @@ const GeocontextListModal = (props) => {
         window.open(url, '_blank');
     }
 
+    const handleSelectLayer = (layerId) => {
+        const layer = cloudNativeLayers?.find(layer => layer.unique_id === layerId);
+        if (layer) {
+            setSelectedLayer(layer)
+        }
+    }
+
     const toggleAddKeyModal = () => {
         if (!isAddKeyModalOpen) {
             setNewGeocontextKey('')
             setAddNewError('')
+            if (cloudNativeLayers.length === 0) {
+                fetchCloudNativeLayers();
+            }
         }
         setIsAddKeyModalOpen(!isAddKeyModalOpen)
     }
@@ -166,17 +201,76 @@ const GeocontextListModal = (props) => {
                             {addNewError}
                         </Alert>
                     }
-                    <FormGroup>
-                        <Label for={'geocontextKey'}>
-                            Key
-                        </Label>
-                        <Input id={'geocontextKey'} value={newGeocontextKey} onChange={(e) => setNewGeocontextKey(e.target.value)}></Input>
-                    </FormGroup>
+                    <ButtonGroup style={{marginBottom: 20}}>
+                        <Button
+                          color="primary"
+                          outline
+                          onClick={() => setLayerType('key')}
+                          active={layerType === 'key'}
+                        >
+                          Key
+                        </Button>
+                        <Button
+                          color="primary"
+                          outline
+                          onClick={() => setLayerType('native_layer')}
+                          active={layerType === 'native_layer'}
+                        >
+                          Native Layer
+                        </Button>
+                    </ButtonGroup>
+                    {
+                        (layerType === 'native_layer') ? (
+                            <>
+                                <FormGroup>
+                                    <Label for={'nativeLayerSelect'}>
+                                        Layer
+                                    </Label>
+                                    <Input
+                                      id="nativeLayerSelect"
+                                      name="nativeLayerSelect"
+                                      type="select"
+                                      onChange={(e) => handleSelectLayer(e.target.value)}
+                                    >
+                                        {cloudNativeLayers?.map(layer => (
+                                            <option id={layer.unique_id} value={layer.unique_id} selected={selectedLayer && selectedLayer === layer.id}>
+                                                {layer.name}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                                <FormGroup>
+                                    <Label for={'nativeLayerAttributesSelect'}>
+                                        Attribute
+                                    </Label>
+                                    <Input
+                                      id="nativeLayerAttributesSelect"
+                                      name="nativeLayerAttributesSelect"
+                                      type="select"
+                                      innerRef={layerAttributeRef}
+                                    >
+                                        {selectedLayer?.attributes?.map(attr => (
+                                            <option id={attr} value={attr}>
+                                                {attr}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                            </>
+                        ) : (
+                            <FormGroup>
+                                <Label for={'geocontextKey'}>
+                                    Key
+                                </Label>
+                                <Input id={'geocontextKey'} value={newGeocontextKey} onChange={(e) => setNewGeocontextKey(e.target.value)}></Input>
+                            </FormGroup>
+                        )
+                    }
                 </ModalBody>
                 <ModalFooter>
                     <Button color="primary" onClick={(e) => {
                         addNewContextKey(newGeocontextKey)
-                    }} disabled={!newGeocontextKey}>
+                    }} disabled={layerType === 'key' && !newGeocontextKey}>
                         Save
                     </Button>
                 </ModalFooter>

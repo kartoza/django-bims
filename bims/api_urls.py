@@ -5,6 +5,7 @@ from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
 )
+from bims.api_views.layers import CloudNativeLayerList
 from bims.api_views.minisass_observations import MiniSASSObservationsView
 from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
@@ -404,4 +405,7 @@ urlpatterns = [
     path('context-layer-keys/',
          ContextLayerKeys.as_view(),
          name='context-layer-keys'),
+    path('cloud-native-layers/',
+         CloudNativeLayerList.as_view(),
+         name='cloud-native-layers'),
 ]
