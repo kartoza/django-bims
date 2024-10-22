@@ -187,6 +187,14 @@ class TestCollectionUpload(FastTenantTestCase):
             )
             site_setting.default_data_source = 'fbis'
             site_setting.park_layer_csv = csv_file
+            csv_content = b"section,latitude,longitude\nSection 1,31.0522,-111.2437\nSection 2,31.1699,-111.1398\n"
+            csv_file = SimpleUploadedFile(
+                "section.csv",
+                csv_content,
+                content_type="text/csv"
+            )
+            site_setting.section_layer_csv = csv_file
+
             site_setting.save()
 
         mock_finish.return_value = None
@@ -264,8 +272,19 @@ class TestCollectionUpload(FastTenantTestCase):
         )
         self.assertEqual(bio.count(), 1)
         self.assertEqual(bio.first().site.legacy_river_name, 'User River Name 2')
-        self.assertTrue(
+        self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 site__name='Park A'
-            ).exists()
+            ).count(), 2
+        )
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                site__name='Section 2'
+            ).count(), 1
+        )
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.filter(
+                site__latitude=31.0522,
+                site__longitude=-111.2437
+            ).count(), 1
         )
