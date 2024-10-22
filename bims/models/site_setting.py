@@ -344,6 +344,12 @@ class SiteSetting(Preferences):
         upload_to='park_layer_csv/'
     )
 
+    section_layer_csv = models.FileField(
+        null=True,
+        blank=True,
+        upload_to='section_layer_csv/'
+    )
+
     park_wfs_attribute_key = models.CharField(
         max_length=200,
         default='',

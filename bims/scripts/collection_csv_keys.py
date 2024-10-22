@@ -92,6 +92,7 @@ SURVEY_DATA = {
 
 # Sanparks
 PARK_OR_MPA_NAME = 'Park or MPA name'
+SECTION_NAME = 'Section'
 ACCURACY_OF_COORDINATES = 'Accuracy of coordinates'
 IDENTIFIED_BY = 'Identified by'
 

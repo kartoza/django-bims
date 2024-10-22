@@ -60,6 +60,7 @@ class OccurrenceProcessor(object):
     fetch_location_context = True
     park_centroid = {}
     parks_data = {}
+    section_data = {}
 
     def start_process(self):
         disconnect_bims_signals()
@@ -217,12 +218,38 @@ class OccurrenceProcessor(object):
         latitude = DataCSVUpload.row_value(record, LATITUDE)
 
         park_name = DataCSVUpload.row_value(record, PARK_OR_MPA_NAME)
+        section_name = DataCSVUpload.row_value(record, SECTION_NAME)
 
         accuracy_of_coordinates = DataCSVUpload.row_value(
             record, ACCURACY_OF_COORDINATES
         )
         if not accuracy_of_coordinates:
             accuracy_of_coordinates = 100
+
+        if not longitude and not latitude and section_name:
+            section_file = preferences.SiteSetting.section_layer_csv
+            if section_file:
+                if not self.section_data:
+                    with open(section_file.path, mode='r') as file:
+                        reader = csv.DictReader(file, delimiter=',')
+                        for row in reader:
+                            _section_name = (
+                                row['section'].strip().lower()
+                            )
+                            lat = float(row['latitude'])
+                            lon = float(row['longitude'])
+                            self.section_data[_section_name] = {
+                                'lat': lat,
+                                'lon': lon
+                            }
+                section_name_low = section_name.strip().lower()
+                if section_name_low in self.section_data:
+                    latitude = self.section_data[
+                        section_name_low
+                    ]['lat']
+                    longitude = self.section_data[
+                        section_name_low
+                    ]['lon']
 
         if not longitude and not latitude and park_name:
             park_mpa_csv_file = preferences.SiteSetting.park_layer_csv
@@ -330,6 +357,8 @@ class OccurrenceProcessor(object):
             location_site_name = wetland_name
         elif park_name:
             location_site_name = park_name
+        elif section_name:
+            location_site_name = section_name
 
         # Find existing location site by data source site code
         data_source = preferences.SiteSetting.default_data_source.upper()
