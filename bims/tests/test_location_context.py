@@ -1,13 +1,15 @@
 import os
 import mock
 import json
+
+from cloud_native_gis.tests.model_factories import create_user
 from django.test import TestCase, override_settings
 
 from bims.utils.location_context import get_location_context_data
-from bims.tests.model_factories import LocationSiteF, LocationContextGroupF
+from bims.tests.model_factories import LocationSiteF, LocationContextGroupF, UserF
 from bims.models.location_context_group import LocationContextGroup
 from bims.models.location_context import LocationContext
-
+from cloud_native_gis.models import Layer
 
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
@@ -91,4 +93,70 @@ class TestLocationContext(TestCase):
                 key='hydrological_regions',
                 id=1
             ).exists()
+        )
+
+
+class TestAddLocationContext(TestCase):
+    def setUp(self) -> None:
+        pass
+
+    @mock.patch('bims.models.location_site.query_features')
+    def test_add_location_context_from_native_layer(self, mock_query_features):
+        location_site = LocationSiteF.create()
+        user_1 = create_user(password='password')
+        layer = Layer.objects.create(
+            name='layer_test',
+            created_by=user_1
+        )
+        context_key = 'test_context_key'
+        full_group_key = f'{layer.unique_id}:{context_key}'
+
+        mock_query_features.return_value = {
+            'result': [{'feature': {context_key: 'some_value'}}]
+        }
+
+        location_site.add_context_group(full_group_key)
+
+        mock_query_features.assert_called_once_with(
+            table_name=layer.query_table_name,
+            field_names=[context_key],
+            coordinates=[(location_site.longitude, location_site.latitude)],
+            tolerance=10
+        )
+
+        location_context_group = LocationContextGroup.objects.filter(
+            geocontext_group_key=layer.unique_id,
+            key=layer.unique_id,
+            name='layer_test'
+        )
+
+        self.assertTrue(location_context_group.exists())
+
+        new_layer = Layer.objects.create(
+            name='layer_test_2',
+            created_by=user_1
+        )
+        LocationContextGroupF.create(
+            geocontext_group_key=new_layer.unique_id,
+            key=new_layer.unique_id,
+            name='Unchanged'
+        )
+        full_group_key = f'{new_layer.unique_id}:{context_key}'
+        location_site.add_context_group(full_group_key)
+
+        location_context_group = LocationContextGroup.objects.filter(
+            geocontext_group_key=new_layer.unique_id,
+            key=new_layer.unique_id,
+            name='Unchanged'
+        )
+        self.assertTrue(location_context_group.exists())
+
+        location_context_values = LocationContext.objects.filter(
+            site=location_site,
+            value='some_value'
+        )
+
+        self.assertEqual(
+            location_context_values.count(),
+            2
         )
