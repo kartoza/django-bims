@@ -33,7 +33,7 @@
      <!-- Page Header -->
     <div class="body-container container">
         <div class="dashboard-title">
-            <h2>Context Layers</h2>
+            <h2>Spatial filters</h2>
             <div class="dashboard-close"
                  onclick="window.location.href='{% if past_url %}{{ past_url }}{% else %}/source-references/{% endif %}'"><i class="fa fa-times" aria-hidden="true"></i>
             </div>
@@ -53,6 +53,7 @@
                 data-{{key}}="{{value}}"
             {% endfor %}
             data-csrf-token="{{ csrf_token }}"
+             data-geocontexturl="{{ preferences.GeocontextSetting.geocontext_url }}"
         ></div>
 
     </div>

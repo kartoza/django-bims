@@ -5,6 +5,7 @@ import { arrayMoveImmutable } from "array-move";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import {Button, Form, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
 import AddContextGroup from "./AddContextGroup";
+import GeocontextListModal from "./GeocontextListModal";
 
 
 const ContextFilterView = (props) => {
@@ -20,6 +21,7 @@ const ContextFilterView = (props) => {
     const [isAddNewFilterModalOpen, setIsAddNewFilterModalOpen] = useState(false);
     const [newFilterName, setNewFilterName] = useState('');
     const [savingNewFilter, setSavingNewFilter] = useState(false);
+    const [isGeocontextListOpen, setIsGeocontextListOpen] = useState(false);
 
     const contextLayerFilterAPI = '/api/context-filter/';
     const contextLayerGroupAPI = '/api/context-layer-group/';
@@ -185,6 +187,10 @@ const ContextFilterView = (props) => {
         setIsAddNewFilterModalOpen(!isAddNewFilterModalOpen)
     }
 
+    const toggleGeocontextListModal = () => {
+        setIsGeocontextListOpen(!isGeocontextListOpen);
+    }
+
     const handleAddNewGroup = (e, contextFilter) => {
          e.stopPropagation();
          toggleAddNewGropModal();
@@ -196,10 +202,17 @@ const ContextFilterView = (props) => {
 
     const handleDeleteFilter = (e, contextFilter) => {
         e.stopPropagation();
-        deleteContextFilter(contextFilter.id);
+        const isConfirmed = window.confirm(`Are you sure you want to delete "${contextFilter.title}"?`);
+        if (isConfirmed) {
+            deleteContextFilter(contextFilter.id);
+        }
     }
 
     const handleRemoveGroup = (filter, group) => {
+        const isConfirmed = window.confirm(`Are you sure you want to delete "${group.group.name}"?`);
+        if (!isConfirmed) {
+            return;
+        }
         let groupId = group.group.id;
         const updatedGroups = {
             [filter.id]: filter.location_context_groups.map((group, index) => ({
@@ -230,9 +243,12 @@ const ContextFilterView = (props) => {
                     className="form-control mb-2"
                 />
             </div>
-            <div>
+            <div style={{ width: '100%' }}>
                 <Button color={'success'} size={'sm'} style={{ marginBottom: 5 }} onClick={toggleAddNewFilterModal}>
                     <i className="bi bi-plus"></i> Add new filter section
+                </Button>
+                <Button color='warning' size={'sm'} style={{ marginBottom: 5, float: 'right' }} onClick={toggleGeocontextListModal}>
+                    <i className="bi bi-list"></i> GeoContext keys
                 </Button>
             </div>
             <div className="row">
@@ -318,6 +334,7 @@ const ContextFilterView = (props) => {
             </ModalFooter>
             </Modal>
 
+            <GeocontextListModal toggle={toggleGeocontextListModal} isOpen={isGeocontextListOpen} csrfToken={props.csrfToken} geocontextUrl={props.geocontextUrl}/>
         </div>
     );
 }

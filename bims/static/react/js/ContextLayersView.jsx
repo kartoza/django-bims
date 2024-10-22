@@ -7,7 +7,7 @@ import ContextFilterView from "./components/ContextFilterView";
 
 const ContextLayersView = (props) => {
     return (
-        <ContextFilterView csrfToken={props.csrfToken}/>
+        <ContextFilterView csrfToken={props.csrfToken} geocontextUrl={props.geocontexturl}/>
     )
 }
 

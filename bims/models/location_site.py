@@ -330,13 +330,23 @@ class LocationSite(AbstractValidation):
                     coordinates=[(self.longitude, self.latitude)],
                     tolerance=10
                 )
-                context_group, _ = LocationContextGroup.objects.update_or_create(
-                    geocontext_group_key=group_key,
-                    key=group_key,
-                    defaults={
-                        'name': layer.name
-                    }
+                # Find by name first
+                context_groups = LocationContextGroup.objects.filter(
+                    name=layer.name
                 )
+                if context_groups.exists():
+                    context_groups.update(
+                        geocontext_group_key=group_key,
+                        key=group_key)
+                    context_group = context_groups.first()
+                else:
+                    context_group, _ = LocationContextGroup.objects.get_or_create(
+                        geocontext_group_key=group_key,
+                        key=group_key,
+                        defaults={
+                            'name': layer.name
+                        }
+                    )
                 for result in feature_data['result']:
                     if context_key in result['feature']:
                         LocationContext.objects.update_or_create(
