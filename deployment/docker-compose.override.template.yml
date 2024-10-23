@@ -3,7 +3,7 @@
 
 # Exactly the same as production but for dev env, we expose the port and uses
 # different port for the web.
-version: '3.7'
+version: '2'
 services:
 
   db:
@@ -11,42 +11,93 @@ services:
       - ./pg/postgres_data:/var/lib/postgresql
       - ./backups:/backups
       - ./sql:/sql
+    ports:
+      - "6543:5432"
 
   dbbackups:
     volumes:
       - ./backups:/backups
 
   uwsgi:
-    volumes:
-      - ../../django-bims:/home/web/django_project
-      - ./static:/home/web/static:rw
-      - ./media:/home/web/media:rw
-
-  worker:
-    volumes:
-      - ../../django-bims:/home/web/django_project
-      - ./static:/home/web/static:rw
-      - ./media:/home/web/media:rw
-
-  searchworker:
-    volumes:
-      - ../../django-bims:/home/web/django_project
-      - ./static:/home/web/static:rw
-      - ./media:/home/web/media:rw
-
-  geocontextworker:
+    environment:
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - APP_NAME=bims
+      - ASYNC_SIGNALS_GEONODE=True
+      - BROKER_URL=amqp://rabbitmq:5672
+      - C_FORCE_ROOT=1
+      - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - ALLOWED_HOSTS=['localhost:63307']
+      - DATABASE_HOST=db
+      - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+      - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+      - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+      - DATABASE_USERNAME=${POSTGRES_USER:-docker}
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+      - GEOSERVER_PUBLIC_LOCATION=http://localhost:63305/geoserver/
+      - MEDIA_ROOT=/home/web/media
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - ROOT_URLCONF=core.urls
+      - SITEURL=http://localhost:63307/
+      - STATIC_ROOT=/home/web/static/static
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
     volumes:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
 
   geoserver:
-    environment:
-      - GEOSERVER_ADMIN_PASSWORD=admingeoserver
-      - SITEURL=http://django-bims.test/
     ports:
       # for geoserver
       - "63305:8080"
+
+  dev:
+    environment:
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - APP_NAME=bims
+      - ASYNC_SIGNALS_GEONODE=True
+      - BROKER_URL=amqp://rabbitmq:5672
+      - C_FORCE_ROOT=1
+      - CONTACT_US_EMAIL=${ADMIN_EMAILS:-dimas@kartoza.com}
+      - ALLOWED_HOSTS=['localhost:63307']
+      - DATABASE_HOST=db
+      - DATABASE_NAME=${POSTGRES_DBNAME:-gis}
+      - DATABASE_PASSWORD=${POSTGRES_PASS:-docker}
+      - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+      - DATABASE_USERNAME=${POSTGRES_USER:-docker}
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+      - GEOSERVER_LOCATION=http://geoserver/geoserver/
+      - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
+      - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
+      - MEDIA_ROOT=/home/web/media
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - ROOT_URLCONF=core.urls
+      - SITEURL=http://localhost:63307/
+      - STATIC_ROOT=/home/web/static/static
+      - VIRTUAL_HOST=bims.kartoza.com
+      - VIRTUAL_PORT=8080
+      - PYTHONPATH=/home/web/django_project
+    build:
+      context: docker
+      dockerfile: Dockerfile-dev
+    command: ''
+    entrypoint: [ ]
+    volumes:
+      - ../../django-bims:/home/web/django_project
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./backups:/home/web/backups
+    ports:
+      # for django test server
+      - "63302:8080"
+      # for ssh
+      - "63303:22"
+      # for karma tests
+      - "63304:9876"
 
   web:
     volumes:
@@ -58,3 +109,16 @@ services:
     ports:
       # for django test server
       - "63307:80"
+
+  worker:
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - PYTHONPATH=/home/web/django_project
+      - DEFAULT_BACKEND_DATASTORE=
+
+
+  searchworker:
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
+      - PYTHONPATH=/home/web/django_project
+      - DEFAULT_BACKEND_DATASTORE=
