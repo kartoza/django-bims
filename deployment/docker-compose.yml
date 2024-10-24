@@ -70,7 +70,7 @@ services:
 
   db:
     container_name: bims_db
-    image: kartoza/postgis:15-3.3
+    image: kartoza/postgis:16-3.4
     shm_size: 1g
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
@@ -85,20 +85,24 @@ services:
       - "6543:5432"
 
   geoserver:
-    image: kartoza/geoserver:2.19.0
+    image: kartoza/geoserver:2.24.4
     restart: unless-stopped
     environment:
-      HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
-      HTTP_PORT: ${GEOSERVER_PORT:-63305}
-      GEOSERVER_ADMIN_USER: ${GEOSERVER_USERNAME:-admin}
-      GEOSERVER_ADMIN_PASSWORD: ${GEOSERVER_PASSWORD:-admingeoserver}
-      DATABASE_URL: postgres://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+      - GEOSERVER_DATA_DIR=${GEOSERVER_DATA_DIR}
+      - GEOWEBCACHE_CACHE_DIR=${GEOWEBCACHE_CACHE_DIR}
+      - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_ADMIN_PASSWORD}
+      - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
+      - INITIAL_MEMORY=${INITIAL_MEMORY}
+      - MAXIMUM_MEMORY=${MAXIMUM_MEMORY}
+      - STABLE_EXTENSIONS=${STABLE_EXTENSIONS}
+      - COMMUNITY_EXTENSIONS=${COMMUNITY_EXTENSIONS}
+      - GEOSERVER_CONTEXT_ROOT=${GEOSERVER_CONTEXT_ROOT}
+      - ROOT_WEBAPP_REDIRECT=true
+      - CONSOLE_HANDLER_LEVEL=${CONSOLE_HANDLER_LEVEL}
     depends_on:
       - db
     volumes:
-      - geoserver-datadir:/opt/geoserver/data_dir/
-    links:
-      - db
+      - geoserver-datadir:/opt/geoserver/data_dir
 
   uwsgi:
     <<: *default-common-django
@@ -163,7 +167,7 @@ services:
       - ./logs:/var/log/
 
   dbbackups:
-    image: kartoza/pg-backup:9.6
+    image: kartoza/pg-backup:16-3.4
     hostname: pg-backups
     links:
       - db:db
