@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import axios from "axios";
 import SortableList, {SortableItem, SortableKnob} from "react-easy-sort";
 import { arrayMoveImmutable } from "array-move";
@@ -18,13 +18,19 @@ const ContextFilterView = (props) => {
     const [isAddNewGroupModalOpen, setIsAddNewGroupModalOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState(null);
     const [contextGroups, setContextGroups] = useState([]);
-    const [isAddNewFilterModalOpen, setIsAddNewFilterModalOpen] = useState(false);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
     const [newFilterName, setNewFilterName] = useState('');
-    const [savingNewFilter, setSavingNewFilter] = useState(false);
+    const [updatedFilter, setUpdatedFilter] = useState(null);
+
+    const [savingFilter, setSavingFilter] = useState(false);
     const [isGeocontextListOpen, setIsGeocontextListOpen] = useState(false);
+    const [editFilterMode, setEditFilterMode] = useState(false);
 
     const contextLayerFilterAPI = '/api/context-filter/';
     const contextLayerGroupAPI = '/api/context-layer-group/';
+
+    const filterIdInput = useRef(null);
 
     const updateOrder = async (updatedFilters, updatedGroups, refresh=false) => {
         try {
@@ -40,6 +46,7 @@ const ContextFilterView = (props) => {
             });
             console.log("Order updated successfully.");
             if (refresh) {
+                setIsFilterModalOpen(false)
                 setContextFilters([]);
                 fetchContextFilters();
             }
@@ -112,14 +119,14 @@ const ContextFilterView = (props) => {
             });
             console.log("New filter created successfully:", response.data.filter);
 
-            setIsAddNewFilterModalOpen(false);
+            setIsFilterModalOpen(false);
 
             setContextFilters([]);
             fetchContextFilters();
         } catch (error) {
             console.error("Failed to create new filter:", error);
         } finally {
-            setSavingNewFilter(false);
+            setSavingFilter(false);
         }
     };
 
@@ -158,20 +165,6 @@ const ContextFilterView = (props) => {
         }));
     };
 
-    const handleFilterChange = (e) => {
-        setFilterText(e.target.value);
-    };
-
-    const handleSaveAddNewFilter = () => {
-        const newFilter = {
-            display_order: contextFilters.length + 1,
-            location_context_groups: [],
-            title: newFilterName
-        }
-        setSavingNewFilter(true);
-        createContextFilter(newFilter);
-    }
-
     const filteredContextFilters = contextFilters.filter(group =>
         group.title.toLowerCase().includes(filterText.toLowerCase())
     );
@@ -180,15 +173,38 @@ const ContextFilterView = (props) => {
         setIsAddNewGroupModalOpen(!isAddNewGroupModalOpen)
     }
 
-    const toggleAddNewFilterModal = () => {
-        if (!isAddNewFilterModalOpen) {
+    const toggleFilterModal = () => {
+        if (!isFilterModalOpen) {
             setNewFilterName('');
         }
-        setIsAddNewFilterModalOpen(!isAddNewFilterModalOpen)
+        if (isFilterModalOpen) {
+            setUpdatedFilter(null)
+        }
+        setIsFilterModalOpen(!isFilterModalOpen)
     }
 
     const toggleGeocontextListModal = () => {
         setIsGeocontextListOpen(!isGeocontextListOpen);
+    }
+
+    const handleFilterChange = (e) => {
+        setFilterText(e.target.value);
+    };
+
+    const handleSaveFilter = () => {
+        if (!editFilterMode) {
+            const newFilter = {
+                display_order: contextFilters.length + 1,
+                location_context_groups: [],
+                title: newFilterName
+            }
+            setSavingFilter(true);
+            createContextFilter(newFilter);
+        } else {
+            let _updatedFilter = {...updatedFilter};
+            _updatedFilter['title'] = newFilterName;
+            updateOrder([_updatedFilter], {}, true)
+        }
     }
 
     const handleAddNewGroup = (e, contextFilter) => {
@@ -206,6 +222,21 @@ const ContextFilterView = (props) => {
         if (isConfirmed) {
             deleteContextFilter(contextFilter.id);
         }
+    }
+
+    const handleEditFilter = (e, contextFilter) => {
+        e.stopPropagation();
+        setEditFilterMode(true);
+        setNewFilterName(contextFilter.title);
+        setIsFilterModalOpen(true);
+        setUpdatedFilter(contextFilter);
+    }
+
+    const handleAddFilter = (e) => {
+        e.stopPropagation();
+        setEditFilterMode(false);
+        setNewFilterName('');
+        setIsFilterModalOpen(true);
     }
 
     const handleRemoveGroup = (filter, group) => {
@@ -244,7 +275,7 @@ const ContextFilterView = (props) => {
                 />
             </div>
             <div style={{ width: '100%' }}>
-                <Button color={'success'} size={'sm'} style={{ marginBottom: 5 }} onClick={toggleAddNewFilterModal}>
+                <Button color={'success'} size={'sm'} style={{ marginBottom: 5 }} onClick={handleAddFilter}>
                     <i className="bi bi-plus"></i> Add new filter section
                 </Button>
                 <Button color='warning' size={'sm'} style={{ marginBottom: 5, float: 'right' }} onClick={toggleGeocontextListModal}>
@@ -269,6 +300,12 @@ const ContextFilterView = (props) => {
                                             onClick={(e) => handleAddNewGroup(e, contextFilter)}
                                             style={{ float: 'right', right: 0, marginTop: -5 }}>
                                         <i className="bi bi-plus"></i>
+                                    </Button>
+                                    <Button color={'warning'} size={'sm'}
+                                            outline
+                                            onClick={(e) => handleEditFilter(e, contextFilter)}
+                                            style={{ float: 'right', right: 0, marginTop: -5, marginRight: 5 }}>
+                                        <i className="bi bi-pencil"></i>
                                     </Button>
                                     <Button color={'danger'} size={'sm'}
                                             outline
@@ -310,9 +347,9 @@ const ContextFilterView = (props) => {
             </div>
 
             <AddContextGroup isOpen={isAddNewGroupModalOpen} selectedFilter={selectedFilter} toggle={toggleAddNewGropModal} updateOrder={updateOrder}/>
-            <Modal isOpen={isAddNewFilterModalOpen} toggle={toggleAddNewFilterModal}>
-                <ModalHeader toggle={toggleAddNewFilterModal}>
-                    Add new filter section
+            <Modal isOpen={isFilterModalOpen} toggle={toggleFilterModal}>
+                <ModalHeader toggle={toggleFilterModal}>
+                    { editFilterMode ? 'Edit filter' : 'Add new filter section' }
                 </ModalHeader>
                 <ModalBody>
                     <Form>
@@ -321,15 +358,16 @@ const ContextFilterView = (props) => {
                                 Filter section name
                             </Label>
                             <Input value={newFilterName} onChange={e => setNewFilterName(e.target.value)}/>
+                            <Input value={''} type={'hidden'} innerRef={filterIdInput}/>
                         </FormGroup>
                     </Form>
                 </ModalBody>
                 <ModalFooter>
-                <Button color="secondary" onClick={toggleAddNewFilterModal} disabled={savingNewFilter}>
+                <Button color="secondary" onClick={toggleFilterModal} disabled={savingFilter}>
                     Close
                 </Button>
-                <Button color="primary" onClick={handleSaveAddNewFilter} disabled={!newFilterName || savingNewFilter}>
-                    {savingNewFilter ? 'Saving...' : 'Save'}
+                <Button color="primary" onClick={handleSaveFilter} disabled={!newFilterName || savingFilter}>
+                    {savingFilter ? 'Saving...' : 'Save'}
                 </Button>
             </ModalFooter>
             </Modal>
