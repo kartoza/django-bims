@@ -193,6 +193,7 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
                 group_id = group_data.get('id')
                 new_group_order = group_data.get('group_display_order')
                 remove = group_data.get('remove', False)
+                group_name = group_data.get('name', None)
                 context_filter_group = LocationContextFilterGroupOrder.objects.filter(
                     filter_id=filter_id,
                     group_id=group_id
@@ -201,8 +202,16 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
                     if remove:
                         context_filter_group.delete()
                     else:
+                        group_updated_data = {
+                            'group_display_order': new_group_order
+                        }
+                        if group_name:
+                           LocationContextGroup.objects.filter(
+                               id=group_id
+                           ).update(name=group_name)
                         context_filter_group.update(
-                            group_display_order=new_group_order)
+                            **group_updated_data
+                        )
                 else:
                     if not remove:
                         LocationContextFilterGroupOrder.objects.create(

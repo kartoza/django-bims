@@ -27,10 +27,15 @@ const ContextFilterView = (props) => {
     const [isGeocontextListOpen, setIsGeocontextListOpen] = useState(false);
     const [editFilterMode, setEditFilterMode] = useState(false);
 
+    const [isGroupEditModalOpen, setIsGroupEditModalOpen] = useState(false);
+    const [selectedGroup, setSelectedGroup] = useState(null);
+    const [selectedGroupName, setSelectedGroupName] = useState('');
+
     const contextLayerFilterAPI = '/api/context-filter/';
     const contextLayerGroupAPI = '/api/context-layer-group/';
 
     const filterIdInput = useRef(null);
+    const groupNameInput = useRef(null);
 
     const updateOrder = async (updatedFilters, updatedGroups, refresh=false) => {
         try {
@@ -183,6 +188,14 @@ const ContextFilterView = (props) => {
         setIsFilterModalOpen(!isFilterModalOpen)
     }
 
+    const toggleGroupModal = () => {
+        if (!isGroupEditModalOpen) {
+
+        }
+
+        setIsGroupEditModalOpen(!isGroupEditModalOpen);
+    }
+
     const toggleGeocontextListModal = () => {
         setIsGeocontextListOpen(!isGeocontextListOpen);
     }
@@ -205,6 +218,19 @@ const ContextFilterView = (props) => {
             _updatedFilter['title'] = newFilterName;
             updateOrder([_updatedFilter], {}, true)
         }
+    }
+
+    const handleSaveGroup = () => {
+        let groupId = selectedGroup.group.id;
+        const updatedGroups = {
+            [selectedFilter.id]: selectedFilter.location_context_groups.map((group, index) => ({
+                id: group.group.id,
+                group_display_order: index + 1,
+                name: group.group.id === groupId ? selectedGroupName : null
+            }))
+        };
+        setIsGroupEditModalOpen(false);
+        updateOrder({}, updatedGroups, true);
     }
 
     const handleAddNewGroup = (e, contextFilter) => {
@@ -239,7 +265,7 @@ const ContextFilterView = (props) => {
         setIsFilterModalOpen(true);
     }
 
-    const handleRemoveGroup = (filter, group) => {
+    const handleDeleteGroup = (filter, group) => {
         const isConfirmed = window.confirm(`Are you sure you want to delete "${group.group.name}"?`);
         if (!isConfirmed) {
             return;
@@ -253,6 +279,13 @@ const ContextFilterView = (props) => {
             }))
         };
         updateOrder({}, updatedGroups, true);
+    }
+
+    const handleEditGroup = (filter, group) => {
+        setSelectedFilter(filter)
+        setSelectedGroup(group)
+        setSelectedGroupName(group.group?.name);
+        setIsGroupEditModalOpen(true)
     }
 
     if (loading) {
@@ -329,9 +362,15 @@ const ContextFilterView = (props) => {
                                                             {contextGroup.group.name}
                                                             <Button color={'danger'} size={'sm'}
                                                                     style={{float: 'right', right: 0, marginTop: -5}}
-                                                                    onClick={(e) => handleRemoveGroup(contextFilter, contextGroup)}
+                                                                    onClick={(e) => handleDeleteGroup(contextFilter, contextGroup)}
                                                             >
                                                                 <i className="bi bi-trash"></i>
+                                                            </Button>
+                                                            <Button color={'warning'} size={'sm'}
+                                                                    style={{float: 'right', marginRight: 5, marginTop: -5}}
+                                                                    onClick={(e) => handleEditGroup(contextFilter, contextGroup)}
+                                                            >
+                                                                <i className="bi bi-pencil"></i>
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -347,6 +386,7 @@ const ContextFilterView = (props) => {
             </div>
 
             <AddContextGroup isOpen={isAddNewGroupModalOpen} selectedFilter={selectedFilter} toggle={toggleAddNewGropModal} updateOrder={updateOrder}/>
+
             <Modal isOpen={isFilterModalOpen} toggle={toggleFilterModal}>
                 <ModalHeader toggle={toggleFilterModal}>
                     { editFilterMode ? 'Edit filter' : 'Add new filter section' }
@@ -368,6 +408,30 @@ const ContextFilterView = (props) => {
                 </Button>
                 <Button color="primary" onClick={handleSaveFilter} disabled={!newFilterName || savingFilter}>
                     {savingFilter ? 'Saving...' : 'Save'}
+                </Button>
+            </ModalFooter>
+            </Modal>
+
+            <Modal isOpen={isGroupEditModalOpen} toggle={toggleGroupModal}>
+                <ModalHeader toggle={toggleGroupModal}>
+                   Edit
+                </ModalHeader>
+                <ModalBody>
+                    <Form>
+                        <FormGroup>
+                            <Label for="filterName">
+                                Context Group Name
+                            </Label>
+                             <Input value={selectedGroupName} onChange={e => setSelectedGroupName(e.target.value)}/>
+                        </FormGroup>
+                    </Form>
+                </ModalBody>
+                <ModalFooter>
+                <Button color="secondary" onClick={toggleGroupModal} disabled={savingFilter}>
+                    Close
+                </Button>
+                <Button color="primary" onClick={handleSaveGroup}>
+                    Save
                 </Button>
             </ModalFooter>
             </Modal>

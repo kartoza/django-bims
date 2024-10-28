@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import '../css/ContextLayers.scss';
 import {createRoot} from "react-dom/client";
-import ContextGroupView from "./components/ContextGroupView";
 import ContextFilterView from "./components/ContextFilterView";
 
 
