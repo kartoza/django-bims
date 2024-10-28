@@ -304,7 +304,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-control-panel-box {
-    width: 280px;
+    width: 320px;
     background-color: white;
     position: absolute;
     top: 0;
@@ -329,7 +329,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-search-result {
-    margin-left: 366px !important;
+    margin-left: 405px !important;
     padding-bottom: 0;
 }
 
@@ -427,7 +427,7 @@ html, body, .map, .map-wrapper, #map-container {
 #layers-selector li .row-title {
     padding: 5px;
     text-overflow: ellipsis;
-    max-width: 250px;
+    max-width: 310px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -667,7 +667,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .container-1 input#search {
-    width: 220px;
+    width: 260px;
     height: 37px;
     background: #ffffff;
     border: none;
@@ -1602,7 +1602,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .layer-transparency {
-    width: 210px;
+    width: 255px;
 }
 
 .upload-alert a {
@@ -2876,7 +2876,7 @@ div:hover::-webkit-scrollbar {
 }
 
 .search-header-row {
-    width: 280px;
+    width: 320px;
     z-index: 9999;
     position: fixed;
     background: white;
