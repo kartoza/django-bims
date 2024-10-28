@@ -29,6 +29,8 @@ const GeocontextListModal = (props) => {
     const [cloudNativeLayers, setCloudNativeLayers] = useState([])
     const [selectedLayer, setSelectedLayer] = useState(null);
 
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const layerAttributeRef = useRef(null);
 
     const apiUrl = '/api/context-layer-keys/';
@@ -79,6 +81,7 @@ const GeocontextListModal = (props) => {
 
     const addNewContextKey = async (newKey) => {
         let keyToAdd = newKey;
+        setIsProcessing(true);
         if (layerType === 'native_layer') {
             keyToAdd = `${selectedLayer.unique_id}:${layerAttributeRef.current.value}`;
         }
@@ -99,6 +102,8 @@ const GeocontextListModal = (props) => {
             if (error.response?.data) {
                 setAddNewError(error.response.data.message)
             }
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -270,8 +275,8 @@ const GeocontextListModal = (props) => {
                 <ModalFooter>
                     <Button color="primary" onClick={(e) => {
                         addNewContextKey(newGeocontextKey)
-                    }} disabled={layerType === 'key' && !newGeocontextKey}>
-                        Save
+                    }} disabled={(layerType === 'key' && !newGeocontextKey) || isProcessing}>
+                        {isProcessing ? 'Processing...' : 'Save'}
                     </Button>
                 </ModalFooter>
             </Modal>
