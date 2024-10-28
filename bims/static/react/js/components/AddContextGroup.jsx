@@ -1,12 +1,12 @@
 import {Button, FormGroup, Input, Label, Modal, ModalBody, ModalFooter, ModalHeader} from "reactstrap";
 import React, {useEffect, useRef, useState} from "react";
 import axios from "axios";
+import Select from "react-select";
 
 
 const AddContextGroup = (props) => {
     const [contextGroups, setContextGroups] = useState([]);
-    const inputRef = useRef(null);
-
+    const [selectedGroup, setSelectedGroup] = useState(null);
     const contextLayerGroupAPI = '/api/context-layer-group/';
 
     const fetchContextGroups = async () => {
@@ -21,7 +21,6 @@ const AddContextGroup = (props) => {
     };
 
     const handleAddNewContext = (e) => {
-        let groupId = parseInt(inputRef.current.value);
         let filterId = props.selectedFilter.id;
 
         const updatedGroups = {
@@ -31,7 +30,7 @@ const AddContextGroup = (props) => {
             }))
         }
         updatedGroups[filterId].push({
-            id: groupId,
+            id: selectedGroup.value,
             group_display_order: props.selectedFilter.location_context_groups.length + 1
         })
         props.updateOrder({}, updatedGroups, true);
@@ -46,6 +45,30 @@ const AddContextGroup = (props) => {
         }
     }, [props.isOpen])
 
+    const onSelectContextGroup = (selectedOption) => {
+        setSelectedGroup(selectedOption)
+      };
+
+
+    const contextOptions = contextGroups?.filter(contextGroup => {
+          return !props.selectedFilter?.location_context_groups.some(
+            group => group.group.id === contextGroup.id
+          );
+        })
+        .map(contextGroup => ({
+          value: contextGroup.id,
+          label: (
+            <>
+              <div>{contextGroup.name}</div>
+              <div style={{ fontSize: 'smaller', color: 'gray' }}>
+                [{contextGroup.geocontext_group_key}]
+              </div>
+            </>
+          ),
+          name: contextGroup.name,
+          geocontext_group_key: contextGroup.is_native_layer ? contextGroup.native_layer_name : contextGroup.geocontext_group_key,
+        }));
+
     return (
         <Modal isOpen={props.isOpen} toggle={props.toggle} size={'lg'}>
             <ModalHeader toggle={props.toggle}>
@@ -56,26 +79,22 @@ const AddContextGroup = (props) => {
                     <Label for="contextGroupSelect">
                       Context layer name
                     </Label>
-                    <Input
-                      id="contextGroupSelect"
-                      name="select"
-                      type="select"
-                      innerRef={inputRef}
-                    >
-
-                        {contextGroups?.filter(contextGroup => {
-                            for(let i = 0; i < props.selectedFilter?.location_context_groups.length; i++) {
-                                if (props.selectedFilter.location_context_groups[i].group.id === contextGroup.id) {
-                                    return false
-                                }
-                            }
-                            return true;
-                        }).map(contextGroup => (
-                            <option id={contextGroup.id} value={contextGroup.id}>
-                                {contextGroup.name}
-                            </option>
-                        ))}
-                    </Input>
+                    <Select
+                        id="contextGroupSelect"
+                        options={contextOptions}
+                        onChange={onSelectContextGroup}
+                        placeholder="Search and select context group"
+                        isSearchable
+                        getOptionLabel={(option) => option.name}
+                        formatOptionLabel={({ name, geocontext_group_key }) => (
+                          <div>
+                            <div>{name}</div>
+                            <div style={{ fontSize: 'smaller', color: 'gray' }}>
+                              {geocontext_group_key}
+                            </div>
+                          </div>
+                        )}
+                      />
                   </FormGroup>
             </ModalBody>
             <ModalFooter>

@@ -356,22 +356,31 @@ const ContextFilterView = (props) => {
                                                          className="context-group-item"
                                                     >
                                                         <div>
-                                                            <SortableKnob>
-                                                                <span><i className="bi bi-grip-vertical"></i></span>
-                                                            </SortableKnob>
-                                                            {contextGroup.group.name}
-                                                            <Button color={'danger'} size={'sm'}
-                                                                    style={{float: 'right', right: 0, marginTop: -5}}
-                                                                    onClick={(e) => handleDeleteGroup(contextFilter, contextGroup)}
-                                                            >
-                                                                <i className="bi bi-trash"></i>
-                                                            </Button>
-                                                            <Button color={'warning'} size={'sm'}
-                                                                    style={{float: 'right', marginRight: 5, marginTop: -5}}
-                                                                    onClick={(e) => handleEditGroup(contextFilter, contextGroup)}
-                                                            >
-                                                                <i className="bi bi-pencil"></i>
-                                                            </Button>
+                                                            <div className={'d-flex'}>
+                                                                <SortableKnob>
+                                                                    <span><i className="bi bi-grip-vertical"></i></span>
+                                                                </SortableKnob>
+                                                                <div>
+                                                                    {contextGroup.group.name}
+                                                                    <div style={{ fontSize: 13}}>
+                                                                        {contextGroup.group.is_native_layer ? contextGroup.group.native_layer_name : contextGroup.group.geocontext_group_key}
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ marginLeft: 'auto', alignContent: 'center' }}>
+                                                                    <Button color={'danger'} size={'sm'}
+                                                                            style={{float: 'right', right: 0}}
+                                                                            onClick={(e) => handleDeleteGroup(contextFilter, contextGroup)}
+                                                                    >
+                                                                        <i className="bi bi-trash"></i>
+                                                                    </Button>
+                                                                    <Button color={'warning'} size={'sm'}
+                                                                            style={{float: 'right', marginRight: 5}}
+                                                                            onClick={(e) => handleEditGroup(contextFilter, contextGroup)}
+                                                                    >
+                                                                        <i className="bi bi-pencil"></i>
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </SortableItem>

@@ -302,13 +302,17 @@ class LocationSite(AbstractValidation):
         LOGGER.info('Request url : {}'.format(url))
 
         try:
-            r = requests.get(url)
+            r = requests.get(url, timeout=10)
             if r.status_code != 200:
                 message = (
                         'Request to url %s got %s [%s], can not update location '
                         'context document.' % (url, r.status_code, r.reason))
                 LOGGER.info(message)
                 return None
+        except requests.exceptions.Timeout:
+            message = 'Request to url %s timed out.' % url
+            LOGGER.info(message)
+            return None
         except requests.exceptions.SSLError:
             return None
 
@@ -359,8 +363,8 @@ class LocationSite(AbstractValidation):
                         )
             return True, 'Added'
 
-        geocontext_data_string = self.get_geocontext_group_data(group_key)
         try:
+            geocontext_data_string = self.get_geocontext_group_data(group_key)
             geocontext_data = json.loads(geocontext_data_string)
             for geocontext_value in geocontext_data['services']:
                 if 'value' not in geocontext_value:

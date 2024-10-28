@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from preferences import preferences
 
+from bims.models import LocationSite
 from bims.models.geocontext_setting import GeocontextSetting
 from bims.models.location_context_group import (
     LocationContextGroup
@@ -276,6 +277,21 @@ class ContextLayerKeys(SuperuserRequiredMixin, APIView):
 
         if new_key not in context_keys:
             context_keys.append(new_key)
+
+            location_site = LocationSite.objects.first()
+            if location_site:
+                add_context_status, message = location_site.add_context_group(new_key)
+                if not add_context_status:
+                    return Response(
+                        {
+                            "message": (
+                                "Failed to retrieve data from GeoContext. "
+                                "Please check if the provided key is valid."
+                            ),
+
+                        }
+                        , status=400)
+
             geocontext_setting.geocontext_keys = ','.join(context_keys)
             geocontext_setting.save()
             return Response(
