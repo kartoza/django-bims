@@ -174,8 +174,18 @@ class ContextFilter(SuperuserRequiredMixin, APIView):
         for filter_data in filters_data:
             filter_id = filter_data.get('id')
             new_order = filter_data.get('display_order')
+            updated_data = {
+                'display_order': new_order
+            }
+
+            filter_title = filter_data.get('title')
+            if filter_title:
+                updated_data['title'] = filter_title
+
             LocationContextFilter.objects.filter(
-                id=filter_id).update(display_order=new_order)
+                id=filter_id).update(
+                    **updated_data
+            )
 
         # Update group order within each filter
         for filter_id, groups in groups_data.items():
