@@ -341,6 +341,7 @@ class LocationSite(AbstractValidation):
                 if context_groups.exists():
                     context_groups.update(
                         geocontext_group_key=group_key,
+                        layer_identifier=context_key,
                         key=group_key)
                     context_group = context_groups.first()
                 else:
@@ -348,9 +349,15 @@ class LocationSite(AbstractValidation):
                         geocontext_group_key=group_key,
                         key=group_key,
                         defaults={
-                            'name': layer.name
+                            'name': layer.name,
                         }
                     )
+
+                    if context_group.layer_identifier != context_key:
+                        LocationContextGroup.objects.filter(
+                            id=context_group.id
+                        ).update(layer_identifier=context_key)
+
                 for result in feature_data['result']:
                     if context_key in result['feature']:
                         LocationContext.objects.update_or_create(
