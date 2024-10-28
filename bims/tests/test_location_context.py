@@ -14,7 +14,7 @@ from cloud_native_gis.models import Layer
 test_data_directory = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'data')
 
-def mocked_location_context_data(url):
+def mocked_location_context_data(*args, **kwargs):
     class MockResponse:
         def __init__(self, json_data, status_code):
             self.json_data = json_data
