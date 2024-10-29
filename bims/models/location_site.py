@@ -360,14 +360,26 @@ class LocationSite(AbstractValidation):
 
                 for result in feature_data['result']:
                     if context_key in result['feature']:
-                        LocationContext.objects.update_or_create(
-                            site=self,
-                            group=context_group,
-                            defaults={
-                                'fetch_time': timezone.now(),
-                                'value': str(result['feature'][context_key])
-                            }
-                        )
+                        try:
+                            LocationContext.objects.update_or_create(
+                                site=self,
+                                group=context_group,
+                                defaults={
+                                    'fetch_time': timezone.now(),
+                                    'value': str(result['feature'][context_key])
+                                }
+                            )
+                        except LocationContext.MultipleObjectsReturned:
+                            LocationContext.objects.filter(
+                                site=self,
+                                group=context_group,
+                            ).delete()
+                            LocationContext.objects.create(
+                                site=self,
+                                group=context_group,
+                                fetch_time=timezone.now(),
+                                value=str(result['feature'][context_key])
+                            )
             return True, 'Added'
 
         try:

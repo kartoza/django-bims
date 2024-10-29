@@ -36,8 +36,11 @@ class LocationContextGroupSerializer(serializers.ModelSerializer):
 
     def get_native_layer_name(self, obj: LocationContextGroup):
         if obj.key and is_uuid(obj.key):
-            layer = Layer.objects.get(unique_id=obj.key)
-            return layer.name
+            try:
+                layer = Layer.objects.get(unique_id=obj.key)
+                return layer.name
+            except Layer.DoesNotExist:
+                return ''
         return ''
 
     def get_is_native_layer(self, obj: LocationContextGroup):
