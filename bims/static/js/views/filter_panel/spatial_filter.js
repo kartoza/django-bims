@@ -348,7 +348,7 @@ define([
         addSelectedSpatialFilterLayerFromJSON: function (json_string) {
             let all = JSON.parse(json_string);
             for (let i=0; i < all.length; i++) {
-                let parsed_data = all[0].split(',');
+                let parsed_data = all[i].split(',');
                 if (parsed_data.length === 2) {
                     parsed_data.push(this.groupKeyLabel);
                 }
@@ -653,6 +653,10 @@ define([
                 this.$el.find('.subtitle').removeClass('filter-panel-selected');
             }
         },
+        isUUID: function (value) {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            return uuidRegex.test(value);
+        },
         showBoundary: function () {
             // Show border in red outline to map for selected filter
             if (this.selectedSpatialFilterLayers.length < 1) {
@@ -662,13 +666,57 @@ define([
             Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
-
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
                 let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0]);
+                let layerIdentifier = $filterContainer.data('layer-identifier');
+
+                if (self.isUUID(key)) {
+                    $.ajax({
+                        type: 'GET',
+                        url: '/api/layer/',
+                        dataType: 'json',
+                        success: function (data) {
+                            const layer = data.results.find(item => item.tile_url.includes(key));
+                            const layerStyle = function(feature, resolution) {
+                              if (selectedLayer.includes(feature.get(layerIdentifier))) {
+                                return new ol.style.Style({
+                                  stroke: new ol.style.Stroke({
+                                    color: 'red',
+                                    width: 3,
+                                  }),
+                                });
+                              } else {
+                                return null;
+                              }
+                            };
+                            let vectorSource = null;
+                            if (layer.pmtile) {
+                                vectorSource = new olpmtiles.PMTilesVectorSource({
+                                  url: `/api/serve-pmtile/${key}/`,
+                                  attributions: []
+                                });
+                            } else {
+                                vectorSource = new ol.source.VectorTile({
+                                    attributions: [],
+                                    url: layer.tile_url,
+                                    format: new ol.format.MVT()
+                                })
+                            }
+                            let vectorLayer = new ol.layer.VectorTile({
+                                title: '',
+                                source: vectorSource,
+                                tileGrid: ol.tilegrid.createXYZ(),
+                                declutter: true,
+                                style: layerStyle,
+                            })
+                            self.layerGroup.getLayers().getArray().push(vectorLayer);
+                        }
+                    })
+                }
+
                 let wmsUrl = '/bims_proxy/' + $filterContainer.data('wms-url');
                 let wmsLayer = $filterContainer.data('layer-name');
                 let wmsFormat = $filterContainer.data('wms-format');
-                let layerIdentifier = $filterContainer.data('layer-identifier');
                 let cqlFilters = null;
                 if (!wmsUrl) {
                     return true;
