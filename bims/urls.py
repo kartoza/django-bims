@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
 from django.urls import reverse_lazy, path, include, re_path
 from django.views.generic import RedirectView
 from django.views.generic import TemplateView
@@ -101,6 +102,10 @@ from bims.views.layer_upload import (
     BoundaryUploadView,
     UserBoundaryUploadView
 )
+
+
+def login_redirect(request):
+    return redirect('/accounts/login', permanent=True)
 
 urlpatterns = [
     re_path(r'^$', landing_page_view, name='landing-page'),
@@ -311,6 +316,7 @@ urlpatterns = [
     path('context-layers/',
         ContextLayersView.as_view(),
         name='context-layers-view'),
+    re_path(r'^login/?$', login_redirect, name='login_redirect'),
 ]
 
 # Api urls
