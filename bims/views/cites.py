@@ -1,5 +1,6 @@
 from braces.views import LoginRequiredMixin
 from django.utils.decorators import method_decorator
+from preferences import preferences
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
@@ -66,9 +67,10 @@ class TaxaCitesStatusAPIView(LoginRequiredMixin, APIView):
         serializer = TaxonNameSerializer(data=request.data)
         if serializer.is_valid():
             taxon_name = serializer.validated_data['taxon_name']
-            success, response_data = get_cites_listing_data(taxon_name)
-            if not success:
-                return Response(response_data,
-                                status=status.HTTP_404_NOT_FOUND)
-            return Response(response_data, status=status.HTTP_200_OK)
+            if preferences.SiteSetting.cites_token_api:
+                success, response_data = get_cites_listing_data(taxon_name)
+                if not success:
+                    return Response(response_data,
+                                    status=status.HTTP_404_NOT_FOUND)
+                return Response(response_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
