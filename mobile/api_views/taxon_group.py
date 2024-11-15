@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from bims.api_views.taxon_update import is_expert
 from bims.models.taxon_group import TaxonGroup
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
@@ -40,9 +41,16 @@ class TaxonGroupTotalValidated(APIView):
         validated = taxon_group.taxonomies.filter(
             taxongrouptaxonomy__is_validated=True
         ).count()
-        unvalidated = taxon_group.taxonomies.filter(
-            taxongrouptaxonomy__is_validated=False
-        ).count()
+        is_user_expert = is_expert(
+            self.request.user,
+            TaxonGroup.objects.get(id=taxon_group.id)
+        )
+        if self.request.user.is_superuser or is_user_expert:
+            unvalidated = taxon_group.taxonomies.filter(
+                taxongrouptaxonomy__is_validated=False
+            ).count()
+        else:
+            unvalidated = 0
 
         self.validated_count += validated
         self.unvalidated_count += unvalidated

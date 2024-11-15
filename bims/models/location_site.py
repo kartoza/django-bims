@@ -332,7 +332,7 @@ class LocationSite(AbstractValidation):
                     table_name=layer.query_table_name,
                     field_names=[context_key],
                     coordinates=[(self.longitude, self.latitude)],
-                    tolerance=10
+                    tolerance=0
                 )
                 # Find by name first
                 context_groups = LocationContextGroup.objects.filter(
