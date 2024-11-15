@@ -121,7 +121,7 @@ class TestAddLocationContext(TestCase):
             table_name=layer.query_table_name,
             field_names=[context_key],
             coordinates=[(location_site.longitude, location_site.latitude)],
-            tolerance=10
+            tolerance=0
         )
 
         location_context_group = LocationContextGroup.objects.filter(
