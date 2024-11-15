@@ -457,7 +457,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             let newParams = {
                 layers: locationSiteGeoserverLayer,
                 format: 'image/png',
-                viewparams: 'where:"' + data['sites_raw_query'] + '"'
+                viewparams: 'where:' + tenant + '."' + data['sites_raw_query'] + '"'
             };
             this.siteLayerSource.updateParams(newParams);
             this.siteLayerSource.refresh();
