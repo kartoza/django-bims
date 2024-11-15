@@ -408,73 +408,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         self.showLayerStyle(e.target.attributes["value"].value);
                     });
 
-                    self.addGeonodeLayersToMap(map);
-
                 },
                 error: function (err) {
                     self.addBiodiveristyLayersToMap(map);
                 }
             });
 
-        },
-        addGeonodeLayersToMap: function (map) {
-            // Adding layer from GeoNode, filtering is done by the API
-            var default_wms_url = ogcServerDefaultLocation + 'wms';
-            var default_wms_format = 'image/png';
-            var self = this;
-
-            $.ajax({
-                type: 'GET',
-                url: '/api/layers',
-                dataType: 'json',
-                success: function (data) {
-                    $.each(data['objects'].reverse(), function (index, value) {
-                        var options = {
-                            url: default_wms_url,
-                            params: {
-                                layers: value.typename,
-                                format: default_wms_format
-                            }
-                        };
-
-                        var layerName = value.typename;
-                        if (!layerName) {
-                            return true;
-                        }
-
-                        if (layerName === 'null' ||
-                            layerName === 'Sites') {
-                            return true;
-                        }
-
-                        let layerOrder = (parseInt(Object.keys(self.orders)[Object.keys(self.orders).length - 1]) + 1);
-                        self.orders[layerOrder] = layerName;
-
-                        var category = '';
-
-                        if (value.hasOwnProperty('category__gn_description')) {
-                            category = value['category__gn_description'];
-                        }
-
-                        self.initLayer(
-                            new ol.layer.Tile({
-                                source: new ol.source.TileWMS(options)
-                            }),
-                            value.title, value.typename, false, category, 'GeoNode'
-                        );
-
-                        self.renderLegend(
-                            value.typename,
-                            value.title,
-                            options['url'],
-                            options['params']['layers'],
-                            false
-                        );
-                    });
-                    self.renderLayers(false);
-                    self.refreshLayerOrders();
-                }
-            })
         },
         changeLayerAdministrative: function (administrative) {
             var self = this;

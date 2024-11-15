@@ -137,23 +137,47 @@ define([
             let self = this;
             const baseLayer = [];
             if (!self.mapLocationSite) {
-                if(bingMapKey){
-                    baseLayer.push(
-                        new ol.layer.Tile({
-                            source: new ol.source.BingMaps({
-                            key: bingMapKey,
-                            imagerySet: 'AerialWithLabels'
-                        })
-                        })
-                    )
-                }
-                else{
-                    baseLayer.push(
-                        new ol.layer.Tile({
-                            source: new ol.source.OSM()
-                        })
-                    )
-                }
+                let _baseMap =  new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                });
+                $.each(baseMapLayers.reverse(), function (index, baseMapData) {
+                    if (baseMapData.default_basemap) {
+                        if (baseMapData['source_type'] === "xyz") {
+                            _baseMap = new ol.layer.Tile({
+                                title: baseMapData['title'],
+                                source: new ol.source.XYZ({
+                                    attributions: [baseMapData['attributions']],
+                                    url: '/bims_proxy/' + baseMapData['url']
+                                })
+                            })
+                        } else if (baseMapData['source_type'] === "bing") {
+                            _baseMap = new ol.layer.Tile({
+                                title: baseMapData['title'],
+                                source: new ol.source.BingMaps({
+                                    key: baseMapData['key'],
+                                    imagerySet: 'AerialWithLabels'
+                                })
+                            });
+                        } else if (baseMapData['source_type'] === "stamen") {
+                            _baseMap = new ol.layer.Tile({
+                                title: baseMapData['title'],
+                                source: new ol.source.XYZ({
+                                    attributions: [
+                                        '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a>',
+                                        '&copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a>',
+                                        '&copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>',
+                                        '&copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>'
+                                    ],
+                                    url: '/bims_proxy/' + 'https://tiles-eu.stadiamaps.com/tiles/' + baseMapData['layer_name'] + '/{z}/{x}/{y}.jpg?api_key=' + baseMapData['key'],
+                                    tilePixelRatio: 2,
+                                    maxZoom: 20
+                                })
+                            });
+                        }
+                    }
+                })
+
+                baseLayer.push(_baseMap)
                 self.mapLocationSite = new ol.Map({
                     controls: ol.control.defaults.defaults().extend([
                         new ol.control.ScaleLine()
@@ -193,6 +217,7 @@ define([
                 viewparams: 'where:"' + data['sites_raw_query'] + '"'
             };
             self.siteLayerSource.updateParams(newParams);
+            self.siteLayerSource.refresh();
         },
         show: function (data) {
             if (this.isOpen) {
@@ -522,10 +547,10 @@ define([
                 this.endemismChartCanvas = null;
             }
 
-            if (this.mapLocationSite) {
-                this.mapLocationSite = null;
-                $('#locationsite-map').html('');
-            }
+            // if (this.mapLocationSite) {
+            //     this.mapLocationSite = null;
+            //     $('#locationsite-map').html('');
+            // }
 
             if (Shared.LocationSiteDetailXHRRequest) {
                 Shared.LocationSiteDetailXHRRequest.abort();

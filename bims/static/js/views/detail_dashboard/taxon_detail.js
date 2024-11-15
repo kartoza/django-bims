@@ -391,23 +391,46 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
 
             if (!this.mapTaxaSite) {
                 const baseLayer = [];
-                if(bingMapKey){
-                    baseLayer.push(
-                        new ol.layer.Tile({
-                            source: new ol.source.BingMaps({
-                            key: bingMapKey,
-                            imagerySet: 'AerialWithLabels'
-                        })
-                        })
-                    )
-                }
-                else{
-                    baseLayer.push(
-                        new ol.layer.Tile({
-                            source: new ol.source.OSM()
-                        })
-                    )
-                }
+                let _baseMap =  new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                });
+                $.each(baseMapLayers.reverse(), function (index, baseMapData) {
+                    if (baseMapData.default_basemap) {
+                        if (baseMapData['source_type'] === "xyz") {
+                            _baseMap = new ol.layer.Tile({
+                                title: baseMapData['title'],
+                                source: new ol.source.XYZ({
+                                    attributions: [baseMapData['attributions']],
+                                    url: '/bims_proxy/' + baseMapData['url']
+                                })
+                            })
+                        } else if (baseMapData['source_type'] === "bing") {
+                            _baseMap = new ol.layer.Tile({
+                                title: baseMapData['title'],
+                                source: new ol.source.BingMaps({
+                                    key: baseMapData['key'],
+                                    imagerySet: 'AerialWithLabels'
+                                })
+                            });
+                        } else if (baseMapData['source_type'] === "stamen") {
+                            _baseMap = new ol.layer.Tile({
+                                title: baseMapData['title'],
+                                source: new ol.source.XYZ({
+                                    attributions: [
+                                        '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a>',
+                                        '&copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a>',
+                                        '&copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>',
+                                        '&copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>'
+                                    ],
+                                    url: '/bims_proxy/' + 'https://tiles-eu.stadiamaps.com/tiles/' + baseMapData['layer_name'] + '/{z}/{x}/{y}.jpg?api_key=' + baseMapData['key'],
+                                    tilePixelRatio: 2,
+                                    maxZoom: 20
+                                })
+                            });
+                        }
+                    }
+                })
+                baseLayer.push(_baseMap)
                 this.mapTaxaSite = new ol.Map({
                     controls: ol.control.defaults.defaults().extend([
                         new ol.control.ScaleLine()
@@ -437,6 +460,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 viewparams: 'where:"' + data['sites_raw_query'] + '"'
             };
             this.siteLayerSource.updateParams(newParams);
+            this.siteLayerSource.refresh();
 
             // Zoom to extent
             let ext = ol.proj.transformExtent(data['extent'], ol.proj.get('EPSG:4326'), ol.proj.get('EPSG:3857'));
