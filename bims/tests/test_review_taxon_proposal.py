@@ -182,8 +182,8 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         taxa_list_url = reverse('taxa-list')
         unvalidated_taxa_list_url = f'{taxa_list_url}?taxonGroup={taxon_group_level_3.id}&validated=False'
         response = self.client.get(unvalidated_taxa_list_url)
-        self.assertFalse(
-            response.data['results'][0]['can_be_validated']
+        self.assertEqual(
+            len(response.data['results']), 0
         )
 
         # The expert of taxon group level 2 validates the taxa.
@@ -217,8 +217,8 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         self.client.login(username='experts_2', password='password')
         unvalidated_taxa_list_url = f'{taxa_list_url}?taxonGroup={self.taxon_group.id}&validated=False'
         response = self.client.get(unvalidated_taxa_list_url)
-        self.assertFalse(
-            response.data['results'][0]['can_be_validated']
+        self.assertEqual(
+            len(response.data['results']), 0
         )
 
         # The expert of taxon group level 1 validates the taxa.

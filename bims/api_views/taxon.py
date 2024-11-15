@@ -577,9 +577,18 @@ class TaxaList(LoginRequiredMixin, APIView):
             try:
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
-                    validated_filters = {
-                        'taxongrouptaxonomy__is_validated': False,
-                    }
+                    # Check if the user is a superuser or has expert permissions for the taxon group
+                    is_user_expert = is_expert(
+                        request.user,
+                        TaxonGroup.objects.get(id=taxon_group_id)
+                    )
+                    if request.user.is_superuser or is_user_expert:
+                        validated_filters = {
+                            'taxongrouptaxonomy__is_validated': False,
+                        }
+                    else:
+                        taxon_list = taxon_list.none()
+                        return taxon_list
                 else:
                     validated_filters = {
                         'taxongrouptaxonomy__is_validated': True,
