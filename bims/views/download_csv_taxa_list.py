@@ -53,6 +53,12 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
     gbif_link = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
     invasion = serializers.SerializerMethodField()
+    accepted_taxon = serializers.SerializerMethodField()
+
+    def get_accepted_taxon(self, obj: Taxonomy):
+        if obj.accepted_taxonomy:
+            return obj.accepted_taxonomy.canonical_name
+        return ''
 
     def get_cites_listing(self, obj: Taxonomy):
         return obj.cites_listing
@@ -170,6 +176,8 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'species',
             'sub_species',
             'taxon',
+            'taxonomic_status',
+            'accepted_taxon',
             'scientific_name_and_authority',
             'common_name',
             'origin',

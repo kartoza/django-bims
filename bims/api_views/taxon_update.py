@@ -56,7 +56,7 @@ def create_taxon_proposal(
             additional_data[additional_key] = data.get(additional_key)
 
     canonical_name = data.get('canonical_name', taxon.canonical_name)
-    if taxon.rank.lower() == 'species':
+    if taxon.rank.lower() == 'species' and taxon.taxonomic_status.lower() == 'accepted':
         if taxon.genus_name not in canonical_name:
             canonical_name = taxon.genus_name + ' ' + canonical_name
     elif taxon.rank.lower() == 'subspecies':
