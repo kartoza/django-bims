@@ -403,7 +403,8 @@ class TaxaProcessor(object):
 
         if rank == SPECIES:
             genus_name = DataCSVUpload.row_value(row, GENUS).strip()
-            if genus_name not in taxon_name:
+            taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS).strip()
+            if genus_name not in taxon_name and taxonomic_status == 'accepted':
                 taxon_name = genus_name + ' ' + taxon_name.strip()
 
         try:

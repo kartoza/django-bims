@@ -4,6 +4,11 @@ import logging
 from django.contrib.auth import get_user_model
 from celery import shared_task
 
+from bims.scripts.species_keys import (
+    ACCEPTED_TAXON, TAXON_RANK,
+    COMMON_NAME, CLASS, SUBSPECIES,
+    CITES_LISTING
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +37,20 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         _updated_headers = []
         for header in _headers:
             if header == 'class_name':
-                header = 'class'
+                header = CLASS
             elif header == 'taxon_rank':
-                header = 'Taxon Rank'
+                header = TAXON_RANK
             elif header == 'common_name':
-                header = 'Common Name'
+                header = COMMON_NAME
+            elif header == 'accepted_taxon':
+                header = ACCEPTED_TAXON
             header = header.replace('_or_', '/')
             if not header.istitle() and header not in tag_titles:
                 header = header.replace('_', ' ').capitalize()
             if header == 'Sub species':
-                header = 'SubSpecies'
+                header = SUBSPECIES
             if header.lower().strip() == 'cites_listing':
-                header = 'CITES listing'
+                header = CITES_LISTING
             _updated_headers.append(header)
         return _updated_headers
 

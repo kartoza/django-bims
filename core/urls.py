@@ -28,6 +28,7 @@ urlpatterns = [
     re_path(r'^grappelli/', include('grappelli.urls')),
     re_path(r'^accounts/', include('allauth.urls')),
     re_path(r'^pages/', include('django.contrib.flatpages.urls')),
+    re_path(r'^page/', include('django.contrib.flatpages.urls')),
     re_path(r'^', include('bims.urls')),
     re_path(r'^mobile/', include('mobile.urls')),
     re_path(r'^', include('bims_theme.urls')),
