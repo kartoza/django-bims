@@ -72,17 +72,22 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
         ).exists():
             with transaction.atomic():
                 TaxonomyUpdateProposal.objects.get_or_create(
+                    scientific_name=taxonomy.scientific_name,
+                    canonical_name=taxonomy.canonical_name,
+                    legacy_canonical_name=taxonomy.legacy_canonical_name,
                     original_taxonomy=taxonomy,
+                    rank=taxonomy.rank,
+                    taxonomic_status=taxonomy.taxonomic_status,
+                    endemism=taxonomy.endemism,
+                    iucn_status=taxonomy.iucn_status,
+                    accepted_taxonomy=taxonomy.accepted_taxonomy,
+                    parent=taxonomy.parent,
                     taxon_group=taxon_group,
                     new_data=True,
                     status='pending',
-                    scientific_name=taxonomy.scientific_name,
-                    canonical_name=taxonomy.canonical_name,
-                    rank=taxonomy.rank,
-                    parent=taxonomy.parent,
-                    taxonomic_status=taxonomy.taxonomic_status,
-                    legacy_canonical_name=taxonomy.legacy_canonical_name,
-                    taxon_group_under_review=taxon_group
+                    taxon_group_under_review=taxon_group,
+                    gbif_key=taxonomy.gbif_key,
+                    origin=taxonomy.origin
                 )
         taxon_group.taxonomies.add(
             taxonomy,
