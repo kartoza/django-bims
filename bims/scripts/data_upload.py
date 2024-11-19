@@ -172,23 +172,36 @@ class DataCSVUpload(object):
         self.upload_session.save()
 
     @staticmethod
-    def row_value(row, key):
+    def row_value(row, key, all_keys=None):
         """
-        Get row value by key
-        :param row: row data
-        :param key: key
-        :return: row value
+        Retrieve the value of a specified key from a CSV row, with optional key mapping.
+
+        :param row: Dictionary representing a row of CSV data.
+        :param key: The key whose value needs to be retrieved.
+        :param all_keys: Optional dictionary for case-insensitive key mapping,
+                         where keys are in UPPERCASE and map to original key names.
+                         Example: {'CONSERVATION VALUE': 'Conservation value'}
+        :return: The cleaned value associated with the key, or an empty string if the key is not found.
         """
+        if all_keys is None:
+            all_keys = {}
+
         row_value = ''
         try:
-            row_value = row[key]
+            # Use mapped key from all_keys if the provided key is not directly in the row
+            if key not in row:
+                if key.upper() in all_keys:
+                    key = all_keys[key.upper()]
+
+            # Retrieve the value and clean it
+            row_value = row.get(key, '')
             row_value = row_value.replace('\xa0', ' ')
             row_value = row_value.replace('\xc2', '')
             row_value = row_value.replace('\xca', ' ')
             row_value = row_value.replace('\\xa0', '')
             row_value = row_value.strip()
-            row_value = re.sub(' +', ' ', row_value)
-        except KeyError:
+            row_value = re.sub(r' +', ' ', row_value)
+        except (KeyError, AttributeError):
             pass
         return row_value
 
