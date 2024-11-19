@@ -150,20 +150,6 @@
                 </div>
             </div>
 
-            <div class="form-group row">
-                <label for="gbif_key" class="col-sm-2 col-form-label col-form-label">
-                    GBIF Key
-                </label>
-                <div class="col-sm-10">
-                    <input type="text" name="gbif_key" id="gbif_key"
-                           class="form-control form-control-sm"
-                           placeholder="" value="{% if object.gbif_key %}{{ object.gbif_key }}{% endif %}" >
-                    <small class="form-text text-muted">
-                        <a onclick="openGbif()" href="#">Check in GBIF</a>
-                    </small>
-                </div>
-            </div>
-
             {% if object.accepted_taxonomy %}
                 <script>
                     acceptedTaxonomy = "{{ object.accepted_taxonomy.canonical_name }} ({{ object.accepted_taxonomy.rank }})";
@@ -177,57 +163,6 @@
                 </label>
                 <div class="col-sm-10">
                     <select id="accepted-taxon" class="taxa-auto-complete" name="accepted_taxonomy" style="width: 100%"></select>
-                </div>
-            </div>
-
-            <div class="form-group row">
-                <label for="tags" class="col-sm-2 col-form-label col-form-label">
-                    Tags
-                </label>
-                <div class="col-sm-10">
-                    <select id="taxa-tag-auto-complete" name="tags" class="tag-auto-complete form-control" multiple="multiple" data-add-new-tag="true"></select>
-                </div>
-            </div>
-
-            <div class="form-group row">
-                <label for="rank" class="col-sm-2 col-form-label col-form-label">
-                    Common name
-                </label>
-                <div class="col-sm-10">
-                    <input type="text" name="common_name" id="common_name"
-                           class="form-control form-control-sm"
-                           placeholder=""
-                           value="{{ object.common_name }}" >
-                </div>
-            </div>
-
-            <div class="form-group row">
-                <label for="tags" class="col-sm-2 col-form-label col-form-label">
-                    Biographic distributions
-                </label>
-                <div class="col-sm-10">
-                    <select id="biographic-tag-auto-complete" data-placeholder="Search for a biographic distribution" name="biographic_distributions" class="tag-auto-complete form-control" multiple="multiple" data-add-new-tag="true"></select>
-                </div>
-            </div>
-
-            <div class="form-group row">
-                <label for="rank" class="col-sm-2 col-form-label col-form-label">
-                    Conservation Status
-                </label>
-                <div class="col-sm-10">
-                    <select name="iucn_status" id="iucn_status" class="form-control form-control-sm">
-                        {% for iucn_status in iucn_status_choices %}
-                            <option value="{{ iucn_status.id }}"
-                                    {% if object.iucn_status %}
-                                        {% if iucn_status == object.iucn_status %}selected{% endif %}
-                                    {% else %}
-                                        {% if iucn_status.category == 'NE' %}
-                                            selected
-                                        {% endif %}
-                                    {% endif %}
-                            >{{ iucn_status.get_status }}</option>
-                        {% endfor %}
-                    </select>
                 </div>
             </div>
 
@@ -257,6 +192,41 @@
 
             <div class="form-group row">
                 <label for="rank" class="col-sm-2 col-form-label col-form-label">
+                    Common Name
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" name="common_name" id="common_name"
+                           class="form-control form-control-sm"
+                           placeholder=""
+                           value="{{ object.common_name }}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="gbif_key" class="col-sm-2 col-form-label col-form-label">
+                    GBIF Key
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" name="gbif_key" id="gbif_key"
+                           class="form-control form-control-sm"
+                           placeholder="" value="{% if object.gbif_key %}{{ object.gbif_key }}{% endif %}" >
+                    <small class="form-text text-muted">
+                        <a onclick="openGbif()" href="#">Check in GBIF</a>
+                    </small>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="tags" class="col-sm-2 col-form-label col-form-label">
+                    Biogeographic Distribution
+                </label>
+                <div class="col-sm-10">
+                    <select id="biographic-tag-auto-complete" data-placeholder="Search for a biographic distribution" name="biographic_distributions" class="tag-auto-complete form-control" multiple="multiple" data-add-new-tag="true"></select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="rank" class="col-sm-2 col-form-label col-form-label">
                     Biogeographic Comments
                 </label>
                 <div class="col-sm-10">
@@ -275,6 +245,15 @@
                            class="form-control form-control-sm"
                            placeholder=""
                            value="{% with object.additional_data as data %}{% if data|value_by_key:'Biogeographic References' %}{{ data|value_by_key:'Biogeographic References' }}{% endif %}{% endwith %}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="tags" class="col-sm-2 col-form-label col-form-label">
+                    Tags
+                </label>
+                <div class="col-sm-10">
+                    <select id="taxa-tag-auto-complete" name="tags" class="tag-auto-complete form-control" multiple="multiple" data-add-new-tag="true"></select>
                 </div>
             </div>
 
@@ -298,6 +277,27 @@
                            class="form-control form-control-sm"
                            placeholder=""
                            value="{% with object.additional_data as data %}{% if data|value_by_key:'Environmental References' %}{{ data|value_by_key:'Environmental References' }}{% endif %}{% endwith %}" >
+                </div>
+            </div>
+        
+            <div class="form-group row">
+                <label for="rank" class="col-sm-2 col-form-label col-form-label">
+                    Conservation Status
+                </label>
+                <div class="col-sm-10">
+                    <select name="iucn_status" id="iucn_status" class="form-control form-control-sm">
+                        {% for iucn_status in iucn_status_choices %}
+                            <option value="{{ iucn_status.id }}"
+                                    {% if object.iucn_status %}
+                                        {% if iucn_status == object.iucn_status %}selected{% endif %}
+                                    {% else %}
+                                        {% if iucn_status.category == 'NE' %}
+                                            selected
+                                        {% endif %}
+                                    {% endif %}
+                            >{{ iucn_status.get_status }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
 
