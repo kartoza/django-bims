@@ -20,6 +20,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from bims.views.documents import BimsDocumentUploadView
 from django.urls import re_path
+from django.contrib.flatpages import views
 
 
 # GeoNode has to be in root url conf.
@@ -27,8 +28,6 @@ from django.urls import re_path
 urlpatterns = [
     re_path(r'^grappelli/', include('grappelli.urls')),
     re_path(r'^accounts/', include('allauth.urls')),
-    re_path(r'^pages/', include('django.contrib.flatpages.urls')),
-    re_path(r'^page/', include('django.contrib.flatpages.urls')),
     re_path(r'^', include('bims.urls')),
     re_path(r'^mobile/', include('mobile.urls')),
     re_path(r'^', include('bims_theme.urls')),
@@ -48,10 +47,10 @@ urlpatterns = [
     re_path(r'^geonode/?$',
         TemplateView.as_view(template_name='site_index.html'),
         name='home'),
-]
-
-urlpatterns += [
+    re_path(r'^pages/', include('django.contrib.flatpages.urls')),
+    re_path(r'^page/', include('django.contrib.flatpages.urls')),
     re_path('^admin/', admin.site.urls),
+    re_path(r"^(?P<url>.*/)$", views.flatpage),
 ]
 
 if settings.DEBUG:
