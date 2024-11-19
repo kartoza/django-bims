@@ -112,6 +112,20 @@ class TestTaxaUpload(FastTenantTestCase):
         )
 
         self.assertTrue(
+            VernacularName.objects.filter(
+                name='trattnattsländor',
+                language='deu',
+            ).exists()
+        )
+
+        self.assertTrue(
+            VernacularName.objects.filter(
+                name='test',
+                language='eng',
+            ).exists()
+        )
+
+        self.assertTrue(
             Taxonomy.objects.get(
                 canonical_name='Ecnomidae'
             ).biographic_distributions.filter(

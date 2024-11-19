@@ -157,7 +157,8 @@ class TaxaProcessor(object):
         return '', source_reference
 
     def common_name(self, row):
-        """Common name of species"""
+        """Extracts and processes common names of species from a given row."""
+
         common_name_value = DataCSVUpload.row_value(row, COMMON_NAME)
         if not common_name_value:
             common_name_value = DataCSVUpload.row_value(row, VERNACULAR_NAME)
@@ -169,10 +170,22 @@ class TaxaProcessor(object):
             return None
 
         vernacular_names = []
-        common_names = common_name_value.split(',')
+
+        # Split the common name string into individual names based on ';' or ',' as delimiters
+        if ';' in common_name_value:
+            common_names = common_name_value.split(';')
+        else:
+            common_names = common_name_value.split(',')
         for common_name in common_names:
             common_name = common_name.strip()
-            match = re.match(r'^(.*?)(?: \((\w+)\))?$', common_name)
+
+            # Match common names with an optional language code in parentheses
+            # Example matches:
+            # "Elephant" -> name: "Elephant", language: None (will use default english)
+            # "Lion (eng)" -> name: "Lion", language: "eng"
+            # "Tigre (spa)" -> name: "Tigre", language: "spa"
+            # "Panda(chi)" -> name: "Panda", language: "chi" (handles no space before parentheses)
+            match = re.match(r'^(.*?)(?: *\((\w+)\))?$', common_name)
             if match:
                 name = match.group(1)
                 language = match.group(2) if match.group(2) else vernacular_lang
