@@ -35,6 +35,8 @@ logger = logging.getLogger('bims')
 
 class TaxaProcessor(object):
 
+    all_keys = {}
+
     def handle_error(self, row, message):
         pass
 
@@ -45,10 +47,13 @@ class TaxaProcessor(object):
         if taxon.rank:
             return taxon.rank.upper()
         return ''
+    
+    def get_row_value(self, row, key):
+        return DataCSVUpload.row_value(row, key, self.all_keys)
 
     def endemism(self, row):
         """Processing endemism data"""
-        endemism_value = DataCSVUpload.row_value(row, ENDEMISM)
+        endemism_value = self.get_row_value(row, ENDEMISM)
         if not endemism_value:
             return None
         try:
@@ -65,15 +70,15 @@ class TaxaProcessor(object):
         """Processing conservation status"""
         national = False
         if global_cons:
-            cons_status = DataCSVUpload.row_value(
+            cons_status = self.get_row_value(
                 row, CONSERVATION_STATUS)
             if not cons_status:
-                cons_status = DataCSVUpload.row_value(
+                cons_status = self.get_row_value(
                     row, CONSERVATION_STATUS_GLOBAL)
                 if not cons_status:
                     return None
         else:
-            cons_status = DataCSVUpload.row_value(
+            cons_status = self.get_row_value(
                 row, CONSERVATION_STATUS_NATIONAL)
             national = True
         if cons_status:
@@ -92,7 +97,7 @@ class TaxaProcessor(object):
             return None
 
     def source_reference(self, row):
-        source_reference_value = DataCSVUpload.row_value(row, REFERENCES)
+        source_reference_value = self.get_row_value(row, REFERENCES)
         if not source_reference_value:
             return '', None
 
@@ -159,10 +164,10 @@ class TaxaProcessor(object):
     def common_name(self, row):
         """Extracts and processes common names of species from a given row."""
 
-        common_name_value = DataCSVUpload.row_value(row, COMMON_NAME)
+        common_name_value = self.get_row_value(row, COMMON_NAME)
         if not common_name_value:
-            common_name_value = DataCSVUpload.row_value(row, VERNACULAR_NAME)
-            vernacular_lang = DataCSVUpload.row_value(row, VERNACULAR_NAME_LANG)
+            common_name_value = self.get_row_value(row, VERNACULAR_NAME)
+            vernacular_lang = self.get_row_value(row, VERNACULAR_NAME_LANG)
         else:
             vernacular_lang = 'eng'
 
@@ -215,8 +220,8 @@ class TaxaProcessor(object):
         Returns:
             tuple: A tuple containing the origin category (str) and an Invasion instance (or None).
         """
-        origin_value = DataCSVUpload.row_value(row, ORIGIN)
-        invasion_category = DataCSVUpload.row_value(row, INVASION)
+        origin_value = self.get_row_value(row, ORIGIN)
+        invasion_category = self.get_row_value(row, INVASION)
         invasion_instance = None
 
         # Handle invasion category if provided
@@ -252,20 +257,20 @@ class TaxaProcessor(object):
         while parent and current_try < max_try:
             taxon_parent_rank = parent_rank(taxon.rank)
             try:
-                csv_data = DataCSVUpload.row_value(
+                csv_data = self.get_row_value(
                     row, taxon_parent_rank.capitalize())
                 if taxon_parent_rank == SPECIES:
-                    genus = DataCSVUpload.row_value(
+                    genus = self.get_row_value(
                         row, GENUS)
                     if genus not in csv_data:
-                        csv_data = DataCSVUpload.row_value(
+                        csv_data = self.get_row_value(
                             row, GENUS) + ' ' + csv_data
             except KeyError:
                 parent = parent.parent
                 continue
             while not csv_data and current_try < max_try:
                 taxon_parent_rank = parent_rank(taxon_parent_rank)
-                csv_data = DataCSVUpload.row_value(
+                csv_data = self.get_row_value(
                     row, taxon_parent_rank)
                 current_try += 1
             if (
@@ -333,20 +338,20 @@ class TaxaProcessor(object):
 
     def get_parent(self, row, current_rank=GENUS):
         # Retrieve the taxon name based on the current rank from the row data
-        taxon_name = DataCSVUpload.row_value(row, current_rank)
+        taxon_name = self.get_row_value(row, current_rank)
         if not taxon_name:
             return None
 
         # Handle concatenation for SPECIES rank
         if current_rank == SPECIES:
-            genus_name = DataCSVUpload.row_value(row, GENUS)
+            genus_name = self.get_row_value(row, GENUS)
             if genus_name not in taxon_name:
                 taxon_name = genus_name + ' ' + taxon_name
 
         # Handle concatenation for VARIETY rank
         if current_rank == VARIETY:
-            genus_name = DataCSVUpload.row_value(row, GENUS)
-            species_name = DataCSVUpload.row_value(row, SPECIES)
+            genus_name = self.get_row_value(row, GENUS)
+            species_name = self.get_row_value(row, SPECIES)
             if species_name not in taxon_name:
                 taxon_name = species_name + ' ' + taxon_name
             if genus_name not in taxon_name:
@@ -391,19 +396,22 @@ class TaxaProcessor(object):
 
     def process_data(self, row, taxon_group: TaxonGroup):
         """Processing row of the csv files"""
+        if not self.all_keys:
+            for key in row.keys():
+                self.all_keys[key.upper()] = key
 
-        taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS)
-        taxon_name = DataCSVUpload.row_value(row, TAXON)
+        taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS)
+        taxon_name = self.get_row_value(row, TAXON)
         accepted_taxon = None
 
         # Get rank
-        rank = DataCSVUpload.row_value(row, TAXON_RANK)
+        rank = self.get_row_value(row, TAXON_RANK)
         rank = rank.capitalize()
         if rank.startswith('Sub'):
             rank = 'Sub' + rank[len('sub'):].capitalize()
 
         if not rank:
-            rank = DataCSVUpload.row_value(row, 'Taxon rank')
+            rank = self.get_row_value(row, 'Taxon rank')
         if not rank:
             self.handle_error(
                 row=row,
@@ -412,18 +420,19 @@ class TaxaProcessor(object):
             return
 
         if not taxon_name:
-            taxon_name = DataCSVUpload.row_value(row, rank.capitalize())
+            taxon_name = self.get_row_value(row, rank.capitalize())
 
         if rank == SPECIES:
-            genus_name = DataCSVUpload.row_value(row, GENUS).strip()
-            taxonomic_status = DataCSVUpload.row_value(row, TAXONOMIC_STATUS).strip()
+            genus_name = self.get_row_value(row, GENUS).strip()
+            taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS).strip()
             if genus_name not in taxon_name and taxonomic_status == 'accepted':
                 taxon_name = genus_name + ' ' + taxon_name.strip()
 
         try:
             on_gbif = (
-                DataCSVUpload.row_value(row, ON_GBIF).strip() and
-                DataCSVUpload.row_value(row, ON_GBIF) != 'No'
+                self.get_row_value(row, ON_GBIF).strip() and
+                self.get_row_value(row, ON_GBIF) in (
+                    'Yes', 'yes', 'True', 'true')
             )
         except Exception:  # noqa
             if is_fada_site():
@@ -439,7 +448,7 @@ class TaxaProcessor(object):
             return
 
         if 'synonym' in taxonomic_status.lower().strip():
-            accepted_taxon_val = DataCSVUpload.row_value(
+            accepted_taxon_val = self.get_row_value(
                 row, ACCEPTED_TAXON
             )
             accepted_taxon_err = ''
@@ -461,11 +470,11 @@ class TaxaProcessor(object):
                 )
                 return
 
-        authors = DataCSVUpload.row_value(row, AUTHORS)
+        authors = self.get_row_value(row, AUTHORS)
 
         if SCIENTIFIC_NAME in row:
-            scientific_name = (DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
-                               if DataCSVUpload.row_value(row, SCIENTIFIC_NAME)
+            scientific_name = (self.get_row_value(row, SCIENTIFIC_NAME)
+                               if self.get_row_value(row, SCIENTIFIC_NAME)
                                else taxon_name)
         else:
             scientific_name = taxon_name
@@ -516,9 +525,9 @@ class TaxaProcessor(object):
             if not taxonomy:
                 # Fetch from gbif
                 if on_gbif:
-                    gbif_link = DataCSVUpload.row_value(row, GBIF_LINK)
+                    gbif_link = self.get_row_value(row, GBIF_LINK)
                     if not gbif_link:
-                        gbif_link = DataCSVUpload.row_value(row, GBIF_URL)
+                        gbif_link = self.get_row_value(row, GBIF_URL)
                     gbif_key = (
                         gbif_link.split('/')[len(gbif_link.split('/')) - 1]
                     )
@@ -558,7 +567,7 @@ class TaxaProcessor(object):
                 current_try = 0
                 parent_name = parent_rank(rank)
                 while (
-                    not DataCSVUpload.row_value(row, parent_name) and parent_name != KINGDOM and current_try < max_try
+                    not self.get_row_value(row, parent_name) and parent_name != KINGDOM and current_try < max_try
                 ):
                     current_try += 1
                     parent_name = parent_rank(parent_name)
@@ -594,7 +603,7 @@ class TaxaProcessor(object):
                     legacy_canonical_name.replace('\\xa0', '')
                 )
                 if FORMER_SPECIES_NAME in row:
-                    former_species_name = DataCSVUpload.row_value(
+                    former_species_name = self.get_row_value(
                         row, FORMER_SPECIES_NAME)
                     if len(former_species_name) > 500:
                         former_species_name = former_species_name[:500]
@@ -672,7 +681,7 @@ class TaxaProcessor(object):
                 # -- Tags | Biographic distribution tags
                 # Check Y Values
                 for key in row:
-                    row_value = DataCSVUpload.row_value(row, key)
+                    row_value = self.get_row_value(row, key)
                     if row_value.upper() == 'Y' or row_value == '?':
                         # Remove (Y/N) or (y/n) from the key if present
                         tag_key = re.sub(r'\(y/n\)', '',
