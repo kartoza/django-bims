@@ -55,19 +55,23 @@ def write_to_csv(headers: list,
                  path_file: str,
                  current_csv_row: int = 0):
     formatted_headers = [format_header(header) for header in headers]
-    with open(path_file, 'a') as csv_file:
+    with open(path_file, 'a', newline='', encoding='utf-8', buffering=1) as csv_file:
         if headers:
-            writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
             if current_csv_row == 0:
+                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
                 writer.writeheader()
+            else:
+                writer = csv.DictWriter(csv_file, fieldnames=headers)
             writer.fieldnames = headers
         for row in rows:
             try:
                 current_csv_row += 1
                 writer.writerow(row)
-            except:  # noqa
+            except Exception as e:
+                logger.error(f"Error writing row {current_csv_row}: {e}")
                 continue
-
+        # Flush the file to ensure data is written to disk
+        csv_file.flush()
     return current_csv_row
 
 
@@ -91,6 +95,7 @@ def download_collection_records(
 
     exclude_fields = []
     headers = []
+    added_headers = set()
 
     if project_name.lower() == 'sanparks':
         exclude_fields = [
@@ -120,31 +125,6 @@ def download_collection_records(
         except DownloadRequest.DoesNotExist:
             return None
 
-    def write_batch_to_csv(header, rows, path_file, start_index, upload_template_headers=[]):
-        bio_serializer = (
-            BioCollectionOneRowSerializer(
-                rows, many=True,
-                context={
-                    'header': header,
-                    'exclude_fields': exclude_fields,
-                    'upload_template_headers': upload_template_headers
-                })
-        )
-        bio_data = bio_serializer.data
-        if len(header) == 0:
-            header = bio_serializer.context['header']
-            if upload_template_headers:
-                park_key = PARK_OR_MPA_NAME
-                if park_key in header:
-                    header.insert(1, header.pop(header.index(park_key)))
-        csv_row = write_to_csv(
-            header,
-            bio_data,
-            path_file,
-            start_index)
-        del bio_serializer
-        return csv_row, header
-
     start = time.time()
 
     filters = request
@@ -173,13 +153,47 @@ def download_collection_records(
     upload_template_headers = []
     if taxon_group.occurrence_upload_template:
         try:
-            with open(taxon_group.occurrence_upload_template.path, 'r', encoding='utf-8') as csvfile:
+            with open(
+                    taxon_group.occurrence_upload_template.path,
+                    'r', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
                 upload_template_headers = reader.fieldnames
         except (FileNotFoundError, UnicodeDecodeError):
             upload_template_headers = []
 
-    for obj in queryset_iterator(collection_results):
+    def write_batch_to_csv(
+            header, rows,
+            _path_file,
+            _start_index):
+        bio_serializer = (
+            BioCollectionOneRowSerializer(
+                rows, many=True,
+                context={
+                    'header': header,
+                    'exclude_fields': exclude_fields,
+                    'upload_template_headers': upload_template_headers,
+                    'added_headers': added_headers,
+                })
+        )
+        bio_data = bio_serializer.data
+
+        header = bio_serializer.context['header']
+        if upload_template_headers:
+            park_key = PARK_OR_MPA_NAME
+            if park_key in header:
+                header.insert(
+                    1, header.pop(
+                        header.index(park_key)))
+
+        csv_row = write_to_csv(
+            header,
+            bio_data,
+            _path_file,
+            _start_index)
+        del bio_serializer
+        return csv_row, header
+
+    for obj in queryset_iterator(collection_results, batch_size=record_number):
         collection_data.append(obj)
         if len(collection_data) >= record_number:
             start_index = current_csv_row
@@ -187,8 +201,7 @@ def download_collection_records(
                 headers,
                 collection_data,
                 path_file,
-                current_csv_row,
-                upload_template_headers
+                current_csv_row
             )
 
             logger.debug('Serialize time {0}:{1}: {2}'.format(
@@ -221,8 +234,7 @@ def download_collection_records(
             headers,
             collection_data,
             path_file,
-            current_csv_row,
-            upload_template_headers
+            current_csv_row
         )
         logger.debug('Serialize time {0}:{1}: {2}'.format(
             start_index,
