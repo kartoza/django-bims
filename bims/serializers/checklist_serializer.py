@@ -11,6 +11,15 @@ from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.dataset import Dataset
 
+HIERARCHY_OF_CERTAINTY = [
+    'High',
+    'Medium',
+    'Low',
+    'Potential Distribution',
+    'Outdated Distribution',
+    'Unknown'
+]
+
 
 def get_dataset_occurrences(occurrences):
     dataset_keys = list(occurrences.values_list(
@@ -275,13 +284,23 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return ''
-        if bio.exclude(certainty_of_identification='').exists():
-            return (
-                bio.exclude(
-                    certainty_of_identification=''
-                ).first().certainty_of_identification
+
+        bio_with_certainty = bio.exclude(
+            certainty_of_identification='')
+        if not bio_with_certainty.exists():
+            return ''
+
+        certainties = set(
+            bio_with_certainty.values_list(
+                'certainty_of_identification', flat=True
             )
-        return ''
+        )
+        # HIERARCHY_OF_CERTAINTY defines the order of precedence
+        for certainty in HIERARCHY_OF_CERTAINTY:
+            if certainty in certainties:
+                return certainty
+
+        return 'Unknown'
 
     def get_park_or_mpa_name(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
