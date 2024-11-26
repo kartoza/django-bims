@@ -53,6 +53,18 @@ DEFAULT_LIMIT = 300
 LOG_TEMPLATE = '---------------------------------------------------\nFetching: {}\n'
 MISSING_KEY_ERROR = 'Missing taxon GBIF key'
 
+ACCEPTED_BASIS_OF_RECORD = [
+    'PRESERVED_SPECIMEN',
+    'LIVING_SPECIMEN',
+    'OBSERVATION',
+    'HUMAN_OBSERVATION',
+    'MACHINE_OBSERVATION',
+    'MATERIAL_SAMPLE',
+    'LITERATURE',
+    'MATERIAL_CITATION',
+    'OCCURRENCE'
+]
+
 
 def build_api_url(taxonomy_gbif_key, offset, base_country_codes, boundary_str=''):
     """
@@ -73,7 +85,7 @@ def build_api_url(taxonomy_gbif_key, offset, base_country_codes, boundary_str=''
         f"offset={offset}&"
         f"hasCoordinate=true&"
         f"hasGeospatialIssue=false&"
-        f"basisOfRecord=HUMAN_OBSERVATION&limit={DEFAULT_LIMIT}"
+        f"limit={DEFAULT_LIMIT}"
         f"{country_params}"
         f"{boundary_params}"
     )
@@ -135,6 +147,7 @@ def process_gbif_response(json_result,
     """
     Process GBIF API response using batch insertion.
     """
+
     if 'error' in json_result:
         log_to_file_or_logger(log_file, json_result['error'], is_error=True)
         return json_result['error'], 0
@@ -161,6 +174,13 @@ def process_gbif_response(json_result,
     for index, result in enumerate(json_result['results'], start=1):
         # Prevent pulling FBIS data back down from GBIF
         if 'projectId' in result and result['projectId'].lower() == 'fbis':
+            continue
+
+        basis_of_record = result.get('basisOfRecord', '')
+        if basis_of_record not in ACCEPTED_BASIS_OF_RECORD:
+            log_to_file_or_logger(
+                log_file,
+                f'Basis of record {basis_of_record} is not in the accepted list')
             continue
 
         if session_id:
