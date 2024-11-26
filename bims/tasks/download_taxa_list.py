@@ -31,6 +31,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     total_taxa = taxa_list.count()
 
     tag_titles = []
+    additional_attributes_titles = []
 
     # Define the header update function
     def update_headers(_headers):
@@ -45,7 +46,11 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
             elif header == 'accepted_taxon':
                 header = ACCEPTED_TAXON
             header = header.replace('_or_', '/')
-            if not header.istitle() and header not in tag_titles:
+            if (
+                not header.istitle()
+                    and header not in tag_titles
+                    and header not in additional_attributes_titles
+            ):
                 header = header.replace('_', ' ').capitalize()
             if header == 'Sub species':
                 header = SUBSPECIES
@@ -58,6 +63,9 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     sample_item = next(taxa_list.iterator())
     sample_serializer = TaxaCSVSerializer(sample_item)
     tag_titles = sample_serializer.context.get('tags', [])
+    additional_attributes_titles = sample_serializer.context.get(
+        'additional_attributes_titles', []
+    )
     headers = list(sample_serializer.data.keys())
     updated_headers = update_headers(headers)
 
