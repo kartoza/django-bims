@@ -190,13 +190,12 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'cites_listing'
         )
 
-
-
     def __init__(self, *args, **kwargs):
         super(TaxaCSVSerializer, self).__init__(*args, **kwargs)
         self.context['headers'] = []
         self.context['additional_data'] = []
         self.context['tags'] = []
+        self.context['additional_attributes_titles'] = []
 
     def _ensure_headers(self, keys):
         if 'headers' not in self.context:
@@ -218,6 +217,9 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
                     continue
                 if attribute_name not in self.context['headers']:
                     self.context['headers'].append(attribute_name)
+                    self.context['additional_attributes_titles'].append(
+                        attribute_name
+                    )
                 if instance.additional_data:
                     result[attribute_name] = (
                         instance.additional_data.get(attribute_name, '')
