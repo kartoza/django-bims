@@ -97,6 +97,6 @@ ACCURACY_OF_COORDINATES = 'Accuracy of coordinates'
 IDENTIFIED_BY = 'Identified by'
 
 VERBATUM_NAME = 'Verbatum Name (Scientific or common)'
-CERTAINTY_OF_IDENTIFICATION = 'Certainty of identification'
+CERTAINTY_OF_IDENTIFICATION = 'Certainty'
 DATE_ACCURACY = 'Date Accuracy'
 DATA_TYPE = 'Data type'
