@@ -12,6 +12,8 @@ from reportlab.platypus.para import Paragraph
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.contrib.auth import get_user_model
+
 from bims.api_views.search import CollectionSearch
 from bims.enums import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
@@ -33,6 +35,8 @@ CSV_HEADER_TITLE = {
     'park_or_mpa_name': 'Park or MPA name'
 }
 
+User = get_user_model()
+
 
 def get_custom_header(fieldnames, header_title_dict):
     custom_header = []
@@ -46,6 +50,17 @@ def get_custom_header(fieldnames, header_title_dict):
 
 def get_serializer_keys(serializer_class):
     return list(serializer_class().get_fields().keys())
+
+
+def checklist_collection_records(download_request: DownloadRequest):
+    filters = parse_url_to_filters(
+        download_request.dashboard_url
+    )
+    search = CollectionSearch(
+        filters,
+        bypass_data_type_checks=True)
+    collection_records = search.process_search()
+    return collection_records
 
 
 def generate_checklist(download_request_id):
@@ -66,11 +81,10 @@ def generate_checklist(download_request_id):
     if not download_request:
         return False
 
-    filters = parse_url_to_filters(download_request.dashboard_url)
-
-    search = CollectionSearch(filters)
     batch_size = 1000
-    collection_records = search.process_search()
+    collection_records = checklist_collection_records(
+        download_request
+    )
     module_name = ''
 
     if collection_records.count() > 0:
