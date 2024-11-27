@@ -1,13 +1,24 @@
 from django.test import TestCase
-from bims.models import BiologicalCollectionRecord, Dataset
-from bims.serializers.checklist_serializer import get_dataset_occurrences, ChecklistPDFSerializer, ChecklistSerializer
+
+from bims.api_views.checklist import checklist_collection_records
+from bims.models.dataset import Dataset
+from bims.models.download_request import DownloadRequest
+from bims.models.biological_collection_record import (
+    BiologicalCollectionRecord
+)
+from bims.serializers.checklist_serializer import (
+    get_dataset_occurrences, ChecklistPDFSerializer, ChecklistSerializer
+)
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF,
     DatasetF,
     VernacularNameF,
-    SourceReferenceF
+    SourceReferenceF,
+    TaxonGroupF,
+    UserF
 )
+
 
 class TestGetDatasetOccurrences(TestCase):
 
@@ -72,6 +83,12 @@ class TestGetDatasetOccurrences(TestCase):
         self.context = {
             'collection_records': BiologicalCollectionRecord.objects.all()
         }
+        self.download_request = DownloadRequest.objects.create(
+            dashboard_url="http://example.com/dashboard",
+            resource_type="csv",
+            processing=True,
+            rejected=False
+        )
 
     def test_get_dataset_occurrences_with_dataset_keys(self):
         occurrences = BiologicalCollectionRecord.objects.filter(
@@ -128,3 +145,34 @@ class TestGetDatasetOccurrences(TestCase):
         self.assertTrue(Dataset.objects.filter(
             citation='Test Citation'
         ).exists())
+
+    def test_checklist_collection_records(self):
+        taxon_group = TaxonGroupF.create()
+        UserF.create(is_superuser=True)
+        BiologicalCollectionRecordF.create(
+            module_group=taxon_group,
+            data_type='private'
+        )
+        BiologicalCollectionRecordF.create(
+            module_group=taxon_group,
+            data_type='public'
+        )
+        BiologicalCollectionRecordF.create(
+            module_group=taxon_group,
+            data_type='sensitive'
+        )
+        dashboard_url = (
+            '/map/#site-detail/taxon=&search=&siteId=&collector=&category=&yearFrom=&yearTo=&months=&boundary=&userBoundary=&' +
+            f'referenceCategory=&spatialFilter=&reference=&endemic=&invasions=&conservationStatus=[]&modules={taxon_group.id}&validated=&' +
+            'sourceCollection=&module=occurrence&ecologicalCategory=&rank=&siteIdOpen=&orderBy=name&polygon=&dst=&ecosystemType='
+        )
+        download_request = DownloadRequest.objects.create(
+            resource_type='csv',
+            resource_name='checklist',
+            dashboard_url=dashboard_url
+        )
+        collection_records = checklist_collection_records(download_request)
+        self.assertEqual(
+            collection_records.count(),
+            3
+        )

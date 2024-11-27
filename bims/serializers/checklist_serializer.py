@@ -157,7 +157,6 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
         ]
 
 
-
 class ChecklistSerializer(ChecklistBaseSerializer):
     """
     Serializer for checklist

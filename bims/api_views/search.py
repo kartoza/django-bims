@@ -123,11 +123,13 @@ class CollectionSearch(object):
     site = None
     taxon_groups = TaxonGroup.objects.all()
     start_time = None
+    bypass_data_type_checks = False
 
-    def __init__(self, parameters, requester_id=None):
+    def __init__(self, parameters, requester_id=None, bypass_data_type_checks=False):
         self.parameters = dict(parameters)
         if requester_id:
             self.parameters['requester'] = requester_id
+        self.bypass_data_type_checks = bypass_data_type_checks
         super(CollectionSearch, self).__init__()
 
     def get_request_data(self, field, default_value=None):
@@ -632,18 +634,6 @@ class CollectionSearch(object):
 
         requester_id = self.parameters.get('requester', None)
 
-        is_sensitive_data_access_allowed = False
-        is_private_data_access_allowed = False
-        try:
-            requester = get_user_model().objects.get(id=requester_id)
-            user_groups = requester.groups.values_list('name', flat=True)
-            if 'SensitiveDataGroup' in user_groups:
-                is_sensitive_data_access_allowed = True
-            if 'PrivateDataGroup' in user_groups:
-                is_private_data_access_allowed = True
-        except get_user_model().DoesNotExist:
-            pass
-
         bio = bio.filter(
             Q(owner_id=requester_id) |
             Q(
@@ -652,16 +642,28 @@ class CollectionSearch(object):
             )
         )
 
-        accessible_data_types = ['public']
-        if is_sensitive_data_access_allowed:
-            accessible_data_types.append('sensitive')
-        if is_private_data_access_allowed:
-            accessible_data_types.append('private')
+        if not self.bypass_data_type_checks:
+            is_sensitive_data_access_allowed = False
+            is_private_data_access_allowed = False
+            try:
+                requester = get_user_model().objects.get(id=requester_id)
+                user_groups = requester.groups.values_list('name', flat=True)
+                if 'SensitiveDataGroup' in user_groups:
+                    is_sensitive_data_access_allowed = True
+                if 'PrivateDataGroup' in user_groups:
+                    is_private_data_access_allowed = True
+            except get_user_model().DoesNotExist:
+                pass
+            accessible_data_types = ['public']
+            if is_sensitive_data_access_allowed:
+                accessible_data_types.append('sensitive')
+            if is_private_data_access_allowed:
+                accessible_data_types.append('private')
 
-        bio = bio.filter(
-            Q(data_type='') |
-            Q(data_type__in=accessible_data_types)
-        )
+            bio = bio.filter(
+                Q(data_type='') |
+                Q(data_type__in=accessible_data_types)
+            )
 
         # Filter collection record with SASS Accreditation status
         validated_values = self.parse_request_json('validated')
