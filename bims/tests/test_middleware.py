@@ -30,7 +30,7 @@ class RedirectHomePageMiddlewareTest(TestCase):
 
     def test_redirect_homepage(self):
         # Create a request for the homepage
-        request = self.factory.get('/')
+        request = self.factory.get('/map/')
 
         # Process the request through the middleware
         response = self.middleware(request)

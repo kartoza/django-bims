@@ -179,8 +179,8 @@ class RedirectHomePageMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
 
-        # Check if the request is for the homepage
-        if request.path == '/':
+        # Check if the request is for the map page
+        if request.path == '/map/':
             # Get the target URL from the environment variable
             target_url = preferences.SiteSetting.homepage_redirect_url
             if target_url:
