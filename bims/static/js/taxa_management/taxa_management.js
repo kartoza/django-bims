@@ -459,17 +459,15 @@ export const taxaManagement = (() => {
                     },
                     "className": "min-width-150"
                 },
-                {"data": "family", "className": "min-width-100"},
-                {"data": "genus", "className": "min-width-100"},
-                {"data": "species", "className": "min-width-100"},
-                {"data": "taxonomic_status", "className": "min-width-100"},
                 {"data": "author", "className": "min-width-100"},
+                {"data": "family", "className": "min-width-100"},
+                {"data": "taxonomic_status", "className": "min-width-100"},
+                {"data": "accepted_taxonomy_name", "className": "min-width-100"},
                 {"data": "biographic_distributions", "className": "min-width-100", "sortable": false,
                     "render": function (data) {
                         return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
                     }
                 },
-                {"data": "accepted_taxonomy_name", "className": "min-width-100"},
                 {"data": "rank", "className": "min-width-100"},
                 {
                     "data": "tag_list",
