@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date
 
 from django.conf import settings
@@ -357,6 +358,15 @@ class AbstractTaxonomy(AbstractValidation):
     @property
     def species_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.SPECIES.name)
+
+    @property
+    def specific_epithet(self):
+        species_name = self.species_name
+        genus_name = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
+        if genus_name in species_name:
+            pattern = r'^' + re.escape(genus_name) + r'\s+'
+            return re.sub(pattern, '', species_name).strip()
+        return species_name
 
     @property
     def sub_species_name(self):

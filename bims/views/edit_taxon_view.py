@@ -56,12 +56,13 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             {'rank': 'Class', 'field': 'class_name'},
             {'rank': 'Order', 'field': 'order_name'},
             {'rank': 'Family', 'field': 'family_name'},
-            {'rank': 'Subfamily', 'field': 'sub_family_name'},
+            {'rank': 'SubFamily', 'field': 'sub_family_name'},
             {'rank': 'Tribe', 'field': 'tribe_name'},
-            {'rank': 'Subtribe', 'field': 'sub_tribe_name'},
+            {'rank': 'SubTribe', 'field': 'sub_tribe_name'},
             {'rank': 'Genus', 'field': 'genus_name'},
-            {'rank': 'Species', 'field': 'species_name'},
-            {'rank': 'Subspecies', 'field': 'sub_species_name'}
+            {'rank': 'SpeciesGroup', 'field': 'species_group'},
+            {'rank': 'Species', 'field': 'specific_epithet'},
+            {'rank': 'SubSpecies', 'field': 'sub_species_name'}
         ]
         return context
 
