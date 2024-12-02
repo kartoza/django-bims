@@ -1,25 +1,19 @@
 # tasks.py
 from celery import shared_task
+from django.db.models import Count, Exists, OuterRef
 
+from bims.cache import get_cache
 
 
 @shared_task(bind=True, name='bims.tasks.delete_occurrences_by_taxon_group', queue='update')
 def delete_occurrences_by_taxon_group(self, taxon_module_id):
-    from bims.models.taxon_group import (
-        TaxonGroup,
-    )
-    from bims.models.biological_collection_record import (
-        BiologicalCollectionRecord
-    )
+    from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
+    from bims.models.biological_collection_record import BiologicalCollectionRecord
     from bims.models.survey import Survey
     from bims.models.taxonomy import Taxonomy
     from bims.models.location_site import LocationSite
     from bims.models.location_context import LocationContext
-
-    from bims.signals.utils import (
-        disconnect_bims_signals,
-        connect_bims_signals
-    )
+    from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
 
     try:
         taxon_group = TaxonGroup.objects.get(id=taxon_module_id)
@@ -27,73 +21,95 @@ def delete_occurrences_by_taxon_group(self, taxon_module_id):
         return {'error': 'Taxon group does not exist'}
 
     disconnect_bims_signals()
-    messages = {
-        'success': 'OK'
-    }
+    messages = {'success': 'OK'}
 
-    collections = (
-        BiologicalCollectionRecord.objects.filter(
-            module_group=taxon_group
-        )
-    )
+    # Collections associated with the taxon group
+    collections = BiologicalCollectionRecord.objects.filter(module_group=taxon_group)
     total_collections = collections.count()
 
-    # -- Survey
-    survey_ids = list(
-        collections.values_list(
-            'survey_id', flat=True).distinct('survey')
-    )
-    surveys = Survey.objects.filter(id__in=survey_ids)
-    total_surveys = surveys.count()
+    # Surveys associated with the collections
+    survey_ids = collections.values_list('survey_id', flat=True).distinct()
 
-    # -- Taxonomy
-    taxa_ids = list(taxon_group.taxonomies.all().values_list(
-        'id', flat=True
-    ))
+    # Taxa associated with the taxon group
+    taxa_ids = taxon_group.taxonomies.all().values_list('id', flat=True)
     taxa = Taxonomy.objects.filter(id__in=taxa_ids)
     total_taxa = taxa.count()
 
-    # -- Sites
-    site_ids = list(
-        collections.values_list('site_id', flat=True).distinct('site'))
-    sites = LocationSite.objects.filter(
-        id__in=site_ids
-    )
-    total_sites = sites.count()
+    # Sites associated with the collections
+    site_ids = list(collections.values_list('site_id', flat=True).distinct())
 
     def batch_delete(queryset):
         while queryset.exists():
             ids = list(queryset.values_list('id', flat=True)[:1000])
             queryset.filter(id__in=ids).delete()
 
+    # Delete surveys
+    surveys = Survey.objects.filter(id__in=survey_ids)
+    total_surveys = surveys.count()
+    if surveys.exists():
+        batch_delete(surveys)
+        messages['Surveys deleted'] = total_surveys
+
+    # Delete collections
     if collections.exists():
         batch_delete(collections)
         messages['Collections deleted'] = total_collections
 
-    if surveys.exists():
-        batch_delete(surveys)
-        messages['Survey deleted'] = total_surveys
-
+    # Clear taxon group associations
     if taxa.exists():
         taxon_group.taxonomies.clear()
 
+        # Remove taxa with no occurrences and no child taxa
+        total_taxa_deleted = 0
+        # Loop to remove taxa without records and without children
+        while True:
+            # Find taxa with no records
+            taxa_without_records = Taxonomy.objects.filter(
+                id__in=taxa_ids
+            ).annotate(
+                num_records=Count('biologicalcollectionrecord'),
+                has_children=Exists(
+                    Taxonomy.objects.filter(parent=OuterRef('pk'))
+                )
+            ).filter(num_records=0, has_children=False)
+
+            if not taxa_without_records.exists():
+                break
+
+            count_deleted = taxa_without_records.count()
+            batch_delete(taxa_without_records)
+            total_taxa_deleted += count_deleted
+
+        if total_taxa_deleted > 0:
+            messages['Taxa deleted'] = total_taxa_deleted
+
+    # Delete sites without surveys or collections
+    sites = LocationSite.objects.filter(id__in=site_ids)
+    total_sites = sites.count()
     if sites.exists():
-        sites = sites.filter(
+        # Filter sites that are not associated with any surveys or collections
+        sites_to_delete = sites.filter(
             survey__isnull=True,
-            biological_collection_record__isnull=True
         )
-        batch_delete(sites)
+        total_sites_to_delete = sites_to_delete.count()
 
-        # -- Location Context
-        location_contexts = LocationContext.objects.filter(
-            site__in=sites
-        )
-        batch_delete(location_contexts)
-        messages['Sites deleted'] = total_sites
+        if sites_to_delete.exists():
+            batch_delete(sites_to_delete)
+            messages['Sites deleted'] = total_sites_to_delete
 
+            # Delete associated location contexts
+            location_contexts = LocationContext.objects.filter(site__in=sites_to_delete)
+            batch_delete(location_contexts)
+
+    # Delete the taxon group
     taxon_group.delete()
 
     connect_bims_signals()
+
+    taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
+    if taxon_group_cache:
+        update_taxon_group_cache(delete_first=True)
+
     return messages
 
 

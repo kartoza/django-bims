@@ -3,7 +3,7 @@ GBIF_LINK = 'GBIF Link'
 GBIF_URL = 'GBIF URL'
 TAXON = 'Taxon'
 SPECIES = 'Species'
-SPECIES_GROUP = 'Species group'
+SPECIES_GROUP = 'SpeciesGroup'
 GENUS = 'Genus'
 SUBFAMILY = 'SubFamily'
 SUBORDER = 'SubOrder'
@@ -34,10 +34,10 @@ TAXONOMIC_STATUS = 'Taxonomic status'
 VARIETY = 'Variety'
 FORMA = 'Forma'
 TRIBE = 'Tribe'
-SUBTRIBE = 'Sub Tribe'
+SUBTRIBE = 'SubTribe'
 SYNONYM = 'Synonym'
 ACCEPTED_TAXON = 'Accepted Taxon'
-SUBGENUS = 'Sub Genus'
+SUBGENUS = 'SubGenus'
 AUTHORS = 'Author(s)'
 BIOGRAPHIC_DISTRIBUTIONS = [
     'ANT', 'AT', 'AU', 'NA',
@@ -49,31 +49,52 @@ PARENT_RANKS = {
     'KINGDOM': None,
     'PHYLUM': KINGDOM,
     'SUBPHYLUM': PHYLUM,
-    'CLASS': PHYLUM,
+    'CLASS': SUBPHYLUM,
     'SUBCLASS': CLASS,
-    'ORDER': CLASS,
+    'ORDER': SUBCLASS,
     'SUBORDER': ORDER,
-    'FAMILY': ORDER,
+    'FAMILY': SUBORDER,
     'SUBFAMILY': FAMILY,
-    'GENUS': FAMILY,
+    'TRIBE': SUBFAMILY,
+    'SUBTRIBE': TRIBE,
+    'GENUS': SUBTRIBE,
     'SUBGENUS': GENUS,
-    'SPECIES_GROUP': GENUS,
+    'SPECIESGROUP': GENUS,
     'SPECIES': GENUS,
     'SUBSPECIES': SPECIES,
     'VARIETY': SPECIES,
     'FORMA': SPECIES,
-    'TRIBE': FAMILY,
-    'SUBTRIBE': TRIBE,
 }
 
 ALL_TAXON_RANKS = list(
     PARENT_RANKS.keys()
 )
 
+RANK_HIERARCHY = [
+    'KINGDOM',
+    'PHYLUM',
+    'SUBPHYLUM',
+    'CLASS',
+    'SUBCLASS',
+    'ORDER',
+    'SUBORDER',
+    'FAMILY',
+    'SUBFAMILY',
+    'TRIBE',
+    'SUBTRIBE',
+    'GENUS',
+    'SUBGENUS',
+    'SPECIESGROUP',
+    'SPECIES',
+    'SUBSPECIES',
+    'VARIETY',
+    'FORMA'
+]
 
-def parent_rank(current_rank):
-    current_rank = current_rank.upper()
-    parent_rank_value = PARENT_RANKS.get(current_rank)
-    if not parent_rank_value:
-        parent_rank_value = ''
-    return parent_rank_value
+
+RANK_INDEX = {rank: idx for idx, rank in enumerate(RANK_HIERARCHY)}
+
+
+def parent_rank(rank):
+    """Return the immediate parent rank of the given rank."""
+    return PARENT_RANKS.get(rank.upper())
