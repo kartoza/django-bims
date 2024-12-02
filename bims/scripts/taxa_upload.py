@@ -245,58 +245,86 @@ class TaxaProcessor(object):
 
     def validate_parents(self, taxon, row):
         """
-        Validating parent data from taxon,
-        cross-check between parents of the database and parents of CSV.
-        If the parent has a different value, update to the correct parent.
+        Validates and updates the parent hierarchy of a taxon based on CSV data.
+        This function now includes sub-ranks like SUBFAMILY.
         :param taxon: Taxonomy object
-        :param row: csv row data
+        :param row: CSV row data
         """
-        parent = taxon.parent
         max_try = 15
         current_try = 1
-        while parent and current_try < max_try:
-            taxon_parent_rank = parent_rank(taxon.rank)
-            try:
-                csv_data = self.get_row_value(
-                    row, taxon_parent_rank.capitalize())
-                if taxon_parent_rank == SPECIES:
-                    genus = self.get_row_value(
-                        row, GENUS)
-                    if genus not in csv_data:
-                        csv_data = self.get_row_value(
-                            row, GENUS) + ' ' + csv_data
-            except KeyError:
-                parent = parent.parent
-                continue
-            while not csv_data and current_try < max_try:
-                taxon_parent_rank = parent_rank(taxon_parent_rank)
-                csv_data = self.get_row_value(
-                    row, taxon_parent_rank)
-                current_try += 1
-            if (
-                    csv_data not in parent.canonical_name and
-                    csv_data not in parent.legacy_canonical_name or
-                    self.rank_name(parent) != taxon_parent_rank.upper()
-            ):
-                print('Different parent for {}'.format(str(taxon)))
-                taxon_parent = self.get_parent(
-                    row,
-                    current_rank=PARENT_RANKS.get(taxon_parent_rank.upper(), '')
-                )
-                print('Updated to {}'.format(str(taxon_parent)))
-                taxon.parent = taxon_parent
-                taxon.save()
-            taxon = parent
-            parent = parent.parent
-            if self.rank_name(taxon) != 'KINGDOM' and not parent:
-                parent = self.get_parent(
-                    row, current_rank=PARENT_RANKS.get(taxon.rank.upper(), '')
-                )
-                if parent:
-                    taxon.parent = parent
-                    taxon.save()
+        taxon_rank = taxon.rank.upper()
+
+        if taxon_rank not in RANK_INDEX:
+            print(f"Rank '{taxon_rank}' not recognized in the hierarchy.")
+            return
+
+        # Start from the current taxon's rank and move up the hierarchy
+        rank_index = RANK_INDEX[taxon_rank]
+
+        while current_try <= max_try and rank_index > 0:
+            parent_rank_name = RANK_HIERARCHY[rank_index - 1]
             current_try += 1
-        print('Parents has been validated')
+
+            # Try to get the parent name from the CSV data
+            csv_parent_name = self.get_row_value(row, parent_rank_name.capitalize())
+
+            # Handle species special case where genus might be part of the species name
+            if parent_rank_name == 'SPECIES':
+                genus_name = self.get_row_value(row, 'Genus')
+                if genus_name and genus_name not in csv_parent_name:
+                    csv_parent_name = f"{genus_name} {csv_parent_name}"
+
+            # If there's no CSV data for this rank, move to the next higher rank
+            if not csv_parent_name:
+                rank_index -= 1
+                continue
+
+            parent = taxon.parent
+
+            # If there's an existing parent, compare names and ranks
+            if parent:
+                db_parent_name = parent.canonical_name.lower()
+                csv_parent_name_lower = csv_parent_name.lower()
+                db_parent_rank = self.rank_name(parent).upper()
+
+                if db_parent_name != csv_parent_name_lower or db_parent_rank != parent_rank_name:
+                    print(f"Different parent detected for '{taxon.canonical_name}':")
+                    print(f"- Current parent: {db_parent_name} ({db_parent_rank})")
+                    print(f"- Expected parent: {csv_parent_name_lower} ({parent_rank_name})")
+                    # Retrieve or create the correct parent taxon
+                    correct_parent = self.get_parent(row, current_rank=parent_rank_name)
+                    if correct_parent:
+                        taxon.parent = correct_parent
+                        taxon.save()
+                        print(f"Updated parent of '{taxon.canonical_name}' to '{correct_parent.canonical_name}'")
+                        # Move up to the parent taxon
+                        taxon = correct_parent
+                    else:
+                        print(f"Could not find or create parent '{csv_parent_name}' at rank '{parent_rank_name}'")
+                        break
+                else:
+                    # Parent matches; move up to the parent taxon
+                    taxon = parent
+            else:
+                # No parent exists; try to get or create one from CSV data
+                correct_parent = self.get_parent(row, current_rank=parent_rank_name)
+                if correct_parent:
+                    taxon.parent = correct_parent
+                    taxon.save()
+                    print(f"Assigned new parent '{correct_parent.canonical_name}' to '{taxon.canonical_name}'")
+                    # Move up to the parent taxon
+                    taxon = correct_parent
+                else:
+                    print(f"Could not find or create parent '{csv_parent_name}' at rank '{parent_rank_name}'")
+                    break
+
+            # Update parent for the next iteration
+            parent = taxon.parent
+
+            # Move up the hierarchy
+            rank_index -= 1
+
+        print('Parent validation complete.')
 
     def get_taxonomy(self, taxon_name, scientific_name, rank):
         """
@@ -425,7 +453,7 @@ class TaxaProcessor(object):
         if rank == SPECIES:
             genus_name = self.get_row_value(row, GENUS).strip()
             taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS).strip()
-            if genus_name not in taxon_name and taxonomic_status == 'accepted':
+            if genus_name not in taxon_name and taxon_name and not taxon_name[0].isupper():
                 taxon_name = genus_name + ' ' + taxon_name.strip()
 
         try:
