@@ -83,6 +83,8 @@ class CarouselHeader(OrderedModel):
         help_text='Specify the font size for the description. Value must be between 10 and 50.'
     )
 
+    full_screen_background = models.BooleanField(default=False)
+
     class Meta:
         verbose_name_plural = 'Carousel Headers'
         ordering = ['order']

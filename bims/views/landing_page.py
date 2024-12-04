@@ -34,7 +34,8 @@ class HeaderSerializer(serializers.ModelSerializer):
             'text_style',
             'title_font_size',
             'description_font_size',
-            'overlay_opacity'
+            'overlay_opacity',
+            'full_screen_background'
         ]
 
 
