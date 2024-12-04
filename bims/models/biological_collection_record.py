@@ -5,7 +5,6 @@
 import json
 import uuid
 from django.conf import settings
-from django.contrib.sites.models import Site
 from django.db import models
 from django.dispatch import receiver
 from django.utils import timezone
@@ -274,9 +273,10 @@ class BiologicalCollectionRecord(AbstractValidation):
         db_index=True
     )
 
-    uuid = models.CharField(
+    uuid = models.UUIDField(
         help_text='Collection record uuid',
-        max_length=200,
+        default=uuid.uuid4,
+        unique=True,
         null=True,
         blank=True
     )
@@ -470,14 +470,6 @@ class BiologicalCollectionRecord(AbstractValidation):
             else:
                 self.additional_data = json.loads(self.additional_data)
                 attempt += 1
-
-        if not self.uuid:
-            collection_uuid = str(uuid.uuid4())
-            while BiologicalCollectionRecord.objects.filter(
-                uuid=collection_uuid
-            ).exists():
-                collection_uuid = str(uuid.uuid4())
-            self.uuid = collection_uuid
 
         if not self.original_species_name:
             self.original_species_name = self.taxonomy.canonical_name
