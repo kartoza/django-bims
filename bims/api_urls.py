@@ -1,6 +1,7 @@
 from django.urls import re_path, path
 
 from bims.api_views.checklist import DownloadChecklistAPIView
+from bims.api_views.clear_cache import ClearCacheView
 from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
@@ -408,4 +409,7 @@ urlpatterns = [
     path('cloud-native-layers/',
          CloudNativeLayerList.as_view(),
          name='cloud-native-layers'),
+    path('clear-cache/',
+         ClearCacheView.as_view(),
+         name='clear_cache_view'),
 ]

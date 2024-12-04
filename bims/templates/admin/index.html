@@ -1,0 +1,58 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+{{ block.super }}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const targetElement = document.querySelector('.g-d-c');
+        if (targetElement) {
+            // Create the button
+            const customButton = document.createElement('a');
+            customButton.href = "#";
+            customButton.className = "grp-button grp-primary";
+            customButton.textContent = "Clear Cache";
+            customButton.style.marginLeft = "10px";
+
+            // Add click event with confirmation
+            customButton.addEventListener("click", function (event) {
+                event.preventDefault();
+
+                // Confirmation dialog
+                if (confirm("Are you sure you want to clear the cache?")) {
+                    // Make an AJAX request
+                    fetch("{% url 'clear_cache_view' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json"
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error("Failed to clear cache");
+                        }
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        window.location.href = "/admin/";
+                    })
+                    .catch(error => {
+                        console.error("Error clearing cache:", error);
+                        alert("An unexpected error occurred. Please try again.");
+                    });
+                }
+            });
+
+            // Append the button to the target element
+            targetElement.appendChild(customButton);
+        } else {
+            console.warn("Element with class 'g-d-c' not found.");
+        }
+    });
+</script>
+
+{% endblock %}
