@@ -266,7 +266,7 @@ class BioCollectionOneRowSerializer(
     def get_uuid(self, obj):
         if obj.uuid:
             try:
-                return str(uuid.UUID(obj.uuid))
+                return str(obj.uuid)
             except ValueError:
                 return obj.uuid
         return '-'
