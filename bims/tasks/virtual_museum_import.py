@@ -40,16 +40,26 @@ def import_data_task(self, module, limit=10):
                 last_task = ImportTask.objects.filter(
                     module=module, in_progress=False
                 ).order_by('-updated_at').first()
+                task = None
                 if (
                         last_task and
                         last_task.updated_at.month == current_month and
-                        last_task.updated_at.year == current_year
+                        last_task.updated_at.year == current_year and
+                        last_task.start_index == last_task.total_record
                 ):
                     logger.info(f"Task for {module} has already been completed this month.")
                     return
 
-                # Create or resume a task
-                task = ImportTask.objects.filter(module=module, in_progress=True).first()
+                # If last task was not completed fully, resume it
+                task = None
+                if last_task and last_task.start_index != last_task.total_records:
+                    task = last_task
+
+                # If no task to resume, check for an in-progress task to resume
+                if not task:
+                    task = ImportTask.objects.filter(module=module, in_progress=True).first()
+                
+                # If no in-progress task at all, create a new one
                 if not task:
                     # No in-progress task, create a new one
                     if module == 'odonates':
@@ -79,6 +89,7 @@ def import_data_task(self, module, limit=10):
                 else:
                     total_records = int(task.total_records)
                     task.celery_task_id = self.request.id
+                    task.in_progress=True
                     task.save()
 
                 start_index = int(task.start_index)
