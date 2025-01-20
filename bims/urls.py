@@ -15,6 +15,7 @@ from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
 from bims.views.spatial_layer import SpatialLayerUploadView, VisualizationLayerView
+from bims.views.taxonworks import TaxonNamesView
 from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
@@ -317,6 +318,7 @@ urlpatterns = [
         ContextLayersView.as_view(),
         name='context-layers-view'),
     re_path(r'^login/?$', login_redirect, name='login_redirect'),
+    path('taxon_names/', TaxonNamesView.as_view(), name='taxon-names'),
 ]
 
 # Api urls
