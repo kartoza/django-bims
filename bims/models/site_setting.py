@@ -31,6 +31,11 @@ class SiteSetting(Preferences):
                   '"filter_values": ["bims"]}]'
     )
 
+    auto_validate_taxa_on_upload = models.BooleanField(
+        default=True,
+        help_text='If True, taxa from CSV uploads are automatically validated.'
+    )
+
     default_location_site_cluster = models.CharField(
         max_length=100,
         help_text='SQL view name of the location site cluster which '

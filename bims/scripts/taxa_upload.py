@@ -17,7 +17,8 @@ from bims.models import (
     IUCNStatus,
     IUCN_CATEGORIES,
     VernacularName,
-    ORIGIN_CATEGORIES, TaxonTag, SourceReference, SourceReferenceBibliography,
+    ORIGIN_CATEGORIES, TaxonTag, SourceReference,
+    SourceReferenceBibliography,
     Invasion
 )
 from bims.templatetags import is_fada_site
@@ -25,10 +26,11 @@ from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names
 )
 from bims.scripts.data_upload import DataCSVUpload
-from bims.utils.gbif import get_vernacular_names
 from td_biblio.exceptions import DOILoaderError
 from td_biblio.models import Entry
 from td_biblio.utils.loaders import DOILoader
+
+from preferences import preferences
 
 logger = logging.getLogger('bims')
 
@@ -36,6 +38,26 @@ logger = logging.getLogger('bims')
 class TaxaProcessor(object):
 
     all_keys = {}
+
+    def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated = True):
+        """
+        Add or update the relationship between a taxonomy and a taxon group,
+        ensuring the 'is_validated' field is properly set in both the
+        intermediate table (TaxonGroupTaxonomy) and on the Taxonomy object.
+        """
+        taxon_group.taxonomies.add(
+            taxonomy,
+            through_defaults={
+                'is_validated': validated
+            }
+        )
+
+    def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
+        """
+        A helper function that calls `add_taxon_to_taxon_group` with
+        validated=True
+        """
+        self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=True)
 
     def handle_error(self, row, message):
         pass
@@ -647,12 +669,7 @@ class TaxaProcessor(object):
                 )
 
                 # -- Add to taxon group
-                taxon_group.taxonomies.add(
-                    taxonomy,
-                    through_defaults={
-                        'is_validated': True
-                    }
-                )
+                self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
 
                 # -- Endemism
                 endemism = self.endemism(row)
@@ -746,8 +763,6 @@ class TaxaProcessor(object):
                 if accepted_taxon:
                     taxonomy.accepted_taxonomy = accepted_taxon
 
-                taxonomy.validated = True
-
                 taxonomy.save()
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa
@@ -756,6 +771,14 @@ class TaxaProcessor(object):
 
 class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
     model_name = 'taxonomy'
+
+    def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
+        """
+        A helper function that calls `add_taxon_to_taxon_group` with
+        validated=False
+        """
+        auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
+        self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
 
     def finish_processing_row(self, row, taxonomy):
         # -- Add to taxon group

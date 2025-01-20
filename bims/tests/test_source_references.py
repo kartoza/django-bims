@@ -4,6 +4,7 @@ from django.contrib.sites.models import Site
 from unittest.mock import patch, MagicMock
 
 from django_tenants.test.cases import FastTenantTestCase
+from datetime import datetime
 
 from bims.factories import EntryFactory
 from bims.tasks import get_source_reference_filter, generate_source_reference_filter
@@ -67,5 +68,5 @@ class TestSourceReferenceFilters(FastTenantTestCase):
             f'source_reference_filter_{self.tenant}',
             [
                 {'id': self.references[0].id, 'reference': f'- | {self.entry.publication_date.year} | Test', 'type': 'Peer-reviewed scientific article'},
-                {'id': self.references[1].id, 'reference': f'- | 2024 | {self.document.source}', 'type': 'Published book, report or thesis'}]
+                {'id': self.references[1].id, 'reference': f'- | {datetime.now().year} | {self.document.source}', 'type': 'Published book, report or thesis'}]
             , timeout=None)
