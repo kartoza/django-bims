@@ -342,7 +342,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                     layers: value.wms_layer_name,
                                     format: value.wms_format,
                                     getFeatureFormat: value.get_feature_format,
-                                    STYLES: value.layer_style
+                                    STYLES: value.layer_style,
+                                    displayInLayerSwitcher: true,
                                 }
                             }
                             source = source.replace(/(^\w+:|^)\/\//, '').split('/');
@@ -370,7 +371,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                                 })
                             }
                             tileLayer = new ol.layer.VectorTile({
-                                title: value.name,
                                 source: vectorSource,
                                 STYLES: value.native_layer_style,
                                 tileGrid: ol.tilegrid.createXYZ(),
