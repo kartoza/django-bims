@@ -1,6 +1,8 @@
 ![Staging Tag](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lgkgh/889dd6c34a68d9461b1fd8cdb56b8a21/raw/bims_multitenant_build-tag.json)
 ![Staging Status](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lgkgh/889dd6c34a68d9461b1fd8cdb56b8a21/raw/bims_multitenant_build-status.json)
 
+Documentation : https://kartoza.github.io/bims-website/
+
 ## Welcome
 
 Welcome to the Biodiversity Information Management System (BIMS) Source Code Repository
