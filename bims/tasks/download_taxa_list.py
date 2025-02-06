@@ -52,7 +52,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                     and header not in additional_attributes_titles
             ):
                 header = header.replace('_', ' ').capitalize()
-            if header == 'Sub species':
+            if header == 'Subspecies':
                 header = SUBSPECIES
             if header.lower().strip() == 'cites_listing':
                 header = CITES_LISTING
