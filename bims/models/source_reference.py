@@ -311,35 +311,27 @@ class SourceReferenceBibliography(SourceReference):
             for author in authors:
                 if author.user:
                     users.append(author.user)
-                else:
+                elif author:
                     author.save()
-                    users.append(author.user)
+                    if author.user:
+                        users.append(author.user)
             authors = users
         if self.document:
             try:
                 bims_document = BimsDocument.objects.get(
                     document__id=self.document.id
                 )
-                if bims_document.authors.all().exists():
-                    _authors = bims_document.authors.all()
-                    different = False
-                    if _authors.count() != len(authors):
-                        authors = _authors
-                        different = True
-                    if not different:
-                        for _author in authors:
-                            if _author not in authors:
-                                different = True
-                                break
-                    if different:
-                        authors = _authors
+                bims_authors = list(bims_document.authors.all())
+                if bims_authors:
+                    if len(bims_authors) != len(authors) or any(a not in authors for a in bims_authors):
+                        authors = bims_authors
             except BimsDocument.DoesNotExist:
                 pass
         return authors
 
     @property
     def authors(self):
-        authors_name = format_authors(self.author_list)
+        authors_name = format_authors(self.author_list).strip()
         return authors_name if authors_name else '-'
 
     @property
@@ -490,12 +482,12 @@ class SourceReferenceDocument(SourceReference):
                 return users
         except BimsDocument.DoesNotExist:
             pass
-        return [self.source.owner]
+        return [self.source.owner] if self.source.owner else []
 
     @property
     def authors(self):
-        return '-'
-        return format_authors(self.author_list)
+        authors_string = format_authors(self.author_list)
+        return authors_string if authors_string else '-'
 
     def link_template(self):
         """Returns html template containing the reference data"""
