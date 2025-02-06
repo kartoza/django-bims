@@ -126,7 +126,7 @@ class TaxaCSVSerializerTest(TestCase):
 
         expected_fields = [
             'taxon_rank', 'kingdom', 'phylum', 'class_name', 'order', 'family', 'genus', 'species',
-            'sub_species', 'taxon', 'scientific_name_and_authority', 'common_name', 'origin',
+            'subspecies', 'taxon', 'scientific_name_and_authority', 'common_name', 'origin',
             'endemism', 'conservation_status_global', 'conservation_status_national', 'on_gbif', 'gbif_link',
             'Growth form', 'freshwater', 'testing', 'ANT'
         ]

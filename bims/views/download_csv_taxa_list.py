@@ -24,24 +24,16 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
+from bims.serializers.taxon_detail_serializer import TaxonHierarchySerializer
 from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_csv_taxa_list as download_csv_taxa_list_task
 )
-from bims.models.cites_listing_info import CITESListingInfo
 
 
-class TaxaCSVSerializer(serializers.ModelSerializer):
+class TaxaCSVSerializer(TaxonHierarchySerializer):
 
     taxon_rank = serializers.SerializerMethodField()
-    kingdom = serializers.SerializerMethodField()
-    phylum = serializers.SerializerMethodField()
-    class_name = serializers.SerializerMethodField()
-    order = serializers.SerializerMethodField()
-    genus = serializers.SerializerMethodField()
-    family = serializers.SerializerMethodField()
-    species = serializers.SerializerMethodField()
-    sub_species = serializers.SerializerMethodField()
     taxon = serializers.SerializerMethodField()
     scientific_name_and_authority = serializers.SerializerMethodField()
     common_name = serializers.SerializerMethodField()
@@ -65,44 +57,6 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
 
     def get_taxon_rank(self, obj):
         return obj.rank.capitalize()
-
-    def get_kingdom(self, obj):
-        return obj.kingdom_name
-
-    def get_phylum(self, obj):
-        return obj.phylum_name
-
-    def get_class_name(self, obj):
-        return obj.class_name
-
-    def get_order(self, obj):
-        return obj.order_name
-
-    def get_genus(self, obj):
-        return obj.genus_name
-
-    def get_family(self, obj):
-        return obj.family_name
-
-    def get_species(self, obj: Taxonomy):
-        species_name = obj.species_name
-        if species_name:
-            genus_name = obj.genus_name
-            if genus_name:
-                species_name = species_name.replace(genus_name, '')
-            return species_name.strip()
-        return species_name
-
-    def get_sub_species(self, obj: Taxonomy):
-        sub_species_name = obj.sub_species_name
-        if sub_species_name:
-            genus_name = obj.genus_name
-            if genus_name:
-                sub_species_name = sub_species_name.replace(genus_name, '', 1)
-            species_name = obj.species_name
-            if species_name:
-                sub_species_name = sub_species_name.replace(species_name, '', 1)
-        return sub_species_name
 
     def get_taxon(self, obj):
         return obj.canonical_name
@@ -174,7 +128,7 @@ class TaxaCSVSerializer(serializers.ModelSerializer):
             'family',
             'genus',
             'species',
-            'sub_species',
+            'subspecies',
             'taxon',
             'taxonomic_status',
             'accepted_taxon',
