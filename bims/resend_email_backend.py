@@ -51,7 +51,7 @@ class ResendBackend(BaseEmailBackend):
             payload["html"] = email.body
 
         # Check for HTML content
-        if email.alternatives:
+        if hasattr(email, 'alternatives') and email.alternatives:
             for alternative in email.alternatives:
                 content_type, content = alternative
                 if content_type == "text/html":
