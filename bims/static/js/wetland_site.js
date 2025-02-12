@@ -176,7 +176,7 @@ let fetchWetlandData = () => {
   if (!currentCoordinate) return;
   let coordinate = currentCoordinate;
   let view = map.getView();
-  let layerSource = wmsLayer.getSource().getGetFeatureInfoUrl(
+  let layerSource = wmsLayer.getSource().getFeatureInfoUrl(
       coordinate,
       view.getResolution(),
       view.getProjection(),
