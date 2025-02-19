@@ -144,5 +144,6 @@ class DataUploadStatusView(APIView):
         return Response({
             'token': session.token,
             'progress': session.progress,
-            'processed': session.processed
+            'processed': session.processed,
+            'canceled': session.canceled
         })

@@ -161,8 +161,11 @@
                                 {% if upload_session.success_file %}
                                     <a href="{{ upload_session.success_file.url }}" target="_blank" class="btn btn-success">Success File</a>
                                 {% endif %}
-                                {% if upload_session.canceled %}
+                                {% if upload_session.canceled and not upload_session.error_notes %}
                                     <p style="color:red">Canceled</p>
+                                {% endif %}
+                                {% if upload_session.error_notes %}
+                                    <p style="color:red">{{ upload_session.error_notes }}</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -218,10 +221,9 @@
 
         const updateProgress = (id, $elm) => {
             setTimeout(function () {
-                console.log(updateUrl);
                 $.get(updateUrl + id).then(
                     (response) => {
-                        if (!response['processed']) {
+                        if (!response['processed'] && !response['canceled']) {
                             let currentProgress = response['progress'];
                             $elm.parent().parent().find('.progress-text').html(currentProgress);
                             if (currentProgress && currentProgress.indexOf('/') > -1) {
