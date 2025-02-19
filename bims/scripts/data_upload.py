@@ -30,42 +30,41 @@ class DataCSVUpload(object):
 
     def start(self, encoding='ISO-8859-1'):
         """
-        Start processing the csv file from upload session
+        Start processing the CSV file from the upload session.
         """
         self.error_list = []
         self.success_list = []
         self.domain = get_current_domain()
-        self.total_rows = len(
-            self.upload_session.process_file.readlines()
-        ) - 1
-        self.process_started()
-        processed = False
-        with open(
-                self.upload_session.process_file.path,
-                encoding=encoding) as csv_file:
-            try:
-                self.csv_dict_reader = csv.DictReader(csv_file)
-                self.process_csv_dict_reader()
-                processed = True
-            except UnicodeDecodeError:
-                pass
-        if not processed:
+
+        try:
             with open(
-                self.upload_session.process_file.path,
-                encoding=encoding
-            ) as csv_file:
-                try:
-                    self.csv_dict_reader = csv.DictReader(csv_file)
-                    self.process_csv_dict_reader()
-                    processed = True
-                except UnicodeDecodeError:
-                    pass
-        if not processed:
+                    self.upload_session.process_file.path,
+                    encoding=encoding
+            ) as f:
+                self.total_rows = sum(1 for _ in f) - 1
+        except Exception as e:
+            self.upload_session.error_notes = f"Error counting rows: {e}"
             self.upload_session.canceled = True
             self.upload_session.save()
             self.process_ended()
             return
-        self.process_ended()
+
+        self.process_started()
+
+        try:
+            with open(self.upload_session.process_file.path, encoding=encoding) as csv_file:
+                self.csv_dict_reader = csv.DictReader(csv_file)
+                self.process_csv_dict_reader()
+        except UnicodeDecodeError as e:
+            self.upload_session.error_notes = str(e)
+            self.upload_session.canceled = True
+            self.upload_session.save()
+        except Exception as e:
+            self.upload_session.error_notes = f"Unexpected error: {e}"
+            self.upload_session.canceled = True
+            self.upload_session.save()
+        finally:
+            self.process_ended()
 
     def error_file(self, error_row, error_message):
         """
