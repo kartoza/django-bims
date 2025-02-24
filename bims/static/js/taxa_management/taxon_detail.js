@@ -53,6 +53,12 @@ export const taxonDetail = (() => {
                     <div class="dt-column">
                         <div class="row">
                             <div class="col-12 text-white dt-header">
+                                Author(s)
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-12">${data.author ? data.author : ''}</div>
+                            </div>
+                            <div class="col-12 text-white dt-header">
                                 Valid/Accepted Names
                             </div>
                             <div class="dt-item col-12 row">
@@ -111,6 +117,10 @@ export const taxonDetail = (() => {
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Environmental References'] || '') : ''}</div>
                             </div>
                             <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>Conservation Status</strong></div>
+                                <div class="col-8">${data.iucn_status_full_name}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Conservation Comments</strong></div>
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation Comments'] || '') : ''}</div>
                             </div>
@@ -125,10 +135,6 @@ export const taxonDetail = (() => {
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Common Name</strong></div>
                                 <div class="col-8">${data.common_name !== 'Unknown' ? data.common_name : ''}</div>
-                            </div>
-                            <div class="dt-item col-12 row">
-                                <div class="col-4"><strong>Conservation Status</strong></div>
-                                <div class="col-8">${data.iucn_status_full_name}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>GBIF Key</strong></div>
