@@ -330,3 +330,11 @@ table {
     margin-top: 20px;
     padding-top: 10px;
 }
+
+.dashboard-header {
+    margin-top: 10px;
+}
+
+#taxon-name-input {
+    width: 25%;
+}
