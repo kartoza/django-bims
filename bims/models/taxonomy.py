@@ -299,6 +299,26 @@ class AbstractTaxonomy(AbstractValidation):
             return self
         return None
 
+    def get_parent_by_rank(self, rank):
+        limit = 20
+        current_try = 0
+        _taxon = self
+        _parent = _taxon.parent if _taxon.parent else None
+        _rank = _taxon.rank
+        while (
+                _parent and _rank
+                and _rank != rank
+                and current_try < limit
+        ):
+            current_try += 1
+            _taxon = _parent
+            _rank = _taxon.rank
+            _parent = _taxon.parent if _taxon.parent else None
+
+        if _rank == rank:
+            return _taxon
+        return None
+
     def get_taxon_rank_name(self, rank):
         limit = 20
         current_try = 0
@@ -338,6 +358,10 @@ class AbstractTaxonomy(AbstractValidation):
     @property
     def family_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
+
+    @property
+    def genus(self):
+        return self.get_parent_by_rank(TaxonomicRank.GENUS.name)
 
     @property
     def genus_name(self):
