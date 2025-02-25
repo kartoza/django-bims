@@ -40,6 +40,7 @@ let validator = $('#site-form').validate({
                 formAlert.html('River name is required.');
                 return false;
             }
+
             // Check length
             if (ecosystemType == 'River') {
                 if (siteCode.length !== 12) {
@@ -47,14 +48,14 @@ let validator = $('#site-form').validate({
                     return false;
                 }
             } else {
-                if (siteCode.length !== 15) {
+                if (siteCode.length < 15) {
                     showSiteCodeError();
                     return false;
                 }
             }
             // Check regex
             let regex = /(\w{6})-(\w{5})/g;
-            if (ecosystemType == 'Open waterbody') {
+            if (ecosystemType == 'Open waterbody' || ecosystemType == 'Wetland') {
                 regex = /(\w{4})-(\w{4})-(\w{5})/g;
             }
             let regexResult = regex.test(siteCode);

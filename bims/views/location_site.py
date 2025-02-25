@@ -284,6 +284,7 @@ class LocationSiteFormView(TemplateView):
     template_name = 'location_site_form_view.html'
     success_message = 'New site has been successfully added'
     location_site = None
+    ecosystem_type = None
 
     def additional_context_data(self):
         return {
@@ -316,7 +317,9 @@ class LocationSiteFormView(TemplateView):
             (g.name, g.value) for g in GEOMORPHOLOGICAL_ZONE_CATEGORY_ORDER
         ]
         context['hydrogeomorphic_type_category'] = HYDROGEOMORPHIC_CHOICES
-        context['ecosystem_type'] = self.request.GET.get('type', '')
+        if not self.ecosystem_type:
+            self.ecosystem_type = self.request.GET.get('type', '')
+        context['ecosystem_type'] = self.ecosystem_type
         try:
             context['bing_key'] = (
                 BaseMapLayer.objects.get(source_type='bing').key

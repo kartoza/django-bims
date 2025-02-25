@@ -236,7 +236,8 @@ wetlandSiteCodeButton.click(function () {
   let latitude = parseFloat($('#latitude').val());
   let longitude = parseFloat($('#longitude').val());
 
-  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#user_wetland_name').val()}&lat=${latitude}&lon=${longitude}`;
+  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#user_river_name').val()}&lat=${latitude}&lon=${longitude}`;
+  console.log(url)
 
   $.ajax({
     url: url,
