@@ -2,7 +2,7 @@ function isInt(value) {
   return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value))
 }
 
-function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true, on_hidden = null) {
+function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true, on_hidden = null, data_format_dropdown = true) {
   const $downloadPopup = $('#download-popup');
   if(resource_type === 'CSV'){
     $downloadPopup.find('#data-format').show()
@@ -14,6 +14,12 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
     $downloadPopup.find('#data-format').hide()
     $downloadPopup.find('#data-format-pdf').hide()
   }
+
+  if (!data_format_dropdown) {
+    $downloadPopup.find('#data-format').hide()
+    $downloadPopup.find('#data-format-pdf').hide()
+  }
+
   $downloadPopup.find('#download-popup-title').html(resource_name);
   $downloadPopup.modal('show');
   $('#download-notes').val('');
@@ -29,11 +35,13 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
 
   $submitDownloadPopup.on('click', function () {
     $submitDownloadPopup.prop('disabled', true);
-    if (resource_type === 'CSV') {
-      resource_type = $('#download-format').val()
-    }
-    if (resource_type === 'PDF') {
-      resource_type = $('#download-format-pdf').val()
+    if (data_format_dropdown) {
+      if (resource_type === 'CSV') {
+        resource_type = $('#download-format').val()
+      }
+      if (resource_type === 'PDF') {
+        resource_type = $('#download-format-pdf').val()
+      }
     }
     let postData = {
       purpose: $downloadPurpose.val(),

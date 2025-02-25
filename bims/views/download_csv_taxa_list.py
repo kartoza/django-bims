@@ -1,23 +1,11 @@
 # coding=utf-8
 import datetime
-import hashlib
-import io
 import os
 import json
 
-from braces.views import LoginRequiredMixin
-from django.db.models import F, Case, When, Value, Count
-from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.conf import settings
-from reportlab.graphics.charts.piecharts import Pie
-from reportlab.graphics.charts.legends import Legend
-from reportlab.graphics.shapes import Drawing, String
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-
-from reportlab.platypus import SimpleDocTemplate
-from rest_framework import serializers, status
-from rest_framework.views import APIView
+from rest_framework import serializers
 
 from bims.enums import TaxonomicGroupCategory
 from bims.models.taxonomy import Taxonomy
@@ -27,7 +15,7 @@ from bims.models.taxon_extra_attribute import TaxonExtraAttribute
 from bims.serializers.taxon_detail_serializer import TaxonHierarchySerializer
 from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
-    download_csv_taxa_list as download_csv_taxa_list_task
+    download_taxa_list as download_taxa_list_task
 )
 
 
@@ -200,9 +188,11 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         return result
 
 
-def download_csv_taxa_list(request):
+def download_taxa_list(request):
     if not request.user.is_authenticated:
         return HttpResponseForbidden('Not logged in')
+
+    output = request.GET.get('output', 'csv')
 
     taxon_group_id = request.GET.get('taxonGroup')
     download_request_id = request.GET.get('downloadRequestId', '')
@@ -237,161 +227,17 @@ def download_csv_taxa_list(request):
             approved=True
         )
     else:
-        download_csv_taxa_list_task.delay(
+        download_taxa_list_task.delay(
             request.GET.dict(),
             csv_file=path_file,
             filename=filename,
             user_id=request.user.id,
-            download_request_id=download_request_id
+            output=output,
+            download_request_id=download_request_id,
+            taxon_group_id=taxon_group_id
         )
 
     return JsonResponse({
         'status': 'processing',
         'filename': filename
     })
-
-
-class DownloadPdfTaxaList(LoginRequiredMixin, APIView):
-
-    def generate_color(self, key, alpha=1):
-        hash_obj = hashlib.sha1(key.encode())
-        hash_num = int(hash_obj.hexdigest(), 16)
-
-        r = (hash_num & 0xFF0000) >> 16
-        g = (hash_num & 0x00FF00) >> 8
-        b = (hash_num & 0x0000FF)
-        return colors.toColor(f'rgba({r},{g},{b},{alpha})')
-
-    def draw_pie_with_legend(self, data, title):
-        drawing = Drawing(400, 200)
-
-        pie = Pie()
-        pie.x = 50
-        pie.y = 15
-        pie.width = 120
-        pie.height = 120
-        pie.data = list(data.values())
-        pie.labels = list(data.keys())
-        pie.slices.strokeWidth = 0.5
-        pie.slices.strokeColor = colors.white
-        pie.slices.label_visible = False
-
-        for i in range(len(data)):
-            pie.slices[i].popout = 5
-
-        drawing.add(
-            String(100, 180, title, fontSize=15, textAnchor='middle', fontName='Helvetica'))
-
-        legend = Legend()
-        legend.x = 180
-        legend.y = 75
-        legend.dx = 8
-        legend.dy = 8
-        legend.fontName = 'Helvetica'
-        legend.fontSize = 8
-        legend.boxAnchor = 'w'
-        legend.columnMaximum = 10
-        legend.strokeWidth = 0.5
-        legend.strokeColor = colors.black
-        legend.deltax = 75
-        legend.deltay = 15
-        legend.autoXPadding = 5
-        legend.autoYPadding = 10
-        legend.yGap = 0
-        legend.dxTextSpace = 5
-        legend.alignment = 'right'
-        legend.dividerLines = 1 | 2 | 4
-        legend.dividerOffsY = 7
-        legend.subCols.rpad = 30
-
-        pie.slices.fillColor = None
-        legend.colorNamePairs = []
-        for i, key in enumerate(list(data.keys())):
-            color = self.generate_color(key)
-            pie.slices[i].fillColor = color
-            legend.colorNamePairs.append(
-                (color, f'{pie.labels[i]} : {data[pie.labels[i]]}'))
-
-        drawing.add(pie)
-        drawing.add(legend)
-
-        return drawing
-
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return HttpResponseForbidden('Not logged in')
-
-        taxon_group_id = request.GET.get('taxonGroup')
-        if not taxon_group_id:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Taxon group ID must be provided'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-        except TaxonGroup.DoesNotExist:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Taxon group not found'
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        taxonomies = taxon_group.taxonomies.all()
-
-        endemism_summary = dict(taxonomies.annotate(
-            value=Case(When(endemism__isnull=False,
-                            then=F('endemism__name')),
-                       default=Value('Unknown'))
-        ).values('value').annotate(
-            count=Count('value')).values_list('value', 'count'))
-
-        origin_dict = {
-            'alien': 'Non-Native',
-            'indigenous': 'Native',
-            'unknown': 'Unknown',
-        }
-        origin_summary = dict(taxonomies.annotate(
-            value=Case(When(origin='',
-                            then=Value('unknown')),
-                       default=F('origin'))
-        ).values('value').annotate(
-            count=Count('value')).values_list('value', 'count'))
-
-        origin_summary_updated = {}
-        for origin_data in origin_summary.keys():
-            origin_summary_updated[
-                origin_dict[origin_data]
-            ] = origin_summary[origin_data]
-
-        # Create a PDF response
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="taxa_list.pdf"'
-
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=(letter[1], letter[0]),
-            rightMargin=5,
-            leftMargin=5,
-            topMargin=10,
-            bottomMargin=10)
-
-        story = []
-
-        drawing = Drawing(400, 50)
-
-        drawing.add(
-            String(100, 20,
-                   taxon_group.name,
-                   fontSize=20, fontName='Helvetica'))
-
-        story.append(drawing)
-        story.append(self.draw_pie_with_legend(endemism_summary, 'Endemism'))
-        story.append(self.draw_pie_with_legend(origin_summary_updated, 'Origin'))
-
-        doc.build(story)
-
-        pdf = buffer.getvalue()
-        buffer.close()
-        response.write(pdf)
-        return response

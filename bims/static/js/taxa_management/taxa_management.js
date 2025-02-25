@@ -69,6 +69,7 @@ export const taxaManagement = (() => {
 
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
         $('#download-csv').on('click', handleDownloadCsv)
+        $('#download-pdf').on('click', handleDownloadPdf)
 
         if (userCanEditTaxonGroup) {
             $sortable.sortable({
@@ -124,18 +125,19 @@ export const taxaManagement = (() => {
         });
     }
 
-    function handleDownloadCsv(e) {
+    function handleDownloadPdf(e) {
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
-        showDownloadPopup('REPORT', 'Taxa List', function (downloadRequestId) {
+        showDownloadPopup('PDF', 'Taxa List', function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
-            let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-csv-taxa-list/')
+            let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-taxa-list/')
             if (!downloadUrl.includes('?')) {
                 downloadUrl += '?';
             }
             downloadUrl += '&downloadRequestId=' + downloadRequestId
+            downloadUrl += '&output=pdf'
             fetch(downloadUrl)
                 .then((resp) => {
                     $target.prop('disabled', false);
@@ -143,7 +145,30 @@ export const taxaManagement = (() => {
                     alert(downloadRequestMessage);
                 })
                 .catch(() => alert('Cannot download the file'));
-        })
+        }, true, null, false)
+    }
+
+    function handleDownloadCsv(e) {
+        const $target = $(e.target);
+        const targetHtml = $target.html();
+        const targetWidth = $target.width();
+        showDownloadPopup('CSV', 'Taxa List', function (downloadRequestId) {
+            $target.prop('disabled', true);
+            $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
+            let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-taxa-list/')
+            if (!downloadUrl.includes('?')) {
+                downloadUrl += '?';
+            }
+            downloadUrl += '&downloadRequestId=' + downloadRequestId
+            downloadUrl += '&output=csv'
+            fetch(downloadUrl)
+                .then((resp) => {
+                    $target.prop('disabled', false);
+                    $target.html(targetHtml);
+                    alert(downloadRequestMessage);
+                })
+                .catch(() => alert('Cannot download the file'));
+        }, true, null, false)
     }
 
     const onEditTaxonFormChanged = (elm, event='change') => {
