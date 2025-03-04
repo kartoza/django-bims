@@ -18,7 +18,7 @@ jobs:
     - name: Build and Publish the Docker Image as Latest
       uses: elgohr/Publish-Docker-Github-Action@v5
       with:
-        name: kartoza/kbims_uwsgi:latest
+        name: ${{ secrets.DOCKER_USERNAME }}/kbims_uwsgi:latest
         context: .
         dockerfile: deployment/docker/Dockerfile
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -34,7 +34,7 @@ jobs:
     - name: Build and Publish the Docker Image with Tag Name
       uses: elgohr/Publish-Docker-Github-Action@v5
       with:
-        name: kartoza/kbims_uwsgi:${{ github.ref_name }}
+        name: ${{ secrets.DOCKER_USERNAME }}/kbims_uwsgi:${{ github.ref_name }}
         context: .
         dockerfile: deployment/docker/Dockerfile
         username: ${{ secrets.DOCKER_USERNAME }}
@@ -50,7 +50,7 @@ jobs:
       - name: Build and Publish the Docker Image as Multi-Tenant
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: kartoza/kbims_uwsgi:multi-tenant
+          name: ${{ secrets.DOCKER_USERNAME }}/kbims_uwsgi:multi-tenant
           context: .
           dockerfile: deployment/docker/Dockerfile
           username: ${{ secrets.DOCKER_USERNAME }}
