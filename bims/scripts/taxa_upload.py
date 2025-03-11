@@ -472,11 +472,17 @@ class TaxaProcessor(object):
         if not taxon_name:
             taxon_name = self.get_row_value(row, rank.capitalize())
 
-        if rank == SPECIES:
+        if 'species' in rank.lower():
             genus_name = self.get_row_value(row, GENUS).strip()
+            species_name = self.get_row_value(row, SPECIES).strip()
             taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS).strip()
-            if genus_name not in taxon_name and taxon_name and not taxon_name[0].isupper():
-                taxon_name = genus_name + ' ' + taxon_name.strip()
+            if genus_name not in species_name and species_name and not species_name[0].isupper():
+                taxon_name = genus_name + ' ' + species_name.strip()
+
+        if rank == SUBSPECIES:
+            sub_species_name = self.get_row_value(row, SUBSPECIES).strip()
+            if taxon_name not in sub_species_name and sub_species_name and not sub_species_name[0].isupper():
+                taxon_name = taxon_name + ' ' + sub_species_name
 
         try:
             on_gbif = (
