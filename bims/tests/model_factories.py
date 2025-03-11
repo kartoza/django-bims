@@ -350,7 +350,6 @@ class BiologicalCollectionRecordF(factory.django.DjangoModelFactory):
     taxonomy = factory.SubFactory(TaxonomyF)
     survey = factory.SubFactory(SurveyF)
     validated = True
-    source_site = Site.objects.get_current()
 
 
 class UnitF(factory.django.DjangoModelFactory):

@@ -192,7 +192,6 @@ class TestApiView(FastTenantTestCase):
 
     def test_get_module_summary(self):
         view = ModuleSummary.as_view()
-        source_site = SiteF.create()
         taxon_class_1 = TaxonomyF.create(
             scientific_name='Aves',
             rank=TaxonomicRank.CLASS.name,
@@ -209,7 +208,6 @@ class TestApiView(FastTenantTestCase):
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             taxonomies=(taxon_species_1,),
             chart_data='division',
-            site=source_site
         )
 
         taxon_group_2 = TaxonGroupF.create(
@@ -217,38 +215,34 @@ class TestApiView(FastTenantTestCase):
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
             taxonomies=(taxon_species_1,),
             chart_data='conservation status',
-            site=source_site
         )
 
         bio1 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
             validated=True,
             site=self.location_site,
-            source_site=source_site
         )
 
         bio2 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
             validated=True,
             site=self.location_site,
-            source_site=source_site
         )
 
         module_summary = ModuleSummary()
         module_summary.summary_data()
-        with override_settings(SITE_ID=source_site.id):
-            request = self.factory.get(reverse('module-summary'))
-            response = view(request)
-            self.assertGreater(
-                response.data['general_summary']['total_occurrences'],
-                1
-            )
-            self.assertGreater(
-                response.data['general_summary']['total_taxa'],
-                1
-            )
-            self.assertTrue(len(response.data['fish']) > 0)
-            self.assertEqual(len(response.data['algae']['division']), 1)
+        request = self.factory.get(reverse('module-summary'))
+        response = view(request)
+        self.assertGreater(
+            response.data['general_summary']['total_occurrences'],
+            1
+        )
+        self.assertGreater(
+            response.data['general_summary']['total_taxa'],
+            1
+        )
+        self.assertTrue(len(response.data['fish']) > 0)
+        self.assertEqual(len(response.data['algae']['division']), 1)
 
     def test_get_autocomplete(self):
         view = autocomplete

@@ -454,15 +454,6 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
                 'bims_profile'
             ):
                 return qs.none()
-            profile = request.user.bims_profile
-            if profile.signup_source_site:
-                source_site = (
-                    profile.signup_source_site
-                )
-                return qs.filter(
-                    Q(source_site=source_site) |
-                    Q(additional_observation_sites=source_site)
-                )
             return qs
         return qs
 
@@ -483,8 +474,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'abundance_number',
         'biotope',
         'record_type',
-        'sampling_method',
-        'source_site'
+        'sampling_method'
     )
     raw_id_fields = (
         'site',
@@ -500,7 +490,6 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'record_type__name',
         'sampling_method',
         'ecosystem_type',
-        'source_site',
         'source_collection',
         'data_type'
     )

@@ -309,8 +309,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                 uploader=request.user,
                 process_file=water_file,
                 uploaded_at=datetime.now(),
-                category=CATEGORY,
-                source_site=Site.objects.get_current()
+                category=CATEGORY
             )
 
             return JsonResponse({

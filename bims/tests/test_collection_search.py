@@ -47,7 +47,6 @@ class TestCollectionSearch(TestCase):
         BiologicalCollectionRecordF.create(
             original_species_name='test',
             taxonomy=self.taxa,
-            source_site=Site.objects.get_current(),
             site=self.site
         )
 
@@ -132,14 +131,12 @@ class TestCollectionSearch(TestCase):
         BiologicalCollectionRecordF.create(
             original_species_name='test981',
             taxonomy=self.taxa,
-            source_site=Site.objects.get_current(),
             site=self.site,
             data_type='private'
         )
         BiologicalCollectionRecordF.create(
             original_species_name='test982',
             taxonomy=self.taxa,
-            source_site=Site.objects.get_current(),
             site=self.site,
             data_type='public'
         )
@@ -190,7 +187,6 @@ class TestCollectionSearch(TestCase):
         BiologicalCollectionRecordF.create(
             original_species_name='test983',
             taxonomy=self.taxa,
-            source_site=Site.objects.get_current(),
             site=self.site,
             data_type='sensitive'
         )
@@ -213,7 +209,6 @@ class TestCollectionSearch(TestCase):
         BiologicalCollectionRecordF.create(
             original_species_name='test99',
             taxonomy=self.taxa,
-            source_site=Site.objects.get_current(),
             site=self.site,
             end_embargo_date=datetime.now() + relativedelta(months=1),
             owner=_user
@@ -221,7 +216,6 @@ class TestCollectionSearch(TestCase):
         BiologicalCollectionRecordF.create(
             original_species_name='test99',
             taxonomy=self.taxa,
-            source_site=Site.objects.get_current(),
             site=self.site2,
             end_embargo_date=datetime.now()
         )

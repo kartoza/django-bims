@@ -53,7 +53,9 @@ dev:
 	@echo "------------------------------------------------------------------"
 	@echo "Running in dev mode"
 	@echo "------------------------------------------------------------------"
-	@docker compose ${ARGS} up -d webpack-watcher dev
+	@export COMPOSE_PROJECT_NAME=bims; \
+	export COMPOSE_FILE=deployment/docker-compose.dev.yml; \
+	docker compose ${ARGS} up -d dev worker
 
 web:
 	@echo

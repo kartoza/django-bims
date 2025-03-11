@@ -723,6 +723,11 @@ class TaxaProcessor(object):
                 if authors:
                     taxonomy.author = authors
 
+                fada_id = self.get_row_value(row, FADA_ID)
+                # -- FADA ID
+                if fada_id and fada_id.isdigit():
+                    taxonomy.fada_id = int(fada_id)
+
                 # -- Tags | Biographic distribution tags
                 # Check Y Values
                 for key in row:

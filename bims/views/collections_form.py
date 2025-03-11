@@ -71,11 +71,6 @@ def add_survey_occurrences(self, post_data, site_image=None) -> Survey:
     reference = post_data.get('study_reference', '')
     reference_category = post_data.get('reference_category', '')
     record_type_str = post_data.get('record_type', None)
-    source_site_id = post_data.get('source_site', None)
-    if source_site_id:
-        source_site = Site.objects.get(id=source_site_id)
-    else:
-        source_site = Site.objects.get_current()
     ecosystem_type = ''
     if record_type_str is not None and record_type_str != '':
         record_type, _ = RecordType.objects.get_or_create(
@@ -196,8 +191,7 @@ def add_survey_occurrences(self, post_data, site_image=None) -> Survey:
         date=collection_date,
         site=self.location_site,
         collector_user=self.request.user,
-        validated=False,
-        source_site=source_site
+        validated=False
     )
 
     if site_image:
@@ -337,7 +331,6 @@ def add_survey_occurrences(self, post_data, site_image=None) -> Survey:
                         hydroperiod=hydroperiod,
                         ecosystem_type=ecosystem_type,
                         wetland_indicator_status=wetland_indicator_status,
-                        source_site=source_site
                     )
                 )
                 collection_record_ids.append(collection_record.id)

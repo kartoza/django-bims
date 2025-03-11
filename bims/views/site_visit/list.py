@@ -87,9 +87,7 @@ class SiteVisitListView(ListView):
                     id__in=self.collection_results.values('survey')
                 )
         else:
-            self.collection_results = BiologicalCollectionRecord.objects.filter(
-                source_site=Site.objects.get_current()
-            )
+            self.collection_results = BiologicalCollectionRecord.objects.all()
 
         qs = qs.annotate(
             total=Count('biological_collection_record', distinct=True),

@@ -123,8 +123,7 @@ class DownloadRequestApi(APIView):
             location_site=location_site,
             taxon=taxon,
             notes=notes,
-            request_date=datetime.now(),
-            source_site=Site.objects.get_current()
+            request_date=datetime.now()
         )
 
         if not approval_needed or auto_approved:
