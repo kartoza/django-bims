@@ -269,8 +269,7 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_total_records(self, obj):
         return BiologicalCollectionRecord.objects.filter(
-            taxonomy=self.taxonomy_obj(obj),
-            source_site=Site.objects.get_current()
+            taxonomy=self.taxonomy_obj(obj)
         ).count()
 
     def get_common_name(self, obj):

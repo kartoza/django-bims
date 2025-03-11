@@ -97,6 +97,8 @@ scrap.html
 
 # Pg cluster for docker
 deployment/pg
+deployment/pg_fip
+deployment/pg_fbis
 # Template for apt-cacher
 # static and media dirs
 deployment/static

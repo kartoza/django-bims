@@ -379,7 +379,7 @@ def suggest_search(query_params):
     :param query_params: Query parameter
     :return: list of taxon
     """
-    api_url = 'http://api.gbif.org/v1/species/suggest?{param}'.format(
+    api_url = 'https://api.gbif.org/v1/species/suggest?{param}'.format(
         param=urllib.parse.urlencode(query_params)
     )
     try:
