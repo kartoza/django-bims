@@ -578,20 +578,23 @@ class TaxaProcessor(object):
                 logger.debug('{} already in the system'.format(
                     taxon_name
                 ))
+
+            gbif_key = None
+            if on_gbif:
+                gbif_link = self.get_row_value(row, GBIF_LINK)
+                if not gbif_link:
+                    gbif_link = self.get_row_value(row, GBIF_URL)
+                gbif_key = (
+                    gbif_link.split('/')[len(gbif_link.split('/')) - 1]
+                )
+
             if not taxonomy:
                 # Fetch from gbif
-                if on_gbif:
-                    gbif_link = self.get_row_value(row, GBIF_LINK)
-                    if not gbif_link:
-                        gbif_link = self.get_row_value(row, GBIF_URL)
-                    gbif_key = (
-                        gbif_link.split('/')[len(gbif_link.split('/')) - 1]
+                if gbif_key:
+                    taxonomy = fetch_all_species_from_gbif(
+                        gbif_key=gbif_key,
+                        fetch_vernacular_names=should_fetch_vernacular_names
                     )
-                    if gbif_key:
-                        taxonomy = fetch_all_species_from_gbif(
-                            gbif_key=gbif_key,
-                            fetch_vernacular_names=should_fetch_vernacular_names
-                        )
                 if not taxonomy and on_gbif:
                     taxonomy = fetch_all_species_from_gbif(
                         species=taxon_name,
@@ -733,6 +736,9 @@ class TaxaProcessor(object):
                 # -- FADA ID
                 if fada_id and fada_id.isdigit():
                     taxonomy.fada_id = int(fada_id)
+
+                if gbif_key:
+                    taxonomy.gbif_key = gbif_key
 
                 # -- Tags | Biographic distribution tags
                 # Check Y Values
