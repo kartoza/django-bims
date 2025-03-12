@@ -521,7 +521,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         try:
             return dict(Taxonomy.CATEGORY_CHOICES)[obj.taxonomy.origin]
         except KeyError:
-            return '-'
+            return 'Unknown'
 
     get_origin.short_description = 'Origin'
     get_origin.admin_order_field = 'taxonomy__origin'

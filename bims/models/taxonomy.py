@@ -79,11 +79,11 @@ class TaxonomyField(models.CharField):
 
 class AbstractTaxonomy(AbstractValidation):
     CATEGORY_CHOICES = (
-        ('non-native', 'Non-Native'),
-        ('native', 'Native'),
+        ('alien', 'Non-Native'),
+        ('indigenous', 'Native'),
         ('unknown', 'Unknown'),
-        ('non-native: invasive', 'Non-native: invasive'),
-        ('non-native: non-invasive', 'Non-native: non-invasive')
+        ('alien-invasive', 'Non-native: invasive'),
+        ('alien-non-invasive', 'Non-native: non-invasive')
     )
     tags = TaggableManager(
         blank=True,
