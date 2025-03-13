@@ -53,12 +53,6 @@ export const taxonDetail = (() => {
                     <div class="dt-column">
                         <div class="row">
                             <div class="col-12 text-white dt-header">
-                                Author(s)
-                            </div>
-                            <div class="dt-item col-12 row">
-                                <div class="col-12">${data.author ? data.author : ''}</div>
-                            </div>
-                            <div class="col-12 text-white dt-header">
                                 Valid/Accepted Names
                             </div>
                             <div class="dt-item col-12 row">
@@ -80,6 +74,10 @@ export const taxonDetail = (() => {
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Subspecies</strong></div>
                                 <div class="col-6">${data.subspecies}</div>
+                            </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-6"><strong>Author(s)</strong></div>
+                                <div class="col-6">${data.author}</div>
                             </div>
                         </div>
                     </div>
@@ -127,10 +125,6 @@ export const taxonDetail = (() => {
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Conservation References</strong></div>
                                 <div class="col-8">${data.additional_data !== null ? (data.additional_data['Conservation References'] || '') : ''}</div>
-                            </div>
-                            <div class="dt-item col-12 row">
-                                <div class="col-4"><strong>Author(s)</strong></div>
-                                <div class="col-8">${data.author}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Common Name</strong></div>
