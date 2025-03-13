@@ -6,6 +6,7 @@ import re
 import requests
 from django.db import transaction
 
+from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models.taxon_group import TaxonGroup
 from bims.scripts.collections_upload_source_reference import get_or_create_data_from_model
 
@@ -51,6 +52,8 @@ class TaxaProcessor(object):
                 'is_validated': validated
             }
         )
+        if not validated:
+            create_taxon_proposal(taxonomy, taxon_group)
 
     def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
         """
@@ -677,9 +680,6 @@ class TaxaProcessor(object):
                     row=row
                 )
 
-                # -- Add to taxon group
-                self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
-
                 # -- Endemism
                 endemism = self.endemism(row)
                 if endemism:
@@ -781,6 +781,10 @@ class TaxaProcessor(object):
                     taxonomy.accepted_taxonomy = accepted_taxon
 
                 taxonomy.save()
+
+                # -- Add to taxon group
+                self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
+
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa
             self.handle_error(row, str(e))

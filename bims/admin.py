@@ -31,6 +31,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django_json_widget.widgets import JSONEditorWidget
 
 from bims.admins.site_setting import SiteSettingAdmin
+from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
@@ -1951,6 +1952,18 @@ class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
         'is_validated'
     )
     search_fields = ('taxonomy__scientific_name', 'taxonomy__canonical_name')
+    actions = ('create_proposal', )
+
+    def create_proposal(self, request, queryset):
+        """Action to create proposal"""
+        unvalidated = queryset.filter(is_validated=False, is_rejected=False)
+        for data in unvalidated:
+            create_taxon_proposal(data.taxonomy, data.taxongroup)
+
+        self.message_user(
+            request,
+            'Proposal has been created for {} data'.format(
+                unvalidated.count()))
 
 
 class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
