@@ -53,6 +53,10 @@ class TaxaProcessor(object):
             }
         )
         if not validated:
+            taxon_group.taxonomies.through.objects.filter(
+                taxongroup=taxon_group,
+                taxonomy=taxonomy
+            ).update(is_validated=False)
             create_taxon_proposal(taxonomy, taxon_group)
 
     def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):

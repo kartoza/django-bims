@@ -39,6 +39,13 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         default='pending'
     )
 
+    fada_id = models.IntegerField(
+        verbose_name='FADA ID',
+        unique=False,
+        null=True,
+        blank=True
+    )
+
     new_data = models.BooleanField(
         default=False
     )
