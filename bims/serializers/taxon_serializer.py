@@ -282,20 +282,23 @@ class TaxonSerializer(serializers.ModelSerializer):
 
     def get_tag_list(self, obj):
         tag_info = []
-        tag_groups = self.context.get('tag_groups', {})
-        for tag in obj.tags.all():
-            if tag.id in tag_groups:
-                tag_info.append(f"{tag_groups[tag.id]}")
+        cached_tag_groups = self.context.get('tag_groups', {})
+
+        for tag in obj.tags.order_by('tag_groups__order'):
+            if tag.id in cached_tag_groups:
+                tag_info.append(cached_tag_groups[tag.id])
             else:
-                tag_groups = tag.tag_groups.all()
-                if tag_groups.exists():
-                    group = tag_groups.first()
+                tag_group_qs = tag.tag_groups.all()
+                if tag_group_qs.exists():
+                    group = tag_group_qs.first()
                     tag_info_data = f"{tag.name} ({group.colour})"
                 else:
                     tag_info_data = tag.name
+
                 tag_info.append(tag_info_data)
-                self.context['tag_groups'][tag.id] = tag_info_data
-        return u", ".join(tag_info)
+                self.context.setdefault('tag_groups', {})[tag.id] = tag_info_data
+
+        return ", ".join(tag_info)
 
     def get_record_type(self, obj):
         return 'bio'

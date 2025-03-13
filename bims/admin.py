@@ -2068,9 +2068,9 @@ class DatasetAdmin(admin.ModelAdmin):
         self.message_user(request, 'Fetching datasets in background')
         return HttpResponseRedirect(reverse('admin:bims_dataset_changelist'))
 
-
-class TagGroupAdmin(admin.ModelAdmin):
-    list_display = ('name', 'colour')
+class TagGroupAdmin(OrderedModelAdmin):
+    ordering = ('order',)
+    list_display = ('id', 'move_up_down_links', 'name', 'colour')
 
 
 # Re-register GeoNode's Profile page
