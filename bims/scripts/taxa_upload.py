@@ -739,8 +739,12 @@ class TaxaProcessor(object):
 
                 fada_id = self.get_row_value(row, FADA_ID)
                 # -- FADA ID
-                if fada_id and fada_id.isdigit():
-                    taxonomy.fada_id = int(fada_id)
+                if fada_id:
+                    try:
+                        integer_part = fada_id.split('.', 1)[0]
+                        taxonomy.fada_id = int(integer_part)
+                    except ValueError:
+                        pass
 
                 if gbif_key:
                     taxonomy.gbif_key = gbif_key
