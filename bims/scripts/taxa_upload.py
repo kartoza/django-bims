@@ -296,7 +296,8 @@ class TaxaProcessor(object):
             current_try += 1
 
             # Try to get the parent name from the CSV data
-            csv_parent_name = self.get_row_value(row, parent_rank_name.capitalize())
+            csv_parent_name = self.get_row_value(row, RANK_TITLE.get(
+                parent_rank_name.upper(), parent_rank_name.capitalize()))
 
             # Handle species special case where genus might be part of the species name
             if parent_rank_name == 'SPECIES':
@@ -322,7 +323,8 @@ class TaxaProcessor(object):
                     print(f"- Current parent: {db_parent_name} ({db_parent_rank})")
                     print(f"- Expected parent: {csv_parent_name_lower} ({parent_rank_name})")
                     # Retrieve or create the correct parent taxon
-                    correct_parent = self.get_parent(row, current_rank=parent_rank_name)
+                    correct_parent = self.get_parent(
+                        row, current_rank=RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name))
                     if correct_parent:
                         taxon.parent = correct_parent
                         taxon.save()
@@ -464,7 +466,7 @@ class TaxaProcessor(object):
 
         # Get rank
         rank = self.get_row_value(row, TAXON_RANK)
-        rank = rank.capitalize()
+        rank = RANK_TITLE.get(rank.upper(), rank.capitalize())
         if rank.startswith('Sub'):
             rank = 'Sub' + rank[len('sub'):].capitalize()
 
@@ -478,7 +480,9 @@ class TaxaProcessor(object):
             return
 
         if not taxon_name:
-            taxon_name = self.get_row_value(row, rank.capitalize())
+            taxon_name = self.get_row_value(
+                row,
+                RANK_TITLE.get(rank.upper(), rank.capitalize()))
 
         if 'species' in rank.lower():
             genus_name = self.get_row_value(row, GENUS).strip()
