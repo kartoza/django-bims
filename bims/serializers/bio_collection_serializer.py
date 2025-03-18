@@ -956,9 +956,12 @@ class BioCollectionOneRowSerializer(
                 if normalized_header == 'author(s)':
                     continue
 
-                result[upload_template_header] = (
-                    instance.additional_data.get(upload_template_header, '')
-                )
+                if instance.additional_data:
+                    result_data = instance.additional_data.get(upload_template_header, '')
+                else:
+                    result_data = ''
+
+                result[upload_template_header] = result_data
 
                 if upload_template_header == PARK_OR_MPA_NAME:
                     result.pop('site_description', None)
