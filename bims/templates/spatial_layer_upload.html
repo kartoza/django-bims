@@ -93,9 +93,11 @@
                     {% for upload_session in upload_sessions %}
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">{{ upload_session.layer }}</h5> <div style="float: right; margin-top: -40px">
+
+                            <h5 class="card-title" style="font-weight: 600">{{ upload_session.layer }}</h5> <div style="float: right; margin-top: -40px">
                             </div>
                             <p>Uploaded at {{ upload_session.created_at }}</p>
+                            <p style="margin-top: -5px">Uploaded by {{ upload_session.created_by }}</p>
                             <p class="card-text">Status : <span class="progress-text">{% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</span></p>
                         </div>
                     </div>
@@ -110,16 +112,19 @@
                     {% for upload_session in uploaded_layers %}
                         <div class="card">
                             <div class="card-body">
-                            <h5 class="card-title">{{ upload_session.layer }}</h5>
+                            <h5 class="card-title" style="font-weight: 600">{{ upload_session.layer }}</h5>
                                 <p>Uploaded at {{ upload_session.created_at }}</p>
+                                <p style="margin-top: -5px">Uploaded by {{ upload_session.created_by }}</p>
                                 {% if upload_session.canceled %}
                                     <p style="color:red">Canceled</p>
                                 {% else %}
+                                {% if upload_session.status != 'Success' %}
                                 <p class="card-text">Result : {% if upload_session.status %}{{ upload_session.status }}{% else %}Processing{% endif %}</p>
+                                {% endif %}
                                 {% endif %}
                                 {% if upload_session.maputnik_url %}
                                     <p class="card-text">
-                                        <a target="_blank" href="{{ upload_session.maputnik_url }}">Editor</a>
+                                        <a class="btn btn-primary" target="_blank" href="{{ upload_session.maputnik_url }}">Style Editor</a>
                                     </p>
                                 {% endif %}
                             </div>
