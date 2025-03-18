@@ -24,13 +24,10 @@ class SpatialLayerUploadView(SuperuserRequiredMixin, TemplateView):
         context = super(
             SpatialLayerUploadView, self).get_context_data(**kwargs)
         context['title'] = self.layer_type_name
-        context['upload_sessions'] = LayerUpload.objects.filter(
-            created_by=self.request.user
-        ).exclude(status=UploadStatus.SUCCESS)
+        context['upload_sessions'] = LayerUpload.objects.exclude(status=UploadStatus.SUCCESS)
         uploaded_layers = LayerUpload.objects.filter(
-            created_by=self.request.user,
             status=UploadStatus.SUCCESS
-        )
+        ).order_by('-created_at')
         for session in uploaded_layers:
             session.maputnik_url = session.layer.maputnik_url(self.request)
         context['uploaded_layers'] = uploaded_layers
