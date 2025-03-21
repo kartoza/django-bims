@@ -754,6 +754,12 @@ class TaxaProcessor(object):
                     taxonomy.gbif_key = gbif_key
 
                 # -- Tags | Biographic distribution tags
+
+                # Clear tags
+                taxonomy.tags.clear()
+                taxonomy.biographic_distributions.clear()
+
+                # Adding tags
                 # Check Y Values
                 for key in row:
                     row_value = self.get_row_value(row, key)
