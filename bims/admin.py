@@ -193,6 +193,34 @@ class LocationContextAdmin(admin.ModelAdmin):
     list_display = ('key', 'name', 'value')
 
 
+class InsideSiteBoundaryFilter(SimpleListFilter):
+    """Filter LocationSites by whether they are inside the configured site boundary."""
+    title = 'Inside site boundary'
+    parameter_name = 'inside_boundary'
+
+    def lookups(self, request, model_admin):
+        """Defines the filter choices."""
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        """Returns the filtered queryset based on user's choice."""
+        boundary = preferences.SiteSetting.site_boundary
+
+        if not boundary or not boundary.geometry:
+            return queryset
+
+        if self.value() == 'yes':
+            return queryset.filter(
+                geometry_point__within=boundary.geometry)
+        elif self.value() == 'no':
+            return queryset.exclude(
+                geometry_point__within=boundary.geometry)
+        return queryset
+
+
 class LocationSiteAdmin(admin.GeoModelAdmin):
     change_list_template = 'admin/location_site_changelist.html'
     form = LocationSiteForm
@@ -211,7 +239,10 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         'geocontext_data_percentage',
         'indicator_thermal')
     search_fields = ('name', 'site_code', 'legacy_site_code')
-    list_filter = (HasLocationContextDocument,)
+    list_filter = (
+        HasLocationContextDocument,
+        InsideSiteBoundaryFilter,
+    )
     raw_id_fields = ('river',)
     list_display_links = ['name', 'site_code']
 
