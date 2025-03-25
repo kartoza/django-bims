@@ -161,6 +161,14 @@
                                                     </div>
                                                 </div>
                                             {% endif %}
+                                            {% if not fada_site %}
+                                            <div class="form-group row">
+                                                <label for="parentTaxa" class="col-sm-3 col-form-label">Parent Taxonomy</label>
+                                                <div class="col-sm-9">
+                                                    <select id="taxa-auto-complete" class="taxon-auto-complete" style="width: 100%"></select>
+                                                </div>
+                                            </div>
+                                            {% else %}
                                             <div class="form-group row">
                                                 <label for="parentTaxa" class="col-sm-3 col-form-label">Family</label>
                                                 <div class="col-sm-9">
@@ -179,6 +187,7 @@
                                                     <select id="species-auto-complete" class="taxon-auto-complete" data-rank='species' style="width: 100%"></select>
                                                 </div>
                                             </div>
+                                            {% endif %}
                                             <div class="form-group row">
                                                 <label for="validated" class="col-sm-3 col-form-label">Validated</label>
                                                 <div class="col-sm-9 d-flex">

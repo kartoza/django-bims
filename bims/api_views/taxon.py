@@ -485,15 +485,26 @@ class TaxaList(LoginRequiredMixin, APIView):
         else:
             taxon_group = None
 
+        taxon_list = Taxonomy.objects.all()
+
+        if parent_ids:
+            parents = Taxonomy.objects.filter(
+                Q(id__in=parent_ids)
+            )
+            if parents.exists():
+                taxon_list = parents.first().get_all_children()
+            else:
+                taxon_list = parents
+
         if taxon_group:
             taxon_group_ids = TaxaList.get_descendant_group_ids(
                 taxon_group)
-            taxon_list = Taxonomy.objects.filter(
+            taxon_list = taxon_list.filter(
                 taxongroup__id__in=taxon_group_ids,
                 taxongrouptaxonomy__is_rejected=False,
             ).distinct().order_by('canonical_name')
         else:
-            taxon_list = Taxonomy.objects.filter(
+            taxon_list = taxon_list.filter(
                 taxongrouptaxonomy__is_rejected=False,
             ).distinct().order_by('canonical_name')
 
@@ -502,12 +513,6 @@ class TaxaList(LoginRequiredMixin, APIView):
                 author__in=authors
             )
 
-        if parent_ids:
-            parents = taxon_list.filter(id__in=parent_ids)
-            if parents.exists():
-                taxon_list = parents[0].get_all_children()
-            else:
-                taxon_list = parents
         if rank:
             taxon_list = taxon_list.filter(rank=rank)
         if len(ranks) > 0:
