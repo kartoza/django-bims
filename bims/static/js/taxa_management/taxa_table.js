@@ -114,7 +114,6 @@ export const taxaTable = (() => {
                     return {
                         term: params.term,
                         rank: $(this).data('rank'),
-                        taxonGroupId: currentSelectedTaxonGroup
                     }
                 },
                 processResults: function (data) {
@@ -320,11 +319,11 @@ export const taxaTable = (() => {
             filterSelected['parent'] = parentArray;
             $.ajax({
                 type: 'GET',
-                url: `/api/taxa-list/?taxonGroup=${currentSelectedTaxonGroup}&id=${urlParams.get('parent')}`,
+                url: `/api/taxa-list/?id=${urlParams.get('parent')}`,
             }).then(function (data) {
                 // create the option and append to Select2
-                if (data.length === 0) return false;
-                let result = data[0];
+                if (data['results'].length === 0) return false;
+                let result = data['results'][0];
                 let option = new Option(
                     `${result['canonical_name']} (${result['rank']})`, result.id, true, true);
                 taxaAutoComplete.append(option).trigger('change');
@@ -376,6 +375,10 @@ export const taxaTable = (() => {
                 return data['species'] ? data['species'] : data['id'];
             }), true, false, urlParams);
         }
+
+        urlParams = insertParam('parent', $(`#taxa-auto-complete`).select2('data').map(function(data) {
+            return data['id'] ? data['id'] : '';
+        }), true, false, urlParams);
 
         const validated = $('input[name="validated"]:checked').val();
         urlParams = insertParam('validated', validated, true, false, urlParams);
