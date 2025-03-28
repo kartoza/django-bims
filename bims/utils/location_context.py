@@ -14,7 +14,6 @@ from bims.models.spatial_scale_group import SpatialScaleGroup
 from bims.models.location_site import LocationSite, generate_site_code
 from bims.models.location_context import LocationContext
 from bims.utils.logger import log
-from preferences import preferences
 
 from bims.models.geocontext_setting import GeocontextSetting
 

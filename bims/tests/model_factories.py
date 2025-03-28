@@ -55,6 +55,7 @@ from bims.models import (
     Dataset
 )
 from sass.models import River
+from cloud_native_gis.models.layer import Layer
 
 
 class LocationTypeF(factory.django.DjangoModelFactory):
@@ -590,3 +591,10 @@ class DatasetF(factory.django.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: u'name %s' % n)
     abbreviation = factory.Sequence(lambda n: u'abbreviation %s' % n)
+
+
+class LayerF(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Layer
+
+    name = factory.Sequence(lambda n: u'name %s' % n)

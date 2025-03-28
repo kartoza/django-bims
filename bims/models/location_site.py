@@ -621,7 +621,8 @@ def generate_site_code(
         fbis_catchment_generator,
         rbis_catchment_generator,
         wetland_catchment,
-        open_waterbody_catchment
+        open_waterbody_catchment,
+        generate_sanparks_site_code
     )
     from preferences import preferences
     site_code = ''
@@ -653,13 +654,15 @@ def generate_site_code(
             lat=lat,
             lon=lon
         )
+    elif project_name == 'sanparks':
+        catchment_site_code = generate_sanparks_site_code(
+            location_site=location_site,
+        )
     else:
         site_name = kwargs.get('site_name', '')
         site_description = kwargs.get('site_desc', '')
         site_name_length = 2
-        if project_name == 'sanparks':
-            site_name_length = 3
-        if project_name in ['bims', 'sanparks'] and (site_name or site_description):
+        if project_name in ['bims'] and (site_name or site_description):
             catchment_site_code = site_name[:site_name_length].upper()
             if project_name == 'bims':
                 catchment_site_code += site_description[:2].upper()
