@@ -1,14 +1,22 @@
+import hashlib
 import json
-import time
+import random
+import string
 from typing import Dict
 
 import requests
+import re
+
+from bims.models import LocationContextGroup
 from bims.models.location_site import LocationSite
 from requests.exceptions import HTTPError
 from bims.location_site.river import fetch_river_name
 from bims.utils.get_key import get_key
+from cloud_native_gis.models import Layer
+from cloud_native_gis.utils.geometry import query_features
 
 FBIS_CATCHMENT_KEY = 'river_catchment_areas_group'
+SANPARK_PARK_KEY = 'sanparks and mpas'
 
 
 def _fetch_catchments_data(catchment_key, lon, lat):
@@ -67,6 +75,60 @@ def _get_catchments_data(
             location_site.update_location_context_document(catchment_key)
             catchments = location_contexts.values_from_group(catchment_key)
     return catchments, catchments_data
+
+
+def generate_sanparks_site_code(location_site: LocationSite):
+    """
+    Generates a SANParks site code for a given location site.
+
+    1. Tries to find whether the site's coordinates lie within a SANParks/MPA boundary.
+       If so, returns that boundary's name.
+    2. If not found, falls back to the first three alphabetical characters of the
+       location site's name (ignoring digits, spaces, and special characters).
+
+    :param location_site: An object with `latitude`, `longitude`, and `name` attributes.
+
+    :return: SANParks site code
+    """
+    lat = location_site.latitude
+    lon = location_site.longitude
+    park_name = ''
+    park_group = LocationContextGroup.objects.filter(
+        name__iexact=SANPARK_PARK_KEY).first()
+
+    if park_group:
+        layer = Layer.objects.filter(unique_id=park_group.key).first()
+        if layer:
+            context_key = park_group.layer_identifier
+            feature_data = query_features(
+                table_name=layer.query_table_name,
+                field_names=[context_key],
+                coordinates=[(lon, lat)],
+                tolerance=0
+            )
+            results = feature_data.get('result', [])
+            if results and 'feature' in results[0] and context_key in results[0]['feature']:
+                park_name = results[0]['feature'][context_key]
+                print(f"Found park name from GIS query: {park_name}")
+
+    if not park_name:
+        park_name = location_site.name
+        print(f"No park boundary found. Fallback: {park_name if park_name else 'N/A'}")
+
+    cleaned_name = re.sub('[^A-Za-z]', '', park_name)
+    code = cleaned_name[:3]
+
+    if len(code) < 3:
+        lat_lon_str = f"{lat:.6f},{lon:.6f}"
+        hash_bytes = hashlib.md5(lat_lon_str.encode('utf-8')).digest()
+        needed = 3 - len(code)
+        additional_letters = ''.join(
+            chr((hash_bytes[i] % 26) + ord('A'))
+            for i in range(needed)
+        )
+        code += additional_letters
+
+    return code.upper()
 
 
 def fbis_catchment_generator(
