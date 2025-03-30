@@ -296,20 +296,23 @@ export const taxaTable = (() => {
         for (const taxaRank of ['family', 'genus', 'species']) {
             if (urlParams.get(taxaRank)) {
                 const filterArray = urlParams.get(taxaRank).split(',');
-                const autoComplete = $(`#${taxaRank}-auto-complete`);
+                const taxaRankAutoComplete = $(`#${taxaRank}-auto-complete`);
+
                 filterSelected[taxaRank] = filterArray;
 
-                for (const taxaFilterValue of filterArray) {
-                    let option = new Option(
-                        `${taxaFilterValue} (${taxaRank.toUpperCase()})`, taxaFilterValue, true, true);
-                    autoComplete.append(option).trigger('change');
-                    autoComplete.trigger({
-                        type: 'select2:select',
-                    });
+                if (taxaRankAutoComplete.length > 0) {
+                    for (const taxaFilterValue of filterArray) {
+                        let option = new Option(
+                            `${taxaFilterValue} (${taxaRank.toUpperCase()})`, taxaFilterValue, true, true);
+                        taxaRankAutoComplete.append(option).trigger('change');
+                        taxaRankAutoComplete.trigger({
+                            type: 'select2:select',
+                        });
 
+                    }
+                    totalAllFilters += filterArray.length;
+                    url += `&${taxaRank}=${urlParams.get(taxaRank)}`;
                 }
-                totalAllFilters += filterArray.length;
-                url += `&${taxaRank}=${urlParams.get(taxaRank)}`;
             }
         }
 
@@ -371,14 +374,20 @@ export const taxaTable = (() => {
         urlParams = insertParam('cons_status', consStatus.join(), true, false, urlParams);
 
         for (const taxaRank of ['family', 'genus', 'species']) {
-            urlParams = insertParam(taxaRank, $(`#${taxaRank}-auto-complete`).select2('data').map(function(data) {
-                return data['species'] ? data['species'] : data['id'];
-            }), true, false, urlParams);
+            let taxaRankAutoComplete = $(`#${taxaRank}-auto-complete`);
+            if (taxaRankAutoComplete.length > 0) {
+                urlParams = insertParam(taxaRank, taxaRankAutoComplete.select2('data').map(function(data) {
+                    return data['species'] ? data['species'] : data['id'];
+                }), true, false, urlParams);
+            }
         }
 
-        urlParams = insertParam('parent', $(`#taxa-auto-complete`).select2('data').map(function(data) {
-            return data['id'] ? data['id'] : '';
-        }), true, false, urlParams);
+        let taxaAutoComplete = $(`#taxa-auto-complete`);
+        if (taxaAutoComplete.length > 0) {
+            urlParams = insertParam('parent', taxaAutoComplete.select2('data').map(function(data) {
+                return data['id'] ? data['id'] : '';
+            }), true, false, urlParams);
+        }
 
         const validated = $('input[name="validated"]:checked').val();
         urlParams = insertParam('validated', validated, true, false, urlParams);
