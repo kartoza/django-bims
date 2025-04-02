@@ -331,10 +331,14 @@ def fetch_all_species_from_gbif(
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
-    # Validate parents
-    taxon_parent = taxonomy.parent
     max_tries = 10
     current_try = 0
+
+    # Validate parents
+    if taxonomy.rank.lower() == 'kingdom':
+        taxon_parent = taxonomy
+    else:
+        taxon_parent = taxonomy.parent
 
     # Traverse up the hierarchy to find a 'kingdom' or reach max tries
     while current_try < max_tries and taxon_parent.parent and taxon_parent.rank.lower() != 'kingdom':
