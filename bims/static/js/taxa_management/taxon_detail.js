@@ -1,5 +1,23 @@
 export const taxonDetail = (() => {
 
+    function getCleanAcceptedName(data, rank='SPECIES') {
+        const name = data.accepted_taxonomy_name || '';
+        if (!name) return '';
+
+        const parts = name.trim().split(/\s+/);
+
+        if (parts.length === 0) return '';
+
+        if (rank === 'GENUS') {
+            return parts[0];
+        } else if (rank === 'SPECIES') {
+            return parts[1] || '';
+        } else if (rank === 'SUBSPECIES') {
+            return parts[2] || '';
+        }
+
+        return name;
+    }
     function formatDetailTaxon(data) {
         return `
             <div class="container container-fluid" style="padding-left:40px;">
@@ -57,7 +75,11 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Genus</strong></div>
-                                <div class="col-6">${data.rank == 'GENUS' && data.accepted_taxonomy_name ? data.accepted_taxonomy_name : data.genus}</div>
+                                 <div class="col-6">${
+                                    data.accepted_taxonomy_name
+                                        ? getCleanAcceptedName(data, 'GENUS')
+                                        : data.genus
+                                }</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Subgenus</strong></div>
@@ -69,11 +91,19 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Species</strong></div>
-                                <div class="col-6">${data.rank == 'SPECIES' && data.accepted_taxonomy_name ? data.accepted_taxonomy_name : data.species}</div>
+                                <div class="col-6">${
+                                    data.accepted_taxonomy_name
+                                        ? getCleanAcceptedName(data, 'SPECIES')
+                                        : data.species
+                                }</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Subspecies</strong></div>
-                                <div class="col-6">${data.subspecies}</div>
+                                <div class="col-6">${
+                                    data.accepted_taxonomy_name
+                                        ? getCleanAcceptedName(data, 'SUBSPECIES')
+                                        : data.subspecies
+                                }</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Author(s)</strong></div>
