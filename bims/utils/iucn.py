@@ -48,6 +48,6 @@ def get_iucn_status(taxon_id=None, species_name=None, only_returns_json=None):
         except TypeError:
             pass
         return None
-    except (HTTPError, KeyError) as e:
+    except (HTTPError, KeyError, requests.exceptions.JSONDecodeError) as e:
         print(e)
         return None
