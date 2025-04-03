@@ -535,13 +535,24 @@ class LocationSiteFormDeleteView(UserPassesTestMixin, View):
             LocationSite,
             id=self.kwargs.get('site_id', None)
         )
+        is_wetland = (
+            location_site.ecosystem_type and
+            location_site.ecosystem_type.lower() == 'wetland'
+        )
         location_site.delete()
         messages.success(
             self.request,
             'Location site successfully deleted',
             extra_tags='location_site_form'
         )
-        return HttpResponseRedirect(reverse('location-site-form'))
+        if is_wetland:
+            redirect_url = reverse('add-wetland-site')
+        else:
+            redirect_url = reverse('location-site-form')
+
+        return HttpResponseRedirect(
+            redirect_url
+        )
 
 
 class NonValidatedSiteView(

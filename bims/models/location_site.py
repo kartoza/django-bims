@@ -604,9 +604,6 @@ def location_site_post_save_handler(sender, instance, **kwargs):
             pass
 
     async_result = update_location_site_context(location_site_id=instance.id)
-    if not instance.site_description:
-        instance.site_description = async_result.id
-        instance.save()
 
 def generate_site_code(
         location_site=None,
