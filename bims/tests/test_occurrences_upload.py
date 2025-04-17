@@ -187,7 +187,7 @@ class TestCollectionUpload(FastTenantTestCase):
             )
             site_setting.default_data_source = 'fbis'
             site_setting.park_layer_csv = csv_file
-            csv_content = b"section,latitude,longitude\nSection 1,31.0522,-111.2437\nSection 2,31.1699,-111.1398\n"
+            csv_content = b"section,x,y\nSection 1,31.0522,-111.2437\nSection 2,31.1699,-111.1398\n"
             csv_file = SimpleUploadedFile(
                 "section.csv",
                 csv_content,
