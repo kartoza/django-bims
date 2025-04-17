@@ -232,24 +232,19 @@ class OccurrenceProcessor(object):
                 if not self.section_data:
                     with open(section_file.path, mode='r') as file:
                         reader = csv.DictReader(file, delimiter=',')
+                        section_key = reader.fieldnames[0].strip().lower()
                         for row in reader:
-                            _section_name = (
-                                row['section'].strip().lower()
-                            )
-                            lat = float(row['latitude'])
-                            lon = float(row['longitude'])
+                            _section_name = row[section_key].strip().lower()
+                            lat = float(row['x'])
+                            lon = float(row['y'])
                             self.section_data[_section_name] = {
                                 'lat': lat,
                                 'lon': lon
                             }
                 section_name_low = section_name.strip().lower()
                 if section_name_low in self.section_data:
-                    latitude = self.section_data[
-                        section_name_low
-                    ]['lat']
-                    longitude = self.section_data[
-                        section_name_low
-                    ]['lon']
+                    latitude = self.section_data[section_name_low]['lat']
+                    longitude = self.section_data[section_name_low]['lon']
 
         if not longitude and not latitude and park_name:
             park_mpa_csv_file = preferences.SiteSetting.park_layer_csv
