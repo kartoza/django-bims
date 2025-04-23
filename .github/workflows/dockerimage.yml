@@ -12,7 +12,7 @@ jobs:
   build-and-push-latest:
     if: github.ref == 'refs/heads/main'
     name: Build and Push Docker Image with Latest Tag
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@master
     - name: Build and Publish the Docker Image as Latest
@@ -28,7 +28,7 @@ jobs:
   build-and-push-tag:
     if: startsWith(github.ref, 'refs/tags/')
     name: Build and Push Docker Image with Tag Name
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@master
     - name: Build and Publish the Docker Image with Tag Name
@@ -44,7 +44,7 @@ jobs:
   build-and-push-multi-tenant:
     if: github.ref == 'refs/heads/multi-tenant'
     name: Build and Push Docker Image with Multi-Tenant Tag
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@master
       - name: Build and Publish the Docker Image as Multi-Tenant
