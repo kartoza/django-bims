@@ -36,5 +36,10 @@ class LandingPageSection(OrderedModel):
         help_text='Background color for the section'
     )
 
+    full_width = models.BooleanField(
+        default=False,
+        help_text='Enable this if you want the section to be full-width'
+    )
+
     def __str__(self):
         return self.name

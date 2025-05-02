@@ -43,6 +43,18 @@ img::-moz-selection {
     background: transparent;
 }
 
+.custom-sections-content img {
+    max-width: 100%;
+    height: auto !important;
+    display: block;
+}
+
+.no-padding {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: 100%;
+}
+
 header.masthead {
     padding-top: 10rem;
     padding-bottom: calc(10rem - 56px);
