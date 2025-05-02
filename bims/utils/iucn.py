@@ -1,5 +1,5 @@
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, SSLError
 from django.conf import settings
 from bims.models.iucn_status import IUCNStatus
 from preferences import preferences
@@ -48,6 +48,6 @@ def get_iucn_status(taxon_id=None, species_name=None, only_returns_json=None):
         except TypeError:
             pass
         return None
-    except (HTTPError, KeyError, requests.exceptions.JSONDecodeError) as e:
+    except (HTTPError, KeyError, requests.exceptions.JSONDecodeError, SSLError) as e:
         print(e)
         return None
