@@ -1,5 +1,6 @@
 # coding=utf-8
 import csv
+import re
 from datetime import timedelta
 from datetime import date
 import json
@@ -1144,6 +1145,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'canonical_name',
         'link_to_gbif',
         'scientific_name',
+        'author',
         'rank',
         'parent',
         'import_date',
@@ -1175,7 +1177,32 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'source_reference'
     )
 
-    actions = ['merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing']
+    actions = [
+        'merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing', 'extract_author'
+    ]
+
+    def extract_author(self, request, queryset):
+        author_year_pattern = re.compile(r'^(.*?)(\b\d{4}\b)')
+
+        count_updated = 0
+        for taxon in queryset:
+            sci = taxon.scientific_name or ''
+            canon = taxon.canonical_name or ''
+
+            if canon and sci.startswith(canon):
+                remainder = sci[len(canon):].strip()
+                match = author_year_pattern.match(remainder)
+                if match:
+                    author_year = match.group(0).strip(", ")
+                    taxon.author = author_year
+                    taxon.save()
+                    count_updated += 1
+
+        self.message_user(
+            request,
+            f"Updated {count_updated} taxa with extracted author and year.")
+
+    extract_author.short_description = "Extract author"
 
     inlines = [TaxonImagesInline]
 
