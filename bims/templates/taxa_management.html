@@ -275,7 +275,8 @@
                         <div class="col-md-6"></div>
                     </div>
                     <!-- Download button -->
-                    <div class="float-right download-button-container"
+                    {% if user.is_authenticated %}
+                    <div class="float-right download-bSutton-container"
                          style="margin-top: -47px;">
                         <button id="add-taxon-btn"
                                 class="btn btn-outline-success" data-toggle="modal"
@@ -293,6 +294,7 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="dashboard-title">
                     {% if selected_taxon_group %}

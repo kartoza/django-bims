@@ -8,11 +8,12 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import AccessMixin
+from preferences import preferences
 
 from bims.cache import get_cache, set_cache
+from bims.mixins import TaxaAccessMixin
 from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
-from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
 from bims.models.endemism import Endemism
@@ -20,7 +21,7 @@ from bims.models.iucn_status import IUCNStatus
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
-class TaxaManagementView(LoginRequiredMixin, TemplateView):
+class TaxaManagementView(TaxaAccessMixin, TemplateView):
     template_name = 'taxa_management.html'
 
     def remove_selected_param_from_url(self, request):

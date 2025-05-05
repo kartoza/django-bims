@@ -17,6 +17,7 @@ from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
 from bims.api_views.taxon_update import is_expert
+from bims.mixins import TaxaAccessMixin
 from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
@@ -403,7 +404,7 @@ def split_authors(author_string):
     return decoded_matches
 
 
-class TaxaList(LoginRequiredMixin, APIView):
+class TaxaList(TaxaAccessMixin, APIView):
     """Returns list of taxa filtered by taxon group"""
     pagination_class = TaxaPagination
 

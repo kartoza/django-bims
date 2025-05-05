@@ -21,6 +21,11 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    is_public_taxa = models.BooleanField(
+        default=False,
+        help_text='Allow non-logged-in users to view the taxa page.'
+    )
+
     map_default_filters = JSONField(
         default=dict,
         null=True,
