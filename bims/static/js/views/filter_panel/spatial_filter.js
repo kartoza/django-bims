@@ -676,7 +676,7 @@ define([
                         url: '/api/layer/',
                         dataType: 'json',
                         success: function (data) {
-                            const layer = data.results.find(item => item.tile_url.includes(key));
+                            const layer = data.results.find(item => item.tile_url && item.tile_url.includes(key));
                             const layerStyle = function(feature, resolution) {
                               if (selectedLayer.includes(feature.get(layerIdentifier))) {
                                 return new ol.style.Style({
