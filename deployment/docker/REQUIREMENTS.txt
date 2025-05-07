@@ -105,4 +105,4 @@ drf-nested-routers==0.93.5
 drf-yasg==1.21.7
 
 # Library to handle geospatial functions
-git+https://github.com/kartoza/CloudNativeGIS.git@bims-pmtile
+git+https://github.com/kartoza/CloudNativeGIS.git@0.0.5bims
