@@ -66,35 +66,40 @@
                 $('#grp-content').find('.national_conservation_status ').find('.c-2').append(
                     `<button class="grp-button" style="width: 250px;" id="find-national_conservation_status">Find National Conservation Status</button>`
                 );
-                $('#find-iucn').click(function(e) {
+               $('#find-iucn').click(function (e) {
                     e.preventDefault();
                     const $target = $(e.target);
                     const originalButtonText = $target.html();
                     const $iucnId = $('#id_iucn_redlist_id');
                     const $iucnData = $('#id_iucn_data');
-                    $target.html('Fetching...')
-                    const speciesName = $('#grp-content').find('[name="canonical_name"]').val();
-                    const iucnKey = '{{ preferences.SiteSetting.iucn_api_key }}';
-                    let iucnApiUrl = '/bims_proxy/http://apiv3.iucnredlist.org/api/v3';
-                    iucnApiUrl += '/species/' + speciesName + '?token=' + iucnKey;
+                    const taxonomyId = $('#id_taxonimage_set-0-taxonomy').val();
+
+                    $target.html('Fetching...');
+
                     $.ajax({
                         type: 'GET',
-                        url: iucnApiUrl,
+                        type: 'GET',
+                        url: `/api/taxonomy-iucn-status/${taxonomyId}/`,
                         success: function (data) {
-                            if (data['result'].length > 0) {
-                                $target.html(originalButtonText);
-                                const result = data['result'][0];
-                                $("#id_iucn_status option:contains(" + result['category'] + ")").attr('selected', 'selected');
-                                $iucnId.val(result['taxonid']);
-                                $iucnData.val(JSON.stringify(result, null, 2));
-                            } else {
-                                $target.html("IUCN Data not found");
-                                $target.attr('disabled', 'disabled')
-                                $target.css('background', '#adadad');
-                                $target.css('border-color', '#adadad');
+                            $target.html(originalButtonText);
+                            if (data.status_category) {
+                                $("#id_iucn_status option").each(function () {
+                                    if ($(this).text() === data.status_category) {
+                                        $(this).prop('selected', true);
+                                    }
+                                });
+                                $iucnId.val(data.sis_id);
+                                if (data.iucn_url) {
+                                    $iucnData.val(`{'url': '${data.iucn_url}'}`);
+                                }
                             }
+                        },
+                        error: function () {
+                            $target.html("IUCN Data not found");
+                            $target.attr('disabled', 'disabled');
+                            $target.css({ background: '#adadad', borderColor: '#adadad' });
                         }
-                    })
+                    });
                 });
 
                 $('#grp-content').find('.gbif_key').find('.c-2').append(

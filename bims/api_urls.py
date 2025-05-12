@@ -36,7 +36,7 @@ from bims.api_views.taxon import (
     FindTaxon,
     AddNewTaxon,
     TaxaList,
-    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail
+    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -365,6 +365,9 @@ urlpatterns = [
     path('taxonomy/<int:pk>/add-tag/',
          AddTagAPIView.as_view(),
          name='add-tag-taxon'),
+    path('taxonomy-iucn-status/<int:pk>/',
+         IUCNStatusFetchView.as_view(),
+         name='taxonomy-iucn-status'),
     path('wetland-data/<str:lat>/<str:lon>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),
