@@ -56,7 +56,16 @@ def get_iucn_status(taxon):
             category = latest.get("red_list_category_code")
             iucn_url = latest.get("url")
             if category:
-                iucn_status, _ = IUCNStatus.objects.get_or_create(category=category)
+                try:
+                    iucn_status, _ = IUCNStatus.objects.get_or_create(
+                        category=category,
+                        national=False
+                    )
+                except IUCNStatus.MultipleObjectsReturned:
+                    iucn_status = IUCNStatus.objects.filter(
+                        category=category,
+                        national=False
+                    ).first()
                 return iucn_status, sis_id, iucn_url
 
         return None, sis_id, iucn_url
