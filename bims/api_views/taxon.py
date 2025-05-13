@@ -9,8 +9,9 @@ from django.forms import model_to_dict
 from django.http import Http404
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
+from rest_framework import status
 from rest_framework.generics import UpdateAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
@@ -28,6 +29,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+from bims.utils.iucn import get_iucn_status
 from bims.utils.user import get_user
 
 logger = logging.getLogger('bims')
@@ -754,3 +756,28 @@ class AddTagAPIView(UpdateAPIView):
     def get_object(self):
         taxonomy_id = self.kwargs.get('pk')
         return Taxonomy.objects.get(pk=taxonomy_id)
+
+
+class IUCNStatusFetchView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        taxonomy_id = self.kwargs.get('pk')
+
+        if not taxonomy_id:
+            return Response(
+                {"detail": "Missing taxon_id"},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        taxon = Taxonomy.objects.get(id=taxonomy_id)
+        iucn_status, sis_id, iucn_url = get_iucn_status(taxon)
+
+        if iucn_status:
+            return Response({
+                "status_category": iucn_status.category,
+                "sis_id": sis_id,
+                "iucn_url": iucn_url
+            })
+        return Response(
+            {"detail": "Not found"},
+            status=status.HTTP_404_NOT_FOUND)

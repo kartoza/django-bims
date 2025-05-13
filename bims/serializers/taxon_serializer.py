@@ -21,6 +21,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     iucn_status_name = serializers.SerializerMethodField()
     iucn_status_full_name = serializers.SerializerMethodField()
     iucn_status_colour = serializers.SerializerMethodField()
+    iucn_url = serializers.SerializerMethodField()
     record_type = serializers.SerializerMethodField()
     taxon_group = serializers.SerializerMethodField()
     origin_name = serializers.SerializerMethodField()
@@ -43,6 +44,15 @@ class TaxonSerializer(serializers.ModelSerializer):
     proposal_id = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     taxonomic_status = serializers.SerializerMethodField()
+
+    def get_iucn_url(self, obj: Taxonomy):
+        if obj.iucn_data:
+            try:
+                iucn_data = json.loads(obj.iucn_data.replace('\'', '"'))
+                return iucn_data.get('url', '')
+            except json.decoder.JSONDecodeError:
+                return ''
+        return ''
 
     def get_taxonomic_status(self, obj: Taxonomy):
         return obj.taxonomic_status.upper()

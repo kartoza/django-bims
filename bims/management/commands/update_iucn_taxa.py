@@ -7,7 +7,6 @@ from bims.models.biological_collection_record import (
     collection_post_save_update_cluster,
     collection_post_save_handler
 )
-from bims.models.iucn_status import IUCNStatus
 
 
 class Command(BaseCommand):
@@ -38,34 +37,25 @@ class Command(BaseCommand):
                 collection_post_save_handler,
         )
         for taxon in taxa:
-            print('Update taxon : %s' % taxon.common_name)
-            if taxon.species:
-                iucn_status = get_iucn_status(
-                        species_name=taxon.species,
-                        only_returns_json=True
+            print('Updating taxon : %s' % taxon.common_name)
+            if taxon.is_species:
+                iucn_status, sis_id, iucn_url = get_iucn_status(
+                    taxon=taxon,
                 )
-            else:
-                iucn_status = get_iucn_status(
-                        species_name=taxon.common_name,
-                        only_returns_json=True
-                )
-            if not iucn_status:
-                # let's try fetch with gbif id
-                iucn_status = get_iucn_status(taxon_id=taxon.gbif_id,
-                                              only_returns_json=True)
 
-            if 'result' in iucn_status:
-                iucn, status = IUCNStatus.objects.get_or_create(
-                        category=iucn_status['result'][0]['category']
-                )
-                taxon.iucn_status = iucn
-                taxon.iucn_redlist_id = iucn_status['result'][0]['taxonid']
-                taxon.iucn_data = json.dumps(
-                        iucn_status['result'][0],
-                        indent=4)
-                taxon.save()
+                if iucn_status:
+                    taxon.iucn_status = iucn_status
 
-            print(iucn_status)
+                if sis_id:
+                    taxon.iucn_redlist_id = sis_id
+
+                if iucn_url:
+                    taxon.iucn_data = {
+                        'url': iucn_url
+                    }
+
+                if iucn_status or sis_id:
+                    taxon.save()
 
         models.signals.post_save.connect(
                 collection_post_save_update_cluster,

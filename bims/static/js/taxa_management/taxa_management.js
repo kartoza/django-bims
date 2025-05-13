@@ -437,7 +437,7 @@ export const taxaManagement = (() => {
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
                             let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
-                            let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
+                            let iucnHTML = data.iucn_url ? ` <a href="${data.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
                             data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML + `<input type="hidden" class="proposal-id" value="${data.proposal_id}" />`;

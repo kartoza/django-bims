@@ -673,41 +673,27 @@ class Taxonomy(AbstractTaxonomy):
 
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
-def taxonomy_pre_save_handler(sender, instance, **kwargs):
-    """Get iucn status before save."""
+def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
+    """Set IUCN status and redlist ID before saving taxonomy."""
     if instance.is_species and not instance.iucn_status:
-        iucn_status = get_iucn_status(
-            species_name=instance.canonical_name,
-            only_returns_json=True
-        )
-        if iucn_status and 'result' in iucn_status:
-            if len(iucn_status['result']) > 0:
-                try:
-                    iucn, _ = IUCNStatus.objects.get_or_create(
-                        category=iucn_status['result'][0]['category']
-                    )
-                except IUCNStatus.MultipleObjectsReturned:
-                    iucn = IUCNStatus.objects.filter(
-                        category=iucn_status['result'][0]['category']
-                    ).first()
-                instance.iucn_status = iucn
-                instance.iucn_redlist_id = iucn_status['result'][0]['taxonid']
-                instance.iucn_data = json.dumps(
-                    iucn_status['result'][0],
-                    indent=4)
-            else:
-                iucn_status = None
-        if not iucn_status:
-            # Get not evaluated
-            try:
-                iucn_status, _ = IUCNStatus.objects.get_or_create(
-                    category='NE'
-                )
-            except IUCNStatus.MultipleObjectsReturned:
-                iucn_status = IUCNStatus.objects.filter(
-                    category='NE'
-                )[0]
+        iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
+        if iucn_status:
             instance.iucn_status = iucn_status
+        else:
+            try:
+                instance.iucn_status = IUCNStatus.objects.get(category='NE')
+            except IUCNStatus.DoesNotExist:
+                instance.iucn_status = IUCNStatus.objects.create(category='NE')
+            except IUCNStatus.MultipleObjectsReturned:
+                instance.iucn_status = IUCNStatus.objects.filter(category='NE').first()
+
+        if sis_id:
+            instance.iucn_redlist_id = sis_id
+
+        if iucn_url:
+            instance.iucn_data = {
+                'url': iucn_url
+            }
 
 
 class TaxonImage(models.Model):
