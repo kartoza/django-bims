@@ -102,6 +102,7 @@ services:
   web:
     volumes:
       - ./nginx/sites-enabled:/etc/nginx/conf.d:ro
+      - ./nginx/html:/etc/nginx/html
       # I dont use volumes_from as I want to use the ro modifier
       - ./logs:/var/log/nginx
       - ./media:/home/web/media:rw
