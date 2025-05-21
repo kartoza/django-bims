@@ -336,7 +336,8 @@ class LocationSite(AbstractValidation):
                 )
                 # Find by name first
                 context_groups = LocationContextGroup.objects.filter(
-                    name=layer.name
+                    key=group_key,
+                    layer_identifier=context_key
                 )
                 if context_groups.exists():
                     context_groups.update(
@@ -345,18 +346,21 @@ class LocationSite(AbstractValidation):
                         key=group_key)
                     context_group = context_groups.first()
                 else:
+                    # Check if name already exists
+                    layer_name = layer.name
+                    if LocationContextGroup.objects.filter(
+                        name=layer_name
+                    ).exists():
+                        layer_name = f'{layer.name} ({context_key})'
+
                     context_group, _ = LocationContextGroup.objects.get_or_create(
                         geocontext_group_key=group_key,
                         key=group_key,
-                        defaults={
-                            'name': layer.name,
+                        layer_identifier=context_key,
+                        defaults = {
+                            'name': layer_name,
                         }
                     )
-
-                    if context_group.layer_identifier != context_key:
-                        LocationContextGroup.objects.filter(
-                            id=context_group.id
-                        ).update(layer_identifier=context_key)
 
                 for result in feature_data['result']:
                     if context_key in result['feature']:

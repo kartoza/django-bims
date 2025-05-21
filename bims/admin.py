@@ -269,23 +269,37 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             return '-'
 
     def geocontext_data_percentage(self, obj):
-        site_setting_group_keys = (
-            preferences.GeocontextSetting.geocontext_keys.split(',')
-        )
-        site_setting_group_keys = [
-            group.split(':')[0] if ':' in group else group for group in site_setting_group_keys
-        ]
-        groups = LocationContext.objects.filter(
-            site=obj,
-            group__geocontext_group_key__in=site_setting_group_keys
-        ).values(
-            'group__geocontext_group_key'
-        ).distinct('group__geocontext_group_key')
-        percentage = 0
-        if groups.count() > 0:
-            percentage = round(
-                groups.count() / len(site_setting_group_keys) * 100
-            )
+        raw_keys = preferences.GeocontextSetting.geocontext_keys.split(',')
+        key_pairs = []
+        for key in raw_keys:
+            if ':' in key:
+                group_key, layer_id = key.split(':', 1)
+                key_pairs.append((group_key, layer_id))
+            else:
+                key_pairs.append((key, None))
+
+        filters = Q()
+        for group_key, layer_id in key_pairs:
+            if layer_id:
+                filters |= Q(
+                    site=obj,
+                    group__geocontext_group_key=group_key,
+                    group__layer_identifier=layer_id
+                )
+            else:
+                filters |= Q(
+                    site=obj,
+                    group__geocontext_group_key=group_key
+                )
+
+        groups = LocationContext.objects.filter(filters).values(
+            'group__geocontext_group_key', 'group__layer_identifier'
+        ).distinct()
+
+        matched_count = groups.count()
+        total_expected = len(key_pairs)
+        percentage = round(matched_count / total_expected * 100) if total_expected > 0 else 0
+
         return format_html(
             '''
             <progress value="{0}" max="100"></progress>
