@@ -38,7 +38,7 @@ class LocationContextGroupSerializer(serializers.ModelSerializer):
         if obj.key and is_uuid(obj.key):
             try:
                 layer = Layer.objects.get(unique_id=obj.key)
-                return layer.name
+                return f'{layer.name} ({obj.layer_identifier})'
             except Layer.DoesNotExist:
                 return ''
         return ''
