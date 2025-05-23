@@ -1,12 +1,19 @@
 # coding: utf-8
+import csv
+import io
 import json
 import asyncio
-from typing import TextIO
+import os
+import time
+import zipfile
+from pathlib import Path
+from typing import TextIO, Optional, Set, List
 
 import requests
 import logging
 import urllib
 import simplejson
+from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from requests.exceptions import HTTPError
 from pygbif import species
@@ -443,208 +450,253 @@ def round_coordinates(coords):
         return [round(coord, 4) for coord in coords]
 
 
+GBIF_DOWNLOAD_URL = "https://api.gbif.org/v1/occurrence/download"
+GBIF_REQUEST_URL  = f"{GBIF_DOWNLOAD_URL}/request"
+
 def find_species_by_area(
-        boundary_id,
+        boundary_id: int,
         parent_species: Taxonomy,
-        max_limit=None,
-        harvest_session: HarvestSession = None,
-        validated=True
-):
+        max_limit: Optional[int] = None,
+        harvest_session: Optional[HarvestSession] = None,
+        validated: bool = True,
+        gbif_username: Optional[str] = None,
+        gbif_password: Optional[str] = None,
+) -> List[Taxonomy]:
     """
-    Searches for species within a specific area defined by a boundary, filtered by taxonomic keys.
-
-    Parameters:
-    boundary_id (int): The ID of the boundary within which to search for species.
-    parent_species (int, required): The taxon for filtering species.
-    max_limit (int, optional): The maximum number of species to be fetched.
-    validated (bool, optional): Automatically validated the species
-
-    Returns:
-    list: A list of species found within the area, filtered by the provided taxonomic keys.
+    Retrieves all species inside *boundary_id* (descendants of *parent_species*)
+    using the GBIF Occurrence Download API, stores each DWCA archive in
+    ``MEDIA_ROOT/gbif_downloads/`` and returns a list of local Taxonomy objects.
     """
     from bims.models.boundary import Boundary
     from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
     from bims.models.taxon_group import TaxonGroup
     from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 
-    add_parent = True
-    taxon_group = None
-    log_file_path = None
+    logger = logging.getLogger(__name__)
 
-    species_keys = set()
-    species_found = []
-
-    if harvest_session:
-        taxon_group = harvest_session.module_group
-        log_file_path = (
-            harvest_session.log_file.path
-            if harvest_session.log_file else None
-        )
-
-    def log_info(message: str):
-        logger.info(message)
+    # ---------------------------------------------------------------- helpers
+    def _log(msg: str):
+        logger.info(msg)
         if log_file_path:
-            with open(log_file_path, 'a') as log_file:
-                log_file.write('{}\n'.format(message))
+            with open(log_file_path, "a") as lf:
+                lf.write(f"{msg}\n")
 
-    def is_canceled():
+    def _is_canceled() -> bool:
         if harvest_session:
-            return HarvestSession.objects.get(
-                id=harvest_session.id
-            ).canceled
+            return HarvestSession.objects.get(id=harvest_session.id).canceled
         return False
 
-    def add_parent_to_group(taxon: Taxonomy, group: TaxonGroup):
+    def _add_parent_to_group(taxon: Taxonomy, group: TaxonGroup):
         if taxon.parent:
-            _taxon_group_taxonomy, _ = (
-                TaxonGroupTaxonomy.objects.get_or_create(
-                    taxongroup=group,
-                    taxonomy=taxon,
-                )
+            tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
+                taxongroup=group, taxonomy=taxon
             )
-            _taxon_group_taxonomy.is_validated = validated
-            _taxon_group_taxonomy.save()
-            add_parent_to_group(taxon.parent, group)
-        else:
-            return
+            tgt.is_validated = validated
+            tgt.save()
+            _add_parent_to_group(taxon.parent, group)
 
-    def fetch_occurrences_by_area(geometry_string):
-        from bims.scripts.import_gbif_occurrences import API_BASE_URL
-        facet_offset = 0
+    # ---------- GBIF interaction ------------------------------------------------
+    def _submit_download(geometry_wkt: str) -> Optional[str]:
+        predicate = {
+            "type": "and",
+            "predicates": [
+                {"type": "equals", "key": "TAXON_KEY", "value": str(parent_species.gbif_key)},
+                {"type": "within", "geometry": geometry_wkt},
+                {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
+                {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
+                {"type": "equals", "key": "BASIS_OF_RECORD", "value": "HUMAN_OBSERVATION"},
+            ]
+        }
+        payload = {
+            "creator": gbif_user,
+            "sendNotification": False,
+            "format": "DWCA",
+            "description": f"Boundary {boundary_id} · parent {parent_species.scientific_name}",
+            "predicate": predicate,
+        }
+        _log(f"POST {GBIF_REQUEST_URL}")
+        r = requests.post(GBIF_REQUEST_URL, auth=auth, json=payload, timeout=60)
+        if r.status_code != 201:
+            _log(f"Download request failed ({r.status_code}): {r.text}")
+            return None
+        return r.text.strip().strip('"')
 
-        while True:
-            if is_canceled():
-                break
-            try:
-                params = {
-                    f"{parent_species.rank.lower()}Key": parent_species.gbif_key,
-                    'facet': 'acceptedTaxonKey',
-                    'facetLimit': 100,
-                    'facetMinCount': 1,
-                    'facetOffset': facet_offset,
-                    'geometry': geometry_string,
-                    'limit': 0,
-                    'hasCoordinate': True,
-                    'hasGeoSpatialIssue': False,
-                    'basisOfRecord': [
-                        'HUMAN_OBSERVATION',
-                    ]
-                }
+    def _get_ready_download_url(key: str) -> Optional[str]:
+        """
+        Polls the GBIF status endpoint until a *working* ZIP link is available.
+        Returns the download URL, or ``None`` on failure/cancellation.
+        """
+        status_url = f"{GBIF_DOWNLOAD_URL}/{key}"
+        poll_sec = 30
 
-                gbif_url = (
-                    f"{API_BASE_URL}?"
-                    f"{parent_species.rank.lower()}Key={parent_species.gbif_key}&"
-                    f"facet=acceptedTaxonKey&"
-                    f"facetLimit=100&"
-                    f"facetMinCount=1&"
-                    f"hasCoordinate=true&"
-                    f"hasGeospatialIssue=false&"
-                    f"basisOfRecord=HUMAN_OBSERVATION&"
-                    f"limit={0}&"
-                    f"geometry={geometry_string}&"
-                    f"facetOffset={facet_offset}&"
-                )
+        while not _is_canceled():
+            r = requests.get(status_url, auth=auth, timeout=30)
+            if r.status_code != 200:
+                _log(f"Status check failed ({r.status_code}): {r.text}")
+                return None
 
-                log_info(gbif_url)
+            info = r.json()
+            status = info.get("status", "UNKNOWN")
+            link = info.get("downloadLink")
 
-                occurrences_data = search(**params)
-                log_info(occurrences_data)
-            except Exception as e:
-                log_info(f"Error fetching occurrences data: {e}")
-                break
+            _log(f"{key} status: {status} | link: {link}")
 
-            if 'facets' in occurrences_data and len(occurrences_data['facets']) > 0:
-                for facet in occurrences_data['facets']:
-                    if facet['field'].upper() == "ACCEPTED_TAXON_KEY":
-                        new_keys = {int(count['name']) for count in facet['counts']}
-                        new_species_keys = new_keys - species_keys
-                        species_keys.update(new_keys)
+            # if GBIF already says it failed, stop here
+            if status in {"FAILED", "KILLED", "CANCELLED"}:
+                return None
 
-                        for species_key in new_species_keys:
-                            if is_canceled():
-                                return species_found
-                            try:
-                                log_info('Processing {}'.format(species_key))
-                                taxonomy = fetch_all_species_from_gbif(
-                                    gbif_key=species_key,
-                                    fetch_children=False,
-                                    log_file_path=log_file_path,
-                                    fetch_vernacular_names=True
-                                )
-                                if taxonomy:
-                                    log_info("Species added/updated: {}".format(taxonomy.scientific_name))
-                                    species_found.append(taxonomy)
-                                    if taxon_group:
-                                        taxon_group_taxonomy, created = (
-                                            TaxonGroupTaxonomy.objects.get_or_create(
-                                                taxongroup=taxon_group,
-                                                taxonomy=taxonomy,
-                                            )
-                                        )
-                                        taxon_group_taxonomy.is_validated = validated
-                                        taxon_group_taxonomy.save()
+            # Sometimes `status` is still RUNNING/PREPARING, but the file is ready.
+            # Try the link (if present) until it responds with 200.
+            if link:
+                try:
+                    # small request first to see if the file is materialised
+                    probe = requests.get(link, auth=auth, stream=True, timeout=60)
+                    if probe.status_code == 200:
+                        probe.close()
+                        return link
+                    elif probe.status_code == 404:
+                        # GBIF returns a JSON RemoteException when HDFS hasn't copied the file yet
+                        _log("ZIP not yet in place, still waiting …")
+                except Exception as exc:
+                    _log(f"Probe failed: {exc}")
 
-                                        if add_parent:
-                                            add_parent_to_group(
-                                                taxonomy, taxon_group
-                                            )
-                            except Exception as e:
-                                log_info(f"Error fetching data for species key {species_key}: {e}")
+            time.sleep(poll_sec)
 
-            else:
-                # If facets or counts are empty, we've reached the end
-                break
+        return None
 
-            log_info(f"Species found so far: {len(species_keys)}")
+    def _wait_for_download(key: str) -> bool:
+        status_url = f"{GBIF_DOWNLOAD_URL}/{key}"
+        while not _is_canceled():
+            r = requests.get(status_url, auth=auth, timeout=30)
+            if r.status_code != 200:
+                _log(f"Status check failed ({r.status_code}): {r.text}")
+                return False
+            status = r.json().get("status", "UNKNOWN")
+            _log(f"{key} status: {status}")
+            if status == "SUCCEEDED":
+                return True
+            if status in {"FAILED", "KILLED", "CANCELLED"}:
+                return False
+            time.sleep(30)
+        return False
 
-            # Adjust facetOffset by the number of counts returned, not by the limit
-            counts_returned = sum(
-                len(facet.get('counts', [])) for facet in occurrences_data.get('facets', []))
-            if counts_returned == 0 or is_canceled():
-                break
-            if max_limit is not None and counts_returned > max_limit:
-                break
-            facet_offset += counts_returned
+    def _download_archive(zip_url: str, key: str) -> Optional[Path]:
+        """
+        Streams the DWCA ZIP to MEDIA_ROOT/gbif_downloads/{key}.zip.
+        Returns the Path (or None on error).
+        """
+        target_dir = Path(settings.MEDIA_ROOT) / "gbif_downloads"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / f"{key}.zip"
 
-        return species_found
+        if target_path.exists():
+            _log(f"Archive cached → {target_path}")
+            return target_path
 
+        _log(f"Downloading {zip_url}")
+        try:
+            with requests.get(zip_url, auth=auth, stream=True, timeout=300) as resp:
+                resp.raise_for_status()
+                with open(target_path, "wb") as fh:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        fh.write(chunk)
+            _log(f"Saved to {target_path}")
+            return target_path
+        except Exception as exc:
+            _log(f"Failed to download archive {key}: {exc}")
+            target_path.unlink(missing_ok=True)
+            return None
+
+    def _extract_species_keys(zip_path: Path, species_keys: Set[int]):
+        with zipfile.ZipFile(zip_path) as zf:
+            with zf.open("occurrence.txt") as occ_file:
+                reader = csv.DictReader(io.TextIOWrapper(occ_file, encoding="utf-8"))
+                for row in reader:
+                    k = row.get("acceptedTaxonKey") or row.get("taxonKey")
+                    if k and k.isdigit():
+                        species_keys.add(int(k))
+                        if max_limit and len(species_keys) >= max_limit:
+                            return
+
+    # ---------------------------------------------------------------- init vars
+    species_keys: Set[int]       = set()
+    species_found: List[Taxonomy] = []
+
+    log_file_path = getattr(harvest_session.log_file, "path", None) if harvest_session else None
+    taxon_group    = harvest_session.module_group if harvest_session else None
+
+    gbif_user = gbif_username or os.getenv("GBIF_USERNAME")
+    gbif_pass = gbif_password or os.getenv("GBIF_PASSWORD")
+    if not gbif_user or not gbif_pass:
+        raise RuntimeError("GBIF credentials missing (GBIF_USERNAME / GBIF_PASSWORD).")
+
+    auth = (gbif_user, gbif_pass)
+
+    # ---------------------------------------------------------------- geometry
     try:
         boundary = Boundary.objects.get(id=boundary_id)
         geometry = boundary.geometry
-        extracted_polygons = []
         if not geometry:
-            raise ValueError("No geometry found for the boundary.")
+            raise ValueError("Boundary has no geometry")
 
-        if isinstance(geometry, MultiPolygon):
-            for geom in geometry:
-                extracted_polygons.append(geom)
-        else:
-            extracted_polygons.append(geometry)
+        polygons = list(geometry) if isinstance(geometry, MultiPolygon) else [geometry]
+        _log(f"Found {len(polygons)} polygon(s)")
 
-        log_info('Found {} area'.format(len(extracted_polygons)))
-        area = 1
-        for polygon in extracted_polygons:
-            if is_canceled():
-                return
+        for idx, polygon in enumerate(polygons, start=1):
+            if _is_canceled() or (max_limit and len(species_keys) >= max_limit):
+                break
             geojson = json.loads(polygon.geojson)
-            geojson['coordinates'] = round_coordinates(geojson['coordinates'])
-            geometry_rounded = GEOSGeometry(json.dumps(geojson))
-            geometry_str = str(geometry_rounded.ogr)
-            log_info(geometry_str)
-            log_info('Area {area}/{total_area}'.format(
-                area=area,
-                total_area=len(extracted_polygons))
-            )
-            area += 1
-            fetch_occurrences_by_area(geometry_str)
+            geojson["coordinates"] = round_coordinates(geojson["coordinates"])
+            geom_wkt = GEOSGeometry(json.dumps(geojson)).wkt
+            _log(f"Polygon {idx}/{len(polygons)}")
+
+            key = _submit_download(geom_wkt)
+            if not key:
+                continue
+
+            zip_url = _get_ready_download_url(key)
+            if not zip_url:
+                _log(f"Download {key} was not completed")
+                continue
+
+            zip_path = _download_archive(zip_url, key)
+            if zip_path:
+                _extract_species_keys(zip_path, species_keys)
+                _log(f"Unique species keys: {len(species_keys)}")
+
+            if max_limit and len(species_keys) >= max_limit:
+                break
 
     except Boundary.DoesNotExist:
-        logger.error(f"Boundary with ID {boundary_id} does not exist.")
+        logger.error(f"Boundary {boundary_id} does not exist.")
         return []
-    except Exception as e:
-        logger.error(f"Error fetching boundary: {e}")
+    except Exception as exc:
+        logger.error(f"Boundary processing failed: {exc}")
         return []
 
-    log_info(f"Species found: {len(species_keys)}")
+    # ------------------------------------------------ fetch taxonomy objects
+    for skey in species_keys:
+        if _is_canceled():
+            break
+        try:
+            _log(f"Processing {skey}")
+            taxonomy = fetch_all_species_from_gbif(
+                gbif_key=skey,
+                fetch_children=False,
+                log_file_path=log_file_path,
+                fetch_vernacular_names=True,
+            )
+            if taxonomy:
+                species_found.append(taxonomy)
+                if taxon_group:
+                    tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
+                        taxongroup=taxon_group, taxonomy=taxonomy
+                    )
+                    tgt.is_validated = validated
+                    tgt.save()
+                    _add_parent_to_group(taxonomy, taxon_group)
+        except Exception as exc:
+            _log(f"Error fetching taxonomy {skey}: {exc}")
 
+    _log(f"Species found: {len(species_found)}")
     return species_found
