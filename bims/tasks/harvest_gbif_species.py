@@ -7,7 +7,7 @@ def harvest_gbif_species(session_id):
     from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
     from bims.utils.logger import log
     from bims.models import HarvestSession
-    from bims.utils.gbif import find_species_by_area
+    from bims.utils.gbif_download import find_species_by_area
 
     try:
         harvest_session = (

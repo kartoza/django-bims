@@ -2,12 +2,11 @@
 import csv
 import io
 import json
-import asyncio
 import os
 import time
 import zipfile
 from pathlib import Path
-from typing import TextIO, Optional, Set, List
+from typing import Optional, Set, List
 
 import requests
 import logging
@@ -17,11 +16,11 @@ from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from requests.exceptions import HTTPError
 from pygbif import species
-from pygbif.occurrences import search
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
 from bims.models.harvest_session import HarvestSession
+from bims.utils.gbif_download import submit_download
 
 logger = logging.getLogger(__name__)
 
@@ -448,245 +447,3 @@ def round_coordinates(coords):
         return [round_coordinates(sub_coords) for sub_coords in coords]
     else:
         return [round(coord, 4) for coord in coords]
-
-
-GBIF_DOWNLOAD_URL = "https://api.gbif.org/v1/occurrence/download"
-GBIF_REQUEST_URL  = f"{GBIF_DOWNLOAD_URL}/request"
-
-def find_species_by_area(
-        boundary_id: int,
-        parent_species: Taxonomy,
-        max_limit: Optional[int] = None,
-        harvest_session: Optional[HarvestSession] = None,
-        validated: bool = True,
-        gbif_username: Optional[str] = None,
-        gbif_password: Optional[str] = None,
-) -> List[Taxonomy]:
-    """
-    Retrieves all species inside *boundary_id* (descendants of *parent_species*)
-    using the GBIF Occurrence Download API, stores each DWCA archive in
-    ``MEDIA_ROOT/gbif_downloads/`` and returns a list of local Taxonomy objects.
-    """
-    from bims.models.boundary import Boundary
-    from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
-    from bims.models.taxon_group import TaxonGroup
-    from bims.utils.fetch_gbif import fetch_all_species_from_gbif
-
-    logger = logging.getLogger(__name__)
-
-    def _log(msg: str):
-        logger.info(msg)
-        if log_file_path:
-            with open(log_file_path, "a") as lf:
-                lf.write(f"{msg}\n")
-
-    def _is_canceled() -> bool:
-        if harvest_session:
-            return HarvestSession.objects.get(id=harvest_session.id).canceled
-        return False
-
-    def _add_parent_to_group(taxon: Taxonomy, group: TaxonGroup):
-        if taxon.parent:
-            tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
-                taxongroup=group, taxonomy=taxon
-            )
-            tgt.is_validated = validated
-            tgt.save()
-            _add_parent_to_group(taxon.parent, group)
-
-    def _submit_download(geometry_wkt: str) -> Optional[str]:
-        predicate = {
-            "type": "and",
-            "predicates": [
-                {"type": "equals", "key": "TAXON_KEY", "value": str(parent_species.gbif_key)},
-                {"type": "within", "geometry": geometry_wkt},
-                {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
-                {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
-                {"type": "equals", "key": "BASIS_OF_RECORD", "value": "HUMAN_OBSERVATION"},
-            ]
-        }
-        payload = {
-            "creator": gbif_user,
-            "sendNotification": False,
-            "format": "DWCA",
-            "description": f"Boundary {boundary_id} · parent {parent_species.scientific_name}",
-            "predicate": predicate,
-        }
-        _log(f"POST {GBIF_REQUEST_URL}")
-        r = requests.post(GBIF_REQUEST_URL, auth=auth, json=payload, timeout=60)
-        if r.status_code != 201:
-            _log(f"Download request failed ({r.status_code}): {r.text}")
-            return None
-        return r.text.strip().strip('"')
-
-    def _get_ready_download_url(key: str) -> Optional[str]:
-        """
-        Polls the GBIF status endpoint until a *working* ZIP link is available.
-        Returns the download URL, or ``None`` on failure/cancellation.
-        """
-        status_url = f"{GBIF_DOWNLOAD_URL}/{key}"
-        poll_sec = 30
-
-        while not _is_canceled():
-            r = requests.get(status_url, auth=auth, timeout=30)
-            if r.status_code != 200:
-                _log(f"Status check failed ({r.status_code}): {r.text}")
-                return None
-
-            info = r.json()
-            status = info.get("status", "UNKNOWN")
-            link = info.get("downloadLink")
-
-            _log(f"{key} status: {status} | link: {link}")
-
-            # if GBIF already says it failed, stop here
-            if status in {"FAILED", "KILLED", "CANCELLED"}:
-                return None
-
-            # Sometimes `status` is still RUNNING/PREPARING, but the file is ready.
-            # Try the link (if present) until it responds with 200.
-            if link:
-                try:
-                    # small request first to see if the file is materialised
-                    probe = requests.get(link, auth=auth, stream=True, timeout=60)
-                    if probe.status_code == 200:
-                        probe.close()
-                        return link
-                    elif probe.status_code == 404:
-                        _log("ZIP not yet in place, still waiting ...")
-                except Exception as exc:
-                    _log(f"Probe failed: {exc}")
-
-            time.sleep(poll_sec)
-
-        return None
-
-    def _download_archive(zip_url: str, key: str) -> Optional[Path]:
-        """
-        Streams the DWCA ZIP to MEDIA_ROOT/gbif_downloads/{key}.zip.
-        Returns the Path (or None on error).
-        """
-        target_dir = Path(settings.MEDIA_ROOT) / "gbif_downloads"
-        target_dir.mkdir(parents=True, exist_ok=True)
-        target_path = target_dir / f"{key}.zip"
-
-        if target_path.exists():
-            _log(f"Archive cached to {target_path}")
-            return target_path
-
-        _log(f"Downloading {zip_url}")
-        try:
-            with requests.get(zip_url, auth=auth, stream=True, timeout=300) as resp:
-                resp.raise_for_status()
-                with open(target_path, "wb") as fh:
-                    for chunk in resp.iter_content(chunk_size=8192):
-                        fh.write(chunk)
-            _log(f"Saved to {target_path}")
-            return target_path
-        except Exception as exc:
-            _log(f"Failed to download archive {key}: {exc}")
-            target_path.unlink(missing_ok=True)
-            return None
-
-    def _extract_species_keys(zip_path: Path,
-                              species_keys: Set[int],
-                              max_limit: Optional[int] = None):
-        """
-        Adds acceptedTaxonKey / taxonKey values from *zip_path* into *species_keys*.
-
-        Works with a header row already present in occurrence.txt, no need for meta.xml.
-        """
-        with zipfile.ZipFile(zip_path) as zf:
-            with zf.open("occurrence.txt") as occ_file:
-                txt = io.TextIOWrapper(occ_file, encoding="utf-8")
-
-                header_fields = txt.readline().rstrip("\n\r").split("\t")
-                reader = csv.DictReader(txt, fieldnames=header_fields, delimiter="\t")
-
-                for row in reader:
-                    key_val = row.get("acceptedTaxonKey") or row.get("taxonKey")
-
-                    if key_val and key_val.isdigit():
-                        species_keys.add(int(key_val))
-                        if max_limit and len(species_keys) >= max_limit:
-                            break
-
-    species_keys: Set[int]       = set()
-    species_found: List[Taxonomy] = []
-
-    log_file_path = getattr(harvest_session.log_file, "path", None) if harvest_session else None
-    taxon_group    = harvest_session.module_group if harvest_session else None
-
-    gbif_user = gbif_username or os.getenv("GBIF_USERNAME")
-    gbif_pass = gbif_password or os.getenv("GBIF_PASSWORD")
-    if not gbif_user or not gbif_pass:
-        raise RuntimeError("GBIF credentials missing (GBIF_USERNAME / GBIF_PASSWORD).")
-
-    auth = (gbif_user, gbif_pass)
-
-    try:
-        boundary = Boundary.objects.get(id=boundary_id)
-        geometry = boundary.geometry
-        if not geometry:
-            raise ValueError("Boundary has no geometry")
-
-        polygons = list(geometry) if isinstance(geometry, MultiPolygon) else [geometry]
-        _log(f"Found {len(polygons)} polygon(s)")
-
-        for idx, polygon in enumerate(polygons, start=1):
-            if _is_canceled() or (max_limit and len(species_keys) >= max_limit):
-                break
-            geojson = json.loads(polygon.geojson)
-            geojson["coordinates"] = round_coordinates(geojson["coordinates"])
-            geom_wkt = GEOSGeometry(json.dumps(geojson)).wkt
-            _log(f"Polygon {idx}/{len(polygons)}")
-
-            key = _submit_download(geom_wkt)
-            if not key:
-                continue
-
-            zip_url = _get_ready_download_url(key)
-            if not zip_url:
-                _log(f"Download {key} was not completed")
-                continue
-
-            zip_path = _download_archive(zip_url, key)
-            if zip_path:
-                _extract_species_keys(zip_path, species_keys)
-                _log(f"Unique species keys: {len(species_keys)}")
-
-            if max_limit and len(species_keys) >= max_limit:
-                break
-
-    except Boundary.DoesNotExist:
-        logger.error(f"Boundary {boundary_id} does not exist.")
-        return []
-    except Exception as exc:
-        logger.error(f"Boundary processing failed: {exc}")
-        return []
-
-    for skey in species_keys:
-        if _is_canceled():
-            break
-        try:
-            _log(f"Processing {skey}")
-            taxonomy = fetch_all_species_from_gbif(
-                gbif_key=skey,
-                fetch_children=False,
-                log_file_path=log_file_path,
-                fetch_vernacular_names=True,
-            )
-            if taxonomy:
-                species_found.append(taxonomy)
-                if taxon_group:
-                    tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
-                        taxongroup=taxon_group, taxonomy=taxonomy
-                    )
-                    tgt.is_validated = validated
-                    tgt.save()
-                    _add_parent_to_group(taxonomy, taxon_group)
-        except Exception as exc:
-            _log(f"Error fetching taxonomy {skey}: {exc}")
-
-    _log(f"Species found: {len(species_found)}")
-    return species_found
