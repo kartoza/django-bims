@@ -474,7 +474,6 @@ def find_species_by_area(
 
     logger = logging.getLogger(__name__)
 
-    # ---------------------------------------------------------------- helpers
     def _log(msg: str):
         logger.info(msg)
         if log_file_path:
@@ -495,7 +494,6 @@ def find_species_by_area(
             tgt.save()
             _add_parent_to_group(taxon.parent, group)
 
-    # ---------- GBIF interaction ------------------------------------------------
     def _submit_download(geometry_wkt: str) -> Optional[str]:
         predicate = {
             "type": "and",
@@ -555,30 +553,13 @@ def find_species_by_area(
                         probe.close()
                         return link
                     elif probe.status_code == 404:
-                        # GBIF returns a JSON RemoteException when HDFS hasn't copied the file yet
-                        _log("ZIP not yet in place, still waiting …")
+                        _log("ZIP not yet in place, still waiting ...")
                 except Exception as exc:
                     _log(f"Probe failed: {exc}")
 
             time.sleep(poll_sec)
 
         return None
-
-    def _wait_for_download(key: str) -> bool:
-        status_url = f"{GBIF_DOWNLOAD_URL}/{key}"
-        while not _is_canceled():
-            r = requests.get(status_url, auth=auth, timeout=30)
-            if r.status_code != 200:
-                _log(f"Status check failed ({r.status_code}): {r.text}")
-                return False
-            status = r.json().get("status", "UNKNOWN")
-            _log(f"{key} status: {status}")
-            if status == "SUCCEEDED":
-                return True
-            if status in {"FAILED", "KILLED", "CANCELLED"}:
-                return False
-            time.sleep(30)
-        return False
 
     def _download_archive(zip_url: str, key: str) -> Optional[Path]:
         """
@@ -590,7 +571,7 @@ def find_species_by_area(
         target_path = target_dir / f"{key}.zip"
 
         if target_path.exists():
-            _log(f"Archive cached → {target_path}")
+            _log(f"Archive cached to {target_path}")
             return target_path
 
         _log(f"Downloading {zip_url}")
@@ -607,18 +588,29 @@ def find_species_by_area(
             target_path.unlink(missing_ok=True)
             return None
 
-    def _extract_species_keys(zip_path: Path, species_keys: Set[int]):
+    def _extract_species_keys(zip_path: Path,
+                              species_keys: Set[int],
+                              max_limit: Optional[int] = None):
+        """
+        Adds acceptedTaxonKey / taxonKey values from *zip_path* into *species_keys*.
+
+        Works with a header row already present in occurrence.txt, no need for meta.xml.
+        """
         with zipfile.ZipFile(zip_path) as zf:
             with zf.open("occurrence.txt") as occ_file:
-                reader = csv.DictReader(io.TextIOWrapper(occ_file, encoding="utf-8"))
-                for row in reader:
-                    k = row.get("acceptedTaxonKey") or row.get("taxonKey")
-                    if k and k.isdigit():
-                        species_keys.add(int(k))
-                        if max_limit and len(species_keys) >= max_limit:
-                            return
+                txt = io.TextIOWrapper(occ_file, encoding="utf-8")
 
-    # ---------------------------------------------------------------- init vars
+                header_fields = txt.readline().rstrip("\n\r").split("\t")
+                reader = csv.DictReader(txt, fieldnames=header_fields, delimiter="\t")
+
+                for row in reader:
+                    key_val = row.get("acceptedTaxonKey") or row.get("taxonKey")
+
+                    if key_val and key_val.isdigit():
+                        species_keys.add(int(key_val))
+                        if max_limit and len(species_keys) >= max_limit:
+                            break
+
     species_keys: Set[int]       = set()
     species_found: List[Taxonomy] = []
 
@@ -632,7 +624,6 @@ def find_species_by_area(
 
     auth = (gbif_user, gbif_pass)
 
-    # ---------------------------------------------------------------- geometry
     try:
         boundary = Boundary.objects.get(id=boundary_id)
         geometry = boundary.geometry
@@ -674,7 +665,6 @@ def find_species_by_area(
         logger.error(f"Boundary processing failed: {exc}")
         return []
 
-    # ------------------------------------------------ fetch taxonomy objects
     for skey in species_keys:
         if _is_canceled():
             break
