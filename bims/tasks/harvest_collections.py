@@ -133,7 +133,8 @@ def auto_resume_harvest():
         latest_sessions_subquery = HarvestSession.objects.filter(
             harvester=OuterRef('harvester'),
             finished=False,
-            canceled=False
+            canceled=False,
+            is_fetching_species=False
         ).order_by('-id').values('id')[:1]
 
         # Retrieve the latest harvest session for each harvester that meets the conditions

@@ -51,6 +51,8 @@ x-common-django:
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
     - CSRF_TRUSTED_ORIGINS=['django-bims.test']
+    - GBIF_USERNAME=${GBIF_USERNAME:-gbif_user}
+    - GBIF_PASSWORD=${GBIF_PASSWORD:-gbif_pass}
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
