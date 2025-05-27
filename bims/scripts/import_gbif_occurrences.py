@@ -558,16 +558,16 @@ def import_gbif_occurrences(
         )
 
         if not key:
-            return None
+            return "Download request failed"
 
         zip_url = get_ready_download_url(
             key, auth, log, lambda: is_canceled(harvest_session))
         if not zip_url:
-            return None
+            return "Status check failed"
 
         zip_path = download_archive(zip_url, key, auth, log)
         if not zip_path:
-            return None
+            return "Failed to download archive"
 
         error, data_count = process_gbif_response(
             zip_path,
@@ -581,7 +581,7 @@ def import_gbif_occurrences(
 
         if error:
             log_to_file_or_logger(log_file_path, message=f'{error}\n', is_error=True)
-            return None
+            return error
 
         return True
 
