@@ -742,8 +742,8 @@ define([
                 view: new ol.View({
                     center: ol.proj.fromLonLat(center),
                     zoom: this.initZoom,
-                    minZoom: 5,
-                    maxZoom: 19, // prevent zooming past 50m
+                    minZoom: mapMinZoom,
+                    maxZoom: 19,
                 }),
                 controls: ol.control.defaults.defaults({ zoom: false }).extend([
                     mousePositionControl,
