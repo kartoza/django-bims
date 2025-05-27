@@ -65,6 +65,7 @@
         const locationSiteName = '{% if custom_theme.location_site_name %}{{ custom_theme.location_site_name }}{% else %}Site{% endif %}';
         const locationSiteNamePlural = '{% if custom_theme.location_site_name_plural %}{{ custom_theme.location_site_name_plural }}{% else %}Sites{% endif %}';
         const bingMapKey = '{{ BING_MAP_KEY }}';
+        const mapMinZoom =  {{ preferences.SiteSetting.map_min_zoom }};
         let siteDetailsData = null;
     </script>
 

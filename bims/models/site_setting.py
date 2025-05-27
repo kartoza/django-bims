@@ -369,6 +369,11 @@ class SiteSetting(Preferences):
         null=True,
     )
 
+    map_min_zoom = models.IntegerField(
+        default=5,
+        help_text="Minimum zoom level allowed for the map. Lower values show a wider area."
+    )
+
     @property
     def project_name(self):
         if self.default_data_source:
