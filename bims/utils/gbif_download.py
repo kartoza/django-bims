@@ -83,6 +83,7 @@ def submit_download(
         "predicate": predicate,
     }
     log(f"POST {GBIF_REQUEST_URL}")
+    log(description)
     r = requests.post(GBIF_REQUEST_URL, auth=(gbif_user, gbif_pass), json=payload, timeout=60)
     if r.status_code != 201:
         log(f"Download request failed ({r.status_code}): {r.text}")
