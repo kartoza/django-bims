@@ -73,8 +73,8 @@ class BioCollectionSummary(APIView):
         if search_process.file_path:
             if os.path.exists(search_process.file_path):
                 try:
-                    raw_data = open(search_process.file_path)
-                    return Response(json.load(raw_data))
+                    with open(search_process.file_path) as raw_data:
+                        return Response(json.load(raw_data))
                 except ValueError:
                     pass
 
@@ -178,9 +178,8 @@ class BioCollectionSummary(APIView):
             search_process=search_process,
             finished=True
         )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        with open(file_path) as file_data:
+            try:
+                return Response(json.load(file_data))
+            except ValueError:
+                return Response(response_data)
