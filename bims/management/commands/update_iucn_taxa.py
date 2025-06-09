@@ -1,7 +1,7 @@
 import json
 from django.core.management.base import BaseCommand
 from django.contrib.gis.db import models
-from bims.utils.iucn import get_iucn_status
+from bims.utils.iucn import get_iucn_statusget_iucn_status, get_iucn_status
 from bims.models.taxonomy import Taxonomy
 from bims.models.biological_collection_record import (
     collection_post_save_update_cluster,
