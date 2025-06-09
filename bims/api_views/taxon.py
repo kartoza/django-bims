@@ -30,7 +30,6 @@ from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_verna
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
-from bims.utils.user import get_user
 
 logger = logging.getLogger('bims')
 

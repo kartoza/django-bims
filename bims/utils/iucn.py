@@ -20,7 +20,17 @@ def get_iucn_status(taxon):
     """
     api_iucn_key = preferences.SiteSetting.iucn_api_key
 
-    if not api_iucn_key or not taxon.genus_name or not taxon.species_name:
+    species_name = taxon.species_name
+    taxon_name_list = species_name.split(' ')
+    if not taxon.parent and species_name and len(taxon_name_list) > 1:
+        genus_name = taxon_name_list[0].strip()
+    else:
+        genus_name = taxon.genus_name
+
+    if genus_name and genus_name in species_name:
+        species_name = species_name.replace(genus_name, '', 1).strip()
+
+    if not api_iucn_key or not genus_name or not species_name:
         return None, None, None
 
     url = "https://api.iucnredlist.org/api/v4/taxa/scientific_name"
@@ -28,12 +38,6 @@ def get_iucn_status(taxon):
         'accept': 'application/json',
         'Authorization': api_iucn_key
     }
-
-    species_name = taxon.species_name
-    genus_name = taxon.genus_name
-
-    if genus_name in species_name:
-        species_name = species_name.replace(genus_name, '', 1).strip()
 
     params = {
         'genus_name': genus_name,
