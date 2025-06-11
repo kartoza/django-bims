@@ -596,75 +596,83 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 $('#map-legend').prepend(html);
             }
         },
-        renderVectorTileLegend: function (id, name, vectorTileLayer, visibleDefault, styles) {
-            if (typeof name === 'undefined') {
-                name = id;
-            }
+        renderVectorTileLegend: function (
+            id,
+            name = id,
+            vectorTileLayer = undefined,
+            visible = true,
+            styles = []
+        ) {
+            const $legendHost   = $('#map-legend');
+            const legendRowSel  = `.legend-row[data-name="${id}"]`;
 
-            let legendHTML = '<div data-name="' + id + '" class="legend-row"';
-            if (!visibleDefault) {
-                legendHTML += ' style="display: none;"';
-            }
-
-            let content = '<b>' + name + '</b><br>';
-
-            function extractValuesFromFilter(filter) {
-                let values = [];
-                if (Array.isArray(filter)) {
-                    // Check if the filter uses "any" or "all"
-                    if (filter[0] === 'any' || filter[0] === 'all') {
-                        filter.slice(1).forEach((item) => {
-                            if (Array.isArray(item)) {
-                                if (item[0] === '==' && item.length === 3) {
-                                    values.push(item[2]);
-                                } else if ((item[0] === 'in' || item[0] === '!in') && item.length >= 3) {
-                                    values = values.concat(item.slice(2));
-                                }
-                            }
-                        });
-                    } else if (filter[0] === '==' && filter.length === 3) {
-                        values.push(filter[2]);
-                    } else if ((filter[0] === 'in' || filter[0] === '!in') && filter.length >= 3) {
-                        values = values.concat(filter.slice(2));
-                    }
+            function getFilteredValues(filter) {
+                if (!Array.isArray(filter)) return [];
+                const [op, ...rest] = filter;
+                const parseItem = item => getFilteredValues(item);
+                switch (op) {
+                    case 'any':
+                    case 'all':  return rest.flatMap(parseItem);
+                    case '==':   return (rest[0] === '$type') ? [] : [rest[1]];
+                    case 'in':
+                    case '!in':  return (rest[0] === '$type') ? [] : rest.slice(1);
+                    default:     return [];
                 }
-                return values;
             }
-            if (Array.isArray(styles)) {
-                styles.forEach((rule) => {
-                    if (rule.paint) {
-                        const fillColor = rule.paint['fill-color'] || 'transparent';
-                        const strokeColor = rule.paint['fill-outline-color'] || 'transparent';
-                        const lineColor = rule.paint['line-color'] || 'transparent';
-                        const lineWidth = rule.paint['line-width'] || 1;
 
-                        const values = extractValuesFromFilter(rule.filter);
+            function makeSwatch(fillColor, strokeColor = 'transparent') {
+                const div = document.createElement('div');
+                div.className = 'legend-swatch';
+                div.style.cssText = `
+                    width: 16px;
+                    height: 16px;
+                    margin-right: 6px;
+                    background-color: ${fillColor};
+                    border: 1px solid ${strokeColor};
+                    flex-shrink: 0;
+                `;
+                return div;
+            }
 
-                        if (values.length === 0) {
-                            return; // Skip to the next iteration
-                        }
+            const fragment = document.createDocumentFragment();
+            const title    = document.createElement('strong');
+            title.textContent = name;
+            fragment.appendChild(title);
+            fragment.appendChild(document.createElement('br'));
 
-                        values.forEach((value) => {
-                            if (fillColor !== 'transparent') {
-                                content += '<div style="display: inline-block; width: 20px; height: 20px; background-color:' + fillColor + '; border: 1px solid ' + strokeColor + '; margin-right: 5px;"></div>';
-                            } else if (lineColor !== 'transparent') {
-                                content += '<div style="display: inline-block; width: 20px; height: 20px; border-bottom: ' + (lineWidth * 2) + 'px solid ' + lineColor + '; margin-right: 5px;"></div>';
-                            }
-                            content += value + '<br>';
-                        });
-                    }
+             if (Array.isArray(styles) && styles.length > 0) {
+                styles.forEach(rule => {
+                    const paint = rule.paint || {};
+                    const fillColor = paint['fill-color'] ?? 'transparent';
+                    const strokeColor = paint['fill-outline-color'] ?? 'transparent';
+
+                    const values = getFilteredValues(rule.filter);
+                    if (values.length === 0 || fillColor === 'transparent') return;
+
+                    values.forEach(value => {
+                        const item = document.createElement('div');
+                        item.className = 'legend-item';
+
+                        const swatch = makeSwatch(fillColor, strokeColor);
+                        const label = document.createTextNode(value);
+
+                        item.appendChild(swatch);
+                        item.appendChild(label);
+                        fragment.appendChild(item);
+                    });
                 });
             } else {
-                content += '<div>No styles available</div>';
+                fragment.append('No styles available');
             }
 
-            let existingLegend = this.getLegendElement(id);
-            if (existingLegend.length > 0) {
-                existingLegend.html(content);
+            let $row = $(legendRowSel);
+            if ($row.length === 0) {
+                $row = $('<div>', {class: 'legend-row', 'data-name': id}).appendTo($legendHost);
             } else {
-                legendHTML += '>' + content + '</div>';
-                $('#map-legend').prepend(legendHTML);
+                $row.empty();
             }
+            $row.css('display', visible ? '' : 'none');
+            $row.append(fragment);
         },
         renderLayersSelector: function (key, name, title, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {

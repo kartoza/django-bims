@@ -528,7 +528,12 @@ define([
             this.$mapLegendWrapper.addClass('show-legend');
             $mapLegendSymbol.hide();
             $mapLegend.show();
-            this.$mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
+
+            this.$mapLegendWrapper.css({'overflow-x': 'auto', 'overflow-y': 'auto'});
+            this.$mapLegendWrapper.attr(
+                'data-original-title',
+                'Click to hide legends <br/>Drag to move legends'
+            ).tooltip('hide');
 
             if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
