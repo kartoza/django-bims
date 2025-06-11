@@ -643,8 +643,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
              if (Array.isArray(styles) && styles.length > 0) {
                 styles.forEach(rule => {
                     const paint = rule.paint || {};
-                    const fillColor = paint['fill-color'] ?? 'transparent';
-                    const strokeColor = paint['fill-outline-color'] ?? 'transparent';
+                    const fillColor = paint['fill-color'] || 'transparent';
+                    const strokeColor = paint['fill-outline-color'] || 'transparent';
 
                     const values = getFilteredValues(rule.filter);
                     if (values.length === 0 || fillColor === 'transparent') return;
