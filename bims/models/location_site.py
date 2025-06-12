@@ -4,12 +4,9 @@
 """
 
 import logging
-from abc import ABC
 
 import requests
 import json
-
-from django.contrib.sites.models import Site
 
 from bims.tasks.location_site import update_location_context
 from bims.models.validation import AbstractValidation
@@ -34,6 +31,9 @@ from cloud_native_gis.models import Layer
 from cloud_native_gis.utils.geometry import query_features
 
 LOGGER = logging.getLogger(__name__)
+
+ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+BASE = len(ALPHABET)
 
 
 class LocationSite(AbstractValidation):
@@ -609,6 +609,42 @@ def location_site_post_save_handler(sender, instance, **kwargs):
 
     async_result = update_location_site_context(location_site_id=instance.id)
 
+def int_to_base36(n: int, width: int = 6) -> str:
+    if n < 0:
+        raise ValueError("n must be non-negative")
+    # special-case zero
+    if n == 0:
+        return "0".zfill(width)
+    out = []
+    while n:
+        n, rem = divmod(n, BASE)
+        out.append(ALPHABET[rem])
+    return "".join(reversed(out)).zfill(width)
+
+def next_site_code(project_name: str, site_prefix: str, width: int = 6) -> str:
+    """
+    Generate the next unique site code for the given prefix.
+    Uses decimal for every prefix except 'fbis_africa', which is base-36.
+    """
+    serial = (
+        LocationSite.objects
+        .filter(site_code__startswith=site_prefix)
+        .count()
+    ) + 1
+
+    while True:
+        if project_name == "fbis_africa":
+            counter = int_to_base36(serial, width)
+        else:
+            counter = str(serial).zfill(width)
+
+        candidate = f"{site_prefix}{counter}"
+
+        if not LocationSite.objects.filter(site_code=candidate).exists():
+            return candidate
+
+        serial += 1
+
 def generate_site_code(
         location_site=None,
         lat=None,
@@ -623,11 +659,11 @@ def generate_site_code(
         rbis_catchment_generator,
         wetland_catchment,
         open_waterbody_catchment,
-        generate_sanparks_site_code
+        generate_sanparks_site_code,
+        generate_fbis_africa_site_code
     )
     from preferences import preferences
     site_code = ''
-    catchment_site_code = ''
     catchments_data = {}
     project_name = preferences.SiteSetting.project_name
     if project_name == 'fbis':
@@ -637,62 +673,48 @@ def generate_site_code(
                 location_site.additional_data and
                 'wetlid' in location_site.additional_data
             ) else {}
-            catchment_site_code = wetland_catchment(lat, lon, wetland_data, wetland_name)
+            site_code = wetland_catchment(lat, lon, wetland_data, wetland_name)
         elif ecosystem_type.lower() == 'open waterbody':
-            catchment_site_code = open_waterbody_catchment(
+            site_code = open_waterbody_catchment(
                 lat, lon, river_name
             )
         else:
-            catchment_site_code, catchments_data = fbis_catchment_generator(
+            site_code, catchments_data = fbis_catchment_generator(
                 location_site=location_site,
                 lat=lat,
                 lon=lon,
                 river_name=river_name
             )
     elif project_name == 'rbis':
-        catchment_site_code, catchments_data = rbis_catchment_generator(
+        site_code, catchments_data = rbis_catchment_generator(
             location_site=location_site,
             lat=lat,
             lon=lon
         )
     elif project_name == 'sanparks':
-        catchment_site_code = generate_sanparks_site_code(
+        site_code = generate_sanparks_site_code(
             location_site=location_site,
+        )
+    elif project_name == 'fbis_africa':
+        site_code = generate_fbis_africa_site_code(
+            location_site=location_site
         )
     else:
         site_name = kwargs.get('site_name', '')
         site_description = kwargs.get('site_desc', '')
         site_name_length = 2
         if project_name in ['bims'] and (site_name or site_description):
-            catchment_site_code = site_name[:site_name_length].upper()
+            site_code = site_name[:site_name_length].upper()
             if project_name == 'bims':
-                catchment_site_code += site_description[:2].upper()
+                site_code += site_description[:2].upper()
         elif location_site:
-            catchment_site_code += location_site.name[:site_name_length].upper()
-            catchment_site_code += location_site.site_description[:4].upper()
-
-    site_code += catchment_site_code
+            site_code += location_site.name[:site_name_length].upper()
+            site_code += location_site.site_description[:4].upper()
 
     # Add hyphen
     site_code += '-'
 
-    # Add five letters describing location e.g. 00001
-    existed_location_sites = LocationSite.objects.filter(
-        site_code__startswith=site_code
-    )
-    if location_site:
-        existed_location_sites = existed_location_sites.exclude(
-            id=location_site.id)
-
-    site_code_number = len(existed_location_sites) + 1
-    site_code_string = str(site_code_number).zfill(5)
-    site_code_full = site_code
-    site_code_full += site_code_string
-
-    while LocationSite.objects.filter(site_code=site_code_full).exists():
-        site_code_number += 1
-        site_code_string = str(site_code_number).zfill(5)
-        site_code_full = site_code
-        site_code_full += site_code_string
+    site_code_full = next_site_code(
+        project_name=project_name, site_prefix=site_code)
 
     return site_code_full, catchments_data

@@ -7,6 +7,7 @@ class SiteSetting(Preferences):
     SITE_CODE_GENERATOR_CHOICES = (
         ('bims', 'BIMS (2 Site Name + 2 Site Description + Site count)'),
         ('fbis', 'FBIS (2 Secondary catchment + 4 River + Site count)'),
+        ('fbis_africa', 'FBIS Africa (3 × ISO Country Code + base-36 Site count)'),
         (
             'rbis',
             'RBIS (Catchment + Province ID + District ID + Site count)'
