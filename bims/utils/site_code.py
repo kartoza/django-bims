@@ -77,6 +77,32 @@ def _get_catchments_data(
     return catchments, catchments_data
 
 
+def generate_fbis_africa_site_code(location_site: LocationSite):
+    countries = LocationContextGroup.objects.filter(
+        name__iexact='Political boundaries').first()
+    context_key = 'ISO'
+    iso_name = ''
+
+    if countries:
+        layer = Layer.objects.filter(unique_id=countries.key).first()
+        if layer:
+            feature_data = query_features(
+                table_name=layer.query_table_name,
+                field_names=[context_key],
+                coordinates=[(location_site.longitude, location_site.latitude)],
+                tolerance=0
+            )
+            results = feature_data.get('result', [])
+            if results and 'feature' in results[0] and context_key in results[0]['feature']:
+                iso_name = results[0]['feature'][context_key]
+
+    if not iso_name:
+        cleaned_name = re.sub('[^A-Za-z]', '', location_site.name)
+        iso_name = cleaned_name[:3]
+
+    return iso_name.upper()
+
+
 def generate_sanparks_site_code(location_site: LocationSite):
     """
     Generates a SANParks site code for a given location site.
