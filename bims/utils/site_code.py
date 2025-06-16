@@ -77,33 +77,31 @@ def _get_catchments_data(
     return catchments, catchments_data
 
 
-def generate_fbis_africa_site_code(location_site: LocationSite):
-    countries = LocationContextGroup.objects.filter(
+def generate_fbis_africa_site_code(latitude: float, longitude: float, site_name: str):
+    countries = Layer.objects.filter(
         name__iexact='Political boundaries').first()
     context_key = 'ISO'
     iso_name = ''
 
     if countries:
-        layer = Layer.objects.filter(unique_id=countries.key).first()
-        if layer:
-            feature_data = query_features(
-                table_name=layer.query_table_name,
-                field_names=[context_key],
-                coordinates=[(location_site.longitude, location_site.latitude)],
-                tolerance=0
-            )
-            results = feature_data.get('result', [])
-            if results and 'feature' in results[0] and context_key in results[0]['feature']:
-                iso_name = results[0]['feature'][context_key]
+        feature_data = query_features(
+            table_name=countries.query_table_name,
+            field_names=[context_key],
+            coordinates=[(longitude, latitude)],
+            tolerance=0
+        )
+        results = feature_data.get('result', [])
+        if results and 'feature' in results[0] and context_key in results[0]['feature']:
+            iso_name = results[0]['feature'][context_key]
 
     if not iso_name:
-        cleaned_name = re.sub('[^A-Za-z]', '', location_site.name)
+        cleaned_name = re.sub('[^A-Za-z]', '', site_name)
         iso_name = cleaned_name[:3]
 
     return iso_name.upper()
 
 
-def generate_sanparks_site_code(location_site: LocationSite):
+def generate_sanparks_site_code(lat: float, lon: float, site_name: str = ''):
     """
     Generates a SANParks site code for a given location site.
 
@@ -112,12 +110,8 @@ def generate_sanparks_site_code(location_site: LocationSite):
     2. If not found, falls back to the first three alphabetical characters of the
        location site's name (ignoring digits, spaces, and special characters).
 
-    :param location_site: An object with `latitude`, `longitude`, and `name` attributes.
-
     :return: SANParks site code
     """
-    lat = location_site.latitude
-    lon = location_site.longitude
     park_name = ''
     park_group = LocationContextGroup.objects.filter(
         name__iexact=SANPARK_PARK_KEY).first()
@@ -138,7 +132,7 @@ def generate_sanparks_site_code(location_site: LocationSite):
                 print(f"Found park name from GIS query: {park_name}")
 
     if not park_name:
-        park_name = location_site.name
+        park_name = site_name
         print(f"No park boundary found. Fallback: {park_name if park_name else 'N/A'}")
 
     cleaned_name = re.sub('[^A-Za-z]', '', park_name)

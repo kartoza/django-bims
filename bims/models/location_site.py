@@ -666,6 +666,13 @@ def generate_site_code(
     site_code = ''
     catchments_data = {}
     project_name = preferences.SiteSetting.project_name
+
+    site_name = kwargs.get('site_name', '')
+    if not site_name or site_name == 'undefined':
+        site_name = kwargs.get('site_desc', '')
+    if site_name == 'undefined':
+        site_name = ''
+
     if project_name == 'fbis':
         if ecosystem_type.lower() == 'wetland':
             wetland_data = location_site.additional_data if (
@@ -693,11 +700,15 @@ def generate_site_code(
         )
     elif project_name == 'sanparks':
         site_code = generate_sanparks_site_code(
-            location_site=location_site,
+            lat=float(lat),
+            lon=float(lon),
+            site_name=site_name
         )
     elif project_name == 'fbis_africa':
         site_code = generate_fbis_africa_site_code(
-            location_site=location_site
+            latitude=float(lat),
+            longitude=float(lon),
+            site_name=site_name
         )
     else:
         site_name = kwargs.get('site_name', '')

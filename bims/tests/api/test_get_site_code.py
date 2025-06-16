@@ -100,6 +100,8 @@ class TestGetSiteCode(FastTenantTestCase):
 
         site_code, catchment_data = generate_site_code(
             location_site=location_site,
+            lat=location_site.latitude,
+            lon=location_site.longitude
         )
         self.assertTrue(
             'KRU' in site_code
