@@ -124,10 +124,18 @@ def create_or_update_taxonomy(
         species_key = gbif_data['nubKey']
     except KeyError:
         species_key = gbif_data['key']
-    try:
-        rank = TaxonomicRank[gbif_data['rank']].name
-    except KeyError:
-        logger.error('No RANK')
+
+    raw_rank = gbif_data.get('rank', '').upper()
+
+    if raw_rank == "UNRANKED":
+        logger.debug("Skipping UNRANKED record – GBIF key %s", gbif_data.get("key"))
+        return None
+
+    rank_enum = TaxonomicRank.__members__.get(raw_rank)
+    rank = rank_enum.name if rank_enum else raw_rank
+
+    if not raw_rank:
+        logger.error("GBIF record has no 'rank' field: %s", gbif_data)
         return None
     if 'scientificName' not in gbif_data:
         logger.error('No scientificName')

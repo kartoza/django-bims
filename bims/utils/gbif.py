@@ -131,68 +131,78 @@ def find_species(
             results = response['results']
             if returns_all:
                 return results
-            for result in results:
+
+            for result in response.get('results', []):
                 if classifier:
                     classifier_found = True
                     for key, value in classifier.items():
                         if value:
                             classifier_found = False
-                            if key == 'class_name':
-                                key = 'class'
-                            if key not in result:
-                                continue
-                            if value.lower() == result[key].lower():
+                            key_db = 'class' if key == 'class_name' else key
+                            if key_db in result and value.lower() == result[key_db].lower():
                                 classifier_found = True
                     if not classifier_found:
                         continue
-                rank = result.get('rank', '')
-                if rank.lower() in RANK_KEYS:
-                    rank_key = rank.lower() + 'Key'
-                else:
-                    rank_key = 'key'
-                key_found = (
-                        'nubKey' in result or rank_key in result)
-                if key_found and 'taxonomicStatus' in result:
-                    taxon_name = ''
-                    if 'canonicalName' in result:
-                        taxon_name = result['canonicalName']
-                    if not taxon_name and rank.lower() in result:
-                        taxon_name = result[rank.lower()]
-                    if not taxon_name and 'scientificName' in result:
-                        taxon_name = result['scientificName']
 
-                    if result['taxonomicStatus'] == 'ACCEPTED':
-                        if accepted_data:
-                            if taxon_name == original_species_name:
-                                if result['key'] < accepted_data['key']:
-                                    accepted_data = result
-                        else:
-                            accepted_data = result
-                    if result['taxonomicStatus'] == 'SYNONYM':
-                        if synonym_data:
-                            if taxon_name == original_species_name:
-                                if result['key'] < synonym_data['key']:
-                                    synonym_data = result
-                        else:
-                            synonym_data = result
-                    else:
-                        if other_data:
-                            if taxon_name == original_species_name:
-                                if result['key'] < other_data['key']:
-                                    other_data = result
-                        else:
-                            other_data = result
-        if accepted_data:
-            return accepted_data
-        if synonym_data:
-            return synonym_data
-        return other_data
+                rank = result.get('rank', '')
+                rank_key = (rank.lower() + 'Key') if rank.lower() in RANK_KEYS else 'key'
+                key_found = ('nubKey' in result or rank_key in result)
+
+                if not key_found or 'taxonomicStatus' not in result:
+                    continue
+
+                status = result['taxonomicStatus']
+                if status == 'ACCEPTED':
+                    accepted_data = _prefer(result, accepted_data, original_species_name)
+                    if accepted_data and 'nubKey' in accepted_data:
+                        break
+
+                elif status == 'SYNONYM':
+                    synonym_data = _prefer(result, synonym_data, original_species_name)
+                    if (accepted_data is None) and synonym_data and 'nubKey' in synonym_data:
+                        break
+                else:
+                    other_data = _prefer(result, other_data, original_species_name)
+                    if (accepted_data is None and synonym_data is None
+                            and other_data and 'nubKey' in other_data):
+                        break
+
+        chosen = accepted_data or synonym_data or other_data
+        if not chosen:
+            return None
+        nub_key = chosen.get('nubKey')
+        if nub_key:
+            canonical = get_species(nub_key)
+            if canonical:
+                return canonical
+        return chosen
     except HTTPError:
         print('Species not found')
     except AttributeError:
         print('error')
 
     return None
+
+
+def _prefer(candidate, current, original_name):
+    """
+    Pick the better of two GBIF lookup results:
+    - Prefer an exact name match.
+    - If both (or neither) match, keep the one with the smaller key.
+    """
+    if current is None:
+        return candidate
+
+    cand_name   = candidate.get('canonicalName') or candidate.get('scientificName', '')
+    curr_name   = current.get('canonicalName')   or current.get('scientificName', '')
+    cand_exact  = cand_name.lower() == original_name.lower()
+    curr_exact  = curr_name.lower() == original_name.lower()
+
+    if cand_exact and not curr_exact:
+        return candidate
+    if cand_exact == curr_exact:
+        return candidate if candidate['key'] < current['key'] else current
+    return current
 
 
 def search_exact_match(species_name):

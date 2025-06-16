@@ -280,13 +280,15 @@ class TaxaProcessor(object):
         :param taxon: Taxonomy object
         :param row: CSV row data
         """
+        if not taxon:
+            return False, 'Missing taxon'
+
         max_try = 15
         current_try = 1
         taxon_rank = taxon.rank.upper()
 
         if taxon_rank not in RANK_INDEX:
-            print(f"Rank '{taxon_rank}' not recognized in the hierarchy.")
-            return
+            return False, f"Rank '{taxon_rank}' not recognized in the hierarchy."
 
         # Start from the current taxon's rank and move up the hierarchy
         rank_index = RANK_INDEX[taxon_rank]
@@ -294,6 +296,9 @@ class TaxaProcessor(object):
         while current_try <= max_try and rank_index > 0:
             parent_rank_name = RANK_HIERARCHY[rank_index - 1]
             current_try += 1
+
+            if not taxon:
+                return False, "Parent not found"
 
             # Try to get the parent name from the CSV data
             csv_parent_name = self.get_row_value(row, RANK_TITLE.get(
@@ -305,58 +310,69 @@ class TaxaProcessor(object):
                 if genus_name and genus_name not in csv_parent_name:
                     csv_parent_name = f"{genus_name} {csv_parent_name}"
 
-            # If there's no CSV data for this rank, move to the next higher rank
+            # ----------------------------------------------------------------
+            # If the row itself gives us nothing for this higher rank
+            #      just climb another step and keep looking.
+            # ----------------------------------------------------------------
             if not csv_parent_name:
                 rank_index -= 1
                 continue
 
-            parent = taxon.parent
+            current_parent = taxon.parent
 
-            # If there's an existing parent, compare names and ranks
-            if parent:
-                db_parent_name = parent.canonical_name.lower()
-                csv_parent_name_lower = csv_parent_name.lower()
-                db_parent_rank = self.rank_name(parent).upper()
-
-                if db_parent_name != csv_parent_name_lower or db_parent_rank != parent_rank_name:
-                    print(f"Different parent detected for '{taxon.canonical_name}':")
-                    print(f"- Current parent: {db_parent_name} ({db_parent_rank})")
-                    print(f"- Expected parent: {csv_parent_name_lower} ({parent_rank_name})")
-                    # Retrieve or create the correct parent taxon
+            # ----------------------------------------------------------------
+            # Parent already exists – verify name/rank.
+            # ----------------------------------------------------------------
+            if current_parent:
+                if (current_parent.canonical_name.lower() != csv_parent_name.lower() or
+                        current_parent.rank.upper() != parent_rank_name):
+                    # Mismatch  →  fetch / create the right parent
                     correct_parent = self.get_parent(
-                        row, current_rank=RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name))
+                        row,
+                        current_rank=RANK_TITLE.get(
+                            parent_rank_name.upper(),
+                            parent_rank_name
+                        )
+                    )
                     if correct_parent:
                         taxon.parent = correct_parent
                         taxon.save()
-                        print(f"Updated parent of '{taxon.canonical_name}' to '{correct_parent.canonical_name}'")
-                        # Move up to the parent taxon
-                        taxon = correct_parent
+                        taxon = correct_parent  # climb one level
                     else:
-                        print(f"Could not find or create parent '{csv_parent_name}' at rank '{parent_rank_name}'")
+                        # Couldn’t resolve parent → abort gracefully
+                        logger.warning(
+                            "Cannot find/create parent '%s' (%s) for '%s'",
+                            csv_parent_name, parent_rank_name, taxon.canonical_name
+                        )
                         break
                 else:
-                    # Parent matches; move up to the parent taxon
-                    taxon = parent
+                    # Parent matches → move up one level
+                    taxon = current_parent
+
+            # ----------------------------------------------------------------
+            # No parent saved yet – try to build one.
+            # ----------------------------------------------------------------
             else:
-                # No parent exists; try to get or create one from CSV data
-                correct_parent = self.get_parent(row, current_rank=parent_rank_name)
+                correct_parent = self.get_parent(row, parent_rank_name)
                 if correct_parent:
                     taxon.parent = correct_parent
                     taxon.save()
-                    print(f"Assigned new parent '{correct_parent.canonical_name}' to '{taxon.canonical_name}'")
-                    # Move up to the parent taxon
-                    taxon = correct_parent
+                    taxon = correct_parent  # climb one level
                 else:
-                    print(f"Could not find or create parent '{csv_parent_name}' at rank '{parent_rank_name}'")
+                    logger.warning(
+                        "Cannot find/create parent '%s' (%s) for '%s'",
+                        csv_parent_name, parent_rank_name, taxon.canonical_name
+                    )
                     break
 
-            # Update parent for the next iteration
-            parent = taxon.parent
-
-            # Move up the hierarchy
+            # prepare for next loop step
             rank_index -= 1
 
-        print('Parent validation complete.')
+        # -------------------------------------------------------------------- #
+        logger.debug("Parent validation finished for '%s'.", taxon.canonical_name
+            if taxon else "unknown taxon")
+
+        return True, ''
 
     def get_taxonomy(self, taxon_name, scientific_name, rank):
         """
@@ -371,30 +387,30 @@ class TaxaProcessor(object):
             rank=rank
         )
         if not taxon_data.exists():
-            parent = fetch_all_species_from_gbif(
+            taxon = fetch_all_species_from_gbif(
                 species=taxon_name,
                 taxonomic_rank=rank,
                 fetch_children=False,
                 fetch_vernacular_names=False
             )
-            if parent:
-                if taxon_name.lower() not in parent.scientific_name.lower():
-                    parent.scientific_name = scientific_name
-                    parent.legacy_canonical_name = taxon_name
-                    parent.canonical_name = taxon_name
-                    parent.gbif_key = None
-                    parent.gbif_data = {}
-                    parent.save()
+            if taxon:
+                if taxon_name.lower() not in taxon.scientific_name.lower():
+                    taxon.scientific_name = scientific_name
+                    taxon.legacy_canonical_name = taxon_name
+                    taxon.canonical_name = taxon_name
+                    taxon.gbif_key = None
+                    taxon.gbif_data = {}
+                    taxon.save()
             else:
-                parent, _ = Taxonomy.objects.get_or_create(
+                taxon, _ = Taxonomy.objects.get_or_create(
                     canonical_name=taxon_name,
                     scientific_name=scientific_name,
                     legacy_canonical_name=taxon_name,
                     rank=rank.upper()
                 )
         else:
-            parent = taxon_data[0]
-        return parent
+            taxon = taxon_data.first()
+        return taxon
 
     def get_parent(self, row, current_rank=GENUS):
         # Retrieve the taxon name based on the current rank from the row data
@@ -684,10 +700,17 @@ class TaxaProcessor(object):
                     legacy_canonical_name[:700]
                 )
                 # -- Validate parents
-                self.validate_parents(
+                validated, message = self.validate_parents(
                     taxon=taxonomy,
                     row=row
                 )
+
+                if not validated:
+                    self.handle_error(
+                        row=row,
+                        message=message
+                    )
+                    return
 
                 # -- Endemism
                 endemism = self.endemism(row)
