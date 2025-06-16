@@ -605,19 +605,37 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         ) {
             const $legendHost   = $('#map-legend');
             const legendRowSel  = `.legend-row[data-name="${id}"]`;
+            let attributeField = '';
 
             function getFilteredValues(filter) {
-                if (!Array.isArray(filter)) return [];
-                const [op, ...rest] = filter;
-                const parseItem = item => getFilteredValues(item);
-                switch (op) {
-                    case 'any':
-                    case 'all':  return rest.flatMap(parseItem);
-                    case '==':   return (rest[0] === '$type') ? [] : [rest[1]];
-                    case 'in':
-                    case '!in':  return (rest[0] === '$type') ? [] : rest.slice(1);
-                    default:     return [];
+                var result = { field: null, values: [] };
+
+                function walk(expr) {
+                    if (!Array.isArray(expr)) { return; }
+
+                    var op   = expr[0];
+                    var rest = expr.slice(1);
+
+                    if (op === 'all' || op === 'any') {
+                        for (var i = 0; i < rest.length; i++) { walk(rest[i]); }
+                    }
+                    else if (op === '==' || op === 'in' || op === '!in') {
+                        var field = rest[0];
+
+                        if (field === '$type') { return; }
+
+                        if (!result.field) { result.field = field; }
+
+                        if (op === '==') {
+                            result.values.push(rest[1]);
+                        } else {
+                            result.values = result.values.concat(rest.slice(1));
+                        }
+                    }
                 }
+
+                walk(filter);
+                return result;
             }
 
             function makeSwatch(fillColor, strokeColor = 'transparent') {
@@ -639,19 +657,21 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             title.textContent = name;
             fragment.appendChild(title);
             fragment.appendChild(document.createElement('br'));
-
              if (Array.isArray(styles) && styles.length > 0) {
                 styles.forEach(rule => {
                     const paint = rule.paint || {};
                     const fillColor = paint['fill-color'] || 'transparent';
                     const strokeColor = paint['fill-outline-color'] || 'transparent';
 
-                    const values = getFilteredValues(rule.filter);
-                    if (values.length === 0 || fillColor === 'transparent') return;
+                    var info = getFilteredValues(rule.filter);
+                    attributeField = info.field;
 
-                    values.forEach(value => {
+                    if (info.values.length === 0 || fillColor === 'transparent') return;
+
+                    info.values.forEach(value => {
                         const item = document.createElement('div');
                         item.className = 'legend-item';
+                        item.dataset.value = value;
 
                         const swatch = makeSwatch(fillColor, strokeColor);
                         const label = document.createTextNode(value);
@@ -673,6 +693,50 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             $row.css('display', visible ? '' : 'none');
             $row.append(fragment);
+            const that = this;
+
+            if (attributeField) {
+                $row.on('mouseenter', '.legend-item', function () {
+                    var hoveredValue = $(this).data('value');
+
+                    if (!vectorTileLayer.get('origStyle')) {
+                        vectorTileLayer.set('origStyle', vectorTileLayer.getStyle() || null);
+                    }
+                    var origStyle = vectorTileLayer.get('origStyle');
+
+                    var highlightStyle = function (feature, resolution) {
+                        var styles = (typeof origStyle === 'function')
+                            ? origStyle.call(this, feature, resolution)
+                            : origStyle;
+
+                        styles = (Array.isArray(styles)) ? styles : [styles];
+                        var isMatch     = (feature.get(attributeField) === hoveredValue);
+                        for (var i = 0; i < styles.length; i++) {
+                            var sty = styles[i];
+                            var stroke = sty.getStroke();
+                            if (!stroke) {
+                                stroke = new ol.style.Stroke({color: '#ffffff', width: 1});
+                                sty.setStroke(stroke);
+                            }
+                            if (isMatch) {
+                                stroke.setColor('#ffff00');
+                                stroke.setWidth(3);
+                            }
+                        }
+                        return styles;
+                    };
+                    vectorTileLayer.setStyle(highlightStyle);
+                    that.moveLayerToTop(vectorTileLayer);
+                    that.map.getTargetElement().style.cursor = 'pointer';
+                });
+
+                $row.on('mouseleave', '.legend-item', function () {
+                    if (vectorTileLayer.get('origStyle')) {
+                        vectorTileLayer.setStyle(vectorTileLayer.get('origStyle'));
+                    }
+                    that.map.getTargetElement().style.cursor = '';
+                });
+            }
         },
         renderLayersSelector: function (key, name, title, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
