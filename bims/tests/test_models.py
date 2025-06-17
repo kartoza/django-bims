@@ -2,10 +2,11 @@
 """Tests for models."""
 from unittest.mock import patch
 
-from django.test import TestCase
 from django.contrib.gis.geos import LineString
 from django.core.exceptions import ValidationError
 from django.db.models import signals
+
+from django_tenants.test.cases import FastTenantTestCase
 
 from bims.models import GeocontextSetting
 from bims.tests.model_factories import (
@@ -69,7 +70,7 @@ def mocked_requests_get(*args, **kwargs):
     return MockResponse(None, 404, 'Not found for %s' % args[0])
 
 
-class TestLocationTypeCRUD(TestCase):
+class TestLocationTypeCRUD(FastTenantTestCase):
     """
     Tests location type.
     """
@@ -133,7 +134,7 @@ class TestLocationTypeCRUD(TestCase):
         self.assertTrue(model.pk is None)
 
 
-class TestLocationSiteCRUD(TestCase):
+class TestLocationSiteCRUD(FastTenantTestCase):
     """
     Tests location site.
     """
@@ -249,7 +250,7 @@ class TestLocationSiteCRUD(TestCase):
             self.assertEqual(location_site.__dict__.get(key), val)
 
 
-class TestIUCNStatusCRUD(TestCase):
+class TestIUCNStatusCRUD(FastTenantTestCase):
     """
        Tests iucn status.
     """
@@ -318,7 +319,7 @@ class TestIUCNStatusCRUD(TestCase):
         self.assertIn(iucn_status_pre_save_handler, registered_signal)
 
 
-class TestTaxonCRUD(TestCase):
+class TestTaxonCRUD(FastTenantTestCase):
     """
     Tests taxon.
     """
@@ -397,7 +398,7 @@ class TestTaxonCRUD(TestCase):
         self.assertTrue(model.pk is None)
 
 
-class TestSurveyCRUD(TestCase):
+class TestSurveyCRUD(FastTenantTestCase):
     """
     Tests survey.
     """
@@ -467,7 +468,7 @@ class TestSurveyCRUD(TestCase):
         self.assertTrue(model.pk is None)
 
 
-class TestEndemismCRUD(TestCase):
+class TestEndemismCRUD(FastTenantTestCase):
     """
     Tests endemism model.
     """
@@ -525,7 +526,7 @@ class TestEndemismCRUD(TestCase):
         self.assertTrue(model.pk is None)
 
 
-class TestFbisUUID(TestCase):
+class TestFbisUUID(FastTenantTestCase):
     """
     Tests FbisUUID model.
     """
