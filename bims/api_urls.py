@@ -21,7 +21,7 @@ from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
-    LocationSitesCoordinate, GbifIdsDownloader
+    LocationSitesCoordinate, GbifIdsDownloader, DeleteDanglingLocationSites
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
@@ -415,4 +415,7 @@ urlpatterns = [
     path('clear-cache/',
          ClearCacheView.as_view(),
          name='clear_cache_view'),
+    path('delete-dangling-sites/',
+         DeleteDanglingLocationSites.as_view(),
+         name='delete_dangling_sites'),
 ]

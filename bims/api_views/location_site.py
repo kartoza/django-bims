@@ -14,9 +14,11 @@ from django.contrib.gis.geos import Polygon
 from django.db.models import Q
 from django.http import Http404
 from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_403_FORBIDDEN
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 
+from bims.api_views.merge_sites import IsSuperUser
 from bims.models.download_request import DownloadRequest
 from bims.models.location_site import LocationSite
 from bims.serializers.location_site_serializer import (
@@ -26,6 +28,7 @@ from bims.serializers.location_site_serializer import (
 from bims.serializers.location_site_detail_serializer import \
     LocationSiteDetailSerializer
 from bims.api_views.collection import GetCollectionAbstract
+from bims.tasks import remove_dangling_sites
 from bims.utils.search_process import (
     get_or_create_search_process,
 )
@@ -329,3 +332,18 @@ class GbifIdsDownloader(APIView):
             'status': 'processing',
             'filename': filename
         })
+
+
+class DeleteDanglingLocationSites(APIView):
+
+    permission_classes = (IsSuperUser,)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            remove_dangling_sites.delay()
+            return Response(
+                {"message": "Deleting dangling sites in the background."},
+                status=HTTP_200_OK)
+        return Response(
+            {"error": "Permission denied."},
+            status=HTTP_403_FORBIDDEN)
