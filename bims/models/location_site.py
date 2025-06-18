@@ -666,6 +666,7 @@ def generate_site_code(
     site_code = ''
     catchments_data = {}
     project_name = preferences.SiteSetting.project_name
+    site_count_width = 5
 
     site_name = kwargs.get('site_name', '')
     if not site_name or site_name == 'undefined':
@@ -705,6 +706,7 @@ def generate_site_code(
             site_name=site_name
         )
     elif project_name == 'fbis_africa':
+        site_count_width = 6
         site_code = generate_fbis_africa_site_code(
             latitude=float(lat),
             longitude=float(lon),
@@ -726,6 +728,6 @@ def generate_site_code(
     site_code += '-'
 
     site_code_full = next_site_code(
-        project_name=project_name, site_prefix=site_code)
+        project_name=project_name, site_prefix=site_code, width=site_count_width)
 
     return site_code_full, catchments_data
