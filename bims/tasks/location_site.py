@@ -1,7 +1,7 @@
 # coding=utf-8
 import logging
 
-from django.db.models import signals
+from django.db.models import signals, OuterRef, Exists
 
 from celery import shared_task
 
@@ -160,3 +160,32 @@ def update_site_code(location_site_ids):
             lon=location_site.longitude
         )
         location_site.save()
+
+
+@shared_task(name='bims.tasks.remove_dangling_sites', queue='geocontext')
+def remove_dangling_sites():
+    from bims.models.location_site import LocationSite
+    from bims.models.location_context import LocationContext
+
+    qs = LocationSite.objects.all()
+
+    for rel in LocationSite._meta.get_fields():
+        if not (rel.auto_created and not rel.concrete):
+            continue  # skip normal fields
+
+        # ── skip LocationContext completely
+        if rel.related_model is LocationContext:
+            continue
+
+        related_model = rel.related_model
+        link_field = (
+            rel.field.name
+            if hasattr(rel, "field") and rel.field
+            else rel.field.m2m_field_name()
+        )
+        sub = related_model.objects.filter(**{link_field: OuterRef("pk")})
+        qs = qs.filter(~Exists(sub))
+
+    total = qs.count()
+    deleted, _ = qs.delete()
+    log(f"Deleted {deleted}/{total} dangling LocationSite rows.")
