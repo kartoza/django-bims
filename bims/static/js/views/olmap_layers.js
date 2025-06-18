@@ -606,6 +606,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             const $legendHost   = $('#map-legend');
             const legendRowSel  = `.legend-row[data-name="${id}"]`;
             let attributeField = '';
+            console.log(styles);
 
             function getFilteredValues(filter) {
                 var result = { field: null, values: [] };
@@ -663,11 +664,33 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     const fillColor = paint['fill-color'] || 'transparent';
                     const strokeColor = paint['fill-outline-color'] || 'transparent';
 
-                    var info = getFilteredValues(rule.filter);
+                    const info = getFilteredValues(rule.filter);
                     attributeField = info.field;
+                    if ((!info.field || info.values.length === 0) &&
+                        fillColor !== 'transparent') {
+                        const geomType = (function unpack(expr) {
+                            if (!Array.isArray(expr)) { return null; }
+                            if (expr[0] === '==' && expr[1] === '$type') {
+                                return expr[2];
+                            }
+                            for (let i = 1; i < expr.length; i++) {
+                                const t = unpack(expr[i]);
+                                if (t) { return t; }
+                            }
+                            return null;
+                        })(rule.filter) || 'Geometry';
 
-                    if (info.values.length === 0 || fillColor === 'transparent') return;
-
+                        const item = document.createElement('div');
+                        item.className = 'legend-item';
+                        const swatch = makeSwatch(fillColor, strokeColor);
+                        item.appendChild(swatch);
+                        item.appendChild(document.createTextNode(geomType));
+                        fragment.appendChild(item);
+                        return;
+                    }
+                    if (info.values.length === 0 || fillColor === 'transparent') {
+                        return;
+                    }
                     info.values.forEach(value => {
                         const item = document.createElement('div');
                         item.className = 'legend-item';
