@@ -1183,6 +1183,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'scientific_name',
         'canonical_name',
         'legacy_canonical_name',
+        'gbif_key',
     )
 
     raw_id_fields = (

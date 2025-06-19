@@ -27,7 +27,7 @@ from bims.models import (
     HarvestSession,
     SourceReferenceDatabase,
     Boundary,
-    Dataset
+    Dataset, Taxonomy
 )
 from bims.models.source_reference import DatabaseRecord
 from bims.models.location_site import generate_site_code
@@ -51,6 +51,7 @@ VERBATIM_LOCALITY_KEY = 'verbatimLocality'
 LOCALITY_KEY = 'locality'
 SPECIES_KEY = 'species'
 DATASET_KEY = 'datasetKey'
+TAXON_KEY = 'taxonKey'
 MODIFIED_DATE_KEY = 'modified'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 MISSING_KEY_ERROR = 'Missing taxon GBIF key'
@@ -168,7 +169,6 @@ def process_gbif_row(
     source_reference,
     source_collection,
     harvest_session,
-    taxonomy,
     taxon_group,
     log,
     habitat = None,
@@ -181,7 +181,6 @@ def process_gbif_row(
     :param source_reference: GBIF occurrence source reference
     :param source_collection: GBIF occurrence source collection
     :param harvest_session: GBIF occurrence harvest session
-    :param taxonomy: GBIF occurrence taxonomy
     :param taxon_group: GBIF occurrence taxon group
     :param log: Callable accepting a single ``str`` for streaming progress
     :param harvest_session: Current `HarvestSession` or *None* when called ad‑hoc
@@ -229,6 +228,16 @@ def process_gbif_row(
     reference = row.get(REFERENCE_KEY, '')
     species = row.get(SPECIES_KEY, None)
     dataset_key = row.get(DATASET_KEY, None)
+    taxon_key = row.get(TAXON_KEY, None)
+
+    taxonomy = None
+
+    if taxon_key:
+        taxonomy = Taxonomy.objects.filter(gbif_key=taxon_key).first()
+
+    if not taxonomy:
+        log(f"Missing taxonomy")
+        return None, False
 
     # Attempt to parse event_date -> collection_date
     collection_date = None
@@ -386,7 +395,6 @@ def process_gbif_response(
     zip_path: Path,
     session_id: Optional[int],
     taxon_group: str,
-    taxonomy,
     habitat: Optional[str] = None,
     origin: Optional[str] = None,
     log_file: Optional[str] = None,
@@ -398,7 +406,6 @@ def process_gbif_response(
     :param zip_path: Filesystem path to the ``.zip`` file returned by the GBIF export
     :param session_id: Primary‑key of the active HarvestSession
     :param taxon_group: Context/metadata passed straight through to process_gbif_row
-    :param taxonomy: Context/metadata passed straight through to process_gbif_row
     :param habitat: Context/metadata passed straight through to process_gbif_row
     :param origin: Context/metadata passed straight through to process_gbif_row
     :param log_file: Optional path to a file where human‑readable progress messages
@@ -451,7 +458,6 @@ def process_gbif_response(
                         source_reference=source_reference,
                         source_collection=source_collection,
                         harvest_session=harvest_session,
-                        taxonomy=taxonomy,
                         taxon_group=taxon_group,
                         log=_log,
                         habitat=habitat,
@@ -480,22 +486,19 @@ def process_gbif_response(
 
 
 def import_gbif_occurrences(
-        taxonomy,
+        taxonomy_ids=[],
         offset=0,
         habitat=None,
         origin='',
         log_file_path=None,
         session_id=None,
         taxon_group=None,
-        area_index=1
+        area_index=1,
 ):
     """
     Import GBIF occurrences based on a taxonomy GBIF key, iterating over offsets
     until all data is fetched. Handles optional boundary polygons or country codes.
     """
-    if not taxonomy.gbif_key:
-        logger.error(MISSING_KEY_ERROR)
-        return MISSING_KEY_ERROR
 
     base_country_codes = preferences.SiteSetting.base_country_code.split(',')
     site_boundary = preferences.SiteSetting.site_boundary
@@ -524,7 +527,7 @@ def import_gbif_occurrences(
         predicates = {
             "type": "and",
             "predicates": [
-                {"type": "equals", "key": "TAXON_KEY", "value": str(taxonomy.gbif_key)},
+                {"type": "in", "key": "TAXON_KEY", "values": taxonomy_ids},
                 {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
                 {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
                 {"type": "in", "key": "BASIS_OF_RECORD", "values": ACCEPTED_BASIS_OF_RECORD},
@@ -553,7 +556,7 @@ def import_gbif_occurrences(
             gbif_user,
             gbif_pass,
             predicate=predicates,
-            description=f"Harvesting occurrences for taxon {taxonomy.scientific_name}",
+            description=f"Harvesting occurrences for multiple taxa",
             log=log,
         )
 
@@ -573,7 +576,6 @@ def import_gbif_occurrences(
             zip_path,
             session_id,
             taxon_group,
-            taxonomy,
             habitat,
             origin,
             log_file_path
@@ -608,7 +610,12 @@ def import_gbif_occurrences(
 
     message = ''
     try:
-        log_to_file_or_logger(log_file_path, LOG_TEMPLATE.format(taxonomy.canonical_name))
+        chunk_first_id = taxonomy_ids[0]
+        chunk_last_id = taxonomy_ids[-1]
+        chunk_first = Taxonomy.objects.filter(id=chunk_first_id).first()
+        chunk_last = Taxonomy.objects.filter(id=chunk_last_id).first()
+
+        log_to_file_or_logger(log_file_path, message=f'Fetching GBIF data for {chunk_first} … {chunk_last}')
 
         # If a boundary is specified, loop each polygon area
         if site_boundary and extracted_polygons:
