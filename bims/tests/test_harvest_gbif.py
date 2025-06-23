@@ -44,6 +44,7 @@ def _create_dummy_gbif_zip() -> str:
         "modified",
         "basisOfRecord",
         "projectId",
+        "taxonKey"
     ]
 
     rows = [
@@ -63,6 +64,7 @@ def _create_dummy_gbif_zip() -> str:
             "2021-01-02",
             "OBSERVATION",
             "",
+            "1",
         ],
         [
             "1",
@@ -80,6 +82,7 @@ def _create_dummy_gbif_zip() -> str:
             "2021-01-02",
             "OBSERVATION",
             "",
+            "1",
         ],
         [
             "2",
@@ -97,6 +100,7 @@ def _create_dummy_gbif_zip() -> str:
             "2021-01-02",
             "OBSERVATION",
             "",
+            "1",
         ],
         [
             "3",
@@ -114,6 +118,7 @@ def _create_dummy_gbif_zip() -> str:
             "2021-01-02",
             "OBSERVATION",
             "",
+            "1",
         ],
         [
             "4",
@@ -131,6 +136,7 @@ def _create_dummy_gbif_zip() -> str:
             "2021-01-02",
             "OBSERVATION",
             "",
+            "1",
         ],
         [
             "5",
@@ -148,6 +154,7 @@ def _create_dummy_gbif_zip() -> str:
             "2021-01-02",
             "OBSERVATION",
             "",
+            "1",
         ],
     ]
 
@@ -225,7 +232,7 @@ class TestHarvestGbif(FastTenantTestCase):
             0,
         )
 
-        status = import_gbif_occurrences(self.taxonomy, session_id=1)
+        status = import_gbif_occurrences([self.taxonomy.id], session_id=1)
         self.assertTrue(status)
 
         # Six records, five distinct surveys (two points share identical coords)
@@ -249,7 +256,7 @@ class TestHarvestGbif(FastTenantTestCase):
         )
 
         # Second import run must be idempotent
-        import_gbif_occurrences(self.taxonomy, session_id=1)
+        import_gbif_occurrences([self.taxonomy.id], session_id=1)
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username="GBIF",
@@ -278,7 +285,7 @@ class TestHarvestGbif(FastTenantTestCase):
         BiologicalCollectionRecordF.create(upstream_id="2563631087", taxonomy=self.taxonomy)
         BiologicalCollectionRecordF.create(upstream_id="2563631087", taxonomy=self.taxonomy)
 
-        status = import_gbif_occurrences(self.taxonomy, session_id=1)
+        status = import_gbif_occurrences([self.taxonomy.id], session_id=1)
         self.assertTrue(status)
 
         # Harvester should resolve duplicates – five GBIF rows remain
@@ -308,7 +315,7 @@ class TestHarvestGbif(FastTenantTestCase):
         mock_preferences.SiteSetting.base_country_code = "ZA"
         mock_preferences.SiteSetting.site_boundary = None
 
-        status = import_gbif_occurrences(self.taxonomy, session_id=1)
+        status = import_gbif_occurrences([self.taxonomy.id], session_id=1)
         self.assertEqual(status, "Download request failed")
 
     # ------------------------------------------------------------------
@@ -324,5 +331,5 @@ class TestHarvestGbif(FastTenantTestCase):
         mock_preferences.SiteSetting.base_country_code = "ZA"
         mock_preferences.SiteSetting.site_boundary = None
 
-        status = import_gbif_occurrences(self.taxonomy, session_id=1)
+        status = import_gbif_occurrences([self.taxonomy.id], session_id=1)
         self.assertEqual(status, "Download request failed")
