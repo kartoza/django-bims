@@ -487,7 +487,6 @@ def process_gbif_response(
 
 def import_gbif_occurrences(
         taxonomy_ids=[],
-        offset=0,
         habitat=None,
         origin='',
         log_file_path=None,
@@ -612,10 +611,10 @@ def import_gbif_occurrences(
     try:
         chunk_first_id = taxonomy_ids[0]
         chunk_last_id = taxonomy_ids[-1]
-        chunk_first = Taxonomy.objects.filter(id=chunk_first_id).first()
-        chunk_last = Taxonomy.objects.filter(id=chunk_last_id).first()
+        chunk_first = Taxonomy.objects.filter(gbif_key=chunk_first_id).first()
+        chunk_last = Taxonomy.objects.filter(gbif_key=chunk_last_id).first()
 
-        log_to_file_or_logger(log_file_path, message=f'Fetching GBIF data for {chunk_first} … {chunk_last}')
+        log_to_file_or_logger(log_file_path, message=f'Fetching GBIF data for {chunk_first} ... {chunk_last}')
 
         # If a boundary is specified, loop each polygon area
         if site_boundary and extracted_polygons:

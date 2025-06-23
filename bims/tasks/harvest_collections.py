@@ -76,9 +76,8 @@ def harvest_collections(session_id, resume=False, chunk_size=100):
 
     if resume and harvest_session.status:
         # Resume index in human-friendly (1-based) terms
-        match = re.search(r'\((\d+)/', harvest_session.status)
+        match = re.search(r'\((\d+)', harvest_session.status)
         start_taxon_idx = int(match.group(1)) if match else 1
-        offset = find_last_index(r'&offset=(\d+)', harvest_session.log_file.path)
         area_index = find_last_index(r'Area=\((\d+)/(\d+)\)', harvest_session.log_file.path) or 1
 
     if resume and harvest_session.canceled:
@@ -114,12 +113,10 @@ def harvest_collections(session_id, resume=False, chunk_size=100):
             log_file_path=harvest_session.log_file.path,
             session_id=session_id,
             taxon_group=harvest_session.module_group,
-            offset=offset,
             area_index=area_index
         )
 
         # Reset per-chunk controls
-        offset = 0
         area_index = 1
         processed += len(chunk)
 
