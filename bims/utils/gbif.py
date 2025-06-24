@@ -308,17 +308,10 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
                 gbif_key=accepted_taxon_key
             ).first()
             if not accepted_taxon:
-                accepted_taxon_data = get_species(accepted_taxon_key)
-                if accepted_taxon_data:
-                    accepted_taxon, _ = Taxonomy.objects.get_or_create(
-                        gbif_key=accepted_taxon_data['key'],
-                        scientific_name=accepted_taxon_data['scientificName'],
-                        canonical_name=accepted_taxon_data['canonicalName'],
-                        taxonomic_status=TaxonomicStatus[
-                            accepted_taxon_data['taxonomicStatus']].name,
-                        rank=TaxonomicRank[
-                            accepted_taxon_data['rank']].name,
-                    )
+                accepted_taxon = update_taxonomy_from_gbif(
+                    accepted_taxon_key,
+                    get_vernacular=get_vernacular
+                )
 
     try:
         log('Found detail for %s' % detail['scientificName'])
@@ -330,6 +323,7 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
                 detail['taxonomicStatus']].name,
             rank=TaxonomicRank[
                 detail['rank']].name,
+            author=detail.get('authorship', '')
         )
         taxon.gbif_data = detail
         if accepted_taxon:
@@ -340,7 +334,7 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
         if get_vernacular:
             vernacular_names = get_vernacular_names(detail['key'])
             if vernacular_names:
-                print('Found %s vernacular names' % len(
+                log('Found %s vernacular names' % len(
                     vernacular_names['results']))
                 for result in vernacular_names['results']:
                     fields = {}
