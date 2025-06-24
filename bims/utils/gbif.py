@@ -1,26 +1,15 @@
 # coding: utf-8
-import csv
-import io
-import json
-import os
-import time
-import zipfile
-from pathlib import Path
-from typing import Optional, Set, List
-
 import requests
 import logging
 import urllib
 import simplejson
-from django.conf import settings
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from requests.exceptions import HTTPError
 from pygbif import species
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
-from bims.models.harvest_session import HarvestSession
-from bims.utils.gbif_download import submit_download
+from bims.utils.logger import log
+
 
 logger = logging.getLogger(__name__)
 
@@ -295,7 +284,7 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
     :return:
     """
     # Get taxon
-    print('Get taxon for key : %s' % key)
+    log('Get taxon for key : %s' % key)
 
     try:
         taxon = Taxonomy.objects.get(
@@ -309,9 +298,30 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
 
     detail = get_species(key)
     taxon = None
+    accepted_taxon = None
+
+    # If synonym then get the accepted taxon
+    if 'synonym' in detail['taxonomicStatus'].lower():
+        accepted_taxon_key = detail.get('acceptedKey', '')
+        if accepted_taxon_key:
+            accepted_taxon = Taxonomy.objects.filter(
+                gbif_key=accepted_taxon_key
+            ).first()
+            if not accepted_taxon:
+                accepted_taxon_data = get_species(accepted_taxon_key)
+                if accepted_taxon_data:
+                    accepted_taxon, _ = Taxonomy.objects.get_or_create(
+                        gbif_key=accepted_taxon_data['key'],
+                        scientific_name=accepted_taxon_data['scientificName'],
+                        canonical_name=accepted_taxon_data['canonicalName'],
+                        taxonomic_status=TaxonomicStatus[
+                            accepted_taxon_data['taxonomicStatus']].name,
+                        rank=TaxonomicRank[
+                            accepted_taxon_data['rank']].name,
+                    )
 
     try:
-        print('Found detail for %s' % detail['scientificName'])
+        log('Found detail for %s' % detail['scientificName'])
         taxon, status = Taxonomy.objects.get_or_create(
             gbif_key=detail['key'],
             scientific_name=detail['scientificName'],
@@ -322,6 +332,8 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
                 detail['rank']].name,
         )
         taxon.gbif_data = detail
+        if accepted_taxon:
+            taxon.accepted_taxonomy = accepted_taxon
         taxon.save()
 
         # Get vernacular names
@@ -354,7 +366,6 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
             )
             taxon.save()
     except (KeyError, TypeError) as e:
-        print(e)
         pass
 
     return taxon

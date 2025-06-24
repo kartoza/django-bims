@@ -369,6 +369,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'author',
                     'tags',
                     'biographic_distributions',
+                    'accepted_taxonomy',
                     'owner',
                     'parent'])
             taxonomy_update_proposal, created = (
@@ -379,6 +380,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     new_data=True,
                     owner=taxonomy.owner,
                     parent=taxonomy.parent,
+                    accepted_taxonomy=taxonomy.accepted_taxonomy,
                     taxon_group_under_review=taxon_group,
                     author=author_name,
                     iucn_status=taxonomy.iucn_status,
