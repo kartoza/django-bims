@@ -191,7 +191,7 @@ def _dangling_queryset(model, *, skip_models=frozenset()):
     return qs
 
 
-@shared_task(name="bims.tasks.remove_dangling_sites", queue="geocontext")
+@shared_task(name="bims.tasks.remove_dangling_sites", queue="search")
 def remove_dangling_sites():
     """
     1. Delete surveys that have no child data.
