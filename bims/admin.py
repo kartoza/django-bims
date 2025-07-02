@@ -2113,7 +2113,7 @@ class ExtendedFlatPageAdmin(FlatPageAdmin):
         }),
         ("Advanced options", {
             "classes": ("collapse",),
-            "fields": ("enable_comments", "registration_required", "template_name"),
+            "fields": ("registration_required", "template_name"),
         }),
     )
 
