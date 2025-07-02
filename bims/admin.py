@@ -6,6 +6,7 @@ from datetime import date
 import json
 
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
+from django.contrib.sites.models import Site
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from rangefilter.filter import DateRangeFilter
@@ -2106,10 +2107,24 @@ class FlatPageExtensionInline(admin.StackedInline):
 class ExtendedFlatPageAdmin(FlatPageAdmin):
     inlines = (FlatPageExtensionInline,)
 
+    fieldsets = (
+        (None, {
+            "fields": ("url", "title", "content"),
+        }),
+        ("Advanced options", {
+            "classes": ("collapse",),
+            "fields": ("registration_required", "template_name"),
+        }),
+    )
+
     formfield_overrides = {
         models.TextField: {
             'widget': CKEditorUploadingWidget}
     }
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        form.instance.sites.set(Site.objects.all())
 
     def show_in_navbar(self, instance):
         return instance.extension.show_in_navbar
