@@ -1165,6 +1165,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'parent',
         'import_date',
         'taxonomic_status',
+        'accepted_taxonomy',
         'legacy_canonical_name',
         'iucn_status',
         'validated',
