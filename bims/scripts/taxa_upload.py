@@ -535,24 +535,10 @@ class TaxaProcessor(object):
             accepted_taxon_val = self.get_row_value(
                 row, ACCEPTED_TAXON
             )
-            accepted_taxon_err = ''
-            if not accepted_taxon_val:
-                accepted_taxon_err = 'Synonym missing accepted taxon'
-            else:
+            if accepted_taxon_val:
                 accepted_taxon = Taxonomy.objects.filter(
                     canonical_name__iexact=accepted_taxon_val
                 ).first()
-                if not accepted_taxon:
-                    accepted_taxon_err = (
-                        'The accepted taxon is not in the system yet'
-                    )
-
-            if accepted_taxon_err:
-                self.handle_error(
-                    row=row,
-                    message=accepted_taxon_err
-                )
-                return
 
         authors = self.get_row_value(row, AUTHORS)
 
