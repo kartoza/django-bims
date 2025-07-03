@@ -34,6 +34,7 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
+from bims.enums import TaxonomicGroupCategory
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
@@ -1148,6 +1149,24 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonGroupListFilter(django_admin.SimpleListFilter):
+    title = 'Taxon Group'
+
+    parameter_name = 'taxon_group'
+
+    def lookups(self, request, model_admin):
+        taxon_groups = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name)
+        return [
+            (taxon_group.id, taxon_group.name) for taxon_group in taxon_groups
+        ]
+
+    def queryset(self, request, queryset):
+        return queryset.filter(
+            taxongrouptaxonomy__taxongroup=self.value()
+        )
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
@@ -1178,7 +1197,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'verified',
         'import_date',
         'taxonomic_status',
-        'iucn_status'
+        'iucn_status',
+        TaxonGroupListFilter,
     )
 
     search_fields = (
