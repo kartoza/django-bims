@@ -1162,9 +1162,12 @@ class TaxonGroupListFilter(django_admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        return queryset.filter(
-            taxongrouptaxonomy__taxongroup=self.value()
-        )
+        if self.value():
+            return queryset.filter(
+                taxongrouptaxonomy__taxongroup=self.value()
+            )
+        else:
+            return queryset
 
 
 class TaxonomyAdmin(admin.ModelAdmin):
