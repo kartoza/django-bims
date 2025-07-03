@@ -531,7 +531,7 @@ class TaxaProcessor(object):
             )
             return
 
-        if 'synonym' in taxonomic_status.lower().strip():
+        if 'synonym' in taxonomic_status.lower().lower().strip():
             accepted_taxon_val = self.get_row_value(
                 row, ACCEPTED_TAXON
             )

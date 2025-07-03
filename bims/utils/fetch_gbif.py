@@ -369,7 +369,7 @@ def fetch_all_species_from_gbif(
     # Check if there is an accepted key
     if (
         'acceptedKey' in species_data and
-        species_data['taxonomicStatus'] == 'SYNONYM'
+        'synonym' in species_data['taxonomicStatus'].lower().strip()
     ):
         accepted_taxonomy = fetch_all_species_from_gbif(
             gbif_key=species_data['acceptedKey'],
