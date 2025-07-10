@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 sitevisitecologicalcondition__isnull=True
             )
         else:
-            site_visits = SiteVisit.objects.filter(location_site_id=74119)
+            site_visits = SiteVisit.objects.all()
 
         count = site_visits.count()
         self.stdout.write(self.style.WARNING(f"[{label}] Found {count} SiteVisit(s) to process."))
