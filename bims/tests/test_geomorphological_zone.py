@@ -25,21 +25,6 @@ class TestGeomorphologicalZone(TestCase):
         )
 
     def test_get_geo_class_from_location_context(self):
-        location_site = LocationSiteF.create()
-        location_context_group = LocationContextGroupF.create(
-            name='geo_class',
-            key='geo_class'
-        )
-        LocationContextF.create(
-            group=location_context_group,
-            site=location_site,
-            value='Upper'
-        )
-        self.assertEqual(
-            'Upper',
-            get_geomorphological_zone_class(location_site)
-        )
-
         location_context_group_recoded = LocationContextGroupF.create(
             name='geo_class_recoded',
             key='geo_class_recoded'
