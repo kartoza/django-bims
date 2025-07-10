@@ -7,6 +7,7 @@ import logging
 
 import requests
 import json
+from preferences import preferences
 
 from bims.tasks.location_site import update_location_context
 from bims.models.validation import AbstractValidation
@@ -332,7 +333,7 @@ class LocationSite(AbstractValidation):
                     table_name=layer.query_table_name,
                     field_names=[context_key],
                     coordinates=[(self.longitude, self.latitude)],
-                    tolerance=0
+                    tolerance=preferences.GeocontextSetting.tolerance
                 )
                 # Find by name first
                 context_groups = LocationContextGroup.objects.filter(

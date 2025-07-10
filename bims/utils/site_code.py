@@ -10,7 +10,6 @@ import re
 from bims.models import LocationContextGroup
 from bims.models.location_site import LocationSite
 from requests.exceptions import HTTPError
-from bims.location_site.river import fetch_river_name
 from bims.utils.get_key import get_key
 from cloud_native_gis.models import Layer
 from cloud_native_gis.utils.geometry import query_features
