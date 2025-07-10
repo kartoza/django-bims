@@ -2,10 +2,12 @@
 import requests
 import json
 
+from django.contrib.gis.geos import Point
 from geopy import Nominatim
 from preferences import preferences
 import logging
 
+from bims.models import Boundary
 from bims.utils.get_key import get_key
 from django.http import Http404
 from braces.views import LoginRequiredMixin
@@ -26,6 +28,19 @@ class SiteInCountry(LoginRequiredMixin, APIView):
 
         if not lat or not lon:
             raise Http404('Missing coordinates')
+
+        site_boundary = preferences.SiteSetting.site_boundary
+
+        if site_boundary:
+            site_point = Point(
+                float(lon),
+                float(lat), srid=4326)
+            is_within_boundary = Boundary.objects.filter(
+                id=site_boundary.id,
+                geometry__contains=site_point,
+            ).exists()
+            return Response(is_within_boundary)
+
         boundary_key = preferences.SiteSetting.boundary_key
 
         if boundary_key:
