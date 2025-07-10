@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db.models import F, Count, Sum, Case, When, Q, FloatField
 from django.db.models.functions import Cast, Coalesce
+from preferences import preferences
+from cloud_native_gis.models import Layer
 
 from bims.utils.geomorphological_zone import get_geomorphological_zone_class
 from bims.utils.site_code import get_feature_data
@@ -10,7 +12,7 @@ from sass.models import (
     SiteVisitTaxon,
     SassEcologicalCategory
 )
-from bims.models import LocationContext
+from bims.models import LocationContext, LocationContextGroup
 from bims.utils.logger import log
 
 
@@ -70,11 +72,14 @@ def generate_site_visit_ecological_condition(site_visits):
             layer_name='SA Ecoregion Level 1'
         )
         if eco_region == '-':
+            layer_name = 'SA Ecoregion Level 1'
             eco_region = get_feature_data(
                 lon=site_visit.location_site.longitude,
                 lat=site_visit.location_site.latitude,
                 context_key='id_eco_reg',
-                layer_name='SA Ecoregion Level 1'
+                layer_name=layer_name,
+                tolerance=preferences.GeocontextSetting.tolerance,
+                location_site=site_visit.location_site
             )
 
         geo_class = get_geomorphological_zone_class(

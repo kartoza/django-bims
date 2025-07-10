@@ -21,8 +21,14 @@ class Command(BaseCommand):
             metavar="SCHEMA",
             help="Target schema name when using django-tenants. If omitted, runs in current schema.",
         )
+        parser.add_argument(
+            "--only-missing",
+            action="store_true",
+            help="Only process SiteVisits that do not have ecological conditions.",
+        )
 
     def handle(self, *args, **options) -> None:
+        self.options = options
         schema = options.get("tenant")
 
         if schema:
@@ -44,7 +50,14 @@ class Command(BaseCommand):
             self._run_update(label="current schema")
 
     def _run_update(self, label: str) -> None:
-        site_visits = SiteVisit.objects.filter(id=14482)
+        only_missing = self.options.get("only_missing")
+        if only_missing:
+            site_visits = SiteVisit.objects.filter(
+                sitevisitecologicalcondition__isnull=True
+            )
+        else:
+            site_visits = SiteVisit.objects.filter(location_site_id=74119)
+
         count = site_visits.count()
         self.stdout.write(self.style.WARNING(f"[{label}] Found {count} SiteVisit(s) to process."))
 

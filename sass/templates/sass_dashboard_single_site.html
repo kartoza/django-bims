@@ -85,6 +85,7 @@
             const riverCatchments = {% if river_catchments %}{{ river_catchments | safe }}{% else %}[]{% endif %};
             const ecoGeoGroup = {% if eco_geo %}{{ eco_geo | safe }}{% else %}[]{% endif %};
             const riverEcoregionGroup = {% if river_ecoregion_group %}{{ river_ecoregion_group | safe }}{% else %}[]{% endif %};
+            const ecoregionOne = '{{ eco_region_1 }}';
             const geomorphologicalGroup = {% if geomorphological_group %}{{ geomorphological_group | safe }}{% else %}[]{% endif %};
             const freshwaterEcoregion = {% if freshwater_ecoregion_of_the_world %}{{ freshwater_ecoregion_of_the_world | safe }}{% else %}[]{% endif %};
             const politicalBoundary = {% if political_boundary %}{{ political_boundary | safe }}{% else %}[]{% endif %};
