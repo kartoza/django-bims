@@ -6,7 +6,12 @@ from django.db import ProgrammingError
 
 
 class LocationContextQuerySet(models.QuerySet):
-    def value_from_key(self, key):
+    def value_from_key(self, key='', layer_name=''):
+        if layer_name:
+            from cloud_native_gis.models import Layer
+            layer = Layer.objects.filter(name__istartswith=layer_name).first()
+            if layer:
+                key = layer.unique_id
         try:
             values = self.filter(
                 group__key=key
