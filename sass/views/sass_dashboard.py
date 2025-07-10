@@ -1,4 +1,5 @@
 import json
+from preferences import preferences
 from collections import OrderedDict
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
@@ -19,6 +20,7 @@ from bims.api_views.search import CollectionSearch
 from bims.serializers.chemical_records_serializer import \
     ChemicalRecordsSerializer
 from bims.utils.geomorphological_zone import get_geomorphological_zone_class
+from bims.utils.site_code import get_feature_data
 from sass.models import (
     SiteVisitTaxon,
     SiteVisitBiotopeTaxon,
@@ -251,8 +253,16 @@ class SassDashboardView(TemplateView):
         chart_data = {}
         try:
             eco_region = self.location_context.value_from_key(
-                'eco_region_1'
+                layer_name='SA Ecoregion Level 1'
             )
+            if eco_region == '-':
+                eco_region = get_feature_data(
+                    lon=self.location_site.longitude,
+                    lat=self.location_site.latitude,
+                    context_key='id_eco_reg',
+                    layer_name='SA Ecoregion Level 1',
+                    tolerance=preferences.GeocontextSetting.tolerance
+                )
             geo_class = get_geomorphological_zone_class(
                 self.location_site
             )
@@ -371,6 +381,9 @@ class SassDashboardView(TemplateView):
         context['sass_taxon_table_data'] = self.get_sass_taxon_table_data()
         context['sensitivity_chart_data'] = self.get_sensitivity_chart_data()
         context['ecological_chart_data'] = self.get_ecological_chart_data()
+        context['eco_region_1'] = self.location_context.value_from_key(
+            layer_name='SA Ecoregion Level 1'
+        )
         context['biotope_ratings_chart_data'] = (
             self.get_biotope_ratings_chart_data()
         )

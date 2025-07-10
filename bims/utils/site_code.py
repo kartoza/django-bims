@@ -7,7 +7,7 @@ from typing import Dict
 import requests
 import re
 
-from bims.models import LocationContextGroup
+from bims.models import LocationContextGroup, LocationContext
 from bims.models.location_site import LocationSite
 from requests.exceptions import HTTPError
 from bims.utils.get_key import get_key
@@ -77,10 +77,12 @@ def _get_catchments_data(
     return catchments, catchments_data
 
 
-def _get_feature_data(lon, lat, context_key, layer_name, tolerance=0) -> str:
+def get_feature_data(lon, lat, context_key, layer_name, tolerance=0, location_site = None) -> str:
     layer = Layer.objects.filter(
         name__istartswith=layer_name
     ).first()
+
+    feature_data = ''
 
     if not layer:
         return ''
@@ -93,8 +95,20 @@ def _get_feature_data(lon, lat, context_key, layer_name, tolerance=0) -> str:
     )
     results = features.get('result', [])
     if results and 'feature' in results[0] and context_key in results[0]['feature']:
-        return results[0]['feature'][context_key]
-    return ''
+        feature_data = results[0]['feature'][context_key]
+
+    if feature_data and location_site:
+        location_contex_group = LocationContextGroup.objects.filter(
+            geocontext_group_key=layer.unique_id
+        ).first()
+        if location_contex_group:
+            location_context, _ = LocationContext.objects.get_or_create(
+                site=location_site,
+                group=location_contex_group,
+                value=feature_data,
+            )
+
+    return feature_data
 
 
 def generate_fbis_africa_site_code(latitude: float, longitude: float, site_name: str):
@@ -185,7 +199,7 @@ def fbis_catchment_generator(
         , catchments data in dictionary
     """
     catchments_data = {}
-    secondary_catchment_name = _get_feature_data(
+    secondary_catchment_name = get_feature_data(
         lon=lon,
         lat=lat,
         context_key='name',
@@ -201,7 +215,7 @@ def fbis_catchment_generator(
         elif location_site.river:
             river_name = location_site.river.name
         else:
-            river_name = _get_feature_data(
+            river_name = get_feature_data(
                 lon=location_site.geometry_point[0],
                 lat=location_site.geometry_point[1],
                 context_key='river_name',
@@ -211,7 +225,7 @@ def fbis_catchment_generator(
 
     # Search river name by coordinates
     if not river_name and lat and lon:
-        river_name = _get_feature_data(
+        river_name = get_feature_data(
             lon=lon,
             lat=lat,
             context_key='river_name',

@@ -16,9 +16,9 @@ def fetch_river_name(latitude, longitude):
     :param latitude: LocationSite latitude
     :param longitude: LocationSite longitude
     """
-    from bims.utils.site_code import _get_feature_data
+    from bims.utils.site_code import get_feature_data
 
-    river_name = _get_feature_data(
+    river_name = get_feature_data(
         lon=longitude,
         lat=latitude,
         context_key='river_name',
