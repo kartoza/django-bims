@@ -21,20 +21,24 @@ def get_geomorphological_zone_class(location_site: LocationSite) -> str:
         'lowland river'
     ]
 
-    if location_site.refined_geomorphological:
-        if location_site.refined_geomorphological.lower() in upper_data:
-            return 'Upper'
-        elif location_site.refined_geomorphological.lower() in lower_data:
-            return 'Lower'
+    # if location_site.refined_geomorphological:
+    #     if location_site.refined_geomorphological.lower() in upper_data:
+    #         return 'Upper'
+    #     elif location_site.refined_geomorphological.lower() in lower_data:
+    #         return 'Lower'
 
     context = LocationContext.objects.filter(
         site=location_site
     )
     geo_class = context.value_from_key(
-        'geo_class'
+        layer_name='geomorphological zone'
     )
     if geo_class != '-':
-        return geo_class
+        if geo_class:
+            if geo_class.lower().strip() in upper_data:
+                return 'Upper'
+            elif geo_class.lower().strip() in lower_data:
+                return 'Lower'
 
     geo_class_recoded = context.value_from_key(
         'geo_class_recoded'

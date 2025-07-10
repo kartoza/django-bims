@@ -3,6 +3,7 @@ from django.db.models import F, Count, Sum, Case, When, Q, FloatField
 from django.db.models.functions import Cast, Coalesce
 
 from bims.utils.geomorphological_zone import get_geomorphological_zone_class
+from bims.utils.site_code import get_feature_data
 from sass.models import (
     SiteVisitEcologicalCondition,
     SassEcologicalCondition,
@@ -65,7 +66,17 @@ def generate_site_visit_ecological_condition(site_visits):
         location_context = LocationContext.objects.filter(
             site=site_visit.location_site
         )
-        eco_region = location_context.value_from_key('eco_region_1')
+        eco_region = location_context.value_from_key(
+            layer_name='SA Ecoregion Level 1'
+        )
+        if eco_region == '-':
+            eco_region = get_feature_data(
+                lon=site_visit.location_site.longitude,
+                lat=site_visit.location_site.latitude,
+                context_key='id_eco_reg',
+                layer_name='SA Ecoregion Level 1'
+            )
+
         geo_class = get_geomorphological_zone_class(
             site_visit.location_site
         )
