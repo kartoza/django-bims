@@ -154,11 +154,13 @@ def get_location_context_data(
         if not isinstance(group_keys, list):
             group_keys = group_keys.split(',')
 
+    group_keys_wo_attr = [key.split(':')[0] for key in group_keys]
+
     if only_empty:
         location_sites = location_sites.exclude(
             reduce(operator.and_, (
                 Q(locationcontext__group__geocontext_group_key=x)
-                for x in group_keys)
+                for x in group_keys_wo_attr)
                    ))
     num = len(location_sites)
     i = 1
