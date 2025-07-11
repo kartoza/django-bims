@@ -2,6 +2,7 @@ import logging
 import operator
 import os
 from functools import reduce
+from typing import Optional, Iterable, List
 
 from django.conf import settings
 from django.db import connection
@@ -16,6 +17,9 @@ from bims.models.location_context import LocationContext
 from bims.utils.logger import log
 
 from bims.models.geocontext_setting import GeocontextSetting
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def array_to_dict(array, key_name='key'):
@@ -98,122 +102,119 @@ def process_spatial_scale_data(location_context_data, group=None):
                 )
 
 
-def get_location_context_data(
-        group_keys=None,
-        site_id=None,
-        only_empty=False,
-        should_generate_site_code=False):
+def _prepare_group_keys(raw_keys: Optional[Iterable[str]]) -> List[str]:
+    """Return a clean list of group keys without attribute suffixes.
     """
-    Get the location context for specific site or all sites
-    :param group_keys: Group keys used to fetch geocontext data
-        (separated by comma), if empty then use geocontext keys from
-        site setting
-    :param site_id: Sites that will be updated, can be multiple sites
-        if separated by comma. If empty then update all sites
-    :param only_empty: Only add empty missing context data
-    :param should_generate_site_code: Generate the site code after updating
-    :return:
-    """
-    # Get location context data from GeoContext
+    if not raw_keys:
+        geocontext_setting = GeocontextSetting.objects.first()
+        raw_keys = (
+            geocontext_setting.geocontext_keys.split(",")
+            if geocontext_setting and geocontext_setting.geocontext_keys
+            else []
+        )
+    elif not isinstance(raw_keys, list):
+        raw_keys = str(raw_keys).split(",")
+    raw_keys = [k.strip() for k in raw_keys if k and k.strip()]
+    return raw_keys
 
-    if site_id:
-        location_sites = LocationSite.objects.filter(id__in=site_id.split(','))
-    else:
-        location_sites = LocationSite.objects.all()
 
-    tenant = connection.schema_name
-    tenant_name = str(tenant)
-    log_file_name = f'{tenant_name}_get_location_context_data.log'
+def _init_file_logger() -> logging.Logger:
+    """Create a tenant-aware ``FileHandler`` if it has not been added yet."""
+    tenant_name = str(connection.schema_name)
+    log_file_name = f"{tenant_name}_get_location_context_data.log"
     log_file_path = os.path.join(settings.MEDIA_ROOT, log_file_name)
 
     os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-    open(log_file_path, 'w').close()
+    open(log_file_path, "a").close()
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    if not any(
+        isinstance(h, logging.FileHandler) and h.baseFilename == log_file_path
+        for h in logger.handlers
+    ):
+        file_handler = logging.FileHandler(log_file_path)
+        file_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-    # Check if the handler is already added to avoid duplicate handlers
-    if not any(isinstance(handler, logging.FileHandler) and handler.baseFilename == log_file_path for handler in
-               logger.handlers):
-        handler = logging.FileHandler(log_file_path)
-        handler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(asctime)s - %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    return logger
 
-    def _log(log_message):
-        logger.info(log_message)
 
-    if not group_keys:
-        geocontext_setting = GeocontextSetting.objects.first()
-        if geocontext_setting and geocontext_setting.geocontext_keys:
-            group_keys = geocontext_setting.geocontext_keys.split(',')
-        else:
-            group_keys = []
+def get_location_context_data(
+    *,
+    group_keys: Optional[Iterable[str]] = None,
+    site_id: Optional[str] = None,
+    only_empty: bool = False,
+    should_generate_site_code: bool = False,
+) -> None:
+    """Harvest GeoContext data **per context** instead of **per site**.
+
+    Parameters
+    ----------
+    group_keys
+        The GeoContext group keys to harvest. May be an iterable or a single
+        comma-separated string.  If ``None`` or empty, the keys defined in
+        :class:`~bims.models.GeocontextSetting` will be used.
+    site_id
+        Limit the harvesting to a subset of sites (comma-separated list of
+        ``LocationSite.id``).  When *None*, all sites will be considered.
+    only_empty
+        If *True*, only harvest sites that do not yet contain the requested
+        context.  This minimises unnecessary API calls.
+    should_generate_site_code
+        When harvesting succeeds and a site is missing ``site_code``, generate
+        one using :func:`bims.utils.site_code.generate_site_code`.
+    """
+    _init_file_logger()
+    _log = logger.info
+
+    if site_id:
+        location_sites = LocationSite.objects.filter(id__in=str(site_id).split(","))
     else:
-        if not isinstance(group_keys, list):
-            group_keys = group_keys.split(',')
+        location_sites = LocationSite.objects.all()
 
-    group_keys_wo_attr = [key.split(':')[0] for key in group_keys]
-
-    if only_empty:
-        location_sites = location_sites.exclude(
-            reduce(operator.and_, (
-                Q(locationcontext__group__geocontext_group_key=x)
-                for x in group_keys_wo_attr)
-                   ))
-    num = len(location_sites)
-    i = 1
-
-    if num == 0:
-        _log('No locations with applied filters were found')
+    raw_keys = _prepare_group_keys(group_keys)
+    if not raw_keys:
+        _log("No GeoContext group keys provided or configured – nothing to do.")
         return
 
-    for location_site in location_sites:
-        _log('Updating %s of %s, %s' % (i, num, location_site.site_code))
-        i += 1
-        all_context = None
-        if only_empty:
-            try:
-                all_context = list(
-                    LocationContext.objects.filter(
-                        site=location_site).values_list(
-                        'group__geocontext_group_key', flat=True)
-                )
-            except (ValueError, TypeError):
-                pass
-        for group_key in group_keys:
-            if (all_context and
-                    group_key in all_context):
-                _log('Context data already exists for {}'.format(
-                    group_key
-                ))
-                continue
-            current_outcome, message = (
-                location_site.add_context_group(group_key))
-            success = current_outcome
-            _log(str('[{status}] [{site_id}] [{group}] - {message}').format(
-                status='SUCCESS' if success else 'FAILED',
-                site_id=location_site.id,
-                message=message,
-                group=group_key
-            ))
+    key_map = {k.split(":")[0]: k for k in raw_keys}
 
-            if not location_site.site_code and should_generate_site_code:
-                site_code, catchments_data = generate_site_code(
-                    location_site,
-                    lat=location_site.latitude,
-                    lon=location_site.longitude
-                )
-                location_site.site_code = site_code
-                location_site.save()
-                _log(str('Site code {site_code} '
-                    'generated for {site_id}').format(
-                    site_code=site_code,
-                    site_id=location_site.id
-                ))
+    _log(
+        "Starting GeoContext harvesting in 'per-context' mode: %s groups, %s sites",
+        len(key_map),
+        location_sites.count(),
+    )
+
+    for query_key, full_key in key_map.items():
+        if only_empty:
+            sites_for_group = location_sites.exclude(
+                locationcontext__group__geocontext_group_key=query_key
+            )
+        else:
+            sites_for_group = location_sites
+
+        total = sites_for_group.count()
+        if total == 0:
+            _log("All sites already contain context '%s' – skipping.", query_key)
+            continue
+
+        _log("Harvesting context '%s' for %d site(s).", query_key, total)
+
+        for idx, site in enumerate(sites_for_group, start=1):
+            _log("[%s/%s] [SITE %s] Adding context '%s'", idx, total, site.id, full_key)
+            success, message = site.add_context_group(full_key)
+            status = "SUCCESS" if success else "FAILED"
+            _log("[%s] [SITE %s] [%s] %s", status, site.id, full_key, message)
+
+            if should_generate_site_code and not site.site_code:
+                scode, _ = generate_site_code(site, lat=site.latitude, lon=site.longitude)
+                site.site_code = scode
+                site.save(update_fields=["site_code"])
+                _log("Generated site code '%s' for site %s", scode, site.id)
 
     set_cache(HARVESTING_GEOCONTEXT, False)
+    _log("GeoContext harvesting completed.")
 
 
 def merge_context_group(excluded_group=None, group_list=None):
