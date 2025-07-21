@@ -68,7 +68,7 @@
         const is_pesticide_dashboard_enabled = {% if preferences.SiteSetting.pesticide_quaternary_data_file %}true{% else %}false{% endif %};
         const locationSiteGeoserverLayer = '{{ preferences.SiteSetting.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
-        const emptyWMSSiteParameter = '{{ preferences.SiteSetting.default_location_site_cluster }}';
+        const emptyWMSSiteParameter = 'public.empty_location_site_view';
         const isStaff = {% if user.is_superuser or user.is_staff %} true {% else %} false {% endif %};
         const isSuperUser = {% if user.is_superuser %} true {% else %} false {% endif %};
         const mapDefaultSelectedFilters = "{{ preferences.SiteSetting.map_default_filters | safe }}";
