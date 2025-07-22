@@ -606,7 +606,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             const $legendHost   = $('#map-legend');
             const legendRowSel  = `.legend-row[data-name="${id}"]`;
             let attributeField = '';
-            console.log(styles);
 
             function getFilteredValues(filter) {
                 var result = { field: null, values: [] };
@@ -728,28 +727,30 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     var origStyle = vectorTileLayer.get('origStyle');
 
                     var highlightStyle = function (feature, resolution) {
-                        var styles = (typeof origStyle === 'function')
+                        var base = (typeof origStyle === 'function')
                             ? origStyle.call(this, feature, resolution)
                             : origStyle;
-
-                        styles = (Array.isArray(styles)) ? styles : [styles];
-                        var isMatch     = (feature.get(attributeField) === hoveredValue);
-                        for (var i = 0; i < styles.length; i++) {
-                            var sty = styles[i];
-                            var stroke = sty.getStroke();
-                            if (!stroke) {
-                                stroke = new ol.style.Stroke({color: '#ffffff', width: 1});
-                                sty.setStroke(stroke);
-                            }
+                        var styles = (Array.isArray(base) ? base : [base]).filter(Boolean);
+                        if (!styles.length) { return styles; }
+                        var isMatch = (feature.get(attributeField) === hoveredValue);
+                        styles = styles.map(function (s) {
+                            var sty = s.clone();
                             if (isMatch) {
-                                stroke.setColor('#ffff00');
-                                stroke.setWidth(3);
+                                var stroke = sty.getStroke();
+                                if (!stroke) {
+                                    stroke = new ol.style.Stroke({ color: '#ffff00', width: 3 });
+                                    sty.setStroke(stroke);
+                                } else {
+                                    stroke.setColor('#ffff00');
+                                    stroke.setWidth(3);
+                                }
                             }
-                        }
+                            return sty;
+                        });
+
                         return styles;
                     };
                     vectorTileLayer.setStyle(highlightStyle);
-                    that.moveLayerToTop(vectorTileLayer);
                     that.map.getTargetElement().style.cursor = 'pointer';
                 });
 
