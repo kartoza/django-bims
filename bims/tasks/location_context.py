@@ -195,11 +195,16 @@ def generate_spatial_scale_filter(tenant_id=None):
 
             spatial_tree_value_sorted = []
             if not location_filter_group_order.use_autocomplete_in_filter:
+                layer_identifier = group.layer_identifier or ''
+                key_suffix = f'.{layer_identifier}' if layer_identifier else ''
                 spatial_tree_value = list(
                     location_contexts.annotate(
                         query=F('value'),
                         key=F('group__key')
                     ).values('query', 'key'))
+
+                for item in spatial_tree_value:
+                    item['key'] += key_suffix
                 try:
                     # Check empty query
                     for index, value in enumerate(spatial_tree_value):
@@ -219,7 +224,7 @@ def generate_spatial_scale_filter(tenant_id=None):
 
             layer_name = group.layer_name
             spatial_tree_children = {
-                'key': group.key,
+                'key': group.key + (f'.{group.layer_identifier}' if group.layer_identifier else ''),
                 'name': group.name,
                 'value': spatial_tree_value_sorted,
                 'autocomplete': location_filter_group_order.use_autocomplete_in_filter,

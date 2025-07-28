@@ -42,7 +42,7 @@ let validator = $('#site-form').validate({
             }
 
             // Check length
-            if (ecosystemType == 'River') {
+            if (ecosystemType == 'River' || ecosystemType == '') {
                 if (siteCode.length !== 12) {
                     showSiteCodeError();
                     return false;

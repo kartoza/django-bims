@@ -397,21 +397,19 @@ define([
             var value = $target.val();
             var $wrapper = $target.parent();
             var level = $target.data('level');
+            let layerName = $target.attr('name');
             let self = this;
             let isAutocompleteFilter = $wrapper.hasClass('spatial-filter-autocomplete-group');
 
             if ($target.is(':checked')) {
-
                 if (isAutocompleteFilter) {
                     $wrapper.find('select').prop('disabled', true);
-                    let layerName = $target.attr('name');
                     let selectedValues = $wrapper.find('select').find(':selected');
                     for (const selected of selectedValues) {
                         self.removeSelectedSpatialFilterLayer(layerName, selected.value);
                         self.removeSelectedValue(layerName, `value,${layerName},${selected.value}`);
                     }
                 }
-
                 this.addSelectedValue(targetName, value);
                 this.addSelectedSpatialFilterLayerFromCheckbox($target);
                 let $children = $wrapper.children().find('input:checkbox:not(:checked)');
@@ -423,17 +421,14 @@ define([
                     this.removeSelectedValue(targetName, childrenValue);
                 }
             } else {
-
                 if (isAutocompleteFilter) {
                     $wrapper.find('select').prop('disabled', false);
-                    let layerName = $target.attr('name');
                     let selectedValues = $wrapper.find('select').find(':selected');
                     for (const selected of selectedValues) {
                         self.addSelectedSpatialFilterLayer(layerName, selected.value);
                         self.addSelectedValue(layerName, `value,${layerName},${selected.value}`);
                     }
                 }
-
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
