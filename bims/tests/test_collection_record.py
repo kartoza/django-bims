@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
+from preferences import preferences
 
 from bims.tests.model_factories import (
     UserF,
