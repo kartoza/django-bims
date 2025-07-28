@@ -5,7 +5,9 @@ from django_tenants.test.client import TenantClient
 
 from bims.tests.model_factories import (
     UserF,
-    BiologicalCollectionRecordF
+    BiologicalCollectionRecordF,
+    LocationContextGroupF,
+    LocationContextF
 )
 from bims.models import BiologicalCollectionRecord
 
@@ -89,3 +91,57 @@ class TestCollectionRecordView(FastTenantTestCase):
         )
         self.assertFalse(
             BiologicalCollectionRecord.objects.filter(id=col.id).exists())
+
+
+
+class TestBioCollectionOneRowSerializerGeoContext(FastTenantTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.old_keys = preferences.GeocontextSetting.geocontext_keys
+        preferences.GeocontextSetting.geocontext_keys = (
+            "geo_class_recoded,feow_hydrosheds:h1"
+        )
+
+        self.user = UserF.create()
+        self.collection = BiologicalCollectionRecordF.create(owner=self.user)
+
+        self.grp1 = LocationContextGroupF.create(
+            name="Geomorphology",
+            key="geo_class_recoded",
+            geocontext_group_key="geo_class_recoded"
+        )
+        self.grp2 = LocationContextGroupF.create(
+            name="Freshwater",
+            key="feow_hydrosheds",
+            geocontext_group_key="feow_hydrosheds",
+            layer_identifier="h1"
+        )
+
+        LocationContextF.create(
+            site=self.collection.site, group=self.grp1, value="GMZ1"
+        )
+        LocationContextF.create(
+            site=self.collection.site, group=self.grp2, value="FW1"
+        )
+
+    def tearDown(self):
+        preferences.GeocontextSetting.geocontext_keys = self.old_keys
+        super().tearDown()
+
+    def test_serializer_includes_geocontext_columns(self):
+        """Serializer should add the GeoContext columns and values."""
+        serializer = BioCollectionOneRowSerializer(
+            self.collection,
+            context={"header": []}
+        )
+        data = serializer.data
+
+        self.assertIn("Geomorphology", data)
+        self.assertIn("Freshwater", data)
+
+        self.assertEqual(data["Geomorphology"], "GMZ1")
+        self.assertEqual(data["Freshwater"], "FW1")
+
+        self.assertIn("Geomorphology", serializer.context["header"])
+        self.assertIn("Freshwater", serializer.context["header"])
