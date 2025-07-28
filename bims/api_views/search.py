@@ -9,6 +9,9 @@ import logging
 from functools import reduce
 
 from django.contrib.auth import get_user_model
+from django.db.models import CharField
+from django.db.models.functions import Length
+
 from preferences import preferences
 
 from bims.models.chemical_record import ChemicalRecord
@@ -368,6 +371,7 @@ class CollectionSearch(object):
 
     @property
     def spatial_filter(self):
+        CharField.register_lookup(Length, 'length')
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filter_group_keys = []
         or_condition = Q()
@@ -376,15 +380,32 @@ class CollectionSearch(object):
         for spatial_filter in spatial_filters:
             spatial_filter_splitted = spatial_filter.split(',')
             if 'group' in spatial_filter_splitted:
-                spatial_filter_group_keys.append(
-                    ','.join(spatial_filter.split(',')[1:])
-                )
+                spatial_filter_key = spatial_filter_splitted[1]
+                if '.' in spatial_filter_key:
+                    key, layer_identifier = spatial_filter_key.split('.')
+                    group = LocationContextGroup.objects.filter(
+                        key=key, layer_identifier=layer_identifier
+                    ).first()
+                else:
+                    group = LocationContextGroup.objects.filter(
+                        key=spatial_filter_key
+                    ).first()
+                if group:
+                    spatial_filter_group_keys.append(group.id)
             else:
                 if spatial_filter_splitted[0] != 'value':
                     continue
-                spatial_filter_group_id = LocationContextGroup.objects.filter(
-                    key=spatial_filter_splitted[1]
-                ).first().id
+                spatial_filter_key = spatial_filter_splitted[1]
+                if '.' in spatial_filter_key:
+                    [spatial_filter_key, layer_identifier] = spatial_filter_key.split('.')
+                    spatial_filter_group_id = LocationContextGroup.objects.filter(
+                        key=spatial_filter_key,
+                        layer_identifier=layer_identifier
+                    ).first().id
+                else:
+                    spatial_filter_group_id = LocationContextGroup.objects.filter(
+                        key=spatial_filter_key,
+                    ).first().id
                 or_condition |= Q(**{
                     'locationcontext__group':
                         spatial_filter_group_id,
@@ -392,11 +413,12 @@ class CollectionSearch(object):
                         spatial_filter_splitted[2:])})
         if spatial_filter_group_keys:
             spatial_filter_groups = LocationContextGroup.objects.filter(
-                key__in=list(set(spatial_filter_group_keys))
+                id__in=list(set(spatial_filter_group_keys))
             ).values_list('id', flat=True)
-            or_condition |= Q(**{
-                'locationcontext__group__in':
-                    spatial_filter_groups})
+            or_condition |= (
+                Q(locationcontext__group__in=spatial_filter_groups) &
+                Q(locationcontext__value__length__gt=0)
+            )
         return or_condition
 
     @property

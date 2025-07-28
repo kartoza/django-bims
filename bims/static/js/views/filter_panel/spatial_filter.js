@@ -265,17 +265,21 @@ define([
                             `id="${elmId}" ` +
                             'multiple="multiple" style="width: 100%"/>');
                         currentItem.append($select);
-                        let $selectAutocomplete = $(`#${elmId}`);
+                        let $selectAutocomplete = $($(`[id="${elmId}"]`)[0]);
                         $selectAutocomplete.select2({
                             ajax: {
                                 url: "/location-context-autocomplete/",
                                 dataType: "json",
                                 delay: 250,
                                 data: function (params) {
-                                    return {
+                                    let paramData = {
                                         q: params.term,
-                                        groupKey: groupData.key
+                                        groupKey: groupData.key.split('.')[0]
                                     }
+                                    if (groupData.key.includes('.')) {
+                                        paramData['layerIdentifier'] = groupData.key.split('.')[1]
+                                    }
+                                    return paramData;
                                 },
                                 processResults: function (data) {
                                     let newData = $.map(data, function (obj) {
@@ -397,21 +401,19 @@ define([
             var value = $target.val();
             var $wrapper = $target.parent();
             var level = $target.data('level');
+            let layerName = $target.attr('name');
             let self = this;
             let isAutocompleteFilter = $wrapper.hasClass('spatial-filter-autocomplete-group');
 
             if ($target.is(':checked')) {
-
                 if (isAutocompleteFilter) {
                     $wrapper.find('select').prop('disabled', true);
-                    let layerName = $target.attr('name');
                     let selectedValues = $wrapper.find('select').find(':selected');
                     for (const selected of selectedValues) {
                         self.removeSelectedSpatialFilterLayer(layerName, selected.value);
                         self.removeSelectedValue(layerName, `value,${layerName},${selected.value}`);
                     }
                 }
-
                 this.addSelectedValue(targetName, value);
                 this.addSelectedSpatialFilterLayerFromCheckbox($target);
                 let $children = $wrapper.children().find('input:checkbox:not(:checked)');
@@ -423,17 +425,14 @@ define([
                     this.removeSelectedValue(targetName, childrenValue);
                 }
             } else {
-
                 if (isAutocompleteFilter) {
                     $wrapper.find('select').prop('disabled', false);
-                    let layerName = $target.attr('name');
                     let selectedValues = $wrapper.find('select').find(':selected');
                     for (const selected of selectedValues) {
                         self.addSelectedSpatialFilterLayer(layerName, selected.value);
                         self.addSelectedValue(layerName, `value,${layerName},${selected.value}`);
                     }
                 }
-
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
