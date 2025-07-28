@@ -265,17 +265,21 @@ define([
                             `id="${elmId}" ` +
                             'multiple="multiple" style="width: 100%"/>');
                         currentItem.append($select);
-                        let $selectAutocomplete = $(`#${elmId}`);
+                        let $selectAutocomplete = $($(`[id="${elmId}"]`)[0]);
                         $selectAutocomplete.select2({
                             ajax: {
                                 url: "/location-context-autocomplete/",
                                 dataType: "json",
                                 delay: 250,
                                 data: function (params) {
-                                    return {
+                                    let paramData = {
                                         q: params.term,
-                                        groupKey: groupData.key
+                                        groupKey: groupData.key.split('.')[0]
                                     }
+                                    if (groupData.key.includes('.')) {
+                                        paramData['layerIdentifier'] = groupData.key.split('.')[1]
+                                    }
+                                    return paramData;
                                 },
                                 processResults: function (data) {
                                     let newData = $.map(data, function (obj) {

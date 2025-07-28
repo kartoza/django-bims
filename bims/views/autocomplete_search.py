@@ -359,14 +359,21 @@ def location_context_value_autocomplete(request) -> HttpResponse:
 
     query = request.GET.get('q', '').lower()
     group_key = request.GET.get('groupKey', '')
+    layer_identifier = request.GET.get('layerIdentifier', '')
 
     data = []
 
     if group_key:
         try:
-            group = LocationContextGroup.objects.get(
-                key=group_key
-            )
+            if layer_identifier:
+                group = LocationContextGroup.objects.get(
+                    key=group_key,
+                    layer_identifier=layer_identifier
+                )
+            else:
+                group = LocationContextGroup.objects.get(
+                    key=group_key
+                )
         except LocationContextGroup.DoesNotExist:
             return HttpResponse(data, 'application/json')
 
