@@ -657,7 +657,7 @@ define([
             return uuidRegex.test(value);
         },
         showBoundary: function () {
-            // Show border in red outline to map for selected filter
+            // Show border in red outline / red boundary to map for selected filter
             if (this.selectedSpatialFilterLayers.length < 1) {
                 return true;
             }
@@ -666,16 +666,19 @@ define([
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
-                let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0]);
+                let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0])
                 let layerIdentifier = $filterContainer.data('layer-identifier');
+                let uuid = key.split('.')[0];
 
-                if (self.isUUID(key)) {
+                if (self.isUUID(uuid)) {
                     $.ajax({
                         type: 'GET',
-                        url: '/api/layer/',
+                        url: `/api/layer/${uuid}/`,
                         dataType: 'json',
-                        success: function (data) {
-                            const layer = data.results.find(item => item.tile_url && item.tile_url.includes(key));
+                        success: function (layer) {
+                            if (!layer) {
+                                return false;
+                            }
                             const layerStyle = function(feature, resolution) {
                               if (selectedLayer.includes(feature.get(layerIdentifier))) {
                                 return new ol.style.Style({
@@ -691,7 +694,7 @@ define([
                             let vectorSource = null;
                             if (layer.pmtile) {
                                 vectorSource = new olpmtiles.PMTilesVectorSource({
-                                  url: `/api/serve-pmtile/${key}/`,
+                                  url: `/api/serve-pmtile/${uuid}/`,
                                   attributions: []
                                 });
                             } else {
