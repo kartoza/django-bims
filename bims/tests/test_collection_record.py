@@ -100,13 +100,19 @@ class TestBioCollectionOneRowSerializerGeoContext(FastTenantTestCase):
 
     def setUp(self):
         super().setUp()
-        self.old_keys = preferences.GeocontextSetting.geocontext_keys
-        preferences.GeocontextSetting.geocontext_keys = (
-            "geo_class_recoded,feow_hydrosheds:h1"
-        )
+        geocontext_setting = preferences.GeocontextSetting
+
+        if not geocontext_setting:
+            geocontext_setting = preferences.GeocontextSetting.objects.create()
+
+        if geocontext_setting:
+            geocontext_setting.geocontext_keys = "geo_class_recoded,feow_hydrosheds:h1"
+            geocontext_setting.save()
 
         self.user = UserF.create()
-        self.collection = BiologicalCollectionRecordF.create(owner=self.user)
+        self.collection = BiologicalCollectionRecordF.create(
+            owner=self.user,
+        )
 
         self.grp1 = LocationContextGroupF.create(
             name="Geomorphology",
@@ -128,7 +134,6 @@ class TestBioCollectionOneRowSerializerGeoContext(FastTenantTestCase):
         )
 
     def tearDown(self):
-        preferences.GeocontextSetting.geocontext_keys = self.old_keys
         super().tearDown()
 
     def test_serializer_includes_geocontext_columns(self):
