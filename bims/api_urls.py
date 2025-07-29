@@ -6,7 +6,7 @@ from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
 )
-from bims.api_views.layers import CloudNativeLayerList
+from bims.api_views.layers import CloudNativeLayerList, LayerByUUIDView
 from bims.api_views.minisass_observations import MiniSASSObservationsView
 from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
@@ -418,4 +418,7 @@ urlpatterns = [
     path('delete-dangling-sites/',
          DeleteDanglingLocationSites.as_view(),
          name='delete_dangling_sites'),
+    path('layer/<uuid:uuid>/',
+         LayerByUUIDView.as_view(),
+         name='layer-by-uuid'),
 ]
