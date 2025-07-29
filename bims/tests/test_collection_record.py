@@ -11,6 +11,7 @@ from bims.tests.model_factories import (
     LocationContextF
 )
 from bims.models import BiologicalCollectionRecord
+from bims.serializers.bio_collection_serializer import BioCollectionOneRowSerializer
 
 
 class TestCollectionRecordView(FastTenantTestCase):
