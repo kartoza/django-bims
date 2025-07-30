@@ -51,13 +51,16 @@ class TaxaProcessor(object):
         genus = (self.get_row_value(row, GENUS) or '').strip()
         species = (self.get_row_value(row, SPECIES) or '').strip()
 
+        if not species:
+            species = self.get_row_value(row, TAXON)
+
         if not genus or not species:
             return species or genus
 
         species_lc = ' '.join(part.lower() for part in species.split())
 
         if species_lc.startswith(genus.lower() + ' '):
-            return species_lc
+            return species
 
         return f'{genus} {species_lc}'
 
