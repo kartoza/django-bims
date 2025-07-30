@@ -671,6 +671,9 @@ define([
                 let uuid = key.split('.')[0];
 
                 if (self.isUUID(uuid)) {
+                    if (!layerIdentifier && key.includes('.')) {
+                        layerIdentifier = key.split('.')[1];
+                    }
                     $.ajax({
                         type: 'GET',
                         url: `/api/layer/${uuid}/`,
@@ -680,7 +683,7 @@ define([
                                 return false;
                             }
                             const layerStyle = function(feature, resolution) {
-                              if (selectedLayer.includes(feature.get(layerIdentifier))) {
+                              if (selectedLayer.includes("" + feature.get(layerIdentifier))) {
                                 return new ol.style.Style({
                                   stroke: new ol.style.Stroke({
                                     color: 'red',
