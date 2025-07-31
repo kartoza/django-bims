@@ -18,6 +18,8 @@
     <link rel="stylesheet"
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/site_form.css" %}" rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/jstree@3.3.15/dist/themes/default/style.min.css" />
     <script>
         const taxonGroupId = "{{ taxon_group_id }}";
         const parent = {% if object.parent %}"{{ object.parent.canonical_name }} ({{ object.parent.rank }})"{% else %}null{% endif %};
@@ -109,6 +111,15 @@
                            class="form-control form-control-sm"
                            placeholder=""
                            value="{{ object.taxon_name }}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label col-form-label">
+                    Taxon hierarchy
+                </label>
+                <div class="col-sm-10">
+                    <div id="taxon-tree"></div>
                 </div>
             </div>
 
@@ -395,6 +406,7 @@
     <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
     <script src="{% static "js/taxon/edit_taxon.js" %}"></script>
     <script src="{% static "js/non_requirejs/tag_select.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.15/dist/jstree.min.js"></script>
 
     <script>
         const checkbox = document.getElementById('disclaimerCheck');

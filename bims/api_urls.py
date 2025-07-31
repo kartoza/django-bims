@@ -36,7 +36,7 @@ from bims.api_views.taxon import (
     FindTaxon,
     AddNewTaxon,
     TaxaList,
-    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView
+    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -421,4 +421,9 @@ urlpatterns = [
     path('layer/<uuid:uuid>/',
          LayerByUUIDView.as_view(),
          name='layer-by-uuid'),
+    path(
+        "taxonomy-tree/<int:taxon_id>/",
+        TaxonTreeJsonView.as_view(),
+        name="taxonomy-tree-json",
+    )
 ]
