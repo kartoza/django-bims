@@ -22,6 +22,9 @@ function formatTaxaSelection (taxa) {
     return taxa.text;
 }
 
+$('#rank').change(function () {
+})
+
 $('.taxa-auto-complete').select2({
     ajax: {
         url: '/species-autocomplete/',
@@ -29,8 +32,7 @@ $('.taxa-auto-complete').select2({
         data: function (params) {
             return {
                 term: params.term,
-                taxonGroupId: taxonGroupId,
-                exclude: taxonId
+                rank: $(this).data('rank')
             }
         },
         processResults: function (data) {
