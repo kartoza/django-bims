@@ -79,18 +79,6 @@
             </div>
 
             <div class="form-group row">
-                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
-                    Taxon Name
-                </label>
-                <div class="col-sm-10">
-                    <input type="text" name="canonical_name" id="canonical_name"
-                           class="form-control form-control-sm"
-                           placeholder=""
-                           value="{{ object.canonical_name }}" >
-                </div>
-            </div>
-
-            <div class="form-group row">
                 <label for="rank" class="col-sm-2 col-form-label col-form-label">
                     Rank
                 </label>
@@ -103,25 +91,46 @@
                 </div>
             </div>
 
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Parent
+                </label>
+                <div class="col-sm-10">
+                    <select id="parent-taxon" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Name
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" name="taxon_name" id="taxon_name"
+                           class="form-control form-control-sm"
+                           placeholder=""
+                           value="{{ object.taxon_name }}" >
+                </div>
+            </div>
+
             {% for taxon in taxon_ranks %}
                 <div class="form-group row">
                     <label for="rank" class="col-sm-2 col-form-label col-form-label">
                         {{ taxon.rank }}
-                        {% if taxon.rank.lower == object.parent.rank.lower %}
-                            <span class="badge badge-warning">Parent</span>
-                        {% endif %}
                     </label>
                     <div class="col-sm-10">
-                        {% if object.parent.rank.lower == taxon.rank.lower %}
-                            <select id="parent-taxon" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
-                            {% if object.parent.parent %}
-                            <small class="form-text text-muted">
-                                <a onclick="window.location.href='/taxonomy/edit/{{ taxon_group_id }}/{{ object.parent.id }}/?next=' + encodeURIComponent('{{ next }}')" href="#">Edit parent</a>
-                            </small>
-                            {% endif %}
-                        {% else %}
-                            <input type="text" class="form-control form-control-sm" readonly value="{{ object|get_attr:taxon.field }}">
-                        {% endif %}
+{#                        {% if object.parent.rank.lower == taxon.rank.lower %}#}
+{#                            <select id="parent-taxon" class="taxa-auto-complete" name="parent" data-rank="{{ taxon.rank }}" style="width: 100%"></select>#}
+{#                            {% if object.parent.parent %}#}
+{#                            <small class="form-text text-muted">#}
+{#                                <a onclick="window.location.href='/taxonomy/edit/{{ taxon_group_id }}/{{ object.parent.id }}/?next=' + encodeURIComponent('{{ next }}')" href="#">Edit {{ object.parent.rank }}</a>#}
+{#                            </small>#}
+{#                            {% endif %}#}
+{#                        {% else %}#}
+{#                        {% endif %}#}
+                        <input type="text"
+                               name="{{ taxon.rank.lower }}_name"
+                               class="species-name-field form-control form-control-sm" readonly
+                               value="{{ object|get_attr:taxon.field }}">
                     </div>
                 </div>
             {% endfor %}

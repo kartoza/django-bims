@@ -421,14 +421,26 @@ class AbstractTaxonomy(AbstractValidation):
 
     @property
     def taxon_name(self):
-        if self.rank.lower() == 'subspecies':
-            canonical_names = self.canonical_name.split(' ')
-            if len(canonical_names) >= 3:
-                return canonical_names[-1]
-            return self.canonical_name.split(self.full_species_name)[-1].strip()
-        if self.is_species and self.genus_name:
-            return self.canonical_name.split(self.genus_name)[-1].strip()
-        return self.canonical_name
+        """
+        Return the most specific part of the taxon's name.
+        """
+        canon = (self.canonical_name or "").strip()
+        if not canon:
+            return ""
+
+        tokens = canon.split()
+        rank = (self.rank or "").lower()
+
+        if rank == "subspecies" or rank == "species":
+            genus_name = self.genus_name
+            if tokens and tokens[0].lower() == genus_name.lower() and len(tokens) > 1:
+                canon = " ".join(tokens[1:])
+                tokens = canon.split()
+            if rank == "subspecies" and self.parent and self.parent.rank.lower() == "species":
+                if len(tokens) > 1 and tokens[0].lower == self.parent.taxon_name:
+                    canon = " ".join(tokens[1:])
+
+        return canon
 
     @property
     def is_species(self):
