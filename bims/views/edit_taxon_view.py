@@ -107,9 +107,6 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         if 'species' in current_rank.lower():
             genus_name = parent.genus_name
-            if not genus_name:
-                raise Http404('Error')
-
             if not taxon_name.startswith(genus_name):
                 taxon_name = f'{genus_name} {taxon_name}'
 
