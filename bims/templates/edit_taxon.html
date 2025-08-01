@@ -123,6 +123,27 @@
                 </div>
             </div>
 
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Parent
+                </label>
+                <div class="col-sm-10">
+                    <select id="parent-taxon" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Name
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" name="taxon_name" id="taxon_name"
+                           class="form-control form-control-sm"
+                           placeholder=""
+                           value="{{ object.taxon_name }}" >
+                </div>
+            </div>
+
             {% for taxon in taxon_ranks %}
                 <div class="form-group row">
                     <label for="rank" class="col-sm-2 col-form-label col-form-label">
