@@ -6,7 +6,7 @@ import re
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.forms import model_to_dict
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import status
@@ -782,3 +782,21 @@ class IUCNStatusFetchView(APIView):
         return Response(
             {"detail": "Not found"},
             status=status.HTTP_404_NOT_FOUND)
+
+
+class TaxonTreeJsonView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, taxon_id, format=None):
+        taxon = Taxonomy.objects.get(id=taxon_id)
+        nodes = []
+        current_taxon = taxon
+        while current_taxon:
+            nodes.append({
+                'id': current_taxon.id,
+                'parent': current_taxon.parent.id if current_taxon.parent else '#',
+                'text': f'{current_taxon.canonical_name} ({current_taxon.rank})',
+                'state': {'opened': True},
+            })
+            current_taxon = current_taxon.parent
+        return JsonResponse(nodes, safe=False)

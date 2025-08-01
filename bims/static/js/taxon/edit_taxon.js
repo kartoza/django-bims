@@ -1,3 +1,6 @@
+let treeDataCache = []
+let initiated = false;
+
 function formatTaxa (taxa) {
     if (taxa.loading) {
         return taxa.text;
@@ -21,6 +24,41 @@ function formatTaxaSelection (taxa) {
     }
     return taxa.text;
 }
+
+function updateTaxonTree(_taxonId) {
+    if ($('#taxon-tree').jstree(true)) {
+        $('#taxon-tree').jstree('destroy');
+    }
+
+    if (treeDataCache.length > 0) {
+
+        treeDataCache = treeDataCache.filter((cache) => cache['id'] == taxonId);
+        treeDataCache[0]['parent'] = _taxonId
+    }
+
+    $('#taxon-tree').jstree({
+        core: {
+            data: function (node, cb) {
+                $.getJSON(`/api/taxonomy-tree/${_taxonId}/`, function (data) {
+                    treeDataCache.push(...data);
+                    cb(treeDataCache);
+                });
+            },
+            multiple: false,
+            themes: { icons: false }
+        },
+        plugins: ['wholerow']
+    }).on('loaded.jstree', function () {
+        $('#taxon-tree').jstree('select_node', _taxonId.toString());
+    });
+}
+
+$('#parent-taxon').change(function () {
+    if (initiated) {
+        updateTaxonTree(this.value);
+    }
+    initiated = true;
+})
 
 $('#rank').change(function () {
 })
@@ -49,10 +87,25 @@ $('.taxa-auto-complete').select2({
     theme: "classic"
 });
 
-
 document.addEventListener('DOMContentLoaded', function() {
     const taxonomicStatus = document.getElementById('taxonomic_status');
     const acceptedTaxonField = document.getElementById('accepted-taxon-field');
+
+    $('#taxon-tree').jstree({
+        core: {
+            data: function (node, cb) {
+                $.getJSON(`/api/taxonomy-tree/${taxonId}/`, function (data) {
+                    treeDataCache = data;
+                    cb(data);
+                });
+            },
+            multiple: false,
+            themes: { icons: false }
+        },
+        plugins: ['wholerow']
+    }).on('loaded.jstree', function () {
+        $('#taxon-tree').jstree('select_node', taxonId.toString());
+    });
 
     function toggleAcceptedTaxonField() {
         if (taxonomicStatus.value === 'SYNONYM') {
