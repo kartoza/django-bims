@@ -36,7 +36,8 @@ from bims.api_views.taxon import (
     FindTaxon,
     AddNewTaxon,
     TaxaList,
-    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView
+    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
+    HarvestIUCNStatus
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -418,6 +419,9 @@ urlpatterns = [
     path('delete-dangling-sites/',
          DeleteDanglingLocationSites.as_view(),
          name='delete_dangling_sites'),
+    path('harvest-iucn-status/',
+         HarvestIUCNStatus.as_view(),
+         name='harvest_iucn_status'),
     path('layer/<uuid:uuid>/',
          LayerByUUIDView.as_view(),
          name='layer-by-uuid'),

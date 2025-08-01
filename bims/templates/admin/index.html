@@ -60,7 +60,6 @@
             removeDanglingSitesBtn.addEventListener("click", function (event) {
                 event.preventDefault();
 
-                // Confirmation dialog
                 if (confirm("Are you sure you want to delete the dangling sites?")) {
                     fetch("{% url 'delete_dangling_sites' %}", {
                         method: "POST",
@@ -89,6 +88,42 @@
             });
 
             targetElement.appendChild(removeDanglingSitesBtn);
+
+            const harvestIucnBtn = document.createElement('a');
+            harvestIucnBtn.href = "#";
+            harvestIucnBtn.className = "grp-button grp-primary";
+            harvestIucnBtn.textContent = "Harvest IUCN status";
+            harvestIucnBtn.style.marginLeft = "10px";
+            harvestIucnBtn.style.marginTop = "10px";
+
+            harvestIucnBtn.addEventListener("click", function (event) {
+                event.preventDefault();
+
+                if (confirm("Kick off a background job to harvest IUCN data?")) {
+                    fetch("{% url 'harvest_iucn_status' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "same-origin"
+                    })
+                    .then(response => {
+                        if (response.ok) return response.json();
+                        throw new Error("Failed to enqueue IUCN harvest");
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        window.location.href = "/admin/";
+                    })
+                    .catch(error => {
+                        console.error("Error harvesting IUCN:", error);
+                        alert("An unexpected error occurred. Please try again.");
+                    });
+                }
+            });
+
+            targetElement.appendChild(harvestIucnBtn);
         } else {
             console.warn("Element with class 'g-d-c' not found.");
         }

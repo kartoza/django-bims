@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
@@ -30,6 +31,7 @@ from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_verna
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
+from bims.tasks.taxa import fetch_iucn_status
 
 logger = logging.getLogger('bims')
 
@@ -800,3 +802,24 @@ class TaxonTreeJsonView(APIView):
             })
             current_taxon = current_taxon.parent
         return JsonResponse(nodes, safe=False)
+
+
+class HarvestIUCNStatus(APIView):
+    """
+    Enqueue a Celery task that pulls/refreshes IUCN Red-List info
+    for all taxa still missing a status (or for an optional list of IDs).
+    """
+    permission_classes = (IsAdminUser,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."},
+                            status=HTTP_403_FORBIDDEN)
+
+        taxa_ids = request.data.get("taxa_ids")
+        fetch_iucn_status.delay(taxa_ids or None)
+
+        return Response(
+            {"message": "Harvesting IUCN status in the background."},
+            status=HTTP_200_OK
+        )
