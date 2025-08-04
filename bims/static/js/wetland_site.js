@@ -1,7 +1,7 @@
 let wetlandData = null;
 let wmsSource = null;
 let wmsLayer = null;
-let wmsLayerName = 'kartoza:nwm6_beta_v3_20230714';
+let wmsLayerName = 'bims:nwm6_beta_v3_20230714';
 let currentCoordinate = null;
 
 let wetlandSiteCodeButton =  $('#wetland-site-code');
@@ -190,7 +190,7 @@ let fetchWetlandData = () => {
 let mapReady = (map) => {
 
   // Add wetland layer
-  let geoserverWms = 'https://maps.kartoza.com/geoserver/wms'
+  let geoserverWms = 'https://geoserver.bims.kartoza.com/geoserver/wms'
 
    // Create a new WMS source
   wmsSource = new ol.source.TileWMS({

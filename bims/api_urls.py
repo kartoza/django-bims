@@ -369,7 +369,7 @@ urlpatterns = [
     path('taxonomy-iucn-status/<int:pk>/',
          IUCNStatusFetchView.as_view(),
          name='taxonomy-iucn-status'),
-    path('wetland-data/<str:lat>/<str:lon>/',
+    path('wetland-data/<str:lon>/<str:lat>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),
     path('taxa-cites-status/',
