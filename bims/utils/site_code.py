@@ -17,6 +17,7 @@ from sass.models import River
 
 FBIS_CATCHMENT_KEY = 'river_catchment_areas_group'
 SANPARK_PARK_KEY = 'sanparks and mpas'
+QUATERNARY_CATCHMENT_LAYER = 'quaternary catchment'
 
 
 def _fetch_catchments_data(catchment_key, lon, lat):
@@ -310,19 +311,34 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
     wetland_site_code = ''
     quaternary_catchment_area_key = 'quaternary_catchment_area'
     quaternary_geocontext_key = 'quaternary_catchment_group'
+    context_key = 'name'
+    quaternary_catchment = ''
 
-    catchments, catchments_data = _get_catchments_data(
-        lat=lat,
-        lon=lon,
-        catchment_key=quaternary_geocontext_key
-    )
+    layer = Layer.objects.filter(
+        name__icontains=QUATERNARY_CATCHMENT_LAYER
+    ).first()
 
-    try:
-        if quaternary_catchment_area_key in catchments:
-            wetland_site_code += catchments[quaternary_catchment_area_key]
-        wetland_site_code += '-'
-    except TypeError:
-        pass
+    if layer:
+        features = query_features(
+            table_name=layer.query_table_name,
+            field_names=[context_key],
+            coordinates=[(lon, lat)],
+            tolerance=0.01
+        )
+        results = features.get('result', [])
+        if results and 'feature' in results[0] and context_key in results[0]['feature']:
+            quaternary_catchment = results[0]['feature'][context_key]
+
+    if not quaternary_catchment and not layer:
+        catchments, catchments_data = _get_catchments_data(
+            lat=lat,
+            lon=lon,
+            catchment_key=quaternary_geocontext_key
+        )
+        if quaternary_catchment_area_key in catchments and catchments[quaternary_catchment_area_key]:
+            quaternary_catchment = catchments[quaternary_catchment_area_key]
+
+    wetland_site_code += quaternary_catchment + '-'
 
     if wetland_data and 'name' in wetland_data and wetland_data['name']:
         wetland_site_code += wetland_data['name'].replace(' ', '')[:4]
