@@ -699,10 +699,6 @@ define([
         },
         mapMoved: function () {
             let self = this;
-            let administrative = self.checkAdministrativeLevel();
-            if (administrative !== 'detail') {
-                this.layers.changeLayerAdministrative(administrative);
-            }
         },
         loadMap: function () {
             var self = this;
@@ -776,37 +772,9 @@ define([
             this.fetchingRecords();
             $('#fetching-error .call-administrator').show();
         },
-        checkAdministrativeLevel: function () {
-            var self = this;
-            var zoomLevel = this.map.getView().getZoom();
-            var administrative = 'detail';
-            $.each(Object.keys(this.clusterLevel), function (index, value) {
-                if (zoomLevel <= value) {
-                    administrative = self.clusterLevel[value];
-                    return false;
-                }
-            });
-            return administrative;
-        },
-        resetAdministrativeLayers: function () {
-            var administrative = this.checkAdministrativeLevel();
-            if (administrative !== 'detail') {
-                if (administrative === this.clusterCollection.administrative) {
-                    return
-                }
-                this.layers.changeLayerAdministrative(administrative);
-            } else {
-                this.clusterCollection.administrative = null;
-            }
-        },
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            return;
-            if (!this.layers.isBiodiversityLayerLoaded()) {
-                return
-            }
-            self.updateClusterBiologicalCollectionZoomExt();
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
             this.closeHighlight();

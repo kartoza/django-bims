@@ -250,7 +250,6 @@ define([
                 }, 500);
                 return false;
             }
-            this.parent.resetAdministrativeLayers();
             $.each(this.viewCollection, function (index, view) {
                 view.destroy();
             });

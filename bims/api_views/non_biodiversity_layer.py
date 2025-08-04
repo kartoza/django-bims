@@ -7,27 +7,45 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.models.non_biodiversity_layer import NonBiodiversityLayer
+from bims.models.non_biodiversity_layer import NonBiodiversityLayer, LayerGroup
 from bims.serializers.non_biodiversity_layer_serializer import (
-    NonBiodiversityLayerSerializer
+    NonBiodiversityLayerSerializer, NonBiodiversityLayerGroupSerializer
 )
 from cloud_native_gis.models import Style
 
 
 class NonBiodiversityLayerList(APIView):
     """
-    List of all non_biodiversity_layer information
+    Returns all non-biodiversity-layers, grouped by NonBiodiversityLayerGroup.
     """
 
     def get(self, request, format=None):
+        groups = LayerGroup.objects.prefetch_related(
+            "layers__native_layer",
+            "layers__native_layer_style",
+            "layers__layer_groups",
+        ).order_by("order")
+
+        ungrouped_layers = (
+            NonBiodiversityLayer.objects.filter(layer_groups=None)
+            .order_by("order")
+            .select_related("native_layer", "native_layer_style")
+        )
+
+        serialized = [
+            *NonBiodiversityLayerGroupSerializer(
+                groups, many=True, context={"request": request}).data,
+            *NonBiodiversityLayerSerializer(
+                ungrouped_layers, many=True, context={"request": request}).data,
+        ]
+
         return Response(
-            NonBiodiversityLayerSerializer(
-                NonBiodiversityLayer.objects.all().order_by('order'),
-                many=True,
-                context={
-                    'request': request
-                }
-            ).data
+            [
+                {**layer, 'order': index + 1}
+                for index, layer in enumerate(
+                    sorted(serialized, key=lambda d: d['order'])
+                )
+            ]
         )
 
 

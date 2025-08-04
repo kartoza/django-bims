@@ -10,27 +10,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         highlightVector: null,
         highlightPinnedVectorSource: null,
         highlightPinnedVector: null,
-        administrativeLayerGroup: null,
         layers: {},
-        currentAdministrativeLayer: "",
-        administrativeKeyword: "Administrative",
+        layerGroups: {},
         initialLoadBiodiversityLayersToMap: false,
-        administrativeTransparency: 100,
         orders: {},
-        administrativeOrder: 0,
         layerSelector: null,
         currentWetlandRequestId: null,
         legends: {},
         wetlandLayer: 'kartoza:nwm6_beta_v3_20230714',
-        administrativeLayersName: ["Administrative Provinces", "Administrative Municipals", "Administrative Districts"],
         initialize: function () {
             this.layerStyle = new LayerStyle();
             Shared.Dispatcher.on('layers:showFeatureInfo', this.showFeatureInfo, this);
             Shared.Dispatcher.on('layers:renderLegend', this.renderLegend, this);
-            let administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'transparency');
-            if (administrativeVisibility !== null) {
-                this.administrativeTransparency = administrativeVisibility;
-            }
         },
         fetchAvailableStyles: function (layerName) {
             let select = document.getElementById(`style-${layerName}`);
@@ -118,33 +109,28 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 })
                 .catch((error) => console.error("Error fetching WMS capabilities:", error));
         },
-        isBiodiversityLayerLoaded: function () {
-            return true;
-        },
-        isAdministrativeLayerSelected: function () {
-            var $checkbox = $('.layer-selector-input[value="Administrative"]');
-            if ($checkbox.length === 0) {
-                return true
-            }
-            return $checkbox.is(':checked');
-        },
-        initLayer: function (layer, layerTitle, layerName, visibleInDefault, category = null, source = null, enableStylesSelection = false) {
+        initLayer: function (
+            layer, layerData,
+            category = null, source = null) {
             layer.set('added', false);
-            var layerType = layerName;
-            var layerSource = '';
-            var layerCategory = '';
-            if (layerName.indexOf(this.administrativeKeyword) >= 0) {
-                layerType = layerName;
-            }
+
+            let layerTitle = layerData['name'];
+            let layerName = layerData['wms_layer_name'];
+            let enableStylesSelection = layerData['enable_styles_selection'] || false;
+
+            let layerType = layerName;
+            let layerSource = '';
+            let layerCategory = '';
             if (layerName === 'Sites') {
                 layerType = layerName;
+                layerTitle = layerName;
             }
-
-            var savedLayerVisibility = Shared.StorageUtil.getItemDict(layerType, 'selected');
-
-            if (savedLayerVisibility !== null) {
-                visibleInDefault = savedLayerVisibility;
+            let defaultVisibility = Shared.StorageUtil.getItemDict(
+                layerName, 'selected');
+            if (defaultVisibility === null) {
+                defaultVisibility = layerData['default_visibility'];
             }
+            Shared.StorageUtil.setItemDict(layerData['wms_layer_name'], 'selected', defaultVisibility);
 
             if (category) {
                 layerCategory = category;
@@ -152,17 +138,16 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             if (source) {
                 layerSource = source;
             }
-
             this.layers[layerType] = {
                 'layer': layer,
-                'visibleInDefault': visibleInDefault,
+                'visibleInDefault': defaultVisibility,
                 'layerName': layerName,
                 'layerTitle': layerTitle,
                 'category': layerCategory,
                 'source': layerSource,
                 'enableStylesSelection': enableStylesSelection
             };
-            if (!visibleInDefault) {
+            if (!defaultVisibility) {
                 layer.setVisible(false);
             }
         },
@@ -212,57 +197,20 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             self.biodiversityTileLayer = new ol.layer.Tile({
                 source: self.biodiversitySource
             });
+
+            let biodiversityLayerData = {
+                'title': 'Sites',
+                'wms_layer_name': 'Sites',
+                'default_visibility': true
+            }
             self.initLayer(
                 self.biodiversityTileLayer,
-                'Sites',
-                'Sites',
-                true,
+                biodiversityLayerData,
             );
 
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
             }
-        },
-        addAdministrativeLayerToMap: function (data) {
-            let self = this;
-            let currentIndex = 0;
-            let _layerName = 'Administrative';
-            let _administrativeLayers = [];
-            $.each(this.administrativeLayersName, function (idx, layerName) {
-                $.each(data, function (index, value) {
-                    if (value.name !== layerName) {
-                        return
-                    }
-                    let options = {
-                        url: '/bims_proxy/' + encodeURI(value.wms_url),
-                        params: {
-                            layers: value.wms_layer_name,
-                            format: value.wms_format
-                        }
-                    };
-                    let layer = new ol.layer.Tile({
-                        source: new ol.source.TileWMS(options)
-                    });
-                    layer.set('layerName', layerName);
-                    layer.setVisible(currentIndex === 0);
-                    _administrativeLayers.push(layer);
-                    currentIndex += 1;
-                });
-            });
-            self.administrativeLayerGroup = new ol.layer.Group({
-                layers: _administrativeLayers
-            });
-
-            let _isAdministrativeSelected = Shared.StorageUtil.getItemDict('Administrative', 'selected');
-            if (!_isAdministrativeSelected) {
-                _isAdministrativeSelected = false;
-            }
-
-            self.initLayer(
-                self.administrativeLayerGroup,
-                _layerName,
-                _isAdministrativeSelected
-            );
         },
         convertStyles: function (styles, name) {
             styles['sources'] = {}
@@ -290,13 +238,73 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             self.addBiodiversityLayersToMap(map);
             self.renderLayers(false);
 
+            function _createLayer(layerData) {
+                let source = layerData.wms_url;
+                let tileLayer = null;
+                let category = '';
+                if (!layerData.native_layer_url) {
+                    options = {
+                        url: '/bims_proxy/' + encodeURI(layerData.wms_url),
+                        params: {
+                            name: layerData.name,
+                            layers: layerData.wms_layer_name,
+                            format: layerData.wms_format,
+                            getFeatureFormat: layerData.get_feature_format,
+                            STYLES: layerData.layer_style,
+                            displayInLayerSwitcher: true,
+                        }
+                    }
+                    source = source.replace(/(^\w+:|^)\/\//, '').split('/');
+                    if (source.length > 0) {
+                        source = source[0];
+                    }
+                    tileLayer = new ol.layer.Tile({
+                        source: new ol.source.TileWMS(options),
+                    })
+                } else {
+                    let vectorSource = null;
+                    category = 'nativeLayer';
+                    source = layerData.native_layer_abstract ? layerData.native_layer_abstract : '-';
+                    if (layerData.pmtiles) {
+                        vectorSource = new olpmtiles.PMTilesVectorSource({
+                          url: layerData.pmtiles,
+                          attributions: [layerData.attribution]
+                        });
+                    } else {
+                        vectorSource = new ol.source.VectorTile({
+                            attributions: [layerData.attribution],
+                            url: layerData.native_layer_url,
+                            format: new ol.format.MVT(),
+                            STYLES: layerData.native_layer_style
+                        })
+                    }
+                    tileLayer = new ol.layer.VectorTile({
+                        source: vectorSource,
+                        STYLES: layerData.native_layer_style,
+                        tileGrid: ol.tilegrid.createXYZ(),
+                        declutter: true,
+                    })
+                    olms.applyStyle(tileLayer, self.convertStyles(
+                        layerData.native_layer_style,
+                        layerData.name), layerData.name).catch((error) => {
+                        console.error('Failed to apply style:', error);
+                    });
+                }
+
+                return {
+                    'tile': tileLayer,
+                    'category': category,
+                    'source': source
+                }
+            }
+
             $.ajax({
                 type: 'GET',
                 url: listNonBiodiversityLayerAPIUrl,
                 dataType: 'json',
                 success: function (data) {
-                    var listNonBioHash = Shared.StorageUtil.getItem('listNonBiodiversity');
-                    var hashCurrentList = Shared.StorageUtil.hashItem(JSON.stringify(data));
+                    let listNonBioHash = Shared.StorageUtil.getItem('listNonBiodiversity');
+                    let hashCurrentList = Shared.StorageUtil.hashItem(JSON.stringify(data));
                     if (!listNonBioHash || listNonBioHash !== hashCurrentList) {
                         Shared.StorageUtil.clear();
                         Shared.StorageUtil.setItem(
@@ -304,146 +312,51 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             hashCurrentList);
                     }
                     $.each(data, function (index, value) {
-                        let source = '';
-                        let category = '';
-                        if (value['name'].indexOf(self.administrativeKeyword) >= 0) {
-                            var administrativeOrder = Shared.StorageUtil.getItemDict('Administrative', 'order');
-                            if (!administrativeOrder) {
-                                self.administrativeOrder = administrativeOrder;
-                                return;
-                            }
-                            if (self.administrativeOrder > 0) {
-                                if (parseInt(value['order']) < self.administrativeOrder) {
-                                    self.administrativeOrder = value['order'];
-                                }
-                            } else {
-                                self.administrativeOrder = value['order'];
-                            }
+                        let layerOrder = value['order'] + 1;
+
+                        if (value['type'] === 'LayerGroup') {
+                            self.orders[layerOrder] = value['name'];
+                            self.layerGroups[value['name']] = value;
+                            $.each(value['layers'], function (idx, layer) {
+                                let _layer = _createLayer(layer);
+                                self.initLayer(
+                                    _layer['tile'],
+                                    layer,
+                                    _layer['category'],
+                                    _layer['source']
+                                );
+                            })
                             return;
                         }
 
-                        var layerOrder = value['order'] + 1;
                         self.orders[layerOrder] = value['wms_layer_name'];
-
-                        var defaultVisibility = Shared.StorageUtil.getItemDict(
-                            value['wms_layer_name'], 'selected');
-                        if (defaultVisibility === null) {
-                            defaultVisibility = value['default_visibility'];
-                        }
-                        Shared.StorageUtil.setItemDict(value['wms_layer_name'], 'selected', defaultVisibility);
-                        let options = {};
-                        let tileLayer = null;
-                        source = value.wms_url;
-                        if (!value.native_layer_url) {
-                            options = {
-                                url: '/bims_proxy/' + encodeURI(value.wms_url),
-                                params: {
-                                    name: value.name,
-                                    layers: value.wms_layer_name,
-                                    format: value.wms_format,
-                                    getFeatureFormat: value.get_feature_format,
-                                    STYLES: value.layer_style,
-                                    displayInLayerSwitcher: true,
-                                }
-                            }
-                            source = source.replace(/(^\w+:|^)\/\//, '').split('/');
-                            if (source.length > 0) {
-                                source = source[0];
-                            }
-                            tileLayer = new ol.layer.Tile({
-                                source: new ol.source.TileWMS(options),
-                            })
-                        } else {
-                            let vectorSource = null;
-                            category = 'nativeLayer';
-                            source = value.native_layer_abstract ? value.native_layer_abstract : '-';
-                            if (value.pmtiles) {
-                                vectorSource = new olpmtiles.PMTilesVectorSource({
-                                  url: value.pmtiles,
-                                  attributions: [value.attribution]
-                                });
-                            } else {
-                                vectorSource = new ol.source.VectorTile({
-                                    attributions: [value.attribution],
-                                    url: value.native_layer_url,
-                                    format: new ol.format.MVT(),
-                                    STYLES: value.native_layer_style
-                                })
-                            }
-                            tileLayer = new ol.layer.VectorTile({
-                                source: vectorSource,
-                                STYLES: value.native_layer_style,
-                                tileGrid: ol.tilegrid.createXYZ(),
-                                declutter: true,
-                            })
-                            olms.applyStyle(tileLayer, self.convertStyles(value.native_layer_style, value.name), value.name).catch((error) => {
-                                console.error('Failed to apply style:', error);
-                            });
-                        }
-
-
+                        let _layer = _createLayer(value);
                         self.initLayer(
-                            tileLayer,
-                            value.name,
-                            value['wms_layer_name'],
-                            defaultVisibility,
-                            category,
-                            source,
-                            value['enable_styles_selection']
+                            _layer['tile'],
+                            value,
+                            _layer['category'],
+                            _layer['source']
                         );
                     });
 
-                    // let administrativeOrder = self.administrativeOrder + 1;
-                    // self.orders[administrativeOrder] = self.administrativeKeyword;
-                    // self.addAdministrativeLayerToMap(data);
-                    // Render available layers first because fetching layer from geonode takes time
-
-                    self.renderLayers(true);
-
+                    self.renderLayers();
                     $('.layer-source').click(function (e) {
                         self.showLayerSource(e.target.attributes["value"].value);
                     });
-
                     $('.layer-source-style').click(function (e) {
                         self.showLayerStyle(e.target.attributes["value"].value);
                     });
 
                 },
                 error: function (err) {
-                    self.addBiodiveristyLayersToMap(map);
                 }
             });
-
-        },
-        changeLayerAdministrative: function (administrative) {
-            var self = this;
-            var administrativeVisibility = Shared.StorageUtil.getItemDict('Administrative', 'selected');
-            if (!self.isAdministrativeLayerSelected() || !administrativeVisibility || !self.administrativeLayerGroup) {
-                return false;
-            }
-            for (let i = 0; i < self.administrativeLayerGroup.getLayers().getLength(); i++) {
-                let _administrativeLayer = self.administrativeLayerGroup.getLayers().item(i);
-                let _layerName = _administrativeLayer.get('layerName');
-                if (_layerName.toLowerCase().indexOf(administrative) > -1) {
-                    self.currentAdministrativeLayer = _layerName;
-                    _administrativeLayer.setVisible(true);
-                } else {
-                    _administrativeLayer.setVisible(false);
-                }
-            }
-            // this.changeLayerTransparency(this.administrativeKeyword, this.administrativeTransparency);
         },
         changeLayerVisibility: function (layerName, visible) {
             if (Object.keys(this.layers).length === 0) {
                 return false;
             }
             this.layers[layerName]['layer'].setVisible(visible);
-        },
-        changeLayerTransparency: function (layername, opacity) {
-            if (Object.keys(this.layers).length === 0) {
-                return false;
-            }
-            this.layers[layername]['layer'].setOpacity(opacity);
         },
         selectorChanged: function (layerName, selected) {
             Shared.StorageUtil.setItemDict(layerName, 'selected', selected);
@@ -482,7 +395,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
 
             let $legendElement = this.getLegendElement(layerName);
-            if (layerName === 'Sites' && this.isBiodiversityLayerLoaded()) {
+            if (layerName === 'Sites') {
                 if (siteCodeGeneratorMethod === 'fbis') {
                     if (selected) {
                         this.renderSitesLegend();
@@ -606,27 +519,20 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             const $legendHost   = $('#map-legend');
             const legendRowSel  = `.legend-row[data-name="${id}"]`;
             let attributeField = '';
-            console.log(styles);
 
             function getFilteredValues(filter) {
-                var result = { field: null, values: [] };
-
+                let result = { field: null, values: [] };
                 function walk(expr) {
                     if (!Array.isArray(expr)) { return; }
-
-                    var op   = expr[0];
-                    var rest = expr.slice(1);
-
+                    let op   = expr[0];
+                    let rest = expr.slice(1);
                     if (op === 'all' || op === 'any') {
                         for (var i = 0; i < rest.length; i++) { walk(rest[i]); }
                     }
                     else if (op === '==' || op === 'in' || op === '!in') {
-                        var field = rest[0];
-
+                        let field = rest[0];
                         if (field === '$type') { return; }
-
                         if (!result.field) { result.field = field; }
-
                         if (op === '==') {
                             result.values.push(rest[1]);
                         } else {
@@ -634,7 +540,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         }
                     }
                 }
-
                 walk(filter);
                 return result;
             }
@@ -761,37 +666,99 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 });
             }
         },
-        renderLayersSelector: function (key, name, title, visibleInDefault, transparencyDefault, category, source, isFirstTime, enableStylesSelection = false) {
+        renderLayerGroup: function (layerGroup) {
+            let self = this;
+            let id = 'layerGroup_' + layerGroup['id'];
+            let name = layerGroup['name'];
+            let checked = '';
+            const allChildren = layerGroup['layers'];
+            const checkedChildren = allChildren.filter(function (layer) {
+                const layerObj = self.layers[layer['name']];
+                return layerObj && layerObj.visibleInDefault;
+            });
+            if (checkedChildren.length === 0) {
+                checked = '';
+            } else if (checkedChildren.length === allChildren.length) {
+                checked = 'checked'
+            } else {
+                checked = 'indeterminate'
+            }
+            let rowTemplate = _.template($('#layer-group-row').html());
+            let $rowTemplate = $(rowTemplate({
+                id: id,
+                name: name,
+                title: name,
+                key: id,
+                checked: checked,
+                opacity: 100
+            }));
+            if (checked === 'indeterminate') {
+                $rowTemplate.find('.layer-group-input').prop('indeterminate', true);
+            }
+            $rowTemplate.prependTo('#layers-selector');
+
+            $rowTemplate.find('.toggle-group-children').on('click', function () {
+                const $btn = $(this);
+                const $icon = $btn.find('i');
+                const $target = $($btn.data('target'));
+                $target.slideToggle(150);
+                $icon.toggleClass('fa-chevron-down fa-chevron-up');
+            });
+
+            let currentLayerTransparency = null;
+
+            $.each(allChildren, function (idx, layer) {
+                let layerName = layer['name'];
+                let layerData = self.layers[layer['name']];
+                let layerTransparency = Shared.StorageUtil.getItemDict(layerName, 'transparency');
+                if (layerTransparency !== null) {
+                    currentLayerTransparency = layerTransparency * 100;
+                    self.changeLayerTransparency(layerName, layerTransparency);
+                } else {
+                    currentLayerTransparency = 100;
+                }
+                self.renderLayersSelector(
+                    layer['wms_layer_name'], layer['name'], layer['name'], layerData['visibleInDefault'],
+                    currentLayerTransparency, '', '',
+                    layer['enable_styles_selection'],
+                    '#children_' + id
+                );
+            });
+            setTimeout(function () {
+                self.refreshGroupSlider($(`#children_${id}`));
+            }, 100)
+        },
+        renderLayersSelector: function (key, name, title,
+                                        visibleInDefault, transparencyDefault, category, source,
+                                        enableStylesSelection = false,
+                                        container = '#layers-selector') {
             if ($('.layer-selector-input[value="' + key + '"]').length > 0) {
                 return
             }
-            var self = this;
-            var mostTop = 'Sites';
-            var checked = '';
+            let self = this;
+            let mostTop = 'Sites';
+            let checked = '';
             if (visibleInDefault) {
                 checked += 'checked';
             }
             if (name === mostTop) {
                 name = '<b>' + name + '</b>';
             }
-
-            var layerSelectorSearch = Shared.StorageUtil.getItem('layerSelectorSearch');
-            var layerDisplayed = 'block';
+            let layerSelectorSearch = Shared.StorageUtil.getItem('layerSelectorSearch');
+            let layerDisplayed = 'block';
             if (layerSelectorSearch) {
                 if (name.toLowerCase().indexOf(layerSelectorSearch.toLowerCase()) === -1) {
                     layerDisplayed = 'none';
                 }
             }
-
-            var tags = '';
-            var layerId = name;
+            let layerId = name;
             if (!source) {
                 source = '';
             }
             if (!category) {
                 category = '';
             }
-            var rowTemplate = _.template($('#layer-selector-row').html());
+            let rowTemplate = _.template($('#layer-selector-row').html());
             let $rowTemplate = $(rowTemplate({
                 id: layerId,
                 name: name,
@@ -804,66 +771,122 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 category: category,
                 enableStylesSelection: enableStylesSelection
             }));
-            if (isFirstTime) {
-                $rowTemplate.prependTo('#layers-selector').find('.layer-selector-tags').append(tags);
-            } else {
-                $rowTemplate.appendTo('#layers-selector').find('.layer-selector-tags').append(tags);
-            }
-
-            var needToReloadXHR = false;
+            $rowTemplate.prependTo(container);
+            let needToReloadXHR = false;
             self.toggleLegend(key, visibleInDefault, needToReloadXHR);
         },
+        refreshGroupSlider: function ($childSlider) {
+            const $childrenBox = $childSlider.closest('[id^="children_"]');
+            if ($childrenBox.length === 0) return;
+            const groupId = $childrenBox.attr('id').replace('children_', '');
+            const $groupSlider = $(`.layer-transparency[data-group="${groupId}"]`);
+            if ($groupSlider.length === 0) return;
+            const values = $childrenBox.find('.layer-transparency')
+                .not('[data-group="true"]')
+                .map(function () { return $(this).slider('value'); })
+                .get();
+            if (!values.length) return;
+            const min = Math.min.apply(null, values);
+            const max = Math.max.apply(null, values);
+            const mixed = min !== max;
+            const newVal = mixed ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : values[0];
+            $groupSlider.slider('value', newVal);
+            $groupSlider.toggleClass('mixed-transparency', mixed);
+        },
+        changeLayerTransparency: function (layername, opacity) {
+            let self = this;
+            if (!Object.keys(this.layers).length) return false;
+            if (this.layerGroups.hasOwnProperty(layername)) {
+                $.each(this.layerGroups[layername].layers, function (_, layer) {
+                    self.layers[layer.name].layer.setOpacity(opacity);
+                });
+                return true;
+            }
+            this.layers[layername].layer.setOpacity(opacity);
+        },
         renderTransparencySlider: function () {
-            var self = this;
-            var layerDivs = $('#layers-selector').find('.layer-transparency');
-            $.each(layerDivs, function (key, layerDiv) {
-                $(layerDiv).slider({
+            let self = this;
+            $('#layers-selector').find('.layer-transparency').each(function () {
+                const $slider = $(this);
+                $slider.slider({
                     range: 'max',
                     min: 1,
                     max: 100,
-                    value: $(layerDiv).data('value'),
-                    slide: function (event, ui) {
-                        var $label = $(event.target).closest('li').find('.layer-selector-input');
-                        var layername = 'Sites';
-                        if ($label.length > 0) {
-                            layername = $label.val();
+                    value: $slider.data('value'),
+                    slide(event, ui) {
+                        const isGroup = $slider.data('group');
+                        const $label = isGroup
+                            ? $slider.closest('li').find('.layer-selector-name')
+                            : $slider.closest('li').find('.layer-selector-input');
+                        const layerKey = isGroup ? $label.html() : $label.val();
+                        self.changeLayerTransparency(layerKey, ui.value / 100);
+                        if (isGroup) {
+                            const groupId = $slider.closest('li').find('.layer-group-input').val();
+                            $(`#children_${groupId}`).find('.layer-transparency').not('[data-group="true"]').each(function () {
+                                $(this).slider('value', ui.value);
+                            });
+                            $slider.toggleClass('mixed-transparency', false);
+                        } else {
+                            self.refreshGroupSlider($slider);
                         }
-                        self.changeLayerTransparency(layername, ui.value / 100);
                     },
-                    stop: function (event, ui) {
-                        var $label = $(event.target).closest('li').find('.layer-selector-input');
-                        var layername = 'Sites';
-                        if ($label.length > 0) {
-                            layername = $label.val();
-                        }
-                        Shared.StorageUtil.setItemDict(layername, 'transparency', ui.value / 100);
-                        if (layername.indexOf(self.administrativeKeyword) >= 0) {
-                            self.administrativeTransparency = ui.value / 100;
+                    stop(event, ui) {
+                        const isGroup = $slider.data('group');
+                        if (isGroup) {
+                            const groupId = $slider.closest('li').find('.layer-group-input').val();
+                            $(`#children_${groupId}`).find('.layer-selector-input').each(function () {
+                                Shared.StorageUtil.setItemDict($(this).val(), 'transparency', ui.value / 100);
+                            });
+                            $slider.toggleClass('mixed-transparency', false);
+                        } else {
+                            const $label = $slider.closest('li').find('.layer-selector-input');
+                            const layerKey = $label.length ? $label.val() : 'Sites';
+                            Shared.StorageUtil.setItemDict(layerKey, 'transparency', ui.value / 100);
+                            self.refreshGroupSlider($slider);
                         }
                     }
                 });
             });
         },
-        renderLayers: function (isFirstTime) {
+        renderLayers: function () {
             let self = this;
             let savedOrders = $.extend({}, self.orders);
 
             // Reverse orders
             let reversedOrders = savedOrders;
-            if (isFirstTime) {
-                reversedOrders = [];
-                $.each(savedOrders, function (key, value) {
-                    reversedOrders.unshift(value);
-                });
-            }
+            reversedOrders = [];
+            $.each(savedOrders, function (key, value) {
+                reversedOrders.unshift(value);
+            });
 
             $.each(reversedOrders, function (index, key) {
-                var value = self.layers[key];
-                var layerName = '';
-                var layerTitle = '';
-                var defaultVisibility = false;
-                var category = '';
-                var source = '';
+                let value = self.layers[key];
+
+                if (!value) {
+                    if (self.layerGroups[key]) {
+                        self.renderLayerGroup(
+                            self.layerGroups[key],
+                        )
+                        $.each(self.layerGroups[key]['layers'], function (key, value) {
+                            let layerName = value['name'];
+                            if (!self.layers[layerName]) {
+                                return
+                            }
+                            let _layer = self.layers[layerName]['layer'];
+                            if (!_layer.get('added')) {
+                                _layer.set('added', true);
+                                self.map.addLayer(_layer);
+                            }
+                        });
+                        return
+                    }
+                }
+
+                let layerName = '';
+                let layerTitle = '';
+                let defaultVisibility = false;
+                let category = '';
+                let source = '';
 
                 if (typeof value !== 'undefined') {
                     layerName = value['layerName'];
@@ -883,11 +906,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     return true;
                 }
 
-                var currentLayerTransparency = 100;
-
+                let currentLayerTransparency = 100;
                 // Get saved transparency data from storage
-                var itemName = key;
-                var layerTransparency = Shared.StorageUtil.getItemDict(itemName, 'transparency');
+                let itemName = key;
+                let layerTransparency = Shared.StorageUtil.getItemDict(itemName, 'transparency');
                 if (layerTransparency !== null) {
                     currentLayerTransparency = layerTransparency * 100;
                     self.changeLayerTransparency(itemName, layerTransparency);
@@ -895,24 +917,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     currentLayerTransparency = 100;
                 }
 
-                if (layerName.indexOf(self.administrativeKeyword) >= 0) {
-                    var administrativeVisibility = Shared.StorageUtil.getItem('Administrative');
-                    if (administrativeVisibility === null) {
-                        administrativeVisibility = true;
-                    } else {
-                        if (administrativeVisibility.hasOwnProperty('selected')) {
-                            administrativeVisibility = administrativeVisibility['selected'];
-                        }
-                    }
-                    defaultVisibility = administrativeVisibility;
-                    source = 'Base';
-                }
-
-                self.renderLayersSelector(key, layerName, layerTitle, defaultVisibility, currentLayerTransparency, category, source, isFirstTime, typeof value !== 'undefined' ? value['enableStylesSelection'] : false);
+                self.renderLayersSelector(
+                    key, layerName, layerTitle, defaultVisibility,
+                    currentLayerTransparency, category, source,
+                    typeof value !== 'undefined' ? value['enableStylesSelection'] : false);
             });
 
             // RENDER LAYERS
             $.each(reversedOrders, function (key, value) {
+                if (!self.layers[value]) {
+                    return
+                }
                 let _layer = self.layers[value]['layer'];
                 if (!_layer.get('added')) {
                     _layer.set('added', true);
@@ -922,14 +937,44 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             self.renderTransparencySlider();
 
             $('.layer-selector-input').change(function (e) {
-                self.selectorChanged($(e.target).val(), $(e.target).is(':checked'))
+                const input = $(e.target);
+                const isChecked = input.is(':checked');
+                self.selectorChanged(input.val(), isChecked);
+
+                const parentDiv = input.closest('[id^="children_"]');
+                if (parentDiv.length === 0) return;
+
+                const groupId = parentDiv.attr('id').replace('children_', '');
+                const groupCheckbox = $(`.layer-group-input[value="${groupId}"]`);
+                if (groupCheckbox.length === 0) return;
+
+                const allChildren = parentDiv.find('.layer-selector-input');
+                const checkedChildren = allChildren.filter(':checked');
+
+                if (checkedChildren.length === 0) {
+                    groupCheckbox.prop('indeterminate', false).prop('checked', false);
+                } else if (checkedChildren.length === allChildren.length) {
+                    groupCheckbox.prop('indeterminate', false).prop('checked', true);
+                } else {
+                    groupCheckbox.prop('indeterminate', true).prop('checked', false);
+                }
             });
-            if (isFirstTime) {
-                setTimeout(function () {
-                    self.initializeLayerSelector();
-                }, 500)
-                self.refreshLayerOrders();
-            }
+            $('.layer-group-input').change(function (e) {
+                const layerGroupChecked = $(e.target).is(':checked');
+                const layerGroupId = $(e.target).val();
+                const layerName = $(e.target).parent().find('.layer-selector-name').html();
+                const children = $(`#children_${layerGroupId}`).find('.layer-selector-input');
+
+                Shared.StorageUtil.setItemDict(layerName, 'selected', layerGroupChecked);
+
+                $.each(children, function (key, value) {
+                    $(value).prop('checked', layerGroupChecked).trigger('change');
+                })
+            });
+            setTimeout(function () {
+                self.initializeLayerSelector();
+            }, 500)
+            self.refreshLayerOrders();
         },
         showFeatureInfo: function (lon, lat, siteExist = false) {
             // Show feature info from lon and lat
@@ -1074,22 +1119,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                         Object.values(data).join(','),
                         ''
                     ].join('\n')
-                    // CSV file
                     let csvFile = new Blob([csvData], {type: "text/csv"});
-                    // Download link
                     let downloadLink = document.createElement("a");
-                    // File name
                     downloadLink.download = `${layerName}-${layerFilter}.csv`
-                    // Create a link to the file
                     downloadLink.href = window.URL.createObjectURL(csvFile);
-                    // Hide download link
                     downloadLink.style.display = "none";
-                    // Add the link to DOM
                     document.body.appendChild(downloadLink);
-                    // Click download link
                     downloadLink.click();
                 }
-
                 $button.removeAttr("disabled");
             })
         },
@@ -1175,10 +1212,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             $.each(featuresInfo, function (key_feature, feature) {
                 var layerName = feature['layerName'];
                 let contentId = `info-${key_feature.replace(':', '-')}`;
-                if (layerName.indexOf(that.administrativeKeyword) >= 0) {
-                    layerName = that.administrativeKeyword;
-                    key_feature = 'administrative';
-                }
                 tabs += '<li ' +
                     'role="presentation" class="info-wrapper-tab"  ' +
                     'title="' + layerName + '" ' +
@@ -1244,7 +1277,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         showLayerSource: function (layerKey) {
             if (Object.keys(this.layers).length === 0) {
                 return false;
-            } else if (layerKey !== this.administrativeKeyword) {
+            } else {
                 this.getLayerAbstract(layerKey);
             }
         },
@@ -1357,32 +1390,61 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 });
             });
         },
-        changeLayerOder: function (layerName, order) {
-            let $layerElm = $('.layer-selector-input[value="' + layerName + '"]').parent().parent();
-            let $layerSelectorList = $('#layers-selector li');
-            if (order > $layerSelectorList.length - 1) {
-                order = $layerSelectorList.length - 1;
+        changeLayerOrder: function (key, order) {
+            let $row = $('.layer-group-input[value="' + key + '"]').closest('li');
+            if (!$row.length) {
+                $row = $('.layer-selector-input[value="' + key + '"]').closest('li');
             }
+            if (!$row.length) return;
+            let $rows = $('#layers-selector > li');
+            if (order > $rows.length - 1) order = $rows.length - 1;
             if (order <= 0) {
-                $layerElm.insertBefore($layerSelectorList.get(0));
+                $row.insertBefore($rows.get(0));
             } else {
-                $layerElm.insertAfter($layerSelectorList.get(order - 1));
+                $row.insertAfter($rows.get(order - 1));
             }
         },
         refreshLayerOrders: function () {
             let self = this;
-            let $layerSelectorInput = $('.layer-selector-input');
-            $($layerSelectorInput.get()).each(function (index, value) {
-                let layerName = $(value).val();
-                let order = Shared.StorageUtil.getItemDict(layerName, 'order');
-                if (order != null) {
-                    self.changeLayerOder(layerName, order);
+            let seen = {};
+            let rows = [];
+            $('#layers-selector > li').each(function () {
+                let $li = $(this);
+                let key, order;
+                let isGroup = false;
+                if ($li.hasClass('sortable-group')) {
+                    key = $li.find('.layer-selector-name').html();
+                    isGroup = true;
                 } else {
-                    if (layerName === 'Sites') {
-                        self.changeLayerOder(layerName, 0)
+                    key = $li.find('.layer-selector-input').val();
+                    for (const [, g] of Object.entries(self.layerGroups)) {
+                        if (g.layers.find(l => l.name === key)) {
+                            key = g.name;
+                            break;
+                        }
                     }
                 }
+                if (seen[key]) return;
+                seen[key] = true;
+                if (isGroup) {
+                    order = Shared.StorageUtil.getItemDict(self.layerGroups[key]['layers'][0].name, 'order');
+                } else {
+                    order = Shared.StorageUtil.getItemDict(key, 'order');
+                }
+                rows.push({ key: key, order: order !== null ? parseInt(order) : 9999 });
             });
+
+            rows.sort(function (a, b) {
+                return a.order - b.order;
+            });
+
+            $.each(rows, function (index, item) {
+                item.order = index;
+            });
+            $.each(rows, function (_, item) {
+                self.changeLayerOrder(item.key, item.order);
+            });
+
             if (self && self.layerSelector) {
                 self.layerSelector.trigger('sortupdate');
             } else {
