@@ -186,26 +186,33 @@ def get_location_context_data(
         location_sites.count(),
     )
 
-    for query_key, full_key in key_map.items():
+    for key in raw_keys:
+        identifier = None
+        if ':' in key:
+            identifier = key.split(":")[1]
         if only_empty:
             sites_for_group = location_sites.exclude(
-                locationcontext__group__geocontext_group_key=query_key
+                locationcontext__group__geocontext_group_key=key
             )
+            if identifier:
+                sites_for_group = sites_for_group.exclude(
+                    locationcontext__group__layer_identifier=identifier
+                )
         else:
             sites_for_group = location_sites
 
         total = sites_for_group.count()
         if total == 0:
-            _log("All sites already contain context '%s' – skipping.", query_key)
+            _log("All sites already contain context '%s' – skipping.", key)
             continue
 
-        _log("Harvesting context '%s' for %d site(s).", query_key, total)
+        _log("Harvesting context '%s' for %d site(s).", key, total)
 
         for idx, site in enumerate(sites_for_group, start=1):
-            _log("[%s/%s] [SITE %s] Adding context '%s'", idx, total, site.id, full_key)
-            success, message = site.add_context_group(full_key)
+            _log("[%s/%s] [SITE %s] Adding context '%s'", idx, total, site.id, key)
+            success, message = site.add_context_group(key)
             status = "SUCCESS" if success else "FAILED"
-            _log("[%s] [SITE %s] [%s] %s", status, site.id, full_key, message)
+            _log("[%s] [SITE %s] [%s] %s", status, site.id, key, message)
 
             if should_generate_site_code and not site.site_code:
                 scode, _ = generate_site_code(site, lat=site.latitude, lon=site.longitude)
