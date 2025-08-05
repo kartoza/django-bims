@@ -7,27 +7,45 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.models.non_biodiversity_layer import NonBiodiversityLayer
+from bims.models.non_biodiversity_layer import NonBiodiversityLayer, LayerGroup
 from bims.serializers.non_biodiversity_layer_serializer import (
-    NonBiodiversityLayerSerializer
+    NonBiodiversityLayerSerializer, NonBiodiversityLayerGroupSerializer
 )
 from cloud_native_gis.models import Style
 
 
 class NonBiodiversityLayerList(APIView):
     """
-    List of all non_biodiversity_layer information
+    Returns all non-biodiversity-layers, grouped by NonBiodiversityLayerGroup.
     """
 
     def get(self, request, format=None):
+        groups = LayerGroup.objects.prefetch_related(
+            "layers__native_layer",
+            "layers__native_layer_style",
+            "layers__layer_groups",
+        ).order_by("order")
+
+        ungrouped_layers = (
+            NonBiodiversityLayer.objects.filter(layer_groups=None)
+            .order_by("order")
+            .select_related("native_layer", "native_layer_style")
+        )
+
+        serialized = [
+            *NonBiodiversityLayerGroupSerializer(
+                groups, many=True, context={"request": request}).data,
+            *NonBiodiversityLayerSerializer(
+                ungrouped_layers, many=True, context={"request": request}).data,
+        ]
+
         return Response(
-            NonBiodiversityLayerSerializer(
-                NonBiodiversityLayer.objects.all().order_by('order'),
-                many=True,
-                context={
-                    'request': request
-                }
-            ).data
+            [
+                {**layer, 'order': index + 1}
+                for index, layer in enumerate(
+                    sorted(serialized, key=lambda d: d['order'])
+                )
+            ]
         )
 
 
@@ -89,19 +107,57 @@ class DownloadLayerData(APIView):
         )
 
 
-class VisualizationLayers(SuperuserRequiredMixin, APIView):
-    def get(self, request, *args):
-        visualization_layers = (
-            NonBiodiversityLayer.objects.all().order_by(
-                'order')
+class LayerGroupView(SuperuserRequiredMixin, APIView):
+    def post(self, request, *args):
+        data = request.data
+        name = data.get('name')
+        description = data.get('description', '')
+        order = LayerGroup.objects.all().count() + 1
+        layer_group = LayerGroup.objects.create(
+            name=name,
+            description=description,
+            order=order
         )
-        visualization_layers_data = NonBiodiversityLayerSerializer(
-            visualization_layers, many=True, context={
-                'request': request
-            }
-        )
-        return Response(visualization_layers_data.data)
+        return Response(
+            {
+                "message": "Group created successfully.",
+                "id": layer_group.id,
+            }, status=201)
 
+    def delete(self, request, *args):
+        group_id = request.query_params.get('id')
+        if not group_id:
+            return Response({"error": "id is required."}, status=400)
+
+        group = LayerGroup.objects.filter(
+            id=group_id
+        )
+        if group.exists():
+            group.delete()
+            return Response({
+                "message": f"Group {id} deleted successfully."},
+                status=204)
+        else:
+            return Response({
+                "error": f"Group with id {id} not found."}, status=404)
+
+    def put(self, request, *args):
+        data = request.data
+        if data.get('id'):
+            try:
+                group = LayerGroup.objects.get(
+                    id=data.get('id'))
+                group.name = data.get('name')
+                group.description = data.get('description', '')
+                group.save()
+            except LayerGroup.DoesNotExist:
+                return Response({'error': 'Group not found.'}, status=404)
+
+        return Response(
+            {"message": "Group updated successfully."}, status=200)
+
+
+class VisualizationLayers(SuperuserRequiredMixin, APIView):
     def post(self, request, *args):
         data = request.data
         layer_type = data.get('layer_type', 'wms')
@@ -167,8 +223,15 @@ class VisualizationLayers(SuperuserRequiredMixin, APIView):
         for layer_data in layers_data:
             layer_id = layer_data.get('id')
             new_order = layer_data.get('display_order')
-            NonBiodiversityLayer.objects.filter(
-                id=layer_id).update(order=new_order)
+            if layer_data.get('type', 'Layer') == 'Layer':
+                NonBiodiversityLayer.objects.filter(
+                    id=layer_id).update(order=new_order)
+            else:
+                LayerGroup.objects.filter(
+                    id=layer_id
+                ).update(
+                    order=new_order,
+                )
 
         if data.get('id'):
             try:

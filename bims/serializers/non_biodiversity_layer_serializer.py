@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from bims.models import NonBiodiversityLayer
+from bims.models import NonBiodiversityLayer, LayerGroup
 
 
 class NonBiodiversityLayerSerializer(serializers.ModelSerializer):
@@ -12,6 +12,10 @@ class NonBiodiversityLayerSerializer(serializers.ModelSerializer):
     native_style_id = serializers.SerializerMethodField()
     pmtiles = serializers.SerializerMethodField()
     attribution = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
+
+    def get_type(self, obj):
+        return 'Layer'
 
     def get_native_style_id(self, obj: NonBiodiversityLayer):
         if obj.native_layer_style:
@@ -53,3 +57,25 @@ class NonBiodiversityLayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = NonBiodiversityLayer
         fields = '__all__'
+
+
+class NonBiodiversityLayerGroupSerializer(serializers.ModelSerializer):
+    layers = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
+
+    def get_type(self, obj):
+        return 'LayerGroup'
+
+    class Meta:
+        model = LayerGroup
+        fields = (
+            "id", "type", "name", "slug", "description", "order", "layers"
+        )
+
+    def get_layers(self, obj):
+        # delegate to the existing layer serializer
+        return NonBiodiversityLayerSerializer(
+            obj.layers.all().order_by("order"),
+            many=True,
+            context=self.context,
+        ).data

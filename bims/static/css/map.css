@@ -2993,3 +2993,24 @@ div:hover::-webkit-scrollbar {
     flex-shrink: 0;
 }
 
+li[data-parent] { padding-left: 22px; }
+
+.layer-group-drawer {
+    float: right;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+.drag-handle        { cursor: move;  margin-right: 6px;  color:#666; }
+.layer-group-drawer { float:right;   cursor:pointer;     margin-left:6px; }
+
+.layer-transparency.mixed-transparency .ui-slider-range {
+    background: #9e9e9e;
+}
+.layer-transparency.mixed-transparency .ui-slider-handle {
+    opacity: .55;
+}
+
+.layer-group-children {
+    background-color: color(srgb 0.91 0.91 0.91 / 0.97);
+}

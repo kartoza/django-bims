@@ -124,7 +124,7 @@ from bims.models import (
     Invasion,
     FlatPageExtension,
     TagGroup,
-    Dataset
+    Dataset, LayerGroup
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2190,6 +2190,34 @@ class DatasetAdmin(admin.ModelAdmin):
 class TagGroupAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name', 'colour')
+
+
+class LayerGroupAdminForm(forms.ModelForm):
+    order_manual = forms.IntegerField(label="Order", required=False)
+
+    class Meta:
+        model = LayerGroup
+        fields = ('name', 'slug', 'description', 'layers')   # no “order” here
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['order_manual'].initial = self.instance.order
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        obj.order = self.cleaned_data.get('order_manual') or obj.order
+        if commit:
+            obj.save()
+        return obj
+
+
+@admin.register(LayerGroup)
+class LayerGroupAdmin(OrderedModelAdmin):
+    form = LayerGroupAdminForm
+    list_display = ('name', 'order', 'move_up_down_links')
+    filter_horizontal = ('layers',)
+    ordering = ('order',)
 
 
 # Re-register GeoNode's Profile page
