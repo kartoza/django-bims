@@ -1382,8 +1382,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 });
                 self.moveLayerToTop(self.highlightPinnedVector);
                 self.moveLayerToTop(self.highlightVector);
-
-                // Update saved order
                 $($layerSelectorInput.get()).each(function (index, value) {
                     let layerName = $(value).val();
                     Shared.StorageUtil.setItemDict(layerName, 'order', parseInt(index));
@@ -1391,7 +1389,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             });
         },
         changeLayerOrder: function (key, order) {
-            let $row = $('.layer-group-input[value="' + key + '"]').closest('li');
+            let $row = $('.sortable-group[data-layer-title="' + key + '"]');
             if (!$row.length) {
                 $row = $('.layer-selector-input[value="' + key + '"]').closest('li');
             }
@@ -1433,18 +1431,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
                 rows.push({ key: key, order: order !== null ? parseInt(order) : 9999 });
             });
-
             rows.sort(function (a, b) {
                 return a.order - b.order;
             });
-
             $.each(rows, function (index, item) {
                 item.order = index;
             });
             $.each(rows, function (_, item) {
                 self.changeLayerOrder(item.key, item.order);
             });
-
             if (self && self.layerSelector) {
                 self.layerSelector.trigger('sortupdate');
             } else {
