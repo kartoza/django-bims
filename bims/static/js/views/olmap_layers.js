@@ -726,6 +726,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                     '#children_' + id
                 );
             });
+            $(`#children_${id}`).find('.drag-handle').css('visibility', 'hidden');
             setTimeout(function () {
                 self.refreshGroupSlider($(`#children_${id}`));
             }, 100)
