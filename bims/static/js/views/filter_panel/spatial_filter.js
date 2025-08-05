@@ -265,17 +265,21 @@ define([
                             `id="${elmId}" ` +
                             'multiple="multiple" style="width: 100%"/>');
                         currentItem.append($select);
-                        let $selectAutocomplete = $(`#${elmId}`);
+                        let $selectAutocomplete = $($(`[id="${elmId}"]`)[0]);
                         $selectAutocomplete.select2({
                             ajax: {
                                 url: "/location-context-autocomplete/",
                                 dataType: "json",
                                 delay: 250,
                                 data: function (params) {
-                                    return {
+                                    let paramData = {
                                         q: params.term,
-                                        groupKey: groupData.key
+                                        groupKey: groupData.key.split('.')[0]
                                     }
+                                    if (groupData.key.includes('.')) {
+                                        paramData['layerIdentifier'] = groupData.key.split('.')[1]
+                                    }
+                                    return paramData;
                                 },
                                 processResults: function (data) {
                                     let newData = $.map(data, function (obj) {
@@ -397,21 +401,19 @@ define([
             var value = $target.val();
             var $wrapper = $target.parent();
             var level = $target.data('level');
+            let layerName = $target.attr('name');
             let self = this;
             let isAutocompleteFilter = $wrapper.hasClass('spatial-filter-autocomplete-group');
 
             if ($target.is(':checked')) {
-
                 if (isAutocompleteFilter) {
                     $wrapper.find('select').prop('disabled', true);
-                    let layerName = $target.attr('name');
                     let selectedValues = $wrapper.find('select').find(':selected');
                     for (const selected of selectedValues) {
                         self.removeSelectedSpatialFilterLayer(layerName, selected.value);
                         self.removeSelectedValue(layerName, `value,${layerName},${selected.value}`);
                     }
                 }
-
                 this.addSelectedValue(targetName, value);
                 this.addSelectedSpatialFilterLayerFromCheckbox($target);
                 let $children = $wrapper.children().find('input:checkbox:not(:checked)');
@@ -423,17 +425,14 @@ define([
                     this.removeSelectedValue(targetName, childrenValue);
                 }
             } else {
-
                 if (isAutocompleteFilter) {
                     $wrapper.find('select').prop('disabled', false);
-                    let layerName = $target.attr('name');
                     let selectedValues = $wrapper.find('select').find(':selected');
                     for (const selected of selectedValues) {
                         self.addSelectedSpatialFilterLayer(layerName, selected.value);
                         self.addSelectedValue(layerName, `value,${layerName},${selected.value}`);
                     }
                 }
-
                 // Uncheck parents
                 if (level > 1) {
                     var $parent = $wrapper.parent();
@@ -658,7 +657,7 @@ define([
             return uuidRegex.test(value);
         },
         showBoundary: function () {
-            // Show border in red outline to map for selected filter
+            // Show border in red outline / red boundary to map for selected filter
             if (this.selectedSpatialFilterLayers.length < 1) {
                 return true;
             }
@@ -667,18 +666,24 @@ define([
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
             $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
-                let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0]);
+                let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0])
                 let layerIdentifier = $filterContainer.data('layer-identifier');
+                let uuid = key.split('.')[0];
 
-                if (self.isUUID(key)) {
+                if (self.isUUID(uuid)) {
+                    if (!layerIdentifier && key.includes('.')) {
+                        layerIdentifier = key.split('.')[1];
+                    }
                     $.ajax({
                         type: 'GET',
-                        url: '/api/layer/',
+                        url: `/api/layer/${uuid}/`,
                         dataType: 'json',
-                        success: function (data) {
-                            const layer = data.results.find(item => item.tile_url && item.tile_url.includes(key));
+                        success: function (layer) {
+                            if (!layer) {
+                                return false;
+                            }
                             const layerStyle = function(feature, resolution) {
-                              if (selectedLayer.includes(feature.get(layerIdentifier))) {
+                              if (selectedLayer.includes("" + feature.get(layerIdentifier))) {
                                 return new ol.style.Style({
                                   stroke: new ol.style.Stroke({
                                     color: 'red',
@@ -692,7 +697,7 @@ define([
                             let vectorSource = null;
                             if (layer.pmtile) {
                                 vectorSource = new olpmtiles.PMTilesVectorSource({
-                                  url: `/api/serve-pmtile/${key}/`,
+                                  url: `/api/serve-pmtile/${uuid}/`,
                                   attributions: []
                                 });
                             } else {

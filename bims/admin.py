@@ -332,10 +332,17 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             return
 
         for location_site in queryset:
+            wetland_name = (
+                location_site.wetland_name if location_site.wetland_name else location_site.user_wetland_name
+            )
+            if not wetland_name:
+                wetland_name = 'UNKNOWN'
             location_site.site_code, catchments_data = generate_site_code(
                 location_site=location_site,
                 lat=location_site.latitude,
-                lon=location_site.longitude
+                lon=location_site.longitude,
+                ecosystem_type=location_site.ecosystem_type,
+                wetland_name=wetland_name,
             )
             location_site.save()
 

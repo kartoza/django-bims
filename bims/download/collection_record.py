@@ -3,6 +3,8 @@ import csv
 import os
 import time
 import gc
+import tempfile
+import shutil
 
 from bims.models.download_request import DownloadRequest
 from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
@@ -54,24 +56,64 @@ def write_to_csv(headers: list,
                  rows: list,
                  path_file: str,
                  current_csv_row: int = 0):
-    formatted_headers = [format_header(header) for header in headers]
-    with open(path_file, 'a', newline='', encoding='utf-8', buffering=1) as csv_file:
-        if headers:
-            if current_csv_row == 0:
-                writer = csv.DictWriter(csv_file, fieldnames=formatted_headers)
-                writer.writeheader()
-            else:
-                writer = csv.DictWriter(csv_file, fieldnames=headers)
-            writer.fieldnames = headers
-        for row in rows:
+    fmt_map = {h: format_header(h) for h in headers}
+    incoming_fmt_headers = [fmt_map[h] for h in headers]
+
+    file_exists = os.path.exists(path_file) and os.path.getsize(path_file) > 0
+
+    if file_exists:
+        with open(path_file, newline='', encoding='utf-8') as f:
+            reader = csv.reader(f)
             try:
-                current_csv_row += 1
-                writer.writerow(row)
-            except Exception as e:
-                logger.error(f"Error writing row {current_csv_row}: {e}")
-                continue
-        # Flush the file to ensure data is written to disk
-        csv_file.flush()
+                existing_header = next(reader)
+            except StopIteration:
+                existing_header = []
+    else:
+        existing_header = []
+
+    existing_set = set(existing_header)
+    new_cols = [h for h in incoming_fmt_headers if h not in existing_set]
+    union_header = existing_header + new_cols if file_exists else incoming_fmt_headers
+
+    def row_to_union(row_dict):
+        out = {fmt_map[k]: v for k, v in row_dict.items() if k in fmt_map}
+        return [out.get(col, '') for col in union_header]
+
+    if not file_exists or new_cols:
+        tmp_path = f"{path_file}.tmp"
+        try:
+            with open(tmp_path, 'w', newline='', encoding='utf-8') as out_f:
+                w = csv.writer(out_f)
+                w.writerow(union_header)
+
+                if file_exists:
+                    with open(path_file, newline='', encoding='utf-8') as in_f:
+                        r = csv.DictReader(in_f)
+                        for old in r:
+                            w.writerow([old.get(col, '') for col in union_header])
+
+                for row in rows:
+                    current_csv_row += 1
+                    w.writerow(row_to_union(row))
+
+            os.replace(tmp_path, path_file)
+        except Exception as e:
+            logger.error(f"Rewrite failed: {e}")
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
+    else:
+        with open(path_file, 'a', newline='', encoding='utf-8', buffering=1) as f:
+            w = csv.writer(f)
+            for row in rows:
+                try:
+                    current_csv_row += 1
+                    w.writerow(row_to_union(row))
+                except Exception as e:
+                    logger.error(f"Error writing row {current_csv_row}: {e}")
+                    continue
+            f.flush()
+
     return current_csv_row
 
 

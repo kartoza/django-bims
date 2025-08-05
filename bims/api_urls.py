@@ -6,7 +6,7 @@ from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
 )
-from bims.api_views.layers import CloudNativeLayerList
+from bims.api_views.layers import CloudNativeLayerList, LayerByUUIDView
 from bims.api_views.minisass_observations import MiniSASSObservationsView
 from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
@@ -36,7 +36,8 @@ from bims.api_views.taxon import (
     FindTaxon,
     AddNewTaxon,
     TaxaList,
-    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView
+    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
+    HarvestIUCNStatus
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -368,7 +369,7 @@ urlpatterns = [
     path('taxonomy-iucn-status/<int:pk>/',
          IUCNStatusFetchView.as_view(),
          name='taxonomy-iucn-status'),
-    path('wetland-data/<str:lat>/<str:lon>/',
+    path('wetland-data/<str:lon>/<str:lat>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),
     path('taxa-cites-status/',
@@ -421,4 +422,15 @@ urlpatterns = [
     path('delete-dangling-sites/',
          DeleteDanglingLocationSites.as_view(),
          name='delete_dangling_sites'),
+    path('harvest-iucn-status/',
+         HarvestIUCNStatus.as_view(),
+         name='harvest_iucn_status'),
+    path('layer/<uuid:uuid>/',
+         LayerByUUIDView.as_view(),
+         name='layer-by-uuid'),
+    path(
+        "taxonomy-tree/<int:taxon_id>/",
+        TaxonTreeJsonView.as_view(),
+        name="taxonomy-tree-json",
+    )
 ]

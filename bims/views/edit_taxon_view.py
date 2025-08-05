@@ -32,7 +32,6 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         taxon = get_object_or_404(
             Taxonomy,
             pk=self.kwargs['id'],
-            taxongroup__id=self.kwargs['taxon_group_id']
         )
         proposal = TaxonomyUpdateProposal.objects.filter(
             original_taxonomy=taxon,
@@ -96,6 +95,20 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return redirect(self.get_success_url())
 
         data = form.cleaned_data
+        current_rank = data.get('rank') or taxon.rank
+        taxon_name = self.request.POST.get('taxon_name', '')
+
+        parent = data.get('parent')
+
+        if 'subspecies' in current_rank.lower():
+            if parent.rank.lower() == 'species':
+                if len(taxon_name.split(' ')) > 1 and not taxon_name.startswith(parent.specific_epithet):
+                    taxon_name = f'{parent.specific_epithet} {taxon_name}'
+
+        if 'species' in current_rank.lower():
+            genus_name = parent.genus_name
+            if not taxon_name.startswith(genus_name):
+                taxon_name = f'{genus_name} {taxon_name}'
 
         data['common_name'] = self.request.POST.get('common_name', '')
         data['tags'] = self.request.POST.getlist('tags')
@@ -103,6 +116,10 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             self.request.POST.getlist('biographic_distributions')
         )
 
+        data['canonical_name'] = taxon_name
+        data['scientific_name'] = (
+            f'{taxon_name} {self.request.POST.get('author', '')}'
+        )
         data['Taxonomic Comments'] = (
             self.request.POST.get('additional_data__Taxonomic_Comments', '')).strip()
         data['Taxonomic References'] = (

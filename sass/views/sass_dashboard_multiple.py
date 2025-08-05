@@ -1,5 +1,6 @@
 import time
 from collections import OrderedDict
+from preferences import preferences
 from django.views.generic import TemplateView
 from django.db.models import (
     Case, When, F, Count, Sum, FloatField, Avg, Min, Max, Q
@@ -12,6 +13,7 @@ from bims.api_views.search import CollectionSearch
 from bims.models import LocationSite, LocationContext, BaseMapLayer
 from bims.utils.geomorphological_zone import get_geomorphological_zone_class
 from bims.utils.logger import log
+from bims.utils.site_code import get_feature_data
 from sass.models import (
     SiteVisit,
     SiteVisitTaxon,
@@ -332,7 +334,19 @@ class SassDashboardMultipleSitesApiView(APIView):
         unique_eco_geo = {}
         for site in self.location_sites:
             eco_region = eco_geo_data.filter(
-                site=site).value_from_key('eco_region_1')
+                site=site).value_from_key(
+                layer_name='SA Ecoregion Level 1',
+            )
+            if eco_region == '-':
+                layer_name = 'SA Ecoregion Level 1'
+                eco_region = get_feature_data(
+                    lon=site.longitude,
+                    lat=site.latitude,
+                    context_key='id_eco_reg',
+                    layer_name=layer_name,
+                    tolerance=preferences.GeocontextSetting.tolerance,
+                    location_site=site
+                )
             geo_class = get_geomorphological_zone_class(site)
             if (eco_region, geo_class) not in unique_eco_geo:
                 unique_eco_geo[(eco_region, geo_class)] = [site.id]

@@ -18,6 +18,8 @@
     <link rel="stylesheet"
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/site_form.css" %}" rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/jstree@3.3.15/dist/themes/default/style.min.css" />
     <script>
         const taxonGroupId = "{{ taxon_group_id }}";
         const parent = {% if object.parent %}"{{ object.parent.canonical_name }} ({{ object.parent.rank }})"{% else %}null{% endif %};
@@ -79,18 +81,6 @@
             </div>
 
             <div class="form-group row">
-                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
-                    Taxon Name
-                </label>
-                <div class="col-sm-10">
-                    <input type="text" name="canonical_name" id="canonical_name"
-                           class="form-control form-control-sm"
-                           placeholder=""
-                           value="{{ object.canonical_name }}" >
-                </div>
-            </div>
-
-            <div class="form-group row">
                 <label for="rank" class="col-sm-2 col-form-label col-form-label">
                     Rank
                 </label>
@@ -103,25 +93,76 @@
                 </div>
             </div>
 
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Parent
+                </label>
+                <div class="col-sm-10">
+                    <select id="parent-taxon" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Name
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" name="taxon_name" id="taxon_name"
+                           class="form-control form-control-sm"
+                           placeholder=""
+                           value="{{ object.taxon_name }}" >
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label col-form-label">
+                    Taxon hierarchy
+                </label>
+                <div class="col-sm-10">
+                    <div id="taxon-tree"></div>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Parent
+                </label>
+                <div class="col-sm-10">
+                    <select id="parent-taxon" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
+                    Name
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" name="taxon_name" id="taxon_name"
+                           class="form-control form-control-sm"
+                           placeholder=""
+                           value="{{ object.taxon_name }}" >
+                </div>
+            </div>
+
             {% for taxon in taxon_ranks %}
                 <div class="form-group row">
                     <label for="rank" class="col-sm-2 col-form-label col-form-label">
                         {{ taxon.rank }}
-                        {% if taxon.rank.lower == object.parent.rank.lower %}
-                            <span class="badge badge-warning">Parent</span>
-                        {% endif %}
                     </label>
                     <div class="col-sm-10">
-                        {% if object.parent.rank.lower == taxon.rank.lower %}
-                            <select id="parent-taxon" class="taxa-auto-complete" name="parent" style="width: 100%"></select>
-                            {% if object.parent.parent %}
-                            <small class="form-text text-muted">
-                                <a onclick="window.location.href='/taxonomy/edit/{{ taxon_group_id }}/{{ object.parent.id }}/?next=' + encodeURIComponent('{{ next }}')" href="#">Edit parent</a>
-                            </small>
-                            {% endif %}
-                        {% else %}
-                            <input type="text" class="form-control form-control-sm" readonly value="{{ object|get_attr:taxon.field }}">
-                        {% endif %}
+{#                        {% if object.parent.rank.lower == taxon.rank.lower %}#}
+{#                            <select id="parent-taxon" class="taxa-auto-complete" name="parent" data-rank="{{ taxon.rank }}" style="width: 100%"></select>#}
+{#                            {% if object.parent.parent %}#}
+{#                            <small class="form-text text-muted">#}
+{#                                <a onclick="window.location.href='/taxonomy/edit/{{ taxon_group_id }}/{{ object.parent.id }}/?next=' + encodeURIComponent('{{ next }}')" href="#">Edit {{ object.parent.rank }}</a>#}
+{#                            </small>#}
+{#                            {% endif %}#}
+{#                        {% else %}#}
+{#                        {% endif %}#}
+                        <input type="text"
+                               name="{{ taxon.rank.lower }}_name"
+                               class="species-name-field form-control form-control-sm" readonly
+                               value="{{ object|get_attr:taxon.field }}">
                     </div>
                 </div>
             {% endfor %}
@@ -386,6 +427,7 @@
     <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
     <script src="{% static "js/taxon/edit_taxon.js" %}"></script>
     <script src="{% static "js/non_requirejs/tag_select.js" %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.15/dist/jstree.min.js"></script>
 
     <script>
         const checkbox = document.getElementById('disclaimerCheck');

@@ -7,16 +7,17 @@ from typing import Dict
 import requests
 import re
 
-from bims.models import LocationContextGroup
+from bims.models import LocationContextGroup, LocationContext
 from bims.models.location_site import LocationSite
 from requests.exceptions import HTTPError
-from bims.location_site.river import fetch_river_name
 from bims.utils.get_key import get_key
 from cloud_native_gis.models import Layer
 from cloud_native_gis.utils.geometry import query_features
+from sass.models import River
 
 FBIS_CATCHMENT_KEY = 'river_catchment_areas_group'
 SANPARK_PARK_KEY = 'sanparks and mpas'
+QUATERNARY_CATCHMENT_LAYER = 'quaternary catchment'
 
 
 def _fetch_catchments_data(catchment_key, lon, lat):
@@ -75,6 +76,40 @@ def _get_catchments_data(
             location_site.update_location_context_document(catchment_key)
             catchments = location_contexts.values_from_group(catchment_key)
     return catchments, catchments_data
+
+
+def get_feature_data(lon, lat, context_key, layer_name, tolerance=0, location_site = None) -> str:
+    layer = Layer.objects.filter(
+        name__istartswith=layer_name
+    ).first()
+
+    feature_data = ''
+
+    if not layer:
+        return ''
+
+    features = query_features(
+        table_name=layer.query_table_name,
+        field_names=[context_key],
+        coordinates=[(lon, lat)],
+        tolerance=tolerance
+    )
+    results = features.get('result', [])
+    if results and 'feature' in results[0] and context_key in results[0]['feature']:
+        feature_data = results[0]['feature'][context_key]
+
+    if feature_data and location_site:
+        location_contex_group = LocationContextGroup.objects.filter(
+            geocontext_group_key=layer.unique_id
+        ).first()
+        if location_contex_group:
+            location_context, _ = LocationContext.objects.get_or_create(
+                site=location_site,
+                group=location_contex_group,
+                value=feature_data,
+            )
+
+    return feature_data
 
 
 def generate_fbis_africa_site_code(latitude: float, longitude: float, site_name: str):
@@ -164,34 +199,61 @@ def fbis_catchment_generator(
         4 characters from river name
         , catchments data in dictionary
     """
-    catchment_code = ''
-    catchments, catchments_data = _get_catchments_data(
-        location_site=location_site,
-        lat=lat,
+    catchments_data = {}
+    secondary_catchment_name = get_feature_data(
         lon=lon,
-        catchment_key=FBIS_CATCHMENT_KEY
+        lat=lat,
+        context_key='name',
+        layer_name='secondary catchment',
+        tolerance=100
     )
-    for key, value in catchments.items():
-        if 'secondary_catchment_area' in key and not catchment_code:
-            catchment_code = value[:2].upper()
-            break
+
+    catchment_code = secondary_catchment_name[:2].upper()
+
     if location_site and not river_name:
         if location_site.legacy_river_name:
             river_name = location_site.legacy_river_name
         elif location_site.river:
             river_name = location_site.river.name
         else:
-            river_name = fetch_river_name(
-                location_site.geometry_point[1],
-                location_site.geometry_point[0]
+            river_name = get_feature_data(
+                lon=location_site.geometry_point[0],
+                lat=location_site.geometry_point[1],
+                context_key='river_name',
+                layer_name='river',
+                tolerance=1000
             )
+
     # Search river name by coordinates
     if not river_name and lat and lon:
-        river_name = fetch_river_name(lat, lon)
+        river_name = get_feature_data(
+            lon=lon,
+            lat=lat,
+            context_key='river_name',
+            layer_name='river',
+            tolerance=1000
+        )
+
+    if not river_name:
+        river_name = 'UNKNOWN'
 
     if river_name:
         river_name = river_name.replace(' ', '')
         catchment_code += river_name[:4].upper()
+
+    if location_site and river_name:
+        if not location_site.river:
+            try:
+                river, _ = River.objects.get_or_create(
+                    name=river_name
+                )
+            except River.MultipleObjectsReturned:
+                river = River.objects.filter(
+                    name=river_name
+                ).first()
+            location_site.river = river
+            location_site.save()
+
     return catchment_code, catchments_data
 
 
@@ -249,19 +311,34 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
     wetland_site_code = ''
     quaternary_catchment_area_key = 'quaternary_catchment_area'
     quaternary_geocontext_key = 'quaternary_catchment_group'
+    context_key = 'name'
+    quaternary_catchment = ''
 
-    catchments, catchments_data = _get_catchments_data(
-        lat=lat,
-        lon=lon,
-        catchment_key=quaternary_geocontext_key
-    )
+    layer = Layer.objects.filter(
+        name__icontains=QUATERNARY_CATCHMENT_LAYER
+    ).first()
 
-    try:
-        if quaternary_catchment_area_key in catchments:
-            wetland_site_code += catchments[quaternary_catchment_area_key]
-        wetland_site_code += '-'
-    except TypeError:
-        pass
+    if layer:
+        features = query_features(
+            table_name=layer.query_table_name,
+            field_names=[context_key],
+            coordinates=[(lon, lat)],
+            tolerance=0.01
+        )
+        results = features.get('result', [])
+        if results and 'feature' in results[0] and context_key in results[0]['feature']:
+            quaternary_catchment = results[0]['feature'][context_key]
+
+    if not quaternary_catchment and not layer:
+        catchments, catchments_data = _get_catchments_data(
+            lat=lat,
+            lon=lon,
+            catchment_key=quaternary_geocontext_key
+        )
+        if quaternary_catchment_area_key in catchments and catchments[quaternary_catchment_area_key]:
+            quaternary_catchment = catchments[quaternary_catchment_area_key]
+
+    wetland_site_code += quaternary_catchment + '-'
 
     if wetland_data and 'name' in wetland_data and wetland_data['name']:
         wetland_site_code += wetland_data['name'].replace(' ', '')[:4]

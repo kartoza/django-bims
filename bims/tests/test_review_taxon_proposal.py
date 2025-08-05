@@ -418,7 +418,7 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         })
 
         data = {
-            'canonical_name': 'Updated Taxon',
+            'taxon_name': 'Updated Taxon',
             'rank': 'SPECIES',
             'author': 'Updated Author',
             'iucn_status': self.iucn_status.id,

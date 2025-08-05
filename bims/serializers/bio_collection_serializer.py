@@ -10,6 +10,7 @@ from rest_framework_gis.serializers import (
     GeoFeatureModelSerializer, GeometrySerializerMethodField)
 from django.contrib.sites.models import Site
 from django.urls import reverse
+from django.db.models import Q
 
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -193,7 +194,7 @@ class BioCollectionOneRowSerializer(
             data = (
                 LocationContext.objects.get(
                     site_id=obj.site.id,
-                    group__key__icontains=key
+                    group__id=key
                 )
             )
         except LocationContext.DoesNotExist:
@@ -201,7 +202,7 @@ class BioCollectionOneRowSerializer(
         except LocationContext.MultipleObjectsReturned:
             data = LocationContext.objects.filter(
                 site_id=obj.site.id,
-                group__key__icontains=key
+                group__id=key
             ).first()
 
         if data:
@@ -973,29 +974,30 @@ class BioCollectionOneRowSerializer(
                     ):
                         result[upload_template_header] = instance.site.name
 
-        geocontext_keys = (
-            preferences.GeocontextSetting.geocontext_keys.split(',')
-        )
-        if 'geocontext_groups' not in self.context:
-            self.context['geocontext_groups'] = []
-            context_groups = (
-                LocationContextGroup.objects.filter(
-                    geocontext_group_key__in=geocontext_keys
-                )
-            )
-            for context_group in context_groups:
-                if context_group.name not in self.context['header']:
-                    self.context['header'].append(context_group.name)
-                self.context['geocontext_groups'].append({
-                    'name': context_group.name,
-                    'key': context_group.key
-                })
+        geo_keys_raw = preferences.GeocontextSetting.geocontext_keys or ""
+        key_pairs = [
+            tuple(k.split(':', 1)) if ':' in k else (k.strip(), None)
+            for k in map(str.strip, geo_keys_raw.split(',')) if k.strip()
+        ]
 
-        if 'geocontext_groups' in self.context:
-            for _group in self.context['geocontext_groups']:
-                _group_name = _group['name']
-                _group_key = _group['key']
-                result[_group_name] = self.spatial_data(instance, _group_key)
+        filters = Q()
+        for group_key, layer_id in key_pairs:
+            q = Q(geocontext_group_key=group_key)
+            if layer_id:
+                q &= Q(layer_identifier=layer_id)
+            filters |= q
+
+        geocontext_groups = self.context.setdefault('geocontext_groups', [])
+        if not geocontext_groups:
+            for grp in LocationContextGroup.objects.filter(filters):
+                if grp.name not in self.context['header']:
+                    self.context['header'].append(grp.name)
+                geocontext_groups.append(
+                    {'name': grp.name, 'key': grp.key, 'id': grp.id}
+                )
+
+        for grp in geocontext_groups:
+            result[grp['name']] = self.spatial_data(instance, grp['id'])
 
         if 'show_link' in self.context and self.context['show_link']:
             result['Link'] = ''.join(

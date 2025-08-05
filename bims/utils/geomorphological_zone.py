@@ -1,5 +1,8 @@
+from preferences import preferences
+
 from bims.models.location_context import LocationContext
 from bims.models.location_site import LocationSite
+from bims.utils.site_code import get_feature_data
 
 
 def get_geomorphological_zone_class(location_site: LocationSite) -> str:
@@ -31,10 +34,24 @@ def get_geomorphological_zone_class(location_site: LocationSite) -> str:
         site=location_site
     )
     geo_class = context.value_from_key(
-        'geo_class'
+        layer_name='geomorphological zone'
     )
-    if geo_class != '-':
-        return geo_class
+    if geo_class == '-':
+        geo_class = get_feature_data(
+            lon=location_site.longitude,
+            lat=location_site.latitude,
+            context_key='name',
+            layer_name='geomorphological',
+            tolerance=preferences.GeocontextSetting.tolerance,
+            location_site=location_site,
+        )
+
+    if geo_class != '-' or not geo_class:
+        if geo_class:
+            if geo_class.lower().strip() in upper_data:
+                return 'Upper'
+            elif geo_class.lower().strip() in lower_data:
+                return 'Lower'
 
     geo_class_recoded = context.value_from_key(
         'geo_class_recoded'

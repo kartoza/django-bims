@@ -40,6 +40,30 @@ class TaxaProcessor(object):
 
     all_keys = {}
 
+    def _compose_species_name(self, row) -> str:
+        """
+        Return a canonical binomial/trinomial.
+
+        • If the species cell already starts with the genus, normalise its case.
+        • Otherwise prepend the genus.
+        • Always force everything *after* the genus to lower-case.
+        """
+        genus = (self.get_row_value(row, GENUS) or '').strip()
+        species = (self.get_row_value(row, SPECIES) or '').strip()
+
+        if not species:
+            species = self.get_row_value(row, TAXON)
+
+        if not genus or not species:
+            return species or genus
+
+        species_lc = ' '.join(part.lower() for part in species.split())
+
+        if species_lc.startswith(genus.lower() + ' '):
+            return species
+
+        return f'{genus} {species_lc}'
+
     def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated = True):
         """
         Add or update the relationship between a taxonomy and a taxon group,
@@ -501,11 +525,7 @@ class TaxaProcessor(object):
                 RANK_TITLE.get(rank.upper(), rank.capitalize()))
 
         if 'species' in rank.lower():
-            genus_name = self.get_row_value(row, GENUS).strip()
-            species_name = self.get_row_value(row, SPECIES).strip()
-            taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS).strip()
-            if genus_name not in species_name and species_name and not species_name[0].isupper():
-                taxon_name = genus_name + ' ' + species_name.strip()
+            taxon_name = self._compose_species_name(row)
 
         if rank == SUBSPECIES:
             sub_species_name = self.get_row_value(row, SUBSPECIES).strip()
@@ -565,6 +585,18 @@ class TaxaProcessor(object):
         taxa = Taxonomy.objects.filter(
             canonical_name__iexact=taxon_name
         )
+        if not taxa.exists() and ' ' in taxon_name:
+            orphan = taxon_name.split(' ', 1)[1].strip()
+            taxa = Taxonomy.objects.filter(
+                canonical_name__iexact=orphan,
+                rank=rank.upper()
+            )
+            if taxa.exists():
+                obtained = taxa.first()
+                obtained.canonical_name = taxon_name
+                obtained.scientific_name = taxon_name
+                obtained.save()
+
         try:
             taxonomy = None
 
@@ -601,6 +633,9 @@ class TaxaProcessor(object):
                 gbif_key = (
                     gbif_link.split('/')[len(gbif_link.split('/')) - 1]
                 )
+                # Remove '.0' if present at the end
+                if gbif_key.endswith('.0'):
+                    gbif_key = gbif_key[:-2]
 
             if not taxonomy:
                 # Fetch from gbif

@@ -6,13 +6,14 @@ import re
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.forms import model_to_dict
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import status
 from rest_framework.generics import UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
@@ -30,6 +31,7 @@ from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_verna
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
+from bims.tasks.taxa import fetch_iucn_status
 
 logger = logging.getLogger('bims')
 
@@ -782,3 +784,42 @@ class IUCNStatusFetchView(APIView):
         return Response(
             {"detail": "Not found"},
             status=status.HTTP_404_NOT_FOUND)
+
+
+class TaxonTreeJsonView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, taxon_id, format=None):
+        taxon = Taxonomy.objects.get(id=taxon_id)
+        nodes = []
+        current_taxon = taxon
+        while current_taxon:
+            nodes.append({
+                'id': current_taxon.id,
+                'parent': current_taxon.parent.id if current_taxon.parent else '#',
+                'text': f'{current_taxon.canonical_name} ({current_taxon.rank})',
+                'state': {'opened': True},
+            })
+            current_taxon = current_taxon.parent
+        return JsonResponse(nodes, safe=False)
+
+
+class HarvestIUCNStatus(APIView):
+    """
+    Enqueue a Celery task that pulls/refreshes IUCN Red-List info
+    for all taxa still missing a status (or for an optional list of IDs).
+    """
+    permission_classes = (IsAdminUser,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."},
+                            status=HTTP_403_FORBIDDEN)
+
+        taxa_ids = request.data.get("taxa_ids")
+        fetch_iucn_status.delay(taxa_ids or None)
+
+        return Response(
+            {"message": "Harvesting IUCN status in the background."},
+            status=HTTP_200_OK
+        )
