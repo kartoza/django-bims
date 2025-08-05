@@ -79,12 +79,3 @@ class LocationContext(models.Model):
         models.Index(fields=['group', 'value']),
       ]
 
-
-@receiver(models.signals.post_save, sender=LocationContext)
-@prevent_recursion
-def location_context_post_save(sender, instance, **kwargs):
-    """
-    Post save location context
-    """
-    if ',' in instance.value:
-        instance.value = instance.value.replace(',', '')

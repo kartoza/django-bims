@@ -341,7 +341,7 @@ define([
             let value = '';
             if (level === 2) {
                  let $wrapper = $('.spatial-filter-container');
-                 value = values[2];
+                 value = $checkbox.val().split(`${key},`)[1];
                  $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
             } else {
                 value = this.groupKeyLabel;
@@ -353,15 +353,20 @@ define([
             let all = JSON.parse(json_string);
             for (let i=0; i < all.length; i++) {
                 let parsed_data = all[i].split(',');
-                if (parsed_data.length === 2) {
-                    parsed_data.push(this.groupKeyLabel);
+                let filterType = parsed_data[0]
+                let filterKey = parsed_data[1]
+                let filterValue = ''
+                if (filterType !== 'value') {
+                    filterValue = this.groupKeyLabel;
+                } else {
+                    filterValue = all[i].split(`${filterKey},`)[1];
                 }
-                if (this.selectedSpatialFilterLayers.hasOwnProperty(parsed_data[1])) {
-                    if (this.selectedSpatialFilterLayers[parsed_data[1]].indexOf(parsed_data[2]) === -1) {
-                        this.selectedSpatialFilterLayers[parsed_data[1]].push(parsed_data[2]);
+                if (this.selectedSpatialFilterLayers.hasOwnProperty(filterKey)) {
+                    if (this.selectedSpatialFilterLayers[filterKey].indexOf(filterValue) === -1) {
+                        this.selectedSpatialFilterLayers[filterKey].push(filterValue);
                     }
                 } else {
-                    this.selectedSpatialFilterLayers[parsed_data[1]] = [parsed_data[2]];
+                    this.selectedSpatialFilterLayers[filterKey] = [filterValue];
                 }
             }
         },
@@ -385,7 +390,7 @@ define([
             let value = '';
             if (level === 2) {
                  let $wrapper = $('.spatial-filter-container');
-                 value = values[2];
+                 value = $checkbox.val().split(`${key},`)[1]    ;
                  $checkbox = $wrapper.find(`input[type=checkbox][value="group,${key}"]`);
             } else {
                 value = this.groupKeyLabel;
