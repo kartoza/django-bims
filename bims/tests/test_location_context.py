@@ -63,7 +63,7 @@ class TestLocationContext(TestCase):
                 group__geocontext_group_key='hydrological_regions',
                 site=self.site
             ).value,
-            'test comma'
+            'test, comma'
         )
 
     @override_settings(GEOCONTEXT_URL="test.gecontext.com")
