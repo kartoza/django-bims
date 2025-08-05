@@ -107,19 +107,57 @@ class DownloadLayerData(APIView):
         )
 
 
-class VisualizationLayers(SuperuserRequiredMixin, APIView):
-    def get(self, request, *args):
-        visualization_layers = (
-            NonBiodiversityLayer.objects.all().order_by(
-                'order')
+class LayerGroupView(SuperuserRequiredMixin, APIView):
+    def post(self, request, *args):
+        data = request.data
+        name = data.get('name')
+        description = data.get('description', '')
+        order = LayerGroup.objects.all().count() + 1
+        layer_group = LayerGroup.objects.create(
+            name=name,
+            description=description,
+            order=order
         )
-        visualization_layers_data = NonBiodiversityLayerSerializer(
-            visualization_layers, many=True, context={
-                'request': request
-            }
-        )
-        return Response(visualization_layers_data.data)
+        return Response(
+            {
+                "message": "Group created successfully.",
+                "id": layer_group.id,
+            }, status=201)
 
+    def delete(self, request, *args):
+        group_id = request.query_params.get('id')
+        if not group_id:
+            return Response({"error": "id is required."}, status=400)
+
+        group = LayerGroup.objects.filter(
+            id=group_id
+        )
+        if group.exists():
+            group.delete()
+            return Response({
+                "message": f"Group {id} deleted successfully."},
+                status=204)
+        else:
+            return Response({
+                "error": f"Group with id {id} not found."}, status=404)
+
+    def put(self, request, *args):
+        data = request.data
+        if data.get('id'):
+            try:
+                group = LayerGroup.objects.get(
+                    id=data.get('id'))
+                group.name = data.get('name')
+                group.description = data.get('description', '')
+                group.save()
+            except LayerGroup.DoesNotExist:
+                return Response({'error': 'Group not found.'}, status=404)
+
+        return Response(
+            {"message": "Group updated successfully."}, status=200)
+
+
+class VisualizationLayers(SuperuserRequiredMixin, APIView):
     def post(self, request, *args):
         data = request.data
         layer_type = data.get('layer_type', 'wms')
@@ -185,8 +223,15 @@ class VisualizationLayers(SuperuserRequiredMixin, APIView):
         for layer_data in layers_data:
             layer_id = layer_data.get('id')
             new_order = layer_data.get('display_order')
-            NonBiodiversityLayer.objects.filter(
-                id=layer_id).update(order=new_order)
+            if layer_data.get('type', 'Layer') == 'Layer':
+                NonBiodiversityLayer.objects.filter(
+                    id=layer_id).update(order=new_order)
+            else:
+                LayerGroup.objects.filter(
+                    id=layer_id
+                ).update(
+                    order=new_order,
+                )
 
         if data.get('id'):
             try:

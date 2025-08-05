@@ -794,7 +794,8 @@
             <div class="layer-selector-name"><%= title %></div>
             <div class="layer-selector-pull-right">
                 <% if (source && source !== 'Base') { %>
-                    <div class="layer-info-icon"><i class="fa fa-info-circle layer-source cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
+                    <div class="layer-info-icon">
+                        <i class="fa fa-info-circle layer-source cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
                 <% } %>
                 <% if (enableStylesSelection) { %>
                 <div class="layer-info-icon"><i class="fa fa-bars layer-source-style cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
@@ -835,6 +836,11 @@
                     <%= checked %>>
             <div class="layer-selector-name" style="padding-left: 5px;"><%= name %></div>
             <i class="fa fa-angle-down layer-group-drawer toggle-group-children" data-target="#children_<%= id %>" data-group="<%= id %>"></i>
+            <div class="layer-selector-pull-right">
+               <div class="layer-info-icon">
+                    <i class="fa fa-info-circle layer-source cancel-sortable" value="<%= name %>" aria-hidden="true"></i>
+               </div>
+            </div>
         </div>
         <div class="group options">
             <div class="row">
@@ -848,6 +854,7 @@
                 </div>
             </div>
         </div>
+        <div value="<%= name %>" class="layer-source-info" style="display: none" data-fetching="false"></div>
         <div>
             <ul class="layer-group-children" id="children_<%= id %>"></ul>
         </div>

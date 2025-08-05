@@ -719,7 +719,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                 }
                 self.renderLayersSelector(
                     layer['wms_layer_name'], layer['name'], layer['name'], layerData['visibleInDefault'],
-                    currentLayerTransparency, '', '',
+                    currentLayerTransparency, '', layer['native_layer_abstract'],
                     layer['enable_styles_selection'],
                     '#children_' + id
                 );
@@ -1323,11 +1323,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
             }
             let url_provider = layerProvider;
             let url_key = layerName;
-            let category = this.layers[layerKey].category;
-            let source = this.layers[layerKey].source
+            let isLayerGroup = this.layerGroups.hasOwnProperty(layerKey);
+            let category = isLayerGroup ? 'layerGroup' : this.layers[layerKey].category;
+            let source = isLayerGroup ? this.layerGroups[layerKey].description : this.layers[layerKey].source;
             let abstract_result = "";
 
-            if (category === 'nativeLayer') {
+            if (category === 'nativeLayer' || category === 'layerGroup') {
                 abstract_result = source;
                 if (!abstract_result || abstract_result === '-') {
                     abstract_result = "Abstract information unavailable.";
