@@ -566,11 +566,13 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
              if (Array.isArray(styles) && styles.length > 0) {
                 styles.forEach(rule => {
                     const paint = rule.paint || {};
-                    const fillColor = paint['fill-color'] || paint['circle-color'] || 'transparent';
-                    const strokeColor = paint['fill-outline-color'] || paint['circle-stroke-color'] || 'transparent';
+                    const fillColor = paint['fill-color'] || paint['circle-color'] || paint['line-color'] || 'transparent';
+                    const strokeColor = paint['fill-outline-color'] || paint['circle-stroke-color'] || paint['line-color'] ||'transparent';
 
                     const info = getFilteredValues(rule.filter);
-                    attributeField = info.field;
+                    if (!attributeField) {
+                        attributeField = info.field ? info.field : attributeField;
+                    }
                     if ((!info.field || info.values.length === 0) &&
                         fillColor !== 'transparent') {
                         const geomType = (function unpack(expr) {
@@ -584,7 +586,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             }
                             return null;
                         })(rule.filter) || 'Geometry';
-
                         const item = document.createElement('div');
                         item.className = 'legend-item';
                         const swatch = makeSwatch(fillColor, strokeColor);
@@ -625,7 +626,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             if (attributeField) {
                 $row.on('mouseenter', '.legend-item', function () {
-                    var hoveredValue = $(this).data('value');
+                    let hoveredValue = $(this).data('value');
 
                     if (!vectorTileLayer.get('origStyle')) {
                         vectorTileLayer.set('origStyle', vectorTileLayer.getStyle() || null);
