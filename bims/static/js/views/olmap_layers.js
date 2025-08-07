@@ -710,7 +710,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             let currentLayerTransparency = null;
 
-            $.each(allChildren, function (idx, layer) {
+            $.each(allChildren.reverse(), function (idx, layer) {
                 let layerName = layer['name'];
                 let layerData = self.layers[layer['name']];
                 let layerTransparency = Shared.StorageUtil.getItemDict(layerName, 'transparency');
