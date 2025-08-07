@@ -172,6 +172,14 @@ class TestTaxaUpload(FastTenantTestCase):
             ).exists()
         )
 
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                canonical_name__icontains='Testgenus testspecies',
+                rank='SPECIES',
+                species_group__name='Test species group'
+            ).exists()
+        )
+
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
     @mock.patch('bims.scripts.taxa_upload.preferences')

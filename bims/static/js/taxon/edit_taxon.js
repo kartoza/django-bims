@@ -25,13 +25,34 @@ function formatTaxaSelection (taxa) {
     return taxa.text;
 }
 
+function formatSpeciesGroupSelection (data) {
+    if (data.name) {
+        return `${data.name}`
+    }
+    return data.text;
+}
+
+function formatSpeciesGroup (data) {
+    if (data.loading) {
+        return data.text;
+    }
+    let $container = $(
+        "<div class='select2-result-repository clearfix'>" +
+        "<div class='select2-result-repository__meta'>" +
+        "<div class='select2-result-repository__title'></div>" +
+        "</div>" +
+        "</div>"
+    );
+    $container.find(".select2-result-repository__title").text(data.name);
+    return $container;
+}
+
 function updateTaxonTree(_taxonId) {
     if ($('#taxon-tree').jstree(true)) {
         $('#taxon-tree').jstree('destroy');
     }
 
     if (treeDataCache.length > 0) {
-
         treeDataCache = treeDataCache.filter((cache) => cache['id'] == taxonId);
         treeDataCache[0]['parent'] = _taxonId
     }
@@ -87,25 +108,34 @@ $('.taxa-auto-complete').select2({
     theme: "classic"
 });
 
+$('.species-group-auto-complete').select2({
+    ajax: {
+        url: '/species-group-autocomplete/',
+        dataType: 'json',
+        data: function (params) {
+            return {
+                term: params.term,
+            }
+        },
+        processResults: function (data) {
+            return {
+                results: data
+            }
+        },
+        cache: true
+    },
+    placeholder: 'Search for a Species Group',
+    minimumInputLength: 3,
+    templateResult: formatSpeciesGroup,
+    templateSelection: formatSpeciesGroupSelection,
+    theme: "classic"
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const taxonomicStatus = document.getElementById('taxonomic_status');
     const acceptedTaxonField = document.getElementById('accepted-taxon-field');
 
-    $('#taxon-tree').jstree({
-        core: {
-            data: function (node, cb) {
-                $.getJSON(`/api/taxonomy-tree/${taxonId}/`, function (data) {
-                    treeDataCache = data;
-                    cb(data);
-                });
-            },
-            multiple: false,
-            themes: { icons: false }
-        },
-        plugins: ['wholerow']
-    }).on('loaded.jstree', function () {
-        $('#taxon-tree').jstree('select_node', taxonId.toString());
-    });
+    updateTaxonTree(taxonId);
 
     function toggleAcceptedTaxonField() {
         if (taxonomicStatus.value === 'SYNONYM') {
@@ -136,6 +166,18 @@ document.addEventListener('DOMContentLoaded', function() {
         let acceptedTaxon = $('#accepted-taxon');
         acceptedTaxon.append(option).trigger('change');
         acceptedTaxon.trigger({
+            type: 'select2:select',
+            params: {
+                data: {}
+            }
+        });
+    }
+
+    if (speciesGroup) {
+        let option = new Option(speciesGroup, speciesGroupId, true, true);
+        let speciesGroupSelect = $('#species-group');
+        speciesGroupSelect.append(option).trigger('change');
+        speciesGroupSelect.trigger({
             type: 'select2:select',
             params: {
                 data: {}

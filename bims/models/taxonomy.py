@@ -50,6 +50,14 @@ class TaxonTag(TagBase):
         verbose_name_plural = "Taxonomy Tags"
 
 
+class SpeciesGroup(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    description = models.TextField(blank=True, default='')
+
+    def __str__(self):
+        return self.name
+
+
 class CustomTaggedTaxonomy(TaggedItemBase):
     content_object = models.ForeignKey(
         'Taxonomy',
@@ -260,6 +268,14 @@ class AbstractTaxonomy(AbstractValidation):
         blank=True,
         on_delete=models.SET_NULL,
         related_name='%(class)s_source_reference',
+    )
+
+    species_group = models.ForeignKey(
+        SpeciesGroup,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text='Informal group of closely related species'
     )
 
     class Meta:

@@ -300,6 +300,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'endemism',
                     'iucn_status',
                     'accepted_taxonomy',
+                    'species_group',
                     'parent',
                     'tags',
                     'biographic_distributions',

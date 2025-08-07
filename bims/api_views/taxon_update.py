@@ -85,7 +85,8 @@ def create_taxon_proposal(
             'collector_user': creator,
             'additional_data': additional_data,
             'gbif_key': data.get('gbif_key', taxon.gbif_key),
-            'fada_id': data.get('fada_id', taxon.fada_id)
+            'fada_id': data.get('fada_id', taxon.fada_id),
+            'species_group': data.get('species_group', taxon.species_group),
         }
     )
     if created:
