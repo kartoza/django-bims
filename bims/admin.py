@@ -124,7 +124,8 @@ from bims.models import (
     Invasion,
     FlatPageExtension,
     TagGroup,
-    Dataset, LayerGroup
+    Dataset, LayerGroup,
+    SpeciesGroup
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2218,6 +2219,12 @@ class LayerGroupAdmin(OrderedModelAdmin):
     list_display = ('name', 'order', 'move_up_down_links')
     filter_horizontal = ('layers',)
     ordering = ('order',)
+
+
+@admin.register(SpeciesGroup)
+class SpeciesGroupAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
 
 
 # Re-register GeoNode's Profile page

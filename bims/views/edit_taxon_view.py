@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.generic import UpdateView
 
 from bims.api_views.taxon_update import is_expert, create_taxon_proposal, update_taxon_proposal
-from bims.models import TaxonGroup, TaxonomyUpdateProposal, IUCNStatus, Endemism, TaxonGroupTaxonomy
+from bims.models import TaxonGroup, TaxonomyUpdateProposal, IUCNStatus, Endemism, TaxonGroupTaxonomy, SpeciesGroup
 from bims.models.taxonomy import Taxonomy
 
 
@@ -35,6 +35,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         )
         proposal = TaxonomyUpdateProposal.objects.filter(
             original_taxonomy=taxon,
+            taxon_group=self.kwargs['taxon_group_id'],
             status='pending'
         ).first()
         return proposal or taxon
@@ -59,7 +60,6 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             {'rank': 'Tribe', 'field': 'tribe_name'},
             {'rank': 'SubTribe', 'field': 'sub_tribe_name'},
             {'rank': 'Genus', 'field': 'genus_name'},
-            {'rank': 'SpeciesGroup', 'field': 'species_group'},
             {'rank': 'Species', 'field': 'specific_epithet'},
             {'rank': 'SubSpecies', 'field': 'sub_species_name'}
         ]
@@ -97,6 +97,12 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         data = form.cleaned_data
         current_rank = data.get('rank') or taxon.rank
         taxon_name = self.request.POST.get('taxon_name', '')
+
+        species_group = self.request.POST.get('species-group', '')
+        if species_group:
+            data['species_group'] = SpeciesGroup.objects.get(id=species_group)
+        else:
+            data['species_group'] = None
 
         parent = data.get('parent')
 

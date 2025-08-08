@@ -20,7 +20,7 @@ from bims.models import (
     VernacularName,
     ORIGIN_CATEGORIES, TaxonTag, SourceReference,
     SourceReferenceBibliography,
-    Invasion
+    Invasion, SpeciesGroup
 )
 from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
@@ -562,6 +562,12 @@ class TaxaProcessor(object):
 
         authors = self.get_row_value(row, AUTHORS)
 
+        species_group = self.get_row_value(row, SPECIES_GROUP)
+        if species_group:
+            species_group, _ = SpeciesGroup.objects.get_or_create(
+                name=species_group
+            )
+
         if SCIENTIFIC_NAME in row:
             scientific_name = (self.get_row_value(row, SCIENTIFIC_NAME)
                                if self.get_row_value(row, SCIENTIFIC_NAME)
@@ -637,21 +643,12 @@ class TaxaProcessor(object):
                 if gbif_key.endswith('.0'):
                     gbif_key = gbif_key[:-2]
 
-            if not taxonomy:
+            if not taxonomy and gbif_key:
                 # Fetch from gbif
-                if gbif_key:
-                    taxonomy = fetch_all_species_from_gbif(
-                        gbif_key=gbif_key,
-                        fetch_vernacular_names=should_fetch_vernacular_names
-                    )
-                if not taxonomy and on_gbif:
-                    taxonomy = fetch_all_species_from_gbif(
-                        species=taxon_name,
-                        taxonomic_rank=rank,
-                        fetch_children=False,
-                        fetch_vernacular_names=should_fetch_vernacular_names,
-                        use_name_lookup=True
-                    )
+                taxonomy = fetch_all_species_from_gbif(
+                    gbif_key=gbif_key,
+                    fetch_vernacular_names=should_fetch_vernacular_names
+                )
 
             if not taxonomy and on_gbif:
                 # Try again with lookup
@@ -784,6 +781,10 @@ class TaxaProcessor(object):
                 # -- Author(s)
                 if authors:
                     taxonomy.author = authors
+
+                # -- SpeciesGroup
+                if species_group:
+                    taxonomy.species_group = species_group
 
                 fada_id = self.get_row_value(row, FADA_ID)
                 # -- FADA ID

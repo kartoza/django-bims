@@ -1,10 +1,13 @@
 import simplejson as json
+from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Concat
 from django.apps import apps
+
+from bims.models import SpeciesGroup
 from bims.models.taxonomy import Taxonomy
 from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
@@ -215,6 +218,24 @@ def data_source_autocomplete(request):
     return HttpResponse(data, mime_type)
 
 
+@login_required
+def species_group_autocomplete(request):
+    q = request.GET.get('term', '').capitalize()
+    species_groups = SpeciesGroup.objects.filter(
+        name__icontains=q
+    )
+    data = []
+    for species_group in species_groups:
+        data.append({
+            'id': species_group.id,
+            'name': species_group.name,
+        })
+    return JsonResponse(
+        data,
+        safe=False
+    )
+
+
 def species_autocomplete(request):
     """
     Autocomplete request for species
@@ -297,6 +318,7 @@ def species_autocomplete(request):
 
 def site_autocomplete(request):
     q = request.GET.get('q', '').capitalize()
+    data = {}
     if len(q) > 2:
         search_qs = LocationSite.objects.filter(
             name__icontains=q)
@@ -308,7 +330,7 @@ def site_autocomplete(request):
             })
         data = json.dumps(results)
         mime_type = 'application/json'
-        return HttpResponse(data, mime_type)
+    return HttpResponse(data, mime_type)
 
 
 def abiotic_autocomplete(request):
