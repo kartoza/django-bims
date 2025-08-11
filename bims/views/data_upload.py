@@ -60,6 +60,7 @@ class DataUploadView(
         taxon_group_id = request.POST.get('taxon_group', None)
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
+        template = request.POST.get('template', '')
         cancel = ast.literal_eval(request.POST.get(
             'cancel', 'False'
         ))
@@ -107,7 +108,8 @@ class DataUploadView(
                         uploader=request.user,
                         uploaded_at=datetime.now(),
                         module_group_id=taxon_group_id,
-                        category=self.category
+                        category=self.category,
+                        template=template
                     )
                     upload_session.process_file.save(csv_file_name, csv_content)
             elif file_extension == '.csv':
@@ -116,7 +118,8 @@ class DataUploadView(
                     process_file=upload_file,
                     uploaded_at=datetime.now(),
                     module_group_id=taxon_group_id,
-                    category=self.category
+                    category=self.category,
+                    template=template
                 )
 
             else:
