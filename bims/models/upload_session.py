@@ -77,7 +77,7 @@ class UploadSession(models.Model):
     )
 
     progress = models.CharField(
-        max_length=200,
+        max_length=512,
         default='',
         blank=True
     )
@@ -112,6 +112,11 @@ class UploadSession(models.Model):
         Site,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True
+    )
+    template = models.CharField(
+        max_length=200,
+        default='',
         blank=True
     )
 
