@@ -12,7 +12,7 @@ from bims.scripts.species_keys import *  # noqa
 from bims.models import (
     Taxonomy, SourceReference
 )
-from .taxa_upload import TaxaProcessor  # wherever your TaxaProcessor lives
+from .taxa_upload import TaxaProcessor
 
 logger = logging.getLogger("bims")
 
@@ -74,7 +74,6 @@ class WormsTaxaProcessor(TaxaProcessor):
         "subspecies": "SUBSPECIES",
     }
 
-    # WoRMS taxonomicStatus -> our taxonomy.taxonomic_status
     STATUS_MAP = {
         "accepted": "ACCEPTED",
         "unaccepted": "UNACCEPTED",
@@ -138,16 +137,14 @@ class WormsTaxaProcessor(TaxaProcessor):
             ("KINGDOM", row.get(WORMS_COLUMN_NAMES["kingdom"])),
             ("PHYLUM", row.get(WORMS_COLUMN_NAMES["phylum"])),
             ("CLASS", row.get(WORMS_COLUMN_NAMES["clazz"])),
-            ("INFRACLASS", row.get(WORMS_COLUMN_NAMES["clazz"]) and None),  # optional slot
+            ("INFRACLASS", row.get(WORMS_COLUMN_NAMES["clazz"]) and None),
             ("ORDER", row.get(WORMS_COLUMN_NAMES["order"])),
             ("FAMILY", row.get(WORMS_COLUMN_NAMES["family"])),
+            ("SUBFAMILY", row.get(WORMS_COLUMN_NAMES["family"]) and None),
             ("GENUS", row.get(WORMS_COLUMN_NAMES["genus"])),
             ("SUBGENUS", row.get(WORMS_COLUMN_NAMES["subgenus"])),
             ("SPECIES", row.get(WORMS_COLUMN_NAMES["species"])),
         ]
-
-        # We only need up to the immediate parent rank of the target
-        # Build a dict for quick position lookup
         idx = {r: i for i, (r, _) in enumerate(lineage)}
         if for_rank not in idx:
             return None
@@ -156,7 +153,6 @@ class WormsTaxaProcessor(TaxaProcessor):
             return None
 
         parent = None
-        # Walk from top to the parent slot, creating/finding nodes
         for i in range(stop_at + 1):
             rank, name = lineage[i]
             if not name:
@@ -167,7 +163,6 @@ class WormsTaxaProcessor(TaxaProcessor):
                 rank=rank
             ).first()
             if not t:
-                # Create placeholder
                 t = Taxonomy.objects.create(
                     canonical_name=name,
                     scientific_name=name,
@@ -297,7 +292,6 @@ class WormsTaxaProcessor(TaxaProcessor):
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
         self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
 
-        # Hook for per-row finishing and success file
         self.finish_processing_row(row, taxonomy)
 
 
@@ -312,7 +306,6 @@ class WormsTaxaCSVUpload(DataCSVUpload, WormsTaxaProcessor):
         self.error_file(error_row=row, error_message=message)
 
     def finish_processing_row(self, row, taxonomy):
-        # mirror your TaxaCSVUpload.finish_processing_row
         taxon_group = self.upload_session.module_group
         if not taxon_group.taxonomies.filter(id=taxonomy.id).exists():
             taxon_group.taxonomies.add(taxonomy)
