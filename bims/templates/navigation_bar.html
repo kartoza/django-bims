@@ -151,7 +151,14 @@
 </nav>
 
 <script>
-
+    document.addEventListener('scroll', function() {
+        const navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('shrink');
+        } else {
+            navbar.classList.remove('shrink');
+        }
+    });
     var dropdownCloseButtons = document.getElementsByClassName("close-dropdown");
 
     for(var i = 0; i < dropdownCloseButtons.length; i++) {

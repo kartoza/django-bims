@@ -269,6 +269,8 @@ header.masthead p {
 	transition: transform 500ms ease !important;
 	-webkit-backface-visibility: visible;
 	        backface-visibility: visible;
+    position: relative;
+    overflow: hidden;
 }
 
 .service-box {
