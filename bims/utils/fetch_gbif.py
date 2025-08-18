@@ -310,6 +310,8 @@ def fetch_all_species_from_gbif(
     logger.debug(species_data)
     if not species_data:
         return None
+    if 'authorship' not in species_data and 'nubKey' in species_data:
+        species_data = get_species(species_data['nubKey'])
     taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names)
     if not taxonomy:
         log_info('Taxonomy not updated/created')
