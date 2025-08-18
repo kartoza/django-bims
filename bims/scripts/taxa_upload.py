@@ -666,6 +666,16 @@ class TaxaProcessor(object):
                 if not taxonomy.parent and parent:
                     taxonomy.parent = parent
 
+                # Missing authorship
+                if on_gbif and not taxonomy.author:
+                    taxonomy = fetch_all_species_from_gbif(
+                        species=taxon_name,
+                        taxonomic_rank=rank,
+                        fetch_children=False,
+                        fetch_vernacular_names=should_fetch_vernacular_names,
+                        use_name_lookup=False
+                    )
+
             # Data from GBIF couldn't be found, so add it manually
             if not taxonomy:
                 max_try = 10
