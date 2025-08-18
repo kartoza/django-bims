@@ -96,10 +96,19 @@ class DataUploadView(
 
         try:
             if file_extension in ['.xls', '.xlsx']:
-                excel_data = pd.read_excel(upload_file)
+                df = pd.read_excel(
+                    upload_file,
+                    keep_default_na=False,
+                    na_filter=False
+                )
+                for col in df.columns:
+                    if pd.api.types.is_numeric_dtype(df[col]):
+                        if (df[col].dropna() % 1 == 0).all():
+                            df[col] = df[col].astype('Int64')
+
                 with NamedTemporaryFile(delete=False, suffix=".csv") as temp_csv_file:
                     csv_file_path = temp_csv_file.name
-                    excel_data.to_csv(csv_file_path, index=False)
+                    df.to_csv(csv_file_path, index=False)
 
                     with open(csv_file_path, 'rb') as csv_file:
                         csv_content = ContentFile(csv_file.read())

@@ -548,15 +548,15 @@ class TaxaList(LoginRequiredMixin, APIView):
             )
         if family_name:
             taxon_list = taxon_list.filter(
-                hierarchical_data__family_name__icontains=family_name
+                hierarchical_data__family_name__iexact=family_name
             )
         if genus_name:
             taxon_list = taxon_list.filter(
-                hierarchical_data__genus_name__icontains=genus_name
+                hierarchical_data__genus_name__iexact=genus_name
             )
         if species_name:
             taxon_list = taxon_list.filter(
-                hierarchical_data__species_name__icontains=species_name
+                hierarchical_data__species_name__iexact=species_name
             )
 
         if tags:
