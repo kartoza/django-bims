@@ -791,7 +791,8 @@ class TaxaProcessor(object):
                 if fada_id:
                     try:
                         integer_part = fada_id.split('.', 1)[0]
-                        taxonomy.fada_id = int(integer_part)
+                        if integer_part and integer_part != '0':
+                            taxonomy.fada_id = int(integer_part)
                     except ValueError:
                         pass
 
