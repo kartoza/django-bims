@@ -9,6 +9,70 @@ let orderField = {
     'endemism_name': 'endemism__name'
 }
 
+async function pollTaskStatus(taskId, { intervalMs = 1500, maxAttempts = 200 } = {}) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const res = await fetch(`/api/celery-status/${taskId}/`, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('Status request failed');
+            const data = await res.json();
+
+            if (['SUCCESS', 'FAILURE', 'REVOKED'].includes(data.state)) {
+                return data;
+            }
+        } catch (e) {
+            console.warn('Polling error:', e);
+        }
+        await new Promise(r => setTimeout(r, intervalMs));
+    }
+    throw new Error('Polling timed out');
+}
+
+async function startBatchApprove(taxonGroupId, includeChildren = true) {
+    $('#processingModal').modal({ backdrop: 'static', keyboard: false });
+    $('#processingModal').modal('show');
+
+    try {
+        const res = await fetch('/api/approve-group-proposals/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                taxon_group_id: parseInt(taxonGroupId, 10),
+                include_children: includeChildren
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || err.message || 'Request failed');
+        }
+
+        const { task_id } = await res.json();
+
+        const result = await pollTaskStatus(task_id);
+
+        $('#processingModal').modal('hide');
+
+        const message = result?.result || 'Batch approval finished.';
+        $('#statusModalBody').text(
+            typeof message === 'string' ? message : JSON.stringify(message)
+        );
+        $('#statusModal').modal('show');
+
+        $('#statusModal').one('hidden.bs.modal', function () {
+            location.reload();
+        });
+    } catch (e) {
+        $('#statusModalBody').text(`Failed to start/complete batch approve: ${e.message}`);
+        $('#statusModal').modal('show');
+        setTimeout(() => {
+            $('#processingModal').modal('hide');
+        }, 500)
+    }
+}
 
 export const taxaManagement = (() => {
     const fullUrl = new URL(window.location.href);
@@ -70,6 +134,19 @@ export const taxaManagement = (() => {
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
         $('#download-csv').on('click', handleDownloadCsv)
         $('#download-pdf').on('click', handleDownloadPdf)
+
+        const $approveAllBtn = $('#approve-all-proposals-btn');
+        if ($approveAllBtn.length) {
+            $approveAllBtn.on('click', function (e) {
+                e.preventDefault();
+                if (!selectedTaxonGroup) return;
+
+                if (!confirm('Approve all UNVALIDATED proposals in this taxon group (including children)?')) {
+                    return;
+                }
+                startBatchApprove(selectedTaxonGroup, true);
+            });
+        }
 
         if (userCanEditTaxonGroup) {
             $sortable.sortable({
@@ -415,6 +492,8 @@ export const taxaManagement = (() => {
 
                 let orderParam = sortOrder + (orderField.hasOwnProperty(sortBy) ? orderField[sortBy] : sortBy);
 
+                $('#approve-all-proposals-btn').hide();
+
                 $.ajax({
                     url: url,
                     data: {o: orderParam, page: page, page_size: pageSize},
@@ -425,6 +504,7 @@ export const taxaManagement = (() => {
 
                         if (response['is_expert']) {
                             $('#add-taxon-btn').show();
+                            $('#approve-all-proposals-btn').show();
                         }
 
                         if (response.count === 0) {
