@@ -10,7 +10,7 @@ from django.http import Http404, JsonResponse
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import status
-from rest_framework.generics import UpdateAPIView
+from rest_framework.generics import UpdateAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK
@@ -31,7 +31,7 @@ from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_verna
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
-from bims.tasks.taxa import fetch_iucn_status
+from bims.tasks.taxa import fetch_iucn_status, approve_unvalidated_taxa_by_group
 
 logger = logging.getLogger('bims')
 
@@ -822,4 +822,60 @@ class HarvestIUCNStatus(APIView):
         return Response(
             {"message": "Harvesting IUCN status in the background."},
             status=HTTP_200_OK
+        )
+
+
+class ApproveTaxonGroupProposalsView(APIView):
+    """
+    POST: Trigger background approval of all proposals under a TaxonGroup.
+    Body:
+      {
+        "taxon_group_id": 123,
+        "include_children": true,
+        "statuses": ["pending"]
+      }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        payload = request.data or {}
+
+        try:
+            taxon_group_id = int(payload.get("taxon_group_id"))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Missing or invalid 'taxon_group_id'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        include_children = payload.get("include_children", True)
+
+        group = get_object_or_404(TaxonGroup, pk=taxon_group_id)
+        user = request.user
+        if not is_expert(user, group):
+            return Response(
+                {"detail": "You do not have permission to approve proposals for this group."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        task = approve_unvalidated_taxa_by_group.delay(
+            taxon_group_id=group.id,
+            initiated_by_user_id=user.id,
+            include_children=bool(include_children),
+        )
+
+        logger.info(
+            "User %s queued batch-approve for TaxonGroup %s "
+            "(task_id=%s, include_children=%s)",
+            user.id, group.id, task.id, include_children
+        )
+
+        return Response(
+            {
+                "message": "Batch approval started.",
+                "task_id": task.id,
+                "taxon_group_id": group.id,
+                "include_children": include_children,
+            },
+            status=status.HTTP_202_ACCEPTED
         )
