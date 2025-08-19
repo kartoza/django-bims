@@ -5,6 +5,8 @@ from django.http import Http404
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
     TaxonExtraAttribute, TaxonomicGroupCategory,
@@ -70,25 +72,7 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
         if not taxon_group.taxonomies.filter(
             id=taxonomy.id
         ).exists():
-            with transaction.atomic():
-                TaxonomyUpdateProposal.objects.get_or_create(
-                    scientific_name=taxonomy.scientific_name,
-                    canonical_name=taxonomy.canonical_name,
-                    legacy_canonical_name=taxonomy.legacy_canonical_name,
-                    original_taxonomy=taxonomy,
-                    rank=taxonomy.rank,
-                    taxonomic_status=taxonomy.taxonomic_status,
-                    endemism=taxonomy.endemism,
-                    iucn_status=taxonomy.iucn_status,
-                    accepted_taxonomy=taxonomy.accepted_taxonomy,
-                    parent=taxonomy.parent,
-                    taxon_group=taxon_group,
-                    new_data=True,
-                    status='pending',
-                    taxon_group_under_review=taxon_group,
-                    gbif_key=taxonomy.gbif_key,
-                    origin=taxonomy.origin
-                )
+            create_taxon_proposal(taxonomy, taxon_group)
         taxon_group.taxonomies.add(
             taxonomy,
             through_defaults={
