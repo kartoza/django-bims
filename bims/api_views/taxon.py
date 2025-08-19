@@ -790,7 +790,10 @@ class TaxonTreeJsonView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, taxon_id, format=None):
-        taxon = Taxonomy.objects.get(id=taxon_id)
+        try:
+            taxon = Taxonomy.objects.get(id=taxon_id)
+        except Taxonomy.DoesNotExist:
+            taxon = TaxonomyUpdateProposal.objects.get(id=taxon_id)
         nodes = []
         current_taxon = taxon
         while current_taxon:
