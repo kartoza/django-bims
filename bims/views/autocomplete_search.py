@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Concat
 from django.apps import apps
+from django.views.decorators.http import require_http_methods
 
 from bims.models import SpeciesGroup
 from bims.models.taxonomy import Taxonomy
@@ -218,6 +219,7 @@ def data_source_autocomplete(request):
     return HttpResponse(data, mime_type)
 
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def species_group_autocomplete(request):
     q = request.GET.get('term', '').capitalize()

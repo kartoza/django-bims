@@ -144,6 +144,7 @@ def update_taxon_proposal(
         origin=data.get('origin', proposal.origin),
         iucn_status=iucn_status,
         endemism=endemism,
+        species_group=data.get('species_group', proposal.species_group),
     )
 
 def is_expert(user, taxon_group):

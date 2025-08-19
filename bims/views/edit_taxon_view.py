@@ -99,7 +99,11 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         taxon_name = self.request.POST.get('taxon_name', '')
 
         species_group = self.request.POST.get('species-group', '')
-        if species_group:
+        if 'NEW' in species_group:
+            data['species_group'] = SpeciesGroup.objects.create(
+                name=species_group.split(':')[-1].strip()
+            )
+        elif species_group:
             data['species_group'] = SpeciesGroup.objects.get(id=species_group)
         else:
             data['species_group'] = None
