@@ -338,3 +338,32 @@ table {
 #taxon-name-input {
     width: 25%;
 }
+
+/* Diff styling for table cells */
+.cell-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.cell-diff.stack-on-narrow { flex-direction: row; }
+
+@media (max-width: 1400px) {
+  .cell-diff.stack-on-narrow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
+
+.cell-diff .old { opacity: 0.8; text-decoration: line-through; }
+.cell-diff .arrow { opacity: 0.6; }
+.cell-diff .new { }
+
+.cell-changed {
+  background: linear-gradient(to right, rgba(255,193,7,.22), rgba(255,193,7,.08));
+  border-left: 3px solid #ffc107;
+}
+
+.cell-diff .badge { margin-right: 2px; }
