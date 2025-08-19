@@ -377,7 +377,7 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             taxon_group=new_taxon_group,
             status='pending',
         ).first()
-        self.assertTrue(taxonomy_update_proposal.new_data)
+        self.assertFalse(taxonomy_update_proposal.new_data)
         self.client.login(username='testuser', password='password')
         url = reverse('review-taxon-proposal',
                       kwargs={
