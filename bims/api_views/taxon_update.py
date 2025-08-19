@@ -135,6 +135,7 @@ def update_taxon_proposal(
     ).update(
         status='pending',
         author=data.get('author', proposal.author),
+        parent=data.get('parent', proposal.parent),
         rank=data.get('rank', proposal.rank),
         scientific_name=data.get(
             'scientific_name', proposal.scientific_name),
