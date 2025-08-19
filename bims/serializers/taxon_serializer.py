@@ -45,6 +45,28 @@ class TaxonSerializer(serializers.ModelSerializer):
     can_edit = serializers.SerializerMethodField()
     taxonomic_status = serializers.SerializerMethodField()
 
+    def _format_distributions(self, qs):
+        names = list(qs.values_list('name', flat=True))
+        return ", ".join(names)
+
+    def _format_tags(self, tags_qs):
+        tag_info = []
+        cached_tag_groups = self.context.setdefault('tag_groups', {})
+
+        for tag in tags_qs.order_by('tag_groups__order'):
+            if tag.id in cached_tag_groups:
+                tag_info.append(cached_tag_groups[tag.id])
+            else:
+                tg_qs = tag.tag_groups.all()
+                if tg_qs.exists():
+                    group = tg_qs.first()
+                    label = f"{tag.name} ({group.colour})"
+                else:
+                    label = tag.name
+                tag_info.append(label)
+                cached_tag_groups[tag.id] = label
+        return ", ".join(tag_info)
+
     def get_iucn_url(self, obj: Taxonomy):
         if obj.iucn_data:
             try:
@@ -55,7 +77,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         return ''
 
     def get_taxonomic_status(self, obj: Taxonomy):
-        return obj.taxonomic_status.upper()
+        return self.get_proposed_or_current(obj, 'taxonomic_status')
 
     def taxonomy_obj(self, obj):
         if isinstance(obj, TaxonomyUpdateProposal):
@@ -69,7 +91,18 @@ class TaxonSerializer(serializers.ModelSerializer):
         return f'row_{obj.id}'
 
     def get_biographic_distributions(self, obj: Taxonomy):
-        return u", ".join(o.name for o in obj.biographic_distributions.all())
+        original_str = self._format_distributions(obj.biographic_distributions.all())
+        if self.context.get('validated', False):
+            return original_str
+
+        proposal = self.get_pending_proposal(obj)
+        if not proposal:
+            return original_str
+
+        proposed_str = self._format_distributions(proposal.biographic_distributions.all())
+        if (original_str or '').strip() != (proposed_str or '').strip():
+            return f"{original_str if original_str else '-'} → {proposed_str}"
+        return original_str
 
     def get_genus(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
@@ -82,7 +115,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_family(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
         if not validated:
-            return obj.family_name
+            return self.get_proposed_or_current(obj, 'family_name')
         if obj.hierarchical_data and 'family_name' in obj.hierarchical_data:
             return obj.hierarchical_data['family_name']
         return obj.family_name
@@ -131,7 +164,7 @@ class TaxonSerializer(serializers.ModelSerializer):
                 return proposal.id
         return None
 
-    def get_proposed_or_current(self, obj, field, original_value=''):
+    def get_proposed_or_current(self, obj, field, original_value='', attr = None):
         validated = self.context.get('validated', False)
         if not original_value:
             original_data = getattr(obj, field)
@@ -142,9 +175,9 @@ class TaxonSerializer(serializers.ModelSerializer):
         proposal_value = ''
         if proposal:
             proposal_data = getattr(proposal, field)
-            proposal_value = str(proposal_data if proposal_data else '')
+            proposal_value = str((getattr(proposal_data, attr) if attr else proposal_data) if proposal_data else '')
         return (
-            f"{original_value} → "
+            f"{original_value if original_value else '-'} → "
             f"{proposal_value}"
             if proposal and original_value.strip() != proposal_value.strip()
             else original_value
@@ -273,9 +306,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         return obj.validated
 
     def get_accepted_taxonomy_name(self, obj):
-        if obj.accepted_taxonomy:
-            return obj.accepted_taxonomy.canonical_name
-        return ''
+        return self.get_proposed_or_current(obj, 'accepted_taxonomy')
 
     def get_total_records(self, obj):
         return BiologicalCollectionRecord.objects.filter(
@@ -291,24 +322,18 @@ class TaxonSerializer(serializers.ModelSerializer):
             return vernacular_names[0]
 
     def get_tag_list(self, obj):
-        tag_info = []
-        cached_tag_groups = self.context.get('tag_groups', {})
+        original_str = self._format_tags(obj.tags)
+        if self.context.get('validated', False):
+            return original_str
 
-        for tag in obj.tags.order_by('tag_groups__order'):
-            if tag.id in cached_tag_groups:
-                tag_info.append(cached_tag_groups[tag.id])
-            else:
-                tag_group_qs = tag.tag_groups.all()
-                if tag_group_qs.exists():
-                    group = tag_group_qs.first()
-                    tag_info_data = f"{tag.name} ({group.colour})"
-                else:
-                    tag_info_data = tag.name
+        proposal = self.get_pending_proposal(obj)
+        if not proposal:
+            return original_str
 
-                tag_info.append(tag_info_data)
-                self.context.setdefault('tag_groups', {})[tag.id] = tag_info_data
-
-        return ", ".join(tag_info)
+        proposed_str = self._format_tags(proposal.tags)
+        if (original_str or '').strip() != (proposed_str or '').strip():
+            return f"{original_str if original_str else '-'} → {proposed_str}"
+        return original_str
 
     def get_record_type(self, obj):
         return 'bio'
