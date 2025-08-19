@@ -7,7 +7,7 @@ from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
 
 from django.db import transaction
-from django.db.models import Q
+from django.conf import settings
 
 logger = get_task_logger(__name__)
 
@@ -129,6 +129,8 @@ def approve_unvalidated_taxa_by_group(
 
     from bims.models import TaxonGroup, TaxonGroupTaxonomy, TaxonomyUpdateProposal, Taxonomy
     from bims.api_views.taxon_update import create_taxon_proposal
+    from bims.tasks.send_notification import send_mail_notification
+    from bims.utils.domain import get_current_domain
 
     User = get_user_model()
 
@@ -177,6 +179,7 @@ def approve_unvalidated_taxa_by_group(
     approved = 0
     failed = 0
     failed_ids: list[int] = []
+    approved_taxa_names: list[str] = []
 
     for link in _iter_queryset(tgt_qs, chunk_size=chunk_size):
         taxon: Taxonomy = link.taxonomy
@@ -201,7 +204,7 @@ def approve_unvalidated_taxa_by_group(
                         data={})
                     created += 1
 
-                proposal.approve(actor)
+                proposal.approve(actor, suppress_emails=True)
 
                 proposal.refresh_from_db()
                 if proposal.status in (None, "", "pending", "created"):
@@ -213,6 +216,9 @@ def approve_unvalidated_taxa_by_group(
                     link.save(update_fields=["is_validated"])
 
                 approved += 1
+                approved_taxa_names.append(
+                    taxon.canonical_name or taxon.scientific_name or f"Taxon {taxon.id}"
+                )
 
         except Exception as exc:
             failed += 1
@@ -227,6 +233,38 @@ def approve_unvalidated_taxa_by_group(
                 state="PROGRESS",
                 meta={"processed": approved + failed, "approved": approved, "failed": failed, "total": total},
             )
+
+    try:
+        if approved > 0:
+            current_site = get_current_domain()
+            from_email = settings.DEFAULT_FROM_EMAIL
+
+            recipients = []
+            for expert in root_group.get_all_experts():
+                if expert.email:
+                    recipients.append(expert.email)
+            superusers = list(
+                User.objects.filter(is_superuser=True).values_list('email', flat=True)
+            )
+            recipients = list({e for e in (recipients + superusers) if e})
+
+            subject = f'[{current_site}] Bulk approval complete: {approved} taxa in "{root_group.name}"'
+            preview = ", ".join(approved_taxa_names[:20])
+            more = f"\n… and {max(0, approved - 20)} more." if approved > 20 else ""
+            message = (
+                f"Bulk approval summary for {current_site}\n\n"
+                f"Taxon Group: {root_group.name}\n"
+                f"Include children: {include_children}\n\n"
+                f"Approved: {approved}\n"
+                f"Created proposals: {created}\n"
+                f"Failed: {failed}\n\n"
+                f"Approved taxa (first 20): {preview}{more}\n"
+            )
+
+            if recipients:
+                send_mail_notification.delay(subject, message, from_email, recipients)
+    except Exception as exc:
+        logger.exception("Failed to send bulk approval summary email: %s", exc)
 
     dt = time.perf_counter() - t0
     summary = (
