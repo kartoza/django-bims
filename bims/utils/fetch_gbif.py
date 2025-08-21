@@ -1,4 +1,6 @@
 import logging
+
+from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
@@ -77,38 +79,93 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
     if vernacular_names:
         excluded_taxon.vernacular_names.add(*vernacular_names)
 
+
+def _norm(s: str) -> str:
+    return (s or "").strip()
+
+
 def fetch_gbif_vernacular_names(taxonomy: Taxonomy):
-    if not taxonomy.gbif_key:
+    if not getattr(taxonomy, "gbif_key", None):
         return False
+
     vernacular_names = get_vernacular_names(taxonomy.gbif_key)
-    logger.info('Fetching vernacular names for {}'.format(
-        taxonomy.canonical_name
-    ))
-    if vernacular_names:
-        logger.info('Found %s vernacular names' % len(
-            vernacular_names['results']))
-        order = 1
-        for result in vernacular_names['results']:
-            fields = {}
-            source = result['source'] if 'source' in result else ''
-            if 'language' in result:
-                fields['language'] = result['language']
-            if 'taxonKey' in result:
-                fields['taxon_key'] = int(result['taxonKey'])
-            fields['order'] = order
+    logger.info("Fetching vernacular names for %s", taxonomy.canonical_name)
 
-            vernacular_name, created = (
-                VernacularName.objects.update_or_create(
-                    name=result['vernacularName'],
-                    source=source,
-                    defaults=fields
-                )
-            )
+    results = (vernacular_names or {}).get("results") or []
+    if not results:
+        logger.info("Found 0 vernacular names")
+        return True
 
-            taxonomy.vernacular_names.add(vernacular_name)
-            order += 1
+    logger.info("Found %s vernacular names", len(results))
 
-        taxonomy.save()
+    order_val = 1
+    created_cnt = 0
+    updated_cnt = 0
+
+    for result in results:
+        name_clean = _norm(result.get("vernacularName"))
+        if not name_clean:
+            continue
+
+        source_clean = _norm(result.get("source"))
+        language_clean = _norm(result.get("language")) or None
+
+        fields = {
+            "language": language_clean,
+            "order": order_val,
+        }
+        if result.get("taxonKey") is not None:
+            try:
+                fields["taxon_key"] = int(result["taxonKey"])
+            except (TypeError, ValueError):
+                pass
+
+        with transaction.atomic():
+            obj = (VernacularName.objects
+                   .select_for_update()
+                   .filter(name__iexact=name_clean, source=source_clean)
+                   .first())
+            if obj:
+                changed = []
+                for k, v in fields.items():
+                    if getattr(obj, k) != v:
+                        setattr(obj, k, v)
+                        changed.append(k)
+                if changed:
+                    obj.save(update_fields=changed)
+                    updated_cnt += 1
+                else:
+                    updated_cnt += 1
+            else:
+                try:
+                    obj = VernacularName.objects.create(
+                        name=name_clean,
+                        source=source_clean,
+                        **fields,
+                    )
+                    created_cnt += 1
+                except IntegrityError:
+                    obj = (VernacularName.objects
+                           .select_for_update()
+                           .get(name__iexact=name_clean, source=source_clean))
+                    changed = []
+                    for k, v in fields.items():
+                        if getattr(obj, k) != v:
+                            setattr(obj, k, v)
+                            changed.append(k)
+                    if changed:
+                        obj.save(update_fields=changed)
+                    updated_cnt += 1
+
+        # Link to taxonomy (idempotent; Django won't add duplicates)
+        taxonomy.vernacular_names.add(obj)
+        order_val += 1
+
+    taxonomy.save()
+    logger.info(
+        "Vernacular names linked. created=%d updated=%d",
+        created_cnt, updated_cnt)
+    return True
 
 
 def create_or_update_taxonomy(
