@@ -84,6 +84,8 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 header = ACCEPTED_TAXON
             elif header == 'fada_id':
                 header = FADA_ID
+                _updated_headers.append(header)
+                continue
 
             header = header.replace('_or_', '/')
 
