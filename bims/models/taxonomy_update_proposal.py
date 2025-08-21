@@ -308,6 +308,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'additional_data',
                     'vernacular_names',
                     'gbif_key',
+                    'gbif_data',
                     'origin']
                 for field in fields_to_update:
                     if field == 'tags':

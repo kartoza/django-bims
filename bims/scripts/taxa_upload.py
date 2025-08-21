@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 import re
@@ -20,7 +19,8 @@ from bims.models import (
     VernacularName,
     ORIGIN_CATEGORIES, TaxonTag, SourceReference,
     SourceReferenceBibliography,
-    Invasion, SpeciesGroup
+    Invasion, SpeciesGroup,
+    TaxonomyUpdateProposal
 )
 from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
@@ -39,6 +39,36 @@ logger = logging.getLogger('bims')
 class TaxaProcessor(object):
 
     all_keys = {}
+
+    def _get_or_create_vernacular_singleton(self, name: str, language: str | None):
+        """
+        Robustly fetch a single VernacularName without raising MultipleObjectsReturned.
+        If multiples exist, return the earliest one. If none, create one.
+        """
+        name = re.sub(r"\s+", " ", (name or "").strip())
+        language = (language or "").strip() or None
+
+        qs = VernacularName.objects.filter(
+            name=name,
+            language=language,
+            is_upload=True
+        ).order_by("id")
+
+        obj = qs.first()
+        if obj:
+            return obj
+
+        return VernacularName.objects.create(
+            name=name,
+            language=language,
+            is_upload=True
+        )
+
+    def _update_taxon_and_proposal(self, taxonomy, proposal, use_proposal, new_taxon, field, value):
+        if new_taxon or not use_proposal:
+            setattr(taxonomy, field, value)
+        if use_proposal:
+            setattr(proposal, field, value)
 
     def _compose_species_name(self, row) -> str:
         """
@@ -81,8 +111,6 @@ class TaxaProcessor(object):
                 taxongroup=taxon_group,
                 taxonomy=taxonomy
             ).update(is_validated=False)
-
-            create_taxon_proposal(taxonomy, taxon_group)
 
     def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
         """
@@ -216,8 +244,7 @@ class TaxaProcessor(object):
         return '', source_reference
 
     def common_name(self, row):
-        """Extracts and processes common names of species from a given row."""
-
+        """Extract and process common names of species from a given row (never raises on duplicates)."""
         common_name_value = self.get_row_value(row, COMMON_NAME)
         if not common_name_value:
             common_name_value = self.get_row_value(row, VERNACULAR_NAME)
@@ -230,38 +257,21 @@ class TaxaProcessor(object):
 
         vernacular_names = []
 
-        # Split the common name string into individual names based on ';' or ',' as delimiters
-        if ';' in common_name_value:
-            common_names = common_name_value.split(';')
-        else:
-            common_names = common_name_value.split(',')
-        for common_name in common_names:
-            common_name = common_name.strip()
+        parts = common_name_value.split(';') if ';' in common_name_value else common_name_value.split(',')
+        for raw in parts:
+            raw = raw.strip()
+            if not raw:
+                continue
+            m = re.match(r'^(.*?)(?:\s*\((\w+)\))?$', raw)
+            if not m:
+                continue
 
-            # Match common names with an optional language code in parentheses
-            # Example matches:
-            # "Elephant" -> name: "Elephant", language: None (will use default english)
-            # "Lion (eng)" -> name: "Lion", language: "eng"
-            # "Tigre (spa)" -> name: "Tigre", language: "spa"
-            # "Panda(chi)" -> name: "Panda", language: "chi" (handles no space before parentheses)
-            match = re.match(r'^(.*?)(?: *\((\w+)\))?$', common_name)
-            if match:
-                name = match.group(1)
-                language = match.group(2) if match.group(2) else vernacular_lang
-                try:
-                    vernacular_name, _ = VernacularName.objects.get_or_create(
-                        name=name,
-                        language=language,
-                        is_upload=True
-                    )
-                except VernacularName.MultipleObjectsReturned:
-                    vernacular_name = VernacularName.objects.filter(
-                        name=name,
-                        language=language,
-                        is_upload=True
-                    )[0]
-                vernacular_names.append(vernacular_name)
-        return vernacular_names
+            name = re.sub(r"\s+", " ", (m.group(1) or "").strip())
+            language = (m.group(2) or vernacular_lang or "").strip() or None
+            vn = self._get_or_create_vernacular_singleton(name=name, language=language)
+            vernacular_names.append(vn)
+
+        return vernacular_names or None
 
     def origin(self, row):
         """
@@ -500,7 +510,10 @@ class TaxaProcessor(object):
             for key in row.keys():
                 self.all_keys[key.upper()] = key
 
-        taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS)
+        auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
+        use_proposal = not auto_validate
+
+        taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS) or ""
         taxon_name = self.get_row_value(row, TAXON)
         accepted_taxon = None
 
@@ -551,6 +564,26 @@ class TaxaProcessor(object):
             )
             return
 
+        gbif_key = None
+        if on_gbif:
+            gbif_link = self.get_row_value(row, GBIF_LINK)
+            if not gbif_link:
+                gbif_link = self.get_row_value(row, GBIF_URL)
+            gbif_key = (
+                gbif_link.split('/')[len(gbif_link.split('/')) - 1]
+            )
+            if gbif_key.endswith('.0'):
+                gbif_key = gbif_key[:-2]
+
+        fada_id = self.get_row_value(row, FADA_ID)
+        if fada_id:
+            try:
+                integer_part = fada_id.split('.', 1)[0]
+                if integer_part and integer_part != '0':
+                    fada_id = int(integer_part)
+            except ValueError:
+                pass
+
         if 'synonym' in taxonomic_status.lower().lower().strip():
             accepted_taxon_val = self.get_row_value(
                 row, ACCEPTED_TAXON
@@ -588,20 +621,49 @@ class TaxaProcessor(object):
             )
             return
 
-        taxa = Taxonomy.objects.filter(
-            canonical_name__iexact=taxon_name
-        )
+        # Check with gbif key
+        taxa = Taxonomy.objects.none()
+        if gbif_key:
+            taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
+        if not taxa and fada_id:
+            taxa = Taxonomy.objects.filter(fada_id=fada_id)
+        if not taxa:
+            taxa = Taxonomy.objects.filter(
+                canonical_name__iexact=taxon_name
+            )
+
+        update_canonical_name = False
         if not taxa.exists() and ' ' in taxon_name:
             orphan = taxon_name.split(' ', 1)[1].strip()
             taxa = Taxonomy.objects.filter(
                 canonical_name__iexact=orphan,
                 rank=rank.upper()
             )
-            if taxa.exists():
+            update_canonical_name = True
+
+        proposal = None
+        new_taxon = False
+        if use_proposal:
+            if taxa:
+                proposal, _ = TaxonomyUpdateProposal.objects.get_or_create(
+                    taxon_group=taxon_group,
+                    original_taxonomy=taxa.first(),
+                    status='pending'
+                )
+            else:
+                proposal = TaxonomyUpdateProposal.objects.create(
+                    taxon_group=taxon_group,
+                    status='pending'
+                )
+
+        if taxa.exists() and update_canonical_name:
+            if proposal:
+                obtained = proposal
+            else:
                 obtained = taxa.first()
-                obtained.canonical_name = taxon_name
-                obtained.scientific_name = taxon_name
-                obtained.save()
+            obtained.canonical_name = taxon_name
+            obtained.scientific_name = taxon_name
+            obtained.save()
 
         try:
             taxonomy = None
@@ -625,23 +687,14 @@ class TaxaProcessor(object):
                     logger.debug('{} has different RANK'.format(
                         taxon_name
                     ))
-                    taxonomy.rank = rank.upper()
+                    if proposal:
+                        proposal.rank = rank.upper()
+                    else:
+                        taxonomy.rank = rank.upper()
 
                 logger.debug('{} already in the system'.format(
                     taxon_name
                 ))
-
-            gbif_key = None
-            if on_gbif:
-                gbif_link = self.get_row_value(row, GBIF_LINK)
-                if not gbif_link:
-                    gbif_link = self.get_row_value(row, GBIF_URL)
-                gbif_key = (
-                    gbif_link.split('/')[len(gbif_link.split('/')) - 1]
-                )
-                # Remove '.0' if present at the end
-                if gbif_key.endswith('.0'):
-                    gbif_key = gbif_key[:-2]
 
             if not taxonomy and gbif_key:
                 # Fetch from gbif
@@ -649,6 +702,8 @@ class TaxaProcessor(object):
                     gbif_key=gbif_key,
                     fetch_vernacular_names=should_fetch_vernacular_names
                 )
+                if taxonomy:
+                    new_taxon = True
 
             if not taxonomy and on_gbif:
                 # Try again with lookup
@@ -660,6 +715,8 @@ class TaxaProcessor(object):
                     fetch_vernacular_names=should_fetch_vernacular_names,
                     use_name_lookup=False
                 )
+                if taxonomy:
+                    new_taxon = True
 
             # Taxonomy found or created then validate it
             if taxonomy:
@@ -698,6 +755,7 @@ class TaxaProcessor(object):
                     )
                     return
                 else:
+                    new_taxon = True
                     # Taxonomy not found, create one
                     taxonomy, _ = Taxonomy.objects.get_or_create(
                         scientific_name=scientific_name,
@@ -712,6 +770,11 @@ class TaxaProcessor(object):
 
             # -- Finish
             if taxonomy:
+                if use_proposal:
+                    proposal = create_taxon_proposal(
+                        taxonomy, taxon_group
+                    )
+
                 # Merge taxon with same canonical name
                 legacy_canonical_name = taxonomy.legacy_canonical_name
                 legacy_canonical_name = (
@@ -724,14 +787,29 @@ class TaxaProcessor(object):
                         former_species_name = former_species_name[:500]
                     if former_species_name not in legacy_canonical_name:
                         legacy_canonical_name += ';' + former_species_name
-                taxonomy.legacy_canonical_name = (
+
+                self._update_taxon_and_proposal(
+                    taxonomy,
+                    proposal,
+                    use_proposal,
+                    new_taxon,
+                    'legacy_canonical_name',
                     legacy_canonical_name[:700]
                 )
+
                 # -- Validate parents
-                validated, message = self.validate_parents(
-                    taxon=taxonomy,
-                    row=row
-                )
+                validated = False
+                message = ''
+                if new_taxon or not use_proposal:
+                    validated, message = self.validate_parents(
+                        taxon=taxonomy,
+                        row=row
+                    )
+                if use_proposal:
+                    validated, message = self.validate_parents(
+                        taxon=proposal,
+                        row=row
+                    )
 
                 if not validated:
                     self.handle_error(
@@ -743,17 +821,35 @@ class TaxaProcessor(object):
                 # -- Endemism
                 endemism = self.endemism(row)
                 if endemism:
-                    taxonomy.endemism = endemism
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'endemism',
+                        endemism
+                    )
 
                 # -- Conservation status global
                 iucn_status = self.conservation_status(row, True)
-                if iucn_status:
-                    taxonomy.iucn_status = iucn_status
+                self._update_taxon_and_proposal(
+                    taxonomy,
+                    proposal,
+                    use_proposal,
+                    new_taxon,
+                    'iucn_status',
+                    iucn_status
+                )
 
                 # -- Conservation status national
                 national_cons_status = self.conservation_status(row, False)
                 if national_cons_status:
-                    taxonomy.national_conservation_status = (
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'national_conservation_status',
                         national_cons_status
                     )
 
@@ -766,54 +862,108 @@ class TaxaProcessor(object):
                     )
                     return
                 if reference:
-                    taxonomy.source_reference = reference
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'source_reference',
+                        reference
+                    )
 
                 # -- Common name
                 if common_name:
-                    taxonomy.vernacular_names.clear()
-                    for _common_name in common_name:
-                        taxonomy.vernacular_names.add(_common_name)
+                    if new_taxon or not use_proposal:
+                        taxonomy.vernacular_names.clear()
+                        for _common_name in common_name:
+                            taxonomy.vernacular_names.add(_common_name)
+                    if use_proposal:
+                        proposal.vernacular_names.clear()
+                        for _common_name in common_name:
+                            proposal.vernacular_names.add(_common_name)
                 else:
                     if (
                         not taxonomy.vernacular_names.exists() and
                         taxonomy.gbif_key
                     ):
-                        fetch_gbif_vernacular_names(taxonomy)
+                        if new_taxon or not use_proposal:
+                            fetch_gbif_vernacular_names(taxonomy)
+                        if use_proposal:
+                            fetch_gbif_vernacular_names(proposal)
 
                 # -- Origin
                 origin_data, invasion = self.origin(row)
                 if origin_data:
-                    taxonomy.origin = origin_data
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'origin',
+                        origin_data
+                    )
 
                 if invasion:
-                    taxonomy.invasion = invasion
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'invasion',
+                        invasion
+                    )
 
                 # -- Author(s)
                 if authors:
-                    taxonomy.author = authors
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'author',
+                        authors
+                    )
 
                 # -- SpeciesGroup
                 if species_group:
-                    taxonomy.species_group = species_group
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'species_group',
+                        species_group
+                    )
 
-                fada_id = self.get_row_value(row, FADA_ID)
-                # -- FADA ID
-                if fada_id:
-                    try:
-                        integer_part = fada_id.split('.', 1)[0]
-                        if integer_part and integer_part != '0':
-                            taxonomy.fada_id = int(integer_part)
-                    except ValueError:
-                        pass
+                if fada_id and isinstance(fada_id, int):
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'fada_id',
+                        fada_id
+                    )
 
                 if gbif_key:
-                    taxonomy.gbif_key = gbif_key
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'gbif_key',
+                        gbif_key
+                    )
 
                 # -- Tags | Biographic distribution tags
 
                 # Clear tags
-                taxonomy.tags.clear()
-                taxonomy.biographic_distributions.clear()
+                if new_taxon or not use_proposal:
+                    taxonomy.tags.clear()
+                    taxonomy.biographic_distributions.clear()
+                if use_proposal:
+                    proposal.tags.clear()
+                    proposal.biographic_distributions.clear()
 
                 # Adding tags
                 # Check Y Values
@@ -837,28 +987,63 @@ class TaxaProcessor(object):
                                     name=tag_key,
                                     doubtful=row_value == '?'
                                 ).first()
-                            taxonomy.biographic_distributions.add(taxon_tag)
+                            if new_taxon or not use_proposal:
+                                taxonomy.biographic_distributions.add(taxon_tag)
+                            if use_proposal:
+                                proposal.biographic_distributions.add(taxon_tag)
                         elif row_value != '?':
-                            taxonomy.tags.add(tag_key)
+                            if new_taxon or not use_proposal:
+                                taxonomy.tags.add(tag_key)
+                            if use_proposal:
+                                proposal.tags.add(tag_key)
 
                 # -- Additional data
-                taxonomy.additional_data = json.dumps(row)
+                self._update_taxon_and_proposal(
+                    taxonomy,
+                    proposal,
+                    use_proposal,
+                    new_taxon,
+                    'additional_data',
+                    json.dumps(row)
+                )
 
                 if taxonomy.canonical_name != taxon_name:
-                    taxonomy.canonical_name = taxon_name
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'canonical_name',
+                        taxon_name
+                    )
 
                 if taxonomic_status:
-                    taxonomy.taxonomic_status = (
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'taxonomic_status',
                         taxonomic_status.strip().upper()
                     )
 
                 if accepted_taxon:
-                    taxonomy.accepted_taxonomy = accepted_taxon
+                    self._update_taxon_and_proposal(
+                        taxonomy,
+                        proposal,
+                        use_proposal,
+                        new_taxon,
+                        'accepted_taxonomy',
+                        accepted_taxon
+                    )
 
                 taxonomy.save()
 
+                if proposal:
+                    proposal.save()
+
                 # -- Add to taxon group
-                self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
+                self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group, proposal)
 
                 self.finish_processing_row(row, taxonomy)
         except Exception as e:  # noqa
@@ -868,7 +1053,7 @@ class TaxaProcessor(object):
 class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
     model_name = 'taxonomy'
 
-    def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
+    def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group, proposal=None):
         """
         A helper function that calls `add_taxon_to_taxon_group` with
         validated=False
