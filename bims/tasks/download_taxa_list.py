@@ -12,7 +12,7 @@ from reportlab.platypus import Paragraph, Spacer, SimpleDocTemplate
 from bims.scripts.species_keys import (
     ACCEPTED_TAXON, TAXON_RANK,
     COMMON_NAME, CLASS, SUBSPECIES,
-    CITES_LISTING
+    CITES_LISTING, FADA_ID
 )
 from bims.utils.domain import get_current_domain
 
@@ -20,29 +20,60 @@ logger = logging.getLogger(__name__)
 
 
 def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, download_request_id=''):
+    import csv
+    from django.contrib.auth import get_user_model
+    from django.conf import settings
+
     from bims.api_views.taxon import TaxaList
     from bims.views.download_csv_taxa_list import TaxaCSVSerializer
     from bims.tasks import send_csv_via_email
     from bims.models.download_request import DownloadRequest
+    from bims.scripts.species_keys import BIOGRAPHIC_DISTRIBUTIONS
+    from bims.models.taxon_group import TaxonGroup
+
+    def _current_domain():
+        try:
+            from bims.utils import get_current_domain
+            return get_current_domain()
+        except Exception:  # noqa
+            pass
+        try:
+            from django.contrib.sites.models import Site
+            return Site.objects.get_current().domain
+        except Exception:  # noqa
+            pass
+        return getattr(settings, "SITE_DOMAIN", "")
 
     class RequestGet:
         def __init__(self, get_data):
             self.GET = get_data
 
-    # Prepare the request object
     request_get = RequestGet(request)
 
-    # Get the taxa list based on request parameters
-    taxa_list = TaxaList.get_taxa_by_parameters(request_get)
-    total_taxa = taxa_list.count()
+    taxon_group_name = "Taxa checklist"
+    tg_id = request.get("taxonGroup") if isinstance(request, dict) else None
+    if tg_id:
+        try:
+            tg = TaxonGroup.objects.get(id=tg_id)
+            taxon_group_name = f"{tg.name} checkList"
+        except TaxonGroup.DoesNotExist:
+            pass
 
-    tag_titles = []
-    additional_attributes_titles = []
+    taxa_qs = TaxaList.get_taxa_by_parameters(request_get)
+    try:
+        taxa_qs = taxa_qs.prefetch_related('tags', 'biographic_distributions', 'vernacular_names')
+    except Exception:
+        pass
 
-    # Define the header update function
+    total_taxa = taxa_qs.count()
+
+    tag_titles = set()
+    additional_attributes_titles = set()
+
     def update_headers(_headers):
         _updated_headers = []
         for header in _headers:
+            original = header
             if header == 'class_name':
                 header = CLASS
             elif header == 'taxon_rank':
@@ -51,60 +82,93 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 header = COMMON_NAME
             elif header == 'accepted_taxon':
                 header = ACCEPTED_TAXON
+            elif header == 'fada_id':
+                header = FADA_ID
+                _updated_headers.append(header)
+                continue
+
             header = header.replace('_or_', '/')
+
             if (
                 not header.istitle()
-                    and header not in tag_titles
-                    and header not in additional_attributes_titles
+                and original not in tag_titles
+                and original not in additional_attributes_titles
             ):
                 header = header.replace('_', ' ').capitalize()
             if header == 'Subspecies':
                 header = SUBSPECIES
             if header.lower().strip() == 'cites_listing':
                 header = CITES_LISTING
+
             _updated_headers.append(header)
         return _updated_headers
 
-    # Serialize a single item to extract headers
-    sample_item = next(taxa_list.iterator())
-    sample_serializer = TaxaCSVSerializer(sample_item)
-    tag_titles = sample_serializer.context.get('tags', [])
-    additional_attributes_titles = sample_serializer.context.get(
-        'additional_attributes_titles', []
-    )
-    headers = list(sample_serializer.data.keys())
-    updated_headers = update_headers(headers)
+    raw_headers = []
+    for taxon in taxa_qs.iterator():
+        ser = TaxaCSVSerializer(taxon)
+        row = ser.data
+
+        for k in row.keys():
+            if k not in raw_headers:
+                raw_headers.append(k)
+
+        tag_titles.update(ser.context.get('tags', []))
+        additional_attributes_titles.update(
+            ser.context.get('additional_attributes_titles', [])
+        )
+
+    for key in BIOGRAPHIC_DISTRIBUTIONS:
+        if key not in raw_headers:
+            raw_headers.append(key)
+
+    updated_headers = update_headers(raw_headers)
 
     progress = 1
-
-    # Write data to CSV
     with open(csv_file_path, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
         writer.writerow(updated_headers)
 
-        # Process each item in the queryset individually
-        for taxon in taxa_list.iterator():
-            serializer = TaxaCSVSerializer(taxon)
-            row = serializer.data
-            writer.writerow([value for key, value in row.items()])
+        taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
+        try:
+            taxa_qs_write = taxa_qs_write.prefetch_related('tags', 'biographic_distributions', 'vernacular_names')
+        except Exception:
+            pass
+
+        for taxon in taxa_qs_write.iterator():
+            ser = TaxaCSVSerializer(taxon)
+            row = ser.data
+
+            writer.writerow([row.get(k, '') for k in raw_headers])
 
             if progress % 10 == 0 and download_request_id:
-                download_request = DownloadRequest.objects.get(
-                    id=download_request_id
-                )
-                download_request.progress = f'{progress}/{total_taxa}'
-                download_request.save()
+                try:
+                    download_request = DownloadRequest.objects.get(id=download_request_id)
+                    download_request.progress = f'{progress}/{total_taxa}'
+                    download_request.save(update_fields=['progress'])
+                except DownloadRequest.DoesNotExist:
+                    pass
 
             progress += 1
 
-    # Send the CSV file via email
+        writer.writerow([])
+
+        # Metadata
+        title_text = f"{taxon_group_name}"
+        writer.writerow([title_text])
+        current_site = _current_domain()
+        generated_text = (
+            f"(generated {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')} "
+            f"from {current_site})"
+        )
+        writer.writerow([generated_text])
+
+
     UserModel = get_user_model()
     try:
         user = UserModel.objects.get(id=user_id)
         if download_request_id:
-            DownloadRequest.objects.filter(
-                id=download_request_id
-            ).update(
+            DownloadRequest.objects.filter(id=download_request_id).update(
                 progress=f'{total_taxa}/{total_taxa}'
             )
         send_csv_via_email(
