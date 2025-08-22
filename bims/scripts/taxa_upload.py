@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-from functools import lru_cache
 
 import requests
 from django.db import transaction
@@ -36,7 +35,7 @@ from preferences import preferences
 
 logger = logging.getLogger('bims')
 
-_TRUTHY = {'y', 'yes', 'true', '1', 't', '✓'}
+_TRUTHY = {'y', 'true', 't', '✓'}
 
 def _as_truthy(val) -> bool:
     if val is None:
@@ -495,7 +494,7 @@ class TaxaProcessor(object):
         if raw_on_gbif is None:
             on_gbif = False if is_fada_site() else True
         else:
-            on_gbif = _as_truthy(raw_on_gbif)
+            on_gbif = 'yes' in raw_on_gbif.lower()
 
         if not taxon_name:
             self.handle_error(row=row, message='Missing Taxon value')
