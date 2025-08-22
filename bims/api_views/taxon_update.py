@@ -1,3 +1,6 @@
+import json
+from typing import Mapping
+
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import transaction
 from django.http import JsonResponse, Http404
@@ -48,13 +51,46 @@ def _normalize_canonical_name(base_taxon, proposed_name, rank, taxonomic_status)
     return name.strip()
 
 
+AD_PREFIX = "additional_data__"
+
 def _merge_additional(existing: dict | None, data: dict) -> dict:
-    existing = dict(existing or {})
-    if isinstance(data.get('additional_data'), dict):
-        existing.update(data['additional_data'])
+    """
+    Merge 'additional_data' safely from diverse inputs.
+    """
+    if existing in (None, "", "null"):
+        existing = {}
+    elif isinstance(existing, str):
+        try:
+            loaded = json.loads(existing)
+            existing = loaded if isinstance(loaded, dict) else {}
+        except Exception:
+            existing = {}
+    elif isinstance(existing, Mapping):
+        existing = dict(existing)
+    else:
+        existing = {}
+
+    if isinstance(data.get("additional_data"), Mapping):
+        for k, v in data["additional_data"].items():
+            if v not in ("", None, [], {}):
+                existing[k] = v
+
+    for k, v in (data.items() if isinstance(data, Mapping) else []):
+        if not isinstance(k, str):
+            continue
+        if k.startswith(AD_PREFIX):
+            key = k[len(AD_PREFIX):].replace("_", " ").strip()
+            if v not in ("", None, [], {}):
+                existing[key] = v
+
     for k in ADDITIONAL_KEYS:
-        if k in data and data.get(k) is not None:
-            existing[k] = data[k]
+        if k in data:
+            v = data.get(k)
+            if isinstance(v, str):
+                v = v.strip()
+            if v not in ("", None, [], {}):
+                existing[k] = v
+
     return existing
 
 
