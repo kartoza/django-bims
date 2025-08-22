@@ -115,8 +115,10 @@ class TaxonDetail(APIView):
         common_names = []
         results = []
 
+        if 'common_name' in data and data['common_name']:
+            common_names.append(data['common_name'])
         # Common name
-        if taxon.vernacular_names.exists():
+        if taxon.vernacular_names.exists() and not common_names:
             common_names = list(set(
                 taxon.vernacular_names.filter(language='eng').values_list('name', flat=True)))
             common_names.sort()
