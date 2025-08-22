@@ -114,30 +114,27 @@ $('.species-group-auto-complete').select2({
     dataType: 'json',
     data: params => ({ term: params.term }),
     processResults: data => ({
-      // Select2 prefers "id" + "text"
-      results: data.map(item => ({ id: item.id, text: item.name }))
+      results: data.map(item => ({ id: String(item.id), text: item.name }))
     }),
     cache: true
   },
   placeholder: 'Search for a Species Group',
-  minimumInputLength: 3,
+  minimumInputLength: 0,          // allow opening without typing
+  allowClear: true,                // <-- enables the clear (x) button
   theme: 'classic',
+  width: '100%',
   tags: true,
   createTag: (params) => {
     const term = (params.term || '').trim();
     if (!term) return null;
-    return {
-      id: 'NEW:' + term,
-      text: `Create "${term}"`,
-      isNew: true,
-      rawText: term,
-    };
+    return { id: 'NEW:' + term, text: `Create "${term}"`, isNew: true, rawText: term };
   },
-  templateResult: (item) => {
-    if (item.isNew) return `➕ ${item.text}`;
-    return item.text || item.name || '';
-  },
+  templateResult: (item) => item.isNew ? `➕ ${item.text}` : (item.text || item.name || ''),
   templateSelection: (item) => item.text || item.name || ''
+});
+
+$('.species-group-auto-complete').on('select2:clear', function () {
+  $(this).val(null).trigger('change');
 });
 
 // $('.species-group-auto-complete').on('select2:select', function (e) {
