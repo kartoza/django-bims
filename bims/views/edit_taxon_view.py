@@ -174,7 +174,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
             proposal = TaxonomyUpdateProposal.objects.filter(
                 original_taxonomy=taxon,
-                status='pending'
+                status='pending',
+                taxon_group=taxon_group
             ).first()
 
             if not proposal:
@@ -212,8 +213,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     'Taxonomy updated successfully')
 
         # The proposal is automatically approved if the user is a superuser
-        if proposal and self.request.user.is_superuser and new_proposal:
-            proposal.approve(self.request.user)
+        # if proposal and self.request.user.is_superuser and new_proposal:
+        #     proposal.approve(self.request.user)
 
         return redirect(self.get_success_url())
 
