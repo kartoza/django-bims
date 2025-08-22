@@ -125,7 +125,8 @@ from bims.models import (
     FlatPageExtension,
     TagGroup,
     Dataset, LayerGroup,
-    SpeciesGroup
+    SpeciesGroup,
+    TaxonGroupCitation
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2353,3 +2354,16 @@ admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
 admin.site.register(Dataset, DatasetAdmin)
+
+
+@admin.register(TaxonGroupCitation)
+class TaxonGroupCitationAdmin(admin.ModelAdmin):
+    list_display = ("taxon_group", "authors", "year", "access_date", "formatted_citation")
+    autocomplete_fields = ("taxon_group",)
+    search_fields = ("taxon_group__name", "authors", "citation_text")
+    exclude = ("created_at", "updated_at")
+
+    def formatted_citation(self, obj):
+        return obj.formatted_citation
+
+    formatted_citation.short_description = "Citation"
