@@ -164,7 +164,7 @@ def create_taxon_proposal(
             proposal.biographic_distributions.set(taxon.biographic_distributions.all())
         if 'common_name' in data:
             common_name = (data.get('common_name') or '').strip()
-            if common_name and getattr(taxon, 'common_name', None) != common_name:
+            if common_name:
                 try:
                     vn, _ = VernacularName.objects.get_or_create(
                         name=common_name,
