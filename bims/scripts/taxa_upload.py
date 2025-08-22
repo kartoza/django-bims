@@ -416,7 +416,6 @@ class TaxaProcessor(object):
             if genus_name and genus_name.lower() not in taxon_name.lower():
                 taxon_name = f'{genus_name} {taxon_name}'
 
-        # VARIETY: ensure Species + Genus prefix
         if current_rank == VARIETY:
             genus_name = _safe_strip(self.get_row_value(row, GENUS))
             species_name = _safe_strip(self.get_row_value(row, SPECIES))
@@ -750,14 +749,14 @@ class TaxaProcessor(object):
             for key in row:
                 row_value = self.get_row_value(row, key)
                 val_norm = _safe_strip(row_value)
-                # only act on Y/Yes/True/1 or '?'
                 if val_norm and (val_norm == '?' or _as_truthy(val_norm)):
                     tag_label = _norm_key_label(key)
-                    # Biographic distribution?
                     if any(tag_label.lower() == bd.lower() for bd in BIOGRAPHIC_DISTRIBUTIONS):
                         doubtful = (val_norm == '?')
                         try:
-                            taxon_tag, _ = TaxonTag.objects.get_or_create(name=tag_label, defaults={'doubtful': doubtful})
+                            taxon_tag, _ = TaxonTag.objects.get_or_create(
+                                name=tag_label, defaults={'doubtful': doubtful}
+                            )
                         except TaxonTag.MultipleObjectsReturned:
                             taxon_tag = TaxonTag.objects.filter(name=tag_label, doubtful=doubtful).order_by('id').first() or TaxonTag.objects.filter(name=tag_label).order_by('id').first()
                         if new_taxon or not use_proposal:

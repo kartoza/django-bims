@@ -137,7 +137,8 @@ class TestTaxaUpload(FastTenantTestCase):
             Taxonomy.objects.get(
                 canonical_name='Ecnomidae'
             ).biographic_distributions.filter(
-                name='AT (?)',
+                name='AT',
+                doubtful=True
             ).exists()
         )
 
