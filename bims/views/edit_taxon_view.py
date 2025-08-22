@@ -98,15 +98,19 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         current_rank = data.get('rank') or taxon.rank
         taxon_name = self.request.POST.get('taxon_name', '')
 
-        species_group = self.request.POST.get('species-group', '')
-        if 'NEW' in species_group:
-            data['species_group'] = SpeciesGroup.objects.create(
-                name=species_group.split(':')[-1].strip()
-            )
-        elif species_group:
-            data['species_group'] = SpeciesGroup.objects.get(id=species_group)
-        else:
+        species_group_raw = (self.request.POST.get('species-group') or '').strip()
+
+        if not species_group_raw or species_group_raw.lower() == 'null' or species_group_raw.lower() == 'none':
             data['species_group'] = None
+        elif species_group_raw.startswith('NEW:'):
+            data['species_group'] = SpeciesGroup.objects.create(
+                name=species_group_raw.split(':', 1)[-1].strip()
+            )
+        else:
+            try:
+                data['species_group'] = SpeciesGroup.objects.get(id=int(species_group_raw))
+            except (ValueError, SpeciesGroup.DoesNotExist):
+                data['species_group'] = None
 
         parent = data.get('parent')
 
