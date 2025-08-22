@@ -322,7 +322,8 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.Survey',
     'bims.TaxonomyUpdateProposal',
     'bims.ImportTask',
-    'bims.IngestedData'
+    'bims.IngestedData',
+    'bims.CustomTaggedUpdateTaxonomy'
 ]
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True
