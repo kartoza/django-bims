@@ -71,3 +71,4 @@ from bims.models.invasion import Invasion
 from bims.models.custom_flat_page import FlatPageExtension
 from bims.models.tag_group import TagGroup
 from bims.models.dataset import Dataset
+from bims.models.taxon_group_citation import TaxonGroupCitation

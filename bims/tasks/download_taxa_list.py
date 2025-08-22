@@ -30,6 +30,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from bims.models.download_request import DownloadRequest
     from bims.scripts.species_keys import BIOGRAPHIC_DISTRIBUTIONS
     from bims.models.taxon_group import TaxonGroup
+    from bims.models import TaxonGroupCitation
 
     def _current_domain():
         try:
@@ -163,6 +164,23 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         )
         writer.writerow([generated_text])
 
+        # --- Citations ---
+        try:
+            if tg_id:
+                tg = TaxonGroup.objects.get(id=tg_id)
+                citations = (
+                    TaxonGroupCitation.objects
+                    .filter(taxon_group=tg)
+                    .order_by('-year', '-access_date', '-updated_at', '-created_at')
+                )
+                if citations.exists():
+                    writer.writerow([])  # spacer
+                    writer.writerow(["To be cited as:"])
+                    for c in citations:
+                        writer.writerow([c.formatted_citation])
+        except Exception:
+            pass
+
 
     UserModel = get_user_model()
     try:
@@ -187,6 +205,7 @@ def process_download_pdf_taxa_list(
     from bims.tasks import send_csv_via_email
     from bims.models.taxon_group import TaxonGroup
     from bims.api_views.taxon import TaxaList
+    from bims.models import TaxonGroupCitation
 
     class RequestGet:
         def __init__(self, get_data):
@@ -234,6 +253,15 @@ def process_download_pdf_taxa_list(
             leading=14,
         )
 
+        heading_style = ParagraphStyle(
+            name="HeadingStyle", parent=styles['Normal'],
+            fontName='Times-Bold', fontSize=12, leading=14, alignment=TA_LEFT,
+        )
+        citation_style = ParagraphStyle(
+            name="CitationStyle", parent=styles['Normal'],
+            fontName='Times-Roman', fontSize=10, leading=12, alignment=TA_LEFT,
+        )
+
         paragraphs = []
 
         title_text = f"{taxon_group.name} checkList"
@@ -248,7 +276,19 @@ def process_download_pdf_taxa_list(
         paragraphs.append(Paragraph(generated_text, generated_style))
         paragraphs.append(Spacer(1, 6))
 
-        paragraphs.append(Spacer(1, 12))
+        # --- Citations ---
+        citations = (
+            TaxonGroupCitation.objects
+            .filter(taxon_group=taxon_group)
+            .order_by('-year', '-access_date', '-updated_at', '-created_at')
+        )
+        if citations.exists():
+            paragraphs.append(Paragraph("To be cited as:", heading_style))
+            for c in citations:
+                paragraphs.append(Paragraph(c.formatted_citation, citation_style))
+            paragraphs.append(Spacer(1, 12))
+        else:
+            paragraphs.append(Spacer(1, 12))
 
         genus_dict = {}
         species_qs = taxonomies.filter(
