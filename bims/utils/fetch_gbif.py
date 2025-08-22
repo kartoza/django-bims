@@ -84,7 +84,7 @@ def _norm(s: str) -> str:
     return (s or "").strip()
 
 
-def fetch_gbif_vernacular_names(taxonomy: Taxonomy):
+def fetch_gbif_vernacular_names(taxonomy):
     if not getattr(taxonomy, "gbif_key", None):
         return False
 

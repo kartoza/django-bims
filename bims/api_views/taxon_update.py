@@ -110,18 +110,22 @@ def create_taxon_proposal(
         'species_group': data.get('species_group', getattr(taxon, 'species_group', None)),
     }
 
-    proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
+    proposal, created = TaxonomyUpdateProposal.objects.update_or_create(
         original_taxonomy=taxon,
         taxon_group=taxon_group,
         status='pending',
         defaults=defaults,
     )
 
-    if created:
+    if proposal:
         if 'tags' in data:
             proposal.tags.set(data.get('tags') or [])
+        else:
+            proposal.tags.set(taxon.tags.all())
         if 'biographic_distributions' in data:
             proposal.biographic_distributions.set(data.get('biographic_distributions') or [])
+        else:
+            proposal.biographic_distributions.set(taxon.biographic_distributions.all())
         if 'common_name' in data:
             common_name = (data.get('common_name') or '').strip()
             if common_name and getattr(taxon, 'common_name', None) != common_name:
@@ -136,6 +140,10 @@ def create_taxon_proposal(
                 proposal.vernacular_names.clear()
                 if vn:
                     proposal.vernacular_names.add(vn)
+        else:
+            proposal.vernacular_names.set(
+                taxon.vernacular_names.values_list('pk', flat=True)
+            )
         proposal.save()
 
     return proposal
