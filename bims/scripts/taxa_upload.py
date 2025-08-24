@@ -1,3 +1,4 @@
+import difflib
 import json
 import logging
 import re
@@ -27,6 +28,7 @@ from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names
 )
 from bims.scripts.data_upload import DataCSVUpload
+from bims.utils.gbif import get_species
 from td_biblio.exceptions import DOILoaderError
 from td_biblio.models import Entry
 from td_biblio.utils.loaders import DOILoader
@@ -54,10 +56,14 @@ def _safe_upper(s):
 def _safe_strip(s):
     return str(s or '').strip()
 
+def _canon(s: str) -> str:
+    return re.sub(r"\s+", " ", str(s or "")).strip().lower()
+
 
 class TaxaProcessor(object):
 
     all_keys = {}
+
 
     def _get_or_create_vernacular_singleton(self, name: str, language: str | None):
         """
@@ -478,8 +484,80 @@ class TaxaProcessor(object):
             self.handle_error(row=row, message='Missing taxon rank')
             return
 
+        # on_gbif flag
+        raw_on_gbif = self.get_row_value(row, ON_GBIF)
+        if raw_on_gbif is None:
+            on_gbif = False if is_fada_site() else True
+        else:
+            on_gbif = 'yes' in raw_on_gbif.lower()
+
         if not taxon_name:
-            taxon_name = _safe_strip(self.get_row_value(row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
+            taxon_name = _safe_strip(
+                self.get_row_value(row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
+
+        # GBIF key
+        gbif_key = None
+        if on_gbif:
+            gbif_link = self.get_row_value(row, GBIF_LINK) or self.get_row_value(row, GBIF_URL)
+            if gbif_link:
+                last = str(gbif_link).rstrip('/').split('/')[-1]
+                gbif_key = last[:-2] if last.endswith('.0') else last
+
+        if gbif_key:
+            try:
+                gbif_rec = get_species(gbif_key)
+            except Exception as e:
+                self.handle_error(
+                    row=row,
+                    message=f"GBIF lookup failed for key {gbif_key}")
+                return
+
+            if not gbif_rec or not isinstance(gbif_rec, dict) or not gbif_rec.get("key"):
+                self.handle_error(
+                    row=row,
+                    message=f"GBIF record not found or invalid for key {gbif_key}; ignoring provided key.")
+                return
+            else:
+                expected_rank = _safe_upper(rank)
+                gbif_rank = _safe_upper(gbif_rec.get("rank"))
+                if expected_rank and gbif_rank and gbif_rank != expected_rank:
+                    self.handle_error(
+                        row=row,
+                        message=(
+                            f'GBIF key {gbif_key} rank mismatch: expected {expected_rank}, '
+                            f'got {gbif_rank}; ignoring key.'
+                        )
+                    )
+                    return
+                else:
+                    if "species" in expected_rank.lower():
+                        expected_name = self._compose_species_name(row)
+                    else:
+                        expected_name = taxon_name
+
+                    expected_norm = _canon(expected_name)
+                    gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
+                    gbif_norm = _canon(gbif_canonical)
+
+                    ratio = 1.0 if not expected_norm or not gbif_norm else \
+                        difflib.SequenceMatcher(None, expected_norm, gbif_norm).ratio()
+
+                    genus_ok = True
+                    csv_genus = _safe_strip(self.get_row_value(row, GENUS))
+                    gbif_genus = _safe_strip(gbif_rec.get("genus"))
+                    if csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower():
+                        genus_ok = False
+
+                    if ratio < 0.75 or not genus_ok:
+                        self.handle_error(
+                            row=row,
+                            message=(
+                                f"GBIF key {gbif_key} name mismatch (ratio={ratio:.2f}): "
+                                f"expected '{expected_name}' ~ '{expected_norm}'; "
+                                f"GBIF '{gbif_canonical}' ~ '{gbif_norm}'. Ignoring key."
+                            ),
+                        )
+                        return
 
         if 'species' in str(rank).lower():
             taxon_name = self._compose_species_name(row)
@@ -489,24 +567,9 @@ class TaxaProcessor(object):
             if sub_species_name and taxon_name not in sub_species_name and not sub_species_name[0].isupper():
                 taxon_name = f'{taxon_name} {sub_species_name}'
 
-        # on_gbif flag
-        raw_on_gbif = self.get_row_value(row, ON_GBIF)
-        if raw_on_gbif is None:
-            on_gbif = False if is_fada_site() else True
-        else:
-            on_gbif = 'yes' in raw_on_gbif.lower()
-
         if not taxon_name:
             self.handle_error(row=row, message='Missing Taxon value')
             return
-
-        # GBIF key
-        gbif_key = None
-        if on_gbif:
-            gbif_link = self.get_row_value(row, GBIF_LINK) or self.get_row_value(row, GBIF_URL)
-            if gbif_link:
-                last = str(gbif_link).rstrip('/').split('/')[-1]
-                gbif_key = last[:-2] if last.endswith('.0') else last
 
         # FADA id (integer part)
         fada_id = self.get_row_value(row, FADA_ID)
