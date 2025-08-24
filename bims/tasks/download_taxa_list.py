@@ -1,6 +1,7 @@
 # coding=utf-8
 import csv
 import datetime
+import json
 import logging
 from django.contrib.auth import get_user_model
 from celery import shared_task
@@ -31,6 +32,35 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from bims.scripts.species_keys import BIOGRAPHIC_DISTRIBUTIONS
     from bims.models.taxon_group import TaxonGroup
     from bims.models import TaxonGroupCitation
+    from bims.templatetags import is_fada_site
+
+    is_fada = is_fada_site()
+
+    # FADA-only additional_data keys (column names)
+    FADA_ADDITIONAL_KEYS = [
+        'Taxonomic Comments',
+        'Taxonomic References',
+        'Biogeographic Comments',
+        'Biogeographic References',
+        'Environmental Comments',
+        'Environmental References',
+        'Conservation Comments',
+        'Conservation References',
+    ]
+
+    def _from_additional_data(instance, k):
+        data = getattr(instance, 'additional_data', None)
+        if not data:
+            return ''
+        if isinstance(data, dict):
+            return data.get(k, '')
+        try:
+            parsed = json.loads(data)
+            if isinstance(parsed, dict):
+                return parsed.get(k, '')
+        except Exception:
+            pass
+        return ''
 
     def _current_domain():
         try:
@@ -74,6 +104,9 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     def update_headers(_headers):
         _updated_headers = []
         for header in _headers:
+            if header in FADA_ADDITIONAL_KEYS:
+                _updated_headers.append(header)
+                continue
             original = header
             if header == 'class_name':
                 header = CLASS
@@ -122,6 +155,11 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         if key not in raw_headers:
             raw_headers.append(key)
 
+    if is_fada:
+        for k in FADA_ADDITIONAL_KEYS:
+            if k not in raw_headers:
+                raw_headers.append(k)
+
     updated_headers = update_headers(raw_headers)
 
     progress = 1
@@ -139,6 +177,11 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         for taxon in taxa_qs_write.iterator():
             ser = TaxaCSVSerializer(taxon)
             row = ser.data
+
+            if is_fada:
+                for k in FADA_ADDITIONAL_KEYS:
+                    if k not in row:
+                        row[k] = _from_additional_data(taxon, k)
 
             writer.writerow([row.get(k, '') for k in raw_headers])
 
