@@ -1,0 +1,24 @@
+#section-wrapper {
+    margin-top: 95px;
+}
+
+.navbar {
+    background-color: var(--navbar-bg-color) !important;
+    transition: all 0.3s ease;
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+}
+
+.navbar.shrink {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+}
+
+.navbar .navbar-brand img {
+    transition: height 0.3s ease;
+    height: 55px; /* taller logo */
+}
+
+.navbar.shrink .navbar-brand img {
+    height: 35px; /* smaller logo when scrolled */
+}

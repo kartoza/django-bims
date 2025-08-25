@@ -1,7 +1,78 @@
 {% load site %}
 {% is_fada_site as fada_site %}
 
-<nav class="navbar navbar-expand-md fixed-top">
+{% if custom_theme.navbar_custom_typography_enabled and custom_theme.navbar_font_url %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ custom_theme.navbar_font_url }}">
+{% endif %}
+
+<style>
+  .navbar {
+      background-color: var(--nb-bg) !important;
+  }
+
+  .navbar .navbar-brand,
+  .navbar .nav-link,
+  .navbar .navbar-toggler,
+  .navbar .navbar-toggler .fa {
+      color: var(--nb-color) !important;
+  }
+
+  .navbar .navbar-brand,
+  .navbar .nav-link {
+      font-family: var(--nb-ff);
+      font-size: var(--nb-fs);
+      font-weight: var(--nb-fw);
+      letter-spacing: var(--nb-ls);
+      text-transform: var(--nb-tt);
+  }
+  .navbar .dropdown-menu,
+  .navbar .dropdown-menu .dropdown-item,
+  .navbar .dropdown-menu .dropdown-header {
+      font-family: var(--nb-ff);
+      font-size: var(--nb-fs);
+      font-weight: var(--nb-fw);
+      letter-spacing: var(--nb-ls);
+      text-transform: var(--nb-tt);
+  }
+
+  .navbar.shrink {
+      padding-top: .5rem !important;
+      padding-bottom: .5rem !important;
+  }
+
+  .brand-divider {
+      display: inline-block;
+      width: 2px;
+      height: 35px;
+      background-color: {{ custom_theme.secondary_accent_color }};
+      opacity: 1;
+      vertical-align: middle;
+      margin-right: 5px;
+  }
+</style>
+
+<nav
+        class="navbar navbar-expand-md fixed-top"
+        style="
+            --nb-bg: {{ custom_theme.navbar_background_color|default:'#343a40' }};
+            --nb-color: {{ custom_theme.navbar_text_color|default:'#FFFFFF' }};
+            {% if custom_theme.navbar_custom_typography_enabled %}
+                --nb-ff: {{ custom_theme.navbar_font_family|default:'\"Roboto Condensed\", sans-serif' }};
+                --nb-fs: {{ custom_theme.navbar_font_size_px|default:16 }}px;
+                --nb-fw: {{ custom_theme.navbar_font_weight|default:'500' }};
+                --nb-ls: {{ custom_theme.navbar_letter_spacing_em|default:'0.00' }}em;
+                --nb-tt: {{ custom_theme.navbar_text_case|default:'none' }};
+            {% else %}
+                --nb-ff: 'Lato', sans-serif;
+                --nb-fs: 16px;
+                --nb-fw: 500;
+                --nb-ls: 0em;
+                --nb-tt: none;
+            {% endif %}
+                "
+>
     <div class="container">
         {% current_domain as domain_name %}
         <a class="navbar-brand bims-title-big" href="/" style="padding-top: 0 !important; padding-bottom: 0 !important;">
@@ -13,11 +84,19 @@
                 {% if custom_theme.site_name %}{{ custom_theme.site_name }}{% else %}{{ APPLICATION_NAME }}{% endif %}
             {% endif %}
         </a>
+
+        {% if custom_theme.navbar_brand_divider_enabled %}
+        <span class="brand-divider d-none d-md-inline-block"></span>
+        {% endif %}
+
         <button class="navbar-toggler" type="button" data-toggle="collapse"
                 data-target="#navbarCollapse" aria-controls="navbarCollapse"
                 aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"><i class="fa fa-bars" aria-hidden="true"></i></span>
+      <span class="navbar-toggler-icon">
+        <i class="fa fa-bars" aria-hidden="true"></i>
+      </span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav mr-auto">
 
@@ -37,44 +116,49 @@
                         </div>
                     </li>
                 {% endif %}
-                {%  if preferences.SiteSetting.blog_page_link %}
-                 <li class="nav-item active">
-                    <a class="nav-link" href="{{ preferences.SiteSetting.blog_page_link }}">News</a>
-                 </li>
+
+                {% if preferences.SiteSetting.blog_page_link %}
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ preferences.SiteSetting.blog_page_link }}">News</a>
+                    </li>
                 {% endif %}
-                {%  if preferences.SiteSetting.docs_page_link %}
-                 <li class="nav-item active">
-                    <a class="nav-link" href="{{ preferences.SiteSetting.docs_page_link }}">Docs</a>
-                 </li>
-                 {% endif %}
+
+                {% if preferences.SiteSetting.docs_page_link %}
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{{ preferences.SiteSetting.docs_page_link }}">Docs</a>
+                    </li>
+                {% endif %}
+
                 {% if not fada_site %}
-                <li class="nav-item active dropdown">
-                    <a class="nav-link dropdown-toggle" href="#"
-                       id="dropdown01" data-toggle="dropdown"
-                       aria-haspopup="true" aria-expanded="false">About</a>
-                    <div class="dropdown-menu" aria-labelledby="dropdown01">
-                        <a class="dropdown-item" href="/contact/">Contact</a>
-                        <a class="dropdown-item" href="/pages/about_us/">About Us</a>
-                    </div>
-                </li>
+                    <li class="nav-item active dropdown">
+                        <a class="nav-link dropdown-toggle" href="#"
+                           id="dropdown02" data-toggle="dropdown"
+                           aria-haspopup="true" aria-expanded="false">About</a>
+                        <div class="dropdown-menu" aria-labelledby="dropdown02">
+                            <a class="dropdown-item" href="/contact/">Contact</a>
+                            <a class="dropdown-item" href="/pages/about_us/">About Us</a>
+                        </div>
+                    </li>
                 {% endif %}
+
                 {% for page in navbar_flatpages %}
                     <li class="nav-item active">
                         <a class="nav-link"
-                            {% if page.extension.redirect_only %}
-                            href="{{ page.url }}"
-                            {% else %}
-                            href="/pages{{ page.url }}"
-                            {% endif %}
+                                {% if page.extension.redirect_only %}
+                           href="{{ page.url }}"
+                                {% else %}
+                           href="/pages{{ page.url }}"
+                                {% endif %}
                         >{{ page.title }}</a>
                     </li>
                 {% endfor %}
+
                 {% if custom_theme.menu_items.all %}
                     <li class="nav-item active dropdown">
                         <a class="nav-link dropdown-toggle" href="#"
-                           id="dropdown01" data-toggle="dropdown"
+                           id="dropdown03" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">Discover</a>
-                        <div class="dropdown-menu" aria-labelledby="dropdown01">
+                        <div class="dropdown-menu" aria-labelledby="dropdown03">
                             {% for menu_item in custom_theme.menu_items.all %}
                                 <a class="dropdown-item" href="{{ menu_item.url }}" {% if menu_item.blank_target %}target="_blank"{% endif %}>{{ menu_item.title }}</a>
                             {% endfor %}
@@ -83,19 +167,21 @@
                 {% endif %}
             </ul>
         </div>
-        <div class="navbar-collapse collapse w-50 order-3 dual-collapse2">
+
+        <div class="navbar-collapse collapse order-3 dual-collapse2">
             <ul class="navbar-nav ml-auto">
                 {% if user.is_authenticated %}
                     <li class="nav-item active dropdown">
                         <a class="nav-link dropdown-toggle" href="#"
-                           id="dropdown01" data-toggle="dropdown"
+                           id="dropdown04" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">{{ user.first_name }}</a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown01">
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown04">
                             <a class="dropdown-item" href="/profile/">Profile</a>
                             {% if not fada_site %}
                                 <a class="dropdown-item" href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a>
                             {% endif %}
                             <div class="dropdown-divider"></div>
+
                             {% if user.is_superuser %}
                                 <div class="text-sm">Upload</div>
                                 <a class="dropdown-item" href="/upload-taxa/">Taxonomic Data</a>
@@ -118,9 +204,9 @@
                                     <a class="dropdown-item" href="/site-visit/list/?&inReview=True">Validate Records</a>
                                 {% endif %}
                                 {% if not fada_site %}
-                                <a class="dropdown-item" href="/upload-spatial-layer/">Upload and Style Spatial Layer</a>
-                                <a class="dropdown-item" href="/visualization-layer/">Publish Spatial Layer on Map</a>
-                                <a class="dropdown-item" href="/context-layers/">Add Spatial Filter</a>
+                                    <a class="dropdown-item" href="/upload-spatial-layer/">Upload and Style Spatial Layer</a>
+                                    <a class="dropdown-item" href="/visualization-layer/">Publish Spatial Layer on Map</a>
+                                    <a class="dropdown-item" href="/context-layers/">Add Spatial Filter</a>
                                 {% endif %}
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="/admin/">Admin Page</a>
@@ -133,6 +219,7 @@
                             {% else %}
                                 <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
                             {% endif %}
+
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="/accounts/logout/">Log Out</a>
                         </div>
@@ -151,14 +238,21 @@
 </nav>
 
 <script>
+    document.addEventListener('scroll', function() {
+        const navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) {
+            navbar.classList.add('shrink');
+        } else {
+            navbar.classList.remove('shrink');
+        }
+    });
 
-    var dropdownCloseButtons = document.getElementsByClassName("close-dropdown");
-
-    for(var i = 0; i < dropdownCloseButtons.length; i++) {
+    var dropdownCloseButtons = document.getElementsByClassName('close-dropdown');
+    for (var i = 0; i < dropdownCloseButtons.length; i++) {
         dropdownCloseButtons[i].onclick = function () {
-            var dropdownMenu = document.getElementsByClassName("dropdown-menu");
-            for(var j = 0; j < dropdownMenu.length; j++) {
-                dropdownMenu[j].classList.remove("show");
+            var dropdownMenu = document.getElementsByClassName('dropdown-menu');
+            for (var j = 0; j < dropdownMenu.length; j++) {
+                dropdownMenu[j].classList.remove('show');
             }
         }
     }
@@ -173,51 +267,42 @@
     var titleAbbr = '{{ title_bims_abbr }}';
     var titleLong = '{{ title_bims_long|safe }}';
 
-    if(uploadUrl !== 'None'){
-        var navbarUpload = document.getElementById("navbar-upload");
-        if(navbarUpload) {
+    if (uploadUrl !== 'None') {
+        var navbarUpload = document.getElementById('navbar-upload');
+        if (navbarUpload) {
             navbarUpload.href = uploadUrl;
         }
     }
-
-    if(extResourceUrl !== 'None'){
-        var navbarExt = document.getElementById("navbar-ext-resources");
+    if (extResourceUrl !== 'None') {
+        var navbarExt = document.getElementById('navbar-ext-resources');
         navbarExt.href = extResourceUrl;
     }
-
-    if(docReportUrl !== 'None'){
-        var navbarDoc = document.getElementById("navbar-doc-report");
+    if (docReportUrl !== 'None') {
+        var navbarDoc = document.getElementById('navbar-doc-report');
         navbarDoc.href = docReportUrl;
     }
-
-    if(contactUrl !== 'None'){
-        var navbarContact = document.getElementById("navbar-contact");
+    if (contactUrl !== 'None') {
+        var navbarContact = document.getElementById('navbar-contact');
         navbarContact.href = contactUrl;
     }
-
-    if(biblioUrl !== 'None'){
-        var navbarBiblio = document.getElementById("navbar-biblio");
+    if (biblioUrl !== 'None') {
+        var navbarBiblio = document.getElementById('navbar-biblio');
         navbarBiblio.href = biblioUrl;
     }
-
-    if(profileUrl !== 'None'){
-        var navbarProfile = document.getElementById("navbar-profile");
-        if(navbarProfile) {
+    if (profileUrl !== 'None') {
+        var navbarProfile = document.getElementById('navbar-profile');
+        if (navbarProfile) {
             navbarProfile.href = profileUrl;
         }
     }
-
-    if(contributionsUrl !== 'None'){
-        var navbarContributions = document.getElementById("navbar-contributions");
+    if (contributionsUrl !== 'None') {
+        var navbarContributions = document.getElementById('navbar-contributions');
         navbarContributions.href = contributionsUrl;
     }
-
-    if(titleAbbr !== 'None'){
-        $(".bims-title-big").html(titleAbbr);
+    if (titleAbbr !== 'None') {
+        $('.bims-title-big').html(titleAbbr);
     }
-
-    if(titleLong !== 'None'){
+    if (titleLong !== 'None') {
         $('.bims-title-acc').html(titleLong);
     }
-
 </script>

@@ -12,6 +12,21 @@ from django.contrib.sites.models import Site
 
 THEME_CACHE_KEY = 'bims_theme'
 
+NAVBAR_TEXT_CASE_CHOICES = [
+    ("none", "None"),
+    ("uppercase", "UPPERCASE"),
+    ("lowercase", "lowercase"),
+    ("capitalize", "Capitalize"),
+]
+
+NAVBAR_FONT_WEIGHT_CHOICES = [
+    ("300", "Light (300)"),
+    ("400", "Regular (400)"),
+    ("500", "Medium (500)"),
+    ("600", "Semibold (600)"),
+    ("700", "Bold (700)"),
+]
+
 
 class CustomTheme(models.Model):
     site = models.ForeignKey(
@@ -42,11 +57,62 @@ class CustomTheme(models.Model):
         null=True,
         blank=True
     )
+    # --- Navbar ---
+    navbar_custom_typography_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable custom font for the navbar. If disabled, theme/site defaults are used."
+    )
+    navbar_font_url = models.CharField(
+        blank=True, default='',
+        help_text=(
+            "e.g. https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700&"
+            "family=Roboto+Condensed:wght@100;300;400;500;700&display=swap"
+        )
+    )
+    navbar_font_family = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text="CSS font-family for navbar text, e.g. 'Inter, system-ui, sans-serif'."
+    )
+    navbar_font_size_px = models.PositiveIntegerField(
+        default=16,
+        help_text="Navbar font size in pixels."
+    )
+    navbar_font_weight = models.CharField(
+        max_length=3,
+        choices=NAVBAR_FONT_WEIGHT_CHOICES,
+        default="500",
+        help_text="Navbar font weight."
+    )
+    navbar_letter_spacing_em = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=0.00,
+        help_text="Letter spacing in em (e.g. 0.00, 0.05, 0.10)."
+    )
+    navbar_text_case = models.CharField(
+        max_length=12,
+        choices=NAVBAR_TEXT_CASE_CHOICES,
+        default="none",
+        help_text="Transform case for navbar text."
+    )
+    navbar_brand_divider_enabled = models.BooleanField(
+        default=True,
+        help_text="Show a vertical divider to the right of the navbar logo/brand."
+    )
     navbar_logo = models.ImageField(
         upload_to='navbar_site_logo',
         null=True,
         blank=True
     )
+    navbar_background_color = ColorField(
+        default='#343a40'
+    )
+    navbar_text_color = ColorField(
+        default='#FFFFFF'
+    )
+
     landing_page_sections = models.ManyToManyField(
         'bims_theme.LandingPageSection',
         null=True,
@@ -117,12 +183,6 @@ class CustomTheme(models.Model):
         default='#DBAF00'
     )
     main_button_text_color = ColorField(
-        default='#FFFFFF'
-    )
-    navbar_background_color = ColorField(
-        default='#343a40'
-    )
-    navbar_text_color = ColorField(
         default='#FFFFFF'
     )
     is_enabled = models.BooleanField(
