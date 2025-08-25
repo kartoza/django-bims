@@ -66,18 +66,18 @@ img::-moz-selection {
     background: transparent;
 }
 
-header.masthead {
-    padding-top: 20px;
-    padding-bottom: 0px;
-    background-position: center center;
-    -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    background-size: cover;
-    background-color: black;
-    max-height: 600px !important;
-    min-height: auto !important;
-}
+/*header.masthead {*/
+/*    padding-top: 20px;*/
+/*    padding-bottom: 0px;*/
+/*    background-position: center center;*/
+/*    -webkit-background-size: cover;*/
+/*    -moz-background-size: cover;*/
+/*    -o-background-size: cover;*/
+/*    background-size: cover;*/
+/*    background-color: black;*/
+/*    max-height: 600px !important;*/
+/*    min-height: auto !important;*/
+/*}*/
 
 .header-image {
     background-position: center top;
@@ -103,9 +103,6 @@ header.masthead p {
 }
 
 @media (min-width: 768px) {
-    header.masthead p {
-        font-size: 1.15rem;
-    }
 }
 
 @media (max-width: 500px) {
@@ -115,9 +112,6 @@ header.masthead p {
 }
 
 @media (min-width: 400px) {
-    header.masthead {
-        height: 300px !important;
-    }
     .carousel-title {
         padding-left: 40px !important;
     }
@@ -208,18 +202,6 @@ header.masthead p {
     margin-top: 250px !important;
 }
 
-#carouselIndicators {
-    width: 100%;
-    position: relative;
-    overflow-y: hidden;
-}
-
-.carousel-indicators li {
-    width: 10px;
-    height: 10px;
-    border-radius: 10px;
-    border: 2px solid white;
-}
 
 .chart-icon-wrapper {
     position: relative;
