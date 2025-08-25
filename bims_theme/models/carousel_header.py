@@ -63,7 +63,7 @@ class CarouselHeader(OrderedModel):
     )
     title_font_size = models.IntegerField(
         validators=[MinValueValidator(10), MaxValueValidator(80)],
-        default=60, help_text='Default title size (10–80).'
+        default=45, help_text='Default title size (10–80).'
     )
     description_font_size = models.IntegerField(
         validators=[MinValueValidator(10), MaxValueValidator(50)],
@@ -116,7 +116,7 @@ class CarouselHeader(OrderedModel):
         help_text='Override alignment for title only (empty = use default).'
     )
     title_offset_y_percent = models.PositiveIntegerField(
-        default=20, validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=30, validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text='Vertical position of title (0–100%, from top).'
     )
     title_line_height_pct = models.PositiveIntegerField(
@@ -149,7 +149,7 @@ class CarouselHeader(OrderedModel):
         help_text='Override alignment for description only (empty = use default).'
     )
     description_offset_y_percent = models.PositiveIntegerField(
-        default=30, validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=12, validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text='Offset below the title in percent of slide height.'
     )
     description_line_height_pct = models.PositiveIntegerField(
