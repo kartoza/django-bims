@@ -37,7 +37,7 @@ from bims.api_views.taxon import (
     AddNewTaxon,
     TaxaList,
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
-    HarvestIUCNStatus
+    HarvestIUCNStatus, ApproveTaxonGroupProposalsView
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -432,5 +432,10 @@ urlpatterns = [
         "taxonomy-tree/<int:taxon_id>/",
         TaxonTreeJsonView.as_view(),
         name="taxonomy-tree-json",
+    ),
+    path(
+        "approve-group-proposals/",
+        ApproveTaxonGroupProposalsView.as_view(),
+        name="approve-group-proposals",
     )
 ]

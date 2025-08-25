@@ -10,7 +10,7 @@ from django.http import Http404, JsonResponse
 from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import status
-from rest_framework.generics import UpdateAPIView
+from rest_framework.generics import UpdateAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK
@@ -31,7 +31,7 @@ from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_verna
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
-from bims.tasks.taxa import fetch_iucn_status
+from bims.tasks.taxa import fetch_iucn_status, approve_unvalidated_taxa_by_group
 
 logger = logging.getLogger('bims')
 
@@ -49,21 +49,31 @@ class TaxonDetail(APIView):
         except Taxonomy.DoesNotExist:
             raise Http404
 
-    def get_taxonomic_rank_values(self, taxonomy):
-        taxonomic_rank_values = []
-        try:
-            taxonomic_data = {
-                TaxonomicRank[taxonomy.rank].value.lower():
-                    taxonomy.canonical_name
-            }
-            taxonomic_rank_values.append(taxonomic_data)
-        except KeyError:
-            pass
-        if taxonomy.parent:
-            taxonomic_rank_values += self.get_taxonomic_rank_values(
-                taxonomy.parent
+    def get_taxonomic_rank_values(self, taxonomy, max_depth=24):
+        """Build rank values walking up parents, but stop on cycles or silly depth."""
+        values = []
+        visited = set()
+        current = taxonomy
+        depth = 0
+
+        while current and getattr(current, "id", None) not in visited and depth < max_depth:
+            if current.id is not None:
+                visited.add(current.id)
+            try:
+                rank_key = TaxonomicRank[current.rank].value.lower()
+                values.append({rank_key: current.canonical_name})
+            except KeyError:
+                pass
+
+            current = current.parent
+            depth += 1
+
+        if current is not None:
+            logger.warning(
+                "Detected taxonomy parent cycle or depth limit (start_id=%s, depth=%s).",
+                getattr(taxonomy, "id", None), depth
             )
-        return taxonomic_rank_values
+        return values
 
     def get_serializer_data(self, pk):
         taxon = self.get_object(pk)
@@ -105,11 +115,15 @@ class TaxonDetail(APIView):
         common_names = []
         results = []
 
+        if 'common_name' in data and data['common_name']:
+            common_names.append(data['common_name'])
         # Common name
-        if taxon.vernacular_names.exists():
-            common_names = list(
-                taxon.vernacular_names.filter(language='eng').values_list('name', flat=True))
-        if len(common_names) == 0:
+        if taxon.vernacular_names.exists() and not common_names:
+            common_names = list(set(
+                taxon.vernacular_names.filter(language='eng').values_list('name', flat=True)))
+            common_names.sort()
+
+        if len(common_names) == 0 and taxon.gbif_key:
             vernacular_names = get_vernacular_names(taxon.gbif_key)
             if vernacular_names:
                 results = vernacular_names['results']
@@ -132,7 +146,7 @@ class TaxonDetail(APIView):
                         )
                         taxon.vernacular_names.add(vernacular_name)
                         break
-        else:
+        elif len(common_names) > 0:
             data['common_name'] = common_names[0]
 
         return Response(data)
@@ -548,15 +562,15 @@ class TaxaList(LoginRequiredMixin, APIView):
             )
         if family_name:
             taxon_list = taxon_list.filter(
-                hierarchical_data__family_name__icontains=family_name
+                hierarchical_data__family_name__iexact=family_name
             )
         if genus_name:
             taxon_list = taxon_list.filter(
-                hierarchical_data__genus_name__icontains=genus_name
+                hierarchical_data__genus_name__iexact=genus_name
             )
         if species_name:
             taxon_list = taxon_list.filter(
-                hierarchical_data__species_name__icontains=species_name
+                hierarchical_data__species_name__iexact=species_name
             )
 
         if tags:
@@ -790,17 +804,49 @@ class TaxonTreeJsonView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, taxon_id, format=None):
-        taxon = Taxonomy.objects.get(id=taxon_id)
+        taxon = None
+        try:
+            taxon = Taxonomy.objects.get(id=taxon_id)
+        except Taxonomy.DoesNotExist:
+            try:
+                taxon = TaxonomyUpdateProposal.objects.get(id=taxon_id)
+            except TaxonomyUpdateProposal.DoesNotExist:
+                raise Http404
+
         nodes = []
-        current_taxon = taxon
-        while current_taxon:
+        current = taxon
+        seen_ids = set()
+        max_depth = 64
+        depth = 0
+
+        while current and depth < max_depth:
+            cur_id = getattr(current, "id", None)
+            if cur_id is not None:
+                if cur_id in seen_ids:
+                    logger.warning(
+                        "TaxonTreeJsonView: detected cycle starting at id=%s (depth=%s)",
+                        getattr(taxon, "id", None), depth
+                    )
+                    break
+                seen_ids.add(cur_id)
+
+            parent = getattr(current, "parent", None)
             nodes.append({
-                'id': current_taxon.id,
-                'parent': current_taxon.parent.id if current_taxon.parent else '#',
-                'text': f'{current_taxon.canonical_name} ({current_taxon.rank})',
+                'id': cur_id,
+                'parent': getattr(parent, "id", None) if parent else '#',
+                'text': f'{getattr(current, "canonical_name", "")} ({getattr(current, "rank", "")})',
                 'state': {'opened': True},
             })
-            current_taxon = current_taxon.parent
+
+            current = parent
+            depth += 1
+
+        if depth >= max_depth:
+            logger.warning(
+                "TaxonTreeJsonView: depth limit hit (start_id=%s, limit=%s)",
+                getattr(taxon, "id", None), max_depth
+            )
+
         return JsonResponse(nodes, safe=False)
 
 
@@ -822,4 +868,60 @@ class HarvestIUCNStatus(APIView):
         return Response(
             {"message": "Harvesting IUCN status in the background."},
             status=HTTP_200_OK
+        )
+
+
+class ApproveTaxonGroupProposalsView(APIView):
+    """
+    POST: Trigger background approval of all proposals under a TaxonGroup.
+    Body:
+      {
+        "taxon_group_id": 123,
+        "include_children": true,
+        "statuses": ["pending"]
+      }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        payload = request.data or {}
+
+        try:
+            taxon_group_id = int(payload.get("taxon_group_id"))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Missing or invalid 'taxon_group_id'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        include_children = payload.get("include_children", True)
+
+        group = get_object_or_404(TaxonGroup, pk=taxon_group_id)
+        user = request.user
+        if not is_expert(user, group):
+            return Response(
+                {"detail": "You do not have permission to approve proposals for this group."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        task = approve_unvalidated_taxa_by_group.delay(
+            taxon_group_id=group.id,
+            initiated_by_user_id=user.id,
+            include_children=bool(include_children),
+        )
+
+        logger.info(
+            "User %s queued batch-approve for TaxonGroup %s "
+            "(task_id=%s, include_children=%s)",
+            user.id, group.id, task.id, include_children
+        )
+
+        return Response(
+            {
+                "message": "Batch approval started.",
+                "task_id": task.id,
+                "taxon_group_id": group.id,
+                "include_children": include_children,
+            },
+            status=status.HTTP_202_ACCEPTED
         )

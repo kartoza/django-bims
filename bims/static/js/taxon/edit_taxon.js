@@ -109,27 +109,56 @@ $('.taxa-auto-complete').select2({
 });
 
 $('.species-group-auto-complete').select2({
-    ajax: {
-        url: '/species-group-autocomplete/',
-        dataType: 'json',
-        data: function (params) {
-            return {
-                term: params.term,
-            }
-        },
-        processResults: function (data) {
-            return {
-                results: data
-            }
-        },
-        cache: true
-    },
-    placeholder: 'Search for a Species Group',
-    minimumInputLength: 3,
-    templateResult: formatSpeciesGroup,
-    templateSelection: formatSpeciesGroupSelection,
-    theme: "classic"
+  ajax: {
+    url: '/species-group-autocomplete/',
+    dataType: 'json',
+    data: params => ({ term: params.term }),
+    processResults: data => ({
+      results: data.map(item => ({ id: String(item.id), text: item.name }))
+    }),
+    cache: true
+  },
+  placeholder: 'Search for a Species Group',
+  minimumInputLength: 0,          // allow opening without typing
+  allowClear: true,                // <-- enables the clear (x) button
+  theme: 'classic',
+  width: '100%',
+  tags: true,
+  createTag: (params) => {
+    const term = (params.term || '').trim();
+    if (!term) return null;
+    return { id: 'NEW:' + term, text: `Create "${term}"`, isNew: true, rawText: term };
+  },
+  templateResult: (item) => item.isNew ? `➕ ${item.text}` : (item.text || item.name || ''),
+  templateSelection: (item) => item.text || item.name || ''
 });
+
+$('.species-group-auto-complete').on('select2:clear', function () {
+  $(this).val(null).trigger('change');
+});
+
+// $('.species-group-auto-complete').on('select2:select', function (e) {
+//   const sel = e.params.data;
+//   if (!sel || !String(sel.id).startsWith('NEW:')) return;
+//
+//   const term = sel.rawText || String(sel.id).replace(/^NEW:/, '').trim();
+//   const $el = $(this);
+//
+//   $.ajax({
+//     url: '/species-group-autocomplete/',
+//     method: 'POST',
+//     dataType: 'json',
+//     data: { name: term },
+//     headers: { 'X-CSRFToken': csrf_token }
+//   }).done(function (res) {
+//     const newOption = new Option(res.name, res.id, true, true);
+//     $el.append(newOption).trigger('change');
+//   }).fail(function (xhr) {
+//     alert(xhr.responseJSON?.error || 'Failed to create Species Group.');
+//     const values = ($el.val() || []).filter(v => v !== sel.id);
+//     $el.val(values).trigger('change');
+//   });
+// });
 
 document.addEventListener('DOMContentLoaded', function() {
     const taxonomicStatus = document.getElementById('taxonomic_status');

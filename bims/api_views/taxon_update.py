@@ -1,3 +1,6 @@
+import json
+from typing import Mapping
+
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import transaction
 from django.http import JsonResponse, Http404
@@ -15,135 +18,251 @@ from bims.models.taxonomy_update_proposal import (
 from bims.models.taxon_group import TaxonGroup
 
 
+ADDITIONAL_KEYS = [
+    'Taxonomic Comments',
+    'Conservation Comments',
+    'Biogeographic Comments',
+    'Environmental Comments',
+    'Taxonomic References',
+    'Conservation References',
+    'Biogeographic References',
+    'Environmental References',
+]
+
+
+def _normalize_canonical_name(base_taxon, proposed_name, rank, taxonomic_status):
+    """
+    Ensure canonical_name contains genus/species prefix when appropriate.
+    """
+    name = (proposed_name or '').strip() or (base_taxon.canonical_name or '').strip()
+    if not name:
+        return name
+
+    rank_l = (rank or base_taxon.rank or '').lower()
+    status_l = (taxonomic_status or base_taxon.taxonomic_status or '').lower()
+
+    if status_l == 'accepted':
+        if rank_l == 'species':
+            if base_taxon.genus_name and base_taxon.genus_name not in name:
+                name = f'{base_taxon.genus_name} {name}'
+        elif rank_l == 'subspecies':
+            if base_taxon.full_species_name and base_taxon.full_species_name not in name:
+                name = f'{base_taxon.full_species_name} {name}'
+    return name.strip()
+
+
+AD_PREFIX = "additional_data__"
+
+def _merge_additional(existing: dict | None, data: dict) -> dict:
+    """
+    Merge 'additional_data' safely from diverse inputs.
+    """
+    if existing in (None, "", "null"):
+        existing = {}
+    elif isinstance(existing, str):
+        try:
+            loaded = json.loads(existing)
+            existing = loaded if isinstance(loaded, dict) else {}
+        except Exception:
+            existing = {}
+    elif isinstance(existing, Mapping):
+        existing = dict(existing)
+    else:
+        existing = {}
+
+    if isinstance(data.get("additional_data"), Mapping):
+        for k, v in data["additional_data"].items():
+            if v not in ("", None, [], {}):
+                existing[k] = v
+
+    for k, v in (data.items() if isinstance(data, Mapping) else []):
+        if not isinstance(k, str):
+            continue
+        if k.startswith(AD_PREFIX):
+            key = k[len(AD_PREFIX):].replace("_", " ").strip()
+            if v not in ("", None, [], {}):
+                existing[key] = v
+
+    for k in ADDITIONAL_KEYS:
+        if k in data:
+            v = data.get(k)
+            if isinstance(v, str):
+                v = v.strip()
+            if v not in ("", None, [], {}):
+                existing[k] = v
+
+    return existing
+
+
+@transaction.atomic
 def create_taxon_proposal(
-        taxon,
-        taxon_group,
-        data={},
-        iucn_status=None,
-        endemism=None,
-        creator=None):
-    if not iucn_status:
-        iucn_status = taxon.iucn_status
-    if not endemism:
-        endemism = taxon.endemism
-    taxonomic_status = (
-        data.get('taxonomic_status', 'ACCEPTED')
-    )
-    if taxonomic_status.lower() == 'accepted':
+    taxon,
+    taxon_group,
+    data=None,
+    iucn_status=None,
+    endemism=None,
+    creator=None,
+):
+    data = data or {}
+
+    iucn_status = iucn_status or taxon.iucn_status
+    endemism = endemism or taxon.endemism
+
+    taxonomic_status = (data.get('taxonomic_status') or taxon.taxonomic_status or 'ACCEPTED')
+    tax_status_l = taxonomic_status.lower()
+
+    if tax_status_l == 'accepted':
         accepted_taxonomy = None
     else:
-        accepted_taxonomy = (
-            data.get('accepted_taxonomy', taxon.accepted_taxonomy),
-        )
-        if isinstance(accepted_taxonomy, tuple) and len(accepted_taxonomy) > 0:
-            accepted_taxonomy = accepted_taxonomy[0]
+        accepted_taxonomy = data.get('accepted_taxonomy', getattr(taxon, 'accepted_taxonomy', None))
 
-    additional_data = taxon.additional_data
-    if not additional_data:
-        additional_data = {}
-    additional_data_to_check = [
-        'Taxonomic Comments',
-        'Conservation Comments',
-        'Biogeographic Comments',
-        'Environmental Comments',
-        'Taxonomic References',
-        'Conservation References',
-        'Biogeographic References',
-        'Environmental References'
-    ]
-    for additional_key in additional_data_to_check:
-        if data.get(additional_key):
-            additional_data[additional_key] = data.get(additional_key)
+    additional_data = _merge_additional(getattr(taxon, 'additional_data', {}) or {}, data)
 
-    canonical_name = data.get('canonical_name', taxon.canonical_name)
-    if taxon.rank.lower() == 'species' and taxon.taxonomic_status.lower() == 'accepted':
-        if taxon.genus_name not in canonical_name:
-            canonical_name = taxon.genus_name + ' ' + canonical_name
-    elif taxon.rank.lower() == 'subspecies':
-        if taxon.full_species_name not in canonical_name:
-            canonical_name = taxon.full_species_name + ' ' + canonical_name
-    canonical_name = canonical_name.strip()
+    canonical_name = _normalize_canonical_name(
+        base_taxon=taxon,
+        proposed_name=data.get('canonical_name', taxon.canonical_name),
+        rank=data.get('rank', taxon.rank),
+        taxonomic_status=taxonomic_status,
+    )
 
-    proposal, created = TaxonomyUpdateProposal.objects.get_or_create(
+    defaults = {
+        'author': data.get('author', taxon.author),
+        'rank': data.get('rank', taxon.rank),
+        'scientific_name': data.get('scientific_name', taxon.scientific_name),
+        'canonical_name': canonical_name,
+        'origin': data.get('origin', taxon.origin),
+        'iucn_status': iucn_status,
+        'endemism': endemism,
+        'taxon_group_under_review': taxon_group,
+        'taxonomic_status': taxonomic_status,
+        'accepted_taxonomy': accepted_taxonomy,
+        'parent': data.get('parent', taxon.parent),
+        'hierarchical_data': data.get('hierarchical_data', getattr(taxon, 'hierarchical_data', {}) or {}),
+        'gbif_data': data.get('gbif_data', getattr(taxon, 'gbif_data', None)),
+        'collector_user': creator,
+        'additional_data': additional_data,
+        'gbif_key': data.get('gbif_key', getattr(taxon, 'gbif_key', None)),
+        'fada_id': data.get('fada_id', getattr(taxon, 'fada_id', None)),
+        'species_group': data.get('species_group', getattr(taxon, 'species_group', None)),
+    }
+
+    proposal, created = TaxonomyUpdateProposal.objects.update_or_create(
         original_taxonomy=taxon,
         taxon_group=taxon_group,
         status='pending',
-        defaults={
-            'author': data.get('author', taxon.author),
-            'rank': data.get('rank', taxon.rank),
-            'scientific_name': data.get('scientific_name', taxon.scientific_name),
-            'canonical_name': canonical_name,
-            'origin': data.get('origin', taxon.origin),
-            'iucn_status': iucn_status,
-            'endemism': endemism,
-            'taxon_group_under_review': taxon_group,
-            'taxonomic_status': taxonomic_status,
-            'accepted_taxonomy': accepted_taxonomy,
-            'parent': data.get('parent', taxon.parent),
-            'hierarchical_data': {},
-            'gbif_data': taxon.gbif_data,
-            'collector_user': creator,
-            'additional_data': additional_data,
-            'gbif_key': data.get('gbif_key', taxon.gbif_key),
-            'fada_id': data.get('fada_id', taxon.fada_id),
-            'species_group': data.get('species_group', taxon.species_group),
-        }
+        defaults=defaults,
     )
-    if created:
-        if data.get('tags'):
-            proposal.tags.set(data.get('tags'))
+
+    if proposal:
+        if 'tags' in data:
+            proposal.tags.set(data.get('tags') or [])
         else:
-            proposal.tags.clear()
-        if data.get('biographic_distributions'):
-            proposal.biographic_distributions.set(data.get('biographic_distributions'))
+            proposal.tags.set(taxon.tags.all())
+        if 'biographic_distributions' in data:
+            proposal.biographic_distributions.set(data.get('biographic_distributions') or [])
         else:
-            proposal.biographic_distributions.clear()
-        common_name = data.get('common_name')
-        if common_name and taxon.common_name != common_name:
-            try:
-                common_name_obj, _ = VernacularName.objects.get_or_create(
-                    name=common_name,
-                    defaults={
-                        'language': 'eng'
-                    }
-                )
-            except VernacularName.MultipleObjectsReturned:
-                common_name_obj = VernacularName.objects.filter(
-                    name=common_name,
-                    language='eng'
-                ).first()
-            proposal.vernacular_names.clear()
-            proposal.vernacular_names.add(common_name_obj)
+            proposal.biographic_distributions.set(taxon.biographic_distributions.all())
+        if 'common_name' in data:
+            common_name = (data.get('common_name') or '').strip()
+            if common_name:
+                try:
+                    vn, _ = VernacularName.objects.get_or_create(
+                        name=common_name,
+                        defaults={'language': 'eng'}
+                    )
+                except VernacularName.MultipleObjectsReturned:
+                    vn = VernacularName.objects.filter(
+                        name=common_name, language='eng').first()
+                proposal.vernacular_names.clear()
+                if vn:
+                    proposal.vernacular_names.add(vn)
+        else:
+            proposal.vernacular_names.set(
+                taxon.vernacular_names.values_list('pk', flat=True)
+            )
         proposal.save()
 
     return proposal
 
 
+@transaction.atomic
 def update_taxon_proposal(
-        proposal: TaxonomyUpdateProposal,
-        data=None,
-        iucn_status=None,
-        endemism=None):
-    if data is None:
-        data = {}
-    if not iucn_status:
-        iucn_status = proposal.iucn_status
-    if not endemism:
-        endemism = proposal.endemism
-    TaxonomyUpdateProposal.objects.filter(
-        id=proposal.id
-    ).update(
-        status='pending',
-        author=data.get('author', proposal.author),
-        rank=data.get('rank', proposal.rank),
-        scientific_name=data.get(
-            'scientific_name', proposal.scientific_name),
-        canonical_name=data.get(
-            'canonical_name', proposal.canonical_name),
-        origin=data.get('origin', proposal.origin),
-        iucn_status=iucn_status,
-        endemism=endemism,
+    proposal: 'TaxonomyUpdateProposal',
+    data=None,
+    iucn_status=None,
+    endemism=None,
+):
+    data = data or {}
+
+    iucn_status = iucn_status or proposal.iucn_status
+    endemism = endemism or proposal.endemism
+
+    taxonomic_status = data.get('taxonomic_status', proposal.taxonomic_status)
+    tax_status_l = (taxonomic_status or '').lower()
+
+    if tax_status_l == 'accepted':
+        accepted_taxonomy = None
+    else:
+        accepted_taxonomy = data.get('accepted_taxonomy', proposal.accepted_taxonomy)
+
+    merged_additional = _merge_additional(getattr(proposal, 'additional_data', {}) or {}, data)
+
+    base_taxon = proposal.original_taxonomy
+    new_rank = data.get('rank', proposal.rank)
+    canonical_name = _normalize_canonical_name(
+        base_taxon=base_taxon,
+        proposed_name=data.get('canonical_name', proposal.canonical_name),
+        rank=new_rank,
+        taxonomic_status=taxonomic_status,
     )
+
+    updates = {
+        'status': 'pending',
+        'author': data.get('author', proposal.author),
+        'parent': data.get('parent', proposal.parent),
+        'rank': new_rank,
+        'scientific_name': data.get('scientific_name', proposal.scientific_name),
+        'canonical_name': canonical_name,
+        'origin': data.get('origin', proposal.origin),
+        'iucn_status': iucn_status,
+        'endemism': endemism,
+        'species_group': data.get('species_group', proposal.species_group),
+        'taxonomic_status': taxonomic_status,
+        'accepted_taxonomy': accepted_taxonomy,
+        'gbif_key': data.get('gbif_key', proposal.gbif_key),
+        'fada_id': data.get('fada_id', proposal.fada_id),
+        'gbif_data': data.get('gbif_data', proposal.gbif_data),
+        'hierarchical_data': data.get('hierarchical_data', proposal.hierarchical_data or {}),
+        'additional_data': merged_additional,
+    }
+
+    TaxonomyUpdateProposal.objects.filter(id=proposal.id).update(**updates)
+
+    proposal.refresh_from_db()
+
+    if 'tags' in data:
+        proposal.tags.set(data.get('tags') or [])
+    if 'biographic_distributions' in data:
+        proposal.biographic_distributions.set(data.get('biographic_distributions') or [])
+    if 'common_name' in data:
+        common_name = (data.get('common_name') or '').strip()
+        if common_name:
+            try:
+                vn, _ = VernacularName.objects.get_or_create(
+                    name=common_name,
+                    defaults={'language': 'eng'}
+                )
+            except VernacularName.MultipleObjectsReturned:
+                vn = VernacularName.objects.filter(name=common_name, language='eng').first()
+            proposal.vernacular_names.clear()
+            if vn:
+                proposal.vernacular_names.add(vn)
+        else:
+            proposal.vernacular_names.clear()
+
+    proposal.save()
+    return proposal
+
 
 def is_expert(user, taxon_group):
     if user.is_superuser:

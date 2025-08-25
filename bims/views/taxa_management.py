@@ -4,7 +4,6 @@
 import json
 from urllib.parse import urlencode
 
-from django.contrib.sites.shortcuts import get_current_site
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
@@ -12,7 +11,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from bims.cache import get_cache, set_cache
 from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
-from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
 from bims.models.endemism import Endemism
@@ -41,7 +39,6 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        site = get_current_site(self.request)
         selected = self.request.GET.get('selected')
         taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
         if taxon_group_cache:

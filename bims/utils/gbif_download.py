@@ -84,6 +84,7 @@ def submit_download(
     }
     log(f"POST {GBIF_REQUEST_URL}")
     log(description)
+    log(payload)
     r = requests.post(GBIF_REQUEST_URL, auth=(gbif_user, gbif_pass), json=payload, timeout=60)
     if r.status_code != 201:
         log(f"Download request failed ({r.status_code}): {r.text}")
@@ -190,6 +191,7 @@ def find_species_by_area(
     from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
     from bims.utils.fetch_gbif import fetch_all_species_from_gbif
     from bims.utils.gbif import round_coordinates
+    from bims.scripts.import_gbif_occurrences import ACCEPTED_BASIS_OF_RECORD
 
     log_file_path = get_log_file_path(harvest_session)
     log = lambda m: log_with_file(m, log_file_path)
@@ -238,7 +240,7 @@ def find_species_by_area(
                         {"type": "within", "geometry": geom_wkt},
                         {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
                         {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
-                        {"type": "equals", "key": "BASIS_OF_RECORD", "value": "HUMAN_OBSERVATION"},
+                        {"type": "in", "key": "BASIS_OF_RECORD", "values": ACCEPTED_BASIS_OF_RECORD},
                     ],
                 },
                 description=f"Boundary {boundary_id} · parent {parent_species.scientific_name}",

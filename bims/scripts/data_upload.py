@@ -2,7 +2,8 @@ import csv
 import re
 import copy
 import logging
-from django.contrib.sites.models import Site
+from io import StringIO
+
 from bims.scripts.species_keys import *  # noqa
 from bims.models import (
     UploadSession
@@ -10,6 +11,8 @@ from bims.models import (
 from bims.utils.domain import get_current_domain
 
 logger = logging.getLogger('bims')
+
+FALLBACK_ENCODINGS = ("utf-8-sig", "utf-8", "cp1252", "latin-1")
 
 
 class DataCSVUpload(object):
@@ -37,11 +40,37 @@ class DataCSVUpload(object):
         self.domain = get_current_domain()
 
         try:
-            with open(
-                    self.upload_session.process_file.path,
-                    encoding=encoding
-            ) as f:
-                self.total_rows = sum(1 for _ in f) - 1
+            with open(self.upload_session.process_file.path, 'rb') as fh:
+                raw = fh.read()
+        except Exception as e:
+            self.upload_session.error_notes = f"Error reading file: {e}"
+            self.upload_session.canceled = True
+            self.upload_session.save()
+            self.process_ended()
+            return
+
+        tried = [encoding] + [e for e in FALLBACK_ENCODINGS if e != encoding]
+        text = None
+        last_exc = None
+        for enc in tried:
+            try:
+                text = raw.decode(enc)
+                break
+            except UnicodeDecodeError as exc:
+                last_exc = exc
+                continue
+
+        if text is None:
+            self.upload_session.error_notes = (
+                f"Could not decode file with encodings {tried}: {last_exc}"
+            )
+            self.upload_session.canceled = True
+            self.upload_session.save()
+            self.process_ended()
+            return
+
+        try:
+            self.total_rows = max(0, len(text.splitlines()) - 1)
         except Exception as e:
             self.upload_session.error_notes = f"Error counting rows: {e}"
             self.upload_session.canceled = True
@@ -52,13 +81,8 @@ class DataCSVUpload(object):
         self.process_started()
 
         try:
-            with open(self.upload_session.process_file.path, encoding=encoding) as csv_file:
-                self.csv_dict_reader = csv.DictReader(csv_file)
-                self.process_csv_dict_reader()
-        except UnicodeDecodeError as e:
-            self.upload_session.error_notes = str(e)
-            self.upload_session.canceled = True
-            self.upload_session.save()
+            self.csv_dict_reader = csv.DictReader(StringIO(text))
+            self.process_csv_dict_reader()
         except Exception as e:
             self.upload_session.error_notes = f"Unexpected error: {e}"
             self.upload_session.canceled = True
@@ -198,6 +222,7 @@ class DataCSVUpload(object):
             row_value = row_value.replace('\xc2', '')
             row_value = row_value.replace('\xca', ' ')
             row_value = row_value.replace('\\xa0', '')
+            row_value = row_value.replace('Ò', '“').replace('Ó', '”')
             row_value = row_value.strip()
             row_value = re.sub(r' +', ' ', row_value)
         except (KeyError, AttributeError):

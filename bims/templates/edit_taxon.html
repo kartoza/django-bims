@@ -24,7 +24,7 @@
         const taxonGroupId = "{{ taxon_group_id }}";
         const parent = {% if object.parent %}"{{ object.parent.canonical_name }} ({{ object.parent.rank }})"{% else %}null{% endif %};
         const parentId = {% if object.parent %}{{ object.parent.id }}{% else %}null{% endif %};
-        const taxonId = {% if object.original_taxonomy.id %}{{ object.original_taxonomy.id }}{% else %}{{ object.id }}{% endif %};
+        const taxonId = {{ object.id }};
         let acceptedTaxonomy = null;
         let acceptedTaxonomyId = null;
         const speciesGroup = {% if object.species_group %}"{{ object.species_group.name }}"{% else %}""{% endif %};
@@ -164,7 +164,9 @@
                     Species Group
                 </label>
                 <div class="col-sm-10">
-                    <select id="species-group" class="species-group-auto-complete" name="species-group" style="width: 100%"></select>
+                    <select id="species-group" class="species-group-auto-complete" name="species-group" style="width: 100%">
+                        <option></option>
+                    </select>
                 </div>
             </div>
 

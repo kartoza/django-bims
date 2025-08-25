@@ -12,18 +12,17 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_extra_attribute import TaxonExtraAttribute
+from bims.scripts.species_keys import BIOGRAPHIC_DISTRIBUTIONS
 from bims.serializers.taxon_detail_serializer import TaxonHierarchySerializer
 from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_taxa_list as download_taxa_list_task
 )
 
-
 class TaxaCSVSerializer(TaxonHierarchySerializer):
 
     taxon_rank = serializers.SerializerMethodField()
     taxon = serializers.SerializerMethodField()
-    scientific_name_and_authority = serializers.SerializerMethodField()
     common_name = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
@@ -48,9 +47,6 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
 
     def get_taxon(self, obj):
         return obj.canonical_name
-
-    def get_scientific_name_and_authority(self, obj):
-        return obj.scientific_name
 
     def get_common_name(self, obj):
         vernacular_names = list(
@@ -114,13 +110,18 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             'class_name',
             'order',
             'family',
+            'subfamily',
+            'tribe',
+            'subtribe',
             'genus',
+            'subgenus',
             'species',
             'subspecies',
+            'species_group',
             'taxon',
+            'author',
             'taxonomic_status',
             'accepted_taxon',
-            'scientific_name_and_authority',
             'common_name',
             'origin',
             'endemism',
@@ -129,6 +130,7 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             'conservation_status_national',
             'on_gbif',
             'gbif_link',
+            'fada_id',
             'cites_listing'
         )
 
@@ -180,13 +182,19 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
                 self.context['tags'].append(tag_name)
             result[tag_name] = tag_value
 
+        for key in BIOGRAPHIC_DISTRIBUTIONS:
+            if key not in self.context['headers']:
+                self.context['headers'].append(key)
+                self.context['tags'].append(key)
+            if key not in result:
+                result[key] = ''
+
     def to_representation(self, instance):
         result = super().to_representation(instance)
         self._ensure_headers(result.keys())
         self._add_additional_attributes(instance, result)
         self._add_tags(instance, result)
         return result
-
 
 def download_taxa_list(request):
     if not request.user.is_authenticated:

@@ -1,4 +1,4 @@
-import copy
+import difflib
 import json
 import logging
 import re
@@ -20,13 +20,15 @@ from bims.models import (
     VernacularName,
     ORIGIN_CATEGORIES, TaxonTag, SourceReference,
     SourceReferenceBibliography,
-    Invasion, SpeciesGroup
+    Invasion, SpeciesGroup,
+    TaxonomyUpdateProposal
 )
 from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names
 )
 from bims.scripts.data_upload import DataCSVUpload
+from bims.utils.gbif import get_species
 from td_biblio.exceptions import DOILoaderError
 from td_biblio.models import Entry
 from td_biblio.utils.loaders import DOILoader
@@ -35,46 +37,105 @@ from preferences import preferences
 
 logger = logging.getLogger('bims')
 
+_TRUTHY = {'y', 'true', 't', '✓'}
+
+def _as_truthy(val) -> bool:
+    if val is None:
+        return False
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() in _TRUTHY
+
+def _norm_key_label(s: str) -> str:
+    # Remove "(y/n)" and collapse whitespace
+    return re.sub(r'\(y/n\)', '', str(s), flags=re.IGNORECASE).strip()
+
+def _safe_upper(s):
+    return str(s or '').upper()
+
+def _safe_strip(s):
+    return str(s or '').strip()
+
+def _canon(s: str) -> str:
+    return re.sub(r"\s+", " ", str(s or "")).strip().lower()
+
 
 class TaxaProcessor(object):
 
     all_keys = {}
 
+
+    def _get_or_create_vernacular_singleton(self, name: str, language: str | None):
+        """
+        Robustly fetch a single VernacularName without raising MultipleObjectsReturned.
+        If multiples exist, return the earliest one. If none, create one.
+        """
+        name = re.sub(r'\s+', ' ', (name or '').strip())
+        language = (language or '').strip() or None
+
+        qs = VernacularName.objects.filter(
+            name=name,
+            language=language,
+            is_upload=True
+        ).order_by('id')
+
+        obj = qs.first()
+        if obj:
+            return obj
+
+        return VernacularName.objects.create(
+            name=name,
+            language=language,
+            is_upload=True
+        )
+
+    def _update_taxon_and_proposal(self, taxonomy, proposal, use_proposal, new_taxon, field, value):
+        # Apply on taxonomy for brand-new objects or when proposals are disabled.
+        if new_taxon or not use_proposal:
+            setattr(taxonomy, field, value)
+        # Apply on proposal when proposals are enabled.
+        if use_proposal and proposal is not None:
+            setattr(proposal, field, value)
+
     def _compose_species_name(self, row) -> str:
         """
         Return a canonical binomial/trinomial.
 
-        • If the species cell already starts with the genus, normalise its case.
+        • If the species cell already starts with the genus, normalize capitalization.
         • Otherwise prepend the genus.
-        • Always force everything *after* the genus to lower-case.
+        • Always force epithets (everything after the genus) to lower-case.
         """
-        genus = (self.get_row_value(row, GENUS) or '').strip()
-        species = (self.get_row_value(row, SPECIES) or '').strip()
+        genus = _safe_strip(self.get_row_value(row, GENUS))
+        species = _safe_strip(self.get_row_value(row, SPECIES))
 
         if not species:
-            species = self.get_row_value(row, TAXON)
+            species = _safe_strip(self.get_row_value(row, TAXON))
 
         if not genus or not species:
             return species or genus
 
-        species_lc = ' '.join(part.lower() for part in species.split())
+        parts = species.split()
+        epithets = ' '.join(p.lower() for p in parts[1:]) if len(parts) > 1 else ''
+        # If species already includes genus (case-insensitive), normalize capitalization.
+        if species.lower().startswith(genus.lower() + ' '):
+            genus_cap = genus[:1].upper() + genus[1:].lower()
+            rest = species.split(' ', 1)[1] if ' ' in species else ''
+            rest_norm = ' '.join(w.lower() for w in rest.split())
+            return f'{genus_cap} {rest_norm}'.strip()
 
-        if species_lc.startswith(genus.lower() + ' '):
-            return species
+        genus_cap = genus[:1].upper() + genus[1:].lower()
+        species_lc = parts[0].lower()
+        tail = f' {epithets}' if epithets else ''
+        return f'{genus_cap} {species_lc}{tail}'.strip()
 
-        return f'{genus} {species_lc}'
-
-    def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated = True):
+    def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated: bool = True):
         """
         Add or update the relationship between a taxonomy and a taxon group,
-        ensuring the 'is_validated' field is properly set in both the
-        intermediate table (TaxonGroupTaxonomy) and on the Taxonomy object.
+        ensuring the 'is_validated' field is properly set in the through table.
         """
         taxon_group.taxonomies.add(
             taxonomy,
-            through_defaults={
-                'is_validated': validated
-            }
+            through_defaults={'is_validated': validated}
         )
         if not validated:
             taxon_group.taxonomies.through.objects.filter(
@@ -82,12 +143,10 @@ class TaxaProcessor(object):
                 taxonomy=taxonomy
             ).update(is_validated=False)
 
-            create_taxon_proposal(taxonomy, taxon_group)
-
     def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
         """
-        A helper function that calls `add_taxon_to_taxon_group` with
-        validated=True
+        Helper for legacy callers. Note: this base implementation uses validated=True.
+        TaxaCSVUpload overrides this to respect site preferences.
         """
         self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=True)
 
@@ -98,74 +157,72 @@ class TaxaProcessor(object):
         pass
 
     def rank_name(self, taxon: Taxonomy):
-        if taxon.rank:
-            return taxon.rank.upper()
-        return ''
-    
+        return (taxon.rank or '').upper() if taxon and taxon.rank else ''
+
     def get_row_value(self, row, key):
         return DataCSVUpload.row_value(row, key, self.all_keys)
 
     def endemism(self, row):
-        """Processing endemism data"""
-        endemism_value = self.get_row_value(row, ENDEMISM)
+        """Processing endemism data (case-insensitive, avoids dupes)."""
+        endemism_value = _safe_strip(self.get_row_value(row, ENDEMISM))
         if not endemism_value:
             return None
         try:
             endemism_obj, _ = Endemism.objects.get_or_create(
-                name=endemism_value
+                name__iexact=endemism_value,
+                defaults={'name': endemism_value}
             )
         except Endemism.MultipleObjectsReturned:
             endemism_obj = Endemism.objects.filter(
-                name=endemism_value
-            )[0]
+                name__iexact=endemism_value
+            ).order_by('id').first()
         return endemism_obj
 
-    def conservation_status(self, row, global_cons = False):
-        """Processing conservation status"""
+    def conservation_status(self, row, global_cons: bool = False):
+        """Processing conservation status with graceful fallbacks."""
         national = False
         if global_cons:
-            cons_status = self.get_row_value(
-                row, CONSERVATION_STATUS)
+            cons_status = self.get_row_value(row, CONSERVATION_STATUS) or self.get_row_value(row, CONSERVATION_STATUS_GLOBAL)
             if not cons_status:
-                cons_status = self.get_row_value(
-                    row, CONSERVATION_STATUS_GLOBAL)
-                if not cons_status:
-                    return None
+                return None
         else:
-            cons_status = self.get_row_value(
-                row, CONSERVATION_STATUS_NATIONAL)
+            cons_status = self.get_row_value(row, CONSERVATION_STATUS_NATIONAL)
             national = True
-        if cons_status:
-            try:
-                iucn_status, _ = IUCNStatus.objects.get_or_create(
-                    category=IUCN_CATEGORIES[cons_status.lower()],
-                    national=national
-                )
-            except IUCNStatus.MultipleObjectsReturned:
-                iucn_status = IUCNStatus.objects.filter(
-                    category=IUCN_CATEGORIES[cons_status.lower()],
-                    national=national
-                ).first()
-            return iucn_status
-        else:
+
+        if not cons_status:
             return None
 
+        key = str(cons_status).strip().lower()
+        category = IUCN_CATEGORIES.get(key)
+        if not category:
+            return None
+
+        try:
+            iucn_status, _ = IUCNStatus.objects.get_or_create(
+                category=category,
+                national=national
+            )
+        except IUCNStatus.MultipleObjectsReturned:
+            iucn_status = IUCNStatus.objects.filter(
+                category=category,
+                national=national
+            ).order_by('id').first()
+        return iucn_status
+
     def source_reference(self, row):
-        source_reference_value = self.get_row_value(row, REFERENCES)
+        source_reference_value = _safe_strip(self.get_row_value(row, REFERENCES))
         if not source_reference_value:
             return '', None
 
         source_reference = None
 
-        # Check if the reference is DOI
-        doi_pattern = r'^10.\d{4,9}/[-._;()/:A-Z0-9]+$'
+        # DOI?
+        doi_pattern = r'^10\.\d{4,9}/[-._;()/:A-Z0-9]+$'
         is_doi = re.match(doi_pattern, source_reference_value, re.IGNORECASE) is not None
         if is_doi:
             entry = get_or_create_data_from_model(
                 model=Entry,
-                fields={
-                    'doi': source_reference_value
-                },
+                fields={'doi': source_reference_value},
                 create=False
             )
             if not entry:
@@ -173,21 +230,17 @@ class TaxaProcessor(object):
                 try:
                     doi_loader.load_records(DOIs=[source_reference_value])
                     doi_loader.save_records()
-                    entry_fields = {
-                        'doi__iexact': source_reference_value
-                    }
                     entry = get_or_create_data_from_model(
                         Entry,
-                        entry_fields,
+                        {'doi__iexact': source_reference_value},
                         create=False
                     )
-                except (
-                        DOILoaderError,
-                        requests.exceptions.HTTPError) as e:
-                    print(e)
+                except (DOILoaderError, requests.exceptions.HTTPError) as e:
+                    logger.warning('DOI fetch failed for %s: %s', source_reference_value, e)
                 finally:
                     if not entry:
-                        return 'Error Fetching DOI : {doi}', None
+                        return f'Error fetching DOI: {source_reference_value}', None
+
             if entry and not source_reference:
                 SourceReference.create_source_reference(
                     category='bibliography',
@@ -195,30 +248,22 @@ class TaxaProcessor(object):
                     note=None
                 )
                 try:
-                    source_reference, _ = (
-                        SourceReferenceBibliography.objects.get_or_create(
-                            source=entry
-                        )
-                    )
+                    source_reference, _ = SourceReferenceBibliography.objects.get_or_create(source=entry)
                 except SourceReferenceBibliography.MultipleObjectsReturned:
-                    source_reference = SourceReferenceBibliography.objects.filter(
-                        source=entry
-                    ).first()
+                    source_reference = SourceReferenceBibliography.objects.filter(source=entry).order_by('id').first()
         else:
-            # Create unpublished
-            source_reference = (
-                SourceReference.create_source_reference(
-                    category=None,
-                    source_id=None,
-                    note=source_reference_value
-                )
+            # Unpublished string note
+            source_reference = SourceReference.create_source_reference(
+                category=None,
+                source_id=None,
+                note=source_reference_value
             )
         return '', source_reference
 
     def common_name(self, row):
-        """Extracts and processes common names of species from a given row."""
-
+        """Extract and process common names of a species row; never raises on duplicates."""
         common_name_value = self.get_row_value(row, COMMON_NAME)
+        vernacular_lang = None
         if not common_name_value:
             common_name_value = self.get_row_value(row, VERNACULAR_NAME)
             vernacular_lang = self.get_row_value(row, VERNACULAR_NAME_LANG)
@@ -229,182 +274,110 @@ class TaxaProcessor(object):
             return None
 
         vernacular_names = []
+        raw_str = str(common_name_value)
+        parts = raw_str.split(';') if ';' in raw_str else raw_str.split(',')
+        for raw in parts:
+            raw = raw.strip()
+            if not raw:
+                continue
+            m = re.match(r'^(.*?)(?:\s*\(([\w-]+)\))?$', raw)
+            if not m:
+                continue
 
-        # Split the common name string into individual names based on ';' or ',' as delimiters
-        if ';' in common_name_value:
-            common_names = common_name_value.split(';')
-        else:
-            common_names = common_name_value.split(',')
-        for common_name in common_names:
-            common_name = common_name.strip()
+            name = re.sub(r'\s+', ' ', (m.group(1) or '').strip())
+            language = (m.group(2) or vernacular_lang or '').strip() or None
+            vn = self._get_or_create_vernacular_singleton(name=name, language=language)
+            vernacular_names.append(vn)
 
-            # Match common names with an optional language code in parentheses
-            # Example matches:
-            # "Elephant" -> name: "Elephant", language: None (will use default english)
-            # "Lion (eng)" -> name: "Lion", language: "eng"
-            # "Tigre (spa)" -> name: "Tigre", language: "spa"
-            # "Panda(chi)" -> name: "Panda", language: "chi" (handles no space before parentheses)
-            match = re.match(r'^(.*?)(?: *\((\w+)\))?$', common_name)
-            if match:
-                name = match.group(1)
-                language = match.group(2) if match.group(2) else vernacular_lang
-                try:
-                    vernacular_name, _ = VernacularName.objects.get_or_create(
-                        name=name,
-                        language=language,
-                        is_upload=True
-                    )
-                except VernacularName.MultipleObjectsReturned:
-                    vernacular_name = VernacularName.objects.filter(
-                        name=name,
-                        language=language,
-                        is_upload=True
-                    )[0]
-                vernacular_names.append(vernacular_name)
-        return vernacular_names
+        return vernacular_names or None
 
     def origin(self, row):
         """
-        Processes the origin information for a given row. Checks the origin and invasion
-        status and returns the appropriate category and invasion instance if applicable.
-
-        Args:
-            row (dict): A dictionary representing a row of data from a CSV upload.
-
-        Returns:
-            tuple: A tuple containing the origin category (str) and an Invasion instance (or None).
+        Parse origin + invasion status.
+        Returns: (origin_category_str | '', invasion_instance | None)
         """
-        origin_value = self.get_row_value(row, ORIGIN)
-        invasion_category = self.get_row_value(row, INVASION)
+        origin_value = _safe_strip(self.get_row_value(row, ORIGIN))
+        invasion_category = _safe_strip(self.get_row_value(row, INVASION))
         invasion_instance = None
 
-        # Handle invasion category if provided
         if invasion_category:
             invasion_instance, _ = Invasion.objects.get_or_create(category=invasion_category)
 
-        # If origin value is not provided, return default values
         if not origin_value:
             return '', invasion_instance
 
-        # Check if origin indicates an invasive status without an explicit invasion category
         if 'invasive' in origin_value.lower() and not invasion_category:
             invasion_instance, _ = Invasion.objects.get_or_create(category=origin_value)
-            return ORIGIN_CATEGORIES['non-native'], invasion_instance
+            return ORIGIN_CATEGORIES.get('non-native', ''), invasion_instance
 
-        # Return the origin category if it exists in the predefined categories
-        if origin_value.lower() not in ORIGIN_CATEGORIES:
+        key = origin_value.lower()
+        if key not in ORIGIN_CATEGORIES:
             return '', invasion_instance
 
-        return ORIGIN_CATEGORIES[origin_value.lower()], invasion_instance
+        return ORIGIN_CATEGORIES[key], invasion_instance
 
     def validate_parents(self, taxon, row):
         """
-        Validates and updates the parent hierarchy of a taxon based on CSV data.
-        This function now includes sub-ranks like SUBFAMILY.
-        :param taxon: Taxonomy object
-        :param row: CSV row data
+        Validate and (if needed) rebuild the parent chain using CSV hints.
         """
         if not taxon:
             return False, 'Missing taxon'
 
+        if not taxon.rank or self.rank_name(taxon) not in RANK_INDEX:
+            return False, f"Rank '{self.rank_name(taxon) or 'UNKNOWN'}' not recognized in the hierarchy."
+
         max_try = 15
-        current_try = 1
-        taxon_rank = taxon.rank.upper()
+        current_try = 0
+        rank_index = RANK_INDEX[self.rank_name(taxon)]
 
-        if taxon_rank not in RANK_INDEX:
-            return False, f"Rank '{taxon_rank}' not recognized in the hierarchy."
-
-        # Start from the current taxon's rank and move up the hierarchy
-        rank_index = RANK_INDEX[taxon_rank]
-
-        while current_try <= max_try and rank_index > 0:
-            parent_rank_name = RANK_HIERARCHY[rank_index - 1]
+        while current_try < max_try and rank_index > 0:
             current_try += 1
+            parent_rank_name = RANK_HIERARCHY[rank_index - 1]
+            csv_parent_name = self.get_row_value(row, RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name.capitalize()))
 
-            if not taxon:
-                return False, "Parent not found"
+            # When setting a SPECIES parent for a subspecific rank, ensure genus is included.
+            if parent_rank_name == 'SPECIES' and csv_parent_name:
+                genus_name = _safe_strip(self.get_row_value(row, 'Genus'))
+                if genus_name and genus_name.lower() not in str(csv_parent_name).lower():
+                    csv_parent_name = f'{genus_name} {csv_parent_name}'.strip()
 
-            # Try to get the parent name from the CSV data
-            csv_parent_name = self.get_row_value(row, RANK_TITLE.get(
-                parent_rank_name.upper(), parent_rank_name.capitalize()))
-
-            # Handle species special case where genus might be part of the species name
-            if parent_rank_name == 'SPECIES':
-                genus_name = self.get_row_value(row, 'Genus')
-                if genus_name and genus_name not in csv_parent_name:
-                    csv_parent_name = f"{genus_name} {csv_parent_name}"
-
-            # ----------------------------------------------------------------
-            # If the row itself gives us nothing for this higher rank
-            #      just climb another step and keep looking.
-            # ----------------------------------------------------------------
             if not csv_parent_name:
                 rank_index -= 1
                 continue
 
             current_parent = taxon.parent
 
-            # ----------------------------------------------------------------
-            # Parent already exists – verify name/rank.
-            # ----------------------------------------------------------------
             if current_parent:
-                if (current_parent.canonical_name.lower() != csv_parent_name.lower() or
-                        current_parent.rank.upper() != parent_rank_name):
-                    # Mismatch  →  fetch / create the right parent
-                    correct_parent = self.get_parent(
-                        row,
-                        current_rank=RANK_TITLE.get(
-                            parent_rank_name.upper(),
-                            parent_rank_name
-                        )
-                    )
+                # Mismatch -> fetch/create correct parent
+                if current_parent.canonical_name.lower() != str(csv_parent_name).lower() or _safe_upper(current_parent.rank) != parent_rank_name:
+                    correct_parent = self.get_parent(row, RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name))
                     if correct_parent:
                         taxon.parent = correct_parent
                         taxon.save()
-                        taxon = correct_parent  # climb one level
+                        taxon = correct_parent
                     else:
-                        # Couldn’t resolve parent → abort gracefully
-                        logger.warning(
-                            "Cannot find/create parent '%s' (%s) for '%s'",
-                            csv_parent_name, parent_rank_name, taxon.canonical_name
-                        )
+                        logger.warning("Cannot resolve parent '%s' (%s) for '%s'", csv_parent_name, parent_rank_name, taxon.canonical_name)
                         break
                 else:
-                    # Parent matches → move up one level
                     taxon = current_parent
-
-            # ----------------------------------------------------------------
-            # No parent saved yet – try to build one.
-            # ----------------------------------------------------------------
             else:
                 correct_parent = self.get_parent(row, parent_rank_name)
                 if correct_parent:
                     taxon.parent = correct_parent
                     taxon.save()
-                    taxon = correct_parent  # climb one level
+                    taxon = correct_parent
                 else:
-                    logger.warning(
-                        "Cannot find/create parent '%s' (%s) for '%s'",
-                        csv_parent_name, parent_rank_name, taxon.canonical_name
-                    )
+                    logger.warning("Cannot resolve parent '%s' (%s) for '%s'", csv_parent_name, parent_rank_name, taxon.canonical_name)
                     break
 
-            # prepare for next loop step
             rank_index -= 1
 
-        # -------------------------------------------------------------------- #
-        logger.debug("Parent validation finished for '%s'.", taxon.canonical_name
-            if taxon else "unknown taxon")
-
+        logger.debug("Parent validation finished for '%s'.", taxon.canonical_name if taxon else 'unknown')
         return True, ''
 
     def get_taxonomy(self, taxon_name, scientific_name, rank):
         """
-        Get taxonomy from database and gbif
-        :param taxon_name: name of the taxon
-        :param scientific_name: scientific name of the taxon
-        :param rank: rank of the taxon
-        :return: taxonomy object
+        Find or create a taxonomy by canonical name + rank, with GBIF fallback.
         """
         taxon_data = Taxonomy.objects.filter(
             canonical_name__iexact=taxon_name,
@@ -418,7 +391,7 @@ class TaxaProcessor(object):
                 fetch_vernacular_names=False
             )
             if taxon:
-                if taxon_name.lower() not in taxon.scientific_name.lower():
+                if taxon_name.lower() not in (taxon.scientific_name or '').lower():
                     taxon.scientific_name = scientific_name
                     taxon.legacy_canonical_name = taxon_name
                     taxon.canonical_name = taxon_name
@@ -437,57 +410,49 @@ class TaxaProcessor(object):
         return taxon
 
     def get_parent(self, row, current_rank=GENUS):
-        # Retrieve the taxon name based on the current rank from the row data
         taxon_name = self.get_row_value(row, current_rank)
         if not taxon_name:
             return None
+        taxon_name = str(taxon_name).strip()
 
-        # Handle concatenation for SPECIES rank
+        # SPECIES: ensure Genus + epithet
         if current_rank == SPECIES:
-            genus_name = self.get_row_value(row, GENUS)
-            if genus_name not in taxon_name:
-                taxon_name = genus_name + ' ' + taxon_name
+            genus_name = _safe_strip(self.get_row_value(row, GENUS))
+            if genus_name and genus_name.lower() not in taxon_name.lower():
+                taxon_name = f'{genus_name} {taxon_name}'
 
-        # Handle concatenation for VARIETY rank
         if current_rank == VARIETY:
-            genus_name = self.get_row_value(row, GENUS)
-            species_name = self.get_row_value(row, SPECIES)
-            if species_name not in taxon_name:
-                taxon_name = species_name + ' ' + taxon_name
-            if genus_name not in taxon_name:
-                taxon_name = genus_name + ' ' + taxon_name
+            genus_name = _safe_strip(self.get_row_value(row, GENUS))
+            species_name = _safe_strip(self.get_row_value(row, SPECIES))
+            if species_name and species_name.lower() not in taxon_name.lower():
+                taxon_name = f'{species_name} {taxon_name}'
+            if genus_name and genus_name.lower() not in taxon_name.lower():
+                taxon_name = f'{genus_name} {taxon_name}'
 
-        # Fetch the taxon using the constructed taxon name and current rank
         taxon = self.get_taxonomy(
             taxon_name,
             taxon_name,
-            current_rank.upper()
+            _safe_upper(current_rank)
         )
 
-        # If the taxon already has a parent, return it
-        if taxon.parent and taxon.parent.rank:
+        # If we already have a parent or reached KINGDOM, stop.
+        if taxon.parent or _safe_upper(taxon.rank) == 'KINGDOM':
             return taxon
 
-        # Loop to find and assign the parent taxon until the conditions are met
-        while not taxon.gbif_key or (taxon.parent and taxon.parent.rank != 'KINGDOM'):
-            # Exit the loop if the current taxon rank is 'KINGDOM'
-            if taxon.rank == 'KINGDOM':
-                break
-
-            # Determine the parent rank name
-            parent_rank_name = parent_rank(current_rank)
+        # Try to climb by using CSV hints
+        climb_guard = 0
+        rank_cursor = current_rank
+        while climb_guard < 10:
+            climb_guard += 1
+            parent_rank_name = parent_rank(rank_cursor)
             if not parent_rank_name:
                 break
-
-            # Recursively get the parent taxon
             parent = self.get_parent(row, parent_rank_name)
             if parent:
                 taxon.parent = parent
                 taxon.save()
                 break
-
-            # Update the current rank for the next iteration
-            current_rank = parent_rank_name
+            rank_cursor = parent_rank_name
 
         return taxon
 
@@ -495,164 +460,209 @@ class TaxaProcessor(object):
         return f'{SYNONYM} {field_key}'
 
     def process_data(self, row, taxon_group: TaxonGroup):
-        """Processing row of the csv files"""
+        """Process a single CSV row."""
         if not self.all_keys:
             for key in row.keys():
                 self.all_keys[key.upper()] = key
 
-        taxonomic_status = self.get_row_value(row, TAXONOMIC_STATUS)
-        taxon_name = self.get_row_value(row, TAXON)
+        auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
+        use_proposal = not auto_validate
+
+        taxonomic_status = _safe_strip(self.get_row_value(row, TAXONOMIC_STATUS))
+        taxon_name = _safe_strip(self.get_row_value(row, TAXON))
         accepted_taxon = None
 
-        # Get rank
+        # Rank
         rank = self.get_row_value(row, TAXON_RANK)
-        rank = RANK_TITLE.get(rank.upper(), rank.capitalize())
+        rank = RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize() if rank else '')
         if rank.startswith('Sub'):
             rank = 'Sub' + rank[len('sub'):].capitalize()
 
         if not rank:
             rank = self.get_row_value(row, 'Taxon rank')
         if not rank:
-            self.handle_error(
-                row=row,
-                message='Missing taxon rank'
-            )
+            self.handle_error(row=row, message='Missing taxon rank')
             return
 
-        if not taxon_name:
-            taxon_name = self.get_row_value(
-                row,
-                RANK_TITLE.get(rank.upper(), rank.capitalize()))
+        # on_gbif flag
+        raw_on_gbif = self.get_row_value(row, ON_GBIF)
+        if raw_on_gbif is None:
+            on_gbif = False if is_fada_site() else True
+        else:
+            on_gbif = 'yes' in raw_on_gbif.lower()
 
-        if 'species' in rank.lower():
+        if not taxon_name:
+            taxon_name = _safe_strip(
+                self.get_row_value(row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
+
+        # GBIF key
+        gbif_key = None
+        if on_gbif:
+            gbif_link = self.get_row_value(row, GBIF_LINK) or self.get_row_value(row, GBIF_URL)
+            if gbif_link:
+                last = str(gbif_link).rstrip('/').split('/')[-1]
+                gbif_key = last[:-2] if last.endswith('.0') else last
+
+        if gbif_key:
+            try:
+                gbif_rec = get_species(gbif_key)
+            except Exception as e:
+                self.handle_error(
+                    row=row,
+                    message=f"GBIF lookup failed for key {gbif_key}")
+                return
+
+            if not gbif_rec or not isinstance(gbif_rec, dict) or not gbif_rec.get("key"):
+                self.handle_error(
+                    row=row,
+                    message=f"GBIF record not found or invalid for key {gbif_key}; ignoring provided key.")
+                return
+            else:
+                expected_rank = _safe_upper(rank)
+                gbif_rank = _safe_upper(gbif_rec.get("rank"))
+                if expected_rank and gbif_rank and gbif_rank != expected_rank:
+                    self.handle_error(
+                        row=row,
+                        message=(
+                            f'GBIF key {gbif_key} rank mismatch: expected {expected_rank}, '
+                            f'got {gbif_rank}; ignoring key.'
+                        )
+                    )
+                    return
+                else:
+                    if "species" in expected_rank.lower():
+                        expected_name = self._compose_species_name(row)
+                    else:
+                        expected_name = taxon_name
+
+                    expected_norm = _canon(expected_name)
+                    gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
+                    gbif_norm = _canon(gbif_canonical)
+
+                    ratio = 1.0 if not expected_norm or not gbif_norm else \
+                        difflib.SequenceMatcher(None, expected_norm, gbif_norm).ratio()
+
+                    genus_ok = True
+                    csv_genus = _safe_strip(self.get_row_value(row, GENUS))
+                    gbif_genus = _safe_strip(gbif_rec.get("genus"))
+                    if csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower():
+                        genus_ok = False
+
+                    if ratio < 0.75 or not genus_ok:
+                        self.handle_error(
+                            row=row,
+                            message=(
+                                f"GBIF key {gbif_key} name mismatch (ratio={ratio:.2f}): "
+                                f"expected '{expected_name}' ~ '{expected_norm}'; "
+                                f"GBIF '{gbif_canonical}' ~ '{gbif_norm}'. Ignoring key."
+                            ),
+                        )
+                        return
+
+        if 'species' in str(rank).lower():
             taxon_name = self._compose_species_name(row)
 
         if rank == SUBSPECIES:
-            sub_species_name = self.get_row_value(row, SUBSPECIES).strip()
-            if taxon_name not in sub_species_name and sub_species_name and not sub_species_name[0].isupper():
-                taxon_name = taxon_name + ' ' + sub_species_name
-
-        try:
-            on_gbif = (
-                self.get_row_value(row, ON_GBIF).strip() and
-                self.get_row_value(row, ON_GBIF) in (
-                    'Yes', 'yes', 'True', 'true')
-            )
-        except Exception:  # noqa
-            if is_fada_site():
-                on_gbif = False
-            else:
-                on_gbif = True
+            sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
+            if sub_species_name and taxon_name not in sub_species_name and not sub_species_name[0].isupper():
+                taxon_name = f'{taxon_name} {sub_species_name}'
 
         if not taxon_name:
-            self.handle_error(
-                row=row,
-                message='Missing Taxon value'
-            )
+            self.handle_error(row=row, message='Missing Taxon value')
             return
 
-        if 'synonym' in taxonomic_status.lower().lower().strip():
-            accepted_taxon_val = self.get_row_value(
-                row, ACCEPTED_TAXON
-            )
+        # FADA id (integer part)
+        fada_id = self.get_row_value(row, FADA_ID)
+        if fada_id:
+            try:
+                integer_part = str(fada_id).split('.', 1)[0]
+                if integer_part and integer_part != '0':
+                    fada_id = int(integer_part)
+                else:
+                    fada_id = None
+            except ValueError:
+                fada_id = None
+
+        # Synonym support
+        if 'synonym' in taxonomic_status.lower().strip():
+            accepted_taxon_val = self.get_row_value(row, ACCEPTED_TAXON)
             if accepted_taxon_val:
                 accepted_taxon = Taxonomy.objects.filter(
                     canonical_name__iexact=accepted_taxon_val
                 ).first()
 
-        authors = self.get_row_value(row, AUTHORS)
+        authors = _safe_strip(self.get_row_value(row, AUTHORS))
 
         species_group = self.get_row_value(row, SPECIES_GROUP)
         if species_group:
-            species_group, _ = SpeciesGroup.objects.get_or_create(
-                name=species_group
-            )
+            species_group, _ = SpeciesGroup.objects.get_or_create(name=species_group)
 
+        # Scientific name + authorship
         if SCIENTIFIC_NAME in row:
-            scientific_name = (self.get_row_value(row, SCIENTIFIC_NAME)
-                               if self.get_row_value(row, SCIENTIFIC_NAME)
-                               else taxon_name)
+            scientific_name = _safe_strip(self.get_row_value(row, SCIENTIFIC_NAME) or taxon_name)
         else:
             scientific_name = taxon_name
-        scientific_name = scientific_name.strip()
 
-        if authors not in scientific_name:
-            scientific_name = f'{scientific_name} {authors}'
+        if authors and authors not in scientific_name:
+            scientific_name = f'{scientific_name} {authors}'.strip()
 
-        # Check if parent and taxon has the same name
+        # Parent check: parent must not have same name as the taxon
         parent = self.get_parent(row, parent_rank(rank))
-        if parent and parent.canonical_name == taxon_name:
-            self.handle_error(
-                row=row,
-                message='Parent cannot have the same name as the taxon'
-            )
+        if parent and _safe_strip(parent.canonical_name) == taxon_name:
+            self.handle_error(row=row, message='Parent cannot have the same name as the taxon')
             return
 
-        taxa = Taxonomy.objects.filter(
-            canonical_name__iexact=taxon_name
-        )
+        # Resolve existing taxa (by gbif, fada, or canonical)
+        taxa = Taxonomy.objects.none()
+        if gbif_key:
+            taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
+        if not taxa and fada_id:
+            taxa = Taxonomy.objects.filter(fada_id=fada_id)
+        if not taxa:
+            taxa = Taxonomy.objects.filter(canonical_name__iexact=taxon_name)
+
+        update_canonical_name = False
         if not taxa.exists() and ' ' in taxon_name:
             orphan = taxon_name.split(' ', 1)[1].strip()
             taxa = Taxonomy.objects.filter(
                 canonical_name__iexact=orphan,
-                rank=rank.upper()
+                rank=_safe_upper(rank)
             )
-            if taxa.exists():
-                obtained = taxa.first()
-                obtained.canonical_name = taxon_name
-                obtained.scientific_name = taxon_name
-                obtained.save()
+            update_canonical_name = taxa.exists()
+
+        proposal = None
+        new_taxon = False
+
+        if taxa.exists() and update_canonical_name:
+            obtained = taxa.first()
+            obtained.canonical_name = taxon_name
+            obtained.scientific_name = scientific_name
+            obtained.save()
 
         try:
             taxonomy = None
 
-            common_name = self.common_name(row)
-            if not common_name:
-                should_fetch_vernacular_names = True
-            else:
-                should_fetch_vernacular_names = False
+            common_name_objs = self.common_name(row)
+            should_fetch_vernacular_names = common_name_objs is None
 
             if taxa.exists():
-                taxa_same_rank = taxa.filter(
-                    rank=rank.upper()
-                )
-                if taxa_same_rank.exists():
-                    taxonomy = taxa_same_rank.first()
-                else:
-                    taxonomy = taxa.first()
+                taxa_same_rank = taxa.filter(rank=_safe_upper(rank))
+                taxonomy = taxa_same_rank.first() if taxa_same_rank.exists() else taxa.first()
+                if taxonomy.rank != _safe_upper(rank):
+                    logger.debug('%s has different RANK', taxon_name)
+                    taxonomy.rank = _safe_upper(rank)
 
-                if taxonomy.rank != rank.upper():
-                    logger.debug('{} has different RANK'.format(
-                        taxon_name
-                    ))
-                    taxonomy.rank = rank.upper()
-
-                logger.debug('{} already in the system'.format(
-                    taxon_name
-                ))
-
-            gbif_key = None
-            if on_gbif:
-                gbif_link = self.get_row_value(row, GBIF_LINK)
-                if not gbif_link:
-                    gbif_link = self.get_row_value(row, GBIF_URL)
-                gbif_key = (
-                    gbif_link.split('/')[len(gbif_link.split('/')) - 1]
-                )
-                # Remove '.0' if present at the end
-                if gbif_key.endswith('.0'):
-                    gbif_key = gbif_key[:-2]
+                logger.debug('%s already in the system', taxon_name)
 
             if not taxonomy and gbif_key:
-                # Fetch from gbif
                 taxonomy = fetch_all_species_from_gbif(
                     gbif_key=gbif_key,
                     fetch_vernacular_names=should_fetch_vernacular_names
                 )
+                if taxonomy:
+                    new_taxon = True
 
             if not taxonomy and on_gbif:
-                # Try again with lookup
-                logger.debug('Use different method')
                 taxonomy = fetch_all_species_from_gbif(
                     species=taxon_name,
                     taxonomic_rank=rank,
@@ -660,235 +670,222 @@ class TaxaProcessor(object):
                     fetch_vernacular_names=should_fetch_vernacular_names,
                     use_name_lookup=False
                 )
+                if taxonomy:
+                    new_taxon = True
 
-            # Taxonomy found or created then validate it
-            if taxonomy:
-                if not taxonomy.parent and parent:
-                    taxonomy.parent = parent
-
-            # Data from GBIF couldn't be found, so add it manually
+            # Ensure we have a taxonomy; if GBIF didn't return, construct one with a valid parent
             if not taxonomy:
+                # Climb until we find a CSV-provided ancestor
                 max_try = 10
                 current_try = 0
                 parent_name = parent_rank(rank)
-                while (
-                    not self.get_row_value(row, parent_name) and parent_name != KINGDOM and current_try < max_try
-                ):
+                while not self.get_row_value(row, parent_name) and parent_name != KINGDOM and current_try < max_try:
                     current_try += 1
                     parent_name = parent_rank(parent_name)
 
                 parent = self.get_parent(row, parent_name)
                 if not parent:
-                    self.handle_error(
-                        row=row,
-                        message=(
-                            'Data not found from gbif for this taxon and '
-                            'its parents'
-                        )
-                    )
+                    self.handle_error(row=row, message='Data not found from GBIF for this taxon and its parents')
                     return
-                else:
-                    # Taxonomy not found, create one
-                    taxonomy, _ = Taxonomy.objects.get_or_create(
-                        scientific_name=scientific_name,
-                        canonical_name=taxon_name,
-                        rank=TaxonomicRank[rank.upper()].name,
-                        parent=parent
-                    )
-                    if taxonomic_status:
-                        taxonomy.taxonomic_status = (
-                            taxonomic_status.upper()
-                        )
-
-            # -- Finish
-            if taxonomy:
-                # Merge taxon with same canonical name
-                legacy_canonical_name = taxonomy.legacy_canonical_name
-                legacy_canonical_name = (
-                    legacy_canonical_name.replace('\\xa0', '')
+                new_taxon = True
+                taxonomy, _ = Taxonomy.objects.get_or_create(
+                    scientific_name=scientific_name,
+                    canonical_name=taxon_name,
+                    rank=TaxonomicRank[_safe_upper(rank)].name,
+                    parent=parent
                 )
-                if FORMER_SPECIES_NAME in row:
-                    former_species_name = self.get_row_value(
-                        row, FORMER_SPECIES_NAME)
-                    if len(former_species_name) > 500:
-                        former_species_name = former_species_name[:500]
+                if taxonomic_status:
+                    taxonomy.taxonomic_status = taxonomic_status.upper()
+
+            # Backfill parent and author if missing
+            if taxonomy and not taxonomy.parent and parent:
+                taxonomy.parent = parent
+
+            if on_gbif and taxonomy and not _safe_strip(getattr(taxonomy, 'author', '')):
+                refreshed = fetch_all_species_from_gbif(
+                    species=taxon_name,
+                    taxonomic_rank=rank,
+                    fetch_children=False,
+                    fetch_vernacular_names=should_fetch_vernacular_names,
+                    use_name_lookup=False
+                )
+                taxonomy = refreshed or taxonomy
+
+            # Create proposal only once taxonomy exists and we know we need it
+            if use_proposal:
+                proposal = create_taxon_proposal(taxonomy, taxon_group)
+
+            # Merge legacy canonical names
+            legacy_canonical_name = (taxonomy.legacy_canonical_name or '').replace('\\xa0', '')
+            if FORMER_SPECIES_NAME in row:
+                former_species_name = _safe_strip(self.get_row_value(row, FORMER_SPECIES_NAME))
+                if former_species_name:
+                    former_species_name = former_species_name[:500]
                     if former_species_name not in legacy_canonical_name:
-                        legacy_canonical_name += ';' + former_species_name
-                taxonomy.legacy_canonical_name = (
-                    legacy_canonical_name[:700]
-                )
-                # -- Validate parents
-                validated, message = self.validate_parents(
-                    taxon=taxonomy,
-                    row=row
-                )
+                        legacy_canonical_name = f'{legacy_canonical_name};{former_species_name}' if legacy_canonical_name else former_species_name
 
-                if not validated:
-                    self.handle_error(
-                        row=row,
-                        message=message
-                    )
+            self._update_taxon_and_proposal(
+                taxonomy, proposal, use_proposal, new_taxon,
+                'legacy_canonical_name', legacy_canonical_name[:700]
+            )
+
+            # Validate parents
+            if new_taxon or not use_proposal:
+                ok, message = self.validate_parents(taxon=taxonomy, row=row)
+                if not ok:
+                    self.handle_error(row=row, message=message)
+                    return
+            if use_proposal and proposal:
+                ok, message = self.validate_parents(taxon=proposal, row=row)
+                if not ok:
+                    self.handle_error(row=row, message=message)
                     return
 
-                # -- Endemism
-                endemism = self.endemism(row)
-                if endemism:
-                    taxonomy.endemism = endemism
+            # Endemism
+            endemism_obj = self.endemism(row)
+            if endemism_obj:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'endemism', endemism_obj)
 
-                # -- Conservation status global
-                iucn_status = self.conservation_status(row, True)
-                if iucn_status:
-                    taxonomy.iucn_status = iucn_status
+            # Conservation (global + national)
+            iucn_status = self.conservation_status(row, True)
+            self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'iucn_status', iucn_status)
 
-                # -- Conservation status national
-                national_cons_status = self.conservation_status(row, False)
-                if national_cons_status:
-                    taxonomy.national_conservation_status = (
-                        national_cons_status
-                    )
+            national_cons_status = self.conservation_status(row, False)
+            if national_cons_status:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'national_conservation_status', national_cons_status)
 
-                # -- References
-                message, reference = self.source_reference(row)
-                if message and not reference:
-                    self.handle_error(
-                        row=row,
-                        message=message
-                    )
-                    return
-                if reference:
-                    taxonomy.source_reference = reference
+            # References
+            msg, reference = self.source_reference(row)
+            if msg and not reference:
+                self.handle_error(row=row, message=msg)
+                return
+            if reference:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'source_reference', reference)
 
-                # -- Common name
-                if common_name:
+            # Common names
+            if common_name_objs:
+                if new_taxon or not use_proposal:
                     taxonomy.vernacular_names.clear()
-                    for _common_name in common_name:
-                        taxonomy.vernacular_names.add(_common_name)
-                else:
-                    if (
-                        not taxonomy.vernacular_names.exists() and
-                        taxonomy.gbif_key
-                    ):
+                    for vn in common_name_objs:
+                        taxonomy.vernacular_names.add(vn)
+                if use_proposal and proposal:
+                    proposal.vernacular_names.clear()
+                    for vn in common_name_objs:
+                        proposal.vernacular_names.add(vn)
+            else:
+                if taxonomy and taxonomy.gbif_key:
+                    if new_taxon or not use_proposal:
                         fetch_gbif_vernacular_names(taxonomy)
+                    if use_proposal and proposal:
+                        fetch_gbif_vernacular_names(proposal)
 
-                # -- Origin
-                origin_data, invasion = self.origin(row)
-                if origin_data:
-                    taxonomy.origin = origin_data
+            # Origin / invasion
+            origin_data, invasion = self.origin(row)
+            if origin_data:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'origin', origin_data)
+            if invasion:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'invasion', invasion)
 
-                if invasion:
-                    taxonomy.invasion = invasion
+            # Author(s)
+            if authors:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'author', authors)
 
-                # -- Author(s)
-                if authors:
-                    taxonomy.author = authors
+            # SpeciesGroup
+            if species_group:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'species_group', species_group)
 
-                # -- SpeciesGroup
-                if species_group:
-                    taxonomy.species_group = species_group
+            if fada_id and isinstance(fada_id, int):
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'fada_id', fada_id)
 
-                fada_id = self.get_row_value(row, FADA_ID)
-                # -- FADA ID
-                if fada_id:
-                    try:
-                        integer_part = fada_id.split('.', 1)[0]
-                        taxonomy.fada_id = int(integer_part)
-                    except ValueError:
-                        pass
+            if gbif_key:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'gbif_key', gbif_key)
 
-                if gbif_key:
-                    taxonomy.gbif_key = gbif_key
-
-                # -- Tags | Biographic distribution tags
-
-                # Clear tags
+            # Tags + biographic distributions
+            if new_taxon or not use_proposal:
                 taxonomy.tags.clear()
                 taxonomy.biographic_distributions.clear()
+            if use_proposal and proposal:
+                proposal.tags.clear()
+                proposal.biographic_distributions.clear()
 
-                # Adding tags
-                # Check Y Values
-                for key in row:
-                    row_value = self.get_row_value(row, key)
-                    if row_value.upper() == 'Y' or row_value == '?':
-                        # Remove (Y/N) or (y/n) from the key if present
-                        tag_key = re.sub(r'\(y/n\)', '',
-                                         key,
-                                         flags=re.IGNORECASE).strip()
-                        if key in BIOGRAPHIC_DISTRIBUTIONS:
-                            if row_value == '?':
-                                tag_key = f'{tag_key} (?)'
-                            try:
-                                taxon_tag, _ = TaxonTag.objects.get_or_create(
-                                    name=tag_key,
-                                    doubtful=row_value == '?'
-                                )
-                            except TaxonTag.MultipleObjectsReturned:
-                                taxon_tag = TaxonTag.objects.filter(
-                                    name=tag_key,
-                                    doubtful=row_value == '?'
-                                ).first()
+            for key in row:
+                row_value = self.get_row_value(row, key)
+                val_norm = _safe_strip(row_value)
+                if val_norm and (val_norm == '?' or _as_truthy(val_norm)):
+                    tag_label = _norm_key_label(key)
+                    if any(tag_label.lower() == bd.lower() for bd in BIOGRAPHIC_DISTRIBUTIONS):
+                        doubtful = (val_norm == '?')
+                        try:
+                            taxon_tag, _ = TaxonTag.objects.get_or_create(
+                                name=tag_label, defaults={'doubtful': doubtful}
+                            )
+                        except TaxonTag.MultipleObjectsReturned:
+                            taxon_tag = TaxonTag.objects.filter(name=tag_label, doubtful=doubtful).order_by('id').first() or TaxonTag.objects.filter(name=tag_label).order_by('id').first()
+                        if new_taxon or not use_proposal:
                             taxonomy.biographic_distributions.add(taxon_tag)
-                        elif row_value != '?':
-                            taxonomy.tags.add(tag_key)
+                        if use_proposal and proposal:
+                            proposal.biographic_distributions.add(taxon_tag)
+                    elif val_norm != '?':
+                        if new_taxon or not use_proposal:
+                            taxonomy.tags.add(tag_label)
+                        if use_proposal and proposal:
+                            proposal.tags.add(tag_label)
 
-                # -- Additional data
-                taxonomy.additional_data = json.dumps(row)
+            # Additional data
+            try:
+                addl = json.dumps(row)
+            except TypeError:
+                # Fallback: stringify
+                addl = json.dumps({str(k): str(v) for k, v in row.items()})
+            self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'additional_data', addl)
 
-                if taxonomy.canonical_name != taxon_name:
-                    taxonomy.canonical_name = taxon_name
+            if taxonomy.canonical_name != taxon_name:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'canonical_name', taxon_name)
 
-                if taxonomic_status:
-                    taxonomy.taxonomic_status = (
-                        taxonomic_status.strip().upper()
-                    )
+            if taxonomic_status:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'taxonomic_status', taxonomic_status.strip().upper())
 
-                if accepted_taxon:
-                    taxonomy.accepted_taxonomy = accepted_taxon
+            if accepted_taxon:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'accepted_taxonomy', accepted_taxon)
 
-                taxonomy.save()
+            taxonomy.save()
+            if proposal:
+                proposal.save()
 
-                # -- Add to taxon group
-                self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
+            # Taxon group linking (respects auto-validate in subclass)
+            self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
 
-                self.finish_processing_row(row, taxonomy)
+            self.finish_processing_row(row, taxonomy)
+
         except Exception as e:  # noqa
+            logger.exception('Error processing row for "%s": %s', taxon_name, e)
             self.handle_error(row, str(e))
 
 
 class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
     model_name = 'taxonomy'
 
-    def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
+    def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group, proposal=None):
         """
-        A helper function that calls `add_taxon_to_taxon_group` with
-        validated=False
+        Respect site preference: auto_validate_taxa_on_upload
         """
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
         self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
 
     def finish_processing_row(self, row, taxonomy):
-        # -- Add to taxon group
+        # Add to taxon group if missing
         taxon_group = self.upload_session.module_group
-        if not taxon_group.taxonomies.filter(
-            id=taxonomy.id
-        ).exists():
+        if not taxon_group.taxonomies.filter(id=taxonomy.id).exists():
             taxon_group.taxonomies.add(taxonomy)
 
-        # -- Add import date
-        taxonomy.import_date = (
-            self.upload_session.uploaded_at.date()
-        )
+        # Import date
+        taxonomy.import_date = self.upload_session.uploaded_at.date()
         taxonomy.save()
 
-        self.success_file(
-            row,
-            taxonomy.id
-        )
+        self.success_file(row, taxonomy.id)
 
     def handle_error(self, row, message):
-        self.error_file(
-            error_row=row,
-            error_message=message
-        )
+        self.error_file(error_row=row, error_message=message)
 
     def process_row(self, row):
         taxon_group = self.upload_session.module_group
