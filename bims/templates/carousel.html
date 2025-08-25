@@ -2,7 +2,7 @@
   {% if headers|length > 1 %}
     <ol class="carousel-indicators">
       {% for header in headers %}
-        <li data-target="#carouselIndicators" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active{% endif %}"></li>
+        <li data-target="#carouselIndicators" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
       {% endfor %}
     </ol>
   {% endif %}
@@ -21,21 +21,18 @@
         <link rel="stylesheet" href="{{ header.description_font_url }}">
       {% endif %}
 
-      {% with fit=header.banner_fit|default_if_none:"cover" hmode=header.banner_height_mode|default_if_none:"viewport_vh" hval=header.banner_height_value|default:60 posx=header.banner_position_x|default:"center" posy=header.banner_position_y|default:"center" %}
+      {% with fit=header.banner_fit|default_if_none:"cover" hmode=header.banner_height_mode|default_if_none:"viewport_vh" hval=header.banner_height_value|default:60 posx=header.banner_position_x|default:"center" posy=header.banner_position_y|default:"center" t_align=header.title_alignment|default:header.text_alignment d_align=header.description_alignment|default:header.text_alignment %}
       <div class="carousel-item {% if forloop.first %}active{% endif %}"
            style="
              /* Whole slide height */
              height:{% if hmode == 'fixed_px' %}{{ hval }}px{% elif hmode == 'viewport_vh' %}{{ hval }}vh{% else %}auto{% endif %};
              min-height: 400px;
-             /* Per-slide variables */
+
+             /* Per-slide variables (free positioning) */
              --title-top: {{ header.title_offset_y_percent|default:50 }}%;
-             --desc-top-raw: {{ header.description_offset_y_percent|default:60 }}%;
-             /* Keep desc target safely within the slide (leave ~8% bottom room) */
-             --desc-top: min(var(--desc-top-raw), 92%);
-             /* Max font sizes from model */
+             --desc-delta: {{ header.description_offset_y_percent|default:10 }}%;
              --title-max: {{ header.title_font_size|default:45 }}px;
              --desc-max:  {{ header.description_font_size|default:30 }}px;
-             /* Sensible minimums so text never disappears */
              --title-min: 22px;
              --desc-min:  16px;
            ">
@@ -48,12 +45,11 @@
         </div>
 
         <div class="carousel-text-layer">
-          <div class="carousel-text-stack"
-               style="text-align: {{ header.title_alignment|default:header.text_alignment }};">
+          <!-- Title: absolute, uses its own top -->
+          <div class="carousel-title-block" style="top: var(--title-top); text-align: {{ t_align }};">
             <p class="carousel-title-text"
                style="color: {{ header.text_color|default:'#FFFFFF' }};
                       font-family: {% firstof header.title_font_family 'inherit' %};
-                      /* Fluid font size with clamp(min, fluid, max) */
                       font-size: clamp(var(--title-min), calc(var(--title-max) * 0.35 + 2.2vw), var(--title-max));
                       font-weight: {% firstof header.title_font_weight '700' %};
                       letter-spacing: {{ header.title_letter_spacing_em|default:'0.00' }}em;
@@ -62,7 +58,9 @@
                       text-shadow: 2px 2px 5px rgba(0,0,0,0.64);">
               {{ header.title|linebreaksbr }}
             </p>
+          </div>
 
+          <div class="carousel-desc-block" style="top: calc(var(--title-top) + var(--desc-delta)); text-align: {{ d_align }};">
             <p class="carousel-desc-text"
                style="color: {{ header.text_color|default:'#FFFFFF' }};
                       font-family: {% firstof header.description_font_family header.title_font_family 'inherit' %};
@@ -80,7 +78,7 @@
             </p>
 
             {% if app == 'fbis' %}
-              <div style="text-align: {{ header.description_alignment|default:header.text_alignment }};">
+              <div style="text-align: {{ d_align }};">
                 {% if not user.is_authenticated %}
                   <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
                   <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
@@ -120,13 +118,14 @@
   .carousel-overlay {
     position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
   }
+
   .carousel-text-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
 
-  /* STACK: pin to the smaller of the two “top” values so we can space downwards */
-  .carousel-text-stack {
+  /* Independent absolute positioning for title & description */
+  .carousel-title-block,
+  .carousel-desc-block {
     position: absolute;
     left: 0; right: 0;
-    top: min(var(--title-top), var(--desc-top));
     padding: 0 1rem;
   }
 
@@ -138,18 +137,13 @@
     max-width: 100%;
   }
 
-  /* Space title/description based on requested tops, but never overlap */
-  .carousel-title-text   { margin-top: calc(max(0%, var(--title-top) - var(--desc-top))); }
-  .carousel-desc-text    { margin-top: calc(max(0%, var(--desc-top)  - var(--title-top))); }
-
-  /* Extra safety: make fonts shrink a bit more on very narrow screens */
+  /* Slightly stronger downscale on narrow screens */
   @media (max-width: 991.98px) {
     .carousel-title-text { font-size: clamp(var(--title-min), 2.8vw, var(--title-max)); }
     .carousel-desc-text  { font-size: clamp(var(--desc-min),  2.0vw, var(--desc-max)); }
   }
-
   @media (max-width: 575.98px) {
-    .carousel-text-stack { padding: 0 .75rem; }
+    .carousel-title-block, .carousel-desc-block { padding: 0 .75rem; }
     .carousel-title-text { font-size: clamp(var(--title-min), 5.2vw, var(--title-max)); }
     .carousel-desc-text  { font-size: clamp(var(--desc-min),  3.8vw, var(--desc-max)); }
   }
