@@ -3,15 +3,10 @@
 }
 
 .navbar {
-    background-color: var(--navbar-bg-color) !important;
+    background-color: var(--navbar-bg-color);
     transition: all 0.3s ease;
-    padding-top: 20px !important;
-    padding-bottom: 20px !important;
-}
-
-.navbar.shrink {
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 .navbar .navbar-brand img {
@@ -21,9 +16,4 @@
 
 .navbar.shrink .navbar-brand img {
     height: 35px;
-}
-
-.navbar-expand-md {
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
 }
