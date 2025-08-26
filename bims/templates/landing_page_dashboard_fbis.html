@@ -98,25 +98,25 @@
             totalSass += moduleData['total_sass'];
         }
         container.append(
-            `<h4 class="module-name" style="font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {{ custom_theme.summary_text_color|default:custom_theme.main_accent_color|default:'#00000' }}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}">${moduleName}</h4>`
+            `<h4 class="module-name">${moduleName}</h4>`
         )
 
         let $moduleInfoContainer = $(`<div class="module-info-container"/>`);
 
         $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-bottom: 0; font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {{ custom_theme.summary_text_color|default:custom_theme.main_accent_color|default:'#00000' }}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(totalRecords)}</span> Records</p>`
+            `<p class="module-info" style="margin-bottom: 0; font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalRecords)}</span> Records</p>`
         )
         $moduleInfoContainer.append(
-            `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {{ custom_theme.summary_text_color|default:custom_theme.main_accent_color|default:'#00000' }}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> ${locationSiteNamePlural}</p>`
+            `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> ${locationSiteNamePlural}</p>`
         )
         if (!hideSiteVisits) {
             $moduleInfoContainer.append(
-                `<p class="module-info" style="margin-top: 0;font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {{ custom_theme.summary_text_color|default:custom_theme.main_accent_color|default:'#00000' }}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
+                `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
             )
         }
         if (totalSass > 0) {
             $moduleInfoContainer.append(
-                `<p class="module-info" style="margin-top: 0;font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {{ custom_theme.summary_text_color|default:custom_theme.main_accent_color|default:'#00000' }}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`
+                `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`
             )
         }
 

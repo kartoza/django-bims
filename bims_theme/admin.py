@@ -40,6 +40,11 @@ class CustomThemeAdmin(admin.ModelAdmin):
         ("Landing Page", {
             "fields": ("landing_page_sections", "carousels", "hide_site_visit")
         }),
+        ("Summary Dashboard", {
+            "fields": ("landing_page_occurrence_records_title", "summary_font", "summary_font_size_px",
+                       "summary_text_color", "summary_background_color",
+                       "summary_text_case", "show_explore_map")
+        }),
         ("Partners & Funders", {
             "fields": (
                 "partners_section_title", "partners_section_order",
