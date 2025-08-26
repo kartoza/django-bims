@@ -23,6 +23,7 @@ class CustomThemeAdmin(admin.ModelAdmin):
                 "navbar_background_color",
                 "navbar_text_color",
                 "navbar_custom_typography_enabled",
+                "navbar_font_url",
                 "navbar_font_family",
                 "navbar_font_size_px",
                 "navbar_font_weight",
