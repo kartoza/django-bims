@@ -17,3 +17,10 @@
 .navbar.shrink .navbar-brand img {
     height: 35px;
 }
+
+.dropdown-menu-scrollable{
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}

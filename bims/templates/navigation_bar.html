@@ -104,7 +104,7 @@
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown01" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">Data</a>
-                        <div class="dropdown-menu" aria-labelledby="dropdown01">
+                        <div class="dropdown-menu dropdown-menu-scrollable" aria-labelledby="dropdown01">
                             <a class="dropdown-item" href="/source-references/">Source References</a>
                             <a class="dropdown-item" href="/site-visit/list/">Site Visits</a>
                         </div>
@@ -152,7 +152,7 @@
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown03" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">Discover</a>
-                        <div class="dropdown-menu" aria-labelledby="dropdown03">
+                        <div class="dropdown-menu dropdown-menu-scrollable" aria-labelledby="dropdown03">
                             {% for menu_item in custom_theme.menu_items.all %}
                                 <a class="dropdown-item" href="{{ menu_item.url }}" {% if menu_item.blank_target %}target="_blank"{% endif %}>{{ menu_item.title }}</a>
                             {% endfor %}
@@ -169,7 +169,7 @@
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown04" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">{{ user.first_name }}</a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown04">
+                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-scrollable" aria-labelledby="dropdown04">
                             <a class="dropdown-item" href="/profile/">Profile</a>
                             {% if not fada_site %}
                                 <a class="dropdown-item" href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a>
