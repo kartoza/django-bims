@@ -276,6 +276,48 @@ class CustomTheme(models.Model):
         help_text='Optional title text displayed in the login modal.'
     )
 
+    landing_page_occurrence_records_title = models.CharField(
+        default='BIODIVERSITY OCCURRENCE RECORDS',
+        help_text='Header title for the Biodiversity Occurrence Records section.',
+        max_length=150,
+    )
+
+    summary_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        null=True,
+        blank=True,
+        help_text="CSS font for the summary. Leave blank to use the site default.",
+        on_delete=models.SET_NULL,
+    )
+
+    summary_font_size_px = models.PositiveIntegerField(
+        default=23,
+        help_text="Base font size (px) for the summary content."
+    )
+
+    summary_text_color = ColorField(
+        null=True,
+        blank=True,
+        help_text="Text color used across the summary section."
+    )
+
+    summary_background_color = ColorField(
+        default='#FFFFFF',
+        help_text="Background color for the summary section."
+    )
+
+    summary_text_case = models.CharField(
+        max_length=12,
+        choices=NAVBAR_TEXT_CASE_CHOICES,
+        default='none',
+        help_text="Text transform for summary content (e.g. UPPERCASE)."
+    )
+
+    show_explore_map = models.BooleanField(
+        default=True,
+        help_text="Show the “Explore Map” button under the summary."
+    )
+
     class Meta:
         ordering = ("date", )
         verbose_name_plural = 'Custom Themes'

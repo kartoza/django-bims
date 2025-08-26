@@ -14,6 +14,7 @@
     <script type="text/javascript">
         const summaries = '{{ summaries|jsonify|safe }}';
         const showModuleSummaries = {% if preferences.SiteSetting.show_module_summary_on_dashboard %}true{% else %}false{% endif %};
+        window.showModuleSummaries = showModuleSummaries;
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
@@ -34,18 +35,20 @@
             </header>
             {% endif %}
             {% if not fada_site %}
-            <section class="biodiversity-data-container" style="position: relative;">
+            <section class="biodiversity-data-container" style="position: relative; background-color: {{ custom_theme.summary_background_color }}">
                 <div class="container">
                     <div class="row">
                         <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_occurrence_records_title }}</h2>
+                            <h2 class="section-heading" style="font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}">{{ custom_theme.landing_page_occurrence_records_title }}</h2>
                         </div>
                     </div>
                     {% include 'landing_page_dashboard.html' %}
 
+                    {% if custom_header.show_explore_map %}
                     <div class="row" style="display: flex; align-items: center; justify-content: center; margin-top: 20px;">
                         <a href="/map" class="btn btn-primary btn-explore-map"><i class="fa fa-map-o"></i> &nbsp;Explore Map »</a>
                     </div>
+                    {% endif %}
                 </div>
             </section>
             {% endif %}
