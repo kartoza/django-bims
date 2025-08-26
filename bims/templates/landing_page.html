@@ -50,25 +50,43 @@
             </section>
             {% endif %}
             {% if custom_theme.landing_page_sections %}
-                {% for landing_page_section in custom_theme.landing_page_sections.all %}
-                    <section class="biodiversity-data-container custom-sections"
-                             style="position: relative; background-color: {{ landing_page_section.background_color }}">
-                        <div class="container">
-                            {% if landing_page_section.title %}
-                                <div class="row">
-                                    <div class="col-lg-8 mx-auto text-center">
-                                        <h2 class="section-heading">{{ landing_page_section.title }}</h2>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            {% for section_content in landing_page_section.contents.all %}
-                                <div class="row">
-                                    {{ section_content.content | safe }}
-                                </div>
-                            {% endfor %}
+              {% for landing_page_section in custom_theme.landing_page_sections.all %}
+                {% with s=landing_page_section %}
+                  <section
+                    class="biodiversity-data-container custom-sections"
+                    style="
+                      position: relative;
+                      background-color: {{ s.background_color }};
+                      {% if s.background %}
+                        background-image: url('{{ s.background.url }}');
+                        background-repeat: no-repeat;
+                        background-size: {{ s.bg_size_css }};
+                        background-position: {{ s.bg_position_css }};
+                      {% endif %}
+                      {{ s.min_height_css }}
+                      {% if s.enable_border %}
+                        border-bottom: 1px solid {{ s.border_color|default:custom_theme.main_accent_color|default:'#e5e7eb' }};
+                      {% endif %}
+                    "
+                  >
+                    <div class="{% if s.full_width %}container-fluid px-0{% else %}container{% endif %}">
+                      {% if s.title %}
+                        <div class="row">
+                          <div class="col-lg-8 mx-auto text-center">
+                            <h2 class="section-heading">{{ s.title }}</h2>
+                          </div>
                         </div>
-                    </section>
-                {% endfor %}
+                      {% endif %}
+
+                      {% for section_content in s.contents.all %}
+                        <div class="row">
+                          {{ section_content.content|safe }}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </section>
+                {% endwith %}
+              {% endfor %}
             {% endif %}
             {% for funder_section in funders_partners %}
                 <section class="biodiversity-data-container grid-logos custom-sections" style="position: relative; background-color: {{ funder_section.color }}">

@@ -19,7 +19,6 @@ class CarouselHeader(OrderedModel):
         ('italic', 'Italic'),
     ]
 
-    # NEW: banner sizing/fit
     BANNER_FIT_CHOICES = [
         ('cover', 'Cover (fill area, crop if needed)'),
         ('contain', 'Contain (no crop)'),
