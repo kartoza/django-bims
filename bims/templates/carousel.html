@@ -10,17 +10,6 @@
   <div class="carousel-inner">
     {% for header in headers %}
 
-      {% if header.title_font_url %}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="{{ header.title_font_url }}">
-      {% endif %}
-      {% if header.description_font_url %}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="{{ header.description_font_url }}">
-      {% endif %}
-
       {% with fit=header.banner_fit|default_if_none:"cover" hmode=header.banner_height_mode|default_if_none:"viewport_vh" hval=header.banner_height_value|default:60 posx=header.banner_position_x|default:"center" posy=header.banner_position_y|default:"center" t_align=header.title_alignment|default:header.text_alignment d_align=header.description_alignment|default:header.text_alignment %}
       <div class="carousel-item {% if forloop.first %}active{% endif %}"
            style="
@@ -49,7 +38,7 @@
           <div class="carousel-title-block" style="top: var(--title-top); text-align: {{ t_align }};">
             <p class="carousel-title-text"
                style="color: {{ header.text_color|default:'#FFFFFF' }};
-                      font-family: {% firstof header.title_font_family 'inherit' %};
+                      font-family: {% firstof header.title_font_stack 'inherit' %};
                       font-size: clamp(var(--title-min), calc(var(--title-max) * 0.35 + 2.2vw), var(--title-max));
                       font-weight: {% firstof header.title_font_weight '700' %};
                       letter-spacing: {{ header.title_letter_spacing_em|default:'0.00' }}em;
@@ -63,7 +52,7 @@
           <div class="carousel-desc-block" style="top: calc(var(--title-top) + var(--desc-delta)); text-align: {{ d_align }};">
             <p class="carousel-desc-text"
                style="color: {{ header.text_color|default:'#FFFFFF' }};
-                      font-family: {% firstof header.description_font_family header.title_font_family 'inherit' %};
+                      font-family: {% firstof header.desc_font_stack header.title_font_stack 'inherit' %};
                       font-size: clamp(var(--desc-min),  calc(var(--desc-max) * 0.45 + 1.2vw), var(--desc-max));
                       font-weight: {% firstof header.description_font_weight '400' %};
                       letter-spacing: {{ header.description_letter_spacing_em|default:'0.00' }}em;

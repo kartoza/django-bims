@@ -15,6 +15,20 @@ class HeaderSerializer(serializers.ModelSerializer):
     color = serializers.CharField(source='text_color')
     overlay = serializers.CharField(source='background_color_overlay')
     overlay_opacity = serializers.SerializerMethodField()
+    title_font_stack = serializers.SerializerMethodField()
+    desc_font_stack = serializers.SerializerMethodField()
+
+    def get_desc_font_stack(self, obj):
+        custom_font = getattr(obj, 'description_font', None)
+        if custom_font:
+            return custom_font.font_stack
+        return None
+
+    def get_title_font_stack(self, obj):
+        custom_font = getattr(obj, 'title_font', None)
+        if custom_font:
+            return custom_font.font_stack
+        return None
 
     def get_file(self, obj: CarouselHeader):
         return getattr(obj.banner, 'name', None)
@@ -56,14 +70,14 @@ class HeaderSerializer(serializers.ModelSerializer):
             'banner_position_x',               # left / center / right
             'banner_position_y',               # top / center / bottom
 
-            'title_font_family',
+            'title_font_stack',
             'title_font_weight',
             'title_letter_spacing_em',
             'title_alignment',
             'title_offset_y_percent',
             'title_line_height_pct',
 
-            'description_font_family',
+            'desc_font_stack',
             'description_font_weight',
             'description_letter_spacing_em',
             'description_alignment',

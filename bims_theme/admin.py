@@ -1,7 +1,12 @@
 # coding=utf-8
 
 from django.contrib import admin
+from django import forms
+from django.conf import settings
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from ordered_model.admin import OrderedModelAdmin
+
+from bims.admins.custom_ckeditor_admin import CustomCKEditorAdmin
 from bims_theme.models import (
     CustomTheme,
     CarouselHeader,
@@ -10,6 +15,7 @@ from bims_theme.models import (
     LandingPageSectionContent,
     MenuItem
 )
+from bims_theme.models.font import CustomFont
 
 
 class CustomThemeAdmin(admin.ModelAdmin):
@@ -23,8 +29,7 @@ class CustomThemeAdmin(admin.ModelAdmin):
                 "navbar_background_color",
                 "navbar_text_color",
                 "navbar_custom_typography_enabled",
-                "navbar_font_url",
-                "navbar_font_family",
+                "navbar_font",
                 "navbar_font_size_px",
                 "navbar_font_weight",
                 "navbar_letter_spacing_em",
@@ -87,14 +92,14 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
         }),
         ("Title Typography & Position", {
             "fields": (
-                "title_font_url", "title_font_family", "title_font_weight",
+                "title_font", "title_font_weight",
                 "title_letter_spacing_em", "title_font_size",
                 "title_alignment", "title_offset_y_percent", "title_line_height_pct",
             )
         }),
         ("Description Typography & Position", {
             "fields": (
-                "description_font_url", "description_font_family", "description_font_weight",
+                "description_font", "description_font_weight",
                 "description_letter_spacing_em", "description_font_size",
                 "description_alignment", "description_offset_y_percent", "description_line_height_pct",
             )
@@ -114,12 +119,19 @@ class LandingPageSectionAdmin(OrderedModelAdmin):
     list_display = ('name', 'title', 'move_up_down_links')
 
 
-class LandingPageSectionContentAdmin(OrderedModelAdmin):
-    list_display = ('name', 'move_up_down_links')
+class LandingPageSectionContentAdmin(CustomCKEditorAdmin):
+    pass
 
 
 class MenuItemAdmin(OrderedModelAdmin):
     list_display = ('title', 'move_up_down_links')
+
+
+@admin.register(CustomFont)
+class CustomFontAdmin(OrderedModelAdmin):
+    list_display = ("name", "is_active", "css_url", "move_up_down_links")
+    list_editable = ("is_active",)
+    search_fields = ("name", "css_url")
 
 
 admin.site.register(CustomTheme, CustomThemeAdmin)

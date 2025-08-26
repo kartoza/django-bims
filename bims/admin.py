@@ -5,7 +5,6 @@ from datetime import timedelta
 from datetime import date
 import json
 
-from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django.contrib.sites.models import Site
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
@@ -32,6 +31,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
+from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory
@@ -132,14 +132,13 @@ from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
-from bims.utils.gbif import search_exact_match, get_species, suggest_search
+from bims.utils.gbif import suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
-from cloud_native_gis.models.layer_upload import LayerUpload
 
 
 class ExportCsvMixin:
@@ -2137,7 +2136,7 @@ class FlatPageExtensionInline(admin.StackedInline):
     fk_name = 'flatpage'
 
 
-class ExtendedFlatPageAdmin(FlatPageAdmin):
+class ExtendedFlatPageAdmin(CustomCKEditorAdmin, FlatPageAdmin):
     inlines = (FlatPageExtensionInline,)
 
     fieldsets = (
@@ -2152,7 +2151,7 @@ class ExtendedFlatPageAdmin(FlatPageAdmin):
 
     formfield_overrides = {
         models.TextField: {
-            'widget': CKEditorUploadingWidget}
+            'widget': DynamicCKEditorUploadingWidget}
     }
 
     def save_related(self, request, form, formsets, change):
