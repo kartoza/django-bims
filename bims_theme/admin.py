@@ -65,7 +65,44 @@ class CustomThemeAdmin(admin.ModelAdmin):
 
 
 class CarouselHeaderAdmin(OrderedModelAdmin):
-    list_display = ('order', 'description', 'banner', 'move_up_down_links')
+    list_display = ("__str__", "order", "move_up_down_links")
+    list_filter = ("banner_fit", "banner_height_mode", "text_alignment")
+    search_fields = ("title", "description")
+    ordering = ("order",)
+
+    fieldsets = (
+        ("Basic", {
+            "fields": ("banner", "title", "description")
+        }),
+        ("Overlay", {
+            "fields": ("background_color_overlay", "background_overlay_opacity", "text_color")
+        }),
+        ("Banner Display", {
+            "fields": (
+                "banner_fit", "banner_height_mode", "banner_height_value",
+                "banner_position_x", "banner_position_y",
+                "full_screen_background",
+            )
+        }),
+        ("Title Typography & Position", {
+            "fields": (
+                "title_font_url", "title_font_family", "title_font_weight",
+                "title_letter_spacing_em", "title_font_size",
+                "title_alignment", "title_offset_y_percent", "title_line_height_pct",
+            )
+        }),
+        ("Description Typography & Position", {
+            "fields": (
+                "description_font_url", "description_font_family", "description_font_weight",
+                "description_letter_spacing_em", "description_font_size",
+                "description_alignment", "description_offset_y_percent", "description_line_height_pct",
+            )
+        }),
+        ("Defaults / Fallbacks", {
+            "classes": ("collapse",),
+            "fields": ("text_alignment", "text_style"),
+        }),
+    )
 
 
 class PartnerAdmin(OrderedModelAdmin):
