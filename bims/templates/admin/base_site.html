@@ -1,4 +1,10 @@
 {% extends "admin/base.html" %}
+{% load static custom_font %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% custom_fonts_links %}
+{% endblock %}
 
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 

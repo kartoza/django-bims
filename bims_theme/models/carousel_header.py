@@ -19,7 +19,6 @@ class CarouselHeader(OrderedModel):
         ('italic', 'Italic'),
     ]
 
-    # NEW: banner sizing/fit
     BANNER_FIT_CHOICES = [
         ('cover', 'Cover (fill area, crop if needed)'),
         ('contain', 'Contain (no crop)'),
@@ -90,16 +89,12 @@ class CarouselHeader(OrderedModel):
         max_length=6, choices=[('top','Top'), ('center','Center'), ('bottom','Bottom')],
         default='center', help_text='Vertical focal point.'
     )
-    title_font_url = models.CharField(
-        blank=True, default='',
-        help_text=(
-            "e.g. https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700&"
-            "family=Roboto+Condensed:wght@100;300;400;500;700&display=swap"
-        )
-    )
-    title_font_family = models.CharField(
-        max_length=200, blank=True, default='',
-        help_text="CSS font-family for title, e.g. 'Alegreya, serif'."
+    title_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='carousel_title_font',
     )
     title_font_weight = models.CharField(
         max_length=3,
@@ -124,17 +119,14 @@ class CarouselHeader(OrderedModel):
         help_text='Title line-height as percent.'
     )
 
-    description_font_url = models.CharField(
-        blank=True, default='',
-        help_text=(
-            "e.g. https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700&"
-            "family=Roboto+Condensed:wght@100;300;400;500;700&display=swap"
-        )
+    description_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='carousel_description_font',
     )
-    description_font_family = models.CharField(
-        max_length=200, blank=True, default='',
-        help_text="CSS font-family for description."
-    )
+
     description_font_weight = models.CharField(
         max_length=3,
         choices=[('300','Light 300'), ('400','Regular 400'), ('500','Medium 500'), ('600','Semibold 600'), ('700','Bold 700')],

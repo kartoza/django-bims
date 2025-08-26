@@ -1,12 +1,6 @@
 {% load site %}
 {% is_fada_site as fada_site %}
 
-{% if custom_theme.navbar_custom_typography_enabled and custom_theme.navbar_font_url %}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="{{ custom_theme.navbar_font_url }}">
-{% endif %}
-
 <style>
   .navbar {
       background-color: var(--nb-bg) !important;
@@ -59,7 +53,7 @@
             --nb-bg: {{ custom_theme.navbar_background_color|default:'#343a40' }};
             --nb-color: {{ custom_theme.navbar_text_color|default:'#FFFFFF' }};
             {% if custom_theme.navbar_custom_typography_enabled %}
-                --nb-ff: {{ custom_theme.navbar_font_family|default:'\"Roboto Condensed\", sans-serif' }};
+                --nb-ff: {{ custom_theme.navbar_font.font_stack|default:'\"Roboto Condensed\", sans-serif' }};
                 --nb-fs: {{ custom_theme.navbar_font_size_px|default:16 }}px;
                 --nb-fw: {{ custom_theme.navbar_font_weight|default:'500' }};
                 --nb-ls: {{ custom_theme.navbar_letter_spacing_em|default:'0.00' }}em;
@@ -110,7 +104,7 @@
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown01" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">Data</a>
-                        <div class="dropdown-menu" aria-labelledby="dropdown01">
+                        <div class="dropdown-menu dropdown-menu-scrollable" aria-labelledby="dropdown01">
                             <a class="dropdown-item" href="/source-references/">Source References</a>
                             <a class="dropdown-item" href="/site-visit/list/">Site Visits</a>
                         </div>
@@ -158,7 +152,7 @@
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown03" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">Discover</a>
-                        <div class="dropdown-menu" aria-labelledby="dropdown03">
+                        <div class="dropdown-menu dropdown-menu-scrollable" aria-labelledby="dropdown03">
                             {% for menu_item in custom_theme.menu_items.all %}
                                 <a class="dropdown-item" href="{{ menu_item.url }}" {% if menu_item.blank_target %}target="_blank"{% endif %}>{{ menu_item.title }}</a>
                             {% endfor %}
@@ -175,7 +169,7 @@
                         <a class="nav-link dropdown-toggle" href="#"
                            id="dropdown04" data-toggle="dropdown"
                            aria-haspopup="true" aria-expanded="false">{{ user.first_name }}</a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown04">
+                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-scrollable" aria-labelledby="dropdown04">
                             <a class="dropdown-item" href="/profile/">Profile</a>
                             {% if not fada_site %}
                                 <a class="dropdown-item" href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a>

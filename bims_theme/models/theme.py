@@ -62,18 +62,12 @@ class CustomTheme(models.Model):
         default=False,
         help_text="Enable custom font for the navbar. If disabled, theme/site defaults are used."
     )
-    navbar_font_url = models.CharField(
-        blank=True, default='',
-        help_text=(
-            "e.g. https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700&"
-            "family=Roboto+Condensed:wght@100;300;400;500;700&display=swap"
-        )
-    )
-    navbar_font_family = models.CharField(
-        max_length=200,
+    navbar_font = models.ForeignKey(
+        'bims_theme.CustomFont',
         blank=True,
-        default='',
-        help_text="CSS font-family for navbar text, e.g. 'Inter, system-ui, sans-serif'."
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='theme_navbar_font',
     )
     navbar_font_size_px = models.PositiveIntegerField(
         default=16,

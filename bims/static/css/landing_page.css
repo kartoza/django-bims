@@ -463,7 +463,6 @@ html, body {
 .biodiversity-data-container {
     padding-top: 100px;
     padding-bottom: 100px;
-    border-bottom: 1px solid var(--main-accent-color);
 }
 
 .btn-explore-map {
