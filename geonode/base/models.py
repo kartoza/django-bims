@@ -500,7 +500,7 @@ class ResourceBase(PolymorphicModel, ItemBase):
     contacts = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through='ContactRole')
-    title = models.CharField(_('title'), max_length=255, help_text=_(
+    title = models.CharField(_('title'), max_length=512, help_text=_(
         'name by which the cited resource is known'))
     alternate = models.CharField(max_length=128, null=True, blank=True)
     date = models.DateTimeField(
