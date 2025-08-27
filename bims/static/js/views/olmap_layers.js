@@ -518,30 +518,37 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
         ) {
             const $legendHost   = $('#map-legend');
             const legendRowSel  = `.legend-row[data-name="${id}"]`;
-            let attributeField = '';
 
             function getFilteredValues(filter) {
                 let result = { field: null, values: [] };
                 function walk(expr) {
-                    if (!Array.isArray(expr)) { return; }
-                    let op   = expr[0];
-                    let rest = expr.slice(1);
+                    if (!Array.isArray(expr)) return;
+                    const op = expr[0];
+                    const rest = expr.slice(1);
                     if (op === 'all' || op === 'any') {
-                        for (var i = 0; i < rest.length; i++) { walk(rest[i]); }
-                    }
-                    else if (op === '==' || op === 'in' || op === '!in') {
-                        let field = rest[0];
-                        if (field === '$type') { return; }
-                        if (!result.field) { result.field = field; }
-                        if (op === '==') {
-                            result.values.push(rest[1]);
-                        } else {
-                            result.values = result.values.concat(rest.slice(1));
-                        }
+                        for (let i = 0; i < rest.length; i++) walk(rest[i]);
+                    } else if (op === '==' || op === 'in' || op === '!in') {
+                        const field = rest[0];
+                        if (field === '$type') return;
+                        if (!result.field) result.field = field;
+                        if (op === '==') result.values.push(rest[1]);
+                        else result.values = result.values.concat(rest.slice(1));
                     }
                 }
                 walk(filter);
                 return result;
+            }
+
+            function isGeometryOnlyFilter(filter) {
+                if (!Array.isArray(filter)) return false;
+                function rec(expr) {
+                    if (!Array.isArray(expr)) return true;
+                    const [op, ...rest] = expr;
+                    if (op === 'all' || op === 'any') return rest.every(rec);
+                    if ((op === '==' || op === 'in' || op === '!in') && rest[0] === '$type') return true;
+                    return false;
+                }
+                return rec(filter);
             }
 
             function makeSwatch(fillColor, strokeColor = 'transparent') {
@@ -560,90 +567,135 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
 
             const fragment = document.createDocumentFragment();
             const title    = document.createElement('strong');
+            let $row = $(legendRowSel);
+
             title.textContent = name;
             fragment.appendChild(title);
             fragment.appendChild(document.createElement('br'));
-             if (Array.isArray(styles) && styles.length > 0) {
+
+            const legendAdded = new Set();
+            let enableHover = false;
+
+            const attrFocus = Array.isArray(styles) && styles.some(r => {
+                const info = getFilteredValues(r.filter);
+                return info.field && info.values.length > 0;
+            });
+
+            if (Array.isArray(styles) && styles.length > 0) {
                 styles.forEach(rule => {
                     const paint = rule.paint || {};
-                    const fillColor = paint['fill-color'] || paint['circle-color'] || paint['line-color'] || 'transparent';
-                    const strokeColor = paint['fill-outline-color'] || paint['circle-stroke-color'] || paint['line-color'] ||'transparent';
+                    const fillColor =
+                        paint['fill-color']   ||
+                        paint['circle-color'] ||
+                        paint['line-color']   ||
+                        'transparent';
+                    const strokeColor =
+                        paint['fill-outline-color']   ||
+                        paint['circle-stroke-color']  ||
+                        paint['line-color']           ||
+                        'transparent';
 
                     const info = getFilteredValues(rule.filter);
-                    if (!attributeField) {
-                        attributeField = info.field ? info.field : attributeField;
-                    }
-                    if ((!info.field || info.values.length === 0) &&
-                        fillColor !== 'transparent') {
+
+                    if (attrFocus && (!info.field || info.values.length === 0)) return;
+
+                    if (!attrFocus && (!info.field || info.values.length === 0) && fillColor !== 'transparent') {
                         const geomType = (function unpack(expr) {
-                            if (!Array.isArray(expr)) { return null; }
-                            if (expr[0] === '==' && expr[1] === '$type') {
-                                return expr[2];
-                            }
+                            if (!Array.isArray(expr)) return null;
+                            if (expr[0] === '==' && expr[1] === '$type') return expr[2];
                             for (let i = 1; i < expr.length; i++) {
-                                const t = unpack(expr[i]);
-                                if (t) { return t; }
+                                const t = unpack(expr[i]); if (t) return t;
                             }
                             return null;
-                        })(rule.filter) || 'Geometry';
+                        })(rule.filter) || rule.source;
+
+                        const isGenericGeom =
+                            geomType === 'Polygon' || geomType === 'LineString' || geomType === 'Point';
+
+                        const hasMoreInformativeRule = styles.some(s =>
+                            s !== rule &&
+                            s.source === rule.source &&
+                            s['source-layer'] === rule['source-layer'] &&
+                            (s.type !== 'fill' || !isGeometryOnlyFilter(s.filter))
+                        );
+
+                        if (isGenericGeom && hasMoreInformativeRule) return;
+
+                        const key = `generic::${geomType}`;
+                        if (legendAdded.has(key)) return;
+
                         const item = document.createElement('div');
                         item.className = 'legend-item';
+                        item.dataset.field = '$type';
+                        item.dataset.value = geomType;
                         const swatch = makeSwatch(fillColor, strokeColor);
                         item.appendChild(swatch);
                         item.appendChild(document.createTextNode(geomType));
+                        legendAdded.add(key);
                         fragment.appendChild(item);
+                        enableHover = true;
                         return;
                     }
-                    if (info.values.length === 0 || fillColor === 'transparent') {
-                        return;
-                    }
+
+                    if (info.values.length === 0 || fillColor === 'transparent') return;
+
                     info.values.forEach(value => {
+                        const key = `${info.field}::${String(value)}`;
+                        if (legendAdded.has(key)) return;
+
                         const item = document.createElement('div');
                         item.className = 'legend-item';
+                        item.dataset.field = info.field;
                         item.dataset.value = value;
 
                         const swatch = makeSwatch(fillColor, strokeColor);
-                        const label = document.createTextNode(value);
-
                         item.appendChild(swatch);
-                        item.appendChild(label);
+                        item.appendChild(document.createTextNode(String(value)));
+
+                        legendAdded.add(key);
                         fragment.appendChild(item);
+                        enableHover = true;
                     });
                 });
             } else {
                 fragment.append('No styles available');
             }
 
-            let $row = $(legendRowSel);
             if ($row.length === 0) {
-                $row = $('<div>', {class: 'legend-row', 'data-name': id}).appendTo($legendHost);
+                $row = $('<div>', { class: 'legend-row', 'data-name': id }).appendTo($legendHost);
             } else {
                 $row.empty();
             }
             $row.css('display', visible ? '' : 'none');
             $row.append(fragment);
-            const that = this;
 
-            if (attributeField) {
+            const that = this;
+            if (enableHover) {
                 $row.on('mouseenter', '.legend-item', function () {
-                    let hoveredValue = $(this).data('value');
+                    const hoveredField = $(this).data('field');
+                    const hoveredValue = $(this).data('value');
 
                     if (!vectorTileLayer.get('origStyle')) {
                         vectorTileLayer.set('origStyle', vectorTileLayer.getStyle() || null);
                     }
-                    var origStyle = vectorTileLayer.get('origStyle');
+                    const origStyle = vectorTileLayer.get('origStyle');
 
-                    var highlightStyle = function (feature, resolution) {
-                        var base = (typeof origStyle === 'function')
+                    const highlightStyle = function (feature, resolution) {
+                        const base = (typeof origStyle === 'function')
                             ? origStyle.call(this, feature, resolution)
                             : origStyle;
-                        var styles = (Array.isArray(base) ? base : [base]).filter(Boolean);
-                        if (!styles.length) { return styles; }
-                        var isMatch = (feature.get(attributeField) === hoveredValue);
+                        let styles = (Array.isArray(base) ? base : [base]).filter(Boolean);
+                        if (!styles.length) return styles;
+
+                        // NEW: if hoveredField === '$type', highlight ALL features
+                        const isMatch = (hoveredField === '$type')
+                            ? true
+                            : (feature.get(hoveredField) === hoveredValue);
+
                         styles = styles.map(function (s) {
-                            var sty = s.clone();
+                            const sty = s.clone();
                             if (isMatch) {
-                                var stroke = sty.getStroke();
+                                let stroke = sty.getStroke();
                                 if (!stroke) {
                                     stroke = new ol.style.Stroke({ color: '#ffff00', width: 3 });
                                     sty.setStroke(stroke);
@@ -654,7 +706,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'jqueryTouch',
                             }
                             return sty;
                         });
-
                         return styles;
                     };
                     vectorTileLayer.setStyle(highlightStyle);
