@@ -18,6 +18,7 @@ from bims.serializers.taxon_serializer import (
     TaxonSerializer,
     TaxonExportSerializer
 )
+from bims.models.dataset import Dataset
 from bims.models.source_reference import (
     SourceReferenceBibliography,
     SourceReferenceDocument,
@@ -159,6 +160,28 @@ class BioCollectionOneRowSerializer(
     wetland_indicator_status = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
     data_type = serializers.SerializerMethodField()
+    dataset = serializers.SerializerMethodField()
+
+    def get_dataset(self, obj: BiologicalCollectionRecord):
+        if obj.dataset_key:
+            dataset = self.get_context_cache(
+                'dataset',
+                obj.dataset_key
+            )
+            if not dataset:
+                try:
+                    dataset = Dataset.objects.get(uuid=obj.dataset_key)
+                    self.set_context_cache(
+                        'dataset',
+                        obj.dataset_key,
+                        dataset
+                    )
+                    return dataset.abbreviation
+                except Dataset.DoesNotExist:
+                    return ''
+            else:
+                return dataset.abbreviation
+        return ''
 
     def taxon_name_by_rank(
             self,
@@ -716,6 +739,8 @@ class BioCollectionOneRowSerializer(
             'recorded_by',
             'decision_support_tool',
             'record_type',
+            'dataset',
+            'dataset_key',
             'cites_listing',
             'data_type'
         ]

@@ -322,6 +322,9 @@ def process_gbif_row(
         collection_record.owner = owner
         collection_record.validated = True
 
+        if dataset_key:
+            collection_record.dataset_key = dataset_key
+
         if habitat:
             collection_record.collection_habitat = habitat.lower()
 
@@ -358,7 +361,8 @@ def process_gbif_row(
             reference=reference,
             module_group=taxon_group,
             validated=True,
-            additional_data=additional_data
+            additional_data=additional_data,
+            dataset_key=dataset_key or ''
         )
 
         if habitat:

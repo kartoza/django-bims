@@ -281,6 +281,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         blank=True
     )
 
+    dataset_key = models.CharField(
+        help_text='Dataset key',
+        default='',
+        blank=True,
+        null=True,
+    )
+
     additional_data = JSONField(
         blank=True,
         null=True
