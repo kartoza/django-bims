@@ -682,7 +682,8 @@ def generate_site_code(
                 location_site.additional_data and
                 'wetlid' in location_site.additional_data
             ) else {}
-            site_code = wetland_catchment(lat, lon, wetland_data, wetland_name)
+            new_wetland_data, site_code = wetland_catchment(lat, lon, wetland_data, wetland_name)
+            catchments_data = new_wetland_data
         elif ecosystem_type.lower() == 'open waterbody':
             site_code = open_waterbody_catchment(
                 lat, lon, river_name

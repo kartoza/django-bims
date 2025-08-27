@@ -6,16 +6,18 @@ from django.db import ProgrammingError
 
 
 class LocationContextQuerySet(models.QuerySet):
-    def value_from_key(self, key='', layer_name=''):
+    def value_from_key(self, key='', layer_name='', layer_identifier=''):
         if layer_name:
             from cloud_native_gis.models import Layer
             layer = Layer.objects.filter(name__istartswith=layer_name).first()
             if layer:
                 key = layer.unique_id
         try:
-            values = self.filter(
-                group__key=key
-            ).order_by(
+            context_data = self.filter(group__key=key)
+            if layer_identifier:
+                context_data = context_data.filter(
+                    group__layer_identifier=layer_identifier)
+            values = context_data.order_by(
                 '-fetch_time'
             ).values_list(
                 'value', flat=True
