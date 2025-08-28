@@ -49,7 +49,7 @@ django-crispy-forms==1.9.1
 selenium==3.141.0
 django-admin-rangefilter==0.6.0
 django-preferences==1.0.0
-PyGithub==1.51
+PyGithub==2.7.0
 sorl-thumbnail==12.9.0
 svglib==1.0.0
 simplejson==3.17.0
