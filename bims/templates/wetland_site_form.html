@@ -96,7 +96,7 @@
                     <input type="text" name="wetland_name" id="river_name" class="form-control form-control-sm" value="{% if wetland_name %}{{ wetland_name }}{% else %}{% endif %}" readonly>
                 </div>
                 <div class="col-sm-4">
-                    <button disabled type="button" class="btn btn-default" id="fetch-wetland-name" style="width: 100%"> Fetch Wetland Name </button>
+                    <button {% if not update or not allow_to_edit %}disabled{% endif %} type="button" class="btn btn-default" id="fetch-wetland-name" style="width: 100%"> Fetch Wetland Name </button>
                 </div>
             </div>
             <div class="form-group row">
@@ -150,7 +150,7 @@
                            placeholder="" value="{{ hydrogeomorphic_type }}" readonly>
                 </div>
                 <div class="col-sm-4">
-                    <button type="button" disabled class="btn btn-default" id="fetch-hydrogeomorphic-type" style="width: 100%">
+                    <button type="button" {% if not update or not allow_to_edit %}disabled{% endif %} class="btn btn-default" id="fetch-hydrogeomorphic-type" style="width: 100%">
                         Fetch data
                     </button>
                 </div>
@@ -379,4 +379,10 @@
 
     <script src="{% static "js/wetland_site.js" %}"></script>
 
+    {% if update %}
+        <script>
+            console.log('test')
+            updateCurrentCoordinate()
+        </script>
+    {% endif %}
 {% endblock %}

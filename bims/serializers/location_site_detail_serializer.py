@@ -38,7 +38,8 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
                     LocationContext.objects.filter(
                         site=obj
                     ).value_from_key(
-                        filter_group.group.key
+                        key=filter_group.group.key,
+                        layer_identifier=filter_group.group.layer_identifier
                     )
                 )
         return context_data

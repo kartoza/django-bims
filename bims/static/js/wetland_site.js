@@ -12,7 +12,7 @@ if (window.wetlandData) {
   wetlandData = window.wetlandData;
 }
 
-updateCoordinate = function (zoomToMap = true) {
+updateCurrentCoordinate = function () {
   try {
     let latitude = parseFloat($('#latitude').val());
     let longitude = parseFloat($('#longitude').val());
@@ -20,10 +20,15 @@ updateCoordinate = function (zoomToMap = true) {
       return false;
     }
     let _coordinates = ol.proj.transform([longitude, latitude], 'EPSG:4326', 'EPSG:3857');
-    mapClicked(_coordinates);
+    currentCoordinate = _coordinates;
   } catch (e) {
     return false;
   }
+}
+
+updateCoordinate = function (zoomToMap = true) {
+  updateCurrentCoordinate();
+  mapClicked(currentCoordinate);
 };
 
 const getFeature = (layerSource, coordinates, renderResult) => {
@@ -236,8 +241,7 @@ wetlandSiteCodeButton.click(function () {
   let latitude = parseFloat($('#latitude').val());
   let longitude = parseFloat($('#longitude').val());
 
-  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#user_river_name').val()}&lat=${latitude}&lon=${longitude}`;
-  console.log(url)
+  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#river_name').val() || $('#user_river_name').val()}&lat=${latitude}&lon=${longitude}`;
 
   $.ajax({
     url: url,

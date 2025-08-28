@@ -345,7 +345,7 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
     elif user_wetland_name:
         wetland_site_code += user_wetland_name.replace(' ', '')[:4]
 
-    return wetland_site_code
+    return wetland_data, wetland_site_code
 
 
 def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
