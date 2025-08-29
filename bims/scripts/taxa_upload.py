@@ -37,6 +37,7 @@ from preferences import preferences
 
 logger = logging.getLogger('bims')
 
+NAME_SIM_THRESHOLD = 0.75
 _TRUTHY = {'y', 'true', 't', '✓'}
 
 def _as_truthy(val) -> bool:
@@ -495,6 +496,18 @@ class TaxaProcessor(object):
             taxon_name = _safe_strip(
                 self.get_row_value(row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
 
+        if 'species' in str(rank).lower():
+            taxon_name = self._compose_species_name(row)
+
+        if rank == SUBSPECIES:
+            sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
+            if sub_species_name and taxon_name not in sub_species_name and not sub_species_name[0].isupper():
+                taxon_name = f'{taxon_name} {sub_species_name}'
+
+        if not taxon_name:
+            self.handle_error(row=row, message='Missing Taxon value')
+            return
+
         # GBIF key
         gbif_key = None
         if on_gbif:
@@ -525,7 +538,7 @@ class TaxaProcessor(object):
                         row=row,
                         message=(
                             f'GBIF key {gbif_key} rank mismatch: expected {expected_rank}, '
-                            f'got {gbif_rank}; ignoring key.'
+                            f'got {gbif_rank}.'
                         )
                     )
                     return
@@ -535,41 +548,41 @@ class TaxaProcessor(object):
                     else:
                         expected_name = taxon_name
 
-                    expected_norm = _canon(expected_name)
+                    expected_norm = _canon(expected_name) if expected_name else ""
+
                     gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
-                    gbif_norm = _canon(gbif_canonical)
+                    gbif_norm = _canon(gbif_canonical) if gbif_canonical else ""
 
-                    ratio = 1.0 if not expected_norm or not gbif_norm else \
-                        difflib.SequenceMatcher(None, expected_norm, gbif_norm).ratio()
+                    ratio = (
+                        1.0
+                        if not expected_norm or not gbif_norm
+                        else difflib.SequenceMatcher(None, expected_norm, gbif_norm).ratio()
+                    )
 
-                    genus_ok = True
-                    csv_genus = _safe_strip(self.get_row_value(row, GENUS))
-                    gbif_genus = _safe_strip(gbif_rec.get("genus"))
+                    csv_genus = _safe_strip(self.get_row_value(row, GENUS)) or ""
+                    gbif_genus = _safe_strip(gbif_rec.get("genus")) or ""
+
                     if csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower():
-                        genus_ok = False
-
-                    if ratio < 0.75 or not genus_ok:
                         self.handle_error(
                             row=row,
                             message=(
-                                f"GBIF key {gbif_key} name mismatch (ratio={ratio:.2f}): "
-                                f"expected '{expected_name}' ~ '{expected_norm}'; "
-                                f"GBIF '{gbif_canonical}' ~ '{gbif_norm}'. Ignoring key."
+                                f"GBIF key {gbif_key}: genus mismatch - CSV genus '{csv_genus}' "
+                                f"!= GBIF genus '{gbif_genus}'. "
+                                f"Fix the GBIF key to the taxon under '{csv_genus}', or set 'On GBIF' to No "
+                                f"if this row should not be GBIF-linked."
                             ),
                         )
                         return
-
-        if 'species' in str(rank).lower():
-            taxon_name = self._compose_species_name(row)
-
-        if rank == SUBSPECIES:
-            sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
-            if sub_species_name and taxon_name not in sub_species_name and not sub_species_name[0].isupper():
-                taxon_name = f'{taxon_name} {sub_species_name}'
-
-        if not taxon_name:
-            self.handle_error(row=row, message='Missing Taxon value')
-            return
+                    if ratio < NAME_SIM_THRESHOLD:
+                        self.handle_error(
+                            row=row,
+                            message=(
+                                f"GBIF key {gbif_key}: name mismatch (similarity={ratio:.2f} < {NAME_SIM_THRESHOLD}). "
+                                f"Expected '{expected_name}' ~ '{expected_norm}'; "
+                                f"GBIF '{gbif_canonical}' ~ '{gbif_norm}'."
+                            ),
+                        )
+                        return
 
         # FADA id (integer part)
         fada_id = self.get_row_value(row, FADA_ID)
@@ -820,7 +833,11 @@ class TaxaProcessor(object):
                                 name=tag_label, defaults={'doubtful': doubtful}
                             )
                         except TaxonTag.MultipleObjectsReturned:
-                            taxon_tag = TaxonTag.objects.filter(name=tag_label, doubtful=doubtful).order_by('id').first() or TaxonTag.objects.filter(name=tag_label).order_by('id').first()
+                            taxon_tag = TaxonTag.objects.filter(
+                                name=tag_label, doubtful=doubtful
+                            ).order_by('id').first() or TaxonTag.objects.filter(
+                                name=tag_label
+                            ).order_by('id').first()
                         if new_taxon or not use_proposal:
                             taxonomy.biographic_distributions.add(taxon_tag)
                         if use_proposal and proposal:
