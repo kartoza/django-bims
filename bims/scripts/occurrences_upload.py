@@ -230,13 +230,13 @@ class OccurrenceProcessor(object):
             section_file = preferences.SiteSetting.section_layer_csv
             if section_file:
                 if not self.section_data:
-                    with open(section_file.path, mode='r') as file:
-                        reader = csv.DictReader(file, delimiter=',')
-                        section_key = reader.fieldnames[0].strip().lower()
-                        for row in reader:
-                            _section_name = row[section_key].strip().lower()
-                            lat = float(row['x'])
-                            lon = float(row['y'])
+                    with open(section_file.path, mode='r') as section_file_obj:
+                        section_reader = csv.DictReader(section_file_obj, delimiter=',')
+                        section_key = section_reader.fieldnames[0]
+                        for section_row in section_reader:
+                            _section_name = section_row[section_key].strip().lower()
+                            lat = float(section_row['x'])
+                            lon = float(section_row['y'])
                             self.section_data[_section_name] = {
                                 'lat': lat,
                                 'lon': lon
@@ -255,14 +255,14 @@ class OccurrenceProcessor(object):
 
             if park_mpa_csv_file:
                 if not self.parks_data:
-                    with open(park_mpa_csv_file.path, mode='r') as file:
-                        reader = csv.DictReader(file, delimiter=',')
-                        for row in reader:
+                    with open(park_mpa_csv_file.path, mode='r') as park_file:
+                        park_reader = csv.DictReader(park_file, delimiter=',')
+                        for park_row in park_reader:
                             _park_name = (
-                                row['Park_Name'].strip().lower()
+                                park_row['Park_Name'].strip().lower()
                             )
-                            lat = float(row['x'])
-                            lon = float(row['y'])
+                            lat = float(park_row['x'])
+                            lon = float(park_row['y'])
                             self.parks_data[_park_name] = {
                                 'lat': lat,
                                 'lon': lon
