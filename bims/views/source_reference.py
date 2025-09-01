@@ -7,7 +7,7 @@ from django.views.generic import ListView, UpdateView, View, CreateView
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.http import Http404
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -206,23 +206,42 @@ class DeleteSourceReferenceView(UserPassesTestMixin, View):
         return self.request.user.has_perm('bims.change_sourcereference')
 
     def post(self, request, *args, **kwargs):
-        reference_id = self.request.POST.get('reference_id', None)
-        next_path = request.POST.get('next', reverse('source-references'))
-        try:
-            source_reference = SourceReference.objects.get(
-                id=reference_id
+        reference_id = request.POST.get('reference_id')
+        if not reference_id:
+            return JsonResponse(
+                {'success': False, 'message': 'No reference ID provided.'},
+                status=400
             )
+
+        try:
+            source_reference = SourceReference.objects.get(id=reference_id)
         except SourceReference.DoesNotExist:
-            raise Http404('Source reference does not exist')
+            return JsonResponse(
+                {'success': False, 'message': 'Source reference does not exist.'},
+                status=404
+            )
+
+        collection_records = BiologicalCollectionRecord.objects.filter(
+            source_reference=source_reference
+        )
+        if collection_records.exists():
+            return JsonResponse(
+                {
+                    'success': False,
+                    'message': (
+                        f'Source reference "{source_reference.title}" is linked to collection records. '
+                        f'Delete those records before removing this reference.'
+                    )
+                },
+                status=400
+            )
+
         source_reference_name = source_reference.title
         source_reference.delete()
-        messages.success(
-            request,
-            'Source reference {} successfully deleted!'.format(
-                source_reference_name
-            ),
-            extra_tags='source_reference')
-        return HttpResponseRedirect(next_path)
+
+        return JsonResponse(
+            {'success': True, 'message': f'Source reference "{source_reference_name}" successfully deleted!'}
+        )
 
 
 class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
