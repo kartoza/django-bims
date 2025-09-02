@@ -145,12 +145,20 @@
         </div>
 
         <div class="form-group row">
-            <label for="data-source" class="col-sm-2">Site Image</label>
+            <label class="col-sm-2 col-form-label">Site Images</label>
             <div class="col-sm-10">
-                {% if site_image %}
-                <img id="site_image" class="site-image" src="{{ site_image.image.url }}" {% if site_image.image.url %} style="display: block" {% endif %}>
+                {% if site_images %}
+                    <div class="third-party-wrapper">
+                        {% for img in site_images %}
+                            <div class="item">
+                                <a href="{{ img.image.url }}" target="_blank" rel="noopener">
+                                    <img src="{{ img.image.url }}" style="max-height: 350px; object-fit: cover;">
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% else %}
-                -
+                    <input class="form-control" disabled value="-">
                 {% endif %}
             </div>
         </div>

@@ -2,7 +2,7 @@ import threading
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
-from bims.models import WaterTemperature
+from bims.models import WaterTemperature, SiteImage
 from bims.models.location_site import LocationSite
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -60,6 +60,16 @@ class SiteVisitDeleteView(UserPassesTestMixin, View):
         with schema_context(tenant.schema_name):
             survey = Survey.objects.get(id=site_visit_id)
             surveys = Survey.objects.filter(site=survey.site)
+
+            site_images_qs = SiteImage.objects.filter(survey=survey)
+            for si in site_images_qs:
+                if getattr(si, "image", None):
+                    try:
+                        si.image.delete(save=False)
+                    except Exception:
+                        pass
+            site_images_qs.delete()
+
             BiologicalCollectionRecord.objects.filter(survey=survey).delete()
             ChemicalRecord.objects.filter(survey=survey).delete()
             Survey.objects.filter(id=survey.id).delete()
