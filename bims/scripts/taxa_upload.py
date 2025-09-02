@@ -320,60 +320,79 @@ class TaxaProcessor(object):
     def validate_parents(self, taxon, row):
         """
         Validate and (if needed) rebuild the parent chain using CSV hints.
+        Works for Taxonomy and (optionally) proposal-like objects that have a 'parent' FK.
         """
-        if not taxon:
+        if taxon is None:
             return False, 'Missing taxon'
 
-        if not taxon.rank or self.rank_name(taxon) not in RANK_INDEX:
-            return False, f"Rank '{self.rank_name(taxon) or 'UNKNOWN'}' not recognized in the hierarchy."
+        if not hasattr(taxon, 'parent'):
+            return False, "Object doesn't have a 'parent' field"
+
+        rank_name = self.rank_name(taxon)
+        if not rank_name or rank_name not in RANK_INDEX:
+            return False, f"Rank '{rank_name or 'UNKNOWN'}' not recognized in the hierarchy."
 
         max_try = 15
-        current_try = 0
-        rank_index = RANK_INDEX[self.rank_name(taxon)]
+        rank_index = RANK_INDEX[rank_name]
 
-        while current_try < max_try and rank_index > 0:
-            current_try += 1
+        cursor = taxon
+
+        while max_try > 0 and rank_index > 0:
+            max_try -= 1
             parent_rank_name = RANK_HIERARCHY[rank_index - 1]
-            csv_parent_name = self.get_row_value(row, RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name.capitalize()))
+            csv_parent_name = self.get_row_value(
+                row, RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name.capitalize())
+            )
 
-            # When setting a SPECIES parent for a subspecific rank, ensure genus is included.
             if parent_rank_name == 'SPECIES' and csv_parent_name:
                 genus_name = _safe_strip(self.get_row_value(row, 'Genus'))
                 if genus_name and genus_name.lower() not in str(csv_parent_name).lower():
                     csv_parent_name = f'{genus_name} {csv_parent_name}'.strip()
 
-            if not csv_parent_name:
-                rank_index -= 1
-                continue
-
-            current_parent = taxon.parent
+            current_parent = getattr(cursor, 'parent', None)
 
             if current_parent:
-                # Mismatch -> fetch/create correct parent
-                if current_parent.canonical_name.lower() != str(csv_parent_name).lower() or _safe_upper(current_parent.rank) != parent_rank_name:
-                    correct_parent = self.get_parent(row, RANK_TITLE.get(parent_rank_name.upper(), parent_rank_name))
+                name_mismatch = (
+                        current_parent.canonical_name.lower() != str(csv_parent_name or '').lower()
+                )
+                rank_mismatch = _safe_upper(current_parent.rank) != parent_rank_name
+                if name_mismatch or rank_mismatch:
+                    correct_parent = self.get_parent(row, parent_rank_name)
                     if correct_parent:
-                        taxon.parent = correct_parent
-                        taxon.save()
-                        taxon = correct_parent
+                        if hasattr(cursor, 'parent'):
+                            cursor.parent = correct_parent
+                            try:
+                                cursor.save(update_fields=['parent'])
+                            except Exception:
+                                cursor.save()
+                        cursor = correct_parent
                     else:
-                        logger.warning("Cannot resolve parent '%s' (%s) for '%s'", csv_parent_name, parent_rank_name, taxon.canonical_name)
+                        logger.warning("Cannot resolve parent '%s' (%s) for '%s'",
+                                       csv_parent_name, parent_rank_name,
+                                       getattr(cursor, 'canonical_name', 'unknown'))
                         break
                 else:
-                    taxon = current_parent
+                    cursor = current_parent
             else:
                 correct_parent = self.get_parent(row, parent_rank_name)
                 if correct_parent:
-                    taxon.parent = correct_parent
-                    taxon.save()
-                    taxon = correct_parent
+                    if hasattr(cursor, 'parent'):
+                        cursor.parent = correct_parent
+                        try:
+                            cursor.save(update_fields=['parent'])
+                        except Exception:
+                            cursor.save()
+                    cursor = correct_parent
                 else:
-                    logger.warning("Cannot resolve parent '%s' (%s) for '%s'", csv_parent_name, parent_rank_name, taxon.canonical_name)
+                    logger.warning("Cannot resolve parent '%s' (%s) for '%s'",
+                                   csv_parent_name, parent_rank_name,
+                                   getattr(cursor, 'canonical_name', 'unknown'))
                     break
 
             rank_index -= 1
 
-        logger.debug("Parent validation finished for '%s'.", taxon.canonical_name if taxon else 'unknown')
+        logger.debug("Parent validation finished for '%s'.",
+                     getattr(taxon, 'canonical_name', 'unknown'))
         return True, ''
 
     def get_taxonomy(self, taxon_name, scientific_name, rank):
@@ -411,6 +430,9 @@ class TaxaProcessor(object):
         return taxon
 
     def get_parent(self, row, current_rank=GENUS):
+        if not current_rank:
+            return None
+
         taxon_name = self.get_row_value(row, current_rank)
         if not taxon_name:
             return None
@@ -519,6 +541,15 @@ class TaxaProcessor(object):
         if gbif_key:
             try:
                 gbif_rec = get_species(gbif_key)
+
+                if gbif_rec and _safe_upper(gbif_rec.get("rank")) == "UNRANKED":
+                    parent_key = gbif_rec.get("parentKey")
+                    if parent_key:
+                        logger.info(
+                            "GBIF key %s is UNRANKED; switching to parentKey %s", gbif_key, parent_key)
+                        gbif_key = str(parent_key)
+                        gbif_rec = get_species(parent_key)
+
             except Exception as e:
                 self.handle_error(
                     row=row,
@@ -743,16 +774,12 @@ class TaxaProcessor(object):
             )
 
             # Validate parents
-            if new_taxon or not use_proposal:
-                ok, message = self.validate_parents(taxon=taxonomy, row=row)
-                if not ok:
-                    self.handle_error(row=row, message=message)
-                    return
+            ok, message = self.validate_parents(taxon=taxonomy, row=row)
+            if not ok:
+                self.handle_error(row=row, message=message)
+                return
             if use_proposal and proposal:
-                ok, message = self.validate_parents(taxon=proposal, row=row)
-                if not ok:
-                    self.handle_error(row=row, message=message)
-                    return
+                proposal.parent = taxonomy.parent
 
             # Endemism
             endemism_obj = self.endemism(row)

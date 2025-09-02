@@ -107,7 +107,7 @@ def fetch_gbif_vernacular_names(taxonomy):
         if not name_clean:
             continue
 
-        source_clean = _norm(result.get("source"))
+        source_clean   = _norm(result.get("source"))
         language_clean = _norm(result.get("language")) or None
 
         fields = {
@@ -120,10 +120,39 @@ def fetch_gbif_vernacular_names(taxonomy):
             except (TypeError, ValueError):
                 pass
 
-        with transaction.atomic():
+        obj = None
+
+        try:
+            with transaction.atomic():
+                obj = (VernacularName.objects
+                       .filter(name__iexact=name_clean, source=source_clean)
+                       .order_by('id')
+                       .first())
+                if obj:
+                    changed = []
+                    for k, v in fields.items():
+                        if getattr(obj, k) != v:
+                            setattr(obj, k, v)
+                            changed.append(k)
+                    if changed:
+                        obj.save(update_fields=changed)
+                    updated_cnt += 1
+                else:
+                    obj = VernacularName.objects.create(
+                        name=name_clean,
+                        source=source_clean,
+                        **fields,
+                    )
+                    created_cnt += 1
+
+        except IntegrityError as ie:
+            logger.warning(
+                "IntegrityError creating VernacularName(name=%r, source=%r): %s",
+                name_clean, source_clean, ie
+            )
             obj = (VernacularName.objects
-                   .select_for_update()
                    .filter(name__iexact=name_clean, source=source_clean)
+                   .order_by('id')
                    .first())
             if obj:
                 changed = []
@@ -133,38 +162,34 @@ def fetch_gbif_vernacular_names(taxonomy):
                         changed.append(k)
                 if changed:
                     obj.save(update_fields=changed)
-                    updated_cnt += 1
-                else:
-                    updated_cnt += 1
+                updated_cnt += 1
             else:
-                try:
-                    obj = VernacularName.objects.create(
+                with transaction.atomic():
+                    obj, created = VernacularName.objects.get_or_create(
                         name=name_clean,
                         source=source_clean,
-                        **fields,
+                        defaults=fields
                     )
-                    created_cnt += 1
-                except IntegrityError:
-                    obj = (VernacularName.objects
-                           .select_for_update()
-                           .get(name__iexact=name_clean, source=source_clean))
-                    changed = []
-                    for k, v in fields.items():
-                        if getattr(obj, k) != v:
-                            setattr(obj, k, v)
-                            changed.append(k)
-                    if changed:
-                        obj.save(update_fields=changed)
-                    updated_cnt += 1
+                    if created:
+                        created_cnt += 1
+                    else:
+                        changed = []
+                        for k, v in fields.items():
+                            if getattr(obj, k) != v:
+                                setattr(obj, k, v)
+                                changed.append(k)
+                        if changed:
+                            obj.save(update_fields=changed)
+                        updated_cnt += 1
 
-        # Link to taxonomy (idempotent; Django won't add duplicates)
         taxonomy.vernacular_names.add(obj)
         order_val += 1
 
     taxonomy.save()
     logger.info(
         "Vernacular names linked. created=%d updated=%d",
-        created_cnt, updated_cnt)
+        created_cnt, updated_cnt
+    )
     return True
 
 
@@ -185,7 +210,14 @@ def create_or_update_taxonomy(
     raw_rank = gbif_data.get('rank', '').upper()
 
     if raw_rank == "UNRANKED":
-        logger.debug("Skipping UNRANKED record – GBIF key %s", gbif_data.get("key"))
+        parent_key = gbif_data.get("parentKey")
+        if parent_key:
+            logger.debug("UNRANKED record %s; resolving to parent %s", gbif_data.get("key"), parent_key)
+            return fetch_all_species_from_gbif(
+                gbif_key=parent_key,
+                fetch_children=False
+            )
+        logger.debug("Skipping UNRANKED record (no parentKey) – GBIF key %s", gbif_data.get("key"))
         return None
 
     rank_enum = TaxonomicRank.__members__.get(raw_rank)
@@ -470,3 +502,4 @@ def fetch_all_species_from_gbif(
                 parent=taxonomy
             )
         return taxonomy
+

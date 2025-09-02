@@ -99,99 +99,129 @@ def find_species(
         returns_all=False,
         **classifier):
     """
-    Find species from gbif with lookup query.
-    :param original_species_name: the name of species we want to find
-    :param rank: taxonomy rank
-    :param returns_all: returns all response
-    :param classifier: rank classifier
-    :return: List of species
+    GBIF lookup that prefers canonical backbone data.
+    - Filters by optional classifier kwargs (e.g., class_name='Actinopteri').
+    - Picks best candidate by status > exact match > nubKey > parentKey > smallest key.
+    - Resolves to /species/{nubKey} (backbone). If UNRANKED, returns its parent.
     """
-    print('Find species : %s' % original_species_name)
+    logger.info('Find species : %s', original_species_name)
     try:
-        response = species.name_lookup(
-            q=original_species_name,
-            limit=50,
-            rank=rank
-        )
-        accepted_data = None
-        synonym_data = None
-        other_data = None
-        if 'results' in response:
-            results = response['results']
-            if returns_all:
-                return results
-
-            for result in response.get('results', []):
-                if classifier:
-                    classifier_found = True
-                    for key, value in classifier.items():
-                        if value:
-                            classifier_found = False
-                            key_db = 'class' if key == 'class_name' else key
-                            if key_db in result and value.lower() == result[key_db].lower():
-                                classifier_found = True
-                    if not classifier_found:
-                        continue
-
-                rank = result.get('rank', '')
-                rank_key = (rank.lower() + 'Key') if rank.lower() in RANK_KEYS else 'key'
-                key_found = ('nubKey' in result or rank_key in result)
-
-                if not key_found or 'taxonomicStatus' not in result:
-                    continue
-
-                status = result['taxonomicStatus']
-                if status == 'ACCEPTED':
-                    accepted_data = _prefer(result, accepted_data, original_species_name)
-                    if accepted_data and 'nubKey' in accepted_data:
-                        break
-
-                elif status == 'SYNONYM':
-                    synonym_data = _prefer(result, synonym_data, original_species_name)
-                    if (accepted_data is None) and synonym_data and 'nubKey' in synonym_data:
-                        break
-                else:
-                    other_data = _prefer(result, other_data, original_species_name)
-                    if (accepted_data is None and synonym_data is None
-                            and other_data and 'nubKey' in other_data):
-                        break
-
-        chosen = accepted_data or synonym_data or other_data
-        if not chosen:
-            return None
-        nub_key = chosen.get('nubKey')
-        if nub_key:
-            canonical = get_species(nub_key)
-            if canonical:
-                return canonical
-        return chosen
+        resp = species.name_lookup(q=original_species_name, limit=50, rank=rank)
     except HTTPError:
-        print('Species not found')
-    except AttributeError:
-        print('error')
+        logger.warning('Species not found (HTTPError) for %s', original_species_name)
+        return None
+    except Exception as e:
+        logger.warning('Lookup error for %s: %s', original_species_name, e)
+        return None
 
-    return None
+    if not resp or 'results' not in resp:
+        return None
+    results = resp['results']
+    if returns_all:
+        return results
+
+    def _matches_classifier(r: dict) -> bool:
+        if not classifier:
+            return True
+        for k, v in classifier.items():
+            if not v:
+                continue
+            key_db = 'class' if k == 'class_name' else k
+            if (r.get(key_db) or '').lower() != str(v).lower():
+                return False
+        return True
+
+    accepted_best = None
+    synonym_best = None
+    other_best = None
+
+    for r in results:
+        if not _matches_classifier(r):
+            continue
+
+        rk = (r.get('rank') or '').lower()
+        rank_key = (rk + 'Key') if rk in RANK_KEYS else 'key'
+        has_any_key = ('nubKey' in r) or (rank_key in r) or ('key' in r)
+        if not has_any_key or 'taxonomicStatus' not in r:
+            continue
+
+        status = r['taxonomicStatus']
+        if status == 'ACCEPTED':
+            accepted_best = _prefer(r, accepted_best, original_species_name)
+            if accepted_best and accepted_best.get('nubKey'):
+                break
+        elif status == 'SYNONYM':
+            synonym_best = _prefer(r, synonym_best, original_species_name)
+        else:
+            other_best = _prefer(r, other_best, original_species_name)
+
+    chosen = accepted_best or synonym_best or other_best
+    if not chosen:
+        return None
+
+    detail_key = chosen.get('nubKey') or chosen.get('key')
+    if not detail_key:
+        return chosen
+
+    detail = get_species(detail_key)
+    if not detail:
+        return chosen
+
+    nub_key = detail.get('nubKey')
+    if nub_key and nub_key != detail.get('key'):
+        canonical = get_species(nub_key)
+        if canonical:
+            detail = canonical
+
+    if (detail.get('rank') or '').upper() == 'UNRANKED':
+        parent_key = detail.get('parentKey')
+        if parent_key:
+            parent_detail = get_species(parent_key)
+            if parent_detail:
+                detail = parent_detail
+
+    return detail
 
 
 def _prefer(candidate, current, original_name):
     """
-    Pick the better of two GBIF lookup results:
-    - Prefer an exact name match.
-    - If both (or neither) match, keep the one with the smaller key.
+    Prefer better GBIF lookup candidates within the same status bucket.
+    Priority:
+      1) exact name match (canonical/scientific) to original_name
+      2) has nubKey
+      3) has parentKey
+      4) smaller 'key'
     """
     if current is None:
         return candidate
 
-    cand_name   = candidate.get('canonicalName') or candidate.get('scientificName', '')
-    curr_name   = current.get('canonicalName')   or current.get('scientificName', '')
-    cand_exact  = cand_name.lower() == original_name.lower()
-    curr_exact  = curr_name.lower() == original_name.lower()
+    def _norm(s):
+        return (s or '').strip().lower()
 
-    if cand_exact and not curr_exact:
+    cand_name = _norm(candidate.get('canonicalName') or candidate.get('scientificName'))
+    curr_name = _norm(current.get('canonicalName') or current.get('scientificName'))
+    orig      = _norm(original_name)
+
+    cand_exact = (cand_name == orig)
+    curr_exact = (curr_name == orig)
+
+    if cand_exact != curr_exact:
+        return candidate if cand_exact else current
+
+    cand_has_nub = 'nubKey' in candidate and candidate.get('nubKey') is not None
+    curr_has_nub = 'nubKey' in current and current.get('nubKey') is not None
+    if cand_has_nub != curr_has_nub:
+        return candidate if cand_has_nub else current
+
+    cand_has_parent = 'parentKey' in candidate and candidate.get('parentKey') is not None
+    curr_has_parent = 'parentKey' in current and current.get('parentKey') is not None
+    if cand_has_parent != curr_has_parent:
+        return candidate if cand_has_parent else current
+
+    try:
+        return candidate if int(candidate.get('key', 10**12)) < int(current.get('key', 10**12)) else current
+    except Exception:
         return candidate
-    if cand_exact == curr_exact:
-        return candidate if candidate['key'] < current['key'] else current
-    return current
 
 
 def search_exact_match(species_name):
