@@ -643,3 +643,31 @@ function deleteRecord(recordId) {
 $('.from-close').click(function (e){
     window.history.back()
 });
+
+
+function updateMultiViewer(input) {
+    const container = $('#site-images-viewer');
+    container.empty();
+
+    if (!input.files || !input.files.length) return;
+
+    Array.from(input.files).forEach(function (file) {
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        const ok = ['gif', 'png', 'jpeg', 'jpg', 'webp', 'bmp', 'tiff', 'svg'].includes(ext);
+        if (!ok) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const card = $(`
+                <div class="card" style="width: 180px;">
+                    <img src="${e.target.result}" class="card-img-top" style="height:120px;object-fit:cover;">
+                    <div class="card-body p-2">
+                        <div class="small text-muted">${file.name}</div>
+                    </div>
+                </div>
+            `);
+            container.append(card);
+        };
+        reader.readAsDataURL(file);
+    });
+}

@@ -467,24 +467,21 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             survey)
 
         # upload site image
-        try:
-            site_image = request.FILES['site_image']
-            if site_image:
-                try:
-                    site_image_obj = SiteImage.objects.get(
-                        site_visit=site_visit
-                    )
-                    site_image_obj.image = site_image
-                    site_image_obj.save()
-                except SiteImage.DoesNotExist:
-                    site_image_obj = SiteImage(
-                        site=site_visit.location_site,
-                        site_visit=site_visit,
-                        image=site_image
-                    )
-                    site_image_obj.save()
-        except:  # noqa
-            pass
+        for img_file in self.request.FILES.getlist('site-images'):
+            SiteImage.objects.update_or_create(
+                site_visit=site_visit,
+                site=site_visit.location_site,
+                image=img_file,
+                defaults={
+                    'date': date
+                }
+            )
+
+        to_delete_ids = self.request.POST.getlist('delete-site-image-ids')
+        if to_delete_ids:
+            SiteImage.objects.filter(
+                id__in=to_delete_ids,
+            ).delete()
 
         # Send email to superusers
         if new_site_visit:
@@ -745,9 +742,8 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             'GEOSERVER_PUBLIC_LOCATION')
         if self.site_visit:
             try:
-                self.site_image = (
-                    SiteImage.objects.get(site_visit=self.site_visit))
-                context['site_image'] = self.site_image
+                context['site_images'] = (
+                    SiteImage.objects.filter(site_visit=self.site_visit))
             except SiteImage.DoesNotExist:
                 pass
             context['sass_version'] = self.site_visit.sass_version

@@ -56,7 +56,7 @@ RIVER_CATCHMENT_ORDER = [
 ]
 
 
-def add_survey_occurrences(self, post_data, site_image=None) -> Survey:
+def add_survey_occurrences(self, post_data, site_images=None) -> Survey:
     date_string = post_data.get('date', None)
     end_embargo_date = post_data.get('end_embargo_date', None)
     owner_id = post_data.get('owner_id', '').strip()
@@ -194,14 +194,15 @@ def add_survey_occurrences(self, post_data, site_image=None) -> Survey:
         validated=False
     )
 
-    if site_image:
-        SiteImage.objects.get_or_create(
-            site=self.location_site,
-            image=site_image,
-            date=collection_date,
-            form_uploader=COLLECTION_RECORD_KEY,
-            survey=self.survey
-        )
+    if site_images:
+        for img_file in site_images:
+            SiteImage.objects.create(
+                survey=self.survey,
+                site=self.location_site,
+                image=img_file,
+                date=collection_date,
+                form_uploader=COLLECTION_RECORD_KEY,
+            )
 
     # -- Algae data
     curation_process = post_data.get('curation_process', None)
@@ -595,7 +596,7 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         post_data['source_site'] = Site.objects.get_current().id
         post_data['source_reference_id'] = request.POST.get('source_reference')
         survey = add_survey_occurrences(
-            self, post_data, request.FILES.get('site-image', None))
+            self, post_data, request.FILES.getlist('site-images'))
 
         session_uuid = '%s' % uuid.uuid4()
         self.add_last_session(request, session_uuid, {
@@ -615,8 +616,10 @@ class CollectionFormView(TemplateView, SessionFormMixin):
 
         # Create a survey
         if (
-            'river' in self.location_site.ecosystem_type.lower() or
-            preferences.SiteSetting.default_data_source == 'fbis'
+                (
+                    self.location_site.ecosystem_type and
+                    'river' in self.location_site.ecosystem_type.lower()
+                ) or preferences.SiteSetting.default_data_source == 'fbis'
         ):
             redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
                 base_url=reverse('abiotic-form'),

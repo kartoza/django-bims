@@ -16,7 +16,7 @@ from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.views.mixin.session_form.mixin import SessionFormMixin
-from bims.models.site_image import SiteImage
+from bims.models.site_image import SiteImage, COLLECTION_RECORD_KEY
 from bims.views.site_visit.base import SiteVisitBaseView
 from bims.models.algae_data import AlgaeData
 from bims.models.chem import Chem
@@ -288,15 +288,22 @@ class SiteVisitUpdateView(
                 except KeyError:
                     continue
 
-        # Add site image
-        site_image_file = self.request.FILES.get('site-image', None)
-        if site_image_file:
-            site_image, _ = SiteImage.objects.get_or_create(
+        for img_file in self.request.FILES.getlist('site-images'):
+            SiteImage.objects.update_or_create(
                 survey=self.object,
-                site=self.object.site
+                site=self.object.site,
+                image=img_file,
+                defaults={
+                    'date': self.object.date,
+                    'form_uploader': COLLECTION_RECORD_KEY
+                }
             )
-            site_image.image = site_image_file
-            site_image.save()
+
+        to_delete_ids = form.data.getlist('delete-site-image-ids')
+        if to_delete_ids:
+            SiteImage.objects.filter(
+                id__in=to_delete_ids,
+            ).delete()
 
         if (
             not self.request.user.is_superuser and
@@ -404,8 +411,10 @@ class SiteVisitUpdateView(
         next_url = '/site-visit/detail/{}/'.format(self.object.id)
         redirect_url = next_url
         if (
-                'river' in self.object.site.ecosystem_type.lower() or
-                preferences.SiteSetting.default_data_source == 'fbis'
+                (
+                    self.object.site.ecosystem_type and
+                    'river' in self.object.site.ecosystem_type.lower()
+                ) or preferences.SiteSetting.default_data_source == 'fbis'
         ):
             redirect_url = '{base_url}?survey={survey_id}&next={next}'.format(
                 base_url=reverse('abiotic-form'),
