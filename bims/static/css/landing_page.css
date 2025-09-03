@@ -349,7 +349,7 @@ html, body {
     margin: 10px;
     font-weight: normal;
     color: var(--main-accent-color);
-    padding: 7px 22px;
+    padding: 10px 35px;
     font-size: 11pt;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease 0s;

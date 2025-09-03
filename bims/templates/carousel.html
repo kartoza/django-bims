@@ -66,17 +66,17 @@
               {% endif %}
             </p>
 
-            {% if app == 'fbis' %}
-              <div style="text-align: {{ d_align }};">
-                {% if not user.is_authenticated %}
-                  <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
-                  <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
-                  <a class="btn btn-account btn-l js-scroll-trigger" href="/map">Explore</a>
-                {% else %}
-                  <a class="btn btn-account btn-l js-scroll-trigger" href="/map">Explore</a>
-                {% endif %}
-              </div>
+          {% if not custom_header.show_explore_map %}
+          <div style="text-align: {{ d_align }}; margin-top: 20px; font-family: {% firstof header.desc_font_stack header.title_font_stack 'inherit' %};">
+            {% if not user.is_authenticated %}
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">LOGIN</a>
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">SIGN UP</a>
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/map">EXPLORE</a>
+            {% else %}
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/map">EXPLORE</a>
             {% endif %}
+          </div>
+          {% endif %}
           </div>
         </div>
 
