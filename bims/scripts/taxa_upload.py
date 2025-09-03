@@ -129,6 +129,62 @@ class TaxaProcessor(object):
         tail = f' {epithets}' if epithets else ''
         return f'{genus_cap} {species_lc}{tail}'.strip()
 
+    def _fix_species_like(self, row, name: str) -> str:
+        """
+        Ensure Genus prefix is present and normalize casing:
+        Genus Capitalized, epithets lower-case.
+        """
+        name = (name or '').strip()
+        if not name:
+            return name
+        genus = _safe_strip(self.get_row_value(row, GENUS))
+        parts = name.split()
+        if not parts:
+            return name
+
+        if genus:
+            genus_cap = genus[:1].upper() + genus[1:].lower()
+            if name.lower().startswith(genus.lower() + ' '):
+                rest = ' '.join(w.lower() for w in parts[1:])
+                return f'{genus_cap} {rest}'.strip()
+            rest = ' '.join(w.lower() for w in parts)
+            return f'{genus_cap} {rest}'.strip()
+
+        head = parts[0][:1].upper() + parts[0][1:].lower()
+        tail = ' '.join(w.lower() for w in parts[1:])
+        return f'{head} {tail}'.strip()
+
+    def _choose_taxon_display_name(self, row, rank: str, taxonomic_status: str,
+                                   csv_taxon: str, composed_taxon: str) -> str:
+        """
+        Decide canonical/binomial name:
+        - Synonyms: prefer CSV; ensure species-like names have Genus prefix/casing.
+        - Species/subspecies (non-synonym): choose the one closer to the composed target.
+        - Higher ranks: prefer CSV if present, else composed.
+        """
+        csv_taxon = _safe_strip(csv_taxon)
+        composed_taxon = _safe_strip(composed_taxon)
+        rank_l = (rank or '').lower()
+        status_l = (taxonomic_status or '').strip().lower()
+        is_species_like = 'species' in rank_l
+
+        if _canon(csv_taxon) == _canon(composed_taxon):
+            return composed_taxon
+
+        if 'synonym' in status_l:
+            return csv_taxon
+
+        if is_species_like:
+            target = self._compose_species_name(row)
+            r_csv = difflib.SequenceMatcher(
+                None, _canon(csv_taxon), _canon(target)).ratio() if csv_taxon else 0.0
+            r_cmp = difflib.SequenceMatcher(
+                None, _canon(composed_taxon), _canon(target)).ratio() if composed_taxon else 0.0
+            name = composed_taxon if r_cmp >= r_csv else csv_taxon
+            return self._fix_species_like(row, name) if name else composed_taxon
+
+        return csv_taxon or composed_taxon
+
     def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated: bool = True):
         """
         Add or update the relationship between a taxonomy and a taxon group,
@@ -493,6 +549,8 @@ class TaxaProcessor(object):
 
         taxonomic_status = _safe_strip(self.get_row_value(row, TAXONOMIC_STATUS))
         taxon_name = _safe_strip(self.get_row_value(row, TAXON))
+        csv_taxon = taxon_name
+
         accepted_taxon = None
 
         # Rank
@@ -516,7 +574,8 @@ class TaxaProcessor(object):
 
         if not taxon_name:
             taxon_name = _safe_strip(
-                self.get_row_value(row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
+                self.get_row_value(
+                    row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
 
         if 'species' in str(rank).lower():
             taxon_name = self._compose_species_name(row)
@@ -525,6 +584,15 @@ class TaxaProcessor(object):
             sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
             if sub_species_name and taxon_name not in sub_species_name and not sub_species_name[0].isupper():
                 taxon_name = f'{taxon_name} {sub_species_name}'
+
+        if csv_taxon:
+            taxon_name = self._choose_taxon_display_name(
+                row=row,
+                rank=rank,
+                taxonomic_status=taxonomic_status,
+                csv_taxon=csv_taxon,
+                composed_taxon=taxon_name
+            )
 
         if not taxon_name:
             self.handle_error(row=row, message='Missing Taxon value')
