@@ -41,13 +41,20 @@ class CustomThemeAdmin(admin.ModelAdmin):
             "fields": ("landing_page_sections", "carousels", "hide_site_visit")
         }),
         ("Summary Dashboard", {
-            "fields": ("landing_page_occurrence_records_title", "summary_font", "summary_font_size_px",
+            "fields": ("landing_page_occurrence_records_title",
+                       "landing_page_occurrence_records_title_font",
+                       "landing_page_occurrence_records_title_font_size_px",
+                       "landing_page_occurrence_records_title_font_weight",
+                       "landing_page_occurrence_records_title_text_color",
+                       "summary_font", "summary_font_size_px",
                        "summary_text_color", "summary_background_color",
                        "summary_text_case", "show_explore_map")
         }),
         ("Partners & Funders", {
             "fields": (
-                "partners_section_title", "partners_section_order",
+                "partners_section_title", "partners_section_title_font",
+                "partners_section_title_font_weight", "partners_section_title_text_color",
+                "partners_section_order",
                 "partners", "partners_section_background_color",
                 "funders_section_title", "funders_section_order",
                 "funders", "funders_section_background_color",

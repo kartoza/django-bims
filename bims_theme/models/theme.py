@@ -119,11 +119,34 @@ class CustomTheme(models.Model):
         blank=True,
         help_text='Carousels that will appear on the landing page'
     )
+
     partners_section_title = models.CharField(
         max_length=100,
         default='PARTNERS',
         help_text='Title for the partners display section'
     )
+    partners_section_title_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='theme_partners_title_font',
+        help_text='Font for the Partners section title.'
+    )
+    partners_section_title_font_size_px = models.PositiveIntegerField(
+        default=28,
+        help_text='Partners title font size (px).'
+    )
+    partners_section_title_font_weight = models.CharField(
+        max_length=3,
+        choices=NAVBAR_FONT_WEIGHT_CHOICES,
+        default='500',
+        help_text='Partners title font weight.'
+    )
+    partners_section_title_text_color = ColorField(
+        null=True,
+        blank=True,
+        help_text='Partners title text color.'
+    )
+
     partners_section_order = models.PositiveIntegerField(
         default=1,
         help_text='The order of the partners section from the bottom'
@@ -281,6 +304,27 @@ class CustomTheme(models.Model):
         help_text='Header title for the Biodiversity Occurrence Records section.',
         max_length=150,
     )
+    landing_page_occurrence_records_title_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='theme_occ_title_font',
+        help_text='Font for the Biodiversity Occurrence Records title.'
+    )
+    landing_page_occurrence_records_title_font_size_px = models.PositiveIntegerField(
+        default=28,
+        help_text='Occurrence Records title font size (px).'
+    )
+    landing_page_occurrence_records_title_font_weight = models.CharField(
+        max_length=3,
+        choices=NAVBAR_FONT_WEIGHT_CHOICES,
+        default='500',
+        help_text='Occurrence Records title font weight.'
+    )
+    landing_page_occurrence_records_title_text_color = ColorField(
+        null=True,
+        blank=True,
+        help_text='Occurrence Records title text color.'
+    )
 
     summary_font = models.ForeignKey(
         'bims_theme.CustomFont',
@@ -315,7 +359,7 @@ class CustomTheme(models.Model):
 
     show_explore_map = models.BooleanField(
         default=True,
-        help_text="Show the “Explore Map” button under the summary."
+        help_text='Show the "Explore" button under the summary. If disabled, it will show in the carousel'
     )
 
     class Meta:
