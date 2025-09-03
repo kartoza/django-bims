@@ -46,7 +46,7 @@ class SamplingMethod(models.Model):
     )
 
     effort_measure = models.CharField(
-        max_length=300,
+        max_length=512,
         null=True,
         blank=True
     )
@@ -57,7 +57,7 @@ class SamplingMethod(models.Model):
     )
 
     factor_description = models.CharField(
-        max_length=300,
+        max_length=512,
         null=True,
         blank=True
     )
