@@ -6,11 +6,13 @@ import os
 import time
 import zipfile
 from pathlib import Path
-from typing import List, Optional, Set, Callable, Dict, Any
+from typing import List, Optional, Set, Callable, Dict, Any, Tuple
 
 import requests
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+from preferences import preferences
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +75,7 @@ def submit_download(
     predicate: Dict[str, Any],
     description: str,
     log: Callable[[str], None],
-) -> Optional[str]:
+) -> Tuple[Optional[str], Any]:
     """Fire a download request and return the GBIF download key."""
     payload = {
         "creator": gbif_user,
@@ -84,12 +86,11 @@ def submit_download(
     }
     log(f"POST {GBIF_REQUEST_URL}")
     log(description)
-    log(payload)
     r = requests.post(GBIF_REQUEST_URL, auth=(gbif_user, gbif_pass), json=payload, timeout=60)
     if r.status_code != 201:
         log(f"Download request failed ({r.status_code}): {r.text}")
-        return None
-    return r.text.strip().strip('"')
+        return None, r.status_code
+    return r.text.strip().strip('"'), r.status_code
 
 
 def get_ready_download_url(
@@ -164,7 +165,7 @@ def extract_species_keys(
                 header = txt.readline().rstrip("\n\r").split("\t")
                 reader = csv.DictReader(txt, fieldnames=header, delimiter="\t")
                 for row in reader:
-                    key_val = row.get("acceptedTaxonKey") or row.get("taxonKey")
+                    key_val = row.get("taxonKey") or row.get("acceptedTaxonKey")
                     if key_val and key_val.isdigit():
                         species_keys.add(int(key_val))
                         if max_limit and len(species_keys) >= max_limit:
@@ -179,8 +180,6 @@ def find_species_by_area(
     max_limit: Optional[int] = None,
     harvest_session=None,
     validated: bool = True,
-    gbif_username: Optional[str] = None,
-    gbif_password: Optional[str] = None,
 ) -> List:
     """
     Return all species occurring inside *boundary_id* that descend from
@@ -192,12 +191,13 @@ def find_species_by_area(
     from bims.utils.fetch_gbif import fetch_all_species_from_gbif
     from bims.utils.gbif import round_coordinates
     from bims.scripts.import_gbif_occurrences import ACCEPTED_BASIS_OF_RECORD
+    from bims.scripts.import_gbif_occurrences import DATE_ISSUES_TO_EXCLUDE
 
     log_file_path = get_log_file_path(harvest_session)
     log = lambda m: log_with_file(m, log_file_path)
 
-    gbif_user = gbif_username or os.getenv("GBIF_USERNAME")
-    gbif_pass = gbif_password or os.getenv("GBIF_PASSWORD")
+    gbif_user = preferences.SiteSetting.gbif_username
+    gbif_pass = preferences.SiteSetting.gbif_password
     if not gbif_user or not gbif_pass:
         raise RuntimeError("GBIF_USERNAME / GBIF_PASSWORD are required")
 
@@ -230,7 +230,7 @@ def find_species_by_area(
             geom_wkt = GEOSGeometry(json.dumps(geojson)).wkt
             log(f"Polygon {idx}/{len(polygons)}")
 
-            key = submit_download(
+            key, status_code = submit_download(
                 gbif_user,
                 gbif_pass,
                 predicate={
@@ -241,6 +241,14 @@ def find_species_by_area(
                         {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
                         {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
                         {"type": "in", "key": "BASIS_OF_RECORD", "values": ACCEPTED_BASIS_OF_RECORD},
+                        {
+                            "type": "not",
+                            "predicate": {
+                                "type": "in",
+                                "key": "ISSUE",
+                                "values": DATE_ISSUES_TO_EXCLUDE,
+                            },
+                        },
                     ],
                 },
                 description=f"Boundary {boundary_id} · parent {parent_species.scientific_name}",

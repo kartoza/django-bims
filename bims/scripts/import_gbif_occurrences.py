@@ -4,6 +4,7 @@ import json
 import datetime
 import logging
 import os
+import time
 import zipfile
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -33,8 +34,7 @@ from bims.models.source_reference import DatabaseRecord
 from bims.models.location_site import generate_site_code
 from bims.models.survey import Survey
 from bims.scripts.extract_dataset_keys import create_dataset_from_gbif
-from bims.utils.gbif import round_coordinates
-
+from bims.utils.gbif import round_coordinates, ACCEPTED_TAXON_KEY
 
 logger = logging.getLogger('bims')
 
@@ -74,6 +74,136 @@ ACCEPTED_BASIS_OF_RECORD = [
     'MATERIAL_CITATION',
     'OCCURRENCE'
 ]
+
+DATE_ISSUES_TO_EXCLUDE = [
+    "RECORDED_DATE_INVALID",
+    "RECORDED_DATE_MISMATCH",
+    "RECORDED_DATE_UNLIKELY",
+]
+BOUNDARY_BATCH_SIZE = 10
+
+
+def chunked(seq, size):
+    for i in range(0, len(seq), size):
+        yield seq[i:i + size]
+
+
+def _clean_polygonal(g):
+    """
+    Return a valid polygonal GEOSGeometry (Polygon or MultiPolygon) or None.
+    Uses make_valid() when available, falls back to buffer(0) trick.
+    Also strips Z/M by re-parsing WKT.
+    """
+    if g is None or g.empty:
+        return None
+    if g.srid is None:
+        g.srid = 4326
+    g = GEOSGeometry(g.wkt, srid=g.srid)
+    try:
+        if hasattr(g, "make_valid"):
+            g = g.make_valid()
+    except Exception:
+        pass
+    if not g.valid:
+        try:
+            g = g.buffer(0)
+        except Exception:
+            return None
+    if g.empty:
+        return None
+    if g.geom_type == "Polygon":
+        return MultiPolygon(g)
+    if g.geom_type == "MultiPolygon":
+        return g
+    if g.geom_type == "GeometryCollection":
+        polys = [ge for ge in g if ge.geom_type == "Polygon"]
+        if not polys:
+            return None
+        return MultiPolygon(polys)
+    return None
+
+
+def _union_polys(polys):
+    """
+    Robust union without relying on cascaded_union/unary_union availability.
+    Accepts a list of Polygon/MultiPolygon and returns a valid MultiPolygon.
+    """
+    acc = None
+    for p in polys:
+        if acc is None:
+            acc = p
+        else:
+            acc = acc.union(p)
+        acc = _clean_polygonal(acc)
+        if acc is None:
+            return None
+    return acc
+
+
+def _ring_area(coords):
+    """Signed area; >0 = CCW, <0 = CW. coords must be closed [ [x,y], ... , [x0,y0] ]."""
+    area = 0.0
+    for i in range(len(coords) - 1):
+        x1, y1 = coords[i]
+        x2, y2 = coords[i + 1]
+        area += (x1 * y2) - (x2 * y1)
+    return area / 2.0
+
+
+def _ensure_closed(coords):
+    """Close ring if not closed."""
+    if not coords:
+        return coords
+    if coords[0] != coords[-1]:
+        coords = coords + [coords[0]]
+    return coords
+
+
+def _orient_polygon_coords(poly_coords):
+    """
+    Enforce exteriors CCW and holes CW, in-place on a polygon's coordinates:
+    poly_coords = [ exterior_ring, hole1, hole2, ... ]
+    """
+    if not poly_coords:
+        return poly_coords
+
+    ext = _ensure_closed(poly_coords[0])
+    if _ring_area(ext) < 0:
+        ext = ext[::-1]
+    poly_coords[0] = ext
+
+    for i in range(1, len(poly_coords)):
+        hole = _ensure_closed(poly_coords[i])
+        if _ring_area(hole) > 0:
+            hole = hole[::-1]
+        poly_coords[i] = hole
+
+    return poly_coords
+
+
+def _enforce_ccw_exteriors(geom):
+    """
+    Return a geometry with exteriors CCW and interiors CW.
+    Accepts Polygon or MultiPolygon GEOSGeometry. Returns MultiPolygon.
+    """
+    if geom is None or geom.empty:
+        return geom
+
+    g2 = GEOSGeometry(geom.wkt, srid=geom.srid)
+
+    gj = json.loads(g2.geojson)
+    if gj["type"] == "Polygon":
+        gj["coordinates"] = _orient_polygon_coords(gj["coordinates"])
+        oriented = GEOSGeometry(json.dumps(gj), srid=g2.srid)
+        return MultiPolygon(oriented)
+
+    if gj["type"] == "MultiPolygon":
+        for i in range(len(gj["coordinates"])):
+            gj["coordinates"][i] = _orient_polygon_coords(gj["coordinates"][i])
+        oriented = GEOSGeometry(json.dumps(gj), srid=g2.srid)
+        return oriented
+
+    return geom
 
 
 def setup_logger(log_file_path, max_bytes=10**6, backup_count=10):
@@ -228,6 +358,7 @@ def process_gbif_row(
     species = row.get(SPECIES_KEY, None)
     dataset_key = row.get(DATASET_KEY, None)
     taxon_key = row.get(TAXON_KEY, None)
+    accepted_taxon_key = row.get(ACCEPTED_TAXON_KEY, None)
 
     taxonomy = None
 
@@ -235,7 +366,16 @@ def process_gbif_row(
         taxonomy = Taxonomy.objects.filter(gbif_key=taxon_key).first()
 
     if not taxonomy:
-        log(f"Missing taxonomy")
+        if accepted_taxon_key and accepted_taxon_key != taxon_key:
+            log(
+                f"Skipping occurrence {upstream_id}: local taxonomy missing for GBIF taxonKey={taxon_key}. "
+                f"GBIF marks it as a synonym of acceptedTaxonKey={accepted_taxon_key}. "
+                f"Please import/sync this taxonomy before harvesting."
+            )
+        else:
+            log(
+                f"Skipping occurrence {upstream_id}: local taxonomy not found for GBIF taxonKey={taxon_key}."
+            )
         return None, False
 
     # Attempt to parse event_date -> collection_date
@@ -510,8 +650,8 @@ def import_gbif_occurrences(
     if log_file_path:
         setup_logger(log_file_path)
 
-    gbif_user = os.environ.get("GBIF_USERNAME", "")
-    gbif_pass = os.environ.get("GBIF_PASSWORD", "")
+    gbif_user = preferences.SiteSetting.gbif_username
+    gbif_pass = preferences.SiteSetting.gbif_password
 
     auth = (gbif_user, gbif_pass)
 
@@ -533,6 +673,14 @@ def import_gbif_occurrences(
                 {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
                 {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
                 {"type": "in", "key": "BASIS_OF_RECORD", "values": ACCEPTED_BASIS_OF_RECORD},
+                {
+                    "type": "not",
+                    "predicate": {
+                        "type": "in",
+                        "key": "ISSUE",
+                        "values": DATE_ISSUES_TO_EXCLUDE,
+                    },
+                },
             ],
         }
 
@@ -554,13 +702,38 @@ def import_gbif_occurrences(
 
         log(predicates)
 
-        key = submit_download(
+        key, status_code = submit_download(
             gbif_user,
             gbif_pass,
             predicate=predicates,
             description=f"Harvesting occurrences for multiple taxa",
             log=log,
         )
+
+        max_retries = 10
+        retry_wait_seconds = 5 * 60
+        attempt = 0
+
+        while (not key) and status_code == 429 and attempt < max_retries:
+            attempt += 1
+            log(f"GBIF rate-limited (429). Retrying in 5 minutes... attempt {attempt}/{max_retries}")
+
+            check_interval = 5
+            waited = 0
+            while waited < retry_wait_seconds:
+                if is_canceled(harvest_session):
+                    log("Harvest canceled during backoff wait.")
+                    return "Canceled"
+                time.sleep(check_interval)
+                waited += check_interval
+
+            key, status_code = submit_download(
+                gbif_user,
+                gbif_pass,
+                predicate=predicates,
+                description="Harvesting occurrences for multiple taxa",
+                log=log,
+            )
 
         if not key:
             return "Download request failed"
@@ -619,28 +792,68 @@ def import_gbif_occurrences(
 
         log_to_file_or_logger(log_file_path, message=f'Fetching GBIF data for {chunk_first} ... {chunk_last}')
 
-        # If a boundary is specified, loop each polygon area
         if site_boundary and extracted_polygons:
-            for polygon in extracted_polygons[area_index - 1 :]:
-                # Check if the harvest session was canceled
+            total = len(extracted_polygons)
+            start_slice = extracted_polygons[area_index - 1:]
+
+            for batch_no, poly_batch in enumerate(chunked(start_slice, BOUNDARY_BATCH_SIZE), start=1):
                 if session_id and HarvestSession.objects.get(id=session_id).canceled:
                     return
 
-                geojson = json.loads(polygon.geojson)
-                geojson['coordinates'] = round_coordinates(geojson['coordinates'])
-                geometry_rounded = GEOSGeometry(json.dumps(geojson))
-                geometry_str = str(geometry_rounded.ogr)
+                cleaned_parts = []
+                for poly in poly_batch:
+                    gj = json.loads(poly.geojson)
+                    gj["coordinates"] = round_coordinates(gj["coordinates"])
+                    g = GEOSGeometry(json.dumps(gj))
+                    g = _clean_polygonal(g)
+                    if g is None:
+                        log_to_file_or_logger(log_file_path,
+                                              message="Skipped an invalid polygon after cleaning")
+                        continue
+                    if g.geom_type == "MultiPolygon":
+                        cleaned_parts.extend(list(g))
+                    else:
+                        cleaned_parts.extend(list(g))
 
+                if not cleaned_parts:
+                    log_to_file_or_logger(log_file_path,
+                                          message="Skipped batch: no valid polygons after cleaning")
+                    continue
+
+                multi = _union_polys(cleaned_parts)
+                if multi is None:
+                    log_to_file_or_logger(
+                        log_file_path,
+                        message="Skipped batch: union produced no valid polygonal geometry")
+                    continue
+
+                multi = _clean_polygonal(multi)
+                if multi is None:
+                    log_to_file_or_logger(
+                        log_file_path,
+                        message="Skipped batch: final geometry invalid after cleaning")
+                    continue
+
+                multi = _enforce_ccw_exteriors(multi)
+
+                multi = _clean_polygonal(multi)
+                if multi is None:
+                    log_to_file_or_logger(
+                        log_file_path,
+                        message="Skipped batch: invalid after orientation fix")
+                    continue
+
+                geometry_str = multi.wkt
+
+                first_idx = (area_index - 1) + (batch_no - 1) * BOUNDARY_BATCH_SIZE + 1
+                last_idx = min(first_idx + len(poly_batch) - 1, total)
                 log_to_file_or_logger(
                     log_file_path,
-                    message=f'Area=({area}/{len(extracted_polygons)})\n'
+                    message=(f'Areas batch {batch_no}: polygons {first_idx}-{last_idx} '
+                             f'of {total} (batch size={len(poly_batch)})\n')
                 )
-                area += 1
 
-                message = fetch_and_process_gbif_data(
-                    base_country_codes,
-                    geometry_str
-                )
+                message = fetch_and_process_gbif_data(base_country_codes, geometry_str)
                 log_to_file_or_logger(log_file_path, message=message)
 
         else:
