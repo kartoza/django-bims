@@ -79,6 +79,7 @@ DATE_ISSUES_TO_EXCLUDE = [
     "RECORDED_DATE_INVALID",
     "RECORDED_DATE_MISMATCH",
     "RECORDED_DATE_UNLIKELY",
+    "MODIFIED_DATE_INVALID"
 ]
 BOUNDARY_BATCH_SIZE = 10
 
@@ -206,22 +207,20 @@ def _enforce_ccw_exteriors(geom):
     return geom
 
 
-def setup_logger(log_file_path, max_bytes=10**6, backup_count=10):
+def setup_logger(log_file_path):
     """
-    Set up and return a logger with a rotating file handler.
+    Set up a logger that writes the FULL log to a single file (no rotation).
     """
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
     harvest_logger = logging.getLogger('harvest_logger')
     harvest_logger.setLevel(logging.INFO)
+    harvest_logger.propagate = False
 
-    # Clear any existing handlers to avoid duplicates
-    if harvest_logger.hasHandlers():
+    if harvest_logger.handlers:
         harvest_logger.handlers.clear()
 
-    handler = RotatingFileHandler(
-        log_file_path,
-        maxBytes=max_bytes,
-        backupCount=backup_count
-    )
+    handler = logging.FileHandler(log_file_path, mode="a", encoding="utf-8")
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
 
@@ -673,6 +672,7 @@ def import_gbif_occurrences(
                 {"type": "equals", "key": "HAS_COORDINATE", "value": "true"},
                 {"type": "equals", "key": "HAS_GEOSPATIAL_ISSUE", "value": "false"},
                 {"type": "in", "key": "BASIS_OF_RECORD", "values": ACCEPTED_BASIS_OF_RECORD},
+                {"type": "equals", "key": "OCCURRENCE_STATUS", "value": "PRESENT"},
                 {
                     "type": "not",
                     "predicate": {

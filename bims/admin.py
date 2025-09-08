@@ -2036,19 +2036,29 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         from bims.tasks.harvest_collections import (
             harvest_collections
         )
+        from bims.tasks.harvest_gbif_species import (
+            harvest_gbif_species
+        )
         if len(queryset) > 1:
             message = 'You can only resume one session'
             self.message_user(request, message, level=messages.ERROR)
             return
 
-        queryset.first().canceled = False
-        queryset.first().save()
+        harvest_session = queryset.first()
+
+        harvest_session.canceled = False
+        harvest_session.save()
 
         full_message = 'Resumed'
-        harvest_collections.delay(
-            queryset.first().id,
-            True
-        )
+        if harvest_session.is_fetching_species:
+            harvest_gbif_species.delay(
+                harvest_session.id
+            )
+        else:
+            harvest_collections.delay(
+                harvest_session.id,
+                True
+            )
 
         self.message_user(request, full_message)
 
