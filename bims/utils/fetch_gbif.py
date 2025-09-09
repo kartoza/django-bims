@@ -10,6 +10,7 @@ from bims.models import Taxonomy, VernacularName, TaxonGroup
 from bims.enums import TaxonomicRank, TaxonomicStatus
 
 logger = logging.getLogger('bims')
+MAX_DEPTH = 50
 
 
 def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
@@ -294,6 +295,8 @@ def fetch_all_species_from_gbif(
     fetch_vernacular_names=False,
     use_name_lookup=True,
     log_file_path=None,
+    _visited=None,
+    _depth=0,
     **classifier):
     """
     Get species detail and all lower rank species
@@ -312,7 +315,19 @@ def fetch_all_species_from_gbif(
             with open(log_file_path, 'a') as log_file:
                 log_file.write('{}\n'.format(message))
 
+    if _visited is None:
+        _visited = set()
+
+    if _depth > MAX_DEPTH:
+        log_info(f"Depth>{MAX_DEPTH} for key={gbif_key} – aborting to avoid recursion loop")
+        return None
+
     if gbif_key:
+        if gbif_key in _visited:
+            log_info(f"Cycle detected at key={gbif_key}; skipping further recursion")
+            existing = Taxonomy.objects.filter(gbif_key=gbif_key).first()
+            return existing
+        _visited.add(gbif_key)
         log_info('Get species {gbif_key}'.format(
             gbif_key=gbif_key
         ))
@@ -355,6 +370,27 @@ def fetch_all_species_from_gbif(
                 q=species,
                 rank=taxonomic_rank
             )
+
+    raw_rank = species_data.get('rank', '').upper() if species_data else ''
+    if raw_rank == "UNRANKED":
+        parent_key = (species_data or {}).get("parentKey")
+        if parent_key and parent_key != species_data.get("key") and parent_key not in _visited:
+            log_info(
+                f"UNRANKED record {species_data.get('key')}; "
+                f"resolving to parent {parent_key}")
+            return fetch_all_species_from_gbif(
+                gbif_key=parent_key,
+                fetch_children=False,
+                fetch_vernacular_names=fetch_vernacular_names,
+                use_name_lookup=use_name_lookup,
+                log_file_path=log_file_path,
+                _visited=_visited,
+                _depth=_depth + 1,
+            )
+        log_info(
+            f"Skipping UNRANKED record (no safe parent) – "
+            f"GBIF key {species_data.get('key') if species_data else None}")
+        return None
 
     # if species not found then return nothing
     if not species_data:
@@ -412,68 +448,79 @@ def fetch_all_species_from_gbif(
         taxonomy.parent = parent
         taxonomy.save()
     else:
-        fetch_parent = not taxonomy.parent
-        if taxonomy.parent and species_data and 'parentKey' in species_data:
-            fetch_parent = taxonomy.parent.gbif_key != species_data['parentKey']
-        if fetch_parent:
-            # Get parent
-            parent_taxonomy = None
-            if 'parentKey' in species_data:
-                parent_key = species_data['parentKey']
-                log_info('Get parent with parentKey : %s' % parent_key)
-                parent_taxonomy = fetch_all_species_from_gbif(
-                    gbif_key=parent_key,
-                    parent=None,
-                    fetch_children=False
-                )
+        desired_parent_key = (species_data or {}).get('parentKey')
+        need_fetch_parent = (
+            desired_parent_key
+            and (not taxonomy.parent or taxonomy.parent.gbif_key != desired_parent_key)
+        )
+        if need_fetch_parent and desired_parent_key != taxonomy.gbif_key and desired_parent_key not in _visited:
+            log_info(f'Get parent with parentKey : {desired_parent_key}')
+            parent_taxonomy = fetch_all_species_from_gbif(
+                gbif_key=desired_parent_key,
+                parent=None,
+                fetch_children=False,
+                fetch_vernacular_names=fetch_vernacular_names,
+                use_name_lookup=use_name_lookup,
+                log_file_path=log_file_path,
+                _visited=_visited,
+                _depth=_depth + 1,
+            )
             if parent_taxonomy:
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
-    max_tries = 10
-    current_try = 0
-
-    # Validate parents
-    if taxonomy.rank.lower() == 'kingdom':
-        taxon_parent = taxonomy
-    else:
-        taxon_parent = taxonomy.parent
-
-    # Traverse up the hierarchy to find a 'kingdom' or reach max tries
-    while current_try < max_tries and taxon_parent.parent and taxon_parent.rank.lower() != 'kingdom':
-        taxon_parent = taxon_parent.parent
-        current_try += 1
-
-    # If a 'kingdom' was not found within max tries
-    if taxon_parent.rank.lower() != 'kingdom' and current_try < max_tries:
-        parent_key = taxon_parent.gbif_data.get('parentKey')
-        if parent_key:
-            parent_taxonomy = fetch_all_species_from_gbif(
-                gbif_key=parent_key,
-                parent=None,
-                fetch_children=False
-            )
-            if parent_taxonomy:
-                taxon_parent.parent = parent_taxonomy
-                taxon_parent.save()
+    max_tries = 20
+    tries = 0
+    cursor = taxonomy
+    while tries < max_tries and cursor and cursor.rank and cursor.rank.lower() != 'kingdom':
+        if not cursor.parent:
+            pk = (cursor.gbif_data or {}).get('parentKey') if hasattr(cursor, 'gbif_data') else None
+            if pk and pk != cursor.gbif_key and pk not in _visited:
+                pt = fetch_all_species_from_gbif(
+                    gbif_key=pk,
+                    parent=None,
+                    fetch_children=False,
+                    fetch_vernacular_names=fetch_vernacular_names,
+                    use_name_lookup=use_name_lookup,
+                    log_file_path=log_file_path,
+                    _visited=_visited,
+                    _depth=_depth + 1,
+                )
+                if pt:
+                    cursor.parent = pt
+                    cursor.save()
+                else:
+                    break
+            else:
+                break
+        cursor = cursor.parent
+        tries += 1
 
     # Check if there is an accepted key
-    if (
-        'acceptedKey' in species_data and
-        'synonym' in species_data['taxonomicStatus'].lower().strip()
-    ):
-        accepted_taxonomy = fetch_all_species_from_gbif(
-            gbif_key=species_data['acceptedKey'],
-            taxonomic_rank=taxonomy.rank,
-            parent=taxonomy.parent,
-            fetch_children=False
-        )
-        if accepted_taxonomy:
-            if taxonomy.iucn_status:
-                accepted_taxonomy.iucn_status = taxonomy.iucn_status
-                accepted_taxonomy.save()
-            taxonomy.accepted_taxonomy = accepted_taxonomy
-            taxonomy.save()
+    try:
+        status = (species_data.get('taxonomicStatus') or "").strip().lower()
+    except Exception:
+        status = ""
+    if species_data and 'acceptedKey' in species_data and 'synonym' in status:
+        ak = species_data['acceptedKey']
+        if ak and ak != taxonomy.gbif_key and ak not in _visited:
+            accepted_taxonomy = fetch_all_species_from_gbif(
+                gbif_key=ak,
+                taxonomic_rank=taxonomy.rank,
+                parent=taxonomy.parent,
+                fetch_children=False,
+                fetch_vernacular_names=fetch_vernacular_names,
+                use_name_lookup=use_name_lookup,
+                log_file_path=log_file_path,
+                _visited=_visited,
+                _depth=_depth + 1,
+            )
+            if accepted_taxonomy:
+                if taxonomy.iucn_status:
+                    accepted_taxonomy.iucn_status = taxonomy.iucn_status
+                    accepted_taxonomy.save()
+                taxonomy.accepted_taxonomy = accepted_taxonomy
+                taxonomy.save()
 
     if not fetch_children:
         if taxonomy.legacy_canonical_name:
@@ -501,5 +548,5 @@ def fetch_all_species_from_gbif(
                 species=child['scientificName'],
                 parent=taxonomy
             )
-        return taxonomy
 
+    return taxonomy

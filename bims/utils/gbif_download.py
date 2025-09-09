@@ -217,18 +217,73 @@ def add_parent_to_group(
     taxon,
     group,
     validated: bool,
-    log: Callable[[str], None],
+    log: Optional[Callable[[str], None]] = None,
+    *,
+    include_self: bool = True,
+    max_steps: int = 200,
 ):
-    """Recursively attach the parents of *taxon* to *group*."""
+    """
+    Attach `taxon` (optionally) and all its parents to `group` safely.
+    """
+    from django.db import transaction
     from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
-    if taxon.parent:
-        tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
-            taxongroup=group, taxonomy=taxon
+    def _log(msg: str) -> None:
+        if log:
+            try:
+                log(msg)
+            except Exception:
+                pass
+
+    visited_ids = set()
+    chain = []
+    current = taxon if include_self else getattr(taxon, "parent", None)
+    steps = 0
+
+    while current and steps < max_steps:
+        if current.id in visited_ids:
+            _log(f"[add_parent_to_group] Cycle detected at taxon #{current.id}; stopping.")
+            break
+        visited_ids.add(current.id)
+        chain.append(current)
+        steps += 1
+        current = getattr(current, "parent", None)
+
+    if steps >= max_steps:
+        _log(f"[add_parent_to_group] Stopped after {steps} steps (max_steps={max_steps}).")
+
+    if not chain:
+        return
+
+    taxonomy_ids = [t.id for t in chain]
+
+    with transaction.atomic():
+        existing_ids = set(
+            TaxonGroupTaxonomy.objects
+            .filter(taxongroup=group, taxonomy_id__in=taxonomy_ids)
+            .values_list("taxonomy_id", flat=True)
         )
-        tgt.is_validated = validated
-        tgt.save()
-        add_parent_to_group(taxon.parent, group, validated, log)
+
+        to_create = [
+            TaxonGroupTaxonomy(
+                taxongroup=group,
+                taxonomy_id=tid,
+                is_validated=validated,
+            )
+            for tid in taxonomy_ids
+            if tid not in existing_ids
+        ]
+        if to_create:
+            TaxonGroupTaxonomy.objects.bulk_create(to_create, ignore_conflicts=True)
+
+        if existing_ids:
+            (TaxonGroupTaxonomy.objects
+             .filter(taxongroup=group, taxonomy_id__in=list(existing_ids))
+             .exclude(is_validated=validated)
+             .update(is_validated=validated))
+
+    _log(f"[add_parent_to_group] Linked {len(taxonomy_ids)} taxa "
+         f"({len(taxonomy_ids) - len(existing_ids)} created, {len(existing_ids)} existed).")
 
 
 def submit_download(
@@ -350,6 +405,7 @@ def find_species_by_area(
     from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
     from bims.utils.fetch_gbif import fetch_all_species_from_gbif
     from bims.utils.gbif import round_coordinates
+    from bims.utils.audit import disable_easy_audit
     from bims.scripts.import_gbif_occurrences import ACCEPTED_BASIS_OF_RECORD
     from bims.scripts.import_gbif_occurrences import (
         DATE_ISSUES_TO_EXCLUDE, chunked, BOUNDARY_BATCH_SIZE,
@@ -523,22 +579,23 @@ def find_species_by_area(
         if is_canceled(harvest_session):
             break
         try:
-            log(f"Processing {skey}")
-            taxonomy = fetch_all_species_from_gbif(
-                gbif_key=skey,
-                fetch_children=False,
-                log_file_path=log_file_path,
-                fetch_vernacular_names=True,
-            )
-            if taxonomy:
-                species_found.append(taxonomy)
-                if taxon_group:
-                    tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
-                        taxongroup=taxon_group, taxonomy=taxonomy
-                    )
-                    tgt.is_validated = validated
-                    tgt.save()
-                    add_parent_to_group(taxonomy, taxon_group, validated, log)
+            with disable_easy_audit():
+                log(f"Processing {skey}")
+                taxonomy = fetch_all_species_from_gbif(
+                    gbif_key=skey,
+                    fetch_children=False,
+                    log_file_path=log_file_path,
+                    fetch_vernacular_names=True,
+                )
+                if taxonomy:
+                    species_found.append(taxonomy)
+                    if taxon_group:
+                        tgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
+                            taxongroup=taxon_group, taxonomy=taxonomy
+                        )
+                        tgt.is_validated = validated
+                        tgt.save()
+                        add_parent_to_group(taxonomy, taxon_group, validated, log)
         except Exception as exc:
             log(f"Error fetching taxonomy {skey}: {exc}")
 

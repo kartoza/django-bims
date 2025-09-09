@@ -76,8 +76,10 @@ class TestGBIFUtil(TestCase):
     @patch('bims.utils.gbif_download.download_archive', return_value=Path('/tmp/dummy.zip'), create=True)
     @patch('bims.utils.gbif_download.get_ready_download_url', return_value='https://x/d.zip', create=True)
     @patch('bims.utils.gbif_download._submit_with_retry', return_value='dummy', create=True)
+    @patch('bims.utils.gbif_download._species_load_set', return_value=(2,1), create=True)
     def test_successful_data_retrieval(
         self,
+        _mock_species_load_set,
         _mock_submit_retry,
         _mock_ready,
         _mock_download,
