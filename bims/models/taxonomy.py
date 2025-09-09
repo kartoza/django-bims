@@ -596,6 +596,19 @@ class Taxonomy(AbstractTaxonomy):
 
     def save(self, *args, **kwargs):
         update_taxon_with_gbif = False
+
+        rank_order = [r.name for r in TaxonomicRank.hierarchy()]
+        cur_rank = (self.rank or "").upper()
+
+        try:
+            cur_idx = rank_order.index(cur_rank)
+        except ValueError:
+            cur_idx = None
+
+        family_idx = rank_order.index(TaxonomicRank.FAMILY.name)
+        genus_idx = rank_order.index(TaxonomicRank.GENUS.name)
+        species_idx = rank_order.index(TaxonomicRank.SPECIES.name)
+
         if self.gbif_data:
             self.gbif_data = self.save_json_data(self.gbif_data)
         if self.additional_data:
@@ -615,11 +628,11 @@ class Taxonomy(AbstractTaxonomy):
                 'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
                 'species_name': species_name
             }
-        elif 'family_name' not in self.hierarchical_data:
+        elif ('family_name' not in self.hierarchical_data or not self.hierarchical_data['family_name']) and cur_idx >= family_idx:
             self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
-        elif 'genus_name' not in self.hierarchical_data:
+        elif ('genus_name' not in self.hierarchical_data or not self.hierarchical_data['genus_name']) and cur_idx >= genus_idx:
             self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
-        elif 'species_name' not in self.hierarchical_data:
+        elif ('species_name' not in self.hierarchical_data or not self.hierarchical_data['species_name']) and cur_idx >= species_idx:
             self.hierarchical_data['species_name'] = species_name
 
         super(Taxonomy, self).save(*args, **kwargs)

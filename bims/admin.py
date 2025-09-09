@@ -1,5 +1,6 @@
 # coding=utf-8
 import csv
+import logging
 import re
 from datetime import timedelta
 from datetime import date
@@ -34,13 +35,14 @@ from django_json_widget.widgets import JSONEditorWidget
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
-from bims.enums import TaxonomicGroupCategory
+from bims.enums import TaxonomicGroupCategory, TaxonomicStatus
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
 from bims.helpers.list import chunk_list
+from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -139,6 +141,9 @@ from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
+
+
+logger = logging.getLogger('bims')
 
 
 class ExportCsvMixin:
@@ -1201,9 +1206,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'import_date',
         'taxonomic_status',
         'accepted_taxonomy',
-        'legacy_canonical_name',
         'iucn_status',
-        'validated',
         'verified',
         'tag_list'
     )
@@ -1222,6 +1225,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'canonical_name',
         'legacy_canonical_name',
         'gbif_key',
+        'accepted_taxonomy__scientific_name'
     )
 
     raw_id_fields = (
@@ -1231,7 +1235,9 @@ class TaxonomyAdmin(admin.ModelAdmin):
     )
 
     actions = [
-        'merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing', 'extract_author'
+        'merge_taxa', 'update_taxa', 'fetch_common_names',
+        'fetch_cites_listing', 'extract_author',
+        'harvest_synonyms_for_accepted'
     ]
 
     def extract_author(self, request, queryset):
@@ -1335,6 +1341,54 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
+
+    def harvest_synonyms_for_accepted(self, request, queryset):
+        """
+        For each selected ACCEPTED taxon (with a GBIF key), fetch synonyms
+        """
+        accepted_qs = queryset.filter(
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name
+        ).exclude(gbif_key__isnull=True)
+
+        if not accepted_qs.exists():
+            self.message_user(
+                request,
+                "No accepted taxa with a GBIF key in the selected rows.",
+                level=messages.WARNING,
+            )
+            return
+
+        total_taxa = 0
+        total_synonyms_linked = 0
+        errors = 0
+
+        for taxon in accepted_qs.iterator():
+            try:
+                processed = harvest_synonyms_for_accepted_taxonomy(
+                    taxon,
+                    fetch_vernacular_names=False,
+                    log_file_path=None,
+                    accept_language=None,
+                )
+                total_taxa += 1
+                total_synonyms_linked += len(processed or [])
+            except Exception as e:
+                logger.exception(
+                    "Failed harvesting synonyms for taxon id=%s key=%s: %s",
+                    taxon.id, taxon.gbif_key, e
+                )
+                errors += 1
+
+        self.message_user(
+            request,
+            f"Synonym harvest completed. Accepted taxa processed: {total_taxa}; "
+            f"synonyms linked: {total_synonyms_linked}; errors: {errors}.",
+            level=messages.INFO if errors == 0 else messages.WARNING,
+        )
+
+    harvest_synonyms_for_accepted.short_description = (
+        "Harvest synonyms for accepted taxa (GBIF)"
+    )
 
 
 class VernacularNameAdmin(admin.ModelAdmin):

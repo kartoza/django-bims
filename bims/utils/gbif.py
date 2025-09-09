@@ -4,12 +4,15 @@ import logging
 import urllib
 import simplejson
 from requests.exceptions import HTTPError
+from requests.adapters import HTTPAdapter, Retry
 from pygbif import species
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
 from bims.utils.logger import log
 
+
+GBIF_API = "https://api.gbif.org/v1"
 
 logger = logging.getLogger(__name__)
 
@@ -492,3 +495,58 @@ def round_coordinates(coords):
         return [round_coordinates(sub_coords) for sub_coords in coords]
     else:
         return [round(coord, 4) for coord in coords]
+
+
+def _gbif_session():
+    """Requests session with sane retries/backoff for GBIF."""
+    s = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=0.5,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+    )
+    s.mount("https://", HTTPAdapter(max_retries=retries))
+    return s
+
+
+def gbif_synonyms_by_usage(
+    usage_key: int,
+    limit: int = 1000,
+    accept_language: str | None = None,
+) -> list[dict]:
+    """
+    Calls GBIF /v1/species/{usageKey}/synonyms and paginates until exhausted.
+    Returns a flat list of synonym objects.
+    """
+    sess = _gbif_session()
+    url = f"{GBIF_API}/species/{usage_key}/synonyms"
+    headers = {}
+    if accept_language:
+        headers["Accept-Language"] = accept_language
+
+    results: list[dict] = []
+    offset = 0
+
+    while True:
+        resp = sess.get(
+            url,
+            params={"limit": limit, "offset": offset},
+            headers=headers, timeout=60)
+        resp.raise_for_status()
+        page = resp.json() or []
+
+        if not isinstance(page, list):
+            page = (
+                    page.get("results") or
+                    page.get("synonyms") or []) if isinstance(page, dict) else []
+
+        if not page:
+            break
+
+        results.extend(page)
+        if len(page) < limit:
+            break
+        offset += limit
+
+    return results
