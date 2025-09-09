@@ -628,11 +628,11 @@ class Taxonomy(AbstractTaxonomy):
                 'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
                 'species_name': species_name
             }
-        elif ('family_name' not in self.hierarchical_data or not self.hierarchical_data['family_name']) and cur_idx >= family_idx:
+        elif ('family_name' not in self.hierarchical_data or not self.hierarchical_data['family_name']) and cur_idx and cur_idx >= family_idx:
             self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
-        elif ('genus_name' not in self.hierarchical_data or not self.hierarchical_data['genus_name']) and cur_idx >= genus_idx:
+        elif ('genus_name' not in self.hierarchical_data or not self.hierarchical_data['genus_name']) and cur_idx and cur_idx >= genus_idx:
             self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
-        elif ('species_name' not in self.hierarchical_data or not self.hierarchical_data['species_name']) and cur_idx >= species_idx:
+        elif ('species_name' not in self.hierarchical_data or not self.hierarchical_data['species_name']) and cur_idx and cur_idx >= species_idx:
             self.hierarchical_data['species_name'] = species_name
 
         super(Taxonomy, self).save(*args, **kwargs)

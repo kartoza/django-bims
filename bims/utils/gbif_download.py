@@ -415,7 +415,7 @@ def find_species_by_area(
 
     log_file_path = get_log_file_path(harvest_session)
     log = lambda m: log_with_file(m, log_file_path)
-    harvest_synonyms = harvest_session.harvest_synonyms
+    harvest_synonyms = harvest_session.harvest_synonyms if harvest_session else False
 
     gbif_user = preferences.SiteSetting.gbif_username
     gbif_pass = preferences.SiteSetting.gbif_password
