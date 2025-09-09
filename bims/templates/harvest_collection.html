@@ -35,11 +35,24 @@
                 <div class="help-block">
                     <div class="help-block-space"></div>
 
+                    {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}
+                        <div class="alert alert-danger" role="alert">
+                            <strong>GBIF credentials not configured.</strong>
+                            To harvest GBIF data, add your GBIF username and password in
+                            <a
+                              href="/admin/bims/sitesetting/{{ preferences.SiteSetting.id }}/change/?section=gbif#gbif"
+                              class="alert-link"
+                              target="_blank" rel="noopener"
+                            >Site Settings → GBIF</a>. Once saved, return here to start the harvest.
+                          </div>
+                    {% endif %}
+
                     {% if not upload_session %}
                     <div class="help-block-space"></div>
                     <div class="help-block">
                         Note : Duplicates will be detected and update the existing data
                     </div>
+
 
                     <div class="help-block-space"></div>
                     <div class="form-group row">
@@ -60,7 +73,7 @@
                     </div>
                     <div class="help-block-space"></div>
 
-                    <button class="btn btn-primary" type="submit">Start harvesting</button>
+                    <button class="btn btn-primary" type="submit" {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}>Start harvesting</button>
 
 
                     {% endif %}

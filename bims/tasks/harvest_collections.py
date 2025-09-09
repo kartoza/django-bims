@@ -48,7 +48,7 @@ def find_last_index(pattern_str, filepath) -> int:
 # tasks.py
 
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
-def harvest_collections(session_id, resume=False, chunk_size=100):
+def harvest_collections(session_id, resume=False, chunk_size=250):
     import re
     from itertools import islice
     from bims.signals.utils import disconnect_bims_signals, connect_bims_signals

@@ -106,3 +106,5 @@ drf-yasg==1.21.7
 
 # Library to handle geospatial functions
 git+https://github.com/kartoza/CloudNativeGIS.git@0.0.5bims
+
+django-cryptography==1.1

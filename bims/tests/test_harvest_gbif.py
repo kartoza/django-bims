@@ -168,7 +168,7 @@ def _create_dummy_gbif_zip() -> str:
 # Dummy replacements for the GBIF helper functions --------------------------------
 
 def _mock_submit_download(*_, **__):
-    return "mock-key"
+    return "mock-key", 200
 
 
 def _mock_get_ready_download_url(*_, **__):

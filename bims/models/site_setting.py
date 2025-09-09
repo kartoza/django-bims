@@ -1,6 +1,8 @@
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import JSONField
 from preferences.models import Preferences
+from django_cryptography.fields import encrypt
 
 
 class SiteSetting(Preferences):
@@ -365,6 +367,21 @@ class SiteSetting(Preferences):
         default=5,
         help_text="Minimum zoom level allowed for the map. Lower values show a wider area."
     )
+
+    gbif_username = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text="GBIF username used for API downloads.",
+        default='',
+        validators=[RegexValidator(r'^[\w.@+-]+$', "Enter a valid username.")],
+    )
+
+    gbif_password = encrypt(models.CharField(
+        max_length=256,
+        blank=True,
+        help_text="GBIF password used for API downloads (encrypted at rest).",
+        default='',
+    ))
 
     @property
     def project_name(self):

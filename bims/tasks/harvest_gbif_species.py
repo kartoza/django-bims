@@ -19,8 +19,9 @@ def harvest_gbif_species(session_id):
 
     disconnect_bims_signals()
 
-    harvest_session.status = 'Processing'
-    harvest_session.save()
+    if not harvest_session.status:
+        harvest_session.status = 'Processing'
+        harvest_session.save()
 
     with open(harvest_session.log_file.path, 'a') as log_file:
         log_file.write('Fetching species in area {}\n'.format(
@@ -35,8 +36,9 @@ def harvest_gbif_species(session_id):
         parent_species=parent_species,
     )
 
-    harvest_session.status = 'Finished'
-    harvest_session.finished = True
-    harvest_session.save()
+    if not HarvestSession.objects.get(id=session_id).canceled:
+        harvest_session.status = 'Finished'
+        harvest_session.finished = True
+        harvest_session.save()
 
     connect_bims_signals()
