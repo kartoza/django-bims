@@ -139,6 +139,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 10px;
     padding-left: 0;
     line-height: 1.2;
+    text-transform: uppercase;
 }
 
 .header-panel-button:hover {
@@ -329,7 +330,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-search-result {
-    margin-left: 405px !important;
+    margin-left: 389px !important;
     padding-bottom: 0;
 }
 
