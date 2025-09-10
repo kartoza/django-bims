@@ -61,6 +61,11 @@ class HarvestSession(models.Model):
         help_text='Flag indicating whether it is only fetching species'
     )
 
+    harvest_synonyms = models.BooleanField(
+        default=False,
+        help_text='When checked, synonyms for each accepted taxon will be harvested'
+    )
+
     boundary = models.ForeignKey(
         'bims.Boundary',
         null=True,

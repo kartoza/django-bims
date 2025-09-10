@@ -77,6 +77,7 @@ class HarvestGbifSpeciesView(
         cancel = ast.literal_eval(request.POST.get(
             'cancel', 'False'
         ))
+        harvest_synonyms = request.POST.get("harvest_synonyms_for_accepted") == "1"
         if cancel:
             session_id = request.POST.get('canceled_session_id', '')
             try:
@@ -113,7 +114,8 @@ class HarvestGbifSpeciesView(
             module_group_id=taxon_group_id,
             category='gbif',
             boundary_id=boundary_id,
-            is_fetching_species=True
+            is_fetching_species=True,
+            harvest_synonyms=harvest_synonyms,
         )
         log_file_folder = os.path.join(
             settings.MEDIA_ROOT, 'harvest-species-session-log'

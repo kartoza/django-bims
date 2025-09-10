@@ -1,10 +1,11 @@
 import logging
 
+import requests
 from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
-    gbif_name_suggest
+    gbif_name_suggest, gbif_synonyms_by_usage
 )
 from bims.models import Taxonomy, VernacularName, TaxonGroup
 from bims.enums import TaxonomicRank, TaxonomicStatus
@@ -550,3 +551,95 @@ def fetch_all_species_from_gbif(
             )
 
     return taxonomy
+
+def harvest_synonyms_for_accepted_taxonomy(
+    accepted_taxonomy: Taxonomy,
+    fetch_vernacular_names: bool = False,
+    log_file_path: str | None = None,
+    accept_language: str | None = None,
+):
+    """
+    Harvest synonyms for a given *accepted* Taxonomy using GBIF's
+    /v1/species/{usageKey}/synonyms endpoint.
+    """
+    def log_info(msg: str):
+        logger.info(msg)
+        if log_file_path:
+            with open(log_file_path, "a") as f:
+                f.write(msg + "\n")
+
+    if not accepted_taxonomy or not getattr(accepted_taxonomy, "gbif_key", None):
+        log_info("harvest_synonyms_for_accepted_taxonomy: missing accepted taxonomy or gbif_key")
+        return []
+
+    log_info(
+        f"Harvesting synonyms via GBIF API for accepted taxonomy "
+        f"{accepted_taxonomy.canonical_name} (key={accepted_taxonomy.gbif_key})"
+    )
+
+    try:
+        synonyms_payload = gbif_synonyms_by_usage(
+            usage_key=int(accepted_taxonomy.gbif_key),
+            limit=1000,
+            accept_language=accept_language,
+        )
+    except requests.RequestException as e:
+        logger.error("Failed to fetch GBIF synonyms for key=%s: %s", accepted_taxonomy.gbif_key, e)
+        return []
+
+    if not synonyms_payload:
+        log_info("No synonyms returned by GBIF for this accepted taxonomy.")
+        return []
+
+    processed: list[Taxonomy] = []
+    seen_keys: set[int] = set()
+    allowed_status_substrings = ("SYNONYM",)
+
+    for syn in synonyms_payload:
+        syn_key = syn.get("nubKey") or syn.get("key")
+        try:
+            syn_key_int = int(syn_key) if syn_key is not None else None
+        except (TypeError, ValueError):
+            syn_key_int = None
+
+        if not syn_key_int:
+            continue
+        if syn_key_int == accepted_taxonomy.gbif_key or syn_key_int in seen_keys:
+            continue
+        seen_keys.add(syn_key_int)
+
+        status = (syn.get("taxonomicStatus") or syn.get("status") or "").upper()
+        if not any(tag in status for tag in allowed_status_substrings):
+            continue
+
+        minimal_ok = all(k in syn for k in ("scientificName", "canonicalName", "rank"))
+        syn_full = syn if minimal_ok else (get_species(syn_key_int) or syn)
+
+        synonym_tax = create_or_update_taxonomy(
+            syn_full,
+            fetch_vernacular_names=fetch_vernacular_names
+        )
+        if not synonym_tax:
+            log_info(f"Failed to create/update synonym taxonomy for key={syn_key_int}")
+            continue
+
+        changed = False
+        if getattr(synonym_tax, "accepted_taxonomy_id", None) != accepted_taxonomy.id:
+            synonym_tax.accepted_taxonomy = accepted_taxonomy
+            changed = True
+
+        if not getattr(synonym_tax, "parent_id", None) and getattr(accepted_taxonomy, "parent_id", None):
+            synonym_tax.parent = accepted_taxonomy.parent
+            changed = True
+
+        if changed:
+            synonym_tax.save()
+
+        processed.append(synonym_tax)
+        log_info(
+            f"Linked synonym {synonym_tax.canonical_name} "
+            f"(key={synonym_tax.gbif_key}) → accepted {accepted_taxonomy.canonical_name}"
+        )
+
+    log_info(f"Synonyms processed: {len(processed)}")
+    return processed

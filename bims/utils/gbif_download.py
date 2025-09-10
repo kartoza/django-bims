@@ -403,7 +403,7 @@ def find_species_by_area(
     from bims.models.boundary import Boundary
     from bims.models.taxon_group import TaxonGroup
     from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
-    from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+    from bims.utils.fetch_gbif import fetch_all_species_from_gbif, harvest_synonyms_for_accepted_taxonomy
     from bims.utils.gbif import round_coordinates
     from bims.utils.audit import disable_easy_audit
     from bims.scripts.import_gbif_occurrences import ACCEPTED_BASIS_OF_RECORD
@@ -415,6 +415,7 @@ def find_species_by_area(
 
     log_file_path = get_log_file_path(harvest_session)
     log = lambda m: log_with_file(m, log_file_path)
+    harvest_synonyms = harvest_session.harvest_synonyms if harvest_session else False
 
     gbif_user = preferences.SiteSetting.gbif_username
     gbif_pass = preferences.SiteSetting.gbif_password
@@ -596,6 +597,31 @@ def find_species_by_area(
                         tgt.is_validated = validated
                         tgt.save()
                         add_parent_to_group(taxonomy, taxon_group, validated, log)
+
+                    if harvest_synonyms and (taxonomy.taxonomic_status or "").upper() == "ACCEPTED":
+                        try:
+                            syn_taxa = harvest_synonyms_for_accepted_taxonomy(
+                                taxonomy,
+                                fetch_vernacular_names=True,
+                                log_file_path=log_file_path,
+                                accept_language=None,
+                            ) or []
+                            log(
+                                f"Harvested {len(syn_taxa)} synonym(s) for "
+                                f"{taxonomy.canonical_name} ({taxonomy.gbif_key})")
+
+                            if taxon_group:
+                                for syn in syn_taxa:
+                                    stgt, _ = TaxonGroupTaxonomy.objects.get_or_create(
+                                        taxongroup=taxon_group, taxonomy=syn
+                                    )
+                                    if stgt.is_validated != validated:
+                                        stgt.is_validated = validated
+                                        stgt.save()
+                                    add_parent_to_group(syn, taxon_group, validated, log)
+                        except Exception as syn_exc:
+                            log(f"Error harvesting synonyms for {taxonomy.gbif_key}: {syn_exc}")
+
         except Exception as exc:
             log(f"Error fetching taxonomy {skey}: {exc}")
 
