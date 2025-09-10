@@ -17,6 +17,7 @@ class BaseMapLayer(OrderedModel):
         ('osm', 'OSM'),
         ('stamen', 'Stamen'),
         ('map_tiler', 'MapTiler'),
+        ('wms', 'WMSTile'),
     )
     title = models.CharField(
         max_length=256,
@@ -30,7 +31,7 @@ class BaseMapLayer(OrderedModel):
         max_length=100,
         default='',
         blank=True,
-        help_text='Only for Stamen base layer'
+        help_text='For Stamen and WMS'
     )
     attributions = models.TextField(
         default='',
