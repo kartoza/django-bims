@@ -187,6 +187,21 @@ define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
                         })
                     });
                 } else if (baseMapData['source_type'] === "stamen") {
+                    // _baseMap = new ol.layer.Tile({
+                    //   source: new ol.source.TileWMS({
+                    //     url: 'https://ows.digitalearth.africa/wms',
+                    //     params: {
+                    //       'LAYERS': 'gm_s2_annual',
+                    //       'VERSION': '1.3.0',
+                    //       'TRANSPARENT': true,
+                    //       'FORMAT': 'image/png'
+                    //     },
+                    //     serverType: 'geoserver',
+                    //     transition: 0
+                    //   }),
+                    //   opacity: 1
+                    // });
+
                     _baseMap = new ol.layer.Tile({
                         title: baseMapData['title'],
                         source: new ol.source.XYZ({
