@@ -168,7 +168,6 @@ define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
             }
 
             let _baseMapLayers = [];
-            console.log(baseMapLayers)
             $.each(baseMapLayers.reverse(), function (index, baseMapData) {
                 let _baseMap = null;
                 if (baseMapData['source_type'] === "xyz") {
