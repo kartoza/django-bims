@@ -176,7 +176,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             this.renderFilterHistorySection($siteDetailWrapper);
             this.renderBiodiversityDataSection($siteDetailWrapper, data);
 
-            Shared.Dispatcher.trigger('sidePanel:toggleLoading', false, '<i class="fa fa-map-marker"></i> Multi-Site Overview');
+            Shared.Dispatcher.trigger('sidePanel:toggleLoading', false, 'Multi-Site Overview');
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
             $siteDetailWrapper.find('.search-results-total').click(this.hideAll);
             $siteDetailWrapper.find('.search-results-total').click();

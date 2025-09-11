@@ -23,6 +23,24 @@
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/bug_report_panel_style.css" %}" rel="stylesheet">
 
+    {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
+       <style>
+            #map-container {
+                height: 100%;
+                padding-bottom: 47px;
+                padding-top:0 !important;
+            }
+            #zoom-control {
+                top: 67px;
+            }
+            .map-control-panel, .download-control-panel {
+                margin-top: 100px;
+            }
+            .map-control-panel-box {
+                margin-top: 67px;
+            }
+       </style>
+    {% endif %}
     <style>
         .select2-container--classic .select2-selection--multiple .select2-selection__choice {
             height: 25px !important;

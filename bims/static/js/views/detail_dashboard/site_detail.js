@@ -279,9 +279,9 @@ define([
                     let dashboardHeader = self.$el.find('.dashboard-header');
 
                     if (data['is_multi_sites']) {
-                        dashboardHeader.html('Multiple Sites Dashboard - ' + self.currentModule);
+                        dashboardHeader.html('MULTIPLE SITES DASHBOARD - ' + self.currentModule.toUpperCase());
                     } else {
-                        dashboardHeader.html('Single Site - ' + self.currentModule);
+                        dashboardHeader.html('SINGLE SITE - ' + self.currentModule.toUpperCase());
                     }
                     // Remove default height for chart containers
                     $('#species-ssdd-occurrences-line-chart').css("height", "")

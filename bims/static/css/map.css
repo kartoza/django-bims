@@ -139,6 +139,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 10px;
     padding-left: 0;
     line-height: 1.2;
+    text-transform: uppercase;
 }
 
 .header-panel-button:hover {
@@ -167,14 +168,14 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     left: 0;
     top: 0;
-    margin-top: 90px;
+    margin-top: 105px;
     padding-left: 6px;
     padding-right: 6px;
     font-size: 18pt;
     text-align: center;
     color: #4e4e4e;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
-    margin-left: 31px;
+    margin-left: 15px;
     padding-top: 0;
     border-top: none;
     width: 54px;
@@ -204,10 +205,10 @@ html, body, .map, .map-wrapper, #map-container {
     padding: 7px 0;
     position: absolute;
     left: 0;
-    top: 60px;
+    top: 72px;
     background-color: rgb(var(--secondary-accent-color));
     opacity: 0.7;
-    margin-left: 31px;
+    margin-left: 15px;
     border-radius: 0;
     color: white;
     width: 54px;
@@ -315,8 +316,8 @@ html, body, .map, .map-wrapper, #map-container {
     text-align: center;
     font-weight: normal;
     border-radius: 0;
-    margin-left: 85px;
-    margin-top: 60px;
+    margin-left: 69px;
+    margin-top: 72px;
     z-index: 100;
     overflow-y: auto;
     overflow-x: hidden;
@@ -329,7 +330,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-search-result {
-    margin-left: 405px !important;
+    margin-left: 389px !important;
     padding-bottom: 0;
 }
 
@@ -655,6 +656,7 @@ html, body, .map, .map-wrapper, #map-container {
 .search-info {
     text-align: left;
     font-size: 10pt;
+    margin-top: 5px;
 }
 
 .container-1 {
@@ -969,11 +971,18 @@ div:hover::-webkit-scrollbar {
 
 .mouse-position, #taxon-filter {
     position: absolute;
-    bottom: .5em;
-    left: .5em;
-    font-size: .7rem;
+    bottom: 55px;
+    left: 15px;
+    font-size: 1rem;
     color: #000;
-    background: rgba(255, 255, 255, .8);
+    background: rgba(255, 255, 255, 1);
+}
+
+.mouse-position button {
+    height: 30px !important;
+    width: 30px !important;
+    opacity: 0.7;
+    border-radius: 5px !important;
 }
 
 #taxon-filter {
@@ -1001,6 +1010,12 @@ div:hover::-webkit-scrollbar {
     padding-right: 20px;
 }
 
+.mouse-position {
+    background-color: rgba(255, 255, 255, 1);
+    z-index: 9999;
+    border-radius: 5px !important;
+}
+
 .mouse-position button {
     height: 1.375em;
     width: 1.375em;
@@ -1008,12 +1023,13 @@ div:hover::-webkit-scrollbar {
 }
 
 .mouse-position.active {
-    width: 117px;
+    width: 155px;
+    background: #b1b1b1;
 }
 
 .ol-mouse-position {
     top: 5px;
-    left: 30px;
+    left: 35px;
     position: absolute;
 }
 
@@ -1116,8 +1132,8 @@ div:hover::-webkit-scrollbar {
     max-width: 250px;
     position: absolute;
     overflow: hidden;
-    left: 0.5em;
-    bottom: 70px;
+    left: 50px;
+    bottom: 55px;
     background-color: white;
     cursor: pointer;
     z-index: 999;
@@ -1131,14 +1147,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #map-legend-symbol {
-    height: 31px;
-    width: 31px;
-    text-align: center;
-    padding-top: 4px;
-    font-weight: 700;
-}
-
-.map-legend-symbol {
     height: 31px;
     width: 31px;
     text-align: center;
@@ -2871,8 +2879,15 @@ div:hover::-webkit-scrollbar {
 }
 
 .ol-scale-line {
-    margin-left: 30px;
-    margin-bottom: 45px;
+    margin-left: 9px;
+    margin-bottom: 9px;
+}
+
+.ol-scale-line-inner {
+  height: 25px;
+  line-height: 25px;
+  padding: 2px 8px;
+  font-size: 15px;
 }
 
 .search-header-row {
@@ -2888,7 +2903,7 @@ div:hover::-webkit-scrollbar {
 .search-box-row {
     z-index: 9999;
     position: fixed;
-    margin-top: 20px;
+    margin-top: 24px;
 }
 
 .filter-header-row {
@@ -2941,9 +2956,10 @@ div:hover::-webkit-scrollbar {
     border-radius: 5px;
 }
 
-.ol-attribution {
-    margin-bottom: 20px;
-}
+/*.ol-attribution {*/
+/*    bottom: 3.5em !important;*/
+/*}*/
+
 
 .wetland-dashboard-status {
     padding: 5px;
