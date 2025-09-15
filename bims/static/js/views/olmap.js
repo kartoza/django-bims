@@ -941,12 +941,24 @@ define([
             }
         },
         downloadMap: function (fileType = 'png') {
-            var that = this;
-            var downloadMap = true;
+            const self = this;
+            if (self._isDownloading) return;
+            self._isDownloading = true;
 
-            that.map.renderSync();
+            const h2c =
+                (typeof HtmlToCanvas !== 'undefined' && HtmlToCanvas) ||
+                (typeof html2canvas !== 'undefined' && html2canvas);
 
-            if (downloadMap) {
+            if (!h2c) {
+                alert('Screenshot library (html2canvas) is not available.');
+                self._isDownloading = false;
+                return;
+            }
+
+            const $mapWrapper = $('.map-wrapper');
+            const el = $mapWrapper[0];
+
+            const hideUI = () => {
                 $('#ripple-loading').show();
                 $('.map-control-panel-box').hide();
                 $('.ol-control').hide();
@@ -955,45 +967,96 @@ define([
                 $('.bug-report-wrapper').hide();
                 $('#wetland-map-feedback').hide();
                 $('.print-map-control').addClass('control-panel-selected');
-                that.map.once('rendercomplete', function (event) {
-                    var canvas = document.getElementsByClassName('map-wrapper');
-                    var $mapWrapper = $('.map-wrapper');
-                    var divHeight = $mapWrapper.height();
-                    var divWidth = $mapWrapper.width();
-                    var ratio = divHeight / divWidth;
-                    html2canvas(canvas, {
-                        useCORS: true,
-                        background: '#FFFFFF',
-                        allowTaint: false,
-                        onrendered: function (canvas) {
-                            if (fileType === 'pdf') {
-                                // Create a new instance of jsPDF
-                                let pdf = new jsPDF.jsPDF('l', 'mm', [divWidth, divHeight]);
+            };
+            const showUI = () => {
+                $('.zoom-control').show();
+                $('.map-control-panel').show();
+                $('#ripple-loading').hide();
+                $('.bug-report-wrapper').show();
+                $('.ol-control').show();
+                $('#wetland-map-feedback').show();
+                $('.print-map-control').removeClass('control-panel-selected');
+            };
 
-                                // Add the canvas image to the PDF
-                                pdf.addImage(canvas.toDataURL("image/png"), 'PNG', 0, 0, divWidth, divHeight);
+            const saveCanvas = (canvas) => {
+                const rect = el.getBoundingClientRect();
+                const widthPx = rect.width;
+                const heightPx = rect.height;
 
-                                // Save the PDF
-                                pdf.save('map.pdf');
-                            } else {
-                                var link = document.createElement('a');
-                                link.setAttribute("type", "hidden");
-                                link.href = canvas.toDataURL("image/" + fileType);
-                                link.download = 'map.' + fileType;
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                            }
-                            $('.zoom-control').show();
-                            $('.map-control-panel').show();
-                            $('#ripple-loading').hide();
-                            $('.bug-report-wrapper').show();
-                            $('.ol-control').show();
-                            $('#wetland-map-feedback').show();
-                            $('.print-map-control').removeClass('control-panel-selected');
+                if (fileType === 'pdf') {
+                    const PX_TO_MM = 0.2645833333;
+                    const pdfW = widthPx * PX_TO_MM;
+                    const pdfH = heightPx * PX_TO_MM;
+                    const pdf = new jsPDF.jsPDF('l', 'mm', [pdfW, pdfH]);
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
+                    pdf.save('map.pdf');
+                } else {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL(`image/${fileType}`);
+                    link.download = `map.${fileType}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                }
+            };
+
+            const captureWithHtml2Canvas = (element, opts = {}) =>
+                new Promise((resolve, reject) => {
+                    const options = Object.assign({}, opts);
+                    // Old API path:
+                    options.onrendered = (canvas) => resolve(canvas);
+                    try {
+                        const maybe = h2c(element, options);
+                        // New API path:
+                        if (maybe && typeof maybe.then === 'function') {
+                            maybe.then(resolve).catch(reject);
                         }
-                    })
+                    } catch (e) {
+                        reject(e);
+                    }
                 });
+
+            const capture = () => {
+                self.map.renderSync();
+                try {
+                    const view = self.map.getView();
+                    view.setZoom(view.getZoom() + 0.0000001);
+                } catch (_) {}
+
+                requestAnimationFrame(() => {
+                    captureWithHtml2Canvas(el, {
+                        useCORS: true,
+                        allowTaint: false,
+                        backgroundColor: '#FFFFFF',
+                        scale: Math.min(2, window.devicePixelRatio || 1),
+                    })
+                        .then(saveCanvas)
+                        .catch((err) => {
+                            console.error('Map capture failed:', err);
+                            alert('Sorry, capturing the map failed. Please try again.');
+                        })
+                        .finally(() => {
+                            showUI();
+                            self._isDownloading = false;
+                        });
+                });
+            };
+
+            hideUI();
+
+            let done = false;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                clearTimeout(fallbackTimer);
+                capture();
+            };
+
+            if (self.mapIsReady) {
+                finish();
+            } else {
+                self.whenMapIsReady(finish);
+                let fallbackTimer = setTimeout(finish, 5000);
             }
         },
         startTutorial: function() {
