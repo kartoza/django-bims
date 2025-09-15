@@ -1045,10 +1045,15 @@ define([
             hideUI();
 
             let done = false;
+            let fallbackTimerId = null;
+
             const finish = () => {
                 if (done) return;
                 done = true;
-                clearTimeout(fallbackTimer);
+                if (fallbackTimerId !== null) {
+                    clearTimeout(fallbackTimerId);
+                    fallbackTimerId = null;
+                }
                 capture();
             };
 
@@ -1056,7 +1061,7 @@ define([
                 finish();
             } else {
                 self.whenMapIsReady(finish);
-                let fallbackTimer = setTimeout(finish, 5000);
+                fallbackTimerId = setTimeout(finish, 5000);
             }
         },
         startTutorial: function() {
