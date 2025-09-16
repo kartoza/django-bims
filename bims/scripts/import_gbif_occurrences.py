@@ -6,12 +6,11 @@ import logging
 import os
 import time
 import zipfile
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Tuple, Optional, List
 
 import requests
-from dateutil.parser import parse, ParserError
+from dateutil.parser import parse
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point, MultiPolygon, GEOSGeometry
 from django.contrib.gis.measure import D
@@ -350,7 +349,7 @@ def process_gbif_row(
     latitude = float(row.get(LAT_KEY))
     coord_uncertainty = row.get(COORDINATE_UNCERTAINTY_KEY).strip()
     coord_uncertainty = float(coord_uncertainty) if coord_uncertainty else 0
-    event_date = row.get(EVENT_DATE_KEY) or row.get(MODIFIED_DATE_KEY)
+    event_date = row.get(EVENT_DATE_KEY, '')
     collector = row.get(COLLECTOR_KEY, '')
     institution_code = row.get(INSTITUTION_CODE_KEY, source_collection)
     reference = row.get(REFERENCE_KEY, '')
@@ -380,12 +379,16 @@ def process_gbif_row(
     # Attempt to parse event_date -> collection_date
     collection_date = None
     if event_date:
+        s = str(event_date).strip()
+
+        if "/" in s:
+            log(f"Interval eventDate '{s}' for upstream_id={upstream_id}; skipping.")
+            return None, False
+
         try:
-            collection_date = parse(event_date)
-        except ParserError:
-            log(
-                f'Date parsing failed for event_date={event_date}'
-            )
+            collection_date = parse(s)
+        except Exception as e:
+            log(f"Date parsing failed for event_date={s}: {e}")
             return None, False
 
     if not collection_date:
