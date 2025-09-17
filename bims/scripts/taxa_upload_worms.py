@@ -13,6 +13,7 @@ from bims.models import (
     Taxonomy, SourceReference
 )
 from .taxa_upload import TaxaProcessor
+from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
 
 logger = logging.getLogger("bims")
 
@@ -195,7 +196,7 @@ class WormsTaxaProcessor(TaxaProcessor):
         )
         taxonomy.source_reference = ref
 
-    def process_worms_data(self, row: dict, taxon_group):
+    def process_worms_data(self, row: dict, taxon_group, harvest_synonyms: bool = False):
         """
         Process a single WoRMS CSV row into Taxonomy without using GBIF.
         """
@@ -247,9 +248,13 @@ class WormsTaxaProcessor(TaxaProcessor):
         if authority:
             taxonomy.author = authority
 
+        is_synonym = False
+
         # Taxonomic status
         if taxonomic_status:
             taxonomy.taxonomic_status = taxonomic_status
+            if 'synonym' in taxonomic_status.lower():
+                is_synonym = True
 
         if not is_accepted and accepted_name:
             acc = Taxonomy.objects.filter(
@@ -292,6 +297,22 @@ class WormsTaxaProcessor(TaxaProcessor):
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
         self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
 
+        if harvest_synonyms and not is_synonym:
+            try:
+                syn_taxa = harvest_synonyms_for_accepted_taxonomy(
+                    taxonomy,
+                    fetch_vernacular_names=True,
+                    accept_language=None,
+                ) or []
+                for syn in syn_taxa:
+                    self.add_taxon_to_taxon_group(
+                        syn, taxon_group, validated=auto_validate
+                    )
+            except Exception as syn_exc:
+                logger.exception(
+                    f"Error harvesting synonyms for {taxonomy.gbif_key}: {syn_exc}"
+                )
+
         self.finish_processing_row(row, taxonomy)
 
 
@@ -315,5 +336,6 @@ class WormsTaxaCSVUpload(DataCSVUpload, WormsTaxaProcessor):
 
     def process_row(self, row):
         taxon_group = self.upload_session.module_group
+        harvest_synonyms = self.upload_session.harvest_synonyms
         with transaction.atomic():
-            self.process_worms_data(row, taxon_group)
+            self.process_worms_data(row, taxon_group, harvest_synonyms)

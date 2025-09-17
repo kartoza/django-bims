@@ -25,7 +25,7 @@ from bims.models import (
 )
 from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
-    fetch_all_species_from_gbif, fetch_gbif_vernacular_names
+    fetch_all_species_from_gbif, fetch_gbif_vernacular_names, harvest_synonyms_for_accepted_taxonomy
 )
 from bims.scripts.data_upload import DataCSVUpload
 from bims.utils.gbif import get_species
@@ -538,7 +538,7 @@ class TaxaProcessor(object):
     def synonym_key(self, field_key):
         return f'{SYNONYM} {field_key}'
 
-    def process_data(self, row, taxon_group: TaxonGroup):
+    def process_data(self, row, taxon_group: TaxonGroup, harvest_synonyms: bool = False):
         """Process a single CSV row."""
         if not self.all_keys:
             for key in row.keys():
@@ -695,8 +695,11 @@ class TaxaProcessor(object):
             except ValueError:
                 fada_id = None
 
+        is_synonym = False
+
         # Synonym support
         if 'synonym' in taxonomic_status.lower().strip():
+            is_synonym = True
             accepted_taxon_val = self.get_row_value(row, ACCEPTED_TAXON)
             if accepted_taxon_val:
                 accepted_taxon = Taxonomy.objects.filter(
@@ -967,6 +970,22 @@ class TaxaProcessor(object):
             # Taxon group linking (respects auto-validate in subclass)
             self.add_taxon_to_taxon_group_unvalidated(taxonomy, taxon_group)
 
+            if not is_synonym and harvest_synonyms:
+                try:
+                    syn_taxa = harvest_synonyms_for_accepted_taxonomy(
+                        taxonomy,
+                        fetch_vernacular_names=True,
+                        accept_language=None,
+                    ) or []
+                    for syn in syn_taxa:
+                        self.add_taxon_to_taxon_group_unvalidated(
+                            syn, taxon_group
+                        )
+                except Exception as syn_exc:
+                    logger.exception(
+                        f"Error harvesting synonyms for {taxonomy.gbif_key}: {syn_exc}"
+                    )
+
             self.finish_processing_row(row, taxonomy)
 
         except Exception as e:  # noqa
@@ -1001,5 +1020,6 @@ class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
 
     def process_row(self, row):
         taxon_group = self.upload_session.module_group
+        harvest_synonyms = self.upload_session.harvest_synonyms
         with transaction.atomic():
-            self.process_data(row, taxon_group)
+            self.process_data(row, taxon_group, harvest_synonyms)

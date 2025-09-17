@@ -61,6 +61,8 @@ class DataUploadView(
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
         template = request.POST.get('template', '')
+        harvest_synonyms = request.POST.get("harvest_synonyms_for_accepted") == "1"
+
         cancel = ast.literal_eval(request.POST.get(
             'cancel', 'False'
         ))
@@ -118,7 +120,8 @@ class DataUploadView(
                         uploaded_at=datetime.now(),
                         module_group_id=taxon_group_id,
                         category=self.category,
-                        template=template
+                        template=template,
+                        harvest_synonyms=harvest_synonyms
                     )
                     upload_session.process_file.save(csv_file_name, csv_content)
             elif file_extension == '.csv':
@@ -128,7 +131,8 @@ class DataUploadView(
                     uploaded_at=datetime.now(),
                     module_group_id=taxon_group_id,
                     category=self.category,
-                    template=template
+                    template=template,
+                    harvest_synonyms=harvest_synonyms
                 )
 
             else:
