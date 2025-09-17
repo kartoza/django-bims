@@ -109,6 +109,14 @@ class BioCollectionSummary(APIView):
         if taxonomy.iucn_status:
             iucn_status = taxonomy.iucn_status.category
         response_data['iucn_id'] = taxonomy.iucn_redlist_id
+        iucn_url = ''
+        if taxonomy.iucn_data:
+            try:
+                iucn_data = json.loads(taxonomy.iucn_data.replace('\'', '"'))
+                iucn_url = iucn_data.get('url', '')
+            except json.decoder.JSONDecodeError:
+                pass
+        response_data['iucn_url'] = iucn_url
         response_data['taxon'] = taxonomy.scientific_name
         response_data['canonical_name'] = taxonomy.canonical_name
         response_data['taxon_additional_data'] = (

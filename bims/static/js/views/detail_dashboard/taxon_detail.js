@@ -302,9 +302,12 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             var canonicalName = data['taxon'];
             var common_name = data['common_name'];
             var iucn_redlist_id = data['iucn_id'];
+            var iucn_url = data['iucn_url'];
             self.taxonName = canonicalName;
 
-            this.iucnLink.attr('href', `https://apiv3.iucnredlist.org/api/v3/taxonredirect/${iucn_redlist_id}/`);
+            if (iucn_url) {
+                this.iucnLink.attr('href', iucn_url);
+            }
 
             var origin_block_data = {};
             var origin_dict = {
