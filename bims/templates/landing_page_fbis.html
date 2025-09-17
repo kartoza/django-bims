@@ -131,9 +131,13 @@
                             <div class="flex-container">
                                 {% for partner in funder_section.org.all %}
                                     <div class="flex-item">
-                                        <a href="{{ partner.link }}" target="_blank">
+                                        {% if partner.link %}
+                                             <a href="{{ partner.link }}" target="_blank">
+                                                <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
+                                            </a>
+                                        {% else %}
                                             <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
-                                        </a>
+                                        {% endif %}
                                     </div>
                                 {% endfor %}
                             </div>
