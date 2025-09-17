@@ -119,6 +119,10 @@ class UploadSession(models.Model):
         default='',
         blank=True
     )
+    harvest_synonyms = models.BooleanField(
+        default=False,
+        help_text='When checked, synonyms for each accepted taxon will be harvested'
+    )
 
     # noinspection PyClassicStyleClass
     class Meta:

@@ -71,7 +71,29 @@
                              <input id="fileupload" type="file" name="csv_file">
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="submit">Upload</button>
+                    <div class="form-group row">
+                      <label class="col-sm-2 col-form-label"></label>
+                      <div class="col-sm-10">
+                        <div class="form-check">
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="harvest-synonyms"
+                            name="harvest_synonyms_for_accepted"
+                            value="1"
+                            {% if request.POST.harvest_synonyms_for_accepted %}checked{% endif %}
+                            {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}
+                          >
+                          <label class="form-check-label" for="harvest-synonyms">
+                            Harvest synonym(s) for all accepted taxa
+                          </label>
+                          <small class="form-text text-muted">
+                            When checked, synonyms for each accepted taxon will be harvested from GBIF.
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    <button class="btn btn-primary" type="submit" disabled>Upload</button>
                     {% endif %}
                 </div>
 
@@ -278,6 +300,14 @@
             $('#cancelModal').on('shown.bs.modal', function (event) {
                  let triggerElement = $(event.relatedTarget);
                  currentSessionId = triggerElement.data('id');
+            });
+
+            $('#fileupload').on('change', function () {
+                if ($(this).val()) {
+                    $('button[type="submit"]').prop('disabled', false);
+                } else {
+                    $('button[type="submit"]').prop('disabled', true);
+                }
             });
         });
 
