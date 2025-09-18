@@ -1,8 +1,11 @@
 # coding=utf-8
 """Test Taxon Group."""
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission, Group
 from django.contrib.sites.models import Site
 from django.test import TestCase
+from rest_framework.test import force_authenticate, APIRequestFactory
+
 from bims.api_views.taxon_group import (
     update_taxon_group_orders,
     remove_taxa_from_taxon_group,
@@ -18,6 +21,7 @@ from bims.models.taxon_group import (
     TAXON_GROUP_LEVEL_3, TAXON_GROUP_LEVEL_2
 )
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 
 
 class TestTaxonGroup(TestCase):
@@ -183,3 +187,115 @@ class TestTaxonGroup(TestCase):
             ).first().name
         )
 
+
+class TestTaxonGroupTotalValidated(TestCase):
+    def setUp(self):
+        self.factory = APIRequestFactory()
+        User = get_user_model()
+        self.superuser = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="x",
+        )
+        self.user = User.objects.create_user(
+            username="user",
+            email="user@example.com",
+            password="x",
+        )
+
+    def _link(self, group, taxonomy, *, is_validated=True):
+        """
+        Attach a taxonomy to a taxon group with the is_validated flag.
+        Works for explicit-through M2M using through_defaults.
+        """
+        group.taxonomies.add(taxonomy, through_defaults={"is_validated": is_validated})
+
+    def _call(self, group, user):
+        view = TaxonGroupTotalValidated.as_view()
+        req = self.factory.get(f"/fake/taxon-group/{group.id}/totals/")
+        force_authenticate(req, user=user)
+        resp = view(req, id=group.id)
+        self.assertEqual(resp.status_code, 200)
+        return resp.data
+
+    def test_superuser_sees_all_buckets(self):
+        # Parent group
+        tg = TaxonGroupF.create()
+
+        # Accepted validated (ACCEPTED, DOUBTFUL, and BLANK should count as accepted)
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_doubt = TaxonomyF.create(taxonomic_status="DOUBTFUL")
+        t_blank = TaxonomyF.create(taxonomic_status="")  # blank -> accepted
+
+        # Synonym validated
+        t_syn = TaxonomyF.create(taxonomic_status="SYNONYM")
+
+        # Unvalidated
+        t_acc_u = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn_u = TaxonomyF.create(taxonomic_status="MISAPPLIED")  # synonym subclass
+
+        # Link them with validation flags
+        self._link(tg, t_acc, is_validated=True)
+        self._link(tg, t_doubt, is_validated=True)
+        self._link(tg, t_blank, is_validated=True)
+        self._link(tg, t_syn, is_validated=True)
+
+        self._link(tg, t_acc_u, is_validated=False)
+        self._link(tg, t_syn_u, is_validated=False)
+
+        data = self._call(tg, self.superuser)
+
+        self.assertEqual(data["accepted_validated"], 3)     # acc + doubtful + blank
+        self.assertEqual(data["synonym_validated"], 1)      # synonym
+        self.assertEqual(data["accepted_unvalidated"], 1)   # acc_u
+        self.assertEqual(data["synonym_unvalidated"], 1)    # misapplied
+
+        self.assertEqual(data["total_validated"], 4)
+        self.assertEqual(data["total_unvalidated"], 2)
+
+    def test_regular_user_hides_unvalidated_counts(self):
+        tg = TaxonGroupF.create()
+
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn = TaxonomyF.create(taxonomic_status="SYNONYM")
+        t_acc_u = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn_u = TaxonomyF.create(taxonomic_status="HOMOTYPIC_SYNONYM")
+
+        self._link(tg, t_acc, is_validated=True)
+        self._link(tg, t_syn, is_validated=True)
+        self._link(tg, t_acc_u, is_validated=False)
+        self._link(tg, t_syn_u, is_validated=False)
+
+        data = self._call(tg, self.user)
+
+        # Validated visible
+        self.assertEqual(data["accepted_validated"], 1)
+        self.assertEqual(data["synonym_validated"], 1)
+        self.assertEqual(data["total_validated"], 2)
+
+        # Unvalidated hidden for non-expert/non-superuser
+        self.assertEqual(data["accepted_unvalidated"], 0)
+        self.assertEqual(data["synonym_unvalidated"], 0)
+        self.assertEqual(data["total_unvalidated"], 0)
+
+    def test_recurses_into_children(self):
+        parent = TaxonGroupF.create()
+        child = TaxonGroupF.create(parent=parent)
+
+        # Put everything on the child and assert parent includes them
+        t_acc = TaxonomyF.create(taxonomic_status="DOUBTFUL")  # accepted bucket
+        t_syn = TaxonomyF.create(taxonomic_status="PROPARTE_SYNONYM")
+
+        self._link(child, t_acc, is_validated=True)
+        self._link(child, t_syn, is_validated=False)
+
+        data_super = self._call(parent, self.superuser)
+        self.assertEqual(data_super["accepted_validated"], 1)
+        self.assertEqual(data_super["synonym_unvalidated"], 1)
+        self.assertEqual(data_super["total_validated"], 1)
+        self.assertEqual(data_super["total_unvalidated"], 1)
+
+        data_user = self._call(parent, self.user)
+        self.assertEqual(data_user["accepted_validated"], 1)
+        self.assertEqual(data_user["synonym_unvalidated"], 0)  # hidden
+        self.assertEqual(data_user["total_unvalidated"], 0)

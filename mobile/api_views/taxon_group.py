@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bims.api_views.taxon_update import is_expert
+from bims.enums import TaxonomicStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
@@ -17,59 +18,112 @@ class TaxonGroupList(APIView):
         return Response(TaxonGroupSerializer(
             taxon_group, many=True
         ).data)
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
 class TaxonGroupTotalValidated(APIView):
     """
-    API View to retrieve total counts of validated and unvalidated taxonomies
-    within a specified taxon group, including its children.
+    Return counts for a taxon group by:
+      - accepted_validated
+      - accepted_unvalidated
+      - synonym_validated
+      - synonym_unvalidated
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.validated_count = 0
-        self.unvalidated_count = 0
+        self.accepted_validated = 0
+        self.accepted_unvalidated = 0
+        self.synonym_validated = 0
+        self.synonym_unvalidated = 0
+
+    def _status_queries(self):
+        accepted_names = {
+            TaxonomicStatus.ACCEPTED.name,
+            TaxonomicStatus.DOUBTFUL.name,
+        }
+        synonym_names = {
+            TaxonomicStatus.SYNONYM.name,
+            TaxonomicStatus.HETEROTYPIC_SYNONYM.name,
+            TaxonomicStatus.HOMOTYPIC_SYNONYM.name,
+            TaxonomicStatus.PROPARTE_SYNONYM.name,
+            TaxonomicStatus.MISAPPLIED.name,
+        }
+
+        accepted_q = (
+            Q(taxonomic_status__in=accepted_names) |
+            Q(taxonomic_status__isnull=True) |
+            Q(taxonomic_status="")
+        )
+        synonym_q = Q(taxonomic_status__in=synonym_names)
+
+        return accepted_q, synonym_q
 
     def collect_taxonomy_ids(self, taxon_group):
         """
-        Recursively collects counts of validated and unvalidated taxonomies
-        within the given taxon group and its children.
-
-        Args:
-            taxon_group (TaxonGroup): The taxon group to collect counts from.
+        Recursively aggregate counts for the given taxon group + children.
         """
-        validated = taxon_group.taxonomies.filter(
+        accepted_q, synonym_q = self._status_queries()
+
+        is_user_expert = is_expert(self.request.user, get_object_or_404(TaxonGroup, id=taxon_group.id))
+        can_view_unvalidated = self.request.user.is_superuser or is_user_expert
+
+        qs = taxon_group.taxonomies.all()
+
+        # Validated
+        self.accepted_validated += qs.filter(
+            accepted_q,
             taxongrouptaxonomy__is_validated=True
         ).count()
-        is_user_expert = is_expert(
-            self.request.user,
-            TaxonGroup.objects.get(id=taxon_group.id)
-        )
-        if self.request.user.is_superuser or is_user_expert:
-            unvalidated = taxon_group.taxonomies.filter(
+
+        self.synonym_validated += qs.filter(
+            synonym_q,
+            taxongrouptaxonomy__is_validated=True
+        ).count()
+
+        # Unvalidated (masked if no permission)
+        if can_view_unvalidated:
+            self.accepted_unvalidated += qs.filter(
+                accepted_q,
                 taxongrouptaxonomy__is_validated=False
             ).count()
-        else:
-            unvalidated = 0
 
-        self.validated_count += validated
-        self.unvalidated_count += unvalidated
+            self.synonym_unvalidated += qs.filter(
+                synonym_q,
+                taxongrouptaxonomy__is_validated=False
+            ).count()
 
-        children = TaxonGroup.objects.filter(parent=taxon_group)
-        for child in children:
+        # Recurse into children
+        for child in TaxonGroup.objects.filter(parent=taxon_group):
             self.collect_taxonomy_ids(child)
 
     def get(self, request, *args, **kwargs):
         """
-        Handles GET request to retrieve the total counts of validated and unvalidated
-        taxonomies for a specified taxon group.
-        Returns:
-            Response: A response containing the total counts of validated and unvalidated taxonomies.
+        GET: return counts split by accepted/synonym and validated/unvalidated.
+        Unvalidated counts are 0 for non-privileged users.
         """
-        taxon_group_id = kwargs.get('id')
+        taxon_group_id = kwargs.get("id")
         taxon_group = get_object_or_404(TaxonGroup, id=taxon_group_id)
+
         self.collect_taxonomy_ids(taxon_group)
+
+        is_user_expert = is_expert(request.user, taxon_group)
+        can_view_unvalidated = request.user.is_superuser or is_user_expert
+        accepted_unvalidated = self.accepted_unvalidated if can_view_unvalidated else 0
+        synonym_unvalidated = self.synonym_unvalidated if can_view_unvalidated else 0
+
+        total_validated = self.accepted_validated + self.synonym_validated
+        total_unvalidated = accepted_unvalidated + synonym_unvalidated
+
         return Response({
-            'total_validated': self.validated_count,
-            'total_unvalidated': self.unvalidated_count
+            "accepted_validated": self.accepted_validated,
+            "accepted_unvalidated": accepted_unvalidated,
+            "synonym_validated": self.synonym_validated,
+            "synonym_unvalidated": synonym_unvalidated,
+
+            "total_validated": total_validated,
+            "total_unvalidated": total_unvalidated,
         })
