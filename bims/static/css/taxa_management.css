@@ -367,3 +367,78 @@ table {
 }
 
 .cell-diff .badge { margin-right: 2px; }
+
+.tg-item .img-container img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.tg-expert-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-right: -10px;
+}
+
+.tg-metrics {
+  display: grid;
+  grid-auto-rows: auto;
+  row-gap: 6px;
+  margin-top: 4px;
+}
+
+/* Section label + chips line */
+.tg-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+/* Section labels */
+.tg-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: #555;
+  margin-right: 2px;
+}
+.tg-label.valid { color: #2e7d32; }      /* green-ish */
+.tg-label.unvalid { color: #8a2d2d; }   /* red-ish  */
+
+/* Count chips */
+.tg-chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+.taxon-group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px solid #e6e6e6;
+  background: #fafafa;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: #222;
+  white-space: nowrap;
+}
+.taxon-group-badge span[id^="taxon_group_"] {
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  text-align: right;
+  display: inline-block;
+}
+
+/* Small action buttons */
+.update-logo-btn.btn {
+  padding: 2px 6px;
+  line-height: 1.1;
+  font-size: 11px;
+}
+.remove-all-btn.btn {
+  font-size: 10pt;
+  padding-top: 0;
+  padding-bottom: 0;
+}

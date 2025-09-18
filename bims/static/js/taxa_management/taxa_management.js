@@ -183,11 +183,12 @@ export const taxaManagement = (() => {
                 headers: {"X-CSRFToken": csrfToken},
                 type: 'GET',
                 success: function (response) {
-                    $('#taxon_group_validated_' + taxaGroup.id).text(response.total_validated);
+                    $('#taxon_group_accepted_validated_' + taxaGroup.id).text(response.accepted_validated);
+                    $('#taxon_group_synonym_validated_' + taxaGroup.id).text(response.synonym_validated);
                     if (response.total_unvalidated > 0) {
-                        $('#taxon_group_validated_' + taxaGroup.id).parent().after($('<div class="taxon-group-badge">\n' +
-                            `<span id="taxon_group_unvalidated_${taxaGroup.id}">${response.total_unvalidated}</span> Unvalidated\n` +
-                            '</div>'))
+                        $('#taxon_group_unvalidated_' + taxaGroup.id).show();
+                        $('#taxon_group_accepted_unvalidated_' + taxaGroup.id).text(response.accepted_unvalidated);
+                        $('#taxon_group_synonym_unvalidated_' + taxaGroup.id).text(response.synonym_unvalidated);
                     }
                 }
             });
