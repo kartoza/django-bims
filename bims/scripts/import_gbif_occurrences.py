@@ -81,9 +81,6 @@ DATE_ISSUES_TO_EXCLUDE = [
     "MODIFIED_DATE_INVALID"
 ]
 BOUNDARY_BATCH_SIZE = 10
-EXCLUDED_PROJECT_IDS = set(
-    getattr(preferences.SiteSetting, "gbif_excluded_project_ids_effective", []) or []
-)
 
 
 def chunked(seq, size):
@@ -302,7 +299,8 @@ def process_gbif_row(
     taxon_group,
     log,
     habitat = None,
-    origin = None
+    origin = None,
+    excluded_project_ids = None
 ) -> Tuple[Optional["BiologicalCollectionRecord"], bool]:
     """Synchronise a GBIF occurrence with *BiologicalCollectionRecord*.
 
@@ -324,7 +322,9 @@ def process_gbif_row(
         indicating whether the row contributed to the harvest totals.
     """
     proj = (row.get("projectId") or "").strip().lower()
-    if proj and proj in EXCLUDED_PROJECT_IDS:
+    if not excluded_project_ids:
+        excluded_project_ids = []
+    if proj and proj in excluded_project_ids:
         log(f"Excluded by tenant setting: projectId='{proj}', skipping...")
         return None, False
 
@@ -599,6 +599,10 @@ def process_gbif_response(
                 records_to_create: List["BiologicalCollectionRecord"] = []
                 processed_count = 0
 
+                excluded_project_ids = set(
+                    preferences.SiteSetting.gbif_excluded_project_ids_effective or []
+                )
+
                 for idx, row in enumerate(reader, start=1):
                     new_record, accepted = process_gbif_row(
                         row=row,
@@ -610,6 +614,7 @@ def process_gbif_response(
                         log=_log,
                         habitat=habitat,
                         origin=origin,
+                        excluded_project_ids=excluded_project_ids
                     )
 
                     if accepted:
