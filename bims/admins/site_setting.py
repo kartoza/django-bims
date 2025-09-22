@@ -66,6 +66,8 @@ class SiteSettingAdminForm(forms.ModelForm):
 class SiteSettingAdmin(PreferencesAdmin):
     form = SiteSettingAdminForm
 
+    readonly_fields = ("gbif_excluded_project_ids_effective_display",)
+
     fieldsets = (
         (_("General"), {
             "fields": (
@@ -153,8 +155,27 @@ class SiteSettingAdmin(PreferencesAdmin):
             "classes": ("collapse",),
         }),
         (_("GBIF"), {
-            "fields": ("gbif_username", "gbif_password"),
+            "fields": (
+                "gbif_username",
+                "gbif_password",
+                "gbif_excluded_project_ids",
+                "gbif_excluded_project_ids_effective_display"
+            ),
         }),
+    )
+
+    def gbif_excluded_project_ids_effective_display(self, obj):
+        """
+        Read-only view of the effective exclusions:
+        CSV from admin + tenant defaults (e.g. 'fbis' on FBIS tenant).
+        """
+        if not obj:
+            return ""
+        vals = getattr(obj, "gbif_excluded_project_ids_effective", []) or []
+        return ", ".join(vals) if vals else "(none)"
+
+    gbif_excluded_project_ids_effective_display.short_description = _(
+        "Excluded projectIds (effective)"
     )
 
     def save_model(self, request, obj, form, change):

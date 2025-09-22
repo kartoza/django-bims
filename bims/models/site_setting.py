@@ -1,5 +1,5 @@
 from django.core.validators import RegexValidator
-from django.db import models
+from django.db import models, connection
 from django.db.models import JSONField
 from preferences.models import Preferences
 from django_cryptography.fields import encrypt
@@ -382,6 +382,30 @@ class SiteSetting(Preferences):
         help_text="GBIF password used for API downloads (encrypted at rest).",
         default='',
     ))
+
+    gbif_excluded_project_ids = models.TextField(
+        blank=True,
+        default="",
+        help_text=(
+            "Comma-separated GBIF projectId values to exclude for this tenant "
+            "(case-insensitive). Example: 'fbis, legacy123'"
+        ),
+    )
+
+    def _tenant_default_exclusions(self) -> set[str]:
+        """Default per tenant: for FBIS tenant, exclude 'fbis'."""
+        schema = (getattr(connection, "schema_name", "") or "").lower()
+        return {"fbis"} if schema == "fbis" else set()
+
+    def _csv_to_set(self) -> set[str]:
+        raw = (self.gbif_excluded_project_ids or "")
+        return {p.strip().lower() for p in raw.split(",") if p.strip()}
+
+    @property
+    def gbif_excluded_project_ids_effective(self) -> list[str]:
+        """CSV + tenant defaults -> normalized, deduped, sorted list."""
+        vals = self._csv_to_set() | self._tenant_default_exclusions()
+        return sorted(vals)
 
     @property
     def project_name(self):
