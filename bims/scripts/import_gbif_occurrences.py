@@ -81,6 +81,9 @@ DATE_ISSUES_TO_EXCLUDE = [
     "MODIFIED_DATE_INVALID"
 ]
 BOUNDARY_BATCH_SIZE = 10
+EXCLUDED_PROJECT_IDS = set(
+    getattr(preferences.SiteSetting, "gbif_excluded_project_ids_effective", []) or []
+)
 
 
 def chunked(seq, size):
@@ -320,9 +323,9 @@ def process_gbif_row(
         existing record was updated; and ``processed`` is a boolean flag
         indicating whether the row contributed to the harvest totals.
     """
-    # Prevent pulling FBIS data back down from GBIF
-    if row.get('projectId', '').lower() == 'fbis':
-        log('FBIS data, skipping...')
+    proj = (row.get("projectId") or "").strip().lower()
+    if proj and proj in EXCLUDED_PROJECT_IDS:
+        log(f"Excluded by tenant setting: projectId='{proj}', skipping...")
         return None, False
 
     # Check harvest session canceled?
