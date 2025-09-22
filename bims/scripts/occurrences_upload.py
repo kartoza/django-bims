@@ -817,66 +817,48 @@ class OccurrenceProcessor(object):
                     data_type = ""
 
             identified_by = DataCSVUpload.row_value(row, IDENTIFIED_BY)
+            ecosystem_type = (
+                    DataCSVUpload.row_value(row, ECOSYSTEM_TYPE) or
+                    DataCSVUpload.row_value(row, ECOSYSTEM_TYPE_2)
+            )
 
             record = None
-            fields = {
+            defaults = {
                 "site": location_site,
                 "original_species_name": species_name,
                 "collection_date": sampling_date,
                 "taxonomy": taxonomy,
                 "collector_user": collector,
+                "survey": self.survey,
                 "validated": True,
                 "certainty_of_identification": (certainty_of_identification if certainty_of_identification else ""),
                 "date_accuracy": date_accuracy.lower() if date_accuracy else "",
                 "data_type": data_type,
-                "identified_by": identified_by if identified_by else ""
+                "identified_by": identified_by if identified_by else "",
+                "ecosystem_type": ecosystem_type,
+                "additional_data": json.dumps(row),
             }
 
-            if uuid_value:
-                uuid_without_hyphen = uuid_value.replace("-", "")
-                records = BiologicalCollectionRecord.objects.filter(
-                    Q(uuid=uuid_value) |
-                    Q(uuid=uuid_without_hyphen)
-                )
-                if records.exists():
-                    records.update(**fields)
-                    record = records[0]
-                    self._log(logging.DEBUG, "Upsert record: update (matched by uuid)")
-                else:
-                    fields["uuid"] = uuid_value
-                    self._log(logging.DEBUG, "Upsert record: create (uuid provided but not found)")
-
-            if not record:
-                try:
-                    record, created = BiologicalCollectionRecord.objects.get_or_create(**fields)
-                    self._log(logging.DEBUG, f"Upsert record: {'create' if created else 'reuse'}")
-                except Exception as e:  # noqa
-                    self.handle_error(row=row, message=str(e))
-                    return
-
-            if not uuid_value:
-                row[UUID] = record.uuid
-
-            # Update existing data
-            if self.survey:
-                record.survey = self.survey
-            for field in optional_data:
-                setattr(record, field, optional_data[field])
-
+            defaults.update(optional_data)
             if self.module_group:
-                record.module_group = self.module_group
+                defaults["module_group"] = self.module_group
 
-            # -- Ecosystem type
-            ecosystem_type = DataCSVUpload.row_value(row, ECOSYSTEM_TYPE)
-            if not ecosystem_type:
-                ecosystem_type = DataCSVUpload.row_value(row, ECOSYSTEM_TYPE_2)
-            record.ecosystem_type = ecosystem_type
-
-            # -- Additional data
-            record.additional_data = json.dumps(row)
-            record.validated = True
-
-            record.save()
+            try:
+                if uuid_value:
+                    canonical_uuid = str(uuid.UUID(uuid_value))
+                    record, created = BiologicalCollectionRecord.objects.update_or_create(
+                        uuid=canonical_uuid,
+                        defaults=defaults
+                    )
+                    self._log(logging.DEBUG, f"Upsert BCR via UUID: {'create' if created else 'update'}")
+                    row[UUID] = record.uuid
+                else:
+                    record = BiologicalCollectionRecord.objects.create(**defaults)
+                    self._log(logging.DEBUG, "Create BCR: no UUID provided")
+                    row[UUID] = record.uuid
+            except Exception as e:
+                self.handle_error(row=row, message=str(e))
+                return
 
             if str(record.site.id) not in self.site_ids:
                 self.site_ids.append(str(record.site.id))
