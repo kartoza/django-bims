@@ -1,23 +1,54 @@
 export const taxonDetail = (() => {
 
-    function getCleanAcceptedName(data, rank='SPECIES') {
-        const name = data.accepted_taxonomy_name || '';
-        if (!name) return '';
+    function parseAcceptedTaxonomyName(raw) {
+      const out = { canonical: '', genus: '', species: '', subspecies: '', author: '' };
+      if (!raw || !String(raw).trim()) return out;
 
-        const parts = name.trim().split(/\s+/);
+      let s = String(raw).trim().replace(/\s*-\s*[A-Z][A-Z\s.]+$/u, '').trim();
 
-        if (parts.length === 0) return '';
+      const paren = s.match(/\(([^()]*)\)\s*$/u);
+      if (paren) {
+        out.author = paren[1].trim();
+        s = s.replace(/\s*\([^)]*\)\s*$/u, '').trim();
+      }
 
-        if (rank === 'GENUS') {
-            return parts[0];
-        } else if (rank === 'SPECIES') {
-            return parts[1] || '';
-        } else if (rank === 'SUBSPECIES') {
-            return parts[2] || '';
+      const tokens = s.split(/\s+/);
+      if (!tokens.length) return out;
+
+      out.genus = tokens[0] || '';
+      let i = 1;
+
+      if (tokens[i] && /^[a-z]/u.test(tokens[i])) { out.species = tokens[i]; i += 1; }
+      if (tokens[i] && /^[a-z]/u.test(tokens[i])) { out.subspecies = tokens[i]; i += 1; }
+
+      if (!out.author && i < tokens.length) {
+        const trailing = tokens.slice(i).join(' ').trim();
+        if (/(^|[\s,])\d{3,4}\s*$/.test(trailing)) {
+          out.author = trailing;
         }
+      }
 
-        return name;
+      out.canonical = [out.genus, out.species, out.subspecies].filter(Boolean).join(' ');
+      return out;
     }
+
+    function getCleanAcceptedName(data, key = 'SPECIES') {
+      const name = data?.accepted_taxonomy_name ?? '';
+      const parts = parseAcceptedTaxonomyName(name);
+
+      // Prefer explicit key; otherwise fall back to data.rank; default SPECIES.
+      const k = String(key || data?.rank || 'SPECIES').toUpperCase();
+
+      switch (k) {
+        case 'GENUS':       return parts.genus;
+        case 'SPECIES':     return parts.species;
+        case 'SUBSPECIES':  return parts.subspecies;
+        case 'AUTHOR':      return parts.author;
+        case 'CANONICAL':   return parts.canonical;
+        default:            return parts.canonical;
+      }
+    }
+
     function formatDetailTaxon(data) {
         return `
             <div class="container container-fluid" style="padding-left:40px;">
@@ -107,7 +138,11 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Author(s)</strong></div>
-                                <div class="col-6">${data.author}</div>
+                                <div class="col-6">${
+                                    data.accepted_taxonomy_name
+                                        ? getCleanAcceptedName(data, 'AUTHOR')
+                                        : data.author
+                                }</div>
                             </div>
                         </div>
                     </div>

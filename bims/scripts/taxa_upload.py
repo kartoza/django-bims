@@ -986,6 +986,11 @@ class TaxaProcessor(object):
                         f"Error harvesting synonyms for {taxonomy.gbif_key}: {syn_exc}"
                     )
 
+            if is_synonym and taxonomy.accepted_taxonomy and not is_fada_site():
+                self.add_taxon_to_taxon_group_unvalidated(
+                    taxonomy.accepted_taxonomy, taxon_group
+                )
+
             self.finish_processing_row(row, taxonomy)
 
         except Exception as e:  # noqa
