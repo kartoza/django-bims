@@ -15,6 +15,7 @@ from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.db import connection
 from preferences import preferences
 
+from bims.templatetags import is_fada_site
 
 logger = logging.getLogger(__name__)
 
