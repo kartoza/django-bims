@@ -1006,8 +1006,6 @@ CELERY_BEAT_SCHEDULE = {}
 #     }
 
 DELAYED_SECURITY_SIGNALS = ast.literal_eval(os.environ.get('DELAYED_SECURITY_SIGNALS', 'False'))
-CELERY_ENABLE_UTC = ast.literal_eval(os.environ.get('CELERY_ENABLE_UTC', 'True'))
-CELERY_TIMEZONE = TIME_ZONE
 
 # Half a day is enough
 CELERY_TASK_RESULT_EXPIRES = os.environ.get('CELERY_TASK_RESULT_EXPIRES', 43200)

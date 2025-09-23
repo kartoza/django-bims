@@ -5,7 +5,9 @@ from celery import shared_task
 import re
 import logging
 
+from django.db import connection
 from django.db.models import Max, Subquery, OuterRef
+from django_tenants.utils import schema_context
 
 from bims.cache import get_cache, set_cache, delete_cache
 
@@ -48,7 +50,7 @@ def find_last_index(pattern_str, filepath) -> int:
 # tasks.py
 
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
-def harvest_collections(session_id, resume=False, chunk_size=250):
+def harvest_collections(session_id, resume=False, chunk_size=250, schema_name='public'):
     import re
     from itertools import islice
     from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
@@ -57,74 +59,75 @@ def harvest_collections(session_id, resume=False, chunk_size=250):
     from django.db.models import Q
     from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
 
-    try:
-        harvest_session = HarvestSession.objects.get(id=session_id)
-    except HarvestSession.DoesNotExist:
-        log('Session does not exist')
-        return
-
-    disconnect_bims_signals()
-
-    taxonomies_qs = harvest_session.module_group.taxonomies.filter(
-        Q(rank='GENUS') | Q(rank='SPECIES') | Q(rank='SUBSPECIES')
-    ).order_by('id')
-
-    # Initialise progress variables
-    start_taxon_idx = 1
-    offset = 0
-    area_index = 1
-
-    if resume and harvest_session.status:
-        # Resume index in human-friendly (1-based) terms
-        match = re.search(r'\((\d+)', harvest_session.status)
-        start_taxon_idx = int(match.group(1)) if match else 1
-        area_index = find_last_index(r'Area=\((\d+)/(\d+)\)', harvest_session.log_file.path) or 1
-
-    if resume and harvest_session.canceled:
-        harvest_session.canceled = False
-        harvest_session.save()
-
-    # Skip already-processed taxonomies
-    taxonomies_iter = islice(taxonomies_qs, start_taxon_idx - 1, None)
-    total_taxa = taxonomies_qs.count()
-    processed = start_taxon_idx
-
-    while True:
-        chunk = list(islice(taxonomies_iter, chunk_size))
-        if not chunk:
-            break
-
-        # Halt if user canceled
-        if HarvestSession.objects.get(id=session_id).canceled:
-            connect_bims_signals()
+    with schema_context(schema_name):
+        try:
+            harvest_session = HarvestSession.objects.get(id=session_id)
+        except HarvestSession.DoesNotExist:
+            log('Session does not exist')
             return
 
-        # Status message (show first & last canonical names in the chunk)
-        chunk_first = chunk[0].canonical_name
-        chunk_last = chunk[-1].canonical_name
-        harvest_session.status = (
-            f'Fetching GBIF data for {chunk_first} … {chunk_last} '
-            f'({processed}-{processed + len(chunk) - 1}/{total_taxa})'
-        )
+        disconnect_bims_signals()
+
+        taxonomies_qs = harvest_session.module_group.taxonomies.filter(
+            Q(rank='GENUS') | Q(rank='SPECIES') | Q(rank='SUBSPECIES')
+        ).order_by('id')
+
+        # Initialise progress variables
+        start_taxon_idx = 1
+        offset = 0
+        area_index = 1
+
+        if resume and harvest_session.status:
+            # Resume index in human-friendly (1-based) terms
+            match = re.search(r'\((\d+)', harvest_session.status)
+            start_taxon_idx = int(match.group(1)) if match else 1
+            area_index = find_last_index(r'Area=\((\d+)/(\d+)\)', harvest_session.log_file.path) or 1
+
+        if resume and harvest_session.canceled:
+            harvest_session.canceled = False
+            harvest_session.save()
+
+        # Skip already-processed taxonomies
+        taxonomies_iter = islice(taxonomies_qs, start_taxon_idx - 1, None)
+        total_taxa = taxonomies_qs.count()
+        processed = start_taxon_idx
+
+        while True:
+            chunk = list(islice(taxonomies_iter, chunk_size))
+            if not chunk:
+                break
+
+            # Halt if user canceled
+            if HarvestSession.objects.get(id=session_id).canceled:
+                connect_bims_signals()
+                return
+
+            # Status message (show first & last canonical names in the chunk)
+            chunk_first = chunk[0].canonical_name
+            chunk_last = chunk[-1].canonical_name
+            harvest_session.status = (
+                f'Fetching GBIF data for {chunk_first} … {chunk_last} '
+                f'({processed}-{processed + len(chunk) - 1}/{total_taxa})'
+            )
+            harvest_session.save()
+
+            import_gbif_occurrences(
+                taxonomy_ids=[t.gbif_key for t in chunk if t.gbif_key],
+                log_file_path=harvest_session.log_file.path,
+                session_id=session_id,
+                taxon_group=harvest_session.module_group,
+                area_index=area_index
+            )
+
+            # Reset per-chunk controls
+            area_index = 1
+            processed += len(chunk)
+
+        harvest_session.status = 'Finished'
+        harvest_session.finished = True
         harvest_session.save()
 
-        import_gbif_occurrences(
-            taxonomy_ids=[t.gbif_key for t in chunk if t.gbif_key],
-            log_file_path=harvest_session.log_file.path,
-            session_id=session_id,
-            taxon_group=harvest_session.module_group,
-            area_index=area_index
-        )
-
-        # Reset per-chunk controls
-        area_index = 1
-        processed += len(chunk)
-
-    harvest_session.status = 'Finished'
-    harvest_session.finished = True
-    harvest_session.save()
-
-    connect_bims_signals()
+        connect_bims_signals()
 
 
 @shared_task(
@@ -149,6 +152,7 @@ def auto_resume_harvest():
 
         harvester_keys_label = 'harvester_keys'
         new_harvester_keys = []
+        schema_name = connection.schema_name
 
         for session in harvest_sessions:
             cache_key = f'harvester_{session.id}_last_log'
@@ -161,7 +165,7 @@ def auto_resume_harvest():
             # Compare log lines to determine if the session needs to be resumed
             if cached_log_line and last_log_line == cached_log_line:
                 logger.info(f"Resuming harvest session for harvester {session.harvester_id}.")
-                harvest_collections.delay(session.id, True)
+                harvest_collections.delay(session.id, True, schema_name=schema_name)
 
             # Update the cache with the current last log line
             set_cache(cache_key, last_log_line)

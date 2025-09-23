@@ -9,14 +9,15 @@ services:
   db:
     volumes:
       - ./pg/postgres_data:/var/lib/postgresql
-      - ./backups:/backups
+      - /storage-box/dbbackups:/backups:cached
       - ./sql:/sql
+      - ./extra.conf:/settings/extra.conf
     ports:
       - "6543:5432"
 
   dbbackups:
     volumes:
-      - ./backups:/backups
+      - /storage-box/dbbackups:/backups
 
   uwsgi:
     environment:
@@ -36,7 +37,7 @@ services:
       - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
       - GEOSERVER_LOCATION=http://geoserver/geoserver/
       - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
-      - GEOSERVER_PUBLIC_LOCATION=http://localhost:63305/geoserver/
+      - GEOSERVER_PUBLIC_LOCATION=http://freshwaterbiodiversity.org/geoserver/
       - MEDIA_ROOT=/home/web/media
       - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
       - ROOT_URLCONF=core.urls
@@ -45,7 +46,6 @@ services:
       - VIRTUAL_HOST=bims.kartoza.com
       - VIRTUAL_PORT=8080
     volumes:
-      - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
 
@@ -53,8 +53,10 @@ services:
     ports:
       # for geoserver
       - "63305:8080"
+    volumes:
+      - ./data_dir:/opt/geoserver/data_dir
 
-  dev:
+  django-runner:
     environment:
       - ADMIN_EMAILS=${ADMIN_EMAILS:-dimas@kartoza.com}
       - APP_NAME=bims
@@ -69,6 +71,7 @@ services:
       - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
       - DATABASE_USERNAME=${POSTGRES_USER:-docker}
       - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - CSRF_TRUSTED_ORIGINS=['https://bims-mothership.kartoza.com']
       - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
       - GEOSERVER_LOCATION=http://geoserver/geoserver/
       - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
@@ -81,23 +84,12 @@ services:
       - VIRTUAL_HOST=bims.kartoza.com
       - VIRTUAL_PORT=8080
       - PYTHONPATH=/home/web/django_project
-    build:
-      context: docker
-      dockerfile: Dockerfile-dev
-    command: ''
-    entrypoint: [ ]
+    image: bims_uwsgi:latest
+    entrypoint: [ "tail", "-f", "/dev/null" ]
     volumes:
-      - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
-      - ./backups:/home/web/backups
-    ports:
-      # for django test server
-      - "63302:8080"
-      # for ssh
-      - "63303:22"
-      # for karma tests
-      - "63304:9876"
+      - ./logs:/var/log
 
   web:
     volumes:
@@ -112,14 +104,108 @@ services:
       - "63307:80"
 
   worker:
+    entrypoint: []
+    hostname: worker
+    command:
+      - celery
+      - -A
+      - bims.celery:app
+      - worker
+      - -Q
+      - update
+      - --autoscale=48,8
+      - --max-memory-per-child
+      - "4096000"
+      - --prefetch-multiplier
+      - "1"
+      - -l
+      - info
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - PYTHONPATH=/home/web/django_project
-      - DEFAULT_BACKEND_DATASTORE=
+      - CELERY_CONCURRENCY=48
+    healthcheck:
+      test: ["CMD-SHELL",
+             "celery -A bims.celery:app inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "48"      # ≈ 25 % of host
+          memory: 64G     # keep plenty free for DB & cache
 
+  geocontextworker:
+    entrypoint: []
+    hostname: geocontextworker
+    command: >
+      celery -A bims.celery:app worker
+             -Q geocontext
+             --autoscale=24,4
+             --max-tasks-per-child 400
+             --prefetch-multiplier 1
+             -l info
+    environment:
+      - CELERY_CONCURRENCY=24
+    healthcheck:
+      test: ["CMD-SHELL",
+             "celery -A bims.celery:app inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "16"
+          memory: 24G
 
   searchworker:
+    entrypoint: []
+    hostname: searchworker
+    command: >
+      celery -A bims.celery:app worker
+             -Q search
+             --autoscale=24,4
+             --prefetch-multiplier 1
+             -l info
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings.dev_docker
-      - PYTHONPATH=/home/web/django_project
-      - DEFAULT_BACKEND_DATASTORE=
+      - CELERY_CONCURRENCY=24
+    healthcheck:
+      test: ["CMD-SHELL",
+             "celery -A bims.celery:app inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "24"
+          memory: 32G
+
+  beat:
+    image: bims_uwsgi:latest
+    hostname: beat
+    entrypoint: [ ]
+    command: >
+      bash -lc "
+        python manage.py migrate django_celery_beat --schema=public --noinput || true;
+        python manage.py sync_celery_beat_schedule || true;
+        celery -A bims.celery:app beat
+          -l info
+      "
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
+      - DJANGO_CELERY_BEAT_MAX_LOOP_INTERVAL=30
+      - CELERY_TIMEZONE=UTC
+      - CELERY_ENABLE_UTC=True
+      - BROKER_URL=amqp://rabbitmq:5672
+      - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - APP_NAME=bims
+    depends_on:
+      - db
+      - rabbitmq
+    restart: unless-stopped
+    volumes:
+      - ./static:/home/web/static:rw
+      - ./media:/home/web/media:rw
+      - ./logs:/var/log

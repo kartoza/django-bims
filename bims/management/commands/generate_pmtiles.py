@@ -120,7 +120,13 @@ class Command(BaseCommand):
 
             try:
                 with transaction.atomic():
-                    layer.generate_pmtiles()
+                    status, message = layer.generate_pmtiles()
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Layer {pk}: {status}")
+                    )
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Layer {pk}: {message}")
+                    )
             except Exception as exc:  # pragma: no cover
                 self.stderr.write(
                     self.style.ERROR(f"[{label}] Failed Layer {pk}: {exc}")

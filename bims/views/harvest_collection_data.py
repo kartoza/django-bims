@@ -7,6 +7,7 @@ import os
 from collections import deque
 from datetime import datetime
 
+from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
@@ -125,7 +126,8 @@ class HarvestCollectionView(
             harvest_session.log_file = File(fi, name=os.path.basename(fi.name))
             harvest_session.save()
 
-        harvest_collections.delay(harvest_session.id)
+        schema_name = connection.schema_name
+        harvest_collections.delay(harvest_session.id, schema_name=schema_name)
         return HttpResponseRedirect(request.path_info)
 
 
