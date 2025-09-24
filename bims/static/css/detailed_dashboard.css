@@ -62,7 +62,6 @@
 }
 
 .btn-dashboard {
-    border-radius: 0;
     position: fixed;
     top: 3px;
     right: 10px;
@@ -121,7 +120,7 @@
     width: -webkit-fill-available;
 }
 
-.download-as-csv, .download-chem-csv, .download-gbif-ids, .download-checklist {
+.download-as-csv, .download-chem-csv, .download-gbif-ids, .download-checklist, .btn-html-img {
     text-transform: none;
     font-size: 10pt;
 }

@@ -6,6 +6,10 @@ body {
     pointer-events: none;
 }
 
+.btn {
+    border-radius: 2.5px;
+}
+
 .container {
     max-width: 100% !important;
 }
@@ -2862,6 +2866,65 @@ div:hover::-webkit-scrollbar {
 
 .badge-primary {
     background-color: var(--main-accent-color) !important;
+}
+
+.badge-button {
+    cursor: pointer;
+    border-radius: 2.5px;
+    transition:
+        background-color .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease,
+        color .15s ease;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0rem .5rem;
+}
+
+.badge-button {
+  --badge-bg: var(--main-accent-color, #0d6efd);
+  --badge-border: var(--badge-bg);
+  --badge-text: #fff;
+}
+
+.badge-button.badge-primary,
+.badge-button.text-bg-primary,
+.badge-button.btn-primary {
+  background-color: var(--badge-bg);
+  border-color: var(--badge-border);
+  color: var(--badge-text);
+}
+
+.badge-button:hover,
+.badge-button:focus:hover {
+  background-color: color-mix(in srgb, var(--badge-bg), #000 10%);
+  border-color: color-mix(in srgb, var(--badge-bg), #000 12%);
+  color: var(--badge-text);
+}
+
+.badge-button:active,
+.badge-button.active,
+.show > .badge-button.dropdown-toggle {
+  background-color: color-mix(in srgb, var(--badge-bg), #000 15%);
+  border-color: color-mix(in srgb, var(--badge-bg), #000 18%);
+  color: var(--badge-text);
+}
+
+.badge-button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--badge-bg), #000 40%);
+}
+
+.badge-button:disabled,
+.badge-button.disabled,
+.badge-button[aria-disabled="true"] {
+  opacity: .65;
+  pointer-events: none;
+}
+
+.badge-button.badge {
+  padding: .2rem .3rem;
+  user-select: none;
 }
 
 .sortby-wrapper {
