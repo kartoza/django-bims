@@ -10,6 +10,11 @@ from django.db import models
 from bims.models.taxon_group import TaxonGroup
 
 
+class HarvestTrigger(models.TextChoices):
+    MANUAL = "manual", "Manual"
+    SCHEDULED = "scheduled", "Scheduled"
+
+
 class HarvestSession(models.Model):
     """Harvest session model
     """
@@ -86,6 +91,15 @@ class HarvestSession(models.Model):
         verbose_name="Associated Site",
         help_text="The site this record is associated with."
     )
+
+    schedule = models.ForeignKey(
+        "bims.HarvestSchedule", null=True, blank=True, on_delete=models.SET_NULL, related_name="sessions"
+    )
+    trigger = models.CharField(
+        max_length=10, choices=HarvestTrigger.choices,
+        default=HarvestTrigger.MANUAL)
+    since_time = models.DateTimeField(null=True, blank=True)
+    until_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return '{start} - {finished}'.format(

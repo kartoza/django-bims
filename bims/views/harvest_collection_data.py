@@ -7,6 +7,7 @@ import os
 from collections import deque
 from datetime import datetime
 
+from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.generic import TemplateView
@@ -15,7 +16,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.conf import settings
 from django.db.models import Q
 from django.core.files import File
-from bims.models.harvest_session import HarvestSession
+from bims.models.harvest_session import HarvestSession, HarvestTrigger
 from bims.models.taxon_group import TaxonGroup
 from bims.tasks.harvest_collections import harvest_collections
 
@@ -33,7 +34,7 @@ class HarvestCollectionView(
         context = super(
             HarvestCollectionView, self).get_context_data(**kwargs)
         harvest_sessions = HarvestSession.objects.filter(
-            harvester=self.request.user,
+            Q(harvester=self.request.user) | Q(trigger=HarvestTrigger.SCHEDULED),
             finished=False,
             canceled=False,
             log_file__isnull=False,
@@ -125,7 +126,8 @@ class HarvestCollectionView(
             harvest_session.log_file = File(fi, name=os.path.basename(fi.name))
             harvest_session.save()
 
-        harvest_collections.delay(harvest_session.id)
+        schema_name = connection.schema_name
+        harvest_collections.delay(harvest_session.id, schema_name=schema_name)
         return HttpResponseRedirect(request.path_info)
 
 

@@ -9,6 +9,9 @@ import json
 from django.contrib.sites.models import Site
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
+from django.utils.timezone import localtime
+from django.db import connection
+from django_tenants.utils import schema_context, get_public_schema_name
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -36,6 +39,7 @@ from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, Cu
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus
+from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
@@ -50,7 +54,6 @@ from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
 from django_admin_inline_paginator.admin import TabularInlinePaginated
-
 from bims.models import (
     LocationType,
     LocationSite,
@@ -128,7 +131,8 @@ from bims.models import (
     TagGroup,
     Dataset, LayerGroup,
     SpeciesGroup,
-    TaxonGroupCitation
+    TaxonGroupCitation,
+    HarvestSchedule
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -141,6 +145,8 @@ from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
+from bims.tasks import run_scheduled_gbif_harvest
+from bims.forms.harvest_schedule import HarvestScheduleAdminForm
 
 
 logger = logging.getLogger('bims')
@@ -2103,15 +2109,19 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         harvest_session.canceled = False
         harvest_session.save()
 
+        schema_name = connection.schema_name
+
         full_message = 'Resumed'
         if harvest_session.is_fetching_species:
             harvest_gbif_species.delay(
-                harvest_session.id
+                harvest_session.id,
+                schema_name
             )
         else:
             harvest_collections.delay(
                 harvest_session.id,
-                True
+                True,
+                schema_name=schema_name
             )
 
         self.message_user(request, full_message)
@@ -2435,3 +2445,97 @@ class TaxonGroupCitationAdmin(admin.ModelAdmin):
         return obj.formatted_citation
 
     formatted_citation.short_description = "Citation"
+
+
+@admin.register(HarvestSchedule)
+class HarvestScheduleAdmin(admin.ModelAdmin):
+    form = HarvestScheduleAdminForm
+
+    list_display = (
+        "module_group",
+        "enabled",
+        "period",
+        "schedule_human",
+        "timezone",
+        "last_harvest_until_local",
+        "updated_at",
+    )
+    list_filter = ("enabled", "period", "timezone")
+    search_fields = ("module_group__name",)
+    autocomplete_fields = ("module_group",)
+    readonly_fields = ("last_harvest_until", "updated_at", "schedule_preview")
+    actions = ["action_run_now", "action_enable", "action_disable"]
+
+    fieldsets = (
+        ("Target", {
+            "fields": ("module_group", "enabled"),
+        }),
+        ("When to run", {
+            "fields": (
+                "period",
+                "run_at",
+                "day_of_week",
+                "day_of_month",
+                "cron_expression",
+                "timezone",
+                "schedule_preview",
+            ),
+            "description": (
+                "Daily/Weekly/Monthly use run_at (+ day fields). "
+                "Custom uses standard 5-field cron: 'm h dom mon dow' (e.g. '15 */6 * * *'). "
+                "Day of week accepts 'mon,tue' or '0-6' (0=Sunday)."
+            ),
+        }),
+        ("Defaults for the job", {
+            "fields": ("harvest_synonyms_default", "boundary_default", "is_fetching_species"),
+        }),
+        ("Watermark & audit", {
+            "fields": ("last_harvest_until", "updated_at"),
+        }),
+    )
+
+    def schedule_human(self, obj: HarvestSchedule):
+        if obj.period == HarvestPeriod.CUSTOM and obj.cron_expression:
+            return obj.cron_expression
+        if obj.period == HarvestPeriod.DAILY:
+            return f"Daily at {obj.run_at}"
+        if obj.period == HarvestPeriod.WEEKLY:
+            return f"Weekly {obj.day_of_week or 'mon'} at {obj.run_at}"
+        if obj.period == HarvestPeriod.MONTHLY:
+            return f"Monthly day {obj.day_of_month or 1} at {obj.run_at}"
+        return "-"
+
+    schedule_human.short_description = "Schedule"
+
+    def last_harvest_until_local(self, obj):
+        return localtime(
+            obj.last_harvest_until
+        ).strftime("%Y-%m-%d %H:%M") if obj.last_harvest_until else "—"
+    last_harvest_until_local.short_description = "Last watermark"
+
+    def schedule_preview(self, obj):
+        text = self.schedule_human(obj)
+        return format_html("<code>{}</code>", text) if text else "—"
+    schedule_preview.short_description = "Schedule preview"
+
+    @admin.action(description="Run now (enqueue Celery task)")
+    def action_run_now(self, request, queryset):
+        count = 0
+        for sched in queryset:
+            schema_name = str(connection.schema_name)
+            run_scheduled_gbif_harvest.delay(schema_name, sched.id)
+            count += 1
+        self.message_user(
+            request, f"Queued {count} run(s).", messages.SUCCESS)
+
+    @admin.action(description="Enable schedule")
+    def action_enable(self, request, queryset):
+        updated = queryset.update(enabled=True)
+        self.message_user(
+            request, f"Enabled {updated} schedule(s).", messages.SUCCESS)
+
+    @admin.action(description="Disable schedule")
+    def action_disable(self, request, queryset):
+        updated = queryset.update(enabled=False)
+        self.message_user(
+            request, f"Disabled {updated} schedule(s).", messages.SUCCESS)

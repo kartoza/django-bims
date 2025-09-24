@@ -5,7 +5,6 @@ core.settings.contrib
 from .base import *  # noqa
 # Override base settings from geonode
 from .legacy_geonode_settings import *
-from core.settings.celery_settings import *  # noqa
 import os
 try:
     from .secret import IUCN_API_KEY  # noqa
@@ -108,6 +107,7 @@ SHARED_APPS = (
     'mobile',
     'pesticide',
     'cloud_native_gis',
+    'django_celery_beat',
 )
 
 TENANT_APPS = (
@@ -508,6 +508,9 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TRACK_STARTED = True
 TASK_TRACK_STARTED = True
 CELERY_IGNORE_RESULT = False
+
+from core.settings.celery_settings import *  # noqa
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
@@ -565,3 +568,4 @@ customColorPalette = [
             'label': 'Blue'
         },
     ]
+
