@@ -487,6 +487,7 @@ define([
             const $mapLegendContainer = $('#map-legend-container');
 
             if ($mapLegend.is(':visible')) {
+                this.dockLegendForClose();
                 this.lastLegendWidth = this.$mapLegendWrapper.width();
                 this.lastLegendHeight = this.$mapLegendWrapper.height();
                 this.$mapLegendWrapper.css('width', '31px')
@@ -503,6 +504,34 @@ define([
                 }
                 this.showMapLegends(true);
             }
+        },
+        dockLegendForClose: function () {
+          if (!this.$mapLegendWrapper || !this.$mapLegendWrapper.length) return;
+
+          const container = $('.map-wrapper')[0].getBoundingClientRect();
+          const legend    = this.$mapLegendWrapper[0].getBoundingClientRect();
+
+          const containerMidX  = container.left + container.width / 2;
+          const legendCenterX  = legend.left + legend.width / 2;
+
+          const bottom = Math.max(0, container.bottom - legend.bottom);
+          const left   = Math.max(0, legend.left - container.left);
+          const right  = Math.max(0, container.right - legend.right);
+
+          const useLeft = legendCenterX < containerMidX;
+
+          if (useLeft) {
+            this.$mapLegendWrapper.css({
+              left: `${left}px`, right: 'auto',
+              bottom: `${bottom}px`, top: 'auto'
+            });
+          } else {
+            this.$mapLegendWrapper.css({
+              right: `${right}px`, left: 'auto',
+              bottom: `${bottom}px`, top: 'auto'
+            });
+          }
+          return { useLeft, bottom, left, right };
         },
         showMapLegends: function (showTooltip) {
             if (!this.mapLegendInitialized) {
@@ -631,32 +660,49 @@ define([
 
             this.$mapLegendWrapper = $('#map-legend-wrapper');
             this.$mapLegendWrapper.draggable({
-                containment: '.map-wrapper',
-                start: function (event, ui) {
-                    self.$mapLegendWrapper.css('bottom', 'auto');
-                    $("[data-toggle=tooltip]").tooltip('hide');
-                },
-                stop: function (event, ui) {
-                    var legend_position = self.$mapLegendWrapper.position();
-                    var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
-                    self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
-                }
+              containment: '.map-wrapper',
+              scroll: false,
+              start: (event, ui) => {
+                const w = this.$mapLegendWrapper.outerWidth();
+                const h = this.$mapLegendWrapper.outerHeight();
+                const pos = this.$mapLegendWrapper.position();
+
+                this.$mapLegendWrapper.css({
+                  width: `${w}px`,
+                  height: `${h}px`,
+                  right: 'auto',
+                  bottom: 'auto',
+                  left: `${pos.left}px`,
+                  top: `${pos.top}px`
+                });
+
+                $("[data-toggle=tooltip]").tooltip('hide');
+              },
+              stop: (event, ui) => {
+                const containerRect = $('.map-wrapper')[0].getBoundingClientRect();
+                const legendRect = this.$mapLegendWrapper[0].getBoundingClientRect();
+
+                const bottom = containerRect.bottom - legendRect.bottom;
+                const right  = containerRect.right  - legendRect.right;
+
+                this.$mapLegendWrapper.css({
+                  bottom: `${Math.max(bottom, 0)}px`,
+                  right:  `${Math.max(right, 0)}px`,
+                  top: 'auto',
+                  left: 'auto'
+                });
+              }
             }).resizable({
-                containment: '.map-wrapper',
-                handles: 'se',
-                minWidth: 100,
-                minHeight: 100,
-                start: function (event, ui) {
-                    self.resizingLegend = true;
-                    $("[data-toggle=tooltip]").tooltip('hide');
-                    $(this).css('max-height', 'none');
-                    $(this).css('max-width', 'none');
-                },
-                stop: function (event, ui) {
-                    setTimeout(function () {
-                        self.resizingLegend = false;
-                    }, 500);
-                }
+              containment: '.map-wrapper',
+              handles: 'se',
+              minWidth: 100,
+              minHeight: 100,
+              start: (event, ui) => {
+                this.resizingLegend = true;
+                $("[data-toggle=tooltip]").tooltip('hide');
+                $(ui.element).css({ 'max-height': 'none', 'max-width': 'none' });
+              },
+              stop: () => setTimeout(() => { this.resizingLegend = false; }, 500)
             });
             this.mapLegendInitialized = true;
             this.$mapLegendWrapper.resizable('option', 'disabled', true);

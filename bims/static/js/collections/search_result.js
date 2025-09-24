@@ -290,7 +290,13 @@ define([
                 });
 
                 // Set multiple site dashboard url
-                let $dashboardButton = $('<span class="badge badge-primary">Sites overview</span>');
+                const $dashboardButton = $(`
+                  <button type="button"
+                          class="btn btn-sm btn-primary d-inline-flex align-items-center site-dashboard-btn badge-button"
+                          title="Open sites overview" aria-label="Open sites overview">
+                    <span class="ms-1 d-none d-sm-inline">Sites overview >></span>
+                  </button>
+                `);
                 $searchResultsWrapper.find('.site-detail-dashboard-button-wrapper').append($dashboardButton);
                 if (this.sitesData.length > 1) {
                     $dashboardButton.click(function () {
@@ -305,7 +311,13 @@ define([
                 }
 
                 if (this.recordsData.length === 1) {
-                    let $taxaDashboardButton = $('<span class="badge badge-primary">Taxon overview</span>');
+                    const $taxaDashboardButton = $(`
+                      <button type="button"
+                              class="btn btn-sm btn-primary d-inline-flex align-items-center site-dashboard-btn badge-button"
+                              title="Open taxon overview" aria-label="Open taxon overview">
+                        <span class="ms-1 d-none d-sm-inline">Taxon overview >></span>
+                      </button>
+                    `);
                     $searchResultsWrapper.find('.taxa-detail-dashboard-button-wrapper').append($taxaDashboardButton);
                     $taxaDashboardButton.click(function () {
                         Shared.Dispatcher.trigger(

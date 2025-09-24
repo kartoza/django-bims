@@ -208,11 +208,13 @@
                 <button type="button" disabled class="btn btn-outline-dark" id="submit-feedback-button">Submit</button>
             </div>
         </div>
+        {% if preferences.SiteSetting.project_name == 'fbis' %}
         <div class="wetland-mapping-button" data-toggle="tooltip" data-placement="left"
              data-original-title="WETLAND MAP FEEDBACK">
             <img src="{% static 'img/wetland-mapping-icon.png' %}" width="28px"
                  style="margin-top: -6px;">
         </div>
+        {% endif %}
     </div>
 </script>
 
