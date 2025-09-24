@@ -6,6 +6,22 @@ body {
     pointer-events: none;
 }
 
+.ol-attribution {
+    position: absolute;
+    left: 85px;
+    right: auto !important;
+    bottom: 53px !important;
+    border-radius: 5px !important;
+}
+
+.ol-attribution button{
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 5px !important;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
 .btn {
     border-radius: 2.5px;
 }
