@@ -65,10 +65,24 @@ EXPOSE 8080
 COPY deployment/docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+ARG APP_USER=bims
+ARG APP_UID=1001
+ARG APP_GID=1001
+
+RUN groupadd --gid ${APP_GID} ${APP_USER} \
+ && useradd  --uid ${APP_UID} --gid ${APP_GID} \
+             --create-home --shell /bin/bash ${APP_USER} \
+ && mkdir -p /var/log \
+ && chown -R ${APP_USER}:${APP_USER} /home/web /var/log /usr/src/app
+
+USER ${APP_USER}
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["uwsgi", "--ini", "/uwsgi.conf"]
 
 FROM prod as dev
+
+USER root
 
 RUN apt-get update && apt-get install -y openssh-server sudo
 RUN mkdir /var/run/sshd
