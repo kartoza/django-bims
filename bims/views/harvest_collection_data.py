@@ -16,7 +16,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.conf import settings
 from django.db.models import Q
 from django.core.files import File
-from bims.models.harvest_session import HarvestSession
+from bims.models.harvest_session import HarvestSession, HarvestTrigger
 from bims.models.taxon_group import TaxonGroup
 from bims.tasks.harvest_collections import harvest_collections
 
@@ -34,7 +34,7 @@ class HarvestCollectionView(
         context = super(
             HarvestCollectionView, self).get_context_data(**kwargs)
         harvest_sessions = HarvestSession.objects.filter(
-            harvester=self.request.user,
+            Q(harvester=self.request.user) | Q(trigger=HarvestTrigger.SCHEDULED),
             finished=False,
             canceled=False,
             log_file__isnull=False,
