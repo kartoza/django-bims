@@ -651,9 +651,17 @@ def import_gbif_occurrences(
     Import GBIF occurrences based on a taxonomy GBIF key, iterating over offsets
     until all data is fetched. Handles optional boundary polygons or country codes.
     """
+    harvest_session = HarvestSession.objects.get(
+        id=session_id
+    )
 
     base_country_codes = preferences.SiteSetting.base_country_code.split(',')
-    site_boundary = preferences.SiteSetting.site_boundary
+
+    if harvest_session.boundary:
+        site_boundary = harvest_session.boundary
+    else:
+        site_boundary = preferences.SiteSetting.site_boundary
+
     extracted_polygons = []
     area = area_index
 
@@ -666,10 +674,6 @@ def import_gbif_occurrences(
     auth = (gbif_user, gbif_pass)
 
     log = lambda m: log_to_file_or_logger(log_file_path, m)
-
-    harvest_session = HarvestSession.objects.get(
-        id=session_id
-    )
 
     def fetch_and_process_gbif_data(country_codes, geom_str=''):
         """
