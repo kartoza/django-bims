@@ -9,6 +9,9 @@ from bims.models.profile import Profile as BimsProfile
 class HidePopupInfoUser(LoginRequiredMixin, APIView):
 
     def get(self, request):
+        if not BimsProfile.objects.filter(
+                user=self.request.user).exists() and not self.request.user.is_anonymous:
+            BimsProfile.objects.create(user=self.request.user)
         try:
             object = BimsProfile.objects.get(user=self.request.user)
             object.hide_bims_info = True
