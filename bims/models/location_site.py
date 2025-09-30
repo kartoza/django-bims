@@ -661,7 +661,8 @@ def generate_site_code(
         wetland_catchment,
         open_waterbody_catchment,
         generate_sanparks_site_code,
-        generate_fbis_africa_site_code
+        generate_fbis_africa_site_code,
+        kafue_site_code
     )
     from preferences import preferences
     site_code = ''
@@ -712,6 +713,12 @@ def generate_site_code(
         site_code = generate_fbis_africa_site_code(
             latitude=float(lat),
             longitude=float(lon),
+            site_name=site_name
+        )
+    elif project_name == 'kafue':
+        site_code = kafue_site_code(
+            lat=float(lat),
+            lon=float(lon),
             site_name=site_name
         )
     else:

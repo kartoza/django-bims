@@ -356,7 +356,11 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
                 ecosystem_type=location_site.ecosystem_type,
                 wetland_name=wetland_name,
             )
-            if location_site.ecosystem_type.lower() == 'wetland' and catchments_data:
+            if (
+                    location_site.ecosystem_type and
+                    location_site.ecosystem_type.lower() == 'wetland' and
+                    catchments_data
+            ):
                 if 'hgm_type' in catchments_data and catchments_data['hgm_type']:
                     location_site.hydrogeomorphic_type = catchments_data['hgm_type']
                 if 'name' in catchments_data and catchments_data['name']:

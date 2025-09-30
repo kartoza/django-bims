@@ -17,6 +17,10 @@ class SiteSetting(Preferences):
         (
             'sanparks',
             'SANPARKS (1st three park name + site count)'
+        ),
+        (
+            'kafue',
+            'KAFUE (1st five district name + site count)'
         )
     )
     site_notice = models.TextField(
