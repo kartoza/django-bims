@@ -311,10 +311,12 @@
 
 <script type='text/html' id='site-details-template'>
     <div class="container-fluid" id="site-details-wrapper">
+        {% if preferences.SiteSetting.enable_ecosystem_type  %}
         <div class="row">
             <div class="col-5 caption-column">Ecosystem Type</div>
             <div class="col-7 value-column"><%= site_detail_info.ecosystem_type %></div>
         </div>
+        {% endif %}
         <div class="row">
             <div class="col-5 caption-column">Site Code</div>
             <div class="col-7 value-column"><%= site_detail_info.site_code %></div>
