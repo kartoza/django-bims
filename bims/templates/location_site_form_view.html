@@ -143,6 +143,8 @@
                         Catchment + Province ID + District ID + site count. E.g. NNYU1205-00001
                         {% elif project_name == 'fbis_africa' %}
                             3 × ISO Country Code + base-36 Site count
+                        {% elif project_name == 'kafue' %}
+                            1st five district name + site count
                         {% else %}
                             {% if project_name == 'sanparks' %}
                                 1st three park name + site count

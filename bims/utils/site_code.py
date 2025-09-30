@@ -136,6 +136,23 @@ def generate_fbis_africa_site_code(latitude: float, longitude: float, site_name:
     return iso_name.upper()
 
 
+def kafue_site_code(lat: float, lon: float, site_name: str = ''):
+    district_name = get_feature_data(
+        lon=lon,
+        lat=lat,
+        context_key='NAME1',
+        layer_name='district',
+        tolerance=0
+    )
+    if not district_name:
+        district_name = site_name
+
+    if not district_name:
+        district_name = 'UNKNOWN'
+
+    return district_name[:5].upper()
+
+
 def generate_sanparks_site_code(lat: float, lon: float, site_name: str = ''):
     """
     Generates a SANParks site code for a given location site.
@@ -205,7 +222,7 @@ def fbis_catchment_generator(
         lat=lat,
         context_key='name',
         layer_name='secondary catchment',
-        tolerance=100
+        tolerance=1
     )
 
     catchment_code = secondary_catchment_name[:2].upper()
@@ -221,7 +238,7 @@ def fbis_catchment_generator(
                 lat=location_site.geometry_point[1],
                 context_key='river_name',
                 layer_name='river',
-                tolerance=1000
+                tolerance=10
             )
 
     # Search river name by coordinates
@@ -231,7 +248,7 @@ def fbis_catchment_generator(
             lat=lat,
             context_key='river_name',
             layer_name='river',
-            tolerance=1000
+            tolerance=10
         )
 
     if not river_name:
