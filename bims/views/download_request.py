@@ -26,14 +26,16 @@ class DownloadRequestListView(
     paginate_by = 20
 
     def test_func(self):
-        return user_has_permission_to_validate(self.request.user)
+        return self.request.user and not self.request.user.is_anonymous
 
     def handle_no_permission(self):
         messages.error(self.request, 'You don\'t have permission '
-                                     'to approve download request')
+                                     'to view download requests')
         return super(DownloadRequestListView, self).handle_no_permission()
 
     def post(self, request, *args, **kwargs):
+        if not user_has_permission_to_validate(self.request.user):
+            raise Http404('User has no permission to approve download requests')
         approved = ast.literal_eval(
             request.POST.get('approved', 'False')
         )
@@ -82,22 +84,14 @@ class DownloadRequestListView(
 
     def get(self, request, *args, **kwargs):
         """Check GET request parameters validity and store them"""
-
-        # -- Filter approved or rejected
         self.approved_or_rejected = self.request.GET.get(
             'approved_or_rejected', 'approved')
-
-        # -- Requester
         requester = self.request.GET.get('requester', None)
         if requester:
             self.current_requester = int(requester)
         else:
             self.current_requester = None
-
-        # -- Date to
         self.filter_date_to = self.request.GET.get('date_to', None)
-
-        # -- Date from
         self.filter_date_from = self.request.GET.get('date_from', None)
 
         return super(DownloadRequestListView, self).get(
@@ -116,15 +110,18 @@ class DownloadRequestListView(
             DownloadRequestListView, self).get_context_data(**kwargs)
         ctx['approved_or_rejected'] = self.approved_or_rejected
         ctx['current_requester'] = self.current_requester
+        ctx['has_permission_to_approve'] = user_has_permission_to_validate(self.request.user)
 
-        # Requester (from selected entries)
-        author_ids = DownloadRequest.objects.filter(
-            requester_id__isnull=False).values_list(
-            'requester__id', flat=True)
-        author_ids = list(set(author_ids))
-        authors_order = ('first_name', 'last_name')
-        filtered_authors = Profile.objects.filter(id__in=author_ids)
-        ctx['requesters'] = filtered_authors.order_by(*authors_order)
+        if user_has_permission_to_validate(self.request.user):
+            author_ids = DownloadRequest.objects.filter(
+                requester_id__isnull=False).values_list(
+                'requester__id', flat=True)
+            author_ids = list(set(author_ids))
+            authors_order = ('first_name', 'last_name')
+            filtered_authors = Profile.objects.filter(id__in=author_ids)
+            ctx['requesters'] = filtered_authors.order_by(*authors_order)
+        else:
+            ctx['requesters'] = [self.request.user]
         return ctx
 
     def get_queryset(self):
@@ -134,6 +131,8 @@ class DownloadRequestListView(
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
         qs = qs.filter(requester__isnull=False)
+        if not self.request.user.is_superuser:
+            qs = qs.filter(requester=self.request.user)
         if (
                 self.approved_or_rejected is not None and
                 self.approved_or_rejected != ''
