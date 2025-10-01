@@ -21,7 +21,8 @@ from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
-    LocationSitesCoordinate, GbifIdsDownloader, DeleteDanglingLocationSites
+    LocationSitesCoordinate, GbifIdsDownloader,
+    DeleteDanglingLocationSites, RemoveOutsideBoundaryGbifData
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
@@ -422,6 +423,9 @@ urlpatterns = [
     path('delete-dangling-sites/',
          DeleteDanglingLocationSites.as_view(),
          name='delete_dangling_sites'),
+    path('remove-gbif-sites-outside-boundary/',
+         RemoveOutsideBoundaryGbifData.as_view(),
+         name='remove_outside_boundary_gbif'),
     path('harvest-iucn-status/',
          HarvestIUCNStatus.as_view(),
          name='harvest_iucn_status'),
