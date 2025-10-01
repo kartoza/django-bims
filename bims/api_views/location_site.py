@@ -41,6 +41,9 @@ from bims.tasks.collection_record import download_gbif_ids
 from bims.tasks.location_site_summary import (
     generate_location_site_summary
 )
+from bims.tasks.prune_outside_boundary import (
+    prune_outside_boundary_gbif
+)
 
 
 class LocationSiteList(APIView):
@@ -347,3 +350,26 @@ class DeleteDanglingLocationSites(APIView):
         return Response(
             {"error": "Permission denied."},
             status=HTTP_403_FORBIDDEN)
+
+
+class RemoveOutsideBoundaryGbifData(APIView):
+    permission_classes = (IsSuperUser,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."}, status=HTTP_403_FORBIDDEN)
+
+        dry_run = bool(request.data.get("dry_run", False))
+        delete_empty_sites = bool(request.data.get("delete_empty_sites", True))
+        prune_outside_boundary_gbif.delay(dry_run=dry_run, delete_empty_sites=delete_empty_sites)
+
+        return Response(
+            {
+                "message": (
+                    "Starting background cleanup of GBIF occurrences and surveys "
+                    "outside the configured boundary."
+                    + (" (dry-run)" if dry_run else "")
+                )
+            },
+            status=HTTP_200_OK,
+        )

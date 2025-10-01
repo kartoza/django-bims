@@ -22,6 +22,7 @@ from bims.tasks.taxon_group import delete_occurrences_by_taxon_group
 from bims.tasks.caches import reset_caches
 from bims.tasks.dataset import retrieve_datasets_from_gbif
 from bims.tasks.harvest_schedule import run_scheduled_gbif_harvest
+from bims.tasks.prune_outside_boundary import prune_outside_boundary_gbif
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')
