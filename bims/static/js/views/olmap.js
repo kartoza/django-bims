@@ -1000,32 +1000,115 @@ define([
                 self._isDownloading = false;
                 return;
             }
-
-            const $mapWrapper = $('.map-wrapper');
-            const el = $mapWrapper[0];
-
+            const mapEl = document.getElementById('map');
+            if (!mapEl) {
+                alert('Map element not found.');
+                self._isDownloading = false;
+                return;
+            }
             const hideUI = () => {
                 $('#ripple-loading').show();
-                $('.map-control-panel-box').hide();
-                $('.ol-control').hide();
-                $('.map-control-panel').hide();
-                $('.zoom-control').hide();
-                $('.bug-report-wrapper').hide();
-                $('#wetland-map-feedback').hide();
-                $('.print-map-control').addClass('control-panel-selected');
             };
             const showUI = () => {
-                $('.zoom-control').show();
-                $('.map-control-panel').show();
                 $('#ripple-loading').hide();
-                $('.bug-report-wrapper').show();
-                $('.ol-control').show();
-                $('#wetland-map-feedback').show();
-                $('.print-map-control').removeClass('control-panel-selected');
             };
 
+            let legendClone = null;
+            let originalLegendId = 'map-legend-wrapper';
+
+            const attachLegendClone = () => {
+                const legJQ = $('#map-legend-wrapper');
+                if (!legJQ.length || !legJQ.is(':visible')) return;
+
+                const legEl = legJQ[0];
+                const mapEl = document.getElementById('map');
+
+                const mapRect = mapEl.getBoundingClientRect();
+                const legRect = legEl.getBoundingClientRect();
+                originalLegendId = legEl.id || 'map-legend-wrapper';
+                legEl.dataset._exportOriginalId = originalLegendId;
+                legEl.id = `${originalLegendId}__hidden`;
+                legendClone = legEl.cloneNode(true);
+                legendClone.id = originalLegendId;
+                legendClone.style.position = 'absolute';
+                legendClone.style.pointerEvents = 'none';
+                legendClone.style.margin = 0;
+                legendClone.style.zIndex = 9999;
+                legendClone.style.left = `${legRect.left - mapRect.left}px`;
+                legendClone.style.top = `${legRect.top}px`;
+                legendClone.style.width = `${legRect.width}px`;
+                legendClone.style.height = `${legRect.height}px`;
+                legendClone.classList.remove('control-drop-shadow', 'ui-draggable', 'ui-draggable-handle', 'ui-resizable');
+                legendClone.style.boxShadow = 'none';
+                legendClone.style.webkitBoxShadow = 'none';
+                legendClone.style.filter = 'none';
+                legendClone.style.textShadow = 'none';
+                legendClone.style.overflow = 'visible';
+                legendClone.style.background = '#fff';
+                legendClone.style.border = '1px solid rgba(0,0,0,.25)';
+                legendClone.style.borderRadius = '6px';
+                $(legendClone).find('.ui-resizable-handle').remove();
+                const sym = legendClone.querySelector('#map-legend-symbol');
+                if (sym) sym.style.display = 'none';
+                const panel = legendClone.querySelector('#map-legend');
+                if (panel) panel.style.display = 'block';
+                legJQ.hide();
+                mapEl.appendChild(legendClone);
+            };
+
+            const detachLegendClone = () => {
+                if (legendClone && legendClone.parentNode) {
+                    legendClone.parentNode.removeChild(legendClone);
+                }
+                legendClone = null;
+                const hidden = document.getElementById(`${originalLegendId}__hidden`);
+                if (hidden) {
+                    hidden.id = hidden.dataset._exportOriginalId || originalLegendId;
+                    delete hidden.dataset._exportOriginalId;
+                    $(hidden).show();
+                }
+            };
+
+            let scaleClone = null;
+            const attachScaleLineClone = () => {
+                const $scale = $('.ol-scale-line');
+                if (!$scale.length || !$scale.is(':visible')) return;
+
+                const scaleEl = $scale[0];
+                const mapRect = mapEl.getBoundingClientRect();
+                const scRect  = scaleEl.getBoundingClientRect();
+
+                scaleClone = scaleEl.cloneNode(true);
+                scaleClone.style.position = 'absolute';
+                scaleClone.style.pointerEvents = 'none';
+                scaleClone.style.margin = 0;
+                scaleClone.style.zIndex = 9998;
+                scaleClone.style.height = '32px';
+                scaleClone.style.left = `${scRect.left - mapRect.left}px`;
+                scaleClone.style.top  = `${scRect.top}px`;
+                scaleClone.style.boxShadow = 'none';
+                scaleClone.style.background = 'rgba(255,255,255,0.5)';
+                scaleClone.style.border = '1px solid rgba(0,0,0,.25)';
+                scaleClone.style.borderRadius = '4px';
+                const inner = scaleClone.querySelector('.ol-scale-line-inner');
+                if (inner) {
+                    inner.style.boxShadow = 'none';
+                    inner.style.background = 'transparent';
+                    inner.style.color = '#000';
+                }
+                $scale.hide();
+                mapEl.appendChild(scaleClone);
+            };
+
+            const detachScaleLineClone = () => {
+                if (scaleClone && scaleClone.parentNode) {
+                    scaleClone.parentNode.removeChild(scaleClone);
+                }
+                scaleClone = null;
+                $('.ol-scale-line').show();
+            };
             const saveCanvas = (canvas) => {
-                const rect = el.getBoundingClientRect();
+                const rect = mapEl.getBoundingClientRect();
                 const widthPx = rect.width;
                 const heightPx = rect.height;
 
@@ -1046,60 +1129,52 @@ define([
                 }
             };
 
-            const captureWithHtml2Canvas = (element, opts = {}) =>
-                new Promise((resolve, reject) => {
-                    const options = Object.assign({}, opts);
-                    // Old API path:
-                    options.onrendered = (canvas) => resolve(canvas);
-                    try {
-                        const maybe = h2c(element, options);
-                        // New API path:
-                        if (maybe && typeof maybe.then === 'function') {
-                            maybe.then(resolve).catch(reject);
-                        }
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-
             const capture = () => {
-                self.map.renderSync();
                 try {
-                    const view = self.map.getView();
-                    view.setZoom(view.getZoom() + 0.0000001);
+                    self.map.updateSize();
+                    self.map.renderSync();
                 } catch (_) {}
 
                 requestAnimationFrame(() => {
-                    captureWithHtml2Canvas(el, {
+                    const w = mapEl.clientWidth;
+                    const h = mapEl.clientHeight;
+                    h2c(mapEl, {
                         useCORS: true,
                         allowTaint: false,
                         backgroundColor: '#FFFFFF',
+                        width: w,
+                        height: h,
+                        windowWidth: w,
+                        windowHeight: h,
+                        scrollX: 0,
+                        scrollY: 0,
                         scale: Math.min(2, window.devicePixelRatio || 1),
+                        logging: false
                     })
-                        .then(saveCanvas)
-                        .catch((err) => {
-                            console.error('Map capture failed:', err);
-                            alert('Sorry, capturing the map failed. Please try again.');
-                        })
-                        .finally(() => {
-                            showUI();
-                            self._isDownloading = false;
-                        });
+                    .then(saveCanvas)
+                    .catch((err) => {
+                        console.error('Map capture failed:', err);
+                        alert('Sorry, capturing the map failed. Please try again.');
+                    })
+                    .finally(() => {
+                        detachScaleLineClone();
+                        detachLegendClone();
+                        showUI();
+                        self._isDownloading = false;
+                    });
                 });
             };
 
             hideUI();
+            attachLegendClone();
+            attachScaleLineClone();
 
             let done = false;
             let fallbackTimerId = null;
-
             const finish = () => {
                 if (done) return;
                 done = true;
-                if (fallbackTimerId !== null) {
-                    clearTimeout(fallbackTimerId);
-                    fallbackTimerId = null;
-                }
+                if (fallbackTimerId !== null) clearTimeout(fallbackTimerId);
                 capture();
             };
 
