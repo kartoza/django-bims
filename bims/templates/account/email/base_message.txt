@@ -1,0 +1,7 @@
+{% load i18n %}{% autoescape off %}{% blocktrans with site_name=current_site %}Hello from {{ site_name }}!{% endblocktrans %}
+
+{% block content %}{% endblock content %}
+
+{% blocktrans with site_name=current_site site_domain=current_site %}
+{{ site_domain }}{% endblocktrans %}
+{% endautoescape %}
