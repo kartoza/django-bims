@@ -342,7 +342,7 @@ define(
                 $('.download-map-container').show();
             },
             closeDownloadMapPanel: function () {
-                this.$el.find('download-map-control').removeClass('control-panel-selected');
+                this.$el.find('.download-map-control').removeClass('control-panel-selected');
                 $('.download-map-container').hide();
             },
             openLocateCoordinates: function (e) {

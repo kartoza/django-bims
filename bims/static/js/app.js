@@ -11,7 +11,7 @@ require.config({
         noUiSlider: 'libs/noUiSlider.11.1.0/nouislider',
         chartJs: 'libs/chart/Chart-2.7.2',
         fileSaver: 'libs/FileSaver.js/1.3.3/FileSaver.min',
-        htmlToCanvas: 'libs/htmlToCanvas/html2canvas.min',
+        htmlToCanvas: 'libs/htmlToCanvas-1.4.1/html2canvas.min',
         jspdf: 'libs/jspdf.umd.min',
         gridStack: 'libs/gridstack-1.1.2/gridstack.min',
         chosen: 'libs/chosen/chosen.jquery.min',
