@@ -745,6 +745,42 @@ class BioCollectionOneRowSerializer(
             'data_type'
         ]
 
+    def _get_geocontext_parks_group(self):
+        park_keys = {
+            'park_or_mpa_name', 'park_or_mpa',
+            'parks_and_mpas', 'sanparks_and_mpas',
+            'sanparks_mpas', 'parks_mpas'
+        }
+
+        geocontext_groups = self.context.setdefault('geocontext_groups', [])
+        for g in geocontext_groups:
+            if g.get('key', '').lower() in park_keys or g.get('name', '').lower() in {
+                'sanparks and mpas', 'parks and mpas', 'sanparks & mpas'
+            }:
+                return g
+        try:
+            grp = LocationContextGroup.objects.filter(
+                Q(key__in=list(park_keys)) | Q(name__iexact='SANParks and MPAs')
+            ).first()
+            if grp:
+                display_name = 'SANParks and MPAs'
+                if 'header' not in self.context:
+                    self.context['header'] = []
+                if display_name not in self.context['header']:
+                    self.context['header'].append(display_name)
+                grp_obj = {'name': display_name, 'key': grp.key, 'id': grp.id}
+                geocontext_groups.append(grp_obj)
+                return grp_obj
+        except Exception:
+            pass
+        return None
+
+    def _get_sanparks_mpa_value(self, instance):
+        grp = self._get_geocontext_parks_group()
+        if grp:
+            return self.spatial_data(instance, grp['id'])
+        return '-'
+
     def to_representation(self, instance: BiologicalCollectionRecord):
         result = super(
             BioCollectionOneRowSerializer, self).to_representation(
@@ -993,6 +1029,21 @@ class BioCollectionOneRowSerializer(
                     result.pop('site_description', None)
                     if 'site_description' in self.context['header']:
                         self.context['header'].remove('site_description')
+
+                    if instance.source_collection == 'gbif':
+                        sanparks_val = self._get_sanparks_mpa_value(instance)
+                        if sanparks_val and sanparks_val != '-':
+                            result[upload_template_header] = sanparks_val
+
+                    if (
+                            not result.get(upload_template_header) and
+                            instance.site and (instance.site.owner or instance.site.creator)
+                    ):
+                        result[upload_template_header] = instance.site.name
+                if upload_template_header == PARK_OR_MPA_NAME:
+                    result.pop('site_description', None)
+                    if 'site_description' in self.context['header']:
+                        self.context['header'].remove('site_description')
                     if (
                             result[upload_template_header] == '' and (
                             instance.site.owner or instance.site.creator)
@@ -1014,11 +1065,24 @@ class BioCollectionOneRowSerializer(
 
         geocontext_groups = self.context.setdefault('geocontext_groups', [])
         if not geocontext_groups:
+            park_keys = {
+                'park_or_mpa_name', 'park_or_mpa',
+                'parks_and_mpas', 'sanparks_and_mpas',
+                'sanparks_mpas', 'parks_mpas'
+            }
             for grp in LocationContextGroup.objects.filter(filters):
-                if grp.name not in self.context['header']:
-                    self.context['header'].append(grp.name)
+                if (grp.key and grp.key.lower() in park_keys) or (
+                        'park' in grp.name.lower() and 'mpa' in grp.name.lower()
+                ):
+                    display_name = 'SANParks and MPAs'
+                else:
+                    display_name = grp.name
+
+                if display_name not in self.context['header']:
+                    self.context['header'].append(display_name)
+
                 geocontext_groups.append(
-                    {'name': grp.name, 'key': grp.key, 'id': grp.id}
+                    {'name': display_name, 'key': grp.key, 'id': grp.id}
                 )
 
         for grp in geocontext_groups:
