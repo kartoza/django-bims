@@ -35,16 +35,17 @@
             <div class="container">
 
                 <div class="custom-form-container">
-                    
                  {% if custom_theme.login_modal_logo %}
-                        <div class="row modal-logo">
+                     <div class="modal-logo">
+                        <div class="row">
                             <div class="col-4">
                                 <img src="{{ MEDIA_URL }}/{{ custom_theme.login_modal_logo }}" width="100%">
                             </div>
-                            <div class="col-8">
-                                <h4>{{ custom_theme.login_modal_title }}</h4>
-                            </div>
                         </div>
+                        <div class="row modal-logo-title">
+                            <h4>{% trans "LOG OUT" %}</h4>
+                        </div>
+                     </div>
                 {% else %}
                     <h1>{% trans "LOG OUT" %}</h1>
                 {% endif %}

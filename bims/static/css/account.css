@@ -223,20 +223,43 @@ a.anchor-entry {
 }
 
 .btn-login {
-    background-color: white;
-    border-radius: 0;
+    background-color: var(--main-accent-color);
+    color: #fff;
+    border-radius: 3px;
     margin: 10px;
     font-weight: normal;
-    color: #436461;
-    padding: 0 30px;
-    border: 2px solid #436461;
-    font-size: 16pt;
+    padding: 0 40px;
+    border: 2px solid var(--main-accent-color);
+    font-size: 15pt;
+    text-transform: capitalize;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 120ms ease,
+        color 160ms ease;
 }
 
-.btn-login:hover {
-    background-color: #436461;
-    color: white;
-    border: 2px solid #436461;
+/* slight darken on hover; keep text white */
+@supports (color: color-mix(in srgb, black, white)) {
+  .btn-login:hover {
+    background-color: color-mix(in srgb, var(--main-accent-color) 60%, black);
+    border: 2px solid var(--main-accent-color);
+    border-color: color-mix(in srgb, var(--main-accent-color) 60%, black);
+    color: #fff;
+    cursor: pointer;
+  }
+}
+
+/* fallback if color-mix not supported: keep same color */
+@supports not (color: color-mix(in srgb, black, white)) {
+  .btn-login:hover {
+    background-color: var(--main-accent-color);
+    border-color: var(--main-accent-color);
+    color: #fff;
+    border: 2px solid var(--main-accent-color);
+    cursor: pointer;
+  }
 }
 
 .socialaccount_ballot li {

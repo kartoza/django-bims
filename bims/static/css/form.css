@@ -221,6 +221,15 @@ h2, h3, h4 {
     border-bottom: 1px solid var(--main-accent-color);
 }
 
+.modal-logo-title {
+    margin-top: -70px;
+    margin-bottom: 40px;
+    margin-left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
 .modal-logo .col-8 {
     display: flex;
     align-items: center;
