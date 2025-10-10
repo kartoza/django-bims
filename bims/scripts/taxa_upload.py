@@ -37,8 +37,12 @@ from preferences import preferences
 
 logger = logging.getLogger('bims')
 
-NAME_SIM_THRESHOLD = 0.75
+NAME_SIM_THRESHOLD = 0.70
 _TRUTHY = {'y', 'true', 't', '✓'}
+INFRA_MARKER_RE = re.compile(
+    r'\b(?:subsp|ssp|subspecies|var|variety|forma|form|f)\.?\b',
+    re.IGNORECASE
+)
 
 def _as_truthy(val) -> bool:
     if val is None:
@@ -59,6 +63,16 @@ def _safe_strip(s):
 
 def _canon(s: str) -> str:
     return re.sub(r"\s+", " ", str(s or "")).strip().lower()
+
+def _norm_taxon_for_similarity(s: str) -> str:
+    """
+    Canonicalize a taxon string for name matching:
+      - lowercase + collapse whitespace (via _canon)
+      - drop infraspecific markers like 'subsp.', 'var.', 'f.'
+    """
+    s = _canon(s)
+    s = INFRA_MARKER_RE.sub(' ', s)
+    return re.sub(r'\s+', ' ', s).strip()
 
 
 class TaxaProcessor(object):
@@ -577,7 +591,7 @@ class TaxaProcessor(object):
                 self.get_row_value(
                     row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
 
-        if 'species' in str(rank).lower():
+        if 'species' in str(rank).lower() and not taxon_name:
             taxon_name = self._compose_species_name(row)
 
         if rank == SUBSPECIES:
@@ -642,26 +656,29 @@ class TaxaProcessor(object):
                     )
                     return
                 else:
-                    if "species" in expected_rank.lower():
+                    if expected_rank.lower() == 'species' and not 'synonym' in taxonomic_status.lower():
                         expected_name = self._compose_species_name(row)
                     else:
                         expected_name = taxon_name
 
+                    gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
                     expected_norm = _canon(expected_name) if expected_name else ""
 
-                    gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
-                    gbif_norm = _canon(gbif_canonical) if gbif_canonical else ""
+                    canon_expected = _canon(expected_name) if expected_name else ""
+                    canon_gbif = _canon(gbif_canonical) if gbif_canonical else ""
 
-                    ratio = (
-                        1.0
-                        if not expected_norm or not gbif_norm
-                        else difflib.SequenceMatcher(None, expected_norm, gbif_norm).ratio()
+                    norm_expected = _norm_taxon_for_similarity(expected_name) if expected_name else ""
+                    norm_gbif = _norm_taxon_for_similarity(gbif_canonical) if gbif_canonical else ""
+
+                    ratio = 1.0 if not norm_expected or not norm_gbif else max(
+                        difflib.SequenceMatcher(None, canon_expected, canon_gbif).ratio(),
+                        difflib.SequenceMatcher(None, norm_expected, norm_gbif).ratio(),
                     )
 
                     csv_genus = _safe_strip(self.get_row_value(row, GENUS)) or ""
                     gbif_genus = _safe_strip(gbif_rec.get("genus")) or ""
 
-                    if csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower():
+                    if rank.lower() != 'genus' and csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower():
                         self.handle_error(
                             row=row,
                             message=(
@@ -678,7 +695,7 @@ class TaxaProcessor(object):
                             message=(
                                 f"GBIF key {gbif_key}: name mismatch (similarity={ratio:.2f} < {NAME_SIM_THRESHOLD}). "
                                 f"Expected '{expected_name}' ~ '{expected_norm}'; "
-                                f"GBIF '{gbif_canonical}' ~ '{gbif_norm}'."
+                                f"GBIF '{gbif_canonical}' ~ '{canon_gbif}'."
                             ),
                         )
                         return
