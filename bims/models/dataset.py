@@ -11,7 +11,7 @@ class Dataset(models.Model):
         unique=True,
     )
     name = models.CharField(
-        max_length=255,
+        max_length=1024,
         help_text='Name of the dataset'
     )
     abbreviation = models.CharField(
