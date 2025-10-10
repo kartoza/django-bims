@@ -74,10 +74,6 @@ services:
     container_name: bims_db
     image: kartoza/postgis:17-3.5
     shm_size: 1g
-    deploy:
-      resources:
-        limits:
-          cpus: '75.0'
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
       POSTGRES_USER: ${POSTGRES_USER:-docker}
