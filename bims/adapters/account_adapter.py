@@ -5,6 +5,7 @@ import json
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.account.utils import user_field, user_email, user_username
 from django.utils.encoding import force_str
+from django.utils.translation import gettext_lazy as _
 
 from tenants.models import Domain
 
@@ -156,9 +157,33 @@ class AccountAdapter(LocalAccountAdapter):
         return reverse('map-page')
 
     def clean_password(self, password, user=None):
-        if re.match(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{6,}$', password):
-            return password
-        raise ValidationError('Password Error')
+        if not password:
+            raise ValidationError(_('Password cannot be empty.'))
+        errors = []
+        if len(password) < 12:
+            errors.append(_('Must be at least 12 characters long.'))
+        if not re.search(r'[A-Z]', password):
+            errors.append(_('Must include at least one uppercase letter.'))
+        if not re.search(r'[a-z]', password):
+            errors.append(_('Must include at least one lowercase letter.'))
+        if not re.search(r'\d', password):
+            errors.append(_('Must include at least one number.'))
+        if not re.search(r'[^A-Za-z0-9]', password):
+            errors.append(_('Must include at least one symbol (e.g. !@#$).'))
+        if user:
+            lowered = password.lower()
+            for attr in ('username', 'email', 'first_name', 'last_name'):
+                val = getattr(user, attr, None)
+                if val:
+                    token = str(val).split('@')[0].lower()
+                    if token and token in lowered:
+                        errors.append(_('Cannot contain your name, username, or email.'))
+                        break
+
+        if errors:
+            raise ValidationError(errors)
+
+        return password
 
     def respond_user_inactive(self, request, user):
         # Sent email to superuser
