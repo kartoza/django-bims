@@ -6,7 +6,9 @@ import operator
 import hashlib
 import ast
 import logging
+import re
 from functools import reduce
+from rest_framework import status
 
 from django.contrib.auth import get_user_model
 from django.db.models import CharField
@@ -54,6 +56,32 @@ MAX_PAGINATED_SITES = 20
 MAX_PAGINATED_RECORDS = 50
 
 
+_SQLI_URL_PATTERN = re.compile(
+    r"""(
+        (?:^|[?&])[^=]*=\s*[^&]*\bunion\s+select\b     | # UNION SELECT
+        (?:^|[?&])[^=]*=\s*[^&]*\bdrop\b               | # DROP
+        (?:^|[?&])[^=]*=\s*[^&]*\balter\b              | # ALTER
+        (?:^|[?&])[^=]*=\s*[^&]*\bcreate\b             | # CREATE
+        (?:^|[?&])[^=]*=\s*[^&]*\btruncate\b           | # TRUNCATE
+        (?:^|[?&])[^=]*=\s*[^&]*\binsert\b             | # INSERT
+        (?:^|[?&])[^=]*=\s*[^&]*\bupdate\b             | # UPDATE
+        (?:^|[?&])[^=]*=\s*[^&]*\bdelete\b             | # DELETE
+        --                                            | # inline comment
+        /\*.*?\*/                                     | # block comment
+        ;                                              | # statement separator
+        \bpg_sleep\s*\(|\bsleep\s*\(|\bbenchmark\s*\(  | # time-based probes
+        \binformation_schema\b                         | # metadata access
+        (?:'|"|\))\s*or\s*(?:'|"|\()?\s*\d+\s*=\s*\d+   # ' OR 1=1
+    )""",
+    re.IGNORECASE | re.DOTALL | re.VERBOSE,
+)
+
+def url_contains_suspect_sqli(full_url: str) -> bool:
+    q = urllib.parse.urlparse(full_url).query or ""
+    q = urllib.parse.unquote_plus(q)
+    return bool(_SQLI_URL_PATTERN.search(q))
+
+
 class CollectionSearchAPIView(BimsApiView):
     """
     API View to search collection data
@@ -62,6 +90,14 @@ class CollectionSearchAPIView(BimsApiView):
     def get(self, request):
         parameters = request.GET.dict()
         search_uri = request.build_absolute_uri()
+
+        if url_contains_suspect_sqli(search_uri):
+            logger.warning("Blocked suspicious query string: %s", search_uri)
+            return Response(
+                {"detail": "Suspicious query detected and blocked."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
