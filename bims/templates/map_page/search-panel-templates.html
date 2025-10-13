@@ -981,9 +981,11 @@
                 <li class="locate-coordinates">
                     Locate by Coordinate
                 </li>
+                {% if preferences.SiteSetting.default_data_source == 'fbis' %}
                 <li class="locate-farm">
                     Locate by Farm Portion Code
                 </li>
+                {% endif %}
             </ul>
         </div>
     </div>
