@@ -14,9 +14,11 @@ from django.contrib.gis.geos import Polygon
 from django.db.models import Q
 from django.http import Http404
 from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_403_FORBIDDEN
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 
+from bims.api_views.merge_sites import IsSuperUser
 from bims.models.download_request import DownloadRequest
 from bims.models.location_site import LocationSite
 from bims.serializers.location_site_serializer import (
@@ -26,6 +28,7 @@ from bims.serializers.location_site_serializer import (
 from bims.serializers.location_site_detail_serializer import \
     LocationSiteDetailSerializer
 from bims.api_views.collection import GetCollectionAbstract
+from bims.tasks import remove_dangling_sites
 from bims.utils.search_process import (
     get_or_create_search_process,
 )
@@ -37,6 +40,9 @@ from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.collection_record import download_gbif_ids
 from bims.tasks.location_site_summary import (
     generate_location_site_summary
+)
+from bims.tasks.prune_outside_boundary import (
+    prune_outside_boundary_gbif
 )
 
 
@@ -329,3 +335,41 @@ class GbifIdsDownloader(APIView):
             'status': 'processing',
             'filename': filename
         })
+
+
+class DeleteDanglingLocationSites(APIView):
+
+    permission_classes = (IsSuperUser,)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            remove_dangling_sites.delay()
+            return Response(
+                {"message": "Deleting dangling sites in the background."},
+                status=HTTP_200_OK)
+        return Response(
+            {"error": "Permission denied."},
+            status=HTTP_403_FORBIDDEN)
+
+
+class RemoveOutsideBoundaryGbifData(APIView):
+    permission_classes = (IsSuperUser,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."}, status=HTTP_403_FORBIDDEN)
+
+        dry_run = bool(request.data.get("dry_run", False))
+        delete_empty_sites = bool(request.data.get("delete_empty_sites", True))
+        prune_outside_boundary_gbif.delay(dry_run=dry_run, delete_empty_sites=delete_empty_sites)
+
+        return Response(
+            {
+                "message": (
+                    "Starting background cleanup of GBIF occurrences and surveys "
+                    "outside the configured boundary."
+                    + (" (dry-run)" if dry_run else "")
+                )
+            },
+            status=HTTP_200_OK,
+        )

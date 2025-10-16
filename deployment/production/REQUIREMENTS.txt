@@ -1,4 +1,4 @@
-Django==4.2.16
+Django==4.2.24
 psycopg2==2.9.9
 django-braces==1.14.0
 django-model-utils==4.0.0
@@ -49,7 +49,7 @@ django-crispy-forms==1.9.1
 selenium==3.141.0
 django-admin-rangefilter==0.6.0
 django-preferences==1.0.0
-PyGithub==1.51
+PyGithub==2.7.0
 sorl-thumbnail==12.9.0
 svglib==1.0.0
 simplejson==3.17.0
@@ -97,3 +97,5 @@ celery==5.3.6
 django-celery-results==2.5.1
 django-tenants==3.6.1
 tenant-schemas-celery==2.2.0
+
+django-cryptography==1.1

@@ -6,9 +6,14 @@ import operator
 import hashlib
 import ast
 import logging
+import re
 from functools import reduce
+from rest_framework import status
 
 from django.contrib.auth import get_user_model
+from django.db.models import CharField
+from django.db.models.functions import Length
+
 from preferences import preferences
 
 from bims.models.chemical_record import ChemicalRecord
@@ -51,6 +56,32 @@ MAX_PAGINATED_SITES = 20
 MAX_PAGINATED_RECORDS = 50
 
 
+_SQLI_URL_PATTERN = re.compile(
+    r"""(
+        (?:^|[?&])[^=]*=\s*[^&]*\bunion\s+select\b     | # UNION SELECT
+        (?:^|[?&])[^=]*=\s*[^&]*\bdrop\b               | # DROP
+        (?:^|[?&])[^=]*=\s*[^&]*\balter\b              | # ALTER
+        (?:^|[?&])[^=]*=\s*[^&]*\bcreate\b             | # CREATE
+        (?:^|[?&])[^=]*=\s*[^&]*\btruncate\b           | # TRUNCATE
+        (?:^|[?&])[^=]*=\s*[^&]*\binsert\b             | # INSERT
+        (?:^|[?&])[^=]*=\s*[^&]*\bupdate\b             | # UPDATE
+        (?:^|[?&])[^=]*=\s*[^&]*\bdelete\b             | # DELETE
+        --                                            | # inline comment
+        /\*.*?\*/                                     | # block comment
+        ;                                              | # statement separator
+        \bpg_sleep\s*\(|\bsleep\s*\(|\bbenchmark\s*\(  | # time-based probes
+        \binformation_schema\b                         | # metadata access
+        (?:'|"|\))\s*or\s*(?:'|"|\()?\s*\d+\s*=\s*\d+   # ' OR 1=1
+    )""",
+    re.IGNORECASE | re.DOTALL | re.VERBOSE,
+)
+
+def url_contains_suspect_sqli(full_url: str) -> bool:
+    q = urllib.parse.urlparse(full_url).query or ""
+    q = urllib.parse.unquote_plus(q)
+    return bool(_SQLI_URL_PATTERN.search(q))
+
+
 class CollectionSearchAPIView(BimsApiView):
     """
     API View to search collection data
@@ -59,6 +90,14 @@ class CollectionSearchAPIView(BimsApiView):
     def get(self, request):
         parameters = request.GET.dict()
         search_uri = request.build_absolute_uri()
+
+        if url_contains_suspect_sqli(search_uri):
+            logger.warning("Blocked suspicious query string: %s", search_uri)
+            return Response(
+                {"detail": "Suspicious query detected and blocked."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         search_process, created = get_or_create_search_process(
             search_type=SEARCH_RESULTS,
             query=search_uri,
@@ -368,6 +407,7 @@ class CollectionSearch(object):
 
     @property
     def spatial_filter(self):
+        CharField.register_lookup(Length, 'length')
         spatial_filters = self.parse_request_json('spatialFilter')
         spatial_filter_group_keys = []
         or_condition = Q()
@@ -376,15 +416,32 @@ class CollectionSearch(object):
         for spatial_filter in spatial_filters:
             spatial_filter_splitted = spatial_filter.split(',')
             if 'group' in spatial_filter_splitted:
-                spatial_filter_group_keys.append(
-                    ','.join(spatial_filter.split(',')[1:])
-                )
+                spatial_filter_key = spatial_filter_splitted[1]
+                if '.' in spatial_filter_key:
+                    key, layer_identifier = spatial_filter_key.split('.')
+                    group = LocationContextGroup.objects.filter(
+                        key=key, layer_identifier=layer_identifier
+                    ).first()
+                else:
+                    group = LocationContextGroup.objects.filter(
+                        key=spatial_filter_key
+                    ).first()
+                if group:
+                    spatial_filter_group_keys.append(group.id)
             else:
                 if spatial_filter_splitted[0] != 'value':
                     continue
-                spatial_filter_group_id = LocationContextGroup.objects.filter(
-                    key=spatial_filter_splitted[1]
-                ).first().id
+                spatial_filter_key = spatial_filter_splitted[1]
+                if '.' in spatial_filter_key:
+                    [spatial_filter_key, layer_identifier] = spatial_filter_key.split('.')
+                    spatial_filter_group_id = LocationContextGroup.objects.filter(
+                        key=spatial_filter_key,
+                        layer_identifier=layer_identifier
+                    ).first().id
+                else:
+                    spatial_filter_group_id = LocationContextGroup.objects.filter(
+                        key=spatial_filter_key,
+                    ).first().id
                 or_condition |= Q(**{
                     'locationcontext__group':
                         spatial_filter_group_id,
@@ -392,11 +449,12 @@ class CollectionSearch(object):
                         spatial_filter_splitted[2:])})
         if spatial_filter_group_keys:
             spatial_filter_groups = LocationContextGroup.objects.filter(
-                key__in=list(set(spatial_filter_group_keys))
+                id__in=list(set(spatial_filter_group_keys))
             ).values_list('id', flat=True)
-            or_condition |= Q(**{
-                'locationcontext__group__in':
-                    spatial_filter_groups})
+            or_condition |= (
+                Q(locationcontext__group__in=spatial_filter_groups) &
+                Q(locationcontext__value__length__gt=0)
+            )
         return or_condition
 
     @property

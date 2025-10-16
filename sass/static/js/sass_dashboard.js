@@ -506,7 +506,7 @@ function renderEcologicalCategoryChart() {
         geoName = 'Combined';
     }
     try {
-        let headerLabel = `${riverEcoregionGroup['eco_region_1']} - ${geoName}`;
+        let headerLabel = `${ecoregionOne} - ${geoName}`;
         header.html(headerLabel);
     } catch (e) {
     }

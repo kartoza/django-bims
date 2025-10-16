@@ -1,53 +1,81 @@
+import logging
+
 import requests
 from requests.exceptions import HTTPError, SSLError
-from django.conf import settings
+
 from bims.models.iucn_status import IUCNStatus
 from preferences import preferences
 
 
-def get_iucn_status(taxon_id=None, species_name=None, only_returns_json=None):
-    """
-    Fetch iucn status of the species, and update the iucn record.
+logger = logging.getLogger(__name__)
 
-    :param taxon_id: taxon id of the species
-    :param species_name: name of the species
+
+def get_iucn_status(taxon):
+    """
+    Fetch IUCN status using genus/species name and return both
+    IUCNStatus instance and sis_id (to set iucn_redlist_id manually).
+
+    :param taxon: Taxonomy instance (must have genus_name and species_name)
+    :return: tuple (IUCNStatus or None, sis_id or None, iucn_url or None)
     """
     api_iucn_key = preferences.SiteSetting.iucn_api_key
 
-    if not api_iucn_key:
-        return None
-
-    api_url = settings.IUCN_API_URL
-
-    if taxon_id:
-        api_url += '/id/' + taxon_id
-    elif species_name:
-        api_url += '/species/' + species_name
+    species_name = taxon.species_name
+    taxon_name_list = species_name.split(' ')
+    if not taxon.parent and species_name and len(taxon_name_list) > 1:
+        genus_name = taxon_name_list[0].strip()
     else:
-        return None
+        genus_name = taxon.genus_name
 
-    # Add token
-    api_url += '?token=' + api_iucn_key
+    if genus_name and genus_name in species_name:
+        species_name = species_name.replace(genus_name, '', 1).strip()
+
+    if not api_iucn_key or not genus_name or not species_name:
+        return None, None, None
+
+    url = "https://api.iucnredlist.org/api/v4/taxa/scientific_name"
+    headers = {
+        'accept': 'application/json',
+        'Authorization': api_iucn_key
+    }
+
+    params = {
+        'genus_name': genus_name,
+        'species_name': species_name
+    }
+
+    iucn_url = None
 
     try:
-        response = requests.get(api_url)
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
         json_result = response.json()
-        if only_returns_json:
-            return json_result
-        try:
-            if len(json_result['result']) > 0:
-                iucn_status = IUCNStatus.objects.filter(
-                    category=json_result['result'][0]['category']
-                )
-                if not iucn_status:
-                    iucn_status = IUCNStatus.objects.create(
-                        category=json_result['result'][0]['category']
+
+        sis_id = json_result.get("taxon", {}).get("sis_id")
+
+        assessments = json_result.get("assessments", [])
+        latest = next((a for a in assessments if a.get("latest")), None)
+
+        if latest:
+            category = latest.get("red_list_category_code")
+            iucn_url = latest.get("url")
+            if category:
+                try:
+                    iucn_status, _ = IUCNStatus.objects.get_or_create(
+                        category=category,
+                        national=False
                     )
-                    return iucn_status
-                return iucn_status[0]
-        except TypeError:
-            pass
-        return None
-    except (HTTPError, KeyError, requests.exceptions.JSONDecodeError, SSLError) as e:
-        print(e)
-        return None
+                except IUCNStatus.MultipleObjectsReturned:
+                    iucn_status = IUCNStatus.objects.filter(
+                        category=category,
+                        national=False
+                    ).first()
+                return iucn_status, sis_id, iucn_url
+
+        return None, sis_id, iucn_url
+
+    except (HTTPError, SSLError,
+            requests.exceptions.JSONDecodeError,
+            requests.exceptions.RequestException) as e:
+        logger.error(f"IUCN API error: {e}")
+        return None, None, iucn_url

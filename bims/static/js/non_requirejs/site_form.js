@@ -37,12 +37,16 @@ let validator = $('#site-form').validate({
         if (siteCodeGeneratorMethod === 'fbis') {
             if (!riverName && !userRiverName) {
                 formAlert.show();
-                formAlert.html('River name is required.');
+                let _message = 'River name is required.'
+                if (ecosystemType === 'Wetland') {
+                    _message = 'Wetland name is required.'
+                }
+                formAlert.html(_message);
                 return false;
             }
 
             // Check length
-            if (ecosystemType == 'River') {
+            if (ecosystemType == 'River' || ecosystemType == '') {
                 if (siteCode.length !== 12) {
                     showSiteCodeError();
                     return false;

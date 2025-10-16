@@ -4,7 +4,6 @@
 import json
 from urllib.parse import urlencode
 
-from django.contrib.sites.shortcuts import get_current_site
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
@@ -42,7 +41,6 @@ class TaxaManagementView(TaxaAccessMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        site = get_current_site(self.request)
         selected = self.request.GET.get('selected')
         taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
         if taxon_group_cache:

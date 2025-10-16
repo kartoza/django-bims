@@ -8,14 +8,14 @@
         const targetElement = document.querySelector('.g-d-c');
         if (targetElement) {
             // Create the button
-            const customButton = document.createElement('a');
-            customButton.href = "#";
-            customButton.className = "grp-button grp-primary";
-            customButton.textContent = "Clear Cache";
-            customButton.style.marginLeft = "10px";
+            const clearCacheButton = document.createElement('a');
+            clearCacheButton.href = "#";
+            clearCacheButton.className = "grp-button grp-primary";
+            clearCacheButton.textContent = "Clear Cache";
+            clearCacheButton.style.marginLeft = "10px";
 
             // Add click event with confirmation
-            customButton.addEventListener("click", function (event) {
+            clearCacheButton.addEventListener("click", function (event) {
                 event.preventDefault();
 
                 // Confirmation dialog
@@ -48,7 +48,158 @@
             });
 
             // Append the button to the target element
-            targetElement.appendChild(customButton);
+            targetElement.appendChild(clearCacheButton);
+
+            const removeDanglingSitesBtn = document.createElement('a');
+            removeDanglingSitesBtn.href = "#";
+            removeDanglingSitesBtn.className = "grp-button grp-primary";
+            removeDanglingSitesBtn.textContent = "Delete dangling sites";
+            removeDanglingSitesBtn.style.marginLeft = "10px";
+            removeDanglingSitesBtn.style.marginTop = "10px";
+
+            removeDanglingSitesBtn.addEventListener("click", function (event) {
+                event.preventDefault();
+
+                if (confirm("Are you sure you want to delete the dangling sites?")) {
+                    fetch("{% url 'delete_dangling_sites' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json"
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error("Failed to delete sites");
+                        }
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        window.location.href = "/admin/";
+                    })
+                    .catch(error => {
+                        console.error("Error deleting sites:", error);
+                        alert("An unexpected error occurred. Please try again.");
+                    });
+                }
+            });
+
+            targetElement.appendChild(removeDanglingSitesBtn);
+
+            const harvestIucnBtn = document.createElement('a');
+            harvestIucnBtn.href = "#";
+            harvestIucnBtn.className = "grp-button grp-primary";
+            harvestIucnBtn.textContent = "Harvest IUCN status";
+            harvestIucnBtn.style.marginLeft = "10px";
+            harvestIucnBtn.style.marginTop = "10px";
+
+            harvestIucnBtn.addEventListener("click", function (event) {
+                event.preventDefault();
+
+                if (confirm("Kick off a background job to harvest IUCN data?")) {
+                    fetch("{% url 'harvest_iucn_status' %}", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json"
+                        },
+                        credentials: "same-origin"
+                    })
+                    .then(response => {
+                        if (response.ok) return response.json();
+                        throw new Error("Failed to enqueue IUCN harvest");
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        window.location.href = "/admin/";
+                    })
+                    .catch(error => {
+                        console.error("Error harvesting IUCN:", error);
+                        alert("An unexpected error occurred. Please try again.");
+                    });
+                }
+            });
+
+            targetElement.appendChild(harvestIucnBtn);
+
+            const outsideWrapper = document.createElement('div');
+            outsideWrapper.style.display = 'flex';
+            outsideWrapper.style.flexDirection = 'column';   // stack vertically
+            outsideWrapper.style.alignItems = 'flex-start';
+            outsideWrapper.style.gap = '6px';
+            outsideWrapper.style.marginTop = '10px';
+
+            const removeOutsideBtn = document.createElement('a');
+            removeOutsideBtn.href = '#';
+            removeOutsideBtn.className = 'grp-button grp-primary';
+            removeOutsideBtn.textContent = 'Remove sites outside boundary';
+            removeOutsideBtn.style.marginLeft = '10px';
+            removeOutsideBtn.style.setProperty('font-size', '8pt', 'important');
+
+            const dryRunLabel = document.createElement('label');
+            dryRunLabel.style.display = 'block';
+            dryRunLabel.style.marginLeft = '10px';
+            dryRunLabel.title = 'If checked, it will only report what would be deleted';
+
+            const dryRunInput = document.createElement('input');
+            dryRunInput.type = 'checkbox';
+            dryRunInput.id = 'outside-boundary-dry-run';
+            dryRunInput.checked = true;
+
+            const dryRunText = document.createElement('span');
+            dryRunText.textContent = 'Dry run';
+
+            dryRunLabel.appendChild(dryRunInput);
+            dryRunLabel.appendChild(dryRunText);
+
+            // Append in order: button, then label (so label is below)
+            outsideWrapper.appendChild(removeOutsideBtn);
+            outsideWrapper.appendChild(dryRunLabel);
+            targetElement.appendChild(outsideWrapper);
+
+
+            removeOutsideBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+
+                const dryRun = !!dryRunInput.checked;
+                const confirmMsg = dryRun
+                    ? "Run a DRY RUN? No data will be deleted."
+                    : "This will permanently delete GBIF occurrences outside the boundary and any resulting empty surveys/sites. Proceed?";
+
+                if (!confirm(confirmMsg)) return;
+
+                fetch("{% url 'remove_outside_boundary_gbif' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        dry_run: dryRun,
+                        delete_empty_sites: true
+                    })
+                })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error("Failed to enqueue outside-boundary cleanup");
+                })
+                .then(data => {
+                    alert(data.message || "Cleanup task started.");
+                    window.location.href = "/admin/";
+                })
+                .catch(error => {
+                    console.error("Error starting cleanup:", error);
+                    alert("An unexpected error occurred. Please try again.");
+                });
+            });
+
+            outsideWrapper.appendChild(removeOutsideBtn);
+            outsideWrapper.appendChild(dryRunLabel);
+            targetElement.appendChild(outsideWrapper);
         } else {
             console.warn("Element with class 'g-d-c' not found.");
         }

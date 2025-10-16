@@ -249,7 +249,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         if taxon_group.parent:
             self.validate_taxon(taxon_group.parent, taxonomy)
 
-    def approve(self, reviewer: settings.AUTH_USER_MODEL):
+    def approve(self, reviewer: settings.AUTH_USER_MODEL, suppress_emails: bool = False):
         """
         Apply the proposed changes to the associated Taxonomy instance
         and update its status to 'approved'.
@@ -264,26 +264,27 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         top_level_taxon_group = self.taxon_group.get_top_level_parent()
 
         if top_level_taxon_group != self.taxon_group_under_review:
-            parent_expert = list(top_level_taxon_group.experts.values_list(
-                'email', flat=True
-            ))
-            superuser = list(
-                get_user_model().objects.filter(
-                    is_superuser=True).values_list('email', flat=True)
-            )
-            recipients = list(set(parent_expert + superuser))
-            current_site = get_current_domain()
-            subject = '[{}] Taxon Validation Required'.format(current_site)
-            from_email = settings.DEFAULT_FROM_EMAIL
-            message = (f"Dear Validator,\n\nThe taxon '{self.original_taxonomy.canonical_name}' "
-                       f"has been validated by the current expert.\n\nIt now requires "
-                       f"validation to be added to the taxon group '{top_level_taxon_group.name}'.")
-            send_mail_notification.delay(
-                subject,
-                message,
-                from_email,
-                recipients
-            )
+            if not suppress_emails:
+                parent_expert = list(top_level_taxon_group.experts.values_list(
+                    'email', flat=True
+                ))
+                superuser = list(
+                    get_user_model().objects.filter(
+                        is_superuser=True).values_list('email', flat=True)
+                )
+                recipients = list(set(parent_expert + superuser))
+                current_site = get_current_domain()
+                subject = '[{}] Taxon Validation Required'.format(current_site)
+                from_email = settings.DEFAULT_FROM_EMAIL
+                message = (f"Dear Validator,\n\nThe taxon '{self.original_taxonomy.canonical_name}' "
+                           f"has been validated by the current expert.\n\nIt now requires "
+                           f"validation to be added to the taxon group '{top_level_taxon_group.name}'.")
+                send_mail_notification.delay(
+                    subject,
+                    message,
+                    from_email,
+                    recipients
+                )
             self.taxon_group_under_review = top_level_taxon_group
             self.save()
         else:
@@ -300,12 +301,14 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'endemism',
                     'iucn_status',
                     'accepted_taxonomy',
+                    'species_group',
                     'parent',
                     'tags',
                     'biographic_distributions',
                     'additional_data',
                     'vernacular_names',
                     'gbif_key',
+                    'gbif_data',
                     'origin']
                 for field in fields_to_update:
                     if field == 'tags':
@@ -333,8 +336,8 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     self.original_taxonomy
                 )
 
-                self.send_success_emails(reviewer)
-                return
+                if not suppress_emails:
+                    self.send_success_emails(reviewer)
 
     def send_success_emails(self, reviewer, comments: str = "",):
         """

@@ -1,12 +1,15 @@
-from django.db import models
+from django.core.validators import RegexValidator
+from django.db import models, connection
 from django.db.models import JSONField
 from preferences.models import Preferences
+from django_cryptography.fields import encrypt
 
 
 class SiteSetting(Preferences):
     SITE_CODE_GENERATOR_CHOICES = (
         ('bims', 'BIMS (2 Site Name + 2 Site Description + Site count)'),
         ('fbis', 'FBIS (2 Secondary catchment + 4 River + Site count)'),
+        ('fbis_africa', 'FBIS Africa (3 × ISO Country Code + base-36 Site count)'),
         (
             'rbis',
             'RBIS (Catchment + Province ID + District ID + Site count)'
@@ -14,6 +17,10 @@ class SiteSetting(Preferences):
         (
             'sanparks',
             'SANPARKS (1st three park name + site count)'
+        ),
+        (
+            'kafue',
+            'KAFUE (1st five district name + site count)'
         )
     )
     site_notice = models.TextField(
@@ -82,15 +89,6 @@ class SiteSetting(Preferences):
         help_text=(
             'File template for occurrence uploader'
         )
-    )
-
-    landing_page_occurrence_records_title = models.CharField(
-        default='BIODIVERSITY OCCURRENCE RECORDS',
-        help_text=(
-            'Header title for Biodiversity Occurrence Records section in '
-            'landing page'
-        ),
-        max_length=150
     )
 
     landing_page_partners_title = models.CharField(
@@ -373,6 +371,50 @@ class SiteSetting(Preferences):
         on_delete=models.SET_NULL,
         null=True,
     )
+
+    map_min_zoom = models.IntegerField(
+        default=5,
+        help_text="Minimum zoom level allowed for the map. Lower values show a wider area."
+    )
+
+    gbif_username = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text="GBIF username used for API downloads.",
+        default='',
+        validators=[RegexValidator(r'^[\w.@+-]+$', "Enter a valid username.")],
+    )
+
+    gbif_password = encrypt(models.CharField(
+        max_length=256,
+        blank=True,
+        help_text="GBIF password used for API downloads (encrypted at rest).",
+        default='',
+    ))
+
+    gbif_excluded_project_ids = models.TextField(
+        blank=True,
+        default="",
+        help_text=(
+            "Comma-separated GBIF projectId values to exclude for this tenant "
+            "(case-insensitive). Example: 'fbis, legacy123'"
+        ),
+    )
+
+    def _tenant_default_exclusions(self) -> set[str]:
+        """Default per tenant: for FBIS tenant, exclude 'fbis'."""
+        schema = (getattr(connection, "schema_name", "") or "").lower()
+        return {"fbis"} if schema == "fbis" else set()
+
+    def _csv_to_set(self) -> set[str]:
+        raw = (self.gbif_excluded_project_ids or "")
+        return {p.strip().lower() for p in raw.split(",") if p.strip()}
+
+    @property
+    def gbif_excluded_project_ids_effective(self) -> list[str]:
+        """CSV + tenant defaults -> normalized, deduped, sorted list."""
+        vals = self._csv_to_set() | self._tenant_default_exclusions()
+        return sorted(vals)
 
     @property
     def project_name(self):

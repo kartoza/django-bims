@@ -12,6 +12,21 @@ from django.contrib.sites.models import Site
 
 THEME_CACHE_KEY = 'bims_theme'
 
+NAVBAR_TEXT_CASE_CHOICES = [
+    ("none", "None"),
+    ("uppercase", "UPPERCASE"),
+    ("lowercase", "lowercase"),
+    ("capitalize", "Capitalize"),
+]
+
+NAVBAR_FONT_WEIGHT_CHOICES = [
+    ("300", "Light (300)"),
+    ("400", "Regular (400)"),
+    ("500", "Medium (500)"),
+    ("600", "Semibold (600)"),
+    ("700", "Bold (700)"),
+]
+
 
 class CustomTheme(models.Model):
     site = models.ForeignKey(
@@ -42,11 +57,56 @@ class CustomTheme(models.Model):
         null=True,
         blank=True
     )
+    # --- Navbar ---
+    navbar_custom_typography_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable custom font for the navbar. If disabled, theme/site defaults are used."
+    )
+    navbar_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='theme_navbar_font',
+    )
+    navbar_font_size_px = models.PositiveIntegerField(
+        default=16,
+        help_text="Navbar font size in pixels."
+    )
+    navbar_font_weight = models.CharField(
+        max_length=3,
+        choices=NAVBAR_FONT_WEIGHT_CHOICES,
+        default="500",
+        help_text="Navbar font weight."
+    )
+    navbar_letter_spacing_em = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=0.00,
+        help_text="Letter spacing in em (e.g. 0.00, 0.05, 0.10)."
+    )
+    navbar_text_case = models.CharField(
+        max_length=12,
+        choices=NAVBAR_TEXT_CASE_CHOICES,
+        default="none",
+        help_text="Transform case for navbar text."
+    )
+    navbar_brand_divider_enabled = models.BooleanField(
+        default=True,
+        help_text="Show a vertical divider to the right of the navbar logo/brand."
+    )
     navbar_logo = models.ImageField(
         upload_to='navbar_site_logo',
         null=True,
         blank=True
     )
+    navbar_background_color = ColorField(
+        default='#343a40'
+    )
+    navbar_text_color = ColorField(
+        default='#FFFFFF'
+    )
+
     landing_page_sections = models.ManyToManyField(
         'bims_theme.LandingPageSection',
         null=True,
@@ -59,11 +119,34 @@ class CustomTheme(models.Model):
         blank=True,
         help_text='Carousels that will appear on the landing page'
     )
+
     partners_section_title = models.CharField(
         max_length=100,
         default='PARTNERS',
         help_text='Title for the partners display section'
     )
+    partners_section_title_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='theme_partners_title_font',
+        help_text='Font for the Partners section title.'
+    )
+    partners_section_title_font_size_px = models.PositiveIntegerField(
+        default=28,
+        help_text='Partners title font size (px).'
+    )
+    partners_section_title_font_weight = models.CharField(
+        max_length=3,
+        choices=NAVBAR_FONT_WEIGHT_CHOICES,
+        default='500',
+        help_text='Partners title font weight.'
+    )
+    partners_section_title_text_color = ColorField(
+        null=True,
+        blank=True,
+        help_text='Partners title text color.'
+    )
+
     partners_section_order = models.PositiveIntegerField(
         default=1,
         help_text='The order of the partners section from the bottom'
@@ -117,12 +200,6 @@ class CustomTheme(models.Model):
         default='#DBAF00'
     )
     main_button_text_color = ColorField(
-        default='#FFFFFF'
-    )
-    navbar_background_color = ColorField(
-        default='#343a40'
-    )
-    navbar_text_color = ColorField(
         default='#FFFFFF'
     )
     is_enabled = models.BooleanField(
@@ -220,6 +297,69 @@ class CustomTheme(models.Model):
         blank=True,
         max_length=100,
         help_text='Optional title text displayed in the login modal.'
+    )
+
+    landing_page_occurrence_records_title = models.CharField(
+        default='BIODIVERSITY OCCURRENCE RECORDS',
+        help_text='Header title for the Biodiversity Occurrence Records section.',
+        max_length=150,
+    )
+    landing_page_occurrence_records_title_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='theme_occ_title_font',
+        help_text='Font for the Biodiversity Occurrence Records title.'
+    )
+    landing_page_occurrence_records_title_font_size_px = models.PositiveIntegerField(
+        default=28,
+        help_text='Occurrence Records title font size (px).'
+    )
+    landing_page_occurrence_records_title_font_weight = models.CharField(
+        max_length=3,
+        choices=NAVBAR_FONT_WEIGHT_CHOICES,
+        default='500',
+        help_text='Occurrence Records title font weight.'
+    )
+    landing_page_occurrence_records_title_text_color = ColorField(
+        null=True,
+        blank=True,
+        help_text='Occurrence Records title text color.'
+    )
+
+    summary_font = models.ForeignKey(
+        'bims_theme.CustomFont',
+        null=True,
+        blank=True,
+        help_text="CSS font for the summary. Leave blank to use the site default.",
+        on_delete=models.SET_NULL,
+    )
+
+    summary_font_size_px = models.PositiveIntegerField(
+        default=23,
+        help_text="Base font size (px) for the summary content."
+    )
+
+    summary_text_color = ColorField(
+        null=True,
+        blank=True,
+        help_text="Text color used across the summary section."
+    )
+
+    summary_background_color = ColorField(
+        default='#FFFFFF',
+        help_text="Background color for the summary section."
+    )
+
+    summary_text_case = models.CharField(
+        max_length=12,
+        choices=NAVBAR_TEXT_CASE_CHOICES,
+        default='none',
+        help_text="Text transform for summary content (e.g. UPPERCASE)."
+    )
+
+    show_explore_map = models.BooleanField(
+        default=True,
+        help_text='Show the "Explore" button under the summary. If disabled, it will show in the carousel'
     )
 
     class Meta:

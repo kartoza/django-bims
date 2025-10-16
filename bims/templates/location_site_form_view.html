@@ -48,22 +48,22 @@
                     <div class="col-lg-12">
                         {% for module in taxon_group %}
                             <a href="/module-form/?siteId={{ site_id }}&module={{ module.id }}"
-                               class="btn btn-info">Add {% if module.singular_name %}
+                               class="btn btn-primary">Add {% if module.singular_name %}
                                 {{ module.singular_name }}{% else %}{{ module.name }}{% endif %} data</a>
                         {% endfor %}
 
                         {% if preferences.SiteSetting.enable_sass and ecosystem_type == 'River' %}
                             <a href="/sass/{{ site_id }}/"
-                               class="btn btn-info">Add SASS data</a>
+                               class="btn btn-primary">Add SASS data</a>
                         {% endif %}
 
                         {% if preferences.SiteSetting.enable_water_temperature %}
                             <a href="/water-temperature-form/?siteId={{ site_id }}"
-                               class="btn btn-info">Add water temperature
+                               class="btn btn-primary">Add water temperature
                                 data</a>
                         {% endif %}
                         <a href="/physico-chemical-form/?siteId={{ site_id }}"
-                           class="btn btn-info">Add physico-chemical
+                           class="btn btn-primary">Add physico-chemical
                             data</a>
                     </div>
                 </div>
@@ -141,6 +141,10 @@
                             {% endif %}
                         {% elif project_name == 'rbis' %}
                         Catchment + Province ID + District ID + site count. E.g. NNYU1205-00001
+                        {% elif project_name == 'fbis_africa' %}
+                            3 × ISO Country Code + base-36 Site count
+                        {% elif project_name == 'kafue' %}
+                            1st five district name + site count
                         {% else %}
                             {% if project_name == 'sanparks' %}
                                 1st three park name + site count

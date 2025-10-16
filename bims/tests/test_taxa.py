@@ -126,7 +126,7 @@ class TaxaCSVSerializerTest(TestCase):
 
         expected_fields = [
             'taxon_rank', 'kingdom', 'phylum', 'class_name', 'order', 'family', 'genus', 'species',
-            'subspecies', 'taxon', 'scientific_name_and_authority', 'common_name', 'origin',
+            'subspecies', 'taxon', 'common_name', 'origin',
             'endemism', 'conservation_status_global', 'conservation_status_national', 'on_gbif', 'gbif_link',
             'Growth form', 'freshwater', 'testing', 'ANT'
         ]
@@ -141,7 +141,6 @@ class TaxaCSVSerializerTest(TestCase):
         self.assertEqual(serialized_data['taxon_rank'], 'Species')
         self.assertEqual(serialized_data['species'], 'Homo sapiens')
         self.assertEqual(serialized_data['taxon'], 'Homo sapiens')
-        self.assertEqual(serialized_data['scientific_name_and_authority'], 'Homo sapiens Linnaeus')
         self.assertEqual(serialized_data['common_name'], 'Human')
         self.assertEqual(serialized_data['endemism'], 'Unknown')
         self.assertEqual(serialized_data['conservation_status_global'], 'Least Concern')

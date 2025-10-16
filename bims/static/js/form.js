@@ -13,10 +13,11 @@ for (var selector in config) {
 $(document).ready(function () {
 
     var passwordMessage = '<div class="alert alert-info password-message" role="alert">' +
-            'Password must contain at least six characters, including: <ul>' +
-        '<li> lower case letter </li>' +
-        '<li> upper case letter </li>'+
-        '<li> numeric character </li></ul>'+
+            'Password must be <strong>at least 12 characters</strong> and include: <ul>' +
+        '<li> a lowercase letter </li>' +
+        '<li> an uppercase letter </li>'+
+        '<li> a number </li>'+
+        '<li> a symbol (e.g. !@#$) </li></ul>'+
         '</div>';
     $(passwordMessage).insertBefore('#id_password1');
 });

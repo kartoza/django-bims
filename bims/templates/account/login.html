@@ -35,25 +35,19 @@
             <div class="container">
 
                 <div class="custom-form-container">
-                    {% if messages %}
-                        <ul class="errorlist">
-                            {% for message in messages %}
-                                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-
                     {% if custom_theme.login_modal_logo %}
-                            <div class="row modal-logo">
+                         <div class="modal-logo">
+                            <div class="row">
                                 <div class="col-4">
                                     <img src="{{ MEDIA_URL }}/{{ custom_theme.login_modal_logo }}" width="100%">
                                 </div>
-                                <div class="col-8">
-                                    <h4>{{ custom_theme.login_modal_title }}</h4>
-                                </div>
                             </div>
+                            <div class="row modal-logo-title">
+                                <h4>{{ custom_theme.login_modal_title }}</h4>
+                            </div>
+                         </div>
                     {% else %}
-                        <h1>LOG IN</h1>
+                        <h1>{% trans "LOG IN" %}</h1>
                     {% endif %}
 
                     <form class="login" method="POST" action="{% url 'account_login' %}">{% csrf_token %}
@@ -61,7 +55,7 @@
                         {% if redirect_field_value %}
                             <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
                         {% endif %}
-                        <button class="login custom-form-submit btn-login" type="submit">{% trans "LOGIN" %}</button>
+                        <button class="login custom-form-submit btn-login" type="submit">{% trans "login" %}</button>
                     </form>
 
                 </div>
@@ -75,9 +69,6 @@
     <link rel="stylesheet" href="{% static 'css/landing_page.css' %}">
     <script>
         $(document).ready(function () {
-            $('input[id=id_password]').parent().append('' +
-                '<div class="login-help pull-right forgot-password">' +
-                '<a href="{% url 'account_reset_password' %}">{% trans "Forgot Password" %}</a></div>')
         })
     </script>
 {% endblock %}

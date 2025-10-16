@@ -114,7 +114,7 @@
                                 {% endif %}
                                 </td>
                                 <td>
-                                    {% if not obj.approved and not obj.rejected %}
+                                    {% if not obj.approved and not obj.rejected and has_permission_to_approve %}
                                         <a href="#"
                                            class="btn btn-sm btn-outline-success approve"
                                            style="font-size: 10pt;"
@@ -125,10 +125,15 @@
                                            data-id="{{ obj.id }}">Reject</a>
                                     {% endif %}
                                     {% if obj.request_file %}
-                                        <a download="{% if '.xlsx' in obj.request_file.name or '.pdf' in obj.request_file.name  %}{{ obj.request_file.name|filename }}{% else %}{{ obj.request_file.name|filename }}.csv{% endif %}"
-                                           href="{{ obj.request_file.url|remove_media_path }}"
-                                           class="btn btn-sm btn-primary"
-                                           style="font-size: 10pt;">Download File</a>
+                                        {% if not obj.approved and not obj.rejected and has_permission_to_approve or obj.approved %}
+                                            <a download="{% if '.xlsx' in obj.request_file.name or '.pdf' in obj.request_file.name %}{{ obj.request_file.name|filename }}{% elif 'PDF' in obj.resource_type  %}{{ obj.request_file.name }}.pdf{% else %}{{ obj.request_file.name|filename }}.csv{% endif %}"
+                                               href="{{ obj.request_file.url|remove_media_path }}"
+                                               class="btn btn-sm btn-primary"
+                                               style="font-size: 10pt;">Download {{ obj.resource_type }} File</a>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if not approved_or_rejected and not has_permission_to_approve %}
+                                        <span>In Review</span>
                                     {% endif %}
                                 </td>
                             </tr>

@@ -132,32 +132,57 @@
             </div>
         </div>
 
-        {% if is_update %}
-            <div class="form-group row">
-                <label for="data-source" class="col-sm-2">Site Image</label>
-                <div class="col-sm-10">
-                    <input type="file" class="form-control" style="height: 43px !important;"
-                           name="site_image" accept="image/*">
-                    <br/><small class="error-upload"></small>
-                    <img id="site_image" class="site-image" src="{{ site_image.image.url }}" {% if site_image.image.url %} style="display: block" {% endif %}>
+        <div class="form-group row">
+            <label for="data-source" class="col-sm-2">Site Image</label>
+            <div class="col-sm-10">
+                <div class="mb-2">
+                    {% if site_images %}
+                        <div class="d-flex flex-wrap" style="gap:10px;">
+                            {% for img in site_images %}
+                                <div class="card" style="width: 180px;">
+                                    <img src="{{ img.image.url }}" class="card-img-top" style="height:120px;object-fit:cover;">
+                                    <div class="card-body p-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="delete-site-image-ids" value="{{ img.id }}"
+                                                   id="del-{{ img.id }}">
+                                            <label class="form-check-label" for="del-{{ img.id }}">
+                                                Remove this image
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <small class="form-text text-muted mt-1">
+                            Tick “Remove this image” to delete on save.
+                        </small>
+                    {% else %}
+                        <div class="text-muted mb-2">No images yet.</div>
+                    {% endif %}
                 </div>
-            </div>
-            {% include 'source_references/source_reference_select.html' %}
-        {% else %}
-            <div class="form-group row">
-                <label class="col-sm-2" for="data-source">Site Image</label>
-                <div class="col-sm-10">
-                    <div class="input-group input-file">
-                        <input type="file" class="form-control" name="site_image"
-                               accept="image/*" style="height: 43px !important;">
-                        <br/><small class="error-upload"></small>
-                    </div>
-                    <img id="site_image" src="" class="site-image">
+                <div class="input-group input-file mb-2">
+                    <input type="file"
+                           class="form-control"
+                           style="height: 43px !important;"
+                           accept="image/*"
+                           name="site-images"
+                           id="site-images-input"
+                           multiple
+                           placeholder="Choose image files..."
+                           onchange="updateMultiViewer(this)"/>
                 </div>
-            </div>
 
-            {% include 'source_references/source_reference_select.html' %}
-        {% endif %}
+                <div id="site-images-viewer" class="d-flex flex-wrap" style="gap:10px;"></div>
+
+                <small class="form-text text-muted">
+                    You can select multiple files at once.
+                </small>
+                <br/><small class="error-upload"></small>
+            </div>
+        </div>
+
+        {% include 'source_references/source_reference_select.html' %}
 
         <div class="row">
             <div class="col-lg-12">

@@ -137,7 +137,8 @@ class TestTaxaUpload(FastTenantTestCase):
             Taxonomy.objects.get(
                 canonical_name='Ecnomidae'
             ).biographic_distributions.filter(
-                name='AT (?)',
+                name='AT',
+                doubtful=True
             ).exists()
         )
 
@@ -169,6 +170,14 @@ class TestTaxaUpload(FastTenantTestCase):
             Taxonomy.objects.filter(
                 invasion__category='Category 1a invasive',
                 origin='indigenous',
+            ).exists()
+        )
+
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                canonical_name__icontains='Testgenus testspecies',
+                rank='SPECIES',
+                species_group__name='Test species group'
             ).exists()
         )
 

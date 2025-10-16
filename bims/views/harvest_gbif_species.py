@@ -6,13 +6,14 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.db import connection
 from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.views.generic import TemplateView
 from django.core.files import File
 from bims.models.taxon_group import TaxonGroup
 from bims.models.boundary import Boundary
-from bims.models.harvest_session import HarvestSession
+from bims.models.harvest_session import HarvestSession, HarvestTrigger
 from bims.tasks.harvest_gbif_species import harvest_gbif_species
 
 
@@ -38,7 +39,7 @@ class HarvestGbifSpeciesView(
         ).order_by('display_order')
 
         harvest_sessions = HarvestSession.objects.filter(
-            harvester=self.request.user,
+            Q(harvester=self.request.user) | Q(trigger=HarvestTrigger.SCHEDULED),
             finished=False,
             canceled=False,
             log_file__isnull=False,
@@ -46,7 +47,7 @@ class HarvestGbifSpeciesView(
         )
 
         if harvest_sessions:
-            harvest_session = harvest_sessions[0]
+            harvest_session = harvest_sessions.last()
             session_data = {
                 'module_group': harvest_session.module_group,
                 'finished': harvest_session.finished,
@@ -77,6 +78,7 @@ class HarvestGbifSpeciesView(
         cancel = ast.literal_eval(request.POST.get(
             'cancel', 'False'
         ))
+        harvest_synonyms = request.POST.get("harvest_synonyms_for_accepted") == "1"
         if cancel:
             session_id = request.POST.get('canceled_session_id', '')
             try:
@@ -113,7 +115,8 @@ class HarvestGbifSpeciesView(
             module_group_id=taxon_group_id,
             category='gbif',
             boundary_id=boundary_id,
-            is_fetching_species=True
+            is_fetching_species=True,
+            harvest_synonyms=harvest_synonyms,
         )
         log_file_folder = os.path.join(
             settings.MEDIA_ROOT, 'harvest-species-session-log'
@@ -134,5 +137,10 @@ class HarvestGbifSpeciesView(
                 fi, name=os.path.basename(fi.name))
             harvest_session.save()
 
-        harvest_gbif_species.delay(harvest_session.id)
+        schema_name = connection.schema_name
+
+        harvest_gbif_species.delay(
+            harvest_session.id,
+            schema_name=schema_name,
+        )
         return HttpResponseRedirect(request.path_info)

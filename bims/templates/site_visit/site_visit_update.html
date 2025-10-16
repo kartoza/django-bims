@@ -347,18 +347,51 @@
                 </div>
             {% endif %}
             <div class="form-group row">
-                <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Site
-                    Image</label>
+                <label class="col-sm-2 col-form-label col-form-label">Site Images</label>
                 <div class="col-sm-10">
-                    <div class="form-group">
-                        <img id="site-image-viewer" src="{{ site_image.image.url }}" height="200">
-                        <div class="input-group input-file">
-                            <input type="file" class="form-control"
-                                   accept="image/*" name="site-image"
-                                   placeholder='Choose a file...' onchange="updateViewer(this)"/>
-                        </div>
+                    <div class="mb-2">
+                        {% if site_images %}
+                            <div class="d-flex flex-wrap" style="gap:10px;">
+                                {% for img in site_images %}
+                                    <div class="card" style="width: 180px;">
+                                        <img src="{{ img.image.url }}" class="card-img-top" style="height:120px;object-fit:cover;">
+                                        <div class="card-body p-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="delete-site-image-ids" value="{{ img.id }}"
+                                                       id="del-{{ img.id }}">
+                                                <label class="form-check-label" for="del-{{ img.id }}">
+                                                    Remove this image
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <small class="form-text text-muted mt-1">
+                                Tick “Remove this image” to delete on save.
+                            </small>
+                        {% else %}
+                            <div class="text-muted mb-2">No images yet.</div>
+                        {% endif %}
                     </div>
+
+                    <div class="input-group input-file mb-2">
+                        <input type="file"
+                               class="form-control"
+                               accept="image/*"
+                               name="site-images"
+                               id="site-images-input"
+                               multiple
+                               placeholder="Choose image files..."
+                               onchange="updateMultiViewer(this)"/>
+                    </div>
+
+                    <div id="site-images-viewer" class="d-flex flex-wrap" style="gap:10px;"></div>
+
+                    <small class="form-text text-muted">
+                        You can select multiple files at once.
+                    </small>
                 </div>
             </div>
 
@@ -653,23 +686,6 @@
 {% endblock %}
 
 {% block foot %}
-
-    <script>
-        function updateViewer(input) {
-            let url = input.value;
-            let ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
-            if (input.files && input.files[0] && (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
-                let reader = new FileReader();
-                reader.onload = function (e) {
-                    $('#site-image-viewer').attr('src', e.target.result);
-                }
-
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                $('#img').attr('src', '');
-            }
-        }
-    </script>
 
     <!-- Plugin JavaScript -->
     <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>

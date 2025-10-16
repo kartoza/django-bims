@@ -201,6 +201,29 @@ define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
                             maxZoom: 20
                         })
                     });
+                }  else if (baseMapData['source_type'] === "map_tiler") {
+                    _baseMap = new ol.layer.Tile({
+                        title: baseMapData['title'],
+                        source: new ol.source.TileJSON({
+                            url: `${baseMapData['url']}?key=${baseMapData['key']}`,
+                            tileSize: 512,
+                            crossOrigin: 'anonymous'
+                          })
+                    })
+                } else if (baseMapData['source_type'] === "wms") {
+                    _baseMap = new ol.layer.Tile({
+                        title: baseMapData['title'],
+                        source: new ol.source.TileWMS({
+                            url: baseMapData['url'],
+                            params: {
+                              'LAYERS': baseMapData['layer_name'],
+                              'TRANSPARENT': true,
+                              'FORMAT': 'image/png'
+                            },
+                            transition: 0
+                        }),
+                        opacity: 1
+                    });
                 }
                 if (_baseMap) {
                     _baseMap.set('visible', baseMapData['default_basemap']);

@@ -60,6 +60,9 @@ class DataUploadView(
         taxon_group_id = request.POST.get('taxon_group', None)
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
+        template = request.POST.get('template', '')
+        harvest_synonyms = request.POST.get("harvest_synonyms_for_accepted") == "1"
+
         cancel = ast.literal_eval(request.POST.get(
             'cancel', 'False'
         ))
@@ -95,10 +98,19 @@ class DataUploadView(
 
         try:
             if file_extension in ['.xls', '.xlsx']:
-                excel_data = pd.read_excel(upload_file)
+                df = pd.read_excel(
+                    upload_file,
+                    keep_default_na=False,
+                    na_filter=False
+                )
+                for col in df.columns:
+                    if pd.api.types.is_numeric_dtype(df[col]):
+                        if (df[col].dropna() % 1 == 0).all():
+                            df[col] = df[col].astype('Int64')
+
                 with NamedTemporaryFile(delete=False, suffix=".csv") as temp_csv_file:
                     csv_file_path = temp_csv_file.name
-                    excel_data.to_csv(csv_file_path, index=False)
+                    df.to_csv(csv_file_path, index=False)
 
                     with open(csv_file_path, 'rb') as csv_file:
                         csv_content = ContentFile(csv_file.read())
@@ -107,7 +119,9 @@ class DataUploadView(
                         uploader=request.user,
                         uploaded_at=datetime.now(),
                         module_group_id=taxon_group_id,
-                        category=self.category
+                        category=self.category,
+                        template=template,
+                        harvest_synonyms=harvest_synonyms
                     )
                     upload_session.process_file.save(csv_file_name, csv_content)
             elif file_extension == '.csv':
@@ -116,7 +130,9 @@ class DataUploadView(
                     process_file=upload_file,
                     uploaded_at=datetime.now(),
                     module_group_id=taxon_group_id,
-                    category=self.category
+                    category=self.category,
+                    template=template,
+                    harvest_synonyms=harvest_synonyms
                 )
 
             else:

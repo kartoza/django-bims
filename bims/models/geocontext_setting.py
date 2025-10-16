@@ -17,3 +17,8 @@ class GeocontextSetting(Preferences):
         default='provinces,rainfall_group',
         blank=True
     )
+
+    tolerance = models.FloatField(
+        default=0.0,
+        help_text='The radius tolerance for the spatial query'
+    )

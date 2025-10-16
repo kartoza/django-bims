@@ -50,6 +50,14 @@ class TaxonTag(TagBase):
         verbose_name_plural = "Taxonomy Tags"
 
 
+class SpeciesGroup(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    description = models.TextField(blank=True, default='')
+
+    def __str__(self):
+        return self.name
+
+
 class CustomTaggedTaxonomy(TaggedItemBase):
     content_object = models.ForeignKey(
         'Taxonomy',
@@ -262,6 +270,14 @@ class AbstractTaxonomy(AbstractValidation):
         related_name='%(class)s_source_reference',
     )
 
+    species_group = models.ForeignKey(
+        SpeciesGroup,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text='Informal group of closely related species'
+    )
+
     class Meta:
         abstract = True
 
@@ -421,14 +437,26 @@ class AbstractTaxonomy(AbstractValidation):
 
     @property
     def taxon_name(self):
-        if self.rank.lower() == 'subspecies':
-            canonical_names = self.canonical_name.split(' ')
-            if len(canonical_names) >= 3:
-                return canonical_names[-1]
-            return self.canonical_name.split(self.full_species_name)[-1].strip()
-        if self.is_species and self.genus_name:
-            return self.canonical_name.split(self.genus_name)[-1].strip()
-        return self.canonical_name
+        """
+        Return the most specific part of the taxon's name.
+        """
+        canon = (self.canonical_name or "").strip()
+        if not canon:
+            return ""
+
+        tokens = canon.split()
+        rank = (self.rank or "").lower()
+
+        if rank == "subspecies" or rank == "species":
+            genus_name = self.genus_name
+            if tokens and tokens[0].lower() == genus_name.lower() and len(tokens) > 1:
+                canon = " ".join(tokens[1:])
+                tokens = canon.split()
+            if rank == "subspecies" and self.parent and self.parent.rank.lower() == "species":
+                if len(tokens) > 1 and tokens[0].lower == self.parent.taxon_name:
+                    canon = " ".join(tokens[1:])
+
+        return canon
 
     @property
     def is_species(self):
@@ -568,6 +596,19 @@ class Taxonomy(AbstractTaxonomy):
 
     def save(self, *args, **kwargs):
         update_taxon_with_gbif = False
+
+        rank_order = [r.name for r in TaxonomicRank.hierarchy()]
+        cur_rank = (self.rank or "").upper()
+
+        try:
+            cur_idx = rank_order.index(cur_rank)
+        except ValueError:
+            cur_idx = None
+
+        family_idx = rank_order.index(TaxonomicRank.FAMILY.name)
+        genus_idx = rank_order.index(TaxonomicRank.GENUS.name)
+        species_idx = rank_order.index(TaxonomicRank.SPECIES.name)
+
         if self.gbif_data:
             self.gbif_data = self.save_json_data(self.gbif_data)
         if self.additional_data:
@@ -587,11 +628,11 @@ class Taxonomy(AbstractTaxonomy):
                 'genus_name': self.get_taxon_rank_name(TaxonomicRank.GENUS.name),
                 'species_name': species_name
             }
-        elif 'family_name' not in self.hierarchical_data:
+        elif ('family_name' not in self.hierarchical_data or not self.hierarchical_data['family_name']) and cur_idx and cur_idx >= family_idx:
             self.hierarchical_data['family_name'] = self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
-        elif 'genus_name' not in self.hierarchical_data:
+        elif ('genus_name' not in self.hierarchical_data or not self.hierarchical_data['genus_name']) and cur_idx and cur_idx >= genus_idx:
             self.hierarchical_data['genus_name'] = self.get_taxon_rank_name(TaxonomicRank.GENUS.name)
-        elif 'species_name' not in self.hierarchical_data:
+        elif ('species_name' not in self.hierarchical_data or not self.hierarchical_data['species_name']) and cur_idx and cur_idx >= species_idx:
             self.hierarchical_data['species_name'] = species_name
 
         super(Taxonomy, self).save(*args, **kwargs)
@@ -673,41 +714,27 @@ class Taxonomy(AbstractTaxonomy):
 
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
-def taxonomy_pre_save_handler(sender, instance, **kwargs):
-    """Get iucn status before save."""
+def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
+    """Set IUCN status and redlist ID before saving taxonomy."""
     if instance.is_species and not instance.iucn_status:
-        iucn_status = get_iucn_status(
-            species_name=instance.canonical_name,
-            only_returns_json=True
-        )
-        if iucn_status and 'result' in iucn_status:
-            if len(iucn_status['result']) > 0:
-                try:
-                    iucn, _ = IUCNStatus.objects.get_or_create(
-                        category=iucn_status['result'][0]['category']
-                    )
-                except IUCNStatus.MultipleObjectsReturned:
-                    iucn = IUCNStatus.objects.filter(
-                        category=iucn_status['result'][0]['category']
-                    ).first()
-                instance.iucn_status = iucn
-                instance.iucn_redlist_id = iucn_status['result'][0]['taxonid']
-                instance.iucn_data = json.dumps(
-                    iucn_status['result'][0],
-                    indent=4)
-            else:
-                iucn_status = None
-        if not iucn_status:
-            # Get not evaluated
-            try:
-                iucn_status, _ = IUCNStatus.objects.get_or_create(
-                    category='NE'
-                )
-            except IUCNStatus.MultipleObjectsReturned:
-                iucn_status = IUCNStatus.objects.filter(
-                    category='NE'
-                )[0]
+        iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
+        if iucn_status:
             instance.iucn_status = iucn_status
+        else:
+            try:
+                instance.iucn_status = IUCNStatus.objects.get(category='NE')
+            except IUCNStatus.DoesNotExist:
+                instance.iucn_status = IUCNStatus.objects.create(category='NE')
+            except IUCNStatus.MultipleObjectsReturned:
+                instance.iucn_status = IUCNStatus.objects.filter(category='NE').first()
+
+        if sis_id:
+            instance.iucn_redlist_id = sis_id
+
+        if iucn_url:
+            instance.iucn_data = {
+                'url': iucn_url
+            }
 
 
 class TaxonImage(models.Model):

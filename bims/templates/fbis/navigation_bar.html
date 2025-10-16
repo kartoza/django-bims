@@ -103,6 +103,7 @@
                     <ul class="dropdown-menu" style="width: 180px">
                         <li class="dropdown-menu-item"><a href="/profile/">Profile</a></li>
                         <li class="dropdown-menu-item"><a href="/site-visit/list/?&collectors=%5B{{ user.id }}%5D">Site Visits</a></li>
+                        <li class="dropdown-menu-item"><a href="/download-request/">Download Requests</a></li>
                     </ul>
                 </li>
                 {% if user.is_superuser %}
@@ -117,9 +118,11 @@
                             <li class="dropdown-menu-item" ><a href="/dashboard-management/">Edit Dashboard</a></li>
                             <li class="dropdown-menu-item"><a href="/site-visit/list/?&inReview=True">Validate Records</a></li>
                             <li class="dropdown-menu-item" ><a href="/download-request/">Download Requests</a></li>
-                            <li class="dropdown-menu-item" ><a href="/upload-spatial-layer/">Upload Spatial Layers</a></li>
-                            <li class="dropdown-menu-item" ><a href="/context-layers/">Spatial Filters</a></li>
-                            <li class="dropdown-menu-item" ><a href="/visualization-layer/">Visualization Layers</a></li>
+
+                            <li class="dropdown-menu-item" ><a href="/upload-spatial-layer/">Upload and Style Spatial Layer</a></li>
+                            <li class="dropdown-menu-item" ><a href="/visualization-layer/">Publish Spatial Layer on Map</a></li>
+                            <li class="dropdown-menu-item" ><a href="/context-layers/">Add Spatial Filter</a></li>
+
                             <div class="dropdown-divider"></div>
                             <div class="text-sm">Upload</div>
                             <li class="dropdown-menu-item"><a href="/upload-taxa/">Taxonomic Data</a></li>

@@ -5,7 +5,6 @@ core.settings.contrib
 from .base import *  # noqa
 # Override base settings from geonode
 from .legacy_geonode_settings import *
-from core.settings.celery_settings import *  # noqa
 import os
 try:
     from .secret import IUCN_API_KEY  # noqa
@@ -108,6 +107,7 @@ SHARED_APPS = (
     'mobile',
     'pesticide',
     'cloud_native_gis',
+    'django_celery_beat',
 )
 
 TENANT_APPS = (
@@ -322,7 +322,9 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.Survey',
     'bims.TaxonomyUpdateProposal',
     'bims.ImportTask',
-    'bims.IngestedData'
+    'bims.IngestedData',
+    'bims.CustomTaggedUpdateTaxonomy',
+    'bims.TaxonGroupTaxonomy'
 ]
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True
@@ -476,8 +478,16 @@ CKEDITOR_CONFIGS = {
         ],
         'removePlugins': 'stylesheetparser',
         'allowedContent': True,
-        'extraAllowedContent': 'span(*) btn(*)'
+        'extraAllowedContent': 'span(*) btn(*)',
+        'font_names': '',
     },
+    "landing": {
+        "toolbar": "Custom",
+        "extraPlugins": ",".join(["font", "colorbutton", "justify"]),
+        "allowedContent": True,
+        "contentsCss": [],
+        "font_names": "",
+    }
 }
 
 # SORL THUMBNAIL SETTINGS
@@ -498,6 +508,9 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TRACK_STARTED = True
 TASK_TRACK_STARTED = True
 CELERY_IGNORE_RESULT = False
+
+from core.settings.celery_settings import *  # noqa
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
@@ -528,3 +541,31 @@ ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
 CELERY_RESULT_BACKEND = 'django-db'
+
+customColorPalette = [
+        {
+            'color': 'hsl(4, 90%, 58%)',
+            'label': 'Red'
+        },
+        {
+            'color': 'hsl(340, 82%, 52%)',
+            'label': 'Pink'
+        },
+        {
+            'color': 'hsl(291, 64%, 42%)',
+            'label': 'Purple'
+        },
+        {
+            'color': 'hsl(262, 52%, 47%)',
+            'label': 'Deep Purple'
+        },
+        {
+            'color': 'hsl(231, 48%, 48%)',
+            'label': 'Indigo'
+        },
+        {
+            'color': 'hsl(207, 90%, 54%)',
+            'label': 'Blue'
+        },
+    ]
+

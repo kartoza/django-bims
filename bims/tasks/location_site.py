@@ -1,7 +1,11 @@
 # coding=utf-8
 import logging
+from django.db import connection
 
-from django.db.models import signals
+from celery.bin.upgrade import settings
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.db.models import signals, OuterRef, Exists
 
 from celery import shared_task
 
@@ -160,3 +164,79 @@ def update_site_code(location_site_ids):
             lon=location_site.longitude
         )
         location_site.save()
+
+
+def _dangling_queryset(model, *, skip_models=frozenset()):
+    """
+    Return a queryset of <model> instances that have no related
+    objects on any *auto-created* reverse relation except those
+    explicitly listed in `skip_models`.
+    """
+    qs = model.objects.all()
+
+    for rel in model._meta.get_fields():
+        if not (rel.auto_created and not rel.concrete):
+            continue
+        if rel.related_model in skip_models:
+            continue
+
+        link_field = (
+            rel.field.name
+            if hasattr(rel, "field") and rel.field
+            else rel.field.m2m_field_name()
+        )
+        sub_qs = rel.related_model.objects.filter(**{link_field: OuterRef("pk")})
+        qs = qs.filter(~Exists(sub_qs))
+
+    return qs
+
+
+@shared_task(name="bims.tasks.remove_dangling_sites", queue="search")
+def remove_dangling_sites():
+    """
+    1. Delete surveys that have no child data.
+    2. Delete location-sites that are no longer referenced.
+    3. E-mail a report to all super-users.
+    """
+    from bims.models import Survey
+    from bims.models.location_site import LocationSite
+    from bims.models.location_context import LocationContext
+
+    dangling_surveys_qs = _dangling_queryset(Survey)
+    surveys_total = dangling_surveys_qs.count()
+    surveys_deleted, _ = dangling_surveys_qs.delete()
+    log(f"Deleted {surveys_deleted}/{surveys_total} dangling Survey rows.")
+
+    dangling_sites_qs = _dangling_queryset(
+        LocationSite, skip_models=frozenset({LocationContext})
+    )
+    sites_total = dangling_sites_qs.count()
+    deleted_all, detail = dangling_sites_qs.delete()
+    sites_deleted = detail.get('bims.LocationSite', 0)
+    log(f"Deleted {sites_deleted}/{sites_total} dangling LocationSite rows.")
+
+    superusers = (
+        get_user_model()
+        .objects.filter(is_superuser=True, email__isnull=False)
+        .values_list("email", flat=True)
+    )
+
+    tenant = connection.tenant
+    try:
+        tenant_name = tenant.name
+    except AttributeError:
+        tenant_name = ''
+    if superusers:
+        subject = f"[{tenant_name}] Dangling data cleanup report"
+        message = (
+            "Automatic cleanup completed.\n\n"
+            f"• Surveys deleted       : {surveys_deleted}/{surveys_total}\n"
+            f"• Location sites deleted: {sites_deleted}/{sites_total}\n"
+        )
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+            recipient_list=list(superusers),
+            fail_silently=True,
+        )

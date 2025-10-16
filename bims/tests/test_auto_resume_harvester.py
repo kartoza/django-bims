@@ -56,7 +56,7 @@ class AutoResumeHarvestTestCase(TestCase):
         auto_resume_harvest()
 
         # Assertions to ensure the session was resumed
-        mock_harvest_collections.assert_called_with(self.session2.id, True)
+        mock_harvest_collections.assert_called_with(self.session2.id, True, schema_name='public')
 
         # Assertions to ensure cache was updated
         new_harvester_keys = cache.get('harvester_keys')

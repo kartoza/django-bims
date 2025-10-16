@@ -89,7 +89,7 @@ class TestScript(TestCase):
                     "TAXON_ID": result['taxonID']
                 })
 
-        mock_validate_parents.return_value = True
+        mock_validate_parents.return_value = True, ''
         TaxaDarwinCore(species_data[:1], taxon_group)
         taxa = Taxonomy.objects.filter(
             canonical_name=species_data[:1][0][TAXON]

@@ -6,6 +6,26 @@ body {
     pointer-events: none;
 }
 
+.ol-attribution {
+    position: absolute;
+    left: 85px;
+    right: auto !important;
+    bottom: 53px !important;
+    border-radius: 5px !important;
+}
+
+.ol-attribution button{
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 5px !important;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.btn {
+    border-radius: 2.5px;
+}
+
 .container {
     max-width: 100% !important;
 }
@@ -139,6 +159,7 @@ html, body, .map, .map-wrapper, #map-container {
     padding-top: 10px;
     padding-left: 0;
     line-height: 1.2;
+    text-transform: uppercase;
 }
 
 .header-panel-button:hover {
@@ -167,14 +188,14 @@ html, body, .map, .map-wrapper, #map-container {
     position: absolute;
     left: 0;
     top: 0;
-    margin-top: 90px;
+    margin-top: 105px;
     padding-left: 6px;
     padding-right: 6px;
     font-size: 18pt;
     text-align: center;
     color: #4e4e4e;
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.2);
-    margin-left: 31px;
+    margin-left: 15px;
     padding-top: 0;
     border-top: none;
     width: 54px;
@@ -204,10 +225,10 @@ html, body, .map, .map-wrapper, #map-container {
     padding: 7px 0;
     position: absolute;
     left: 0;
-    top: 60px;
+    top: 72px;
     background-color: rgb(var(--secondary-accent-color));
     opacity: 0.7;
-    margin-left: 31px;
+    margin-left: 15px;
     border-radius: 0;
     color: white;
     width: 54px;
@@ -315,8 +336,8 @@ html, body, .map, .map-wrapper, #map-container {
     text-align: center;
     font-weight: normal;
     border-radius: 0;
-    margin-left: 85px;
-    margin-top: 60px;
+    margin-left: 69px;
+    margin-top: 72px;
     z-index: 100;
     overflow-y: auto;
     overflow-x: hidden;
@@ -329,7 +350,7 @@ html, body, .map, .map-wrapper, #map-container {
 }
 
 .map-search-result {
-    margin-left: 405px !important;
+    margin-left: 389px !important;
     padding-bottom: 0;
 }
 
@@ -655,6 +676,7 @@ html, body, .map, .map-wrapper, #map-container {
 .search-info {
     text-align: left;
     font-size: 10pt;
+    margin-top: 5px;
 }
 
 .container-1 {
@@ -969,11 +991,18 @@ div:hover::-webkit-scrollbar {
 
 .mouse-position, #taxon-filter {
     position: absolute;
-    bottom: .5em;
-    left: .5em;
-    font-size: .7rem;
+    bottom: 55px;
+    left: 15px;
+    font-size: 1rem;
     color: #000;
-    background: rgba(255, 255, 255, .8);
+    background: rgba(255, 255, 255, 1);
+}
+
+.mouse-position button {
+    height: 30px !important;
+    width: 30px !important;
+    opacity: 0.7;
+    border-radius: 5px !important;
 }
 
 #taxon-filter {
@@ -1001,6 +1030,12 @@ div:hover::-webkit-scrollbar {
     padding-right: 20px;
 }
 
+.mouse-position {
+    background-color: rgba(255, 255, 255, 1);
+    z-index: 9999;
+    border-radius: 5px !important;
+}
+
 .mouse-position button {
     height: 1.375em;
     width: 1.375em;
@@ -1008,12 +1043,13 @@ div:hover::-webkit-scrollbar {
 }
 
 .mouse-position.active {
-    width: 117px;
+    width: 155px;
+    background: #b1b1b1;
 }
 
 .ol-mouse-position {
     top: 5px;
-    left: 30px;
+    left: 35px;
     position: absolute;
 }
 
@@ -1116,8 +1152,8 @@ div:hover::-webkit-scrollbar {
     max-width: 250px;
     position: absolute;
     overflow: hidden;
-    left: 0.5em;
-    bottom: 70px;
+    left: 50px;
+    bottom: 55px;
     background-color: white;
     cursor: pointer;
     z-index: 999;
@@ -1131,14 +1167,6 @@ div:hover::-webkit-scrollbar {
 }
 
 #map-legend-symbol {
-    height: 31px;
-    width: 31px;
-    text-align: center;
-    padding-top: 4px;
-    font-weight: 700;
-}
-
-.map-legend-symbol {
     height: 31px;
     width: 31px;
     text-align: center;
@@ -2856,6 +2884,65 @@ div:hover::-webkit-scrollbar {
     background-color: var(--main-accent-color) !important;
 }
 
+.badge-button {
+    cursor: pointer;
+    border-radius: 2.5px;
+    transition:
+        background-color .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease,
+        color .15s ease;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0rem .5rem;
+}
+
+.badge-button {
+  --badge-bg: var(--main-accent-color, #0d6efd);
+  --badge-border: var(--badge-bg);
+  --badge-text: #fff;
+}
+
+.badge-button.badge-primary,
+.badge-button.text-bg-primary,
+.badge-button.btn-primary {
+  background-color: var(--badge-bg);
+  border-color: var(--badge-border);
+  color: var(--badge-text);
+}
+
+.badge-button:hover,
+.badge-button:focus:hover {
+  background-color: color-mix(in srgb, var(--badge-bg), #000 10%);
+  border-color: color-mix(in srgb, var(--badge-bg), #000 12%);
+  color: var(--badge-text);
+}
+
+.badge-button:active,
+.badge-button.active,
+.show > .badge-button.dropdown-toggle {
+  background-color: color-mix(in srgb, var(--badge-bg), #000 15%);
+  border-color: color-mix(in srgb, var(--badge-bg), #000 18%);
+  color: var(--badge-text);
+}
+
+.badge-button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--badge-bg), #000 40%);
+}
+
+.badge-button:disabled,
+.badge-button.disabled,
+.badge-button[aria-disabled="true"] {
+  opacity: .65;
+  pointer-events: none;
+}
+
+.badge-button.badge {
+  padding: .2rem .3rem;
+  user-select: none;
+}
+
 .sortby-wrapper {
     padding: 10px;
     margin-bottom: 0 !important;
@@ -2871,8 +2958,15 @@ div:hover::-webkit-scrollbar {
 }
 
 .ol-scale-line {
-    margin-left: 30px;
-    margin-bottom: 45px;
+    margin-left: 9px;
+    margin-bottom: 9px;
+}
+
+.ol-scale-line-inner {
+  height: 25px;
+  line-height: 25px;
+  padding: 2px 8px;
+  font-size: 15px;
 }
 
 .search-header-row {
@@ -2888,7 +2982,7 @@ div:hover::-webkit-scrollbar {
 .search-box-row {
     z-index: 9999;
     position: fixed;
-    margin-top: 20px;
+    margin-top: 24px;
 }
 
 .filter-header-row {
@@ -2941,9 +3035,10 @@ div:hover::-webkit-scrollbar {
     border-radius: 5px;
 }
 
-.ol-attribution {
-    margin-bottom: 20px;
-}
+/*.ol-attribution {*/
+/*    bottom: 3.5em !important;*/
+/*}*/
+
 
 .wetland-dashboard-status {
     padding: 5px;
@@ -2967,4 +3062,50 @@ div:hover::-webkit-scrollbar {
 .locationsite-map-wrapper {
     width: 100%;
     height: 300px; /* You can adjust the height as needed */
+}
+
+.legend-row {
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    padding-left: 5px;
+}
+
+.legend-item:hover {
+    background-color: rgba(207, 207, 207, 0.34);
+}
+
+.legend-swatch {
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+    border: 1px solid #00000033;
+    flex-shrink: 0;
+}
+
+li[data-parent] { padding-left: 22px; }
+
+.layer-group-drawer {
+    float: right;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+.drag-handle        { cursor: move;  margin-right: 6px;  color:#666; }
+.layer-group-drawer { float:right;   cursor:pointer;     margin-left:6px; }
+
+.layer-transparency.mixed-transparency .ui-slider-range {
+    background: #9e9e9e;
+}
+.layer-transparency.mixed-transparency .ui-slider-handle {
+    opacity: .55;
+}
+
+.layer-group-children {
+    background-color: color(srgb 0.91 0.91 0.91 / 0.97);
 }

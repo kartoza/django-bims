@@ -1,7 +1,7 @@
 let wetlandData = null;
 let wmsSource = null;
 let wmsLayer = null;
-let wmsLayerName = 'kartoza:nwm6_beta_v3_20230714';
+let wmsLayerName = 'bims:nwm6_beta_v3_20230714';
 let currentCoordinate = null;
 
 let wetlandSiteCodeButton =  $('#wetland-site-code');
@@ -12,7 +12,7 @@ if (window.wetlandData) {
   wetlandData = window.wetlandData;
 }
 
-updateCoordinate = function (zoomToMap = true) {
+updateCurrentCoordinate = function () {
   try {
     let latitude = parseFloat($('#latitude').val());
     let longitude = parseFloat($('#longitude').val());
@@ -20,10 +20,15 @@ updateCoordinate = function (zoomToMap = true) {
       return false;
     }
     let _coordinates = ol.proj.transform([longitude, latitude], 'EPSG:4326', 'EPSG:3857');
-    mapClicked(_coordinates);
+    currentCoordinate = _coordinates;
   } catch (e) {
     return false;
   }
+}
+
+updateCoordinate = function (zoomToMap = true) {
+  updateCurrentCoordinate();
+  mapClicked(currentCoordinate);
 };
 
 const getFeature = (layerSource, coordinates, renderResult) => {
@@ -190,7 +195,7 @@ let fetchWetlandData = () => {
 let mapReady = (map) => {
 
   // Add wetland layer
-  let geoserverWms = 'https://maps.kartoza.com/geoserver/wms'
+  let geoserverWms = 'https://geoserver.bims.kartoza.com/geoserver/wms'
 
    // Create a new WMS source
   wmsSource = new ol.source.TileWMS({
@@ -236,8 +241,7 @@ wetlandSiteCodeButton.click(function () {
   let latitude = parseFloat($('#latitude').val());
   let longitude = parseFloat($('#longitude').val());
 
-  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#user_river_name').val()}&lat=${latitude}&lon=${longitude}`;
-  console.log(url)
+  let url = `/api/get-site-code/?ecosystem_type=Wetland&user_wetland_name=${$('#river_name').val() || $('#user_river_name').val()}&lat=${latitude}&lon=${longitude}`;
 
   $.ajax({
     url: url,

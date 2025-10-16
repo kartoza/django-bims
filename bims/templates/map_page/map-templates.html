@@ -134,11 +134,13 @@
                 <div class="search-results-total">Conservation Status</div>
                 <div class="row dd-status-list conservation-status-list-detail">
             </div>
-            <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/<%= iucn_redlist_id %>/" target="_blank">
+            <% if (iucn_url) { %>
+            <a href="<%= iucn_url %>" target="_blank">
                 <div class="iucn-species-page-link">
                     IUCN species page
                 </div>
             </a>
+            <% } %>
             <div id="third-party-images" class="search-results-wrapper">
                 <div class="search-results-total" data-visibility="false">
                     Images
@@ -206,11 +208,13 @@
                 <button type="button" disabled class="btn btn-outline-dark" id="submit-feedback-button">Submit</button>
             </div>
         </div>
+        {% if preferences.SiteSetting.project_name == 'fbis' %}
         <div class="wetland-mapping-button" data-toggle="tooltip" data-placement="left"
              data-original-title="WETLAND MAP FEEDBACK">
             <img src="{% static 'img/wetland-mapping-icon.png' %}" width="28px"
                  style="margin-top: -6px;">
         </div>
+        {% endif %}
     </div>
 </script>
 

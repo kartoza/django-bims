@@ -1,10 +1,14 @@
 import simplejson as json
+from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.conf import settings
 from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Concat
 from django.apps import apps
+from django.views.decorators.http import require_http_methods
+
+from bims.models import SpeciesGroup
 from bims.models.taxonomy import Taxonomy
 from bims.models.location_site import LocationSite
 from bims.models.data_source import DataSource
@@ -215,6 +219,25 @@ def data_source_autocomplete(request):
     return HttpResponse(data, mime_type)
 
 
+@require_http_methods(["GET", "POST"])
+@login_required
+def species_group_autocomplete(request):
+    q = request.GET.get('term', '').capitalize()
+    species_groups = SpeciesGroup.objects.filter(
+        name__icontains=q
+    )
+    data = []
+    for species_group in species_groups:
+        data.append({
+            'id': species_group.id,
+            'name': species_group.name,
+        })
+    return JsonResponse(
+        data,
+        safe=False
+    )
+
+
 def species_autocomplete(request):
     """
     Autocomplete request for species
@@ -297,6 +320,7 @@ def species_autocomplete(request):
 
 def site_autocomplete(request):
     q = request.GET.get('q', '').capitalize()
+    data = {}
     if len(q) > 2:
         search_qs = LocationSite.objects.filter(
             name__icontains=q)
@@ -308,7 +332,7 @@ def site_autocomplete(request):
             })
         data = json.dumps(results)
         mime_type = 'application/json'
-        return HttpResponse(data, mime_type)
+    return HttpResponse(data, mime_type)
 
 
 def abiotic_autocomplete(request):
@@ -359,14 +383,21 @@ def location_context_value_autocomplete(request) -> HttpResponse:
 
     query = request.GET.get('q', '').lower()
     group_key = request.GET.get('groupKey', '')
+    layer_identifier = request.GET.get('layerIdentifier', '')
 
     data = []
 
     if group_key:
         try:
-            group = LocationContextGroup.objects.get(
-                key=group_key
-            )
+            if layer_identifier:
+                group = LocationContextGroup.objects.get(
+                    key=group_key,
+                    layer_identifier=layer_identifier
+                )
+            else:
+                group = LocationContextGroup.objects.get(
+                    key=group_key
+                )
         except LocationContextGroup.DoesNotExist:
             return HttpResponse(data, 'application/json')
 

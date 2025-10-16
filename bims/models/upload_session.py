@@ -77,7 +77,7 @@ class UploadSession(models.Model):
     )
 
     progress = models.CharField(
-        max_length=200,
+        max_length=512,
         default='',
         blank=True
     )
@@ -113,6 +113,15 @@ class UploadSession(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True
+    )
+    template = models.CharField(
+        max_length=200,
+        default='',
+        blank=True
+    )
+    harvest_synonyms = models.BooleanField(
+        default=False,
+        help_text='When checked, synonyms for each accepted taxon will be harvested'
     )
 
     # noinspection PyClassicStyleClass

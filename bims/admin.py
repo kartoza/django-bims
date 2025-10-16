@@ -1,13 +1,17 @@
 # coding=utf-8
 import csv
+import logging
 import re
 from datetime import timedelta
 from datetime import date
 import json
 
-from ckeditor_uploader.widgets import CKEditorUploadingWidget
+from django.contrib.sites.models import Site
 from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
+from django.utils.timezone import localtime
+from django.db import connection
+from django_tenants.utils import schema_context, get_public_schema_name
 from rangefilter.filter import DateRangeFilter
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -31,14 +35,18 @@ from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
 
+from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
+from bims.enums import TaxonomicGroupCategory, TaxonomicStatus
+from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
 from bims.helpers.list import chunk_list
+from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
 from geonode.documents.admin import DocumentAdmin
 from geonode.documents.models import Document
 from geonode.people.admin import ProfileAdmin
@@ -46,7 +54,6 @@ from geonode.people.models import Profile
 from ordered_model.admin import OrderedModelAdmin
 
 from django_admin_inline_paginator.admin import TabularInlinePaginated
-
 from bims.models import (
     LocationType,
     LocationSite,
@@ -122,20 +129,27 @@ from bims.models import (
     Invasion,
     FlatPageExtension,
     TagGroup,
-    Dataset
+    Dataset, LayerGroup,
+    SpeciesGroup,
+    TaxonGroupCitation,
+    HarvestSchedule
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
-from bims.utils.gbif import search_exact_match, get_species, suggest_search
+from bims.utils.gbif import suggest_search
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
-from cloud_native_gis.models.layer_upload import LayerUpload
+from bims.tasks import run_scheduled_gbif_harvest
+from bims.forms.harvest_schedule import HarvestScheduleAdminForm
+
+
+logger = logging.getLogger('bims')
 
 
 class ExportCsvMixin:
@@ -269,23 +283,37 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             return '-'
 
     def geocontext_data_percentage(self, obj):
-        site_setting_group_keys = (
-            preferences.GeocontextSetting.geocontext_keys.split(',')
-        )
-        site_setting_group_keys = [
-            group.split(':')[0] if ':' in group else group for group in site_setting_group_keys
-        ]
-        groups = LocationContext.objects.filter(
-            site=obj,
-            group__geocontext_group_key__in=site_setting_group_keys
-        ).values(
-            'group__geocontext_group_key'
-        ).distinct('group__geocontext_group_key')
-        percentage = 0
-        if groups.count() > 0:
-            percentage = round(
-                groups.count() / len(site_setting_group_keys) * 100
-            )
+        raw_keys = preferences.GeocontextSetting.geocontext_keys.split(',')
+        key_pairs = []
+        for key in raw_keys:
+            if ':' in key:
+                group_key, layer_id = key.split(':', 1)
+                key_pairs.append((group_key, layer_id))
+            else:
+                key_pairs.append((key, None))
+
+        filters = Q()
+        for group_key, layer_id in key_pairs:
+            if layer_id:
+                filters |= Q(
+                    site=obj,
+                    group__geocontext_group_key=group_key,
+                    group__layer_identifier=layer_id
+                )
+            else:
+                filters |= Q(
+                    site=obj,
+                    group__geocontext_group_key=group_key
+                )
+
+        groups = LocationContext.objects.filter(filters).values(
+            'group__geocontext_group_key', 'group__layer_identifier'
+        ).distinct()
+
+        matched_count = groups.count()
+        total_expected = len(key_pairs)
+        percentage = round(matched_count / total_expected * 100) if total_expected > 0 else 0
+
         return format_html(
             '''
             <progress value="{0}" max="100"></progress>
@@ -316,11 +344,27 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
             return
 
         for location_site in queryset:
+            wetland_name = (
+                location_site.wetland_name if location_site.wetland_name else location_site.user_wetland_name
+            )
+            if not wetland_name:
+                wetland_name = 'UNKNOWN'
             location_site.site_code, catchments_data = generate_site_code(
                 location_site=location_site,
                 lat=location_site.latitude,
-                lon=location_site.longitude
+                lon=location_site.longitude,
+                ecosystem_type=location_site.ecosystem_type,
+                wetland_name=wetland_name,
             )
+            if (
+                    location_site.ecosystem_type and
+                    location_site.ecosystem_type.lower() == 'wetland' and
+                    catchments_data
+            ):
+                if 'hgm_type' in catchments_data and catchments_data['hgm_type']:
+                    location_site.hydrogeomorphic_type = catchments_data['hgm_type']
+                if 'name' in catchments_data and catchments_data['name']:
+                    location_site.wetland_name = catchments_data['name']
             location_site.save()
 
         models.signals.post_save.connect(
@@ -1133,6 +1177,27 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     )
 
 
+class TaxonGroupListFilter(django_admin.SimpleListFilter):
+    title = 'Taxon Group'
+
+    parameter_name = 'taxon_group'
+
+    def lookups(self, request, model_admin):
+        taxon_groups = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name)
+        return [
+            (taxon_group.id, taxon_group.name) for taxon_group in taxon_groups
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(
+                taxongrouptaxonomy__taxongroup=self.value()
+            )
+        else:
+            return queryset
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
@@ -1150,9 +1215,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'parent',
         'import_date',
         'taxonomic_status',
-        'legacy_canonical_name',
+        'accepted_taxonomy',
         'iucn_status',
-        'validated',
         'verified',
         'tag_list'
     )
@@ -1162,13 +1226,16 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'verified',
         'import_date',
         'taxonomic_status',
-        'iucn_status'
+        'iucn_status',
+        TaxonGroupListFilter,
     )
 
     search_fields = (
         'scientific_name',
         'canonical_name',
         'legacy_canonical_name',
+        'gbif_key',
+        'accepted_taxonomy__scientific_name'
     )
 
     raw_id_fields = (
@@ -1178,7 +1245,9 @@ class TaxonomyAdmin(admin.ModelAdmin):
     )
 
     actions = [
-        'merge_taxa', 'update_taxa', 'fetch_common_names', 'fetch_cites_listing', 'extract_author'
+        'merge_taxa', 'update_taxa', 'fetch_common_names',
+        'fetch_cites_listing', 'extract_author',
+        'harvest_synonyms_for_accepted'
     ]
 
     def extract_author(self, request, queryset):
@@ -1282,6 +1351,54 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
+
+    def harvest_synonyms_for_accepted(self, request, queryset):
+        """
+        For each selected ACCEPTED taxon (with a GBIF key), fetch synonyms
+        """
+        accepted_qs = queryset.filter(
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name
+        ).exclude(gbif_key__isnull=True)
+
+        if not accepted_qs.exists():
+            self.message_user(
+                request,
+                "No accepted taxa with a GBIF key in the selected rows.",
+                level=messages.WARNING,
+            )
+            return
+
+        total_taxa = 0
+        total_synonyms_linked = 0
+        errors = 0
+
+        for taxon in accepted_qs.iterator():
+            try:
+                processed = harvest_synonyms_for_accepted_taxonomy(
+                    taxon,
+                    fetch_vernacular_names=False,
+                    log_file_path=None,
+                    accept_language=None,
+                )
+                total_taxa += 1
+                total_synonyms_linked += len(processed or [])
+            except Exception as e:
+                logger.exception(
+                    "Failed harvesting synonyms for taxon id=%s key=%s: %s",
+                    taxon.id, taxon.gbif_key, e
+                )
+                errors += 1
+
+        self.message_user(
+            request,
+            f"Synonym harvest completed. Accepted taxa processed: {total_taxa}; "
+            f"synonyms linked: {total_synonyms_linked}; errors: {errors}.",
+            level=messages.INFO if errors == 0 else messages.WARNING,
+        )
+
+    harvest_synonyms_for_accepted.short_description = (
+        "Harvest synonyms for accepted taxa (GBIF)"
+    )
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
@@ -1983,19 +2100,33 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         from bims.tasks.harvest_collections import (
             harvest_collections
         )
+        from bims.tasks.harvest_gbif_species import (
+            harvest_gbif_species
+        )
         if len(queryset) > 1:
             message = 'You can only resume one session'
             self.message_user(request, message, level=messages.ERROR)
             return
 
-        queryset.first().canceled = False
-        queryset.first().save()
+        harvest_session = queryset.first()
+
+        harvest_session.canceled = False
+        harvest_session.save()
+
+        schema_name = connection.schema_name
 
         full_message = 'Resumed'
-        harvest_collections.delay(
-            queryset.first().id,
-            True
-        )
+        if harvest_session.is_fetching_species:
+            harvest_gbif_species.delay(
+                harvest_session.id,
+                schema_name
+            )
+        else:
+            harvest_collections.delay(
+                harvest_session.id,
+                True,
+                schema_name=schema_name
+            )
 
         self.message_user(request, full_message)
 
@@ -2088,13 +2219,27 @@ class FlatPageExtensionInline(admin.StackedInline):
     fk_name = 'flatpage'
 
 
-class ExtendedFlatPageAdmin(FlatPageAdmin):
+class ExtendedFlatPageAdmin(CustomCKEditorAdmin, FlatPageAdmin):
     inlines = (FlatPageExtensionInline,)
+
+    fieldsets = (
+        (None, {
+            "fields": ("url", "title", "content"),
+        }),
+        ("Advanced options", {
+            "classes": ("collapse",),
+            "fields": ("registration_required", "template_name"),
+        }),
+    )
 
     formfield_overrides = {
         models.TextField: {
-            'widget': CKEditorUploadingWidget}
+            'widget': DynamicCKEditorUploadingWidget}
     }
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        form.instance.sites.set(Site.objects.all())
 
     def show_in_navbar(self, instance):
         return instance.extension.show_in_navbar
@@ -2129,6 +2274,40 @@ class DatasetAdmin(admin.ModelAdmin):
 class TagGroupAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name', 'colour')
+
+
+class LayerGroupAdminForm(forms.ModelForm):
+    order_manual = forms.IntegerField(label="Order", required=False)
+
+    class Meta:
+        model = LayerGroup
+        fields = ('name', 'slug', 'description', 'layers')   # no “order” here
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['order_manual'].initial = self.instance.order
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        obj.order = self.cleaned_data.get('order_manual') or obj.order
+        if commit:
+            obj.save()
+        return obj
+
+
+@admin.register(LayerGroup)
+class LayerGroupAdmin(OrderedModelAdmin):
+    form = LayerGroupAdminForm
+    list_display = ('name', 'order', 'move_up_down_links')
+    filter_horizontal = ('layers',)
+    ordering = ('order',)
+
+
+@admin.register(SpeciesGroup)
+class SpeciesGroupAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
 
 
 # Re-register GeoNode's Profile page
@@ -2257,3 +2436,110 @@ admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
 admin.site.register(Dataset, DatasetAdmin)
+
+
+@admin.register(TaxonGroupCitation)
+class TaxonGroupCitationAdmin(admin.ModelAdmin):
+    list_display = ("taxon_group", "authors", "year", "access_date", "formatted_citation")
+    autocomplete_fields = ("taxon_group",)
+    search_fields = ("taxon_group__name", "authors", "citation_text")
+    exclude = ("created_at", "updated_at")
+
+    def formatted_citation(self, obj):
+        return obj.formatted_citation
+
+    formatted_citation.short_description = "Citation"
+
+
+@admin.register(HarvestSchedule)
+class HarvestScheduleAdmin(admin.ModelAdmin):
+    form = HarvestScheduleAdminForm
+
+    list_display = (
+        "module_group",
+        "enabled",
+        "period",
+        "schedule_human",
+        "timezone",
+        "last_harvest_until_local",
+        "updated_at",
+    )
+    list_filter = ("enabled", "period", "timezone")
+    search_fields = ("module_group__name",)
+    autocomplete_fields = ("module_group",)
+    readonly_fields = ("last_harvest_until", "updated_at", "schedule_preview")
+    actions = ["action_run_now", "action_enable", "action_disable"]
+
+    fieldsets = (
+        ("Target", {
+            "fields": ("module_group", "enabled"),
+        }),
+        ("When to run", {
+            "fields": (
+                "period",
+                "run_at",
+                "day_of_week",
+                "day_of_month",
+                "cron_expression",
+                "timezone",
+                "schedule_preview",
+            ),
+            "description": (
+                "Daily/Weekly/Monthly use run_at (+ day fields). "
+                "Custom uses standard 5-field cron: 'm h dom mon dow' (e.g. '15 */6 * * *'). "
+                "Day of week accepts 'mon,tue' or '0-6' (0=Sunday)."
+            ),
+        }),
+        ("Defaults for the job", {
+            "fields": ("harvest_synonyms_default", "boundary_default", "is_fetching_species"),
+        }),
+        ("Watermark & audit", {
+            "fields": ("last_harvest_until", "updated_at"),
+        }),
+    )
+
+    def schedule_human(self, obj: HarvestSchedule):
+        if obj.period == HarvestPeriod.CUSTOM and obj.cron_expression:
+            return obj.cron_expression
+        if obj.period == HarvestPeriod.DAILY:
+            return f"Daily at {obj.run_at}"
+        if obj.period == HarvestPeriod.WEEKLY:
+            return f"Weekly {obj.day_of_week or 'mon'} at {obj.run_at}"
+        if obj.period == HarvestPeriod.MONTHLY:
+            return f"Monthly day {obj.day_of_month or 1} at {obj.run_at}"
+        return "-"
+
+    schedule_human.short_description = "Schedule"
+
+    def last_harvest_until_local(self, obj):
+        return localtime(
+            obj.last_harvest_until
+        ).strftime("%Y-%m-%d %H:%M") if obj.last_harvest_until else "—"
+    last_harvest_until_local.short_description = "Last watermark"
+
+    def schedule_preview(self, obj):
+        text = self.schedule_human(obj)
+        return format_html("<code>{}</code>", text) if text else "—"
+    schedule_preview.short_description = "Schedule preview"
+
+    @admin.action(description="Run now (enqueue Celery task)")
+    def action_run_now(self, request, queryset):
+        count = 0
+        for sched in queryset:
+            schema_name = str(connection.schema_name)
+            run_scheduled_gbif_harvest.delay(schema_name, sched.id)
+            count += 1
+        self.message_user(
+            request, f"Queued {count} run(s).", messages.SUCCESS)
+
+    @admin.action(description="Enable schedule")
+    def action_enable(self, request, queryset):
+        updated = queryset.update(enabled=True)
+        self.message_user(
+            request, f"Enabled {updated} schedule(s).", messages.SUCCESS)
+
+    @admin.action(description="Disable schedule")
+    def action_disable(self, request, queryset):
+        updated = queryset.update(enabled=False)
+        self.message_user(
+            request, f"Disabled {updated} schedule(s).", messages.SUCCESS)

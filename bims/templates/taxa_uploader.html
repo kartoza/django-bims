@@ -57,12 +57,43 @@
                     </div>
                     <div class="help-block-space"></div>
                     <div class="form-group row">
+                        <div class="col-sm-2"><b>CSV Template</b></div>
+                        <div class="col-sm-10">
+                            <select class="form-control" name="template">
+                                <option value=""> Standard </option>
+                                <option value="worms"> WORMS </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
                         <label class="col-sm-2 col-form-label" for="file"><b>Upload csv here</b></label>
                         <div class="col-sm-10">
                              <input id="fileupload" type="file" name="csv_file">
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="submit">Upload</button>
+                    <div class="form-group row">
+                      <label class="col-sm-2 col-form-label"></label>
+                      <div class="col-sm-10">
+                        <div class="form-check">
+                          <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="harvest-synonyms"
+                            name="harvest_synonyms_for_accepted"
+                            value="1"
+                            {% if request.POST.harvest_synonyms_for_accepted %}checked{% endif %}
+                            {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}
+                          >
+                          <label class="form-check-label" for="harvest-synonyms">
+                            Harvest synonym(s) for all accepted taxa
+                          </label>
+                          <small class="form-text text-muted">
+                            When checked, synonyms for each accepted taxon will be harvested from GBIF.
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    <button id="main-upload-btn" class="btn btn-primary" type="submit" disabled>Upload</button>
                     {% endif %}
                 </div>
 
@@ -204,6 +235,33 @@
         </div>
     </div>
 
+    <div class="modal fade" id="confirmUploadModal" tabindex="-1" role="dialog" aria-labelledby="confirmUploadModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-warning">
+            <h5 class="modal-title" id="confirmUploadModalLabel">Confirm Upload</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Please confirm the details before proceeding:</p>
+            <ul>
+              <li><strong>Taxon Group:</strong> <span id="confirm-taxon-group"></span></li>
+              <li><strong>Template:</strong> <span id="confirm-template"></span></li>
+              <li><strong>CSV File:</strong> <span id="confirm-file"></span></li>
+              <li><strong>Harvest Synonyms:</strong> <span id="confirm-harvest"></span></li>
+            </ul>
+            <p><strong>Are you sure you want to upload this file?</strong></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirm-upload">Yes, Upload</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <iframe id="download_iframe" style="display:none;"></iframe>
 
 
@@ -267,11 +325,50 @@
             });
 
             $('#cancelModal').on('shown.bs.modal', function (event) {
-                 let triggerElement = $(event.relatedTarget);
-                 currentSessionId = triggerElement.data('id');
+                let triggerElement = $(event.relatedTarget);
+                currentSessionId = triggerElement.data('id');
+            });
+
+            $('#fileupload').on('change', function () {
+                $('button[type="submit"]').prop('disabled', !$(this).val());
+            });
+
+            $('#taxa-upload-form').on('submit', function (e) {
+                const submitButton = e.originalEvent?.submitter;
+                const isUploadButton = $(submitButton).attr('id') === 'main-upload-btn';
+
+                e.preventDefault();
+
+                if (!isUploadButton) {
+                    this.submit();
+                    return;
+                }
+
+                if ($('#confirm-upload').data('confirmed')) {
+                    this.submit();
+                    return;
+                }
+
+                const taxonGroupName = $('#taxon-group option:selected').text().trim();
+                const templateName = $('select[name="template"] option:selected').text().trim();
+                const fileVal = $('#fileupload').val();
+                const fileName = fileVal ? fileVal.split('\\').pop() : 'No file selected';
+                const harvestChecked = $('#harvest-synonyms').is(':checked') ? 'Yes' : 'No';
+
+                $('#confirm-taxon-group').text(taxonGroupName || '—');
+                $('#confirm-template').text(templateName || '—');
+                $('#confirm-file').text(fileName);
+                $('#confirm-harvest').text(harvestChecked);
+
+                $('#confirmUploadModal').modal('show');
+            });
+
+           $('#confirm-upload').on('click', function () {
+                $('#confirm-upload').data('confirmed', true);
+                $('#confirmUploadModal').modal('hide');
+                $('#taxa-upload-form').submit();
             });
         });
-
     </script>
 
 {% endblock %}

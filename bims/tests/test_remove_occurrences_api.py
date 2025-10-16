@@ -1,6 +1,6 @@
 import json
-from django.test import TestCase
 from django.urls import reverse
+from django_tenants.test.cases import FastTenantTestCase
 from rest_framework.test import APIRequestFactory
 from preferences import preferences
 from bims.api_views.remove_occurrences import RemoveOccurrencesApiView
@@ -15,16 +15,14 @@ from bims.tests.model_factories import (
     SurveyF
 )
 from bims.models import (
-    BiologicalCollectionRecord,
-    Taxonomy,
     Survey,
     LocationSite,
     SiteSetting,
-    TaxonGroup
+    TaxonGroup, BiologicalCollectionRecord
 )
 
 
-class TestRemoveOccurrencesApi(TestCase):
+class TestRemoveOccurrencesApi(FastTenantTestCase):
     """Test Remove Occurrences Api"""
 
     def setUp(self):

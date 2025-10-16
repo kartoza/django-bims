@@ -66,18 +66,18 @@ img::-moz-selection {
     background: transparent;
 }
 
-header.masthead {
-    padding-top: 20px;
-    padding-bottom: 0px;
-    background-position: center center;
-    -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    background-size: cover;
-    background-color: black;
-    max-height: 600px !important;
-    min-height: auto !important;
-}
+/*header.masthead {*/
+/*    padding-top: 20px;*/
+/*    padding-bottom: 0px;*/
+/*    background-position: center center;*/
+/*    -webkit-background-size: cover;*/
+/*    -moz-background-size: cover;*/
+/*    -o-background-size: cover;*/
+/*    background-size: cover;*/
+/*    background-color: black;*/
+/*    max-height: 600px !important;*/
+/*    min-height: auto !important;*/
+/*}*/
 
 .header-image {
     background-position: center top;
@@ -103,9 +103,6 @@ header.masthead p {
 }
 
 @media (min-width: 768px) {
-    header.masthead p {
-        font-size: 1.15rem;
-    }
 }
 
 @media (max-width: 500px) {
@@ -115,9 +112,6 @@ header.masthead p {
 }
 
 @media (min-width: 400px) {
-    header.masthead {
-        height: 300px !important;
-    }
     .carousel-title {
         padding-left: 40px !important;
     }
@@ -208,18 +202,6 @@ header.masthead p {
     margin-top: 250px !important;
 }
 
-#carouselIndicators {
-    width: 100%;
-    position: relative;
-    overflow-y: hidden;
-}
-
-.carousel-indicators li {
-    width: 10px;
-    height: 10px;
-    border-radius: 10px;
-    border: 2px solid white;
-}
 
 .chart-icon-wrapper {
     position: relative;
@@ -269,6 +251,8 @@ header.masthead p {
 	transition: transform 500ms ease !important;
 	-webkit-backface-visibility: visible;
 	        backface-visibility: visible;
+    position: relative;
+    overflow: hidden;
 }
 
 .service-box {
@@ -365,7 +349,7 @@ html, body {
     margin: 10px;
     font-weight: normal;
     color: var(--main-accent-color);
-    padding: 7px 22px;
+    padding: 10px 35px;
     font-size: 11pt;
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease 0s;
@@ -479,7 +463,6 @@ html, body {
 .biodiversity-data-container {
     padding-top: 100px;
     padding-bottom: 100px;
-    border-bottom: 1px solid var(--main-accent-color);
 }
 
 .btn-explore-map {

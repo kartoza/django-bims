@@ -48,7 +48,7 @@ from bims.views.autocomplete_search import (
     species_autocomplete,
     site_autocomplete,
     abiotic_autocomplete,
-    location_context_value_autocomplete, author_autocomplete
+    location_context_value_autocomplete, author_autocomplete, species_group_autocomplete
 )
 from bims.views.collections_form import (
     FishFormView,
@@ -148,6 +148,9 @@ urlpatterns = [
     re_path(r'^species-autocomplete/$',
             species_autocomplete,
             name='species-autocomplete-search'),
+    re_path(r'^species-group-autocomplete/$',
+            species_group_autocomplete,
+            name='species-group-autocomplete-search'),
     re_path(r'^data-source-autocomplete/$',
             data_source_autocomplete,
             name='data-source-autocomplete-search'),

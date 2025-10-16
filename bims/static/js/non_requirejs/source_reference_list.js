@@ -33,11 +33,20 @@ $('.delete-reference').click(function (e) {
                 'reference_id': referenceId
             },
             success: function (res) {
+                alert(res.message);
                 location.reload();
+            },
+            error: function (xhr) {
+                let res = xhr.responseJSON;
+                if (res && res.message) {
+                    alert(res.message);
+                } else {
+                    alert("An unexpected error occurred.");
+                }
             }
         });
     }
-})
+});
 
 $('.delete-records').click(function (e) {
     e.preventDefault();

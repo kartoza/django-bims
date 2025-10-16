@@ -1,3 +1,4 @@
+from django.db import transaction, IntegrityError
 from django.db.models import ForeignKey
 from django.apps import apps
 from rest_framework.views import APIView
@@ -5,12 +6,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import BasePermission
 from rest_framework import status
 from bims.models.location_site import LocationSite
-from bims.models.biological_collection_record import BiologicalCollectionRecord
-from bims.models.chemical_record import ChemicalRecord
-from bims.models.survey import Survey
-from bims.models.site_image import SiteImage
 from bims.models.search_process import SearchProcess
-from sass.models.site_visit import SiteVisit
 
 
 class IsSuperUser(BasePermission):
@@ -27,72 +23,95 @@ class MergeSites(APIView):
     @staticmethod
     def update_sites(primary_site, secondary_sites):
         """
-        Automatically finds models with a ForeignKey to LocationSite and updates them.
-        :param primary_site: The site that remains after the merge.
-        :param secondary_sites: List of sites to be merged into the primary site.
-        :return: A dictionary with counts of updated records for each model.
+        Update all FKs to LocationSite from secondary_sites to primary_site.
+        Special-case LocationContext to avoid (site, group) unique collisions.
         """
         updated_counts = {}
-        models = apps.get_models()
 
-        for model in models:
-            for field in model._meta.get_fields():
-                if isinstance(field, ForeignKey) and field.related_model == LocationSite:
-                    site_identifier = field.name
-                    secondary_sites_query = {f'{site_identifier}__in': secondary_sites}
-                    primary_site_query = {f'{site_identifier}': primary_site}
-                    merged_data = model.objects.filter(**secondary_sites_query)
-                    count = merged_data.update(**primary_site_query)
-                    if count > 0:
-                        updated_counts[model._meta.label] = count
+        with transaction.atomic():
+            try:
+                from bims.models.location_context import LocationContext
+
+                primary_groups = list(
+                    LocationContext.objects.filter(site=primary_site)
+                    .values_list('group_id', flat=True)
+                )
+
+                if primary_groups:
+                    deleted, _ = LocationContext.objects.filter(
+                        site__in=secondary_sites,
+                        group_id__in=primary_groups
+                    ).delete()
+                    if deleted:
+                        updated_counts['bims.LocationContext (duplicates_deleted)'] = deleted
+
+                moved = LocationContext.objects.filter(
+                    site__in=secondary_sites
+                ).update(site=primary_site)
+                if moved:
+                    updated_counts['bims.LocationContext'] = moved
+            except Exception:
+                pass
+
+            for model in apps.get_models():
+                if model._meta.label == 'bims.LocationContext':
+                    continue
+
+                for field in model._meta.get_fields():
+                    if isinstance(field, ForeignKey) and getattr(field.remote_field, 'model', None) is LocationSite:
+                        site_field = field.name
+                        qs = model.objects.filter(**{f'{site_field}__in': secondary_sites})
+
+                        if not qs.exists():
+                            continue
+
+                        try:
+                            cnt = qs.update(**{site_field: primary_site})
+                        except IntegrityError:
+                            cnt = 0
+                            skipped = 0
+                            for pk in qs.values_list('pk', flat=True):
+                                try:
+                                    model.objects.filter(pk=pk).update(**{site_field: primary_site})
+                                    cnt += 1
+                                except IntegrityError:
+                                    skipped += 1
+                            if skipped:
+                                updated_counts[f'{model._meta.label} (skipped_due_to_conflict)'] = skipped
+
+                        if cnt:
+                            updated_counts[model._meta.label] = updated_counts.get(model._meta.label, 0) + cnt
 
         return updated_counts
 
-    def put(self, request, *args):
-        primary_site_id = request.data.get('primary_site', None)
-        merged_site_ids = request.data.get('merged_sites', None)
-        query_url = request.data.get('query_url', None)
+    def put(self, request, *args, **kwargs):
+        primary_site_id = request.data.get('primary_site')
+        merged_site_ids = request.data.get('merged_sites')
+        query_url = request.data.get('query_url')
 
         if query_url:
-            query_params = query_url.split('#search//')
-            if len(query_params) > 1:
-                SearchProcess.objects.filter(
-                    query__contains=query_params[1]
-                ).delete()
+            parts = query_url.split('#search//')
+            if len(parts) > 1:
+                SearchProcess.objects.filter(query__contains=parts[1]).delete()
 
         if not primary_site_id or not merged_site_ids:
-            return Response(
-                'Missing primary or secondary sites',
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response('Missing primary or secondary sites', status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            location_site = LocationSite.objects.get(
-                id=primary_site_id
-            )
+            primary_site = LocationSite.objects.get(id=primary_site_id)
         except LocationSite.DoesNotExist:
-            return Response(
-                'Primary site does not exist',
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response('Primary site does not exist', status=status.HTTP_400_BAD_REQUEST)
 
-        merged_sites = LocationSite.objects.filter(
-            id__in=merged_site_ids.split(',')
-        ).exclude(
-            id=location_site.id
-        )
+        ids = [i.strip() for i in str(merged_site_ids).split(',') if i.strip()]
+        secondary_sites = LocationSite.objects.filter(id__in=ids).exclude(id=primary_site.id)
 
-        if merged_sites.count() < 1:
-            return Response(
-                'Secondary sites do not exist',
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if not secondary_sites.exists():
+            return Response('Secondary sites do not exist', status=status.HTTP_400_BAD_REQUEST)
 
-        update_results = self.update_sites(location_site, list(merged_sites))
+        update_results = self.update_sites(primary_site, list(secondary_sites))
 
-        sites_removed = merged_sites.count()
-        merged_sites.delete()
-
+        sites_removed = secondary_sites.count()
+        secondary_sites.delete()
         update_results['sites_removed'] = sites_removed
 
         return Response(update_results, status=status.HTTP_200_OK)

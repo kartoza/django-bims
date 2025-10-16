@@ -6,7 +6,7 @@ from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
 )
-from bims.api_views.layers import CloudNativeLayerList
+from bims.api_views.layers import CloudNativeLayerList, LayerByUUIDView
 from bims.api_views.minisass_observations import MiniSASSObservationsView
 from bims.api_views.invasions import InvasionsList
 from bims.api_views.taxon_update import UpdateTaxon, ReviewTaxonProposal
@@ -21,13 +21,14 @@ from bims.api_views.duplicate_records import DuplicateRecordsApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
-    LocationSitesCoordinate, GbifIdsDownloader
+    LocationSitesCoordinate, GbifIdsDownloader,
+    DeleteDanglingLocationSites, RemoveOutsideBoundaryGbifData
 )
 from bims.api_views.location_type import (
     LocationTypeAllowedGeometryDetail
 )
 from bims.api_views.non_biodiversity_layer import (
-    NonBiodiversityLayerList, DownloadLayerData, VisualizationLayers
+    NonBiodiversityLayerList, DownloadLayerData, VisualizationLayers, LayerGroupView
 )
 from bims.api_views.search_module import SearchModuleAPIView
 
@@ -36,7 +37,8 @@ from bims.api_views.taxon import (
     FindTaxon,
     AddNewTaxon,
     TaxaList,
-    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail
+    TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
+    HarvestIUCNStatus, ApproveTaxonGroupProposalsView
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -365,7 +367,10 @@ urlpatterns = [
     path('taxonomy/<int:pk>/add-tag/',
          AddTagAPIView.as_view(),
          name='add-tag-taxon'),
-    path('wetland-data/<str:lat>/<str:lon>/',
+    path('taxonomy-iucn-status/<int:pk>/',
+         IUCNStatusFetchView.as_view(),
+         name='taxonomy-iucn-status'),
+    path('wetland-data/<str:lon>/<str:lat>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),
     path('taxa-cites-status/',
@@ -398,6 +403,9 @@ urlpatterns = [
     path('visualization-layers/',
          VisualizationLayers.as_view(),
          name='visualization-layers'),
+    path('layer-group/',
+         LayerGroupView.as_view(),
+         name='layer-group'),
     path('context-layer-group/<int:pk>/',
          ContextLayerGroup.as_view(),),
     path('cloud-native-layer-autocomplete/',
@@ -412,4 +420,26 @@ urlpatterns = [
     path('clear-cache/',
          ClearCacheView.as_view(),
          name='clear_cache_view'),
+    path('delete-dangling-sites/',
+         DeleteDanglingLocationSites.as_view(),
+         name='delete_dangling_sites'),
+    path('remove-gbif-sites-outside-boundary/',
+         RemoveOutsideBoundaryGbifData.as_view(),
+         name='remove_outside_boundary_gbif'),
+    path('harvest-iucn-status/',
+         HarvestIUCNStatus.as_view(),
+         name='harvest_iucn_status'),
+    path('layer/<uuid:uuid>/',
+         LayerByUUIDView.as_view(),
+         name='layer-by-uuid'),
+    path(
+        "taxonomy-tree/<int:taxon_id>/",
+        TaxonTreeJsonView.as_view(),
+        name="taxonomy-tree-json",
+    ),
+    path(
+        "approve-group-proposals/",
+        ApproveTaxonGroupProposalsView.as_view(),
+        name="approve-group-proposals",
+    )
 ]

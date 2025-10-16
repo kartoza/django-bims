@@ -65,10 +65,22 @@ def get_html_for_radio_group_headings(column_count):
 def value_by_key(d, key):
     if not d:
         return ''
+    if isinstance(d, str):
+        try:
+            d = json.loads(d)
+        except Exception:
+            return ''
     if isinstance(d, list):
-        return d[key]
-    if key in d:
-        return d[key]
+        try:
+            idx = int(key)
+        except (ValueError, TypeError):
+            return ''
+        try:
+            return d[idx]
+        except (IndexError, TypeError):
+            return ''
+    if isinstance(d, dict):
+        return d.get(key, '')
     return ''
 
 

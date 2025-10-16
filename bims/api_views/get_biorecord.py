@@ -73,8 +73,8 @@ class BioCollectionSummary(APIView):
         if search_process.file_path:
             if os.path.exists(search_process.file_path):
                 try:
-                    raw_data = open(search_process.file_path)
-                    return Response(json.load(raw_data))
+                    with open(search_process.file_path) as raw_data:
+                        return Response(json.load(raw_data))
                 except ValueError:
                     pass
 
@@ -109,6 +109,14 @@ class BioCollectionSummary(APIView):
         if taxonomy.iucn_status:
             iucn_status = taxonomy.iucn_status.category
         response_data['iucn_id'] = taxonomy.iucn_redlist_id
+        iucn_url = ''
+        if taxonomy.iucn_data:
+            try:
+                iucn_data = json.loads(taxonomy.iucn_data.replace('\'', '"'))
+                iucn_url = iucn_data.get('url', '')
+            except json.decoder.JSONDecodeError:
+                pass
+        response_data['iucn_url'] = iucn_url
         response_data['taxon'] = taxonomy.scientific_name
         response_data['canonical_name'] = taxonomy.canonical_name
         response_data['taxon_additional_data'] = (
@@ -178,9 +186,8 @@ class BioCollectionSummary(APIView):
             search_process=search_process,
             finished=True
         )
-        file_data = open(file_path)
-
-        try:
-            return Response(json.load(file_data))
-        except ValueError:
-            return Response(response_data)
+        with open(file_path) as file_data:
+            try:
+                return Response(json.load(file_data))
+            except ValueError:
+                return Response(response_data)

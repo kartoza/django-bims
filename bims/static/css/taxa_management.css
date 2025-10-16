@@ -338,3 +338,107 @@ table {
 #taxon-name-input {
     width: 25%;
 }
+
+/* Diff styling for table cells */
+.cell-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.cell-diff.stack-on-narrow { flex-direction: row; }
+
+@media (max-width: 1400px) {
+  .cell-diff.stack-on-narrow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}
+
+.cell-diff .old { opacity: 0.8; text-decoration: line-through; }
+.cell-diff .arrow { opacity: 0.6; }
+.cell-diff .new { }
+
+.cell-changed {
+  background: linear-gradient(to right, rgba(255,193,7,.22), rgba(255,193,7,.08));
+  border-left: 3px solid #ffc107;
+}
+
+.cell-diff .badge { margin-right: 2px; }
+
+.tg-item .img-container img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.tg-expert-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-right: -10px;
+}
+
+.tg-metrics {
+  display: grid;
+  grid-auto-rows: auto;
+  row-gap: 6px;
+  margin-top: 4px;
+}
+
+/* Section label + chips line */
+.tg-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+/* Section labels */
+.tg-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: #555;
+  margin-right: 2px;
+}
+.tg-label.valid { color: #2e7d32; }      /* green-ish */
+.tg-label.unvalid { color: #8a2d2d; }   /* red-ish  */
+
+/* Count chips */
+.tg-chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+.taxon-group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px solid #e6e6e6;
+  background: #fafafa;
+  border-radius: 9999px;
+  font-size: 12px;
+  color: #222;
+  white-space: nowrap;
+}
+.taxon-group-badge span[id^="taxon_group_"] {
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  text-align: right;
+  display: inline-block;
+}
+
+/* Small action buttons */
+.update-logo-btn.btn {
+  padding: 2px 6px;
+  line-height: 1.1;
+  font-size: 11px;
+}
+.remove-all-btn.btn {
+  font-size: 10pt;
+  padding-top: 0;
+  padding-bottom: 0;
+}

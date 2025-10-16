@@ -22,7 +22,7 @@ class WetlandDataApiView(APIView):
     """
     API View to handle wetland data retrieval and location site creation based on wetland layer information.
     """
-    wetland_layer_name = 'kartoza:nwm6_beta_v3_20230714'
+    wetland_layer_name = 'bims:nwm6_beta_v3_20230714'
 
     def create_location_site(self, original_lon, original_lat, centroid):
         """
@@ -60,7 +60,7 @@ class WetlandDataApiView(APIView):
             signals.post_save.connect(location_site_post_save_handler, sender=LocationSite)
 
             # Fetch and apply wetland data from WMS
-            wms_url = 'https://maps.kartoza.com/geoserver/wms'
+            wms_url = 'https://geoserver.bims.kartoza.com/geoserver/wms'
             wms_data = get_feature_info_from_wms(
                 wms_url,
                 self.wetland_layer_name,
@@ -97,7 +97,7 @@ class WetlandDataApiView(APIView):
         lat = float(lat)
         lon = float(lon)
 
-        wfs_url = 'https://maps.kartoza.com/geoserver/wfs'
+        wfs_url = 'https://geoserver.bims.kartoza.com/geoserver/wfs'
 
         centroid = get_feature_centroid(
             wfs_url=wfs_url,

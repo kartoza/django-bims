@@ -1,0 +1,175 @@
+<div class="row summary-data">
+    <div class="row module-summary"></div>
+</div>
+
+<script>
+
+    function getNumberWithCommas(number) {
+        try {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        } catch (e) {
+            return ''
+        }
+    }
+
+    function createDonutGraph(container, data) {
+        let donutChart = new Chart(container, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                cutoutPercentage: 70,
+                legend: {
+                    display: false
+                },
+            }
+        });
+    }
+
+    function createModuleCharts(moduleData, moduleName, container) {
+        if (!moduleData) {
+            return;
+        }
+        const img = new Image();
+        let chartWrapper = $('<div class="chart-icon-wrapper" />');
+        img.classList = 'module-icon';
+        img.src = moduleData['icon'];
+        chartWrapper.append(img);
+        let canvas = $(`<div class="donut-chart"><canvas id="chart-${moduleName}" width="150px" height="150px"></canvas></div>`);
+        chartWrapper.append(canvas);
+        container.append(chartWrapper);
+
+        let native = 0;
+        let non_native = 0;
+        let translocated = 0;
+        let totalRecords = 0;
+        let totalSass = 0;
+        let totalSite = 0;
+        let totalSiteVisit = 0;
+        let alienInvasive = 0;
+        let alienNonInvasive = 0;
+        let unspecified = 0;
+
+        let cons_labels = [];
+        let chart_data = {};
+
+        if (moduleData.hasOwnProperty('conservation-status')) {
+            cons_labels = Object.keys(moduleData['conservation-status'])
+            chart_data = moduleData['conservation-status']
+        }
+
+        let ce_data = 0
+        let dd_data = 0
+        let en_data = 0
+        let lc_data = 0
+        let nt_data = 0
+        let ne_data = 0
+        let vu_data = 0
+
+        if (moduleData.hasOwnProperty('total')) {
+            totalRecords += moduleData['total'];
+        }
+        if (moduleData.hasOwnProperty('alien')) {
+            non_native += moduleData['alien'];
+        }
+        if (moduleData.hasOwnProperty('indigenous')) {
+            native += moduleData['indigenous'];
+        }
+        if (moduleData.hasOwnProperty('translocated')) {
+            translocated += moduleData['translocated'];
+        }
+        if (moduleData.hasOwnProperty('alien-invasive')) {
+            alienInvasive += moduleData['alien-invasive'];
+        }
+        if (moduleData.hasOwnProperty('alien-non-invasive')) {
+            alienNonInvasive += moduleData['alien-non-invasive'];
+        }
+        if (moduleData.hasOwnProperty('Unspecified')) {
+            unspecified += moduleData['Unspecified'];
+        }
+        if (moduleData.hasOwnProperty('total_site')) {
+            totalSite += moduleData['total_site'];
+        }
+        if (!hideSiteVisits) {
+            if (moduleData.hasOwnProperty('total_site_visit')) {
+                totalSiteVisit += moduleData['total_site_visit'];
+            }
+        }
+        if (moduleData.hasOwnProperty('total_sass')) {
+            totalSass += moduleData['total_sass'];
+        }
+        container.append(
+            `<h4 class="module-name">${moduleName}</h4>`
+        )
+
+        let $moduleInfoContainer = $(`<div class="module-info-container"/>`);
+
+        $moduleInfoContainer.append(
+            `<p class="module-info" style="margin-bottom: 0; font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalRecords)}</span> Records</p>`
+        )
+        $moduleInfoContainer.append(
+            `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> ${locationSiteNamePlural}</p>`
+        )
+        if (!hideSiteVisits) {
+            $moduleInfoContainer.append(
+                `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSiteVisit)}</span> Site Visits</p>`
+            )
+        }
+        if (totalSass > 0) {
+            $moduleInfoContainer.append(
+                `<p class="module-info" style="margin-top: 0;font-size: 1.5em"><span class="module-numbers">${getNumberWithCommas(totalSass)}</span> SASS assessments</p>`
+            )
+        }
+
+        container.append($moduleInfoContainer);
+
+        let moduleContainer = document.getElementById("chart-" + moduleName);
+        let moduleChartDataset = {
+            labels: cons_labels,
+            datasets: [{
+                data: Object.values(chart_data),
+                backgroundColor: [
+                    '#D7CD47',
+                    '#39B2A3',
+                    '#17766B',
+                    '#2C495A',
+                    '#525351',
+                    '#8D2641',
+                    '#641f30',
+                ],
+                borderWidth: 1
+            }]
+        };
+        createDonutGraph(moduleContainer, createSummaryChart(moduleData))
+    }
+
+    if (showModuleSummaries) {
+        $.get('/api/module-summary').then(
+            function (data) {
+                console.log(data);
+                $('.module-loading').hide();
+                const $container = $('.summary-data');
+                const $generalSummary = $('.general-summary');
+                const $moduleSummary = $('.module-summary');
+
+                 $.each(data, function(key, summaryData) {
+                     if (!summaryData['icon']) {
+                       if ($generalSummary && key === 'general_summary') {
+                         $.each(summaryData, function(gsKey, gsData) {
+                           $(`#${gsKey}`).html(getNumberWithCommas(gsData));
+                         });
+                       }
+                       return true;
+                     } else {
+                         let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
+                         $moduleSummary.append(_container);
+                         createModuleCharts(
+                             summaryData,
+                             key,
+                             _container
+                         )
+                     }
+                 });
+            }
+        )
+    }
+</script>

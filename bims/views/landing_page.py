@@ -10,34 +10,80 @@ from bims_theme.models.theme import CustomTheme
 
 class HeaderSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
+    banner_url = serializers.SerializerMethodField()
     paragraph = serializers.CharField(source='description')
     color = serializers.CharField(source='text_color')
     overlay = serializers.CharField(source='background_color_overlay')
     overlay_opacity = serializers.SerializerMethodField()
+    title_font_stack = serializers.SerializerMethodField()
+    desc_font_stack = serializers.SerializerMethodField()
+
+    def get_desc_font_stack(self, obj):
+        custom_font = getattr(obj, 'description_font', None)
+        if custom_font:
+            return custom_font.font_stack
+        return None
+
+    def get_title_font_stack(self, obj):
+        custom_font = getattr(obj, 'title_font', None)
+        if custom_font:
+            return custom_font.font_stack
+        return None
 
     def get_file(self, obj: CarouselHeader):
-        return obj.banner
+        return getattr(obj.banner, 'name', None)
+
+    def get_banner_url(self, obj: CarouselHeader):
+        try:
+            return obj.banner.url
+        except Exception:
+            return None
 
     def get_overlay_opacity(self, obj: CarouselHeader):
-        return obj.background_overlay_opacity / 100
+        val = getattr(obj, 'background_overlay_opacity', None)
+        if val is None:
+            return 0
+        return round(float(val) / 100.0, 3)
 
     class Meta:
         model = CarouselHeader
         fields = [
+            'id',
             'file',
+            'banner_url',
             'title',
             'paragraph',
-            'id',
             'color',
             'overlay',
             'text_alignment',
             'text_style',
             'title_font_size',
             'description_font_size',
-            'overlay_opacity',
-            'full_screen_background'
-        ]
+            'overlay_opacity',                 # 0..1 (legacy-friendly)
+            'background_overlay_opacity',      # 0..100 (raw int)
+            'background_color_overlay',        # explicit color
+            'full_screen_background',          # legacy flag (still exposed)
 
+            'banner_fit',                      # cover / contain / natural / stretch
+            'banner_height_mode',              # auto / fixed_px / viewport_vh
+            'banner_height_value',             # px or vh depending on mode
+            'banner_position_x',               # left / center / right
+            'banner_position_y',               # top / center / bottom
+
+            'title_font_stack',
+            'title_font_weight',
+            'title_letter_spacing_em',
+            'title_alignment',
+            'title_offset_y_percent',
+            'title_line_height_pct',
+
+            'desc_font_stack',
+            'description_font_weight',
+            'description_letter_spacing_em',
+            'description_alignment',
+            'description_offset_y_percent',
+            'description_line_height_pct',
+        ]
 
 def landing_page_view(request, *args, **kwargs):
     context = {}

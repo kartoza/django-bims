@@ -16,7 +16,19 @@ def fetch_river_name(latitude, longitude):
     :param latitude: LocationSite latitude
     :param longitude: LocationSite longitude
     """
-    river_name = ''
+    from bims.utils.site_code import get_feature_data
+
+    river_name = get_feature_data(
+        lon=longitude,
+        lat=latitude,
+        context_key='river_name',
+        layer_name='river',
+        tolerance=1000
+    )
+
+    if river_name:
+        return river_name
+
     base_geocontext_url = get_key('GEOCONTEXT_URL')
     api_url = '/api/v2/query?registry=service&key=river_name&'
     y = latitude

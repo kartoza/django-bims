@@ -1,90 +1,141 @@
 <div id="carouselIndicators" class="carousel slide" data-ride="carousel">
-    {% if headers|length > 1 %}
+  {% if headers|length > 1 %}
     <ol class="carousel-indicators">
-        {% for header in headers %}
-            <li data-target="#carouselIndicators" data-slide-to="{{ forloop.counter0 }}"
-                {% if forloop.first %}class="active"{% endif %}></li>
-        {% endfor %}
+      {% for header in headers %}
+        <li data-target="#carouselIndicators" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
+      {% endfor %}
     </ol>
-    {% endif %}
-    <div class="carousel-inner">
-        {% for header in headers %}
-        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-            <div class="carousel-overlay" style="background-color: {{ header.overlay }}; opacity: {{ header.overlay_opacity }}"></div>
-            <div class="carousel-title" style="color: {{ header.color }}">
-                <div>
-                    <p class="carousel-title-text" style="font-weight: {{ header.text_style }}; text-align: {{ header.text_alignment }}; font-size: {{ header.title_font_size }}px; line-height: {{ header.title_font_size|add:5 }}px;">
-                        {{ header.title|linebreaksbr }}
-                    </p>
-                </div>
-                <h5>
-                    <p style="font-size: {{ header.description_font_size }}px; font-weight: {{ header.text_style }}; text-align: {{ header.text_alignment }};">
-                        {{ header.paragraph|linebreaksbr }}
-                    </p>
-                </h5>
-                {% if app == 'fbis' %}
-                <div style="text-align: {{ header.text_alignment }};">
-                    {% if not user.is_authenticated %}
-                        <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">Login</a>
-                        <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">Sign Up</a>
-                        <a class="btn btn-account btn-l js-scroll-trigger" href="/map">Explore</a>
-                    {% else %}
-                        <a class="btn btn-account btn-l js-scroll-trigger" href="/map">Explore</a>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            <div class="d-block w-100 header-image" style="background-image: url('uploaded/{{ header.file }}'); {% if header.full_screen_background %}background-size: cover;{% else %}background-size: contain; height: 100%;{% endif %} background-position: center center; background-repeat: no-repeat;"></div>
+  {% endif %}
+
+  <div class="carousel-inner">
+    {% for header in headers %}
+
+      {% with fit=header.banner_fit|default_if_none:"cover" hmode=header.banner_height_mode|default_if_none:"viewport_vh" hval=header.banner_height_value|default:60 posx=header.banner_position_x|default:"center" posy=header.banner_position_y|default:"center" t_align=header.title_alignment|default:header.text_alignment d_align=header.description_alignment|default:header.text_alignment %}
+      <div class="carousel-item {% if forloop.first %}active{% endif %}"
+           style="
+             /* Whole slide height */
+             height:{% if hmode == 'fixed_px' %}{{ hval }}px{% elif hmode == 'viewport_vh' %}{{ hval }}vh{% else %}auto{% endif %};
+             min-height: 400px;
+
+             /* Per-slide variables (free positioning) */
+             --title-top: {{ header.title_offset_y_percent|default:50 }}%;
+             --desc-delta: {{ header.description_offset_y_percent|default:10 }}%;
+             --title-max: {{ header.title_font_size|default:45 }}px;
+             --desc-max:  {{ header.description_font_size|default:30 }}px;
+             --title-min: 22px;
+             --desc-min:  16px;
+           ">
+
+        <div class="carousel-overlay"
+             style="
+               background-color: {% firstof header.background_color_overlay header.overlay '#000' %};
+               opacity: {% if header.overlay_opacity is not None %}{{ header.overlay_opacity }}{% else %}calc({{ header.background_overlay_opacity|default:0 }} / 100){% endif %};
+             ">
         </div>
-        {% endfor %}
-    </div>
+
+        <div class="carousel-text-layer">
+          <!-- Title: absolute, uses its own top -->
+          <div class="carousel-title-block" style="top: var(--title-top); text-align: {{ t_align }};">
+            <p class="carousel-title-text"
+               style="color: {{ header.text_color|default:'#FFFFFF' }};
+                      font-family: {% firstof header.title_font_stack 'inherit' %};
+                      font-size: clamp(var(--title-min), calc(var(--title-max) * 0.35 + 2.2vw), var(--title-max));
+                      font-weight: {% firstof header.title_font_weight '700' %};
+                      letter-spacing: {{ header.title_letter_spacing_em|default:'0.00' }}em;
+                      line-height: {{ header.title_line_height_pct|default:110 }}%;
+                      {% if header.text_style == 'italic' %}font-style: italic;{% endif %}
+                      text-shadow: 2px 2px 5px rgba(0,0,0,0.64);">
+              {{ header.title|linebreaksbr }}
+            </p>
+          </div>
+
+          <div class="carousel-desc-block" style="top: calc(var(--title-top) + var(--desc-delta)); text-align: {{ d_align }};">
+            <p class="carousel-desc-text"
+               style="color: {{ header.text_color|default:'#FFFFFF' }};
+                      font-family: {% firstof header.desc_font_stack header.title_font_stack 'inherit' %};
+                      font-size: clamp(var(--desc-min),  calc(var(--desc-max) * 0.45 + 1.2vw), var(--desc-max));
+                      font-weight: {% firstof header.description_font_weight '400' %};
+                      letter-spacing: {{ header.description_letter_spacing_em|default:'0.00' }}em;
+                      line-height: {{ header.description_line_height_pct|default:130 }}%;
+                      {% if header.text_style == 'italic' %}font-style: italic;{% endif %}
+                      text-shadow: 2px 2px 5px rgba(0,0,0,0.62);">
+              {% if header.description %}
+                {{ header.description|linebreaksbr }}
+              {% elif header.paragraph %}
+                {{ header.paragraph|linebreaksbr }}
+              {% endif %}
+            </p>
+
+          {% if not custom_header.show_explore_map %}
+          <div style="text-align: {{ d_align }}; margin-top: 20px; font-family: {% firstof header.desc_font_stack header.title_font_stack 'inherit' %};">
+            {% if not user.is_authenticated %}
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/login/">LOGIN</a>
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/accounts/signup/">SIGN UP</a>
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/map">EXPLORE</a>
+            {% else %}
+              <a class="btn btn-account btn-l js-scroll-trigger" href="/map">EXPLORE</a>
+            {% endif %}
+          </div>
+          {% endif %}
+          </div>
+        </div>
+
+        <div class="d-block w-100 header-image"
+             style="
+               {% if header.banner %}background-image: url('{{ header.banner.url }}');{% elif header.file %}background-image: url('uploaded/{{ header.file }}');{% endif %}
+               background-repeat: no-repeat;
+               background-position: {{ posx }} {{ posy }};
+               {% if fit == 'cover' %}background-size: cover;{% elif fit == 'contain' %}background-size: contain;{% elif fit == 'stretch' %}background-size: 100% 100%;{% else %}background-size: auto;{% endif %}
+               height: 100%;
+             ">
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
 </div>
 
-<!-- Move general styles to an external stylesheet or the head section -->
 <style>
-    .header-image {
-        width: 100%;
-    }
+  #carouselIndicators { width: 100%; position: relative; overflow-y: hidden; }
 
-    .carousel-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-    }
+  .carousel-indicators li {
+    width: 10px; height: 10px; border-radius: 10px; border: 2px solid #fff;
+  }
 
-    .carousel-title {
-        position: absolute;
-        z-index: 2;
-        width: 100%;
-        top: 50%;
-        transform: translateY(-50%);
-    }
+  .header-image { width: 100%; }
 
-    .carousel-title-text {
-        margin: 0;
-    }
+  .carousel-overlay {
+    position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
+  }
 
-    #header {
-        margin-top: 55px;
-    }
+  .carousel-text-layer { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; }
 
-    @media (min-width: 1200px) {
-        .carousel-title-text {
-            font-size: calc({{ header.title_font_size }}px + 5px) !important;
-        }
-    }
+  /* Independent absolute positioning for title & description */
+  .carousel-title-block,
+  .carousel-desc-block {
+    position: absolute;
+    left: 0; right: 0;
+    padding: 0 5rem;
+  }
 
-    @media (min-width: 768px) and (max-width: 1199px) {
-        .carousel-title-text {
-            font-size: calc({{ header.title_font_size }}px - 30px) !important;
-        }
-    }
+  .carousel-title-text,
+  .carousel-desc-text {
+    margin: 0;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    max-width: 100%;
+  }
 
-    @media (max-width: 767px) {
-        .carousel-title-text {
-            font-size: calc({{ header.title_font_size }}px - 40px) !important;
-        }
-    }
+  /* Slightly stronger downscale on narrow screens */
+  @media (max-width: 991.98px) {
+    .carousel-title-text { font-size: clamp(var(--title-min), 2.8vw, var(--title-max)); }
+    .carousel-desc-text  { font-size: clamp(var(--desc-min),  2.0vw, var(--desc-max)); }
+  }
+  @media (max-width: 575.98px) {
+    .carousel-title-block, .carousel-desc-block { padding: 0 .75rem; }
+    .carousel-title-text { font-size: clamp(var(--title-min), 5.2vw, var(--title-max)); }
+    .carousel-desc-text  { font-size: clamp(var(--desc-min),  3.8vw, var(--desc-max)); }
+  }
+
+  #header { margin-top: 55px; }
 </style>

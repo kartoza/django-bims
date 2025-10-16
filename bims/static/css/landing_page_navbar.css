@@ -1,0 +1,26 @@
+#section-wrapper {
+    margin-top: 100px;
+}
+
+.navbar {
+    background-color: var(--navbar-bg-color);
+    transition: all 0.3s ease;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.navbar .navbar-brand img {
+    transition: height 0.3s ease;
+    height: 90px;
+}
+
+.navbar.shrink .navbar-brand img {
+    height: 35px;
+}
+
+.dropdown-menu-scrollable{
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}

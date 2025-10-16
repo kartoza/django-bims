@@ -37,7 +37,7 @@ x-common-django:
     - DATABASE_URL=postgis://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
     - DATABASE_USERNAME=${POSTGRES_USER:-docker}
     - DJANGO_SETTINGS_MODULE=core.settings.prod_docker
-    - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext.kartoza.com}
+    - GEOCONTEXT_URL=${GEOCONTEXT_URL:-https://geocontext-new.kartoza.com}
     - GEOSERVER_LOCATION=http://geoserver/geoserver/
     - GEOSERVER_LOCATION_SITE_LAYER=bims:location_site_view
     - GEOSERVER_PUBLIC_LOCATION=http://django-bims.test/geoserver/
@@ -50,7 +50,9 @@ x-common-django:
     - STATIC_ROOT=/home/web/static/static
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
-    - CSRF_TRUSTED_ORIGINS=['django-bims.test']
+    - CSRF_TRUSTED_ORIGINS=['https://bims-mothership.kartoza.com']
+    - GBIF_USERNAME=${GBIF_USERNAME:-gbif_user}
+    - GBIF_PASSWORD=${GBIF_PASSWORD:-gbif_pass}
   volumes:
     - static-data:/home/web/static
     - media-data:/home/web/media
@@ -70,7 +72,7 @@ services:
 
   db:
     container_name: bims_db
-    image: kartoza/postgis:16-3.4
+    image: kartoza/postgis:17-3.5
     shm_size: 1g
     environment:
       ALLOW_IP_RANGE: 0.0.0.0/0
@@ -79,8 +81,8 @@ services:
       POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
     volumes:
       - ./pg/postgres_data:/var/lib/postgresql
-      - ./backups:/backups
       - ./sql:/sql
+      - ./extra.conf:/settings/extra.conf
     ports:
       - "6543:5432"
 
@@ -99,6 +101,8 @@ services:
       - GEOSERVER_CONTEXT_ROOT=${GEOSERVER_CONTEXT_ROOT}
       - ROOT_WEBAPP_REDIRECT=true
       - CONSOLE_HANDLER_LEVEL=${CONSOLE_HANDLER_LEVEL}
+      - HTTP_PROXY_NAME=freshwaterbiodiversity.org
+      - HTTP_SCHEME=https
     depends_on:
       - db
     volumes:
@@ -121,7 +125,7 @@ services:
       - ../../django-bims:/home/web/django_project
       - ./static:/home/web/static:rw
       - ./media:/home/web/media:rw
-      - ./logs:/var/log/
+      - ./logs/celery:/var/log/celery
 
   geocontextworker:
     <<: *default-common-django
@@ -167,7 +171,7 @@ services:
       - ./logs:/var/log/
 
   dbbackups:
-    image: kartoza/pg-backup:16-3.4
+    image: kartoza/pg-backup:17-3.5
     hostname: pg-backups
     links:
       - db:db
@@ -177,11 +181,13 @@ services:
       - DUMPPREFIX=PG_bims
       # These are all defaults anyway, but setting explicitly in
       # case we ever want to ever use different credentials
-      - PGUSER=${POSTGRES_USER:-docker}
-      - PGPASSWORD=${POSTGRES_PSS:-docker}
-      - PGPORT=5432
-      - PGHOST=db
-      - PGDATABASE=${POSTGRES_DBNAME:-gis}
+      - POSTGRES_USER=${POSTGRES_USER:-docker}
+      - POSTGRES_PASS=${POSTGRES_PASS:-docker}
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=db
+      - POSTGRES_DBNAME=${POSTGRES_DBNAME:-gis}
+      - RUN_AS_ROOT=true
+      - CRON_SCHEDULE="0 1 * * *"
     restart: unless-stopped
 
   # This is normally the main entry point for a production server
@@ -196,7 +202,7 @@ services:
       - media-data:/home/web/media
 
   rabbitmq:
-    image: rabbitmq:3.7-alpine
+    image: rabbitmq:3.13.7-alpine
     volumes:
       - rabbitmq:/var/lib/rabbitmq
     restart: on-failure

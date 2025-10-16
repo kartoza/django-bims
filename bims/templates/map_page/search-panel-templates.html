@@ -788,13 +788,14 @@
     <li class="ui-state-default" style="display: <%= display %>"
         data-name="<%= id %>" data-layer-title="<%= title %>">
         <div class="row-title">
-            <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
+            <span class="ui-icon ui-icon-arrowthick-2-n-s drag-handle"></span>
             <input type="checkbox" value="<%= key %>"
                    class="layer-selector-input" <%= checked %>>
             <div class="layer-selector-name"><%= title %></div>
             <div class="layer-selector-pull-right">
                 <% if (source && source !== 'Base') { %>
-                    <div class="layer-info-icon"><i class="fa fa-info-circle layer-source cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
+                    <div class="layer-info-icon">
+                        <i class="fa fa-info-circle layer-source cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
                 <% } %>
                 <% if (enableStylesSelection) { %>
                 <div class="layer-info-icon"><i class="fa fa-bars layer-source-style cancel-sortable" value="<%= key %>" aria-hidden="true"></i></div>
@@ -823,6 +824,41 @@
             </select>
           </div>
         </div>
+</script>
+
+<script type="text/html" id="layer-group-row">
+    <li class="ui-state-default sortable-group" data-key="<%= id %>" data-layer-title="<%= name %>">
+        <div class="row-title">
+            <span class="ui-icon ui-icon-arrowthick-2-n-s drag-handle"></span>
+            <input  type="checkbox"
+                    value="<%= id %>"
+                    class="layer-group-input"
+                    <%= checked %>>
+            <div class="layer-selector-name" style="padding-left: 5px;"><%= name %></div>
+            <i class="fa fa-angle-down layer-group-drawer toggle-group-children" data-target="#children_<%= id %>" data-group="<%= id %>"></i>
+            <div class="layer-selector-pull-right">
+               <div class="layer-info-icon">
+                    <i class="fa fa-info-circle layer-source cancel-sortable" value="<%= name %>" aria-hidden="true"></i>
+               </div>
+            </div>
+        </div>
+        <div class="group options">
+            <div class="row">
+                <div class="col-md-2 transparency-icon">
+                    <img src="/static/img/transparency-icon.png"/>
+                </div>
+                <div class="col-md-10 transparency-slider">
+                    <div class="layer-group-transparency layer-transparency"
+                         data-group="<%= id %>"
+                         data-value="<%= opacity %>"></div>
+                </div>
+            </div>
+        </div>
+        <div value="<%= name %>" class="layer-source-info" style="display: none" data-fetching="false"></div>
+        <div>
+            <ul class="layer-group-children" id="children_<%= id %>"></ul>
+        </div>
+    </li>
 </script>
 
 <script type="text/html" id="map-control-panel">
@@ -945,9 +981,11 @@
                 <li class="locate-coordinates">
                     Locate by Coordinate
                 </li>
+                {% if preferences.SiteSetting.default_data_source == 'fbis' %}
                 <li class="locate-farm">
                     Locate by Farm Portion Code
                 </li>
+                {% endif %}
             </ul>
         </div>
     </div>

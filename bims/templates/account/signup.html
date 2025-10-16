@@ -37,17 +37,20 @@
 
                 <div class="custom-form-container" style="margin-top: 40px;">
                     {% if custom_theme.login_modal_logo %}
-                            <div class="row modal-logo">
+                         <div class="modal-logo">
+                            <div class="row">
                                 <div class="col-4">
                                     <img src="{{ MEDIA_URL }}/{{ custom_theme.login_modal_logo }}" width="100%">
                                 </div>
-                                <div class="col-8">
-                                    <h4>{{ custom_theme.login_modal_title }}</h4>
-                                </div>
                             </div>
+                            <div class="row modal-logo-title">
+                                <h4>{% trans "Sign Up" %}</h4>
+                            </div>
+                         </div>
                     {% else %}
-                        <h1>{% trans "SIGN UP" %}</h1>
+                        <h1>{% trans "Sign Up" %}</h1>
                     {% endif %}
+
                     <form class="signup" id="signup_form" method="POST" action="{% url 'account_signup' %}">{% csrf_token %}
                         <input type="hidden" name="recaptcha_token" id="recaptcha-token-input" value="">
                         {% if form.non_field_errors %}
@@ -64,10 +67,9 @@
 
                         {% include "recaptcha.html" %}
 
-                        <button id="submit-button" class="login custom-form-submit btn-login" type="submit">{% trans "SIGN UP" %}</button>
+                        <button id="submit-button" class="login custom-form-submit btn-login" type="submit">{% trans "sign up" %}</button>
                     </form>
                     <div class="login-help">
-                        <a href="{% url 'account_login' %}">{% trans "Log In" %}</a> -
                         <a href="{% url 'account_reset_password' %}">{% trans "Forgot Password" %}</a>
                     </div>
                 </div>

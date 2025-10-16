@@ -1,20 +1,18 @@
 # coding: utf-8
-import json
-import asyncio
-from typing import TextIO
-
 import requests
 import logging
 import urllib
 import simplejson
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon, Polygon
 from requests.exceptions import HTTPError
+from requests.adapters import HTTPAdapter, Retry
 from pygbif import species
-from pygbif.occurrences import search
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
-from bims.models.harvest_session import HarvestSession
+from bims.utils.logger import log
+
+
+GBIF_API = "https://api.gbif.org/v1"
 
 logger = logging.getLogger(__name__)
 
@@ -104,89 +102,129 @@ def find_species(
         returns_all=False,
         **classifier):
     """
-    Find species from gbif with lookup query.
-    :param original_species_name: the name of species we want to find
-    :param rank: taxonomy rank
-    :param returns_all: returns all response
-    :param classifier: rank classifier
-    :return: List of species
+    GBIF lookup that prefers canonical backbone data.
+    - Filters by optional classifier kwargs (e.g., class_name='Actinopteri').
+    - Picks best candidate by status > exact match > nubKey > parentKey > smallest key.
+    - Resolves to /species/{nubKey} (backbone). If UNRANKED, returns its parent.
     """
-    print('Find species : %s' % original_species_name)
+    logger.info('Find species : %s', original_species_name)
     try:
-        response = species.name_lookup(
-            q=original_species_name,
-            limit=50,
-            rank=rank
-        )
-        accepted_data = None
-        synonym_data = None
-        other_data = None
-        if 'results' in response:
-            results = response['results']
-            if returns_all:
-                return results
-            for result in results:
-                if classifier:
-                    classifier_found = True
-                    for key, value in classifier.items():
-                        if value:
-                            classifier_found = False
-                            if key == 'class_name':
-                                key = 'class'
-                            if key not in result:
-                                continue
-                            if value.lower() == result[key].lower():
-                                classifier_found = True
-                    if not classifier_found:
-                        continue
-                rank = result.get('rank', '')
-                if rank.lower() in RANK_KEYS:
-                    rank_key = rank.lower() + 'Key'
-                else:
-                    rank_key = 'key'
-                key_found = (
-                        'nubKey' in result or rank_key in result)
-                if key_found and 'taxonomicStatus' in result:
-                    taxon_name = ''
-                    if 'canonicalName' in result:
-                        taxon_name = result['canonicalName']
-                    if not taxon_name and rank.lower() in result:
-                        taxon_name = result[rank.lower()]
-                    if not taxon_name and 'scientificName' in result:
-                        taxon_name = result['scientificName']
-
-                    if result['taxonomicStatus'] == 'ACCEPTED':
-                        if accepted_data:
-                            if taxon_name == original_species_name:
-                                if result['key'] < accepted_data['key']:
-                                    accepted_data = result
-                        else:
-                            accepted_data = result
-                    if result['taxonomicStatus'] == 'SYNONYM':
-                        if synonym_data:
-                            if taxon_name == original_species_name:
-                                if result['key'] < synonym_data['key']:
-                                    synonym_data = result
-                        else:
-                            synonym_data = result
-                    else:
-                        if other_data:
-                            if taxon_name == original_species_name:
-                                if result['key'] < other_data['key']:
-                                    other_data = result
-                        else:
-                            other_data = result
-        if accepted_data:
-            return accepted_data
-        if synonym_data:
-            return synonym_data
-        return other_data
+        resp = species.name_lookup(q=original_species_name, limit=50, rank=rank)
     except HTTPError:
-        print('Species not found')
-    except AttributeError:
-        print('error')
+        logger.warning('Species not found (HTTPError) for %s', original_species_name)
+        return None
+    except Exception as e:
+        logger.warning('Lookup error for %s: %s', original_species_name, e)
+        return None
 
-    return None
+    if not resp or 'results' not in resp:
+        return None
+    results = resp['results']
+    if returns_all:
+        return results
+
+    def _matches_classifier(r: dict) -> bool:
+        if not classifier:
+            return True
+        for k, v in classifier.items():
+            if not v:
+                continue
+            key_db = 'class' if k == 'class_name' else k
+            if (r.get(key_db) or '').lower() != str(v).lower():
+                return False
+        return True
+
+    accepted_best = None
+    synonym_best = None
+    other_best = None
+
+    for r in results:
+        if not _matches_classifier(r):
+            continue
+
+        rk = (r.get('rank') or '').lower()
+        rank_key = (rk + 'Key') if rk in RANK_KEYS else 'key'
+        has_any_key = ('nubKey' in r) or (rank_key in r) or ('key' in r)
+        if not has_any_key or 'taxonomicStatus' not in r:
+            continue
+
+        status = r['taxonomicStatus']
+        if status == 'ACCEPTED':
+            accepted_best = _prefer(r, accepted_best, original_species_name)
+            if accepted_best and accepted_best.get('nubKey'):
+                break
+        elif status == 'SYNONYM':
+            synonym_best = _prefer(r, synonym_best, original_species_name)
+        else:
+            other_best = _prefer(r, other_best, original_species_name)
+
+    chosen = accepted_best or synonym_best or other_best
+    if not chosen:
+        return None
+
+    detail_key = chosen.get('nubKey') or chosen.get('key')
+    if not detail_key:
+        return chosen
+
+    detail = get_species(detail_key)
+    if not detail:
+        return chosen
+
+    nub_key = detail.get('nubKey')
+    if nub_key and nub_key != detail.get('key'):
+        canonical = get_species(nub_key)
+        if canonical:
+            detail = canonical
+
+    if (detail.get('rank') or '').upper() == 'UNRANKED':
+        parent_key = detail.get('parentKey')
+        if parent_key:
+            parent_detail = get_species(parent_key)
+            if parent_detail:
+                detail = parent_detail
+
+    return detail
+
+
+def _prefer(candidate, current, original_name):
+    """
+    Prefer better GBIF lookup candidates within the same status bucket.
+    Priority:
+      1) exact name match (canonical/scientific) to original_name
+      2) has nubKey
+      3) has parentKey
+      4) smaller 'key'
+    """
+    if current is None:
+        return candidate
+
+    def _norm(s):
+        return (s or '').strip().lower()
+
+    cand_name = _norm(candidate.get('canonicalName') or candidate.get('scientificName'))
+    curr_name = _norm(current.get('canonicalName') or current.get('scientificName'))
+    orig      = _norm(original_name)
+
+    cand_exact = (cand_name == orig)
+    curr_exact = (curr_name == orig)
+
+    if cand_exact != curr_exact:
+        return candidate if cand_exact else current
+
+    cand_has_nub = 'nubKey' in candidate and candidate.get('nubKey') is not None
+    curr_has_nub = 'nubKey' in current and current.get('nubKey') is not None
+    if cand_has_nub != curr_has_nub:
+        return candidate if cand_has_nub else current
+
+    cand_has_parent = 'parentKey' in candidate and candidate.get('parentKey') is not None
+    curr_has_parent = 'parentKey' in current and current.get('parentKey') is not None
+    if cand_has_parent != curr_has_parent:
+        return candidate if cand_has_parent else current
+
+    try:
+        return candidate if int(candidate.get('key', 10**12)) < int(current.get('key', 10**12)) else current
+    except Exception:
+        return candidate
 
 
 def search_exact_match(species_name):
@@ -279,7 +317,7 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
     :return:
     """
     # Get taxon
-    print('Get taxon for key : %s' % key)
+    log('Get taxon for key : %s' % key)
 
     try:
         taxon = Taxonomy.objects.get(
@@ -293,9 +331,23 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
 
     detail = get_species(key)
     taxon = None
+    accepted_taxon = None
+
+    # If synonym then get the accepted taxon
+    if 'synonym' in detail['taxonomicStatus'].lower():
+        accepted_taxon_key = detail.get('acceptedKey', '')
+        if accepted_taxon_key:
+            accepted_taxon = Taxonomy.objects.filter(
+                gbif_key=accepted_taxon_key
+            ).first()
+            if not accepted_taxon:
+                accepted_taxon = update_taxonomy_from_gbif(
+                    accepted_taxon_key,
+                    get_vernacular=get_vernacular
+                )
 
     try:
-        print('Found detail for %s' % detail['scientificName'])
+        log('Found detail for %s' % detail['scientificName'])
         taxon, status = Taxonomy.objects.get_or_create(
             gbif_key=detail['key'],
             scientific_name=detail['scientificName'],
@@ -304,15 +356,18 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
                 detail['taxonomicStatus']].name,
             rank=TaxonomicRank[
                 detail['rank']].name,
+            author=detail.get('authorship', '')
         )
         taxon.gbif_data = detail
+        if accepted_taxon:
+            taxon.accepted_taxonomy = accepted_taxon
         taxon.save()
 
         # Get vernacular names
         if get_vernacular:
             vernacular_names = get_vernacular_names(detail['key'])
             if vernacular_names:
-                print('Found %s vernacular names' % len(
+                log('Found %s vernacular names' % len(
                     vernacular_names['results']))
                 for result in vernacular_names['results']:
                     fields = {}
@@ -338,7 +393,6 @@ def update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
             )
             taxon.save()
     except (KeyError, TypeError) as e:
-        print(e)
         pass
 
     return taxon
@@ -443,208 +497,56 @@ def round_coordinates(coords):
         return [round(coord, 4) for coord in coords]
 
 
-def find_species_by_area(
-        boundary_id,
-        parent_species: Taxonomy,
-        max_limit=None,
-        harvest_session: HarvestSession = None,
-        validated=True
-):
+def _gbif_session():
+    """Requests session with sane retries/backoff for GBIF."""
+    s = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=0.5,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+    )
+    s.mount("https://", HTTPAdapter(max_retries=retries))
+    return s
+
+
+def gbif_synonyms_by_usage(
+    usage_key: int,
+    limit: int = 1000,
+    accept_language: str | None = None,
+) -> list[dict]:
     """
-    Searches for species within a specific area defined by a boundary, filtered by taxonomic keys.
-
-    Parameters:
-    boundary_id (int): The ID of the boundary within which to search for species.
-    parent_species (int, required): The taxon for filtering species.
-    max_limit (int, optional): The maximum number of species to be fetched.
-    validated (bool, optional): Automatically validated the species
-
-    Returns:
-    list: A list of species found within the area, filtered by the provided taxonomic keys.
+    Calls GBIF /v1/species/{usageKey}/synonyms and paginates until exhausted.
+    Returns a flat list of synonym objects.
     """
-    from bims.models.boundary import Boundary
-    from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
-    from bims.models.taxon_group import TaxonGroup
-    from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+    sess = _gbif_session()
+    url = f"{GBIF_API}/species/{usage_key}/synonyms"
+    headers = {}
+    if accept_language:
+        headers["Accept-Language"] = accept_language
 
-    add_parent = True
-    taxon_group = None
-    log_file_path = None
+    results: list[dict] = []
+    offset = 0
 
-    species_keys = set()
-    species_found = []
+    while True:
+        resp = sess.get(
+            url,
+            params={"limit": limit, "offset": offset},
+            headers=headers, timeout=60)
+        resp.raise_for_status()
+        page = resp.json() or []
 
-    if harvest_session:
-        taxon_group = harvest_session.module_group
-        log_file_path = (
-            harvest_session.log_file.path
-            if harvest_session.log_file else None
-        )
+        if not isinstance(page, list):
+            page = (
+                    page.get("results") or
+                    page.get("synonyms") or []) if isinstance(page, dict) else []
 
-    def log_info(message: str):
-        logger.info(message)
-        if log_file_path:
-            with open(log_file_path, 'a') as log_file:
-                log_file.write('{}\n'.format(message))
+        if not page:
+            break
 
-    def is_canceled():
-        if harvest_session:
-            return HarvestSession.objects.get(
-                id=harvest_session.id
-            ).canceled
-        return False
+        results.extend(page)
+        if len(page) < limit:
+            break
+        offset += limit
 
-    def add_parent_to_group(taxon: Taxonomy, group: TaxonGroup):
-        if taxon.parent:
-            _taxon_group_taxonomy, _ = (
-                TaxonGroupTaxonomy.objects.get_or_create(
-                    taxongroup=group,
-                    taxonomy=taxon,
-                )
-            )
-            _taxon_group_taxonomy.is_validated = validated
-            _taxon_group_taxonomy.save()
-            add_parent_to_group(taxon.parent, group)
-        else:
-            return
-
-    def fetch_occurrences_by_area(geometry_string):
-        from bims.scripts.import_gbif_occurrences import API_BASE_URL
-        facet_offset = 0
-
-        while True:
-            if is_canceled():
-                break
-            try:
-                params = {
-                    f"{parent_species.rank.lower()}Key": parent_species.gbif_key,
-                    'facet': 'acceptedTaxonKey',
-                    'facetLimit': 100,
-                    'facetMinCount': 1,
-                    'facetOffset': facet_offset,
-                    'geometry': geometry_string,
-                    'limit': 0,
-                    'hasCoordinate': True,
-                    'hasGeoSpatialIssue': False,
-                    'basisOfRecord': [
-                        'HUMAN_OBSERVATION',
-                    ]
-                }
-
-                gbif_url = (
-                    f"{API_BASE_URL}?"
-                    f"{parent_species.rank.lower()}Key={parent_species.gbif_key}&"
-                    f"facet=acceptedTaxonKey&"
-                    f"facetLimit=100&"
-                    f"facetMinCount=1&"
-                    f"hasCoordinate=true&"
-                    f"hasGeospatialIssue=false&"
-                    f"basisOfRecord=HUMAN_OBSERVATION&"
-                    f"limit={0}&"
-                    f"geometry={geometry_string}&"
-                    f"facetOffset={facet_offset}&"
-                )
-
-                log_info(gbif_url)
-
-                occurrences_data = search(**params)
-                log_info(occurrences_data)
-            except Exception as e:
-                log_info(f"Error fetching occurrences data: {e}")
-                break
-
-            if 'facets' in occurrences_data and len(occurrences_data['facets']) > 0:
-                for facet in occurrences_data['facets']:
-                    if facet['field'].upper() == "ACCEPTED_TAXON_KEY":
-                        new_keys = {int(count['name']) for count in facet['counts']}
-                        new_species_keys = new_keys - species_keys
-                        species_keys.update(new_keys)
-
-                        for species_key in new_species_keys:
-                            if is_canceled():
-                                return species_found
-                            try:
-                                log_info('Processing {}'.format(species_key))
-                                taxonomy = fetch_all_species_from_gbif(
-                                    gbif_key=species_key,
-                                    fetch_children=False,
-                                    log_file_path=log_file_path,
-                                    fetch_vernacular_names=True
-                                )
-                                if taxonomy:
-                                    log_info("Species added/updated: {}".format(taxonomy.scientific_name))
-                                    species_found.append(taxonomy)
-                                    if taxon_group:
-                                        taxon_group_taxonomy, created = (
-                                            TaxonGroupTaxonomy.objects.get_or_create(
-                                                taxongroup=taxon_group,
-                                                taxonomy=taxonomy,
-                                            )
-                                        )
-                                        taxon_group_taxonomy.is_validated = validated
-                                        taxon_group_taxonomy.save()
-
-                                        if add_parent:
-                                            add_parent_to_group(
-                                                taxonomy, taxon_group
-                                            )
-                            except Exception as e:
-                                log_info(f"Error fetching data for species key {species_key}: {e}")
-
-            else:
-                # If facets or counts are empty, we've reached the end
-                break
-
-            log_info(f"Species found so far: {len(species_keys)}")
-
-            # Adjust facetOffset by the number of counts returned, not by the limit
-            counts_returned = sum(
-                len(facet.get('counts', [])) for facet in occurrences_data.get('facets', []))
-            if counts_returned == 0 or is_canceled():
-                break
-            if max_limit is not None and counts_returned > max_limit:
-                break
-            facet_offset += counts_returned
-
-        return species_found
-
-    try:
-        boundary = Boundary.objects.get(id=boundary_id)
-        geometry = boundary.geometry
-        extracted_polygons = []
-        if not geometry:
-            raise ValueError("No geometry found for the boundary.")
-
-        if isinstance(geometry, MultiPolygon):
-            for geom in geometry:
-                extracted_polygons.append(geom)
-        else:
-            extracted_polygons.append(geometry)
-
-        log_info('Found {} area'.format(len(extracted_polygons)))
-        area = 1
-        for polygon in extracted_polygons:
-            if is_canceled():
-                return
-            geojson = json.loads(polygon.geojson)
-            geojson['coordinates'] = round_coordinates(geojson['coordinates'])
-            geometry_rounded = GEOSGeometry(json.dumps(geojson))
-            geometry_str = str(geometry_rounded.ogr)
-            log_info(geometry_str)
-            log_info('Area {area}/{total_area}'.format(
-                area=area,
-                total_area=len(extracted_polygons))
-            )
-            area += 1
-            fetch_occurrences_by_area(geometry_str)
-
-    except Boundary.DoesNotExist:
-        logger.error(f"Boundary with ID {boundary_id} does not exist.")
-        return []
-    except Exception as e:
-        logger.error(f"Error fetching boundary: {e}")
-        return []
-
-    log_info(f"Species found: {len(species_keys)}")
-
-    return species_found
+    return results

@@ -315,17 +315,24 @@
                 </div>
             {% endif %}
             <div class="form-group row">
-                <label for="date"
-                       class="col-sm-2 col-form-label col-form-label">Site
-                    Image</label>
+                <label class="col-sm-2 col-form-label col-form-label">Site Images</label>
                 <div class="col-sm-10">
-                    <div class="form-group">
-                        <div class="input-group input-file">
-                            <input type="file" class="form-control"
-                                   accept="image/*" name="site-image"
-                                   placeholder='Choose a file...'/>
-                        </div>
+                    <div class="input-group input-file mb-2">
+                        <input type="file"
+                               class="form-control"
+                               accept="image/*"
+                               name="site-images"
+                               id="site-images-input"
+                               multiple
+                               placeholder="Choose image files..."
+                               onchange="updateMultiViewer(this)"/>
                     </div>
+
+                    <div id="site-images-viewer" class="d-flex flex-wrap" style="gap:10px;"></div>
+
+                    <small class="form-text text-muted">
+                        You can select multiple files at once.
+                    </small>
                 </div>
             </div>
 
@@ -338,11 +345,11 @@
 
             <div class="form-group rowa">
                 <div class="add-taxon-container">
-                    <button id="add-taxon" type="button" class="btn btn-info">
+                    <button id="add-taxon" type="button" class="btn btn-primary">
                         Add taxon
                     </button>
                     <button id="add-new-taxon" type="button"
-                            class="btn btn-info" data-toggle="modal"
+                            class="btn btn-primary" data-toggle="modal"
                             data-target="#addNewTaxonModal">
                         Add new taxon
                     </button>

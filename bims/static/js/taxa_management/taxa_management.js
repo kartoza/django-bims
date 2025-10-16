@@ -9,6 +9,151 @@ let orderField = {
     'endemism_name': 'endemism__name'
 }
 
+function escapeHtml(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function tokenize(str) {
+  if (!str) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+function isColorDark(hex) {
+  const c = (hex || '').replace('#','');
+  if (c.length !== 6) return false;
+  const r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16);
+  return (0.299*r + 0.587*g + 0.114*b) < 186;
+}
+function renderSimpleBadges(tokens) {
+  if (!tokens.length) return '';
+  return tokens.map(t => `<span class="badge badge-info">${escapeHtml(t)}</span>`).join('');
+}
+function renderTagBadges(tokens) {
+  if (!tokens.length) return '';
+  return tokens.map(tag => {
+    const m = tag.match(/^(.*)\s+\((#[0-9A-Fa-f]{6})\)\s*$/);
+    if (m) {
+      const tagName = escapeHtml(m[1].trim());
+      const color = m[2];
+      const textColor = isColorDark(color) ? 'white' : 'black';
+      return `<span class="badge" style="background-color:${color};color:${textColor};">${tagName}</span>`;
+    }
+    return `<span class="badge badge-info">${escapeHtml(tag)}</span>`;
+  }).join('');
+}
+function renderDiffString(data, { colored, stackedOnNarrow = true } = {}) {
+  if (!data) return '';
+  const parts = String(data).split(/\s*→\s*|\s*->\s*/);
+  if (parts.length === 2) {
+    const [oldStr, newStr] = parts;
+    const oldTokens = (oldStr.trim() === '-' ? [] : tokenize(oldStr));
+    const newTokens = (newStr.trim() === '-' ? [] : tokenize(newStr));
+    const render = colored ? renderTagBadges : renderSimpleBadges;
+
+    const oldHtml = render(oldTokens) || '<span class="text-muted">-</span>';
+    const newHtml = render(newTokens) || '<span class="text-muted">-</span>';
+
+    const changed = (oldStr || '').trim() !== (newStr || '').trim();
+
+    return `
+      <span class="cell-diff ${changed ? 'cell-changed' : ''} ${stackedOnNarrow ? 'stack-on-narrow' : ''}">
+        <span class="diff-old">${oldHtml}</span>
+        <span class="arrow text-muted mx-1">→</span>
+        <span class="diff-new">${newHtml}</span>
+      </span>
+    `;
+  }
+  const tokens = tokenize(data);
+  return (colored ? renderTagBadges : renderSimpleBadges)(tokens);
+}
+function renderTextDiff(data, { stackedOnNarrow = true, showLabels = false } = {}) {
+  if (data == null) return '';
+  const parts = String(data).split(/\s*→\s*|\s*->\s*/);
+  if (parts.length === 2) {
+    const [oldRaw, newRaw] = parts;
+    const oldText = (oldRaw || '').trim();
+    const newText = (newRaw || '').trim();
+    const changed = oldText !== newText;
+
+    const oldLabel = showLabels ? '<span class="badge badge-light mr-1">OLD</span>' : '';
+    const newLabel = showLabels ? '<span class="badge badge-success mr-1">NEW</span>' : '';
+
+    return `
+      <span class="cell-diff ${changed ? 'cell-changed' : ''} ${stackedOnNarrow ? 'stack-on-narrow' : ''}"
+            title="${escapeHtml(oldText)} → ${escapeHtml(newText)}">
+        <span class="old text-muted">${oldLabel}${escapeHtml(oldText || '-')}</span>
+        <span class="arrow text-muted mx-1">→</span>
+        <span class="new font-weight-bold">${newLabel}${escapeHtml(newText || '-')}</span>
+      </span>
+    `;
+  }
+  return escapeHtml(String(data));
+}
+
+async function pollTaskStatus(taskId, { intervalMs = 1500, maxAttempts = 200 } = {}) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            const res = await fetch(`/api/celery-status/${taskId}/`, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('Status request failed');
+            const data = await res.json();
+
+            if (['SUCCESS', 'FAILURE', 'REVOKED'].includes(data.state)) {
+                return data;
+            }
+        } catch (e) {
+            console.warn('Polling error:', e);
+        }
+        await new Promise(r => setTimeout(r, intervalMs));
+    }
+    throw new Error('Polling timed out');
+}
+
+async function startBatchApprove(taxonGroupId, includeChildren = true) {
+    $('#processingModal').modal({ backdrop: 'static', keyboard: false });
+    $('#processingModal').modal('show');
+
+    try {
+        const res = await fetch('/api/approve-group-proposals/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                taxon_group_id: parseInt(taxonGroupId, 10),
+                include_children: includeChildren
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || err.message || 'Request failed');
+        }
+
+        const { task_id } = await res.json();
+
+        const result = await pollTaskStatus(task_id);
+
+        $('#processingModal').modal('hide');
+
+        const message = result?.result || 'Batch approval finished.';
+        $('#statusModalBody').text(
+            typeof message === 'string' ? message : JSON.stringify(message)
+        );
+        $('#statusModal').modal('show');
+
+        $('#statusModal').one('hidden.bs.modal', function () {
+            location.reload();
+        });
+    } catch (e) {
+        $('#statusModalBody').text(`Failed to start/complete batch approve: ${e.message}`);
+        $('#statusModal').modal('show');
+        setTimeout(() => {
+            $('#processingModal').modal('hide');
+        }, 500)
+    }
+}
 
 export const taxaManagement = (() => {
     const fullUrl = new URL(window.location.href);
@@ -38,11 +183,12 @@ export const taxaManagement = (() => {
                 headers: {"X-CSRFToken": csrfToken},
                 type: 'GET',
                 success: function (response) {
-                    $('#taxon_group_validated_' + taxaGroup.id).text(response.total_validated);
+                    $('#taxon_group_accepted_validated_' + taxaGroup.id).text(response.accepted_validated);
+                    $('#taxon_group_synonym_validated_' + taxaGroup.id).text(response.synonym_validated);
                     if (response.total_unvalidated > 0) {
-                        $('#taxon_group_validated_' + taxaGroup.id).parent().after($('<div class="taxon-group-badge">\n' +
-                            `<span id="taxon_group_unvalidated_${taxaGroup.id}">${response.total_unvalidated}</span> Unvalidated\n` +
-                            '</div>'))
+                        $('#taxon_group_unvalidated_' + taxaGroup.id).show();
+                        $('#taxon_group_accepted_unvalidated_' + taxaGroup.id).text(response.accepted_unvalidated);
+                        $('#taxon_group_synonym_unvalidated_' + taxaGroup.id).text(response.synonym_unvalidated);
                     }
                 }
             });
@@ -70,6 +216,19 @@ export const taxaManagement = (() => {
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
         $('#download-csv').on('click', handleDownloadCsv)
         $('#download-pdf').on('click', handleDownloadPdf)
+
+        const $approveAllBtn = $('#approve-all-proposals-btn');
+        if ($approveAllBtn.length) {
+            $approveAllBtn.on('click', function (e) {
+                e.preventDefault();
+                if (!selectedTaxonGroup) return;
+
+                if (!confirm('Approve all UNVALIDATED proposals in this taxon group (including children)?')) {
+                    return;
+                }
+                startBatchApprove(selectedTaxonGroup, true);
+            });
+        }
 
         if (userCanEditTaxonGroup) {
             $sortable.sortable({
@@ -415,6 +574,8 @@ export const taxaManagement = (() => {
 
                 let orderParam = sortOrder + (orderField.hasOwnProperty(sortBy) ? orderField[sortBy] : sortBy);
 
+                $('#approve-all-proposals-btn').hide();
+
                 $.ajax({
                     url: url,
                     data: {o: orderParam, page: page, page_size: pageSize},
@@ -425,6 +586,7 @@ export const taxaManagement = (() => {
 
                         if (response['is_expert']) {
                             $('#add-taxon-btn').show();
+                            $('#approve-all-proposals-btn').show();
                         }
 
                         if (response.count === 0) {
@@ -437,7 +599,7 @@ export const taxaManagement = (() => {
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
                             let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
-                            let iucnHTML = data.iucn_redlist_id ? ` <a href="https://apiv3.iucnredlist.org/api/v3/taxonredirect/${data.iucn_redlist_id}/" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
+                            let iucnHTML = data.iucn_url ? ` <a href="${data.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
                             data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML + `<input type="hidden" class="proposal-id" value="${data.proposal_id}" />`;
@@ -478,40 +640,34 @@ export const taxaManagement = (() => {
                     defaultContent: '',
                 },
                 {
-                    "data": "canonical_name",
-                    "render": function (data, type, row) {
-                        return row.nameHTML;
-                    },
-                    "className": "min-width-150"
+                  data: "canonical_name",
+                  render: function (data, type, row) {
+                    const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
+                    return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+                  },
+                  className: "min-width-150"
                 },
-                {"data": "author", "className": "min-width-100"},
-                {"data": "family", "className": "min-width-100"},
-                {"data": "taxonomic_status", "className": "min-width-100"},
-                {"data": "accepted_taxonomy_name", "className": "min-width-100"},
-                {"data": "rank", "className": "min-width-100"},
-                {"data": "biographic_distributions", "className": "min-width-100", "sortable": false,
-                    "render": function (data) {
-                        return data.split(',').map(tag => `<span class="badge badge-info">${tag}</span>`).join('');
-                    }
+                { data: "author", className: "min-width-100", render: (d) => renderTextDiff(d) },
+                { data: "family", className: "min-width-100", render: (d) => renderTextDiff(d) },
+                { data: "taxonomic_status", className: "min-width-100", render: (d) => renderTextDiff(d) },
+                { data: "accepted_taxonomy_name", className: "min-width-100", render: (d) => renderTextDiff(d) },
+                { data: "rank", className: "min-width-100", render: (d) => renderTextDiff(d) },
+                {
+                  data: "biographic_distributions",
+                  className: "min-width-100",
+                  sortable: false,
+                  render: function (data) {
+                    return renderDiffString(data, { colored: false });
+                  }
                 },
                 {
-                    "data": "tag_list",
-                    "sortable": false,
-                    "className": "min-width-100",
-                    "searchable": false,
-                    "render": function (data) {
-                        return data.split(',').map(tag => {
-                            const match = tag.match(/(.*)\s+\((#[0-9A-Fa-f]{6})\)/);
-                            if (match) {
-                                const tagName = match[1].trim();
-                                const color = match[2];
-                                const textColor = isColorDark(color) ? 'white' : 'black';
-                                return `<span class="badge" style="background-color: ${color}; color: ${textColor};">${tagName}</span>`;
-                            } else {
-                                return `<span class="badge badge-info">${tag.trim()}</span>`;
-                            }
-                        }).join('');
-                    }
+                  data: "tag_list",
+                  sortable: false,
+                  className: "min-width-100",
+                  searchable: false,
+                  render: function (data) {
+                    return renderDiffString(data, { colored: true });
+                  }
                 },
                 {
                     "data": "rowActionHTML",

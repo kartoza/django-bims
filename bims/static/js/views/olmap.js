@@ -487,6 +487,7 @@ define([
             const $mapLegendContainer = $('#map-legend-container');
 
             if ($mapLegend.is(':visible')) {
+                this.dockLegendForClose();
                 this.lastLegendWidth = this.$mapLegendWrapper.width();
                 this.lastLegendHeight = this.$mapLegendWrapper.height();
                 this.$mapLegendWrapper.css('width', '31px')
@@ -503,6 +504,34 @@ define([
                 }
                 this.showMapLegends(true);
             }
+        },
+        dockLegendForClose: function () {
+          if (!this.$mapLegendWrapper || !this.$mapLegendWrapper.length) return;
+
+          const container = $('.map-wrapper')[0].getBoundingClientRect();
+          const legend    = this.$mapLegendWrapper[0].getBoundingClientRect();
+
+          const containerMidX  = container.left + container.width / 2;
+          const legendCenterX  = legend.left + legend.width / 2;
+
+          const bottom = Math.max(0, container.bottom - legend.bottom);
+          const left   = Math.max(0, legend.left - container.left);
+          const right  = Math.max(0, container.right - legend.right);
+
+          const useLeft = legendCenterX < containerMidX;
+
+          if (useLeft) {
+            this.$mapLegendWrapper.css({
+              left: `${left}px`, right: 'auto',
+              bottom: `${bottom}px`, top: 'auto'
+            });
+          } else {
+            this.$mapLegendWrapper.css({
+              right: `${right}px`, left: 'auto',
+              bottom: `${bottom}px`, top: 'auto'
+            });
+          }
+          return { useLeft, bottom, left, right };
         },
         showMapLegends: function (showTooltip) {
             if (!this.mapLegendInitialized) {
@@ -528,7 +557,12 @@ define([
             this.$mapLegendWrapper.addClass('show-legend');
             $mapLegendSymbol.hide();
             $mapLegend.show();
-            this.$mapLegendWrapper.attr('data-original-title', 'Click to hide legends <br/>Drag to move legends').tooltip('hide');
+
+            this.$mapLegendWrapper.css({'overflow-x': 'auto', 'overflow-y': 'auto'});
+            this.$mapLegendWrapper.attr(
+                'data-original-title',
+                'Click to hide legends <br/>Drag to move legends'
+            ).tooltip('hide');
 
             if (showTooltip) {
                 this.$mapLegendWrapper.tooltip('show');
@@ -626,32 +660,49 @@ define([
 
             this.$mapLegendWrapper = $('#map-legend-wrapper');
             this.$mapLegendWrapper.draggable({
-                containment: '.map-wrapper',
-                start: function (event, ui) {
-                    self.$mapLegendWrapper.css('bottom', 'auto');
-                    $("[data-toggle=tooltip]").tooltip('hide');
-                },
-                stop: function (event, ui) {
-                    var legend_position = self.$mapLegendWrapper.position();
-                    var bottom = $('#map').height() - legend_position.top - self.$mapLegendWrapper.outerHeight();
-                    self.$mapLegendWrapper.css('bottom', bottom + 'px').css('top', 'auto');
-                }
+              containment: '.map-wrapper',
+              scroll: false,
+              start: (event, ui) => {
+                const w = this.$mapLegendWrapper.outerWidth();
+                const h = this.$mapLegendWrapper.outerHeight();
+                const pos = this.$mapLegendWrapper.position();
+
+                this.$mapLegendWrapper.css({
+                  width: `${w}px`,
+                  height: `${h}px`,
+                  right: 'auto',
+                  bottom: 'auto',
+                  left: `${pos.left}px`,
+                  top: `${pos.top}px`
+                });
+
+                $("[data-toggle=tooltip]").tooltip('hide');
+              },
+              stop: (event, ui) => {
+                const containerRect = $('.map-wrapper')[0].getBoundingClientRect();
+                const legendRect = this.$mapLegendWrapper[0].getBoundingClientRect();
+
+                const bottom = containerRect.bottom - legendRect.bottom;
+                const right  = containerRect.right  - legendRect.right;
+
+                this.$mapLegendWrapper.css({
+                  bottom: `${Math.max(bottom, 0)}px`,
+                  right:  `${Math.max(right, 0)}px`,
+                  top: 'auto',
+                  left: 'auto'
+                });
+              }
             }).resizable({
-                containment: '.map-wrapper',
-                handles: 'se',
-                minWidth: 100,
-                minHeight: 100,
-                start: function (event, ui) {
-                    self.resizingLegend = true;
-                    $("[data-toggle=tooltip]").tooltip('hide');
-                    $(this).css('max-height', 'none');
-                    $(this).css('max-width', 'none');
-                },
-                stop: function (event, ui) {
-                    setTimeout(function () {
-                        self.resizingLegend = false;
-                    }, 500);
-                }
+              containment: '.map-wrapper',
+              handles: 'se',
+              minWidth: 100,
+              minHeight: 100,
+              start: (event, ui) => {
+                this.resizingLegend = true;
+                $("[data-toggle=tooltip]").tooltip('hide');
+                $(ui.element).css({ 'max-height': 'none', 'max-width': 'none' });
+              },
+              stop: () => setTimeout(() => { this.resizingLegend = false; }, 500)
             });
             this.mapLegendInitialized = true;
             this.$mapLegendWrapper.resizable('option', 'disabled', true);
@@ -694,10 +745,6 @@ define([
         },
         mapMoved: function () {
             let self = this;
-            let administrative = self.checkAdministrativeLevel();
-            if (administrative !== 'detail') {
-                this.layers.changeLayerAdministrative(administrative);
-            }
         },
         loadMap: function () {
             var self = this;
@@ -742,8 +789,8 @@ define([
                 view: new ol.View({
                     center: ol.proj.fromLonLat(center),
                     zoom: this.initZoom,
-                    minZoom: 5,
-                    maxZoom: 19, // prevent zooming past 50m
+                    minZoom: mapMinZoom,
+                    maxZoom: 19,
                 }),
                 controls: ol.control.defaults.defaults({ zoom: false }).extend([
                     mousePositionControl,
@@ -771,37 +818,9 @@ define([
             this.fetchingRecords();
             $('#fetching-error .call-administrator').show();
         },
-        checkAdministrativeLevel: function () {
-            var self = this;
-            var zoomLevel = this.map.getView().getZoom();
-            var administrative = 'detail';
-            $.each(Object.keys(this.clusterLevel), function (index, value) {
-                if (zoomLevel <= value) {
-                    administrative = self.clusterLevel[value];
-                    return false;
-                }
-            });
-            return administrative;
-        },
-        resetAdministrativeLayers: function () {
-            var administrative = this.checkAdministrativeLevel();
-            if (administrative !== 'detail') {
-                if (administrative === this.clusterCollection.administrative) {
-                    return
-                }
-                this.layers.changeLayerAdministrative(administrative);
-            } else {
-                this.clusterCollection.administrative = null;
-            }
-        },
         fetchingRecords: function () {
             // get records based on administration
             var self = this;
-            return;
-            if (!this.layers.isBiodiversityLayerLoaded()) {
-                return
-            }
-            self.updateClusterBiologicalCollectionZoomExt();
         },
         updateClusterBiologicalCollectionTaxonID: function (taxonID, taxonName) {
             this.closeHighlight();
@@ -968,59 +987,202 @@ define([
             }
         },
         downloadMap: function (fileType = 'png') {
-            var that = this;
-            var downloadMap = true;
+            const self = this;
+            if (self._isDownloading) return;
+            self._isDownloading = true;
 
-            that.map.renderSync();
+            const h2c =
+                (typeof HtmlToCanvas !== 'undefined' && HtmlToCanvas) ||
+                (typeof html2canvas !== 'undefined' && html2canvas);
 
-            if (downloadMap) {
+            if (!h2c) {
+                alert('Screenshot library (html2canvas) is not available.');
+                self._isDownloading = false;
+                return;
+            }
+            const mapEl = document.getElementById('map');
+            if (!mapEl) {
+                alert('Map element not found.');
+                self._isDownloading = false;
+                return;
+            }
+            const hideUI = () => {
                 $('#ripple-loading').show();
-                $('.map-control-panel-box').hide();
-                $('.ol-control').hide();
-                $('.map-control-panel').hide();
-                $('.zoom-control').hide();
-                $('.bug-report-wrapper').hide();
-                $('#wetland-map-feedback').hide();
-                $('.print-map-control').addClass('control-panel-selected');
-                that.map.once('rendercomplete', function (event) {
-                    var canvas = document.getElementsByClassName('map-wrapper');
-                    var $mapWrapper = $('.map-wrapper');
-                    var divHeight = $mapWrapper.height();
-                    var divWidth = $mapWrapper.width();
-                    var ratio = divHeight / divWidth;
-                    html2canvas(canvas, {
+            };
+            const showUI = () => {
+                $('#ripple-loading').hide();
+            };
+
+            let legendClone = null;
+            let originalLegendId = 'map-legend-wrapper';
+
+            const attachLegendClone = () => {
+                const legJQ = $('#map-legend-wrapper');
+                if (!legJQ.length || !legJQ.is(':visible')) return;
+
+                const legEl = legJQ[0];
+                const mapEl = document.getElementById('map');
+
+                const mapRect = mapEl.getBoundingClientRect();
+                const legRect = legEl.getBoundingClientRect();
+                originalLegendId = legEl.id || 'map-legend-wrapper';
+                legEl.dataset._exportOriginalId = originalLegendId;
+                legEl.id = `${originalLegendId}__hidden`;
+                legendClone = legEl.cloneNode(true);
+                legendClone.id = originalLegendId;
+                legendClone.style.position = 'absolute';
+                legendClone.style.pointerEvents = 'none';
+                legendClone.style.margin = 0;
+                legendClone.style.zIndex = 9999;
+                legendClone.style.left = `${legRect.left - mapRect.left}px`;
+                legendClone.style.top = `${legRect.top}px`;
+                legendClone.style.width = `${legRect.width}px`;
+                legendClone.style.height = `${legRect.height}px`;
+                legendClone.classList.remove('control-drop-shadow', 'ui-draggable', 'ui-draggable-handle', 'ui-resizable');
+                legendClone.style.boxShadow = 'none';
+                legendClone.style.webkitBoxShadow = 'none';
+                legendClone.style.filter = 'none';
+                legendClone.style.textShadow = 'none';
+                legendClone.style.overflow = 'visible';
+                legendClone.style.background = '#fff';
+                legendClone.style.border = '1px solid rgba(0,0,0,.25)';
+                legendClone.style.borderRadius = '6px';
+                $(legendClone).find('.ui-resizable-handle').remove();
+                const sym = legendClone.querySelector('#map-legend-symbol');
+                if (sym) sym.style.display = 'none';
+                const panel = legendClone.querySelector('#map-legend');
+                if (panel) panel.style.display = 'block';
+                legJQ.hide();
+                mapEl.appendChild(legendClone);
+            };
+
+            const detachLegendClone = () => {
+                if (legendClone && legendClone.parentNode) {
+                    legendClone.parentNode.removeChild(legendClone);
+                }
+                legendClone = null;
+                const hidden = document.getElementById(`${originalLegendId}__hidden`);
+                if (hidden) {
+                    hidden.id = hidden.dataset._exportOriginalId || originalLegendId;
+                    delete hidden.dataset._exportOriginalId;
+                    $(hidden).show();
+                }
+            };
+
+            let scaleClone = null;
+            const attachScaleLineClone = () => {
+                const $scale = $('.ol-scale-line');
+                if (!$scale.length || !$scale.is(':visible')) return;
+
+                const scaleEl = $scale[0];
+                const mapRect = mapEl.getBoundingClientRect();
+                const scRect  = scaleEl.getBoundingClientRect();
+
+                scaleClone = scaleEl.cloneNode(true);
+                scaleClone.style.position = 'absolute';
+                scaleClone.style.pointerEvents = 'none';
+                scaleClone.style.margin = 0;
+                scaleClone.style.zIndex = 9998;
+                scaleClone.style.height = '32px';
+                scaleClone.style.left = `${scRect.left - mapRect.left}px`;
+                scaleClone.style.top  = `${scRect.top}px`;
+                scaleClone.style.boxShadow = 'none';
+                scaleClone.style.background = 'rgba(255,255,255,0.5)';
+                scaleClone.style.border = '1px solid rgba(0,0,0,.25)';
+                scaleClone.style.borderRadius = '4px';
+                const inner = scaleClone.querySelector('.ol-scale-line-inner');
+                if (inner) {
+                    inner.style.boxShadow = 'none';
+                    inner.style.background = 'transparent';
+                    inner.style.color = '#000';
+                }
+                $scale.hide();
+                mapEl.appendChild(scaleClone);
+            };
+
+            const detachScaleLineClone = () => {
+                if (scaleClone && scaleClone.parentNode) {
+                    scaleClone.parentNode.removeChild(scaleClone);
+                }
+                scaleClone = null;
+                $('.ol-scale-line').show();
+            };
+            const saveCanvas = (canvas) => {
+                const rect = mapEl.getBoundingClientRect();
+                const widthPx = rect.width;
+                const heightPx = rect.height;
+
+                if (fileType === 'pdf') {
+                    const PX_TO_MM = 0.2645833333;
+                    const pdfW = widthPx * PX_TO_MM;
+                    const pdfH = heightPx * PX_TO_MM;
+                    const pdf = new jsPDF.jsPDF('l', 'mm', [pdfW, pdfH]);
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH);
+                    pdf.save('map.pdf');
+                } else {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL(`image/${fileType}`);
+                    link.download = `map.${fileType}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                }
+            };
+
+            const capture = () => {
+                try {
+                    self.map.updateSize();
+                    self.map.renderSync();
+                } catch (_) {}
+
+                requestAnimationFrame(() => {
+                    const w = mapEl.clientWidth;
+                    const h = mapEl.clientHeight;
+                    h2c(mapEl, {
                         useCORS: true,
-                        background: '#FFFFFF',
                         allowTaint: false,
-                        onrendered: function (canvas) {
-                            if (fileType === 'pdf') {
-                                // Create a new instance of jsPDF
-                                let pdf = new jsPDF.jsPDF('l', 'mm', [divWidth, divHeight]);
-
-                                // Add the canvas image to the PDF
-                                pdf.addImage(canvas.toDataURL("image/png"), 'PNG', 0, 0, divWidth, divHeight);
-
-                                // Save the PDF
-                                pdf.save('map.pdf');
-                            } else {
-                                var link = document.createElement('a');
-                                link.setAttribute("type", "hidden");
-                                link.href = canvas.toDataURL("image/" + fileType);
-                                link.download = 'map.' + fileType;
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                            }
-                            $('.zoom-control').show();
-                            $('.map-control-panel').show();
-                            $('#ripple-loading').hide();
-                            $('.bug-report-wrapper').show();
-                            $('.ol-control').show();
-                            $('#wetland-map-feedback').show();
-                            $('.print-map-control').removeClass('control-panel-selected');
-                        }
+                        backgroundColor: '#FFFFFF',
+                        width: w,
+                        height: h,
+                        windowWidth: w,
+                        windowHeight: h,
+                        scrollX: 0,
+                        scrollY: 0,
+                        scale: Math.min(2, window.devicePixelRatio || 1),
+                        logging: false
                     })
+                    .then(saveCanvas)
+                    .catch((err) => {
+                        console.error('Map capture failed:', err);
+                        alert('Sorry, capturing the map failed. Please try again.');
+                    })
+                    .finally(() => {
+                        detachScaleLineClone();
+                        detachLegendClone();
+                        showUI();
+                        self._isDownloading = false;
+                    });
                 });
+            };
+
+            hideUI();
+            attachLegendClone();
+            attachScaleLineClone();
+
+            let done = false;
+            let fallbackTimerId = null;
+            const finish = () => {
+                if (done) return;
+                done = true;
+                if (fallbackTimerId !== null) clearTimeout(fallbackTimerId);
+                capture();
+            };
+
+            if (self.mapIsReady) {
+                finish();
+            } else {
+                self.whenMapIsReady(finish);
+                fallbackTimerId = setTimeout(finish, 5000);
             }
         },
         startTutorial: function() {

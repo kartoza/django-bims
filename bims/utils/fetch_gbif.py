@@ -1,13 +1,17 @@
 import logging
+
+import requests
+from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
-    gbif_name_suggest
+    gbif_name_suggest, gbif_synonyms_by_usage
 )
 from bims.models import Taxonomy, VernacularName, TaxonGroup
 from bims.enums import TaxonomicRank, TaxonomicStatus
 
 logger = logging.getLogger('bims')
+MAX_DEPTH = 50
 
 
 def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
@@ -77,38 +81,118 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
     if vernacular_names:
         excluded_taxon.vernacular_names.add(*vernacular_names)
 
-def fetch_gbif_vernacular_names(taxonomy: Taxonomy):
-    if not taxonomy.gbif_key:
+
+def _norm(s: str) -> str:
+    return (s or "").strip()
+
+
+def fetch_gbif_vernacular_names(taxonomy):
+    if not getattr(taxonomy, "gbif_key", None):
         return False
+
     vernacular_names = get_vernacular_names(taxonomy.gbif_key)
-    logger.info('Fetching vernacular names for {}'.format(
-        taxonomy.canonical_name
-    ))
-    if vernacular_names:
-        logger.info('Found %s vernacular names' % len(
-            vernacular_names['results']))
-        order = 1
-        for result in vernacular_names['results']:
-            fields = {}
-            source = result['source'] if 'source' in result else ''
-            if 'language' in result:
-                fields['language'] = result['language']
-            if 'taxonKey' in result:
-                fields['taxon_key'] = int(result['taxonKey'])
-            fields['order'] = order
+    logger.info("Fetching vernacular names for %s", taxonomy.canonical_name)
 
-            vernacular_name, created = (
-                VernacularName.objects.update_or_create(
-                    name=result['vernacularName'],
-                    source=source,
-                    defaults=fields
-                )
+    results = (vernacular_names or {}).get("results") or []
+    if not results:
+        logger.info("Found 0 vernacular names")
+        return True
+
+    logger.info("Found %s vernacular names", len(results))
+
+    order_val = 1
+    created_cnt = 0
+    updated_cnt = 0
+
+    for result in results:
+        name_clean = _norm(result.get("vernacularName"))
+        if not name_clean:
+            continue
+
+        source_clean   = _norm(result.get("source"))
+        language_clean = _norm(result.get("language")) or None
+
+        fields = {
+            "language": language_clean,
+            "order": order_val,
+        }
+        if result.get("taxonKey") is not None:
+            try:
+                fields["taxon_key"] = int(result["taxonKey"])
+            except (TypeError, ValueError):
+                pass
+
+        obj = None
+
+        try:
+            with transaction.atomic():
+                obj = (VernacularName.objects
+                       .filter(name__iexact=name_clean, source=source_clean)
+                       .order_by('id')
+                       .first())
+                if obj:
+                    changed = []
+                    for k, v in fields.items():
+                        if getattr(obj, k) != v:
+                            setattr(obj, k, v)
+                            changed.append(k)
+                    if changed:
+                        obj.save(update_fields=changed)
+                    updated_cnt += 1
+                else:
+                    obj = VernacularName.objects.create(
+                        name=name_clean,
+                        source=source_clean,
+                        **fields,
+                    )
+                    created_cnt += 1
+
+        except IntegrityError as ie:
+            logger.warning(
+                "IntegrityError creating VernacularName(name=%r, source=%r): %s",
+                name_clean, source_clean, ie
             )
+            obj = (VernacularName.objects
+                   .filter(name__iexact=name_clean, source=source_clean)
+                   .order_by('id')
+                   .first())
+            if obj:
+                changed = []
+                for k, v in fields.items():
+                    if getattr(obj, k) != v:
+                        setattr(obj, k, v)
+                        changed.append(k)
+                if changed:
+                    obj.save(update_fields=changed)
+                updated_cnt += 1
+            else:
+                with transaction.atomic():
+                    obj, created = VernacularName.objects.get_or_create(
+                        name=name_clean,
+                        source=source_clean,
+                        defaults=fields
+                    )
+                    if created:
+                        created_cnt += 1
+                    else:
+                        changed = []
+                        for k, v in fields.items():
+                            if getattr(obj, k) != v:
+                                setattr(obj, k, v)
+                                changed.append(k)
+                        if changed:
+                            obj.save(update_fields=changed)
+                        updated_cnt += 1
 
-            taxonomy.vernacular_names.add(vernacular_name)
-            order += 1
+        taxonomy.vernacular_names.add(obj)
+        order_val += 1
 
-        taxonomy.save()
+    taxonomy.save()
+    logger.info(
+        "Vernacular names linked. created=%d updated=%d",
+        created_cnt, updated_cnt
+    )
+    return True
 
 
 def create_or_update_taxonomy(
@@ -124,10 +208,25 @@ def create_or_update_taxonomy(
         species_key = gbif_data['nubKey']
     except KeyError:
         species_key = gbif_data['key']
-    try:
-        rank = TaxonomicRank[gbif_data['rank']].name
-    except KeyError:
-        logger.error('No RANK')
+
+    raw_rank = gbif_data.get('rank', '').upper()
+
+    if raw_rank == "UNRANKED":
+        parent_key = gbif_data.get("parentKey")
+        if parent_key:
+            logger.debug("UNRANKED record %s; resolving to parent %s", gbif_data.get("key"), parent_key)
+            return fetch_all_species_from_gbif(
+                gbif_key=parent_key,
+                fetch_children=False
+            )
+        logger.debug("Skipping UNRANKED record (no parentKey) – GBIF key %s", gbif_data.get("key"))
+        return None
+
+    rank_enum = TaxonomicRank.__members__.get(raw_rank)
+    rank = rank_enum.name if rank_enum else raw_rank
+
+    if not raw_rank:
+        logger.error("GBIF record has no 'rank' field: %s", gbif_data)
         return None
     if 'scientificName' not in gbif_data:
         logger.error('No scientificName')
@@ -197,6 +296,8 @@ def fetch_all_species_from_gbif(
     fetch_vernacular_names=False,
     use_name_lookup=True,
     log_file_path=None,
+    _visited=None,
+    _depth=0,
     **classifier):
     """
     Get species detail and all lower rank species
@@ -215,7 +316,19 @@ def fetch_all_species_from_gbif(
             with open(log_file_path, 'a') as log_file:
                 log_file.write('{}\n'.format(message))
 
+    if _visited is None:
+        _visited = set()
+
+    if _depth > MAX_DEPTH:
+        log_info(f"Depth>{MAX_DEPTH} for key={gbif_key} – aborting to avoid recursion loop")
+        return None
+
     if gbif_key:
+        if gbif_key in _visited:
+            log_info(f"Cycle detected at key={gbif_key}; skipping further recursion")
+            existing = Taxonomy.objects.filter(gbif_key=gbif_key).first()
+            return existing
+        _visited.add(gbif_key)
         log_info('Get species {gbif_key}'.format(
             gbif_key=gbif_key
         ))
@@ -258,6 +371,27 @@ def fetch_all_species_from_gbif(
                 q=species,
                 rank=taxonomic_rank
             )
+
+    raw_rank = species_data.get('rank', '').upper() if species_data else ''
+    if raw_rank == "UNRANKED":
+        parent_key = (species_data or {}).get("parentKey")
+        if parent_key and parent_key != species_data.get("key") and parent_key not in _visited:
+            log_info(
+                f"UNRANKED record {species_data.get('key')}; "
+                f"resolving to parent {parent_key}")
+            return fetch_all_species_from_gbif(
+                gbif_key=parent_key,
+                fetch_children=False,
+                fetch_vernacular_names=fetch_vernacular_names,
+                use_name_lookup=use_name_lookup,
+                log_file_path=log_file_path,
+                _visited=_visited,
+                _depth=_depth + 1,
+            )
+        log_info(
+            f"Skipping UNRANKED record (no safe parent) – "
+            f"GBIF key {species_data.get('key') if species_data else None}")
+        return None
 
     # if species not found then return nothing
     if not species_data:
@@ -302,6 +436,8 @@ def fetch_all_species_from_gbif(
     logger.debug(species_data)
     if not species_data:
         return None
+    if 'authorship' not in species_data and 'nubKey' in species_data:
+        species_data = get_species(species_data['nubKey'])
     taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names)
     if not taxonomy:
         log_info('Taxonomy not updated/created')
@@ -313,68 +449,79 @@ def fetch_all_species_from_gbif(
         taxonomy.parent = parent
         taxonomy.save()
     else:
-        fetch_parent = not taxonomy.parent
-        if taxonomy.parent and species_data and 'parentKey' in species_data:
-            fetch_parent = taxonomy.parent.gbif_key != species_data['parentKey']
-        if fetch_parent:
-            # Get parent
-            parent_taxonomy = None
-            if 'parentKey' in species_data:
-                parent_key = species_data['parentKey']
-                log_info('Get parent with parentKey : %s' % parent_key)
-                parent_taxonomy = fetch_all_species_from_gbif(
-                    gbif_key=parent_key,
-                    parent=None,
-                    fetch_children=False
-                )
+        desired_parent_key = (species_data or {}).get('parentKey')
+        need_fetch_parent = (
+            desired_parent_key
+            and (not taxonomy.parent or taxonomy.parent.gbif_key != desired_parent_key)
+        )
+        if need_fetch_parent and desired_parent_key != taxonomy.gbif_key and desired_parent_key not in _visited:
+            log_info(f'Get parent with parentKey : {desired_parent_key}')
+            parent_taxonomy = fetch_all_species_from_gbif(
+                gbif_key=desired_parent_key,
+                parent=None,
+                fetch_children=False,
+                fetch_vernacular_names=fetch_vernacular_names,
+                use_name_lookup=use_name_lookup,
+                log_file_path=log_file_path,
+                _visited=_visited,
+                _depth=_depth + 1,
+            )
             if parent_taxonomy:
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
-    max_tries = 10
-    current_try = 0
-
-    # Validate parents
-    if taxonomy.rank.lower() == 'kingdom':
-        taxon_parent = taxonomy
-    else:
-        taxon_parent = taxonomy.parent
-
-    # Traverse up the hierarchy to find a 'kingdom' or reach max tries
-    while current_try < max_tries and taxon_parent.parent and taxon_parent.rank.lower() != 'kingdom':
-        taxon_parent = taxon_parent.parent
-        current_try += 1
-
-    # If a 'kingdom' was not found within max tries
-    if taxon_parent.rank.lower() != 'kingdom' and current_try < max_tries:
-        parent_key = taxon_parent.gbif_data.get('parentKey')
-        if parent_key:
-            parent_taxonomy = fetch_all_species_from_gbif(
-                gbif_key=parent_key,
-                parent=None,
-                fetch_children=False
-            )
-            if parent_taxonomy:
-                taxon_parent.parent = parent_taxonomy
-                taxon_parent.save()
+    max_tries = 20
+    tries = 0
+    cursor = taxonomy
+    while tries < max_tries and cursor and cursor.rank and cursor.rank.lower() != 'kingdom':
+        if not cursor.parent:
+            pk = (cursor.gbif_data or {}).get('parentKey') if hasattr(cursor, 'gbif_data') else None
+            if pk and pk != cursor.gbif_key and pk not in _visited:
+                pt = fetch_all_species_from_gbif(
+                    gbif_key=pk,
+                    parent=None,
+                    fetch_children=False,
+                    fetch_vernacular_names=fetch_vernacular_names,
+                    use_name_lookup=use_name_lookup,
+                    log_file_path=log_file_path,
+                    _visited=_visited,
+                    _depth=_depth + 1,
+                )
+                if pt:
+                    cursor.parent = pt
+                    cursor.save()
+                else:
+                    break
+            else:
+                break
+        cursor = cursor.parent
+        tries += 1
 
     # Check if there is an accepted key
-    if (
-        'acceptedKey' in species_data and
-        species_data['taxonomicStatus'] == 'SYNONYM'
-    ):
-        accepted_taxonomy = fetch_all_species_from_gbif(
-            gbif_key=species_data['acceptedKey'],
-            taxonomic_rank=taxonomy.rank,
-            parent=taxonomy.parent,
-            fetch_children=False
-        )
-        if accepted_taxonomy:
-            if taxonomy.iucn_status:
-                accepted_taxonomy.iucn_status = taxonomy.iucn_status
-                accepted_taxonomy.save()
-            taxonomy.accepted_taxonomy = accepted_taxonomy
-            taxonomy.save()
+    try:
+        status = (species_data.get('taxonomicStatus') or "").strip().lower()
+    except Exception:
+        status = ""
+    if species_data and 'acceptedKey' in species_data and 'synonym' in status:
+        ak = species_data['acceptedKey']
+        if ak and ak != taxonomy.gbif_key and ak not in _visited:
+            accepted_taxonomy = fetch_all_species_from_gbif(
+                gbif_key=ak,
+                taxonomic_rank=taxonomy.rank,
+                parent=taxonomy.parent,
+                fetch_children=False,
+                fetch_vernacular_names=fetch_vernacular_names,
+                use_name_lookup=use_name_lookup,
+                log_file_path=log_file_path,
+                _visited=_visited,
+                _depth=_depth + 1,
+            )
+            if accepted_taxonomy:
+                if taxonomy.iucn_status:
+                    accepted_taxonomy.iucn_status = taxonomy.iucn_status
+                    accepted_taxonomy.save()
+                taxonomy.accepted_taxonomy = accepted_taxonomy
+                taxonomy.save()
 
     if not fetch_children:
         if taxonomy.legacy_canonical_name:
@@ -402,4 +549,97 @@ def fetch_all_species_from_gbif(
                 species=child['scientificName'],
                 parent=taxonomy
             )
-        return taxonomy
+
+    return taxonomy
+
+def harvest_synonyms_for_accepted_taxonomy(
+    accepted_taxonomy: Taxonomy,
+    fetch_vernacular_names: bool = False,
+    log_file_path: str | None = None,
+    accept_language: str | None = None,
+):
+    """
+    Harvest synonyms for a given *accepted* Taxonomy using GBIF's
+    /v1/species/{usageKey}/synonyms endpoint.
+    """
+    def log_info(msg: str):
+        logger.info(msg)
+        if log_file_path:
+            with open(log_file_path, "a") as f:
+                f.write(msg + "\n")
+
+    if not accepted_taxonomy or not getattr(accepted_taxonomy, "gbif_key", None):
+        log_info("harvest_synonyms_for_accepted_taxonomy: missing accepted taxonomy or gbif_key")
+        return []
+
+    log_info(
+        f"Harvesting synonyms via GBIF API for accepted taxonomy "
+        f"{accepted_taxonomy.canonical_name} (key={accepted_taxonomy.gbif_key})"
+    )
+
+    try:
+        synonyms_payload = gbif_synonyms_by_usage(
+            usage_key=int(accepted_taxonomy.gbif_key),
+            limit=1000,
+            accept_language=accept_language,
+        )
+    except requests.RequestException as e:
+        logger.error("Failed to fetch GBIF synonyms for key=%s: %s", accepted_taxonomy.gbif_key, e)
+        return []
+
+    if not synonyms_payload:
+        log_info("No synonyms returned by GBIF for this accepted taxonomy.")
+        return []
+
+    processed: list[Taxonomy] = []
+    seen_keys: set[int] = set()
+    allowed_status_substrings = ("SYNONYM",)
+
+    for syn in synonyms_payload:
+        syn_key = syn.get("nubKey") or syn.get("key")
+        try:
+            syn_key_int = int(syn_key) if syn_key is not None else None
+        except (TypeError, ValueError):
+            syn_key_int = None
+
+        if not syn_key_int:
+            continue
+        if syn_key_int == accepted_taxonomy.gbif_key or syn_key_int in seen_keys:
+            continue
+        seen_keys.add(syn_key_int)
+
+        status = (syn.get("taxonomicStatus") or syn.get("status") or "").upper()
+        if not any(tag in status for tag in allowed_status_substrings):
+            continue
+
+        minimal_ok = all(k in syn for k in ("scientificName", "canonicalName", "rank"))
+        syn_full = syn if minimal_ok else (get_species(syn_key_int) or syn)
+
+        synonym_tax = create_or_update_taxonomy(
+            syn_full,
+            fetch_vernacular_names=fetch_vernacular_names
+        )
+        if not synonym_tax:
+            log_info(f"Failed to create/update synonym taxonomy for key={syn_key_int}")
+            continue
+
+        changed = False
+        if getattr(synonym_tax, "accepted_taxonomy_id", None) != accepted_taxonomy.id:
+            synonym_tax.accepted_taxonomy = accepted_taxonomy
+            changed = True
+
+        if not getattr(synonym_tax, "parent_id", None) and getattr(accepted_taxonomy, "parent_id", None):
+            synonym_tax.parent = accepted_taxonomy.parent
+            changed = True
+
+        if changed:
+            synonym_tax.save()
+
+        processed.append(synonym_tax)
+        log_info(
+            f"Linked synonym {synonym_tax.canonical_name} "
+            f"(key={synonym_tax.gbif_key}) → accepted {accepted_taxonomy.canonical_name}"
+        )
+
+    log_info(f"Synonyms processed: {len(processed)}")
+    return processed

@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.generic import UpdateView
 
 from bims.api_views.taxon_update import is_expert, create_taxon_proposal, update_taxon_proposal
-from bims.models import TaxonGroup, TaxonomyUpdateProposal, IUCNStatus, Endemism, TaxonGroupTaxonomy
+from bims.models import TaxonGroup, TaxonomyUpdateProposal, IUCNStatus, Endemism, TaxonGroupTaxonomy, SpeciesGroup
 from bims.models.taxonomy import Taxonomy
 
 
@@ -32,10 +32,10 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         taxon = get_object_or_404(
             Taxonomy,
             pk=self.kwargs['id'],
-            taxongroup__id=self.kwargs['taxon_group_id']
         )
         proposal = TaxonomyUpdateProposal.objects.filter(
             original_taxonomy=taxon,
+            taxon_group=self.kwargs['taxon_group_id'],
             status='pending'
         ).first()
         return proposal or taxon
@@ -60,7 +60,6 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             {'rank': 'Tribe', 'field': 'tribe_name'},
             {'rank': 'SubTribe', 'field': 'sub_tribe_name'},
             {'rank': 'Genus', 'field': 'genus_name'},
-            {'rank': 'SpeciesGroup', 'field': 'species_group'},
             {'rank': 'Species', 'field': 'specific_epithet'},
             {'rank': 'SubSpecies', 'field': 'sub_species_name'}
         ]
@@ -96,6 +95,34 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             return redirect(self.get_success_url())
 
         data = form.cleaned_data
+        current_rank = data.get('rank') or taxon.rank
+        taxon_name = self.request.POST.get('taxon_name', '')
+
+        species_group_raw = (self.request.POST.get('species-group') or '').strip()
+
+        if not species_group_raw or species_group_raw.lower() == 'null' or species_group_raw.lower() == 'none':
+            data['species_group'] = None
+        elif species_group_raw.startswith('NEW:'):
+            data['species_group'] = SpeciesGroup.objects.create(
+                name=species_group_raw.split(':', 1)[-1].strip()
+            )
+        else:
+            try:
+                data['species_group'] = SpeciesGroup.objects.get(id=int(species_group_raw))
+            except (ValueError, SpeciesGroup.DoesNotExist):
+                data['species_group'] = None
+
+        parent = data.get('parent')
+
+        if 'subspecies' in current_rank.lower():
+            if parent.rank.lower() == 'species':
+                if len(taxon_name.split(' ')) > 1 and not taxon_name.startswith(parent.specific_epithet):
+                    taxon_name = f'{parent.specific_epithet} {taxon_name}'
+
+        if 'species' in current_rank.lower():
+            genus_name = parent.genus_name
+            if not taxon_name.startswith(genus_name):
+                taxon_name = f'{genus_name} {taxon_name}'
 
         data['common_name'] = self.request.POST.get('common_name', '')
         data['tags'] = self.request.POST.getlist('tags')
@@ -103,6 +130,10 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             self.request.POST.getlist('biographic_distributions')
         )
 
+        data['canonical_name'] = taxon_name
+        data['scientific_name'] = (
+            f'{taxon_name} {self.request.POST.get('author', '')}'
+        )
         data['Taxonomic Comments'] = (
             self.request.POST.get('additional_data__Taxonomic_Comments', '')).strip()
         data['Taxonomic References'] = (
@@ -147,7 +178,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
             proposal = TaxonomyUpdateProposal.objects.filter(
                 original_taxonomy=taxon,
-                status='pending'
+                status='pending',
+                taxon_group=taxon_group
             ).first()
 
             if not proposal:
@@ -185,8 +217,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     'Taxonomy updated successfully')
 
         # The proposal is automatically approved if the user is a superuser
-        if proposal and self.request.user.is_superuser and new_proposal:
-            proposal.approve(self.request.user)
+        # if proposal and self.request.user.is_superuser and new_proposal:
+        #     proposal.approve(self.request.user)
 
         return redirect(self.get_success_url())
 

@@ -61,7 +61,7 @@ def overview_site_detail(site_id: int):
         )
         river_and_geo['Geomorphological zone'] = (
             location_context.value_from_key(
-                'geo_class_recoded')
+                layer_name='Geomorphological Zone')
         )
         refined_geomorphological = '-'
         if location_site.refined_geomorphological:
@@ -107,7 +107,8 @@ def overview_site_detail(site_id: int):
             result[title] = {}
         result[title][context_filter.group.name] = (
             location_context.value_from_key(
-                context_filter.group.key
+                key=context_filter.group.key,
+                layer_identifier=context_filter.group.layer_identifier
             )
         )
 

@@ -190,7 +190,7 @@ class BiologicalCollectionRecord(AbstractValidation):
         default=timezone.now
     )
     collector = models.CharField(
-        max_length=300,
+        max_length=1024,
         blank=True,
         default='',
         help_text='Collector name in string value, this is useful for '
@@ -247,7 +247,7 @@ class BiologicalCollectionRecord(AbstractValidation):
     )
 
     reference = models.CharField(
-        max_length=300,
+        max_length=2048,
         blank=True,
         default=''
     )
@@ -279,6 +279,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         unique=True,
         null=True,
         blank=True
+    )
+
+    dataset_key = models.CharField(
+        help_text='Dataset key',
+        default='',
+        blank=True,
+        null=True,
     )
 
     additional_data = JSONField(
@@ -393,7 +400,7 @@ class BiologicalCollectionRecord(AbstractValidation):
     )
 
     identified_by = models.CharField(
-        max_length=300,
+        max_length=512,
         blank=True,
         default='',
         help_text='Name of the person who identified the species',

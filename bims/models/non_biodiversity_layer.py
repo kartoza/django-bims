@@ -104,3 +104,43 @@ class NonBiodiversityLayer(OrderedModel):
         """Meta class for project."""
         app_label = 'bims'
         ordering = ('order',)
+
+    def __str__(self) -> str:  # type: ignore[override]
+        return self.name
+
+
+class LayerGroup(OrderedModel):
+    """
+    Logical grouping of NonBiodiversityLayer records
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Human-readable group name."
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        help_text="URL-safe unique identifier (auto-fill in admin)."
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional longer description shown in layer selector."
+    )
+    layers = models.ManyToManyField(
+        'NonBiodiversityLayer',
+        related_name='layer_groups',
+        blank=True,
+        help_text="Layers that belong to this group (drag or multi-select)."
+    )
+
+    # Preserve drag-and-drop ordering from OrderedModel
+    class Meta(OrderedModel.Meta):
+        app_label = 'bims'
+        ordering = ('order',)
+        verbose_name = 'Layer group'
+        verbose_name_plural = 'Layer groups'
+
+    def __str__(self) -> str:  # type: ignore[override]
+        return self.name

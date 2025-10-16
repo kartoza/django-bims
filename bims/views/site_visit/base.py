@@ -267,12 +267,11 @@ class SiteVisitBaseView(View):
             )
         except BaseMapLayer.DoesNotExist:
             context['bing_key'] = ''
-        try:
-            context['site_image'] = SiteImage.objects.get(
-                survey=self.object
-            )
-        except SiteImage.DoesNotExist:
-            pass
+
+        context['site_images'] = SiteImage.objects.filter(
+            survey=self.object,
+            site=self.object.site
+        ).order_by('id')
 
         try:
             context['taxon_images'] = TaxonImage.objects.filter(

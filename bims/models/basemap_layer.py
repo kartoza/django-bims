@@ -15,7 +15,9 @@ class BaseMapLayer(OrderedModel):
         ('xyz', 'XYZ'),
         ('bing', 'BingMaps'),
         ('osm', 'OSM'),
-        ('stamen', 'Stamen')
+        ('stamen', 'Stamen'),
+        ('map_tiler', 'MapTiler'),
+        ('wms', 'WMSTile'),
     )
     title = models.CharField(
         max_length=256,
@@ -29,7 +31,7 @@ class BaseMapLayer(OrderedModel):
         max_length=100,
         default='',
         blank=True,
-        help_text='Only for Stamen base layer'
+        help_text='For Stamen and WMS'
     )
     attributions = models.TextField(
         default='',
@@ -44,7 +46,7 @@ class BaseMapLayer(OrderedModel):
         default='',
         blank=True,
         help_text=(
-            'Key is required if the source of the map is Bing or Stamen'
+            'Key is required if the source of the map is Bing, Stamen, or MapTiler.'
         )
     )
     additional_params = JSONField(

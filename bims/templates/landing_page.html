@@ -14,10 +14,13 @@
     <script type="text/javascript">
         const summaries = '{{ summaries|jsonify|safe }}';
         const showModuleSummaries = {% if preferences.SiteSetting.show_module_summary_on_dashboard %}true{% else %}false{% endif %};
+        window.showModuleSummaries = showModuleSummaries;
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
     <script src="{% static "js/libs/chart/Chart-2.7.2.js" %}"></script>
+
+    <link href="{% static "css/landing_page_navbar.css" %}" rel="stylesheet">
 
 {% endblock %}
 
@@ -32,58 +35,94 @@
             </header>
             {% endif %}
             {% if not fada_site %}
-            <section class="biodiversity-data-container" style="position: relative;">
+            <section class="biodiversity-data-container" style="position: relative; background-color: {{ custom_theme.summary_background_color }}">
                 <div class="container">
                     <div class="row">
                         <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading">{{ preferences.SiteSetting.landing_page_occurrence_records_title }}</h2>
+                            <h2 class="section-heading"
+                                style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
+                                        font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
+                                        color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
+                                        font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
+                                {{ custom_theme.landing_page_occurrence_records_title }}
+                            </h2>
                         </div>
                     </div>
                     {% include 'landing_page_dashboard.html' %}
 
+                    {% if custom_header.show_explore_map %}
                     <div class="row" style="display: flex; align-items: center; justify-content: center; margin-top: 20px;">
-                        <a href="/map" class="btn btn-primary btn-explore-map"><i class="fa fa-map-o"></i> &nbsp;Explore Map »</a>
+                        <a href="/map" class="btn btn-primary btn-explore-map"><i class="fa fa-map-o"></i> &nbsp;Explore Map</a>
                     </div>
+                    {% endif %}
                 </div>
             </section>
             {% endif %}
             {% if custom_theme.landing_page_sections %}
-                {% for landing_page_section in custom_theme.landing_page_sections.all %}
-                    <section class="biodiversity-data-container custom-sections"
-                             style="position: relative; background-color: {{ landing_page_section.background_color }}">
-                        <div class="container">
-                            {% if landing_page_section.title %}
-                                <div class="row">
-                                    <div class="col-lg-8 mx-auto text-center">
-                                        <h2 class="section-heading">{{ landing_page_section.title }}</h2>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            {% for section_content in landing_page_section.contents.all %}
-                                <div class="row">
-                                    {{ section_content.content | safe }}
-                                </div>
-                            {% endfor %}
+              {% for landing_page_section in custom_theme.landing_page_sections.all %}
+                {% with s=landing_page_section %}
+                  <section
+                    class="biodiversity-data-container custom-sections"
+                    style="
+                      position: relative;
+                      background-color: {{ s.background_color }};
+                      {% if s.background %}
+                        background-image: url('{{ s.background.url }}');
+                        background-repeat: no-repeat;
+                        background-size: {{ s.bg_size_css }};
+                        background-position: {{ s.bg_position_css }};
+                      {% endif %}
+                      {{ s.min_height_css }}
+                      {% if s.enable_border %}
+                        border-bottom: 1px solid {{ s.border_color|default:custom_theme.main_accent_color|default:'#e5e7eb' }};
+                      {% endif %}
+                    "
+                  >
+                    <div class="{% if s.full_width %}container-fluid px-0{% else %}container{% endif %}">
+                      {% if s.title %}
+                        <div class="row">
+                          <div class="col-lg-8 mx-auto text-center">
+                            <h2 class="section-heading">{{ s.title }}</h2>
+                          </div>
                         </div>
-                    </section>
-                {% endfor %}
+                      {% endif %}
+
+                      {% for section_content in s.contents.all %}
+                        <div class="row">
+                          {{ section_content.content|safe }}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </section>
+                {% endwith %}
+              {% endfor %}
             {% endif %}
             {% for funder_section in funders_partners %}
                 <section class="biodiversity-data-container grid-logos custom-sections" style="position: relative; background-color: {{ funder_section.color }}">
                     <div class="container" style="margin-bottom: 25px">
                         <div class="row">
                             <div class="col-lg-8 mx-auto text-center">
-                                <h2 class="section-heading">{{ funder_section.title }}</h2>
+                                <h2 class="section-heading"
+                                    style="font-family: {% firstof custom_theme.partners_section_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
+                                        font-size: {{ custom_theme.partners_section_title_font_size_px }}px !important;
+                                        color: {% firstof custom_theme.partners_section_title_text_color custom_theme.main_accent_color 'inherit' %};
+                                        font-weight: {{ custom_theme.partners_section_title_font_weight }}">
+                                    {{ custom_theme.partners_section_title }}
+                                </h2>
                             </div>
                             <div class="partner-container">
                                 <div class="flex-container">
                                     {% for partner in funder_section.org.all %}
-                                        <div class="flex-item">
-                                            <a href="{{ partner.link }}" target="_blank">
+                                    <div class="flex-item">
+                                        {% if partner.link %}
+                                             <a href="{{ partner.link }}" target="_blank">
                                                 <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
                                             </a>
-                                        </div>
-                                    {% endfor %}
+                                        {% else %}
+                                            <img src="{{ partner.logo.url }}" alt="1" class="img-responsive" data-toggle="tooltip" data-placement="bottom" title="{{ partner.name }}">
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
                                 </div>
                             </div>
 
