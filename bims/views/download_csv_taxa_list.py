@@ -1,13 +1,20 @@
 # coding=utf-8
 import datetime
+import hashlib
 import os
 import json
 
 from django.http import HttpResponseForbidden, JsonResponse
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
+from preferences import preferences
 from rest_framework import serializers
 
 from bims.enums import TaxonomicGroupCategory
+from bims.models import DownloadRequest
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxon_group import TaxonGroup
 from bims.models.iucn_status import IUCNStatus
@@ -196,56 +203,60 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         self._add_tags(instance, result)
         return result
 
+@csrf_protect
+@require_POST
 def download_taxa_list(request):
-    if not request.user.is_authenticated:
+    allowed_to_download = request.user.is_authenticated
+    if not allowed_to_download and preferences.SiteSetting.is_public_taxa:
+        allowed_to_download = True
+    if not allowed_to_download:
         return HttpResponseForbidden('Not logged in')
 
-    output = request.GET.get('output', 'csv')
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            data = json.loads(request.body.decode("utf-8") or "{}")
+        except Exception:
+            data = {}
+    else:
+        data = request.POST.dict()
 
-    taxon_group_id = request.GET.get('taxonGroup')
-    download_request_id = request.GET.get('downloadRequestId', '')
-    taxon_group = TaxonGroup.objects.get(
-        id=taxon_group_id
-    )
+    output = (data.get('output') or 'csv').lower()
+    taxon_group_id = data.get('taxonGroup')
+    download_request_id = data.get('downloadRequestId', '')
 
-    current_time = datetime.datetime.now()
-    filter_hash = hash(json.dumps(request.GET.dict()))
+    taxon_group = get_object_or_404(TaxonGroup, id=taxon_group_id)
 
-    # Check if the file exists in the processed directory
+    now = timezone.localtime()
+    filter_str = json.dumps(data, sort_keys=True, separators=(',', ':'))
+    filter_hash = hashlib.sha256(filter_str.encode('utf-8')).hexdigest()[:12]
+
     filename = (
-        f'{taxon_group.name}-{current_time.year}-'
-        f'{current_time.month}-{current_time.day}-'
-        f'{current_time.hour}-{filter_hash}'
+        f"{taxon_group.name}-{now.year}-{now.month}-{now.day}-{now.hour}-{filter_hash}"
     ).replace(' ', '_')
     folder = settings.PROCESSED_CSV_PATH
-    path_folder = os.path.join(
-        settings.MEDIA_ROOT,
-        folder
-    )
+    path_folder = os.path.join(settings.MEDIA_ROOT, folder)
     path_file = os.path.join(path_folder, filename)
 
-    if not os.path.exists(path_folder):
-        os.mkdir(path_folder)
+    os.makedirs(path_folder, exist_ok=True)
 
     if os.path.exists(path_file):
+        user_id = request.user.id if request.user.is_authenticated else None
         send_csv_via_email(
-            user_id=request.user.id,
+            user_id=user_id,
             csv_file=path_file,
             file_name=filename,
             approved=True
         )
     else:
+        user_id = request.user.id if request.user.is_authenticated else None
         download_taxa_list_task.delay(
-            request.GET.dict(),
+            data,
             csv_file=path_file,
             filename=filename,
-            user_id=request.user.id,
+            user_id=user_id,
             output=output,
             download_request_id=download_request_id,
             taxon_group_id=taxon_group_id
         )
 
-    return JsonResponse({
-        'status': 'processing',
-        'filename': filename
-    })
+    return JsonResponse({'status': 'processing', 'filename': filename})

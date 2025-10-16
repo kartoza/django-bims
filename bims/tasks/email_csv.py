@@ -32,12 +32,6 @@ def send_csv_via_email(
     from django.conf import settings
     from bims.models.download_request import DownloadRequest
 
-    user = get_user_model().objects.get(id=user_id)
-
-    download_request = None
-    extension = 'csv'
-    download_file_path = csv_file
-
     if download_request_id:
         try:
             download_request = DownloadRequest.objects.get(
@@ -46,6 +40,21 @@ def send_csv_via_email(
             approved = download_request.approved
         except DownloadRequest.DoesNotExist:
             pass
+
+    user_name = ''
+    user_email = ''
+    if user_id:
+        user = get_user_model().objects.get(id=user_id)
+        user_email = user.email
+        user_name = user.username
+    else:
+        if download_request and download_request.email:
+            user_email = download_request.email
+            user_name = download_request.email
+
+    download_request = None
+    extension = 'csv'
+    download_file_path = csv_file
 
     if download_request and not download_request.request_file:
         download_request.request_category = file_name
@@ -91,8 +100,11 @@ def send_csv_via_email(
     if not approved and approved is not None:
         return False
 
+    if not user_email and not user_name:
+        return False
+
     ctx = {
-        'username': user.username,
+        'username': user_name,
         'current_site': get_current_domain(),
     }
     subject = render_to_string(
@@ -107,9 +119,9 @@ def send_csv_via_email(
         subject.strip(),
         message,
         settings.DEFAULT_FROM_EMAIL,
-        [user.email])
+        [user_email])
     zip_folder = os.path.join(
-        settings.MEDIA_ROOT, settings.PROCESSED_CSV_PATH, user.username)
+        settings.MEDIA_ROOT, settings.PROCESSED_CSV_PATH, user_name)
     if not os.path.exists(zip_folder):
         os.makedirs(zip_folder)
     zip_file = os.path.join(zip_folder, '{}.zip'.format(file_name))

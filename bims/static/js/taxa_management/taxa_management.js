@@ -155,6 +155,31 @@ async function startBatchApprove(taxonGroupId, includeChildren = true) {
     }
 }
 
+function parseParamsFromTaxaUrl(urlLike) {
+  const u = new URL(urlLike, window.location.origin);
+  return Object.fromEntries(u.searchParams.entries());
+}
+
+async function postDownloadTaxaList({ output, downloadRequestId, extraParams = {} }) {
+  const payload = {
+    ...extraParams,
+    output,
+    downloadRequestId
+  };
+  if (!payload.taxonGroup && typeof selectedTaxonGroup !== 'undefined' && selectedTaxonGroup) {
+    payload.taxonGroup = String(selectedTaxonGroup);
+  }
+  return fetch('/download-taxa-list/', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken,          // <-- CSRF here
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
 export const taxaManagement = (() => {
     const fullUrl = new URL(window.location.href);
     const urlParams = fullUrl.searchParams;
@@ -288,46 +313,63 @@ export const taxaManagement = (() => {
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
+        const showEmail = $target.attr("data-show-email") === "true";
         showDownloadPopup('PDF', 'Taxa List', function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
-            let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-taxa-list/')
-            if (!downloadUrl.includes('?')) {
-                downloadUrl += '?';
-            }
-            downloadUrl += '&downloadRequestId=' + downloadRequestId
-            downloadUrl += '&output=pdf'
-            fetch(downloadUrl)
-                .then((resp) => {
-                    $target.prop('disabled', false);
-                    $target.html(targetHtml);
-                    alert(downloadRequestMessage);
-                })
-                .catch(() => alert('Cannot download the file'));
-        }, true, null, false)
+
+            const extraParams = parseParamsFromTaxaUrl(taxaUrlList);
+
+            postDownloadTaxaList({
+              output: 'pdf',
+              downloadRequestId,
+              extraParams
+            })
+              .then((resp) => {
+                $target.prop('disabled', false);
+                $target.html(targetHtml);
+                if (!resp.ok) throw new Error('Request failed');
+                alert(downloadRequestMessage);
+              })
+              .catch(() => {
+                $target.prop('disabled', false);
+                $target.html(targetHtml);
+                alert('Cannot start the download process');
+              });
+          }, true, null, false, showEmail);
     }
 
     function handleDownloadCsv(e) {
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
+        const showEmail = $target.attr("data-show-email") === "true";
         showDownloadPopup('CSV', 'Taxa List', function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
-            let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-taxa-list/')
-            if (!downloadUrl.includes('?')) {
-                downloadUrl += '?';
+
+            const extraParams = parseParamsFromTaxaUrl(taxaUrlList);
+            if (showEmail) {
+              extraParams.show_email = true;
             }
-            downloadUrl += '&downloadRequestId=' + downloadRequestId
-            downloadUrl += '&output=csv'
-            fetch(downloadUrl)
-                .then((resp) => {
-                    $target.prop('disabled', false);
-                    $target.html(targetHtml);
-                    alert(downloadRequestMessage);
-                })
-                .catch(() => alert('Cannot download the file'));
-        }, true, null, false)
+
+            postDownloadTaxaList({
+              output: 'csv',
+              downloadRequestId,
+              extraParams
+            })
+              .then((resp) => {
+                $target.prop('disabled', false);
+                $target.html(targetHtml);
+                if (!resp.ok) throw new Error('Request failed');
+                alert(downloadRequestMessage);
+              })
+              .catch(() => {
+                $target.prop('disabled', false);
+                $target.html(targetHtml);
+                alert('Cannot start the download process');
+              });
+          }, true, null, false, showEmail);
     }
 
     const onEditTaxonFormChanged = (elm, event='change') => {

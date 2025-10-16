@@ -64,7 +64,7 @@
                                     <a href="{{ obj.dashboard_url }}"><span class="request-date" data-timestamp="{{ obj.request_date|date:"U" }}">{{ obj.request_date|date:'Y-m-d  h:i a' }}</span></a>
                                 </td>
                                 <td>
-                                    {{ obj.get_formatted_name }}
+                                    {{ obj.get_formatted_name | linebreaks }}
                                 </td>
                                 <td>
                                     {% if obj.request_category %}
