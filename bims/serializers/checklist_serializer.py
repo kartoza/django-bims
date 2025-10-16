@@ -22,10 +22,17 @@ HIERARCHY_OF_CERTAINTY = [
 
 
 def get_dataset_occurrences(occurrences):
-    dataset_keys = list(occurrences.values_list(
-        'additional_data__datasetKey',
-        flat=True
-    ))
+    rows = occurrences.values_list('additional_data__datasetKey', 'dataset_key')
+    dataset_keys_set = set()
+    for json_key, field_key in rows:
+        if isinstance(json_key, (list, tuple)):
+            dataset_keys_set.update(k for k in json_key if k)
+        elif json_key:
+            dataset_keys_set.add(json_key)
+        if field_key:
+            dataset_keys_set.add(field_key)
+    dataset_keys = list(dataset_keys_set)
+
     if dataset_keys:
         dataset_keys = list(filter(None, set(dataset_keys)))
         datasets = Dataset.objects.filter(
