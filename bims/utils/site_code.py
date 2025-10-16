@@ -133,6 +133,9 @@ def generate_fbis_africa_site_code(latitude: float, longitude: float, site_name:
         cleaned_name = re.sub('[^A-Za-z]', '', site_name)
         iso_name = cleaned_name[:3]
 
+    if not iso_name:
+        return 'UNKNOWN'
+
     return iso_name.upper()
 
 
