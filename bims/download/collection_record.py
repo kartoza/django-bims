@@ -193,47 +193,67 @@ def download_collection_records(
 
     taxon_group = collection_results.first().module_group
     upload_template_headers = []
-    if taxon_group.occurrence_upload_template:
-        try:
-            with open(
-                    taxon_group.occurrence_upload_template.path,
-                    'r', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-                upload_template_headers = reader.fieldnames
-        except (FileNotFoundError, UnicodeDecodeError):
-            upload_template_headers = []
 
-    def write_batch_to_csv(
-            header, rows,
-            _path_file,
-            _start_index):
-        bio_serializer = (
-            BioCollectionOneRowSerializer(
-                rows, many=True,
-                context={
-                    'header': header,
-                    'exclude_fields': exclude_fields,
-                    'upload_template_headers': upload_template_headers,
-                    'added_headers': added_headers,
-                })
+    def _extend_headers(headers):
+        if not headers:
+            return
+        seen = set(upload_template_headers)
+        for h in headers:
+            if h and h not in seen:
+                upload_template_headers.append(h)
+                seen.add(h)
+
+    legacy_field = getattr(taxon_group, 'occurrence_upload_template', None)
+    if legacy_field:
+        try:
+            with open(legacy_field.path, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                _extend_headers(reader.fieldnames)
+        except (FileNotFoundError, UnicodeDecodeError, AttributeError):
+            pass
+
+    if hasattr(taxon_group, 'occurrence_upload_templates'):
+        for tpl in taxon_group.occurrence_upload_templates.all():
+            try:
+                with open(tpl.file.path, 'r', encoding='utf-8') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    _extend_headers(reader.fieldnames)
+            except (FileNotFoundError, UnicodeDecodeError, AttributeError):
+                continue
+
+    def write_batch_to_csv(header, rows, _path_file, _start_index):
+        bio_serializer = BioCollectionOneRowSerializer(
+            rows, many=True,
+            context={
+                'header': header,
+                'exclude_fields': exclude_fields,
+                'upload_template_headers': upload_template_headers,
+                'added_headers': added_headers,
+            }
         )
         bio_data = bio_serializer.data
 
         header = bio_serializer.context['header']
-        if upload_template_headers:
-            park_key = PARK_OR_MPA_NAME
-            if park_key in header:
-                header.insert(
-                    1, header.pop(
-                        header.index(park_key)))
+
+        present_cols = set()
+        for r in bio_data:
+            present_cols.update(r.keys())
+
+        filtered_header = [h for h in header if h in present_cols]
+
+        if PARK_OR_MPA_NAME in filtered_header:
+            i = filtered_header.index(PARK_OR_MPA_NAME)
+            if i != 1:
+                filtered_header.insert(1, filtered_header.pop(i))
 
         csv_row = write_to_csv(
-            header,
+            filtered_header,
             bio_data,
             _path_file,
-            _start_index)
+            _start_index
+        )
         del bio_serializer
-        return csv_row, header
+        return csv_row, filtered_header
 
     for obj in queryset_iterator(collection_results, batch_size=record_number):
         collection_data.append(obj)
