@@ -2,8 +2,14 @@ function isInt(value) {
   return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value))
 }
 
-function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true, on_hidden = null, data_format_dropdown = true) {
+function showDownloadPopup(resource_type, resource_name, callback, auto_approved = true, on_hidden = null, data_format_dropdown = true, show_email = false) {
   const $downloadPopup = $('#download-popup');
+  console.log(show_email)
+  if (show_email) {
+      $downloadPopup.find('.email-form').show()
+  } else {
+      $downloadPopup.find('.email-form').hide()
+  }
   if(resource_type === 'CSV'){
     $downloadPopup.find('#data-format').show()
     $downloadPopup.find('#data-format-pdf').hide()
@@ -34,6 +40,14 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
   let survey_id = urlParams.get('survey');
 
   $submitDownloadPopup.on('click', function () {
+    let email = $downloadPopup.find('input[name="download_email"]')[0].value
+    if (show_email) {
+        let isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!isValidEmail) {
+            alert("You need to provide a valid email address to receive the download request output.")
+            return false;
+        }
+    }
     $submitDownloadPopup.prop('disabled', true);
     if (data_format_dropdown) {
       if (resource_type === 'CSV') {
@@ -48,6 +62,7 @@ function showDownloadPopup(resource_type, resource_name, callback, auto_approved
       dashboard_url: window.location.href,
       resource_type: resource_type,
       resource_name: resource_name,
+      download_email: email,
       site_id: site_id,
       survey_id: survey_id,
       taxon_id: taxon_id,

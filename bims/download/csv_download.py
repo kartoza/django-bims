@@ -97,7 +97,7 @@ class CsvDownload(APIView):
         })
 
 
-def send_new_csv_notification(user, date_request, approval_needed=True):
+def send_new_csv_notification(user, date_request, approval_needed=True, email = ''):
     """
     Send an email notify admin/staff that new request has been created
     :param user: User object
@@ -109,7 +109,7 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
         DOWNLOAD_REQUEST
     )
     ctx = {
-        'username': user.username,
+        'username': user.username if user else email,
         'current_site': get_current_domain(),
         'date_request': date_request
     }

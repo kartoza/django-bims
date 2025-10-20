@@ -77,6 +77,11 @@ class DownloadRequest(models.Model):
         blank=True,
         null=True,
     )
+    email = models.EmailField(
+        default='',
+        blank=True,
+        null=True,
+    )
     request_date = models.DateTimeField(
         default=datetime.now
     )
@@ -161,6 +166,8 @@ class DownloadRequest(models.Model):
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
         if not self.requester:
+            if self.email:
+                return f'{self.email}\n(Public User)'
             return '-'
         if self.requester.first_name or self.requester.last_name:
             return '%s %s' % (

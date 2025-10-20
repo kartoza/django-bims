@@ -20,7 +20,7 @@ from bims.utils.domain import get_current_domain
 logger = logging.getLogger(__name__)
 
 
-def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, download_request_id=''):
+def process_download_csv_taxa_list(data, csv_file_path, filename, user_id, download_request_id=''):
     import csv
     from django.contrib.auth import get_user_model
     from django.conf import settings
@@ -79,10 +79,10 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         def __init__(self, get_data):
             self.GET = get_data
 
-    request_get = RequestGet(request)
+    request_get = RequestGet(data)
 
     taxon_group_name = "Taxa checklist"
-    tg_id = request.get("taxonGroup") if isinstance(request, dict) else None
+    tg_id = data.get("taxonGroup") if isinstance(data, dict) else None
     if tg_id:
         try:
             tg = TaxonGroup.objects.get(id=tg_id)
@@ -170,7 +170,10 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
 
         taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
         try:
-            taxa_qs_write = taxa_qs_write.prefetch_related('tags', 'biographic_distributions', 'vernacular_names')
+            taxa_qs_write = taxa_qs_write.prefetch_related(
+                'tags',
+                'biographic_distributions',
+                'vernacular_names')
         except Exception:
             pass
 
@@ -226,21 +229,24 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
 
 
     UserModel = get_user_model()
+    user = None
     try:
         user = UserModel.objects.get(id=user_id)
-        if download_request_id:
-            DownloadRequest.objects.filter(id=download_request_id).update(
-                progress=f'{total_taxa}/{total_taxa}'
-            )
-        send_csv_via_email(
-            user_id=user.id,
-            csv_file=csv_file_path,
-            file_name=filename,
-            approved=True,
-            download_request_id=download_request_id
-        )
     except UserModel.DoesNotExist:
         pass
+
+    if download_request_id:
+        DownloadRequest.objects.filter(id=download_request_id).update(
+            progress=f'{total_taxa}/{total_taxa}',
+            request_file=csv_file_path
+        )
+    send_csv_via_email(
+        user_id=user.id if user else None,
+        csv_file=csv_file_path,
+        file_name=filename,
+        approved=True,
+        download_request_id=download_request_id
+    )
 
 
 def process_download_pdf_taxa_list(
@@ -249,6 +255,7 @@ def process_download_pdf_taxa_list(
     from bims.models.taxon_group import TaxonGroup
     from bims.api_views.taxon import TaxaList
     from bims.models import TaxonGroupCitation
+    from bims.models import DownloadRequest
 
     class RequestGet:
         def __init__(self, get_data):
@@ -395,22 +402,28 @@ def process_download_pdf_taxa_list(
     doc.build(story)
 
     UserModel = get_user_model()
+    user = None
     try:
         user = UserModel.objects.get(id=user_id)
-        send_csv_via_email(
-            user_id=user.id,
-            csv_file=pdf_file_path,
-            file_name=filename,
-            approved=True,
-            download_request_id=download_request_id
-        )
     except UserModel.DoesNotExist:
         pass
+
+    DownloadRequest.objects.filter(id=download_request_id).update(
+        request_file=pdf_file_path
+    )
+
+    send_csv_via_email(
+        user_id=user.id if user else None,
+        csv_file=pdf_file_path,
+        file_name=filename,
+        approved=True,
+        download_request_id=download_request_id
+    )
 
 
 @shared_task(name='bims.tasks.download_csv_taxa_list', queue='update')
 def download_taxa_list(
-        request, csv_file, filename, user_id, output = 'csv', download_request_id='', taxon_group_id = None):
+        data, csv_file, filename, user_id, output = 'csv', download_request_id='', taxon_group_id = None):
     from bims.utils.celery import memcache_lock
     lock_id = '{0}-lock-{1}'.format(
         filename,
@@ -421,11 +434,11 @@ def download_taxa_list(
         if acquired:
             if output == 'csv':
                 return process_download_csv_taxa_list(
-                    request, csv_file, filename, user_id, download_request_id
+                    data, csv_file, filename, user_id, download_request_id
                 )
             else:
                 return process_download_pdf_taxa_list(
-                    request, csv_file, filename, user_id, taxon_group_id, download_request_id
+                    data, csv_file, filename, user_id, taxon_group_id, download_request_id
                 )
     logger.info(
         'Csv %s is already being processed by another worker',

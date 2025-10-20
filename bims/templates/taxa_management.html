@@ -280,6 +280,7 @@
                         <div class="col-md-6"></div>
                     </div>
                     <!-- Download button -->
+                    {% if user.is_authenticated or preferences.SiteSetting.is_public_taxa  %}
                     <div class="float-right download-button-container"
                          style="margin-top: -47px;">
                         <button id="add-taxon-btn"
@@ -293,11 +294,12 @@
                                 <span class="caret"></span>
                             </a>
                             <div class="dropdown-menu">
-                                <a class="dropdown-item" href="#" id="download-csv">CSV Taxa List</a>
-                                <a class="dropdown-item" href="#" id="download-pdf">PDF Checklist</a>
+                                <a class="dropdown-item" href="#" id="download-csv" data-show-email="{% if not user.is_authenticated and preferences.SiteSetting.is_public_taxa %}true{% else %}false{% endif %}">CSV Taxa List</a>
+                                <a class="dropdown-item" href="#" id="download-pdf" data-show-email="{% if not user.is_authenticated and preferences.SiteSetting.is_public_taxa %}true{% else %}false{% endif %}">PDF Checklist</a>
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 <div class="dashboard-title">
                     {% if selected_taxon_group %}

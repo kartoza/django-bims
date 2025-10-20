@@ -130,8 +130,7 @@ class DownloadRequestListView(
         """
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
-        qs = qs.filter(requester__isnull=False)
-        if not self.request.user.is_superuser:
+        if not self.request.user.is_superuser and self.request.user.is_authenticated:
             qs = qs.filter(requester=self.request.user)
         if (
                 self.approved_or_rejected is not None and
