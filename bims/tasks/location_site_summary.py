@@ -4,6 +4,7 @@ import time
 from celery import shared_task, current_task
 from django.db.models import Q, F, Count, Case, When, Value
 from django.db.models.functions import Coalesce, ExtractYear
+from preferences import preferences
 from sorl.thumbnail import get_thumbnail
 
 
@@ -164,7 +165,6 @@ def generate_location_site_summary(
         biodiversity_data['species']['endemism_chart'] = {}
         biodiversity_data['species']['sampling_method_chart'] = {}
         biodiversity_data['species']['biotope_chart'] = {}
-        biodiversity_data['species']['cons_status_national_chart'] = {}
 
         start_time = time.time()
         origin_data = collection_records.annotate(
@@ -189,19 +189,38 @@ def generate_location_site_summary(
             False,
             collection_records
         )
+
+        global_iucn_colors = dict(IUCNStatus.objects.filter(national=False).values_list(
+            'category',
+            'colour'
+        ))
         biodiversity_data['species']['cons_status_chart']['data'] = local_conservation_status_data[1]
         biodiversity_data['species']['cons_status_chart']['keys'] = local_conservation_status_data[0]
+        biodiversity_data['species']['cons_status_chart']['colours'] = [
+            global_iucn_colors[x] for x in local_conservation_status_data[0]
+        ]
 
+        national_iucn_colors = dict(IUCNStatus.objects.filter(national=True).values_list(
+            'category',
+            'colour'
+        ))
         national_conservation_status_data = conservation_status_data(
-            False,
+            True,
             collection_records
         )
-        biodiversity_data['species']['cons_status_national_chart']['data'] = (
-            national_conservation_status_data[1]
-        )
-        biodiversity_data['species']['cons_status_national_chart']['keys'] = (
-            national_conservation_status_data[0]
-        )
+
+        if preferences.SiteSetting.project_name != "fbis_africa":
+            biodiversity_data['species']['cons_status_national_chart'] = {}
+            biodiversity_data['species']['cons_status_national_chart']['data'] = (
+                national_conservation_status_data[1]
+            )
+            biodiversity_data['species']['cons_status_national_chart']['keys'] = (
+                national_conservation_status_data[0]
+            )
+            biodiversity_data['species']['cons_status_national_chart']['colours'] = [
+                national_iucn_colors[x] for x in national_conservation_status_data[0]
+            ]
+
         biodiversity_data['times']['conservation_status_data'] = time.time() - start_time
 
         start_time = time.time()

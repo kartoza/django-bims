@@ -452,12 +452,17 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 labels.push(value['name']);
                 dataset.push(value['count']);
 
-                if (legends.hasOwnProperty(value['name'])) {
-                    colours.push(legends[value['name']]);
+                if(value.hasOwnProperty('colour')) {
+                    colours.push(value['colour']);
+                    legends[value['name']] = value['colour'];
                 } else {
-                    let length = Object.keys(legends).length;
-                    colours.push(self.chartBackgroundColours[length]);
-                    legends[value['name']] = self.chartBackgroundColours[length];
+                    if (legends.hasOwnProperty(value['name'])) {
+                        colours.push(legends[value['name']]);
+                    } else {
+                        let length = Object.keys(legends).length;
+                        colours.push(self.chartBackgroundColours[length]);
+                        legends[value['name']] = self.chartBackgroundColours[length];
+                    }
                 }
             });
 

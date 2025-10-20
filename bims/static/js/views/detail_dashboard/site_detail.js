@@ -928,15 +928,24 @@ define([
             }
             var datasets = [];
             var barChartData = {};
-            var colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC'];
+            let colorMap = {}
+            if (dataIn.hasOwnProperty('colours')) {
+                colorMap = dataIn['colours'];
+            }
+            let colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC'];
             var myDataset = {};
             var count = dataIn['dataset_labels'].length;
             for (let i = 0; i < count; i++) {
                 myDataset = {};
                 var nextKey = dataIn['dataset_labels'][i];
                 var nextColour = colours[i%colours.length];
-                if (randomColor) {
-                    nextColour = Shared.ColorUtil.generateHexColor();
+
+                if (colorMap && colorMap.hasOwnProperty(nextKey)) {
+                    nextColour = colorMap[nextKey];
+                } else {
+                    if (randomColor) {
+                        nextColour = Shared.ColorUtil.generateHexColor();
+                    }
                 }
                 var nextData = dataIn['data'][nextKey];
                 myDataset = {
@@ -950,7 +959,7 @@ define([
                 'labels': dataIn['labels'],
                 'datasets': datasets,
             };
-            var chartConfig = {
+            let chartConfig = {
                 type: 'bar',
                 data: barChartData,
                 options: {
@@ -1129,6 +1138,7 @@ define([
                     // Update labels
                     $.each(responseData['dataset_labels'], function (index, label) {
                         if (iucnCategoryList.hasOwnProperty(label)) {
+                            responseData['colours'][iucnCategoryList[label]] = responseData['colours'][responseData['dataset_labels'][index]]
                             responseData['dataset_labels'][index] = iucnCategoryList[label];
                         }
                     });
@@ -1140,7 +1150,9 @@ define([
                         }
                     });
                     let chartCanvas = container.find('canvas')[0];
-                    this.consChartCanvas = self.renderStackedBarChart(responseData, 'cons_status_bar', chartCanvas);
+                    console.log(responseData)
+                    this.consChartCanvas = self.renderStackedBarChart(
+                        responseData, 'cons_status_bar', chartCanvas);
                 }
             )
         },
@@ -1345,6 +1357,7 @@ define([
 
         createDataSummary: function (data, container = null, height = null) {
             let bio_data = data['biodiversity_data'];
+            let nationalConsExist = bio_data['species'].hasOwnProperty('cons_status_national_chart');
             let biodiversityData = data['biodiversity_data']['species'];
             let origin_length = biodiversityData['origin_chart']['keys'].length;
             let originNameList = data['origin_name_list'];
@@ -1360,10 +1373,12 @@ define([
                 'cons_status_chart',
             )
 
-            this.getIUCN_name(
-                data,
-                'cons_status_national_chart',
-            )
+            if (nationalConsExist) {
+                this.getIUCN_name(
+                    data,
+                    'cons_status_national_chart',
+                )
+            }
 
             let originPieCanvas = document.getElementById('species-ssdd-origin-pie');
             let endemismPieCanvas = document.getElementById('species-ssdd-endemism-pie');
@@ -1373,7 +1388,6 @@ define([
             let conservationStatusNationalPieCanvas = document.getElementById('species-ssdd-conservation-status-national-pie');
 
             if (container) {
-
                 let parentHeight = container.parent().height();
                 let titleHeight = container.find('.ssdd-titles').height();
                 let legendHeight = container.find('.species-ssdd-legend').height();
@@ -1394,13 +1408,22 @@ define([
             this.renderPieChart(bio_data, 'species', 'cons_status', conservationStatusPieCanvas);
             this.renderPieChart(bio_data, 'species', 'sampling_method', samplingMethodPieCanvas);
             this.renderPieChart(bio_data, 'species', 'biotope', biotopeCanvas);
-            this.renderPieChart(bio_data, 'species', 'cons_status_national', conservationStatusNationalPieCanvas);
+            if (nationalConsExist) {
+                this.renderPieChart(bio_data, 'species', 'cons_status_national', conservationStatusNationalPieCanvas);
+            } else {
+                document.querySelector('.occurrence-conservation-status-national-chart').style.display = 'none';
+                document.querySelector('.cons-status-national-title').style.display = 'none';
+                document.querySelector('#species-ssdd-cons_status_national-legend').style.display = 'none';
+            }
         },
         renderPieChart: function (data, speciesType, chartName, chartCanvas) {
             if (typeof data == 'undefined') {
                 return null;
             }
-            var backgroundColours = [
+
+            let chartData = data[speciesType][chartName + '_chart']
+
+            let chartColours = [
                 '#8D2641', '#641f30',
                 '#E6E188', '#D7CD47',
                 '#9D9739', '#525351',
@@ -1409,14 +1432,18 @@ define([
                 '#859FAC', '#1E2F38'
                 ]
 
+            if (chartData.hasOwnProperty('colours')) {
+                chartColours = chartData['colours'];
+            }
+
             var chartConfig = {
                 type: 'pie',
                 data: {
                     datasets: [{
-                        data: data[speciesType][chartName + '_chart']['data'],
-                        backgroundColor: backgroundColours
+                        data: chartData['data'],
+                        backgroundColor: chartColours
                     }],
-                    labels: data[speciesType][chartName + '_chart']['keys']
+                    labels: chartData['keys']
                 },
                 options: {
                     responsive: true,
@@ -1433,13 +1460,13 @@ define([
             this.chartConfigs[chartName + '_pie'] = chartConfig;
 
             // Render chart labels
-            var dataKeys = data[speciesType][chartName + '_chart']['keys'];
+            var dataKeys = chartData['keys'];
             var dataLength = dataKeys.length;
             var chart_labels = {};
             chart_labels[chartName] = '';
             for (var i = 0; i < dataLength; i++) {
                 chart_labels[chartName] += '<div><span style="color:' +
-                    backgroundColours[i] + ';">■</span>' +
+                    chartColours[i] + ';">■</span>' +
                     '<span class="species-ssdd-legend-title">&nbsp;' +
                     dataKeys[i] + '</span></div>'
             }

@@ -243,6 +243,10 @@
     padding-bottom: 0.5rem;
 }
 
+.species-ssdd-legend {
+    padding-left: 20px !important;
+}
+
 .species-ssdd-legends .col-3 {
     padding-left:9%;
 }
