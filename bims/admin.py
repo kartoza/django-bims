@@ -34,6 +34,8 @@ from django.urls import reverse, path
 from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
+from taggit.admin import TagAdmin
+from taggit.models import Tag
 
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
@@ -2438,6 +2440,10 @@ admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 
+admin.site.unregister(Tag)
+@admin.register(Tag)
+class TagAdmin(TagAdmin):
+    inlines = []
 
 @admin.register(TaxonGroupCitation)
 class TaxonGroupCitationAdmin(admin.ModelAdmin):
