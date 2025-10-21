@@ -132,7 +132,8 @@ from bims.models import (
     Dataset, LayerGroup,
     SpeciesGroup,
     TaxonGroupCitation,
-    HarvestSchedule
+    HarvestSchedule,
+    UploadRequest
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2543,3 +2544,11 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
         updated = queryset.update(enabled=False)
         self.message_user(
             request, f"Disabled {updated} schedule(s).", messages.SUCCESS)
+
+
+@admin.register(UploadRequest)
+class UploadRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created_at', 'name', 'email', 'upload_type', 'status', 'github_issue_number')
+    list_filter = ('upload_type', 'status', 'created_at')
+    search_fields = ('name', 'email', 'notes', 'github_issue_url')
+    readonly_fields = ('created_at', 'updated_at', 'client_ip', 'github_issue_number', 'github_issue_url')
