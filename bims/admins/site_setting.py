@@ -11,7 +11,8 @@ SECRET_INPUTS = [
     'virtual_museum_token',
     'resend_api_key',
     'github_feedback_token',
-    'gbif_password'
+    'gbif_password',
+    'github_private_key',
 ]
 
 
@@ -24,43 +25,56 @@ class SiteSettingAdminForm(forms.ModelForm):
         widget=forms.PasswordInput(render_value=True),
         required=False
     )
-
     iucn_api_key = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         required=False
     )
-
     cites_token_api = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         required=False
     )
-
     virtual_museum_token = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         required=False
     )
-
     resend_api_key = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         required=False
     )
-
     github_feedback_token = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         required=False
     )
-
     minisass_token = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
         required=False
+    )
+
+    # NEW: Do NOT render the PEM value back to the browser.
+    github_private_key = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                'rows': 10,
+                'placeholder': '-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----',
+                'style': 'font-family:monospace;',
+            }
+        ),
+        help_text=SiteSetting._meta.get_field('github_private_key').help_text,
+        label=_('GitHub App private key (PEM)'),
     )
 
     def __init__(self, *args, **kwargs):
         super(SiteSettingAdminForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             for secret_input in SECRET_INPUTS:
-                self.fields[secret_input].widget.attrs['placeholder'] = '******'
-                self.fields[secret_input].required = False
+                if secret_input in self.fields:
+                    # Never show actual secret; keep UX consistent with placeholders.
+                    self.fields[secret_input].widget.attrs['placeholder'] = '******'
+                    self.fields[secret_input].required = False
+                    # Specifically blank out PEM initial so it is not rendered at all.
+                    if secret_input == 'github_private_key':
+                        self.fields[secret_input].initial = ''
 
 
 class SiteSettingAdmin(PreferencesAdmin):
@@ -119,6 +133,7 @@ class SiteSettingAdmin(PreferencesAdmin):
             "fields": (
                 "readme_download",
                 "taxonomic_upload_template",
+                "occurrence_upload_guidelines",  # NEW
                 "occurrence_upload_template",
                 "auto_validate_taxa_on_upload",
             ),
@@ -134,6 +149,13 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "allow_taxa_edit_in_admin",
             ),
             "classes": ("collapse",),
+        }),
+        (_("GitHub App"), {  # NEW dedicated section
+            "fields": (
+                "github_app_id",
+                "github_private_key",
+                "github_upload_assignees",
+            ),
         }),
         (_("External Integrations & Tokens"), {
             "fields": (
@@ -181,11 +203,11 @@ class SiteSettingAdmin(PreferencesAdmin):
     def save_model(self, request, obj, form, change):
         if change:
             for secret_input in SECRET_INPUTS:
-                if secret_input in form.changed_data:
-                    setattr(obj, secret_input, form.cleaned_data[secret_input])
-                else:
-                    current_value = getattr(obj, secret_input)
-                    setattr(obj, secret_input, current_value)
+                if secret_input in form.fields:
+                    if secret_input in form.changed_data:
+                        setattr(obj, secret_input, form.cleaned_data.get(secret_input))
+                    else:
+                        setattr(obj, secret_input, getattr(obj, secret_input))
         obj.save()
 
     class Media:
