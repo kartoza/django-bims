@@ -38,7 +38,7 @@ from bims.api_views.taxon import (
     AddNewTaxon,
     TaxaList,
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
-    HarvestIUCNStatus, ApproveTaxonGroupProposalsView
+    HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup
 )
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
@@ -426,6 +426,9 @@ urlpatterns = [
     path('remove-gbif-sites-outside-boundary/',
          RemoveOutsideBoundaryGbifData.as_view(),
          name='remove_outside_boundary_gbif'),
+    path('clear-taxa-not-associated-in-taxon_group/',
+         ClearTaxaNotAssociatedInTaxonGroup.as_view(),
+         name='clear_taxa_not_associated_in_taxon_group'),
     path('harvest-iucn-status/',
          HarvestIUCNStatus.as_view(),
          name='harvest_iucn_status'),

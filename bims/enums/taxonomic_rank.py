@@ -34,6 +34,8 @@ class TaxonomicRank(Enum):
     VARIETY     = "Variety"
     FORMA       = "Forma"
 
+    FORM        = "Forma"
+
     # ------------------------------------------------------------------ #
     #  Ordered from highest → lowest rank
     # ------------------------------------------------------------------ #
