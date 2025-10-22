@@ -18,6 +18,7 @@ from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
+from bims.api_views.merge_sites import IsSuperUser
 from bims.api_views.taxon_update import is_expert
 from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
@@ -31,7 +32,8 @@ from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_verna
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
-from bims.tasks.taxa import fetch_iucn_status, approve_unvalidated_taxa_by_group
+from bims.tasks.taxa import fetch_iucn_status, approve_unvalidated_taxa_by_group, \
+    clear_taxa_not_associated_in_taxon_group
 
 logger = logging.getLogger('bims')
 
@@ -924,4 +926,25 @@ class ApproveTaxonGroupProposalsView(APIView):
                 "include_children": include_children,
             },
             status=status.HTTP_202_ACCEPTED
+        )
+
+
+class ClearTaxaNotAssociatedInTaxonGroup(APIView):
+    permission_classes = (IsSuperUser,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."}, status=HTTP_403_FORBIDDEN)
+
+        dry_run = bool(request.data.get("dry_run", False))
+        clear_taxa_not_associated_in_taxon_group.delay(dry_run=dry_run, keep_referenced_by_occurrences=True)
+
+        return Response(
+            {
+                "message": (
+                    "Starting background cleanup of Taxonomy rows that are not associated with any taxon group. "
+                    + (" (dry-run)" if dry_run else "")
+                )
+            },
+            status=HTTP_200_OK,
         )
