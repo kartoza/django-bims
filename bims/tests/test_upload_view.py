@@ -64,6 +64,7 @@ class TestUploadView(FastTenantTestCase):
 
     def _post_payload(self, **overrides):
         data = {
+            "title": "test",
             "name": "Jane Doe",
             "email": "jane@example.org",
             "upload_type": "occurrence",
