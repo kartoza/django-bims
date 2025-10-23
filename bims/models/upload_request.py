@@ -32,6 +32,7 @@ class UploadRequest(models.Model):
         on_delete=models.SET_NULL, related_name='uploads'
     )
 
+    title = models.CharField(max_length=255, blank=True, default='')
     name = models.CharField(max_length=255)
     email = models.EmailField()
     upload_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
