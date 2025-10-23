@@ -181,7 +181,7 @@ class UploadView(UserPassesTestMixin, FormView):
             f"- **Upload ID:** {instance.pk}\n"
         )
 
-        title = f"[Upload] {instance.get_upload_type_display()} from {instance.name}"
+        title = f"{instance.title}"
 
         issue = repo.create_issue(
             title=title,
@@ -207,6 +207,7 @@ class UploadView(UserPassesTestMixin, FormView):
                 )
 
         instance = UploadRequest(
+            title=form.cleaned_data['title'],
             user=self.request.user if self.request.user.is_authenticated else None,
             name=form.cleaned_data['name'],
             email=form.cleaned_data['email'],

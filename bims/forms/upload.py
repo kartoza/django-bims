@@ -13,6 +13,7 @@ FILE_UPLOAD_MAX_SIZE_MB = 50
 
 
 class UploadForm(forms.Form):
+    title = forms.CharField(max_length=255)
     name = forms.CharField(max_length=200)
     email = forms.EmailField()
     upload_type = forms.ChoiceField(
