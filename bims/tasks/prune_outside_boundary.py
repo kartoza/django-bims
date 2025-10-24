@@ -1,14 +1,13 @@
 import logging
 
 from celery import shared_task
-from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import GEOSGeometry
-from django.core.mail import send_mail
 from django.db import connection
 from django.db.models import Q, Count
 
 from preferences import preferences
+
+from bims.utils.mail import mail_superusers, get_domain_name
 
 logger = logging.getLogger("bims")
 
@@ -38,22 +37,6 @@ def _outside_sites_qs(boundary_geom, location_site_obj):
     return location_site_obj.objects.filter(outside_q)
 
 
-def _mail_superusers(subject: str, body: str):
-    superusers = (
-        get_user_model()
-        .objects.filter(is_superuser=True, email__isnull=False)
-        .values_list("email", flat=True)
-    )
-    if superusers:
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-            recipient_list=list(superusers),
-            fail_silently=True,
-        )
-
-
 @shared_task(name="bims.tasks.prune_outside_boundary_gbif", queue="update")
 def prune_outside_boundary_gbif(dry_run: bool = False, delete_empty_sites: bool = True) -> dict:
     """
@@ -65,22 +48,15 @@ def prune_outside_boundary_gbif(dry_run: bool = False, delete_empty_sites: bool 
     """
     from bims.models import Survey, BiologicalCollectionRecord
     from bims.models.location_site import LocationSite
-    from tenants.models import Domain
 
-    tenant = getattr(connection, "tenant", None)
-    tenant_name = getattr(tenant, "name", "") or getattr(tenant, "schema_name", "") or ""
-    domain_name = Domain.objects.filter(tenant__name=tenant_name).first()
-    if not domain_name:
-        domain_name = tenant_name
-    else:
-        domain_name = domain_name.domain
+    domain_name = get_domain_name()
 
     try:
         boundary_geom = _get_boundary_geom()
     except ValueError as e:
         msg = f"[{domain_name}] Outside-boundary cleanup aborted: {e}"
         logger.warning(msg)
-        _mail_superusers(
+        mail_superusers(
             subject=f"[{domain_name}] Outside-boundary cleanup aborted",
             body=str(e),
         )
@@ -164,7 +140,7 @@ def prune_outside_boundary_gbif(dry_run: bool = False, delete_empty_sites: bool 
         f"• Sites deleted              : {counts_after['sites_deleted']}\n"
         f"• Sample site codes          : {', '.join(counts_after['sample_outside_site_codes']) or '-'}\n"
     )
-    _mail_superusers(subject=subject, body=message)
+    mail_superusers(subject=subject, body=message)
 
     logger.info(message.replace("\n", " "))
     return {"ok": True, **counts_after}

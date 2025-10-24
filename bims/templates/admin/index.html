@@ -144,6 +144,14 @@
             dryRunLabel.style.marginLeft = '10px';
             dryRunLabel.title = 'If checked, it will only report what would be deleted';
 
+            const clearTaxaBtn = document.createElement('a');
+            clearTaxaBtn.href = '#';
+            clearTaxaBtn.className = 'grp-button grp-primary';
+            clearTaxaBtn.textContent = 'Clear taxa not in group';
+            clearTaxaBtn.style.marginLeft = '10px';
+            clearTaxaBtn.style.marginTop = '15px';
+            clearTaxaBtn.style.setProperty('font-size', '9pt', 'important');
+
             const dryRunInput = document.createElement('input');
             dryRunInput.type = 'checkbox';
             dryRunInput.id = 'outside-boundary-dry-run';
@@ -158,8 +166,8 @@
             // Append in order: button, then label (so label is below)
             outsideWrapper.appendChild(removeOutsideBtn);
             outsideWrapper.appendChild(dryRunLabel);
+            outsideWrapper.appendChild(clearTaxaBtn);
             targetElement.appendChild(outsideWrapper);
-
 
             removeOutsideBtn.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -172,6 +180,42 @@
                 if (!confirm(confirmMsg)) return;
 
                 fetch("{% url 'remove_outside_boundary_gbif' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        dry_run: dryRun,
+                        delete_empty_sites: true
+                    })
+                })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error("Failed to enqueue outside-boundary cleanup");
+                })
+                .then(data => {
+                    alert(data.message || "Cleanup task started.");
+                    window.location.href = "/admin/";
+                })
+                .catch(error => {
+                    console.error("Error starting cleanup:", error);
+                    alert("An unexpected error occurred. Please try again.");
+                });
+            });
+
+            clearTaxaBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+
+                const dryRun = !!dryRunInput.checked;
+                const confirmMsg = dryRun
+                    ? "Run a DRY RUN? No data will be deleted."
+                    : "This will permanently delete Taxonomy data that are NOT associated with any taxon group. Proceed?";
+
+                if (!confirm(confirmMsg)) return;
+
+                fetch("{% url 'clear_taxa_not_associated_in_taxon_group' %}", {
                     method: "POST",
                     headers: {
                         "X-CSRFToken": "{{ csrf_token }}",

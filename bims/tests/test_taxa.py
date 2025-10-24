@@ -1,8 +1,11 @@
 from django.test import TestCase
+from django_tenants.test.cases import FastTenantTestCase
+from mock import patch
 
 from bims.enums import TaxonomicGroupCategory
+from bims.tasks import clear_taxa_not_associated_in_taxon_group
 from bims.tests.model_factories import (
-    TaxonomyF, BiologicalCollectionRecordF, TaxonGroupF, VernacularNameF
+    TaxonomyF, BiologicalCollectionRecordF, TaxonGroupF, VernacularNameF, TaxonGroupTaxonomyF
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup, IUCNStatus, TaxonExtraAttribute
@@ -153,3 +156,123 @@ class TaxaCSVSerializerTest(TestCase):
         self.assertEqual(serialized_data['ANT'], 'Y')
         self.assertEqual(serialized_data['TEST'], '?')
         self.assertTrue(len(serializer.context.get('tags')) > 0)
+
+
+class TestClearTaxaNotAssociatedInTaxonGroup(FastTenantTestCase):
+    """
+    Tests for bims.tasks.clear_taxa_not_associated_in_taxon_group
+    """
+
+    def setUp(self):
+        # Common tree:
+        self.root = TaxonomyF.create(rank="kingdom", canonical_name="Rootus")
+        self.mid = TaxonomyF.create(rank="phylum", parent=self.root, canonical_name="Midus")
+        self.leaf = TaxonomyF.create(rank="class", parent=self.mid, canonical_name="Leafus")
+
+        self.orphan_kingdom = TaxonomyF.create(rank="kingdom", canonical_name="OrphanKingdom")
+
+        self.orphan_referenced = TaxonomyF.create(rank="species", canonical_name="Orphanus ref")
+
+        taxon_group = TaxonGroupF.create()
+        TaxonGroupTaxonomyF.create(
+            taxongroup=taxon_group,
+            taxonomy=self.leaf,
+        )
+
+        if "accepted_taxonomy" in [f.name for f in Taxonomy._meta.get_fields()]:
+            self.accepted = TaxonomyF.create(rank="species", canonical_name="Acceptedus")
+            self.leaf.accepted_taxonomy = self.accepted
+            self.leaf.save(update_fields=["accepted_taxonomy"])
+        else:
+            self.accepted = None
+
+        self.bcr = BiologicalCollectionRecordF.create()
+        setattr(self.bcr, "taxonomy_id", self.orphan_referenced.id)
+        self.bcr.save(update_fields=["taxonomy"])
+        self.mail_patcher = patch("bims.tasks.mail_superusers")
+        self.mock_mail = self.mail_patcher.start()
+        self.domain_patcher = patch("bims.tasks.get_domain_name", return_value="test.local")
+        self.domain_patcher.start()
+
+    def tearDown(self):
+        self.mail_patcher.stop()
+        self.domain_patcher.stop()
+
+    def test_dry_run_keeps_group_ancestors_and_referenced_and_accepted(self):
+        res = clear_taxa_not_associated_in_taxon_group(dry_run=True, keep_referenced_by_occurrences=True)
+
+        self.assertTrue(res["ok"])
+        self.assertTrue(res["dry_run"])
+        self.assertEqual(res["domain"], "fast_test")
+
+        self.assertEqual(res["kept_with_group"], 1)
+
+        self.assertEqual(res["kept_ancestors_added"], 2)
+        if self.accepted:
+            self.assertIn("kept_referenced_by_occurrences", res)
+        if self.bcr:
+            self.assertEqual(res["kept_referenced_by_occurrences"], 1)
+
+        # Dry run must not delete anything
+        self.assertEqual(res["deleted"], 0)
+
+        sample = res.get("sample_taxa_to_delete", [])
+        for line in sample:
+            self.assertNotIn(str(self.leaf.id), line)
+            self.assertNotIn(str(self.mid.id), line)
+            self.assertNotIn(str(self.root.id), line)
+
+    def test_real_run_deletes_unlinked_unreferenced_taxa(self):
+        doomed = TaxonomyF.create(rank="species", canonical_name="Doomed")
+
+        before = Taxonomy.objects.count()
+        res = clear_taxa_not_associated_in_taxon_group(dry_run=False, keep_referenced_by_occurrences=True)
+
+        after = Taxonomy.objects.count()
+
+        self.assertTrue(res["ok"])
+        self.assertFalse(Taxonomy.objects.filter(id=doomed.id).exists())
+        self.assertGreater(res["deleted"], 0)
+        self.assertLess(after, before)
+        self.assertTrue(Taxonomy.objects.filter(id=self.root.id).exists())
+        self.assertTrue(Taxonomy.objects.filter(id=self.mid.id).exists())
+        self.assertTrue(Taxonomy.objects.filter(id=self.leaf.id).exists())
+        if self.accepted:
+            self.assertTrue(Taxonomy.objects.filter(id=self.accepted.id).exists())
+
+    def test_real_run_respects_keep_referenced_by_occurrences_flag(self):
+        """
+        If keep_referenced_by_occurrences=False, the referenced orphan should be deleted (provided
+        it isn't also kept for other reasons).
+        """
+        if not self.bcr:
+            self.skipTest("Could not detect a Taxonomy FK on BCR; skipping referenced-by-occ test.")
+
+        self.assertNotEqual(self.orphan_referenced.id, self.leaf.id)
+
+        res = clear_taxa_not_associated_in_taxon_group(dry_run=False, keep_referenced_by_occurrences=False)
+        self.assertTrue(res["ok"])
+
+        self.assertFalse(Taxonomy.objects.filter(id=self.orphan_referenced.id).exists())
+
+    def test_keeps_ancestors_when_only_leaf_is_grouped(self):
+        """
+        Ensure a leaf in a group keeps its ancestors up the chain on real run.
+        """
+        res = clear_taxa_not_associated_in_taxon_group(dry_run=False, keep_referenced_by_occurrences=True)
+        self.assertTrue(res["ok"])
+
+        self.assertTrue(Taxonomy.objects.filter(id=self.root.id).exists())
+        self.assertTrue(Taxonomy.objects.filter(id=self.mid.id).exists())
+
+    def test_breakdown_by_rank_is_present(self):
+        """
+        Ensure we return a rank breakdown list (when the field exists) and the shape is [{'rank': ..., 'n': ...}, ...]
+        """
+        res = clear_taxa_not_associated_in_taxon_group(dry_run=True, keep_referenced_by_occurrences=True)
+        breakdown = res.get("delete_breakdown_by_rank", [])
+        if breakdown:
+            self.assertIsInstance(breakdown, list)
+            self.assertIsInstance(breakdown[0], dict)
+            self.assertIn("n", breakdown[0])
+            self.assertIn("rank", breakdown[0])

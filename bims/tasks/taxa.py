@@ -1,13 +1,18 @@
 # coding=utf-8
 import time
-from typing import Iterable
+from typing import Iterable, Set
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.contrib.auth import get_user_model
+from django.core.exceptions import FieldError
 
-from django.db import transaction
+from django.db import transaction, connection
 from django.conf import settings
+from django.db.models import Count
+
+from bims.utils.mail import mail_superusers, get_domain_name
+from tenants.models import Domain
 
 logger = get_task_logger(__name__)
 
@@ -277,3 +282,144 @@ def approve_unvalidated_taxa_by_group(
 
     logger.info(summary)
     return summary
+
+
+@shared_task(name="bims.tasks.clear_taxa_not_associated_in_taxon_group", queue="update")
+def clear_taxa_not_associated_in_taxon_group(
+    dry_run: bool = True,
+    keep_referenced_by_occurrences: bool = True,
+) -> dict:
+    """
+    Remove Taxonomy rows that are NOT associated with any taxon group,
+    while keeping:
+      • all taxa that are linked to a group,
+      • all their ancestors (parent chain),
+      • (optionally) any taxa referenced by occurrences,
+      • (optionally) accepted-name pointers of kept taxa.
+
+    In dry_run, no deletion is performed; we return hypothetical counts/samples.
+    """
+    from bims.models.taxonomy import Taxonomy
+    from bims.models.biological_collection_record import BiologicalCollectionRecord as BCR
+
+    def _ids(qs, field="id") -> Set[int]:
+        return set(qs.values_list(field, flat=True))
+
+    def _collect_ancestors_ids(seed_ids: Iterable[int]) -> Set[int]:
+        """
+        Walk parent chain upward to include all ancestors of the seed set.
+        """
+        keep = set(seed_ids)
+        frontier = set(seed_ids)
+        while frontier:
+            parent_ids = _ids(
+                Taxonomy.objects.filter(
+                    id__in=frontier).exclude(parent_id=None), "parent_id")
+            parent_ids -= keep
+            if not parent_ids:
+                break
+            keep |= parent_ids
+            frontier = parent_ids
+        return keep
+
+    def _with_taxon_group_qs():
+        """
+        Return a QS of taxa that are associated to at least one taxon group.
+        """
+        qs = Taxonomy.objects.filter(taxongroup__isnull=False).distinct()
+        return qs
+
+    def _accepted_pointer_expand(base_ids: Set[int]) -> Set[int]:
+        """
+        If the model has an 'accepted_taxonomy' pointer FK, include those accepted taxa too.
+        """
+        expanded = set(base_ids)
+        acc_ids = _ids(Taxonomy.objects.filter(
+            id__in=base_ids
+        ).exclude(accepted_taxonomy_id=None), "accepted_taxonomy_id")
+        expanded |= acc_ids
+        return expanded
+
+    domain_name = get_domain_name()
+
+    taxa_with_group_qs = _with_taxon_group_qs()
+    keep_ids = _ids(taxa_with_group_qs)
+
+    kept_ancestors = _collect_ancestors_ids(keep_ids)
+    kept_ancestors_len = len(kept_ancestors) - len(keep_ids)
+
+    keep_ids |= kept_ancestors
+
+    keep_ids = _accepted_pointer_expand(keep_ids)
+
+    occ_ref_ids = set()
+    if keep_referenced_by_occurrences:
+        occ_ref_ids = set(
+            BCR.objects.exclude(
+                taxonomy__isnull=True
+            ).values_list("taxonomy_id", flat=True)
+        )
+        keep_ids |= occ_ref_ids
+        keep_ids |= _collect_ancestors_ids(occ_ref_ids)
+
+    candidates_qs = Taxonomy.objects.exclude(id__in=keep_ids)
+
+    total_taxa = Taxonomy.objects.count()
+    kept_with_group = len(_ids(taxa_with_group_qs))
+    kept_ancestors = kept_ancestors_len
+    referenced_by_occ = len(occ_ref_ids)
+    to_delete = candidates_qs.count()
+
+    by_rank = []
+    try:
+        by_rank = list(
+            candidates_qs.values("rank").annotate(n=Count("id")).order_by("-n")
+        )
+    except FieldError:
+        pass
+
+    sample_vals = list(
+        candidates_qs.values("id", "canonical_name", "scientific_name", "rank")[:25]
+    )
+    sample_deleted = []
+    for row in sample_vals:
+        nm = row.get("canonical_name") or row.get("scientific_name") or "-"
+        sample_deleted.append(f"{row['id']}: {nm} ({row.get('rank') or '-'})")
+
+    deleted = 0
+    details = {}
+
+    if not dry_run:
+        total_rows, detail_map = candidates_qs.delete()
+        deleted = detail_map.get(f"{Taxonomy._meta.app_label}.{Taxonomy._meta.object_name}", 0)
+        details = detail_map
+
+    result = {
+        "ok": True,
+        "dry_run": dry_run,
+        "domain": domain_name,
+        "total_taxa": total_taxa,
+        "kept_with_group": kept_with_group,
+        "kept_ancestors_added": max(0, kept_ancestors),
+        "kept_referenced_by_occurrences": referenced_by_occ,
+        "to_delete": to_delete,
+        "deleted": deleted,
+        "delete_breakdown_by_rank": by_rank,
+        "sample_taxa_to_delete": sample_deleted,
+    }
+
+    subject = f"[{domain_name}] Taxonomy cleanup (not in any taxon group){' (DRY RUN)' if dry_run else ''}"
+    message = (
+        f"Taxonomy cleanup completed{' (DRY RUN – no changes made)' if dry_run else ''}.\n\n"
+        f"• Total taxa : {total_taxa}\n"
+        f"• Kept (linked to group) : {kept_with_group}\n"
+        f"• Kept (ancestors of kept) : {max(0, kept_ancestors)}\n"
+        f"• Kept (referenced by occurrences) : {referenced_by_occ}\n"
+        f"• Candidates to delete : {to_delete}\n"
+        f"• Deleted : {deleted}\n"
+        f"• Sample (up to 25) : {', '.join(sample_deleted) or '-'}\n"
+    )
+    mail_superusers(subject=subject, body=message)
+    logger.info(message.replace("\n", " "))
+
+    return result

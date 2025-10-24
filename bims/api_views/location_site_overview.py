@@ -147,6 +147,7 @@ class LocationSiteOverviewData(object):
             all_cons_status = group_records.filter(
                 taxonomy__iucn_status__national=False
             ).values('iucn_category').annotate(
+                colour=F('taxonomy__iucn_status__colour'),
                 count=Count('iucn_category')
             ).order_by('iucn_category')
             if all_cons_status:

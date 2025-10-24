@@ -27,7 +27,7 @@ from bims.api_views.get_feature_info import GetFeatureInfo
 from bims.api_views.database_record import DatabaseRecordsList
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
-from bims.views.csv_upload import CsvUploadView
+from bims.views.upload import UploadView
 from bims.views.taxa_upload import TaxaUploadView
 from bims.views.collections_upload import CollectionsUploadView
 from bims.views.boundary_upload import (
@@ -110,7 +110,7 @@ def login_redirect(request):
 urlpatterns = [
     re_path(r'^$', landing_page_view, name='landing-page'),
     re_path(r'^map/$', MapPageView.as_view(), name='map-page'),
-    re_path(r'^upload/$', CsvUploadView.as_view(),
+    re_path(r'^upload/$', UploadView.as_view(),
             name='csv-upload'),
     re_path(r'^upload-taxa/$', TaxaUploadView.as_view(),
             name='csv-upload-taxa'),

@@ -113,6 +113,41 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    github_private_key = encrypt(
+        models.TextField(
+            help_text=(
+                'Private key (PEM) for your GitHub App. Paste the FULL key including '
+                'the "-----BEGIN PRIVATE KEY-----" / "-----END PRIVATE KEY-----" lines. '
+                'If stored on one line, you may use \\n for newlines.'
+            ),
+            default='',
+            blank=True
+        )
+    )
+
+    github_upload_assignees = models.CharField(
+        max_length=255,
+        help_text=(
+            'Comma-separated GitHub usernames to assign to newly created issues. '
+            'Assignees must have access to the repository.'
+        ),
+        default='',
+        blank=True
+    )
+
+    github_app_id = models.CharField(
+        max_length=50,
+        help_text='GitHub App ID (integration ID) as shown on the GitHub App settings page.',
+        default='',
+        blank=True
+    )
+
+    occurrence_upload_guidelines = models.FileField(
+        null=True,
+        blank=True,
+        help_text='Guidelines document for uploading occurrence data (e.g. PDF/DOCX).'
+    )
+
     recaptcha_site_key = models.CharField(
         default='',
         max_length=150,

@@ -28,7 +28,7 @@ from bims.serializers.location_site_serializer import (
 from bims.serializers.location_site_detail_serializer import \
     LocationSiteDetailSerializer
 from bims.api_views.collection import GetCollectionAbstract
-from bims.tasks import remove_dangling_sites
+from bims.tasks import remove_dangling_sites, clear_taxa_not_associated_in_taxon_group
 from bims.utils.search_process import (
     get_or_create_search_process,
 )
@@ -361,7 +361,8 @@ class RemoveOutsideBoundaryGbifData(APIView):
 
         dry_run = bool(request.data.get("dry_run", False))
         delete_empty_sites = bool(request.data.get("delete_empty_sites", True))
-        prune_outside_boundary_gbif.delay(dry_run=dry_run, delete_empty_sites=delete_empty_sites)
+        # prune_outside_boundary_gbif.delay(dry_run=dry_run, delete_empty_sites=delete_empty_sites)
+        clear_taxa_not_associated_in_taxon_group.delay(dry_run=dry_run, keep_referenced_by_occurrences=True)
 
         return Response(
             {

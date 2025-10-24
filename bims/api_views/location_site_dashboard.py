@@ -1,3 +1,4 @@
+from bims.models import IUCNStatus
 from bims.models.taxonomy import Taxonomy
 from rest_framework.views import APIView, Response
 from django.db.models import Case, F, Count, Value, When, CharField
@@ -15,7 +16,8 @@ class ChartDataApiView(APIView):
         chart_data = {
             'dataset_labels': categories,
             'labels': [],
-            'data': {category: [] for category in categories}
+            'data': {category: [] for category in categories},
+            'colours': self.colors()
         }
 
         if self.data_frequency == PER_MONTH_FREQUENCY:
@@ -46,6 +48,9 @@ class ChartDataApiView(APIView):
 
     def categories(self, collection_results):
         raise NotImplementedError
+
+    def colors(self):
+        return {}
 
     def get(self, request):
         filters = request.GET.dict()
@@ -135,6 +140,13 @@ class LocationSitesConservationChartData(ChartDataApiView):
         ).values_list(
             'name', flat=True
         ).distinct('name'))
+
+    def colors(self):
+        return dict(IUCNStatus.objects.filter(
+            national=False
+        ).values_list(
+            'category', 'colour')
+        )
 
     def chart_data_per_month(self, collection_results):
         return collection_results.annotate(

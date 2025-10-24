@@ -1,0 +1,213 @@
+{% extends "main_base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block subtitle %}{% trans "Upload" %}{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/form.css' %}">
+    <link rel="stylesheet" href="{% static 'css/account.css' %}">
+    <script>
+        window.hasRecaptcha = {% if not preferences.SiteSetting.recaptcha_site_key %}false{% else %}true{% endif %};
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="{% static 'js/libs/bootstrap-4.0.0/js/bootstrap.min.js' %}"></script>
+
+    <style>
+        html{overflow-y:hidden}.content{min-height:100vh;overflow:visible}.container{overflow:visible}.btn-upload{background:var(--main-accent-color);color:var(--main-button-text-color)!important;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-radius:4px;padding:.75rem 2rem;border:none}.btn-upload:hover,.btn-upload:focus{background:var(--main-accent-color);color:var(--main-button-text-color)!important;text-decoration:none}.upload-hero{background:#f7f9f8;border:1px solid #dfe6e2;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}.section-card{border:1px solid #dfe6e2;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;background:#fff}.section-card h2{font-size:1.25rem;margin-bottom:.75rem}.download-list .list-group-item{display:flex;align-items:center;justify-content:space-between}.help-block.decoy{display:none}.required-hint{font-size:.875rem;color:#666}.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}#id_email{height:39px!important}
+    </style>
+{% endblock %}
+
+{% block body_content %}
+    <div class="content">
+        <div class="container">
+            <div class="upload-hero">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <h1 class="mb-1">{% trans "Upload to " %} {{ preferences.SiteSetting.default_site_name }}</h1>
+                        <p class="mb-0 required-hint">
+                            {% trans "Please provide your name and email so we can create a ticket and follow up. Fields marked * are required." %}
+                            <br/>
+                            {% trans "Please download the guideline and template to format your occurrence data." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {% if form and form.non_field_errors %}
+                <div class="alert alert-warning">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div id="flash-area" class="alert d-none" role="alert" aria-live="polite"></div>
+
+            <!-- Downloads -->
+            <div class="section-card">
+                <h2>{% trans "Downloads" %}</h2>
+                <ul class="list-group download-list">
+                    <li class="list-group-item">
+                        <span>{% trans "Guidelines for uploading occurrence data" %}</span>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="{% if preferences.SiteSetting.occurrence_upload_guidelines %}{{ preferences.SiteSetting.occurrence_upload_guidelines.url }}{% else %}#{% endif %}"
+                           download>
+                            {% trans "Download" %}
+                        </a>
+                    </li>
+                    <li class="list-group-item">
+                        <span>{% trans 'Template for "Uploading Occurrence Data"' %}</span>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="{% if preferences.SiteSetting.occurrence_upload_template %}{{ preferences.SiteSetting.occurrence_upload_template.url }}{% else %}#{% endif %}"
+                           download>
+                            {% trans "Download" %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Upload form -->
+            <div class="section-card">
+                <h2>{% trans "Upload" %}</h2>
+
+                <form id="upload_form" method="POST" enctype="multipart/form-data" class="signup">
+                    {% csrf_token %}
+                    <input type="hidden" name="recaptcha_token" id="recaptcha-token-input" value="">
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group {% if form and form.title.errors %}has-error{% endif %}">
+                                <label for="id_title" class="control-label">
+                                    {% trans "Title" %} *
+                                </label>
+                                <input type="text"
+                                       id="id_title"
+                                       name="title"
+                                       class="form-control"
+                                       value=""
+                                       required
+                                       autocomplete="title">
+                                {% if form and form.title.errors %}
+                                    <p class="help-block text-danger">{{ form.title.errors|join:", " }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group {% if form and form.name.errors %}has-error{% endif %}">
+                                <label for="id_name" class="control-label">
+                                    {% trans "Your Name" %} *
+                                </label>
+                                <input type="text"
+                                       id="id_name"
+                                       name="name"
+                                       class="form-control"
+                                       value="{% if form and form.data.name %}{{ form.data.name }}{% elif form and form.initial.name %}{{ form.initial.name }}{% else %}{% endif %}"
+                                       required
+                                       autocomplete="name">
+                                {% if form and form.name.errors %}
+                                    <p class="help-block text-danger">{{ form.name.errors|join:", " }}</p>
+                                {% else %}
+                                    <p class="help-block mt-2">{% trans "Tell us who you are." %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group {% if form and form.email.errors %}has-error{% endif %}">
+                                <label for="id_email" class="control-label">
+                                    {% trans "Email address" %} *
+                                </label>
+                                <input type="email"
+                                       id="id_email"
+                                       name="email"
+                                       class="form-control"
+                                       value="{% if form and form.data.email %}{{ form.data.email }}{% elif form and form.initial.email %}{{ form.initial.email }}{% else %}{% endif %}"
+                                       required
+                                       autocomplete="email">
+                                {% if form and form.email.errors %}
+                                    <p class="help-block text-danger">{{ form.email.errors|join:", " }}</p>
+                                {% else %}
+                                    <p class="help-block">{% trans "We’ll use this to notify you and create a ticket." %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group {% if form and form.upload_type.errors %}has-error{% endif %}">
+                        <label for="id_upload_type" class="control-label">
+                            {% trans "What would you like to upload?" %} *
+                        </label>
+                        <select id="id_upload_type" name="upload_type" class="form-control" required>
+                            <option value="">{% trans "Select an option" %}</option>
+                            <option value="occurrence" {% if form and form.data.upload_type == 'occurrence' %}selected{% endif %}>
+                                {% trans "Upload Occurrence Data" %}
+                            </option>
+                            <option value="spatial" {% if form and form.data.upload_type == 'spatial' %}selected{% endif %}>
+                                {% trans "Upload Spatial Layer" %}
+                            </option>
+                        </select>
+                        {% if form and form.upload_type and form.upload_type.errors %}
+                            <p class="help-block text-danger">{{ form.upload_type.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div id="upload-file-wrapper" class="form-group d-none {% if form and form.upload_file and form.upload_file.errors %}has-error{% endif %}">
+                        <label for="id_upload_file" class="control-label">
+                            <span data-occurrence-label>{% trans "Select file (CSV/XLSX/ZIP for occurrences)" %}</span>
+                            <span data-spatial-label class="d-none">{% trans "Select file (GeoPackage/GeoJSON/ZIP Shapefile) for spatial layer" %}</span> *
+                        </label>
+                        <input type="file"
+                               id="id_upload_file"
+                               name="upload_file"
+                               class="form-control"
+                               required>
+                        {% if form and form.upload_file and form.upload_file.errors %}
+                            <p class="help-block text-danger">{{ form.upload_file.errors|join:", " }}</p>
+                        {% else %}
+                            <p class="help-block">
+                                <span data-occurrence-hint>{% trans "Use the provided occurrence template for best results." %}</span>
+                                <span data-spatial-hint class="d-none">{% trans "Include a projection if relevant; preferred EPSG:4326." %}</span>
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <div id="spatial-notes-wrapper" class="form-group d-none">
+                        <label for="id_notes" class="control-label">
+                            {% trans "Notes (Spatial Layer)" %}
+                        </label>
+                        <textarea id="id_notes"
+                                  name="notes"
+                                  rows="3"
+                                  class="form-control"
+                                  placeholder="{% trans 'Any context about the layer (extent, scale, licensing, etc.)' %}"></textarea>
+                        <p class="help-block">{% trans "Optional, but helpful to admins." %}</p>
+                    </div>
+
+                    <div class="form-group visually-hidden">
+                        <label for="id_decoy">{% trans "Leave this field blank" %}</label>
+                        <input type="text" id="id_decoy" name="decoy" value="" autocomplete="off">
+                        <p class="help-block decoy">{% trans "If you can see the decoy field, please leave it blank." %}</p>
+                    </div>
+
+                    <div class="d-flex justify-content-center">
+                        {% include "recaptcha.html" %}
+                    </div>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-upload" id="submit-button" disabled>
+                            {% trans "Submit" %}
+                        </button>
+                    </div>
+
+                    <input type="hidden" name="source" value="upload_portal">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/uploader.js' %}"></script>
+{% endblock %}
