@@ -21,7 +21,6 @@ require.config({
         'jquery.fileupload': 'libs/jquery-fileupload/jquery.fileupload',
         'jquery.fileupload-process': 'libs/jquery-fileupload/jquery.fileupload-process',
         'jquery.fileupload-validate': 'libs/jquery-fileupload/jquery.fileupload-validate',
-        jqueryTouch: 'libs/jqueryui-touch-punch/jquery.ui.touch-punch.min'
     },
     shim: {
         underscore: {

@@ -46,6 +46,7 @@ define(
                 'click #print-control': 'downloadMapClicked',
                 'click .download-map-btn': 'downloadMap',
                 'click .download-map-container-close ': 'closeDownloadMapPanel',
+                'click .layer-switcher': 'layerSwitcherClicked'
             },
             initialize: function (options) {
                 _.bindAll(this, 'render');
@@ -179,6 +180,16 @@ define(
                 } else {
                     this.closeLocatePanel();
                 }
+            },
+            layerSwitcherClicked: function (e) {
+                this.closeSearchPanel();
+                this.closeLassoPanel();
+                this.closeFilterPanel();
+                this.closeSpatialFilterPanel();
+                this.closeValidateData();
+                this.closeThirdPartyPanel();
+                this.closeLocatePanel();
+                this.closeDownloadMapPanel();
             },
             downloadMap: function (e) {
                 let selectElement = document.getElementById("download-map-format");
