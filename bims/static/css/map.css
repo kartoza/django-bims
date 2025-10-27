@@ -1296,6 +1296,7 @@ div:hover::-webkit-scrollbar {
 .button-filter-wrapper {
     text-align: center;
     padding: 8px 47px;
+    width: 100%;
 }
 
 .upload-data-button {
@@ -2818,7 +2819,7 @@ div:hover::-webkit-scrollbar {
     text-align: center;
 }
 
-.apply-filter, .clear-filter {
+.apply-filter, .clear-filter, .spatial-scale-apply-filter, .spatial-scale-clear-filter {
     text-transform: uppercase;
     font-size: 10pt;
     font-weight: bold;
@@ -2830,7 +2831,7 @@ div:hover::-webkit-scrollbar {
     transition-duration: 0.4s;
 }
 
-.apply-filter:hover, .clear-filter:hover {
+.apply-filter:hover, .clear-filter:hover, .spatial-scale-apply-filter:hover, .spatial-scale-clear-filter:hover {
     cursor: pointer;
     border-color: #5e5e5e;
     color: #404040;

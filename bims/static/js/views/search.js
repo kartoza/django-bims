@@ -405,6 +405,13 @@ define([
 
             $('#search-results-wrapper').html('');
 
+            // modules
+            if(filterParameters['modules']) {
+                $('.biodiversity-module-title').addClass('filter-panel-selected');
+            } else {
+                $('.biodiversity-module-title').removeClass('filter-panel-selected');
+            }
+
             // reference category
             var referenceCategory = self.referenceCategoryView.getSelected();
             if (referenceCategory.length > 0) {
