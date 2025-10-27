@@ -134,11 +134,11 @@ def prune_outside_boundary_gbif(dry_run: bool = False, delete_empty_sites: bool 
     subject = f"[{domain_name}] Outside-boundary GBIF cleanup{' (DRY RUN)' if dry_run else ''}"
     message = (
         f"Automatic cleanup completed{' (DRY RUN – no changes made)' if dry_run else ''}.\n\n"
-        f"• Sites outside boundary     : {counts_after['outside_sites']}\n"
-        f"• GBIF occurrences deleted   : {counts_after['gbif_occ_deleted']}\n"
-        f"• Surveys deleted            : {counts_after['surveys_deleted']}\n"
-        f"• Sites deleted              : {counts_after['sites_deleted']}\n"
-        f"• Sample site codes          : {', '.join(counts_after['sample_outside_site_codes']) or '-'}\n"
+        f"• Sites outside boundary : {counts_after['outside_sites']}\n"
+        f"• GBIF occurrences deleted : {counts_after['gbif_occ_deleted']}\n"
+        f"• Surveys deleted : {counts_after['surveys_deleted']}\n"
+        f"• Sites deleted : {counts_after['sites_deleted']}\n"
+        f"• Sample site codes : {', '.join(counts_after['sample_outside_site_codes']) or '-'}\n"
     )
     mail_superusers(subject=subject, body=message)
 

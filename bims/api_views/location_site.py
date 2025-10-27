@@ -361,8 +361,7 @@ class RemoveOutsideBoundaryGbifData(APIView):
 
         dry_run = bool(request.data.get("dry_run", False))
         delete_empty_sites = bool(request.data.get("delete_empty_sites", True))
-        # prune_outside_boundary_gbif.delay(dry_run=dry_run, delete_empty_sites=delete_empty_sites)
-        clear_taxa_not_associated_in_taxon_group.delay(dry_run=dry_run, keep_referenced_by_occurrences=True)
+        prune_outside_boundary_gbif.delay(dry_run=dry_run, delete_empty_sites=delete_empty_sites)
 
         return Response(
             {
