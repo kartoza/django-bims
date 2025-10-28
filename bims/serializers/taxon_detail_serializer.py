@@ -13,6 +13,7 @@ class TaxonHierarchySerializer(serializers.ModelSerializer):
     tribe = serializers.SerializerMethodField()
     subtribe = serializers.SerializerMethodField()
     subgenus = serializers.SerializerMethodField()
+    variety = serializers.SerializerMethodField()
 
     family = serializers.SerializerMethodField()
     genus = serializers.SerializerMethodField()
@@ -79,6 +80,9 @@ class TaxonHierarchySerializer(serializers.ModelSerializer):
 
     def get_subtribe(self, obj: Taxonomy):
         return obj.sub_tribe_name
+
+    def get_variety(self, obj: Taxonomy):
+        return obj.variety_name
 
     def get_species_group(self, obj: Taxonomy):
         return obj.species_group.name if obj.species_group else ''
