@@ -349,6 +349,24 @@ class CollectionSearch(object):
             return False
 
     @property
+    def taxon_tags(self):
+        """
+        Returns a list of tag id the user wants to filter by.
+        """
+        raw_tags = self.get_request_data('tags')
+        if not raw_tags:
+            return []
+
+        try:
+            parsed = json.loads(raw_tags)
+            if isinstance(parsed, list):
+                return [t.strip() for t in parsed if t and isinstance(t, str)]
+        except (json.JSONDecodeError, TypeError, ValueError):
+            pass
+
+        return [t.strip() for t in raw_tags.split(',') if t.strip()]
+
+    @property
     def polygon(self):
         try:
             layer_param = self.parse_request_json('polygon')
@@ -535,19 +553,20 @@ class CollectionSearch(object):
         elif self.search_query:
             bio = collection_records_by_site.filter(
                 Q(taxonomy__canonical_name__icontains=self.search_query) |
-                Q(taxonomy__accepted_taxonomy__canonical_name__icontains=
-                  self.search_query) |
-                Q(taxonomy__synonym__canonical_name__icontains=
-                  self.search_query)
+                Q(taxonomy__accepted_taxonomy__canonical_name__icontains=self.search_query) |
+                Q(taxonomy__synonym__canonical_name__icontains=self.search_query)
             )
+
             if not bio.exists():
                 bio = collection_records_by_site.filter(
                     original_species_name__icontains=self.search_query
                 )
+
             if not bio.exists():
                 bio = collection_records_by_site.filter(
                     taxonomy__scientific_name__icontains=self.search_query
                 )
+
             if not bio.exists():
                 bio = collection_records_by_site.filter(
                     site__site_code__icontains=self.search_query
@@ -560,12 +579,18 @@ class CollectionSearch(object):
                 bio = collection_records_by_site.filter(
                     site__river__name__icontains=self.search_query
                 )
+
             if not bio.exists():
-                # Search by vernacular names
                 bio = collection_records_by_site.filter(
-                    taxonomy__vernacular_names__name__icontains=
-                    self.search_query
+                    taxonomy__vernacular_names__name__icontains=self.search_query
                 )
+
+            if not bio.exists():
+                bio = collection_records_by_site.filter(
+                    Q(taxonomy__tags__name__icontains=self.search_query) |
+                    Q(taxonomy__tags__slug__icontains=self.search_query)
+                ).distinct()
+
         if bio is None:
             bio = collection_records_by_site
         else:
@@ -597,6 +622,8 @@ class CollectionSearch(object):
                     'origin__in': self.categories
                 }
             )
+        if self.taxon_tags:
+            filters['taxonomy__tags__id__in'] = self.taxon_tags
         if self.decision_support_tools:
             filters['decisionsupporttool__dst_name__name__in'] = (
                 self.decision_support_tools

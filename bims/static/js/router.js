@@ -18,7 +18,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
                 'category', 'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory',
                 'boundary', 'reference', 'endemic', 'invasions', 'conservationStatus', 'spatialFilter',
                 'taxon', 'validated', 'modules', 'sourceCollection', 'ecologicalCategory',
-                'module', 'rank', 'orderBy', 'siteIdOpen', 'polygon',
+                'module', 'tags', 'rank', 'orderBy', 'siteIdOpen', 'polygon',
                 'dst', 'ecosystemType'
             ];
 

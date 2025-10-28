@@ -127,6 +127,9 @@
         <div class="source-collection-wrapper" id="data-source-container">
         </div>
 
+        <div class="taxon-tags-wrapper" id="taxon-tags-container">
+        </div>
+
         <div id="validation-status-container">
             <div class="row sub-filter">
                 <div class="col-lg-12 subtitle">
@@ -417,6 +420,32 @@
             </div>
             <div class="row" style="display: none">
                 <div class="col-lg-12 filter-content data-source-list">
+                </div>
+                <div class="button-filter-wrapper">
+                    <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>
+                    <button class="clear-filter"><i class="fa fa-times" aria-hidden="true"></i> Clear</button>
+                </div>
+            </div>
+        </div>
+</script>
+
+<script type="text/html" id="taxon-tags-template">
+        <div class="taxon-tags-wrapper">
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle">
+                     TAXON TAGS <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div class="row" style="display: none">
+                <div class="chosen-wrapper">
+                    <div>
+                        <select class="form-control" data-placeholder="Choose a tag"
+                            id="taxon-tags-search"
+                            multiple>
+                        </select>
+                    </div>
                 </div>
                 <div class="button-filter-wrapper">
                     <button class="apply-filter"><i class="fa fa-check" aria-hidden="true"></i> Apply</button>

@@ -75,6 +75,10 @@ let filterParametersJSON = {
     'spatialFilter': {
         'label': 'Spatial filter',
         'type': 'spatial_filter'
+    },
+    'tags': {
+        'label': 'Taxon tags',
+        'type': 'json'
     }
 };
 
@@ -127,31 +131,92 @@ function renderFilterList($div, asTable = true) {
                 } catch (e) {
                     json_data = JSON.parse(decodeURIComponent(decodeURIComponent(urlParams[key])));
                 }
+
                 try {
                     if (typeof json_data !== 'undefined' && json_data.length > 0) {
-                        tableData[data['label']] = '';
-                        $.each(json_data, function (index, json_label) {
-                            if (typeof json_label === 'undefined') {
-                                return true;
-                            }
-                            let label = json_label;
-                            if (data.hasOwnProperty('font')) {
-                                if (data['font'] === 'uppercase') {
-                                    label = label.toUpperCase();
+                        // special case: taxon tags -> resolve IDs to names
+                        if (key === 'tags') {
+                            // json_data here is array of IDs like [17,4,9] (numbers or strings)
+                            // we'll call /api/taxon-tag-autocomplete/?ids=17,4,9
+                            let tagNames = [];
+                            $.ajax({
+                                url: '/api/taxon-tag-autocomplete/',
+                                dataType: 'json',
+                                async: false, // block until we have names
+                                data: {
+                                    ids: json_data.join(',')
+                                },
+                                success: function (resp) {
+                                    // resp is [{id:17,name:"Terrestrial"}, ...]
+                                    $.each(resp, function (idx, tagObj) {
+                                        if (!tagObj || !tagObj.name) {
+                                            return true;
+                                        }
+                                        tagNames.push(tagObj.name);
+                                    });
+                                },
+                                error: function () {
+                                    // fallback: if request fails, just show raw IDs
+                                    $.each(json_data, function (idx, rawId) {
+                                        tagNames.push(rawId);
+                                    });
                                 }
+                            });
+
+                            // Build pretty string, capitalized first letter of each name
+                            if (tagNames.length > 0) {
+                                tableData[data['label']] = '';
+                                $.each(tagNames, function (idx, nm) {
+                                    if (!nm) {
+                                        return true;
+                                    }
+                                    let label = nm;
+                                    // keep same visual treatment as others: uppercase first char
+                                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                                    tableData[data['label']] += label;
+                                    if (idx < tagNames.length - 1) {
+                                        tableData[data['label']] += ', ';
+                                    }
+                                });
                             }
-                            if (data.hasOwnProperty('rename')) {
-                                if (data['rename'].hasOwnProperty(label)) {
-                                    label = data['rename'][label];
+                        } else {
+                            // default behavior for normal json arrays (collector, sourceCollection, etc.)
+                            tableData[data['label']] = '';
+                            $.each(json_data, function (index, json_label) {
+                                if (typeof json_label === 'undefined') {
+                                    return true;
                                 }
-                            }
-                            tableData[data['label']] += label.charAt(0).toUpperCase() + label.slice(1);
-                            if (index < json_data.length-1) {
-                                tableData[data['label']] += ', ';
-                            }
-                        });
+                                let label = json_label;
+
+                                // Custom font transform (e.g. uppercase for Data Source)
+                                if (data.hasOwnProperty('font')) {
+                                    if (data['font'] === 'uppercase' && typeof label === 'string') {
+                                        label = label.toUpperCase();
+                                    }
+                                }
+
+                                // Rename map (e.g. alien → Non-Native)
+                                if (data.hasOwnProperty('rename') && typeof label === 'string') {
+                                    if (data['rename'].hasOwnProperty(label)) {
+                                        label = data['rename'][label];
+                                    }
+                                }
+
+                                // Capitalize first letter for display, if it's still a string
+                                if (typeof label === 'string' && label.length > 0) {
+                                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                                }
+
+                                tableData[data['label']] += label;
+
+                                if (index < json_data.length - 1) {
+                                    tableData[data['label']] += ', ';
+                                }
+                            });
+                        }
                     }
                 } catch (e) {
+                    // swallow
                 }
             }
         }
@@ -182,6 +247,7 @@ function renderFilterList($div, asTable = true) {
                 data += `Global: ${consCategory.global.join()}`
             }
         }
+
         if (asTable) {
             let $tr = $('<div class="row">');
             $tr.append('<div class="col-4">' + key + '</div>');

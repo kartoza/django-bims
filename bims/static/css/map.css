@@ -2805,6 +2805,18 @@ div:hover::-webkit-scrollbar {
     background-color: #BEBEBE !important;
 }
 
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    height: 25px !important;
+}
+
+.select2-container--default .select2-selection--multiple.select2-selection--clearable {
+    text-align: left;
+}
+
+.select2-container--default .select2-search--inline .select2-search__field {
+    height: 25px !important;
+}
+
 .fbis-button-disabled:hover {
     cursor: default !important;
     background-color: #BEBEBE !important;

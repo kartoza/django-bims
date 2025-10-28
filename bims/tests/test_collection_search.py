@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.db import connection
 from django.contrib.sites.models import Site
+from taggit.models import Tag
 
 from bims.models import format_search_result_raw_query
 from bims.tests.model_factories import (
@@ -31,6 +32,9 @@ class TestCollectionSearch(TestCase):
             scientific_name='scientific_test',
             vernacular_names=(vernacular_name_1, )
         )
+        self.tag_name = 'invasive_tag'
+        self.taxa.tags.add(self.tag_name)
+
         self.river = RiverF.create(
             name='original_river_name'
         )
@@ -116,6 +120,43 @@ class TestCollectionSearch(TestCase):
             0
         )
 
+    def test_search_by_taxon_tag_name(self):
+        """
+        Free-text search should fall back to searching taxonomy tags
+        if names/common names/etc. don't match.
+        We added self.tag_name as a tag on self.taxa in setUp.
+        """
+        filters = {
+            'search': self.tag_name
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+
+        self.assertGreater(
+            collection_results.count(),
+            0,
+            msg="Expected records when searching by tag name"
+        )
+
+    def test_filter_by_taxon_tags_param(self):
+        """
+        Passing ?tags=["invasive_tag"] should filter to taxa that have that tag.
+        CollectionSearch.taxon_tags parses JSON string -> ['invasive_tag']
+        and we add a JOIN filter taxonomy__tags__name__in.
+        """
+        taxon_tag_id = Tag.objects.get(name='invasive_tag').id
+        filters = {
+            'tags': '["%s"]' % taxon_tag_id
+        }
+        search = CollectionSearch(filters)
+        collection_results = search.process_search()
+
+        self.assertGreater(
+            collection_results.count(),
+            0,
+            msg="Expected records when filtering by explicit tags param"
+        )
+
     def test_search_with_data_type(self):
         _user = UserF.create(is_superuser=False)
         _staff = UserF.create(is_superuser=True)
@@ -181,7 +222,7 @@ class TestCollectionSearch(TestCase):
             cursor.execute(raw_query)
         self.assertEqual(
             collection_results.count(),
-        1
+            1
         )
 
         BiologicalCollectionRecordF.create(
