@@ -11,6 +11,38 @@ export const taxaSidebar = (() => {
     let currentRemoveModuleName = '';
     let selectedTaxonGroup = '';
     let updateTaxonGroup = null;
+    // state for soft-deletes (per modal session)
+    let deletedOccurrenceTemplateIds = new Set();
+
+    function renderOccurrenceTemplatesList(items) {
+      const $list = $('#occurrence-templates-list');
+      $list.empty();
+
+      if (!items || !items.length) {
+        $list.append(
+          '<div class="text-muted" style="font-style: italic;">No occurrence templates yet.</div>'
+        );
+        return;
+      }
+
+      items.forEach(item => {
+        // skip those already flagged for deletion
+        if (deletedOccurrenceTemplateIds.has(String(item.id))) return;
+
+        const row = $(`
+          <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-1"
+               data-template-id="${_.escape(item.id)}">
+            <a href="${_.escape(item.url)}" target="_blank" class="mr-3 text-truncate">
+              ${_.escape(item.name || (item.url.split('/').pop()))}
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger delete-occ-template">
+              <i class="fa fa-trash"></i> Remove
+            </button>
+          </div>
+        `);
+        $list.append(row);
+      });
+    }
 
     function findGbifTaxonomyByTaxonGroupId(parentId, groups) {
         let item = groups.find(item => item.id === parentId && item.gbif_parent_species);
@@ -220,10 +252,23 @@ export const taxaSidebar = (() => {
         $editTaxonGroupModal.find('#taxa-upload-template-link').attr('href', taxaUploadTemplate);
         $editTaxonGroupModal.find('#taxa-upload-template-link').text(taxaUploadTemplate.split('/').pop());
 
-        let occurrenceUploadTemplate = _element.find('.taxon-group-title').data('occurrence-upload-template');
-        $editTaxonGroupModal.find('#occurrence-upload-template-link').attr('href', occurrenceUploadTemplate);
-        $editTaxonGroupModal.find('#occurrence-upload-template-link').text(occurrenceUploadTemplate.split('/').pop());
+        deletedOccurrenceTemplateIds = new Set();
+        $('#occurrence-templates-deleted').empty();
 
+        let occList = _element.find('.taxon-group-title').data('occurrence-uploads');
+        try {
+          if (typeof occList === 'string') occList = JSON.parse(occList);
+        } catch (e) {
+          occList = [];
+        }
+        if ((!occList || !occList.length)) {
+          const legacyUrl = _element.find('.taxon-group-title').data('occurrence-upload-template');
+          if (legacyUrl) {
+            occList = [{ id: 'legacy', name: legacyUrl.split('/').pop(), url: legacyUrl }];
+          }
+        }
+
+        renderOccurrenceTemplatesList(occList);
 
         return false;
     }
@@ -386,6 +431,21 @@ export const taxaSidebar = (() => {
 
         selectedTaxonGroup = _selectedTaxonGroup
         updateTaxonGroup = _updateTaxonGroup
+
+        $(document).on('click', '.delete-occ-template', function (e) {
+          e.preventDefault();
+          const $row = $(this).closest('[data-template-id]');
+          const id = String($row.data('template-id'));
+
+          deletedOccurrenceTemplateIds.add(id);
+
+          $row.slideUp(150, () => $row.remove());
+
+          const $deleted = $('#occurrence-templates-deleted');
+          $deleted.append(
+            `<input type="hidden" name="delete_occurrence_template" value="${_.escape(id)}">`
+          );
+        });
     }
 
     return {

@@ -135,6 +135,7 @@ from bims.models import (
     SpeciesGroup,
     TaxonGroupCitation,
     HarvestSchedule,
+    OccurrenceUploadTemplate,
     UploadRequest
 )
 from bims.models.climate_data import ClimateData
@@ -1154,9 +1155,15 @@ class TaxonGroupTaxonomyInline(TabularInlinePaginated):
     per_page = 20
 
 
+class OccurrenceUploadTemplateInline(admin.TabularInline):
+    model = OccurrenceUploadTemplate
+    extra = 1
+
+
 class TaxonGroupAdmin(admin.ModelAdmin):
     inlines = [
         TaxonGroupTaxonomyInline,
+        OccurrenceUploadTemplateInline
     ]
     list_per_page = 20
     list_display = (

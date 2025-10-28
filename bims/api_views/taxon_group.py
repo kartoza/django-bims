@@ -10,7 +10,7 @@ from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
     TaxonExtraAttribute, TaxonomicGroupCategory,
-    TaxonomyUpdateProposal
+    TaxonomyUpdateProposal, OccurrenceUploadTemplate
 )
 
 
@@ -152,45 +152,58 @@ class AddTaxaToTaxonGroup(TaxaUpdateMixin):
         )
 
 
-class UpdateTaxonGroup(TaxaUpdateMixin):
-    """Api to update taxon group.
-    API to update or add a new taxon group.
-    For updating, 'module_id' is required in POST data.
-    To add a new module, omit 'module_id'.
 
-    Post data required:
-    {
-        'module_id': id
-    }
-    Post data optional:
-    {
-        'module_name': 'Module' // Name of the taxon group
-        'module_logo': File img // Img file of the logo
-    }
+class UpdateTaxonGroup(TaxaUpdateMixin):
     """
+    API to update or add a new taxon group.
+
+    POST form-data:
+    - module_id (optional): if provided, update that TaxonGroup; if not, create new.
+    - module_name
+    - module_logo (file)
+    - parent-taxon (id)
+    - gbif-species (taxonomy id)
+    - extra_attribute: can repeat multiple times
+    - taxon-group-experts: can repeat multiple times
+    - taxa_upload_template: file
+    - occurrence_upload_template: file           [legacy single upload]
+    - occurrence_upload_templates: <multiple files> [new multi-upload]
+    - delete_occurrence_template: <id> repeated   [mark rows to delete]
+    """
+
     def post(self, request, *args):
-        module_name = self.request.POST.get('module_name')
-        module_logo = self.request.FILES.get('module_logo', None)
-        module_id = self.request.POST.get('module_id', None)
-        extra_attributes = self.request.POST.getlist('extra_attribute', [])
-        new_expert_ids = self.request.POST.getlist('taxon-group-experts')
-        gbif_species = self.request.POST.get('gbif-species', None)
-        parent_taxon_id = self.request.POST.get('parent-taxon', None)
-        taxa_upload_template = self.request.FILES.get('taxa_upload_template', None)
-        occurrence_upload_template = self.request.FILES.get('occurrence_upload_template', None)
+        module_name = request.POST.get('module_name')
+        module_logo = request.FILES.get('module_logo', None)
+        module_id = request.POST.get('module_id', None)
+        extra_attributes = request.POST.getlist('extra_attribute', [])
+        new_expert_ids = request.POST.getlist('taxon-group-experts', [])
+        gbif_species = request.POST.get('gbif-species', None)
+        parent_taxon_id = request.POST.get('parent-taxon', None)
+
+        taxa_upload_template = request.FILES.get('taxa_upload_template', None)
+
+        legacy_occurrence_upload_template = request.FILES.get(
+            'occurrence_upload_template', None
+        )
+
+        occurrence_upload_templates_files = request.FILES.getlist(
+            'occurrence_upload_templates'
+        )
+
+        delete_occurrence_template_ids = request.POST.getlist(
+            'delete_occurrence_template', []
+        )
 
         if module_id:
-            # Update existing module
             try:
                 taxon_group = TaxonGroup.objects.get(id=module_id)
-                taxon_group.gbif_parent_species_id = gbif_species
             except TaxonGroup.DoesNotExist:
                 raise Http404('Taxon group does not exist')
         else:
-            # Create new module
             taxon_group = TaxonGroup()
 
         taxon_group.site = Site.objects.get_current()
+
         if not taxon_group.parent:
             taxon_group.category = TaxonomicGroupCategory.SPECIES_MODULE.name
 
@@ -200,33 +213,18 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         if module_logo:
             taxon_group.logo = module_logo
 
+        if gbif_species:
+            taxon_group.gbif_parent_species_id = gbif_species
+
         if taxa_upload_template:
             taxon_group.taxa_upload_template = taxa_upload_template
 
-        if occurrence_upload_template:
-            taxon_group.occurrence_upload_template = occurrence_upload_template
-
-        TaxonExtraAttribute.objects.filter(taxon_group=taxon_group).exclude(
-            name__in=extra_attributes).delete()
-
-        if extra_attributes:
-            taxon_group.save()
-            for extra_attribute in extra_attributes:
-                if not extra_attribute:
-                    continue
-                try:
-                    TaxonExtraAttribute.objects.get_or_create(
-                        name=extra_attribute,
-                        taxon_group=taxon_group
-                    )
-                except TaxonExtraAttribute.MultipleObjectsReturned:
-                    pass
+        if legacy_occurrence_upload_template:
+            taxon_group.occurrence_upload_template = legacy_occurrence_upload_template
 
         if parent_taxon_id:
             try:
-                parent_taxon_group = TaxonGroup.objects.get(
-                    id=parent_taxon_id
-                )
+                parent_taxon_group = TaxonGroup.objects.get(id=parent_taxon_id)
                 taxon_group.parent = parent_taxon_group
             except TaxonGroup.DoesNotExist:
                 pass
@@ -235,7 +233,49 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
 
         taxon_group.save()
 
-        new_expert_ids = [int(expert_id) for expert_id in new_expert_ids]
-        taxon_group.experts.set(new_expert_ids)
+        TaxonExtraAttribute.objects.filter(
+            taxon_group=taxon_group
+        ).exclude(
+            name__in=extra_attributes
+        ).delete()
 
-        return Response('Taxon group updated' if module_id else 'New taxon group added')
+        for extra_attr in extra_attributes:
+            if not extra_attr:
+                continue
+            try:
+                TaxonExtraAttribute.objects.get_or_create(
+                    taxon_group=taxon_group,
+                    name=extra_attr
+                )
+            except TaxonExtraAttribute.MultipleObjectsReturned:
+                pass
+
+        if delete_occurrence_template_ids:
+            OccurrenceUploadTemplate.objects.filter(
+                taxon_group=taxon_group,
+                id__in=delete_occurrence_template_ids
+            ).delete()
+
+        for f in occurrence_upload_templates_files:
+            if not f:
+                continue
+            OccurrenceUploadTemplate.objects.create(
+                taxon_group=taxon_group,
+                file=f,
+                label=''
+            )
+
+        if new_expert_ids:
+            cleaned_expert_ids = []
+            for expert_id in new_expert_ids:
+                try:
+                    cleaned_expert_ids.append(int(expert_id))
+                except (ValueError, TypeError):
+                    continue
+            taxon_group.experts.set(cleaned_expert_ids)
+        else:
+            taxon_group.experts.clear()
+
+        return Response(
+            'Taxon group updated' if module_id else 'New taxon group added'
+        )

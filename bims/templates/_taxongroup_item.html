@@ -21,7 +21,8 @@
         <div class="taxon-group-title"
              data-extra-attributes="{{ taxon_group.extra_attributes }}"
              data-taxa-upload-template="{{ taxon_group.taxa_upload_template }}"
-             data-occurrence-upload-template="{{ taxon_group.occurrence_upload_template }}">
+             data-occurrence-upload-template="{{ taxon_group.occurrence_upload_template }}"
+             data-occurrence-uploads='{{ taxon_group.occurrence_upload_templates | safe }}'>
           <span class="taxon-group-name">{{ taxon_group.name }}</span>
 
           {% if user.is_superuser or user_is_expert %}

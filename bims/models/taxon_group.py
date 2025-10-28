@@ -161,6 +161,20 @@ class TaxonGroup(models.Model):
     def __str__(self):
         return f'{self.name} - {self.level}'
 
+    def list_all_occurrence_templates(self) -> list:
+        """
+        Returns a list of template-like objects.
+        """
+        templates = list(self.occurrence_upload_templates.all())
+        if self.occurrence_upload_template:
+            temp = OccurrenceUploadTemplate(
+                taxon_group=self,
+                file=self.occurrence_upload_template,
+                label='Legacy template'
+            )
+            templates.insert(0, temp)
+        return templates
+
     def get_top_level_parent(self):
         """
         Recursively finds the top-level parent of the current taxon group.
@@ -218,6 +232,31 @@ class TaxonGroup(models.Model):
     @property
     def permission_codename(self):
         return self.permission_name.lower().replace(' ', '_')
+
+
+class OccurrenceUploadTemplate(models.Model):
+    taxon_group = models.ForeignKey(
+        'bims.TaxonGroup',
+        related_name='occurrence_upload_templates',
+        on_delete=models.CASCADE,
+    )
+    file = models.FileField(
+        upload_to='occurrence_templates/',
+        help_text='Occurrence data upload template file.'
+    )
+    label = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text='Optional display name (e.g. “Standard”, “With traits”).'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('created_at',)
+
+    def __str__(self):
+        base = self.label or self.file.name.split('/')[-1]
+        return f'{base} ({self.taxon_group.name})'
 
 
 @receiver(models.signals.pre_save)

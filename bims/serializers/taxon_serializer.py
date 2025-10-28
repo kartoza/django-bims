@@ -9,7 +9,7 @@ from taggit.models import Tag
 
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal, TaxonomyUpdateReviewer
 from bims.models.iucn_status import IUCNStatus
-from bims.models.taxon_group import TaxonGroup
+from bims.models.taxon_group import TaxonGroup, OccurrenceUploadTemplate
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
 
@@ -471,6 +471,23 @@ class TaxonGroupExpertSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'full_name', 'email']
 
 
+class OccurrenceUploadTemplateSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OccurrenceUploadTemplate
+        fields = ("id", "url", "name", "label", "created_at")
+
+    def get_url(self, obj: OccurrenceUploadTemplate) -> str:
+        return obj.file.url if obj.file else ""
+
+    def get_name(self, obj: OccurrenceUploadTemplate) -> str:
+        if obj.file:
+            return obj.file.name.split("/")[-1]
+        return obj.label or ""
+
+
 class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
     taxa_count = serializers.SerializerMethodField()
@@ -481,6 +498,11 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     unvalidated_count = serializers.SerializerMethodField()
     taxa_upload_template = serializers.SerializerMethodField()
     occurrence_upload_template = serializers.SerializerMethodField()
+    occurrence_upload_templates = serializers.SerializerMethodField()
+
+    def get_occurrence_upload_templates(self, obj: TaxonGroup):
+        items = obj.list_all_occurrence_templates()
+        return json.dumps(OccurrenceUploadTemplateSerializer(items, many=True).data)
 
     def get_taxa_upload_template(self, obj: TaxonGroup):
         if not obj.taxa_upload_template:
@@ -553,4 +575,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',
                   'experts', 'children',
-                  'taxa_upload_template', 'occurrence_upload_template']
+                  'taxa_upload_template',
+                  'occurrence_upload_template',
+                  'occurrence_upload_templates'
+                  ]

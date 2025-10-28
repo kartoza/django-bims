@@ -41,16 +41,16 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         selected = self.request.GET.get('selected')
         taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
-        if taxon_group_cache:
-            context['taxa_groups'] = taxon_group_cache
-        else:
-            taxa_groups_query = TaxonGroup.objects.filter(
-                category='SPECIES_MODULE',
-                parent__isnull=True
-            ).order_by('display_order')
-            context['taxa_groups'] = TaxonGroupSerializer(
-                taxa_groups_query, many=True).data
-            set_cache(TAXON_GROUP_CACHE, context['taxa_groups'])
+        # if taxon_group_cache:
+        #     context['taxa_groups'] = taxon_group_cache
+        # else:
+        taxa_groups_query = TaxonGroup.objects.filter(
+            category='SPECIES_MODULE',
+            parent__isnull=True
+        ).order_by('display_order')
+        context['taxa_groups'] = TaxonGroupSerializer(
+            taxa_groups_query, many=True).data
+        # set_cache(TAXON_GROUP_CACHE, context['taxa_groups'])
         context['selected_taxon_group'] = None
         if selected:
             try:

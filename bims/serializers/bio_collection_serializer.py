@@ -162,6 +162,37 @@ class BioCollectionOneRowSerializer(
     data_type = serializers.SerializerMethodField()
     dataset = serializers.SerializerMethodField()
 
+    @staticmethod
+    def _has_value(v) -> bool:
+        """Treat None/''/whitespace/empty containers as no value.
+        Numbers (incl. 0) and booleans (incl. False) count as values."""
+        if v is None:
+            return False
+        if isinstance(v, str):
+            return v.strip() != ''
+        if isinstance(v, (list, tuple, set, dict)):
+            return len(v) > 0
+        return True
+
+    @staticmethod
+    def _get_additional_value(additional, header):
+        """Try several key variants to find the value in additional_data."""
+        if not isinstance(additional, dict):
+            return None
+        variants = [
+            header,
+            header.strip(),
+            header.lower(),
+            header.replace(' ', '_'),
+            header.lower().replace(' ', '_'),
+            header.replace('/', ' or '),
+            header.lower().replace('/', ' or '),
+        ]
+        for k in variants:
+            if k in additional:
+                return additional[k]
+        return None
+
     def get_dataset(self, obj: BiologicalCollectionRecord):
         if obj.dataset_key:
             dataset = self.get_context_cache(
@@ -976,79 +1007,49 @@ class BioCollectionOneRowSerializer(
         # Taxon attribute
         taxon_group = instance.module_group
 
-        # Check if template headers exist, then process them
         if TEMPLATE_HEADER_KEYS in self.context and self.context[TEMPLATE_HEADER_KEYS]:
-            if 'added_headers' not in self.context:
-                self.context['added_headers'] = set()
 
-            template_headers = list(
-                self.context[TEMPLATE_HEADER_KEYS])
-            headers_to_add = []
+            template_headers = list(self.context[TEMPLATE_HEADER_KEYS])
+            self.context.setdefault('added_headers', set())
 
-            # Process template headers
-            for upload_template_header in template_headers:
-                normalized_header = upload_template_header.lower().replace(' ', '_')
+            for tpl_header in template_headers:
+                norm = tpl_header.strip().lower().replace(' ', '_')
 
-                # Skip 'author(s)'
-                if normalized_header == 'author(s)':
+                if norm == 'author(s)':
                     continue
 
-                # Add to headers_to_add if it's not already in the context header
-                if (
-                        upload_template_header not in self.context['header'] and
-                        normalized_header not in self.context['header']
-                ):
-                    headers_to_add.append(upload_template_header)
-
-            # Extend the context header
-            self.context['header'].extend(headers_to_add)
-
-            self.context['added_headers'].update(headers_to_add)
-
-            # Handle the case where no new headers were added
-            if not headers_to_add:
-                headers_to_add = list(
-                    self.context['added_headers']
-                )
-
-            # Process the result dictionary
-            for upload_template_header in headers_to_add:
-                normalized_header = upload_template_header.lower().replace(' ', '_')
-
-                if normalized_header == 'author(s)':
-                    continue
-
+                value = None
                 if instance.additional_data:
-                    result_data = instance.additional_data.get(upload_template_header, '')
-                else:
-                    result_data = ''
+                    if isinstance(instance.additional_data, str):
+                        try:
+                            _ad = json.loads(instance.additional_data)
+                        except Exception:
+                            _ad = {}
+                    else:
+                        _ad = instance.additional_data
+                    value = self._get_additional_value(_ad, tpl_header)
 
-                result[upload_template_header] = result_data
+                if tpl_header == PARK_OR_MPA_NAME:
+                    if not self._has_value(value) and instance.source_collection == 'gbif':
+                        sp = self._get_sanparks_mpa_value(instance)
+                        if self._has_value(sp) and sp != '-':
+                            value = sp
+                    if (not self._has_value(value)) and instance.site and (
+                            instance.site.owner or instance.site.creator):
+                        value = instance.site.name
 
-                if upload_template_header == PARK_OR_MPA_NAME:
+                if not self._has_value(value):
+                    continue
+
+                if tpl_header not in self.context['header']:
+                    self.context['header'].append(tpl_header)
+                self.context['added_headers'].add(tpl_header)
+                result[tpl_header] = value
+
+                if tpl_header == PARK_OR_MPA_NAME:
                     result.pop('site_description', None)
                     if 'site_description' in self.context['header']:
                         self.context['header'].remove('site_description')
-
-                    if instance.source_collection == 'gbif':
-                        sanparks_val = self._get_sanparks_mpa_value(instance)
-                        if sanparks_val and sanparks_val != '-':
-                            result[upload_template_header] = sanparks_val
-
-                    if (
-                            not result.get(upload_template_header) and
-                            instance.site and (instance.site.owner or instance.site.creator)
-                    ):
-                        result[upload_template_header] = instance.site.name
-                if upload_template_header == PARK_OR_MPA_NAME:
-                    result.pop('site_description', None)
-                    if 'site_description' in self.context['header']:
-                        self.context['header'].remove('site_description')
-                    if (
-                            result[upload_template_header] == '' and (
-                            instance.site.owner or instance.site.creator)
-                    ):
-                        result[upload_template_header] = instance.site.name
 
         geo_keys_raw = preferences.GeocontextSetting.geocontext_keys or ""
         key_pairs = [

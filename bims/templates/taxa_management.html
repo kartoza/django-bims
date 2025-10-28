@@ -608,11 +608,24 @@
                             <input type="file" class="form-control" id="taxa-upload-template" name="taxa_upload_template" accept=".csv,.xls">
                         </div>
                         <div class="form-group">
-                            <label for="occurrence-upload-template" class="col-form-label">Occurrence Upload Template</label>
-                            <div>
-                                <a href="#" id="occurrence-upload-template-link" target="_blank"></a>
-                            </div>
-                            <input type="file" class="form-control" id="occurrence-upload-template" name="occurrence_upload_template" accept=".csv,.xls">
+                          <label for="occurrence-upload-template" class="col-form-label">
+                            Occurrence Upload Templates
+                          </label>
+
+                          <div id="occurrence-templates-list" class="mb-2"></div>
+                          <div id="occurrence-templates-deleted"></div>
+
+                          <input
+                            type="file"
+                            class="form-control"
+                            id="occurrence-upload-templates"
+                            name="occurrence_upload_templates"
+                            accept=".csv,.xls,.xlsx"
+                            multiple
+                          >
+                          <small class="form-text text-muted">
+                            You can select multiple files. Existing files will stay unless you remove them above.
+                          </small>
                         </div>
                 </div>
                 <div class="modal-footer">
