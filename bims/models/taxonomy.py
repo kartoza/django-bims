@@ -433,7 +433,27 @@ class AbstractTaxonomy(AbstractValidation):
 
     @property
     def variety_name(self):
-        self.get_taxon_rank_name(TaxonomicRank.VARIETY.name)
+        """
+        Return just the variety epithet, e.g. "major",
+        """
+        variety_taxon = (
+            self if self.rank == TaxonomicRank.VARIETY.name
+            else self.get_parent_by_rank(TaxonomicRank.VARIETY.name)
+        )
+
+        if not variety_taxon:
+            if self.additional_data and self.additional_data.get('Variety'):
+                return self.additional_data.get('Variety').strip()
+            return ''
+
+        canon = (variety_taxon.canonical_name or '').strip()
+        if not canon:
+            if variety_taxon.additional_data and variety_taxon.additional_data.get('Variety'):
+                return variety_taxon.additional_data.get('Variety').strip()
+            return ''
+
+        tokens = canon.split()
+        return tokens[-1] if tokens else ''
 
     @property
     def taxon_name(self):

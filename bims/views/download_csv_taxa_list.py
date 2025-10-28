@@ -33,6 +33,10 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
     cites_listing = serializers.SerializerMethodField()
     invasion = serializers.SerializerMethodField()
     accepted_taxon = serializers.SerializerMethodField()
+    scientific_name_and_authority = serializers.SerializerMethodField()
+
+    def get_scientific_name_and_authority(self, obj: Taxonomy):
+        return obj.scientific_name
 
     def get_accepted_taxon(self, obj: Taxonomy):
         if obj.accepted_taxonomy:
@@ -117,8 +121,10 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             'subgenus',
             'species',
             'subspecies',
+            'variety',
             'species_group',
             'taxon',
+            'scientific_name_and_authority',
             'author',
             'taxonomic_status',
             'accepted_taxon',
