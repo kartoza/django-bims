@@ -750,19 +750,41 @@ class TaxaList(LoginRequiredMixin, APIView):
         return Response(serializer.data)
 
 
+
 class TaxonTagAutocompleteAPIView(APIView):
     def get(self, request, format=None):
+        """
+        Modes:
+        - Autocomplete: ?q=te
+        - Bootstrap by IDs: ?ids=1,4,9
+        """
         query = request.query_params.get('q', '')
-        biographic = ast.literal_eval(request.query_params.get('biographic', 'False'))
+        ids_param = request.query_params.get('ids', '')
+        biographic = ast.literal_eval(
+            request.query_params.get('biographic', 'False')
+        )
+
         if biographic:
-            taxonomy_tags = TaxonTag.objects.filter(
-                name__icontains=query
-            ).distinct()[:10]
+            base_qs = TaxonTag.objects.all()
         else:
-            taxonomy_tags = Tag.objects.filter(
-                taxonomy__isnull=False,
-                name__icontains=query
-            ).distinct()[:10]
+            base_qs = Tag.objects.filter(taxonomy__isnull=False)
+
+        if ids_param:
+            try:
+                ids_list = [
+                    int(x.strip())
+                    for x in ids_param.split(',')
+                    if x.strip()
+                ]
+            except ValueError:
+                ids_list = []
+            taxonomy_tags = base_qs.filter(id__in=ids_list).distinct()
+        else:
+            taxonomy_tags = (
+                base_qs.filter(name__icontains=query)
+                .distinct()[:10]
+            )
+
         serializer = TagSerializer(taxonomy_tags, many=True)
         return Response(serializer.data)
 

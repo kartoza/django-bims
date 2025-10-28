@@ -9,9 +9,10 @@ define([
     'chosen',
     'views/filter_panel/reference_category',
     'views/filter_panel/spatial_filter',
-    'views/filter_panel/source_collection'
+    'views/filter_panel/source_collection',
+    'views/filter_panel/taxon_tags'
 ], function (Backbone, _, Shared, NoUiSlider, SearchResultCollection, SearchPanelView, $, Chosen,
-             ReferenceCategoryView, SpatialFilterView, SourceCollectionView) {
+             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -169,6 +170,9 @@ define([
 
             this.sourceCollectionView = new SourceCollectionView({parent: this});
             this.$el.find('.source-collection-wrapper').append(this.sourceCollectionView.render().$el);
+
+            this.taxonTagsView = new TaxonTagsView({parent: this});
+            this.$el.find('.taxon-tags-wrapper').append(this.taxonTagsView.render().$el);
 
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var nonNativeOriginDropdown = self.$el.find('.non-native-origin-dropdown');
@@ -582,6 +586,16 @@ define([
             }
             filterParameters['ecologicalCategory'] = ecologicalConditions;
 
+            // Tags
+            let selectedTagIds = self.taxonTagsView.getSelected();
+            if (selectedTagIds.length) {
+                filterParameters['tags'] = JSON.stringify(
+                    selectedTagIds.map(function (v) {
+                        return decodeURIComponent(v);
+                    })
+                );
+            }
+
             // Selected module
             filterParameters['module'] = document.querySelector('input[name="module"]:checked').value;
             self.highlightPanel('.thermal-module-filters-wrapper', filterParameters['module'] !== 'occurrence');
@@ -926,6 +940,8 @@ define([
                 }
             }
 
+            console.log(allFilters)
+
             // Category
             if (allFilters.hasOwnProperty('category')) {
                 var categories = JSON.parse(allFilters['category']);
@@ -958,6 +974,11 @@ define([
                     }
                 });
             }
+
+            // Taxon tags
+            self.initialSelectedTaxonTags = allFilters.hasOwnProperty('tags') ? JSON.parse(allFilters['tags']) : [];
+            self.taxonTagsView.setInitialSelection();
+            console.log('initialSelectedTaxonTags', self.initialSelectedTaxonTags);
 
             // Collectors
             self.initialSelectedCollectors = [];
