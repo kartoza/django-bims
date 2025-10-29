@@ -50,7 +50,7 @@ def google_analytic_key(request):
     """
     Return google analytic key
     """
-    return {'GOOGLE_ANALYTIC_KEY': get_key('GOOGLE_ANALYTIC_KEY')}
+    return {'GOOGLE_ANALYTIC_KEY': preferences.SiteSetting.google_analytics_key}
 
 
 def bing_api_key(request):
