@@ -13,6 +13,7 @@ SECRET_INPUTS = [
     'github_feedback_token',
     'gbif_password',
     'github_private_key',
+    'google_analytics_key',
 ]
 
 
@@ -50,7 +51,6 @@ class SiteSettingAdminForm(forms.ModelForm):
         required=False
     )
 
-    # NEW: Do NOT render the PEM value back to the browser.
     github_private_key = forms.CharField(
         required=False,
         widget=forms.Textarea(
@@ -62,6 +62,13 @@ class SiteSettingAdminForm(forms.ModelForm):
         ),
         help_text=SiteSetting._meta.get_field('github_private_key').help_text,
         label=_('GitHub App private key (PEM)'),
+    )
+
+    google_analytics_key = forms.CharField(
+        widget=forms.PasswordInput(render_value=True),
+        required=False,
+        label=_('Google Analytics Key'),
+        help_text=_('Used for tracking site visits and analytics.'),
     )
 
     def __init__(self, *args, **kwargs):
@@ -168,6 +175,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "cites_token_api",
                 "virtual_museum_token",
                 "resend_api_key",
+                "google_analytics_key",
                 "default_from_email",
             ),
             "classes": ("collapse",),

@@ -431,6 +431,13 @@ class SiteSetting(Preferences):
         ),
     )
 
+    google_analytics_key = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Google Analytics Measurement ID or API key."
+    )
+
     def _tenant_default_exclusions(self) -> set[str]:
         """Default per tenant: for FBIS tenant, exclude 'fbis'."""
         schema = (getattr(connection, "schema_name", "") or "").lower()
