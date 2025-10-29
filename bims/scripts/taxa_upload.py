@@ -587,12 +587,12 @@ class TaxaProcessor(object):
             on_gbif = 'yes' in raw_on_gbif.lower()
 
         if not taxon_name:
-            taxon_name = _safe_strip(
-                self.get_row_value(
-                    row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
-
-        if 'species' in str(rank).lower() and not taxon_name:
-            taxon_name = self._compose_species_name(row)
+            if 'species' in str(rank).lower():
+                taxon_name = self._compose_species_name(row)
+            else:
+                taxon_name = _safe_strip(
+                    self.get_row_value(
+                        row, RANK_TITLE.get(_safe_upper(rank), str(rank).capitalize())))
 
         if rank == SUBSPECIES:
             sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
