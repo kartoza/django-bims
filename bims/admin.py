@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils.timezone import localtime
 from django.db import connection
 from django_tenants.utils import schema_context, get_public_schema_name
-from rangefilter.filter import DateRangeFilter
+from rangefilter.filters import DateRangeFilterBuilder
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
 
@@ -566,7 +566,7 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'survey'
     )
     list_filter = (
-        ('collection_date', DateRangeFilter),
+        ('collection_date', DateRangeFilterBuilder()),
         'taxonomy__origin',
         'record_type__name',
         'sampling_method',
@@ -1624,7 +1624,7 @@ class ChemicalRecordAdmin(admin.ModelAdmin):
         'source_reference'
     )
     list_filter = (
-        ('date', DateRangeFilter),
+        ('date', DateRangeFilterBuilder()),
         'chem',
     )
     search_fields = (
@@ -1721,7 +1721,7 @@ class SurveyAdmin(admin.ModelAdmin):
         'uuid'
     )
     list_filter = (
-        ('date', DateRangeFilter),
+        ('date', DateRangeFilterBuilder()),
     )
     list_display = (
         'id',
