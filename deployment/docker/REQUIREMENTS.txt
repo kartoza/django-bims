@@ -47,7 +47,7 @@ django-crispy-forms==1.9.1
 # git+https://github.com/dimasciput/pandas_access.git
 
 selenium==3.141.0
-django-admin-rangefilter==0.6.0
+django-admin-rangefilter==0.13.3
 django-preferences==1.0.0
 PyGithub==2.7.0
 sorl-thumbnail==12.9.0
