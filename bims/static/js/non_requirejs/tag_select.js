@@ -70,9 +70,6 @@ $(document).ready(function () {
                 }
             });
 
-
-            console.log('exists', exists, selectResults)
-
             if (exists) {
                 return false;
             }

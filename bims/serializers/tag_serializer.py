@@ -1,10 +1,17 @@
 from rest_framework import serializers
 from taggit.models import Tag
 
-from bims.models.taxonomy import Taxonomy
+from bims.models.taxonomy import Taxonomy, TaxonTag
 
 
 class TagSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        if isinstance(obj, TaxonTag):
+            return f'{obj.name} {"(?)" if obj.doubtful else ""}'
+        return obj.name
+
     class Meta:
         model = Tag
         fields = ['id', 'name']

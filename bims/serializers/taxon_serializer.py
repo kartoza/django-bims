@@ -46,8 +46,10 @@ class TaxonSerializer(serializers.ModelSerializer):
     taxonomic_status = serializers.SerializerMethodField()
 
     def _format_distributions(self, qs):
-        names = list(qs.values_list('name', flat=True))
-        return ", ".join(names)
+        bio_tags = list(qs.values('name', 'doubtful'))
+        return ", ".join(
+            [f'{bio_tag["name"]}{"(?)" if bio_tag["doubtful"] else ""}' for bio_tag in bio_tags]
+        )
 
     def _format_tags(self, tags_qs):
         tag_info = []

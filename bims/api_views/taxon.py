@@ -785,7 +785,9 @@ class TaxonTagAutocompleteAPIView(APIView):
                 .distinct()[:10]
             )
 
-        serializer = TagSerializer(taxonomy_tags, many=True)
+        serializer = TagSerializer(taxonomy_tags, many=True, context={
+            'is_biographic': biographic
+        })
         return Response(serializer.data)
 
 
