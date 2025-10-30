@@ -702,15 +702,6 @@ class TaxaProcessor(object):
 
         # FADA id (integer part)
         fada_id = self.get_row_value(row, FADA_ID)
-        if fada_id:
-            try:
-                integer_part = str(fada_id).split('.', 1)[0]
-                if integer_part and integer_part != '0':
-                    fada_id = int(integer_part)
-                else:
-                    fada_id = None
-            except ValueError:
-                fada_id = None
 
         is_synonym = False
 
@@ -922,7 +913,7 @@ class TaxaProcessor(object):
             if species_group:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'species_group', species_group)
 
-            if fada_id and isinstance(fada_id, int):
+            if fada_id:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'fada_id', fada_id)
 
             if gbif_key:
