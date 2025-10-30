@@ -111,11 +111,12 @@ class AbstractTaxonomy(AbstractValidation):
         on_delete=models.SET_NULL
     )
 
-    fada_id = models.IntegerField(
+    fada_id = models.CharField(
         verbose_name='FADA ID',
         unique=True,
         null=True,
-        blank=True
+        blank=True,
+        max_length=50
     )
 
     gbif_key = models.IntegerField(
