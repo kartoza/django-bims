@@ -53,7 +53,7 @@ def _as_truthy(val) -> bool:
 
 def _norm_key_label(s: str) -> str:
     # Remove "(y/n)" and collapse whitespace
-    return re.sub(r'\(y/n\)', '', str(s), flags=re.IGNORECASE).strip()
+    return re.sub(r'\s+', ' ', re.sub(r'\(y/n\)', '', str(s), flags=re.IGNORECASE)).strip()
 
 def _safe_upper(s):
     return str(s or '').upper()
@@ -78,7 +78,6 @@ def _norm_taxon_for_similarity(s: str) -> str:
 class TaxaProcessor(object):
 
     all_keys = {}
-
 
     def _get_or_create_vernacular_singleton(self, name: str, language: str | None):
         """
@@ -231,7 +230,63 @@ class TaxaProcessor(object):
         return (taxon.rank or '').upper() if taxon and taxon.rank else ''
 
     def get_row_value(self, row, key):
-        return DataCSVUpload.row_value(row, key, self.all_keys)
+        """
+        Return value with normalization:
+        - Treat numeric 0 or string "0" as missing (None).
+        """
+        val = DataCSVUpload.row_value(row, key, self.all_keys)
+        if val is None:
+            return None
+        if isinstance(val, (int, float)) and val == 0:
+            return None
+        s = str(val).strip()
+        if s == "0":
+            return None
+        return val
+
+    def _clean_additional_data(self, row) -> dict:
+        """
+        Build cleaned dict for additional_data WITHOUT boolean coercion.
+        - Trim strings & collapse whitespace
+        - Drop blanks and placeholder zeros (handled via get_row_value)
+        - Keep numbers/bools as-is
+        - Include any extra metadata keys that start with "_" verbatim
+        """
+        cleaned = {}
+        for key in row.keys():
+            # Include underscore "meta" keys directly (e.g., _gbif_genus_mismatch)
+            if isinstance(key, str) and key.startswith('_') and isinstance(row, dict):
+                meta_val = row.get(key)
+                if meta_val is None:
+                    continue
+                try:
+                    json.dumps(meta_val)  # probe
+                    cleaned[key] = meta_val
+                except TypeError:
+                    cleaned[key] = str(meta_val)
+                continue
+
+            val = self.get_row_value(row, key)  # returns None for 0/"0"
+            if val is None:
+                continue
+
+            if isinstance(val, str):
+                s = re.sub(r'\s+', ' ', val).strip()
+                if not s:
+                    continue
+                cleaned[key] = s
+                continue
+
+            if isinstance(val, (int, float, bool)):
+                cleaned[key] = val
+                continue
+
+            try:
+                json.dumps(val)  # probe serializability
+                cleaned[key] = val
+            except TypeError:
+                cleaned[key] = str(val)
+        return cleaned
 
     def endemism(self, row):
         """Processing endemism data (case-insensitive, avoids dupes)."""
@@ -386,6 +441,13 @@ class TaxaProcessor(object):
             return '', invasion_instance
 
         return ORIGIN_CATEGORIES[key], invasion_instance
+
+    def _specific_epithet(self, name: str) -> str:
+        """Return specific epithet (2nd token) from a binomial/trinomial string."""
+        if not name:
+            return ''
+        parts = _canon(name).split()
+        return parts[1] if len(parts) >= 2 else ''
 
     def validate_parents(self, taxon, row):
         """
@@ -620,6 +682,8 @@ class TaxaProcessor(object):
                 last = str(gbif_link).rstrip('/').split('/')[-1]
                 gbif_key = last[:-2] if last.endswith('.0') else last
 
+        accepted_genus_mismatch = False
+
         if gbif_key:
             try:
                 gbif_rec = get_species(gbif_key)
@@ -656,14 +720,12 @@ class TaxaProcessor(object):
                     )
                     return
                 else:
-                    if expected_rank.lower() == 'species' and not 'synonym' in taxonomic_status.lower():
+                    if expected_rank.lower() == 'species' and 'synonym' not in (taxonomic_status or '').lower():
                         expected_name = self._compose_species_name(row)
                     else:
                         expected_name = taxon_name
 
                     gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
-                    expected_norm = _canon(expected_name) if expected_name else ""
-
                     canon_expected = _canon(expected_name) if expected_name else ""
                     canon_gbif = _canon(gbif_canonical) if gbif_canonical else ""
 
@@ -678,24 +740,38 @@ class TaxaProcessor(object):
                     csv_genus = _safe_strip(self.get_row_value(row, GENUS)) or ""
                     gbif_genus = _safe_strip(gbif_rec.get("genus")) or ""
 
-                    if rank.lower() != 'genus' and csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower():
-                        self.handle_error(
-                            row=row,
-                            message=(
-                                f"GBIF key {gbif_key}: genus mismatch - CSV genus '{csv_genus}' "
-                                f"!= GBIF genus '{gbif_genus}'. "
-                                f"Fix the GBIF key to the taxon under '{csv_genus}', or set 'On GBIF' to No "
-                                f"if this row should not be GBIF-linked."
-                            ),
-                        )
-                        return
+                    # Handle genus mismatch more gracefully if the specific epithet matches
+                    genus_mismatch = (
+                        rank.lower() != 'genus' and csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower()
+                    )
+                    if genus_mismatch:
+                        csv_ep = self._specific_epithet(expected_name) or self._specific_epithet(taxon_name) or _canon(_safe_strip(self.get_row_value(row, SPECIES)))
+                        gbif_ep = _canon(_safe_strip(gbif_rec.get("specificEpithet"))) or self._specific_epithet(gbif_canonical)
+                        if csv_ep and gbif_ep and csv_ep == gbif_ep:
+                            accepted_genus_mismatch = True
+                            if isinstance(row, dict):
+                                row["_gbif_genus_mismatch"] = {
+                                    "csv_genus": csv_genus,
+                                    "gbif_genus": gbif_genus,
+                                    "gbif_key": gbif_key,
+                                    "gbif_canonical": gbif_canonical,
+                                }
+                        else:
+                            self.handle_error(
+                                row=row,
+                                message=(
+                                    f"GBIF key {gbif_key}: genus mismatch '{csv_genus}' vs '{gbif_genus}' "
+                                    f"and epithet differs; cannot safely reconcile."
+                                ),
+                            )
+                            return
+
                     if ratio < NAME_SIM_THRESHOLD:
                         self.handle_error(
                             row=row,
                             message=(
                                 f"GBIF key {gbif_key}: name mismatch (similarity={ratio:.2f} < {NAME_SIM_THRESHOLD}). "
-                                f"Expected '{expected_name}' ~ '{expected_norm}'; "
-                                f"GBIF '{gbif_canonical}' ~ '{canon_gbif}'."
+                                f"Expected '{expected_name}'; GBIF '{gbif_canonical}'."
                             ),
                         )
                         return
@@ -706,7 +782,7 @@ class TaxaProcessor(object):
         is_synonym = False
 
         # Synonym support
-        if 'synonym' in taxonomic_status.lower().strip():
+        if 'synonym' in (taxonomic_status or '').lower().strip():
             is_synonym = True
             accepted_taxon_val = self.get_row_value(row, ACCEPTED_TAXON)
             if accepted_taxon_val:
@@ -905,10 +981,6 @@ class TaxaProcessor(object):
             if invasion:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'invasion', invasion)
 
-            # Author(s)
-            if authors:
-                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'author', authors)
-
             # SpeciesGroup
             if species_group:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'species_group', species_group)
@@ -936,7 +1008,7 @@ class TaxaProcessor(object):
                         doubtful = (val_norm == '?')
                         try:
                             taxon_tag, _ = TaxonTag.objects.get_or_create(
-                                name=tag_label, defaults={'doubtful': doubtful}
+                                name=tag_label, doubtful=doubtful
                             )
                         except TaxonTag.MultipleObjectsReturned:
                             taxon_tag = TaxonTag.objects.filter(
@@ -954,22 +1026,51 @@ class TaxaProcessor(object):
                         if use_proposal and proposal:
                             proposal.tags.add(tag_label)
 
-            # Additional data
             try:
-                addl = json.dumps(row)
-            except TypeError:
-                # Fallback: stringify
-                addl = json.dumps({str(k): str(v) for k, v in row.items()})
+                cleaned_row = self._clean_additional_data(row)
+                addl = json.dumps(cleaned_row, ensure_ascii=False, separators=(',', ':'))
+            except Exception:  # noqa
+                addl = json.dumps({str(k): _safe_strip(str(v)) for k, v in row.items()}, ensure_ascii=False)
             self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'additional_data', addl)
 
             if taxonomy.canonical_name != taxon_name:
-                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'canonical_name', taxon_name)
+                if accepted_genus_mismatch:
+                    legacy = (taxonomy.legacy_canonical_name or '').replace('\\xa0', '')
+                    if taxon_name and taxon_name not in legacy:
+                        legacy = f'{legacy};{taxon_name}' if legacy else taxon_name
+                    self._update_taxon_and_proposal(
+                        taxonomy, proposal, use_proposal, new_taxon,
+                        'legacy_canonical_name', legacy[:700]
+                    )
+                else:
+                    self._update_taxon_and_proposal(
+                        taxonomy, proposal, use_proposal, new_taxon, 'canonical_name', taxon_name
+                    )
 
             if taxonomic_status:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'taxonomic_status', taxonomic_status.strip().upper())
 
             if accepted_taxon:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'accepted_taxonomy', accepted_taxon)
+
+            # Author(s)
+            if authors:
+                if new_taxon:
+                    taxonomy.author = authors
+                    if use_proposal and proposal:
+                        proposal.author = authors
+                    base_sciname = taxonomy.canonical_name or taxon_name
+                    base_sciname = re.sub(r'\s*\([^)]*\)\s*$', '', base_sciname).strip()
+                    normalized_sciname = f'{base_sciname} {authors}'.strip()
+                    taxonomy.scientific_name = normalized_sciname
+                    if use_proposal and proposal:
+                        proposal.scientific_name = normalized_sciname
+                else:
+                    if use_proposal and proposal:
+                        proposal.author = authors
+                        base_sciname = (taxonomy.scientific_name or taxon_name)
+                        base_sciname = re.sub(r'\s*\([^)]*\)\s*$', '', base_sciname).strip()
+                        proposal.scientific_name = f'{base_sciname} {authors}'.strip()
 
             taxonomy.save()
             if proposal:

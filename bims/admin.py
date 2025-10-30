@@ -2184,6 +2184,10 @@ class TaxonomyUpdateProposalAdmin(admin.ModelAdmin):
     autocomplete_fields = (
         'vernacular_names',
     )
+    search_fields = (
+        'scientific_name',
+        'canonical_name'
+    )
 
 
 class TaxonomyUpdateReviewerAdmin(admin.ModelAdmin):

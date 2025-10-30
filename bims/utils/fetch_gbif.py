@@ -502,22 +502,28 @@ def fetch_all_species_from_gbif(
         status = (species_data.get('taxonomicStatus') or "").strip().lower()
     except Exception:
         status = ""
+
     if species_data and 'acceptedKey' in species_data and 'synonym' in status:
         ak = species_data['acceptedKey']
         if ak and ak != taxonomy.gbif_key and ak not in _visited:
-            accepted_taxonomy = fetch_all_species_from_gbif(
-                gbif_key=ak,
-                taxonomic_rank=taxonomy.rank,
-                parent=taxonomy.parent,
-                fetch_children=False,
-                fetch_vernacular_names=fetch_vernacular_names,
-                use_name_lookup=use_name_lookup,
-                log_file_path=log_file_path,
-                _visited=_visited,
-                _depth=_depth + 1,
-            )
+            accepted_preexists = Taxonomy.objects.filter(gbif_key=ak).exists()
+            if accepted_preexists:
+                accepted_taxonomy = Taxonomy.objects.filter(gbif_key=ak).first()
+            else:
+                accepted_taxonomy = fetch_all_species_from_gbif(
+                    gbif_key=ak,
+                    taxonomic_rank=taxonomy.rank,
+                    parent=taxonomy.parent,
+                    fetch_children=False,
+                    fetch_vernacular_names=fetch_vernacular_names,
+                    use_name_lookup=use_name_lookup,
+                    log_file_path=log_file_path,
+                    _visited=_visited,
+                    _depth=_depth + 1,
+                )
+
             if accepted_taxonomy:
-                if taxonomy.iucn_status:
+                if not accepted_preexists and taxonomy.iucn_status:
                     accepted_taxonomy.iucn_status = taxonomy.iucn_status
                     accepted_taxonomy.save()
                 taxonomy.accepted_taxonomy = accepted_taxonomy
