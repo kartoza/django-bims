@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
 from rest_framework import serializers
 
-from bims.models import TaxonGroupTaxonomy
+from bims.models import TaxonGroupTaxonomy, LocationSite
 from bims.models.taxonomy import Taxonomy
 from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 from bims.serializers.bio_collection_serializer import SerializerContextCache
@@ -12,13 +12,34 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.dataset import Dataset
 
 HIERARCHY_OF_CERTAINTY = [
-    'High',
-    'Medium',
-    'Low',
-    'Potential Distribution',
-    'Outdated Distribution',
-    'Unknown'
+    "High",
+    "Herbarium verified",
+    "Expert verified",
+    "Photo ID",
+    "Medium",
+    "Unverified",
+    "Low",
+    "Misidentification",
+    "Potential Distribution",
+    "Unknown",
 ]
+
+HIERARCHY_OF_ACCURACY_OF_COORDINATES = [
+    "GPS point",
+    "Nbal Centroid",
+    "Section Centroid",
+    "Park Centroid",
+    "QDS Centroid",
+    "Inaccurate GPS location",
+    "Verified place name",
+    "Historical range map",
+    "Unverified place name",
+    "Unknown"
+]
+
+
+def _norm_confidence(s):
+    return (s or "").strip().lower()
 
 
 def get_dataset_occurrences(occurrences):
@@ -183,7 +204,8 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     national_conservation_status = serializers.SerializerMethodField()
     sources = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
-    confidence = serializers.SerializerMethodField()
+    certainty = serializers.SerializerMethodField()
+    accuracy_of_coordinates = serializers.SerializerMethodField()
     park_or_mpa_name = serializers.SerializerMethodField()
     creation_date = serializers.SerializerMethodField()
     occurrence_records = serializers.SerializerMethodField()
@@ -286,7 +308,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             return 0
         return bio.count()
 
-    def get_confidence(self, obj: Taxonomy):
+    def get_certainty(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return ''
@@ -296,15 +318,38 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         if not bio_with_certainty.exists():
             return ''
 
-        certainties = set(
-            bio_with_certainty.values_list(
-                'certainty_of_identification', flat=True
-            )
+        certainties_lc = {
+            _norm_confidence(c)
+            for c in bio_with_certainty.values_list('certainty_of_identification', flat=True)
+            if c is not None and c.strip() != ''
+        }
+
+        for canonical in HIERARCHY_OF_CERTAINTY:
+            if _norm_confidence(canonical) in certainties_lc:
+                return canonical
+
+        return 'Unknown'
+
+    def get_accuracy_of_coordinates(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+
+        qs = (
+            bio
+            .exclude(site__isnull=True)
+            .exclude(site__accuracy_of_coordinates__isnull=True)
+            .exclude(site__accuracy_of_coordinates__exact='')
         )
-        # HIERARCHY_OF_CERTAINTY defines the order of precedence
-        for certainty in HIERARCHY_OF_CERTAINTY:
-            if certainty in certainties:
-                return certainty
+
+        accuracies_lc = {
+            _norm_confidence(val)
+            for val in qs.values_list('site__accuracy_of_coordinates', flat=True).distinct()
+        }
+
+        for canonical in HIERARCHY_OF_ACCURACY_OF_COORDINATES:
+            if _norm_confidence(canonical) in accuracies_lc:
+                return canonical
 
         return 'Unknown'
 
@@ -378,7 +423,8 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'national_conservation_status',
             'sources',
             'cites_listing',
-            'confidence',
+            'certainty',
+            'accuracy_of_coordinates',
             'park_or_mpa_name',
             'creation_date',
             'occurrence_records'
