@@ -442,6 +442,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         if not preferences.SiteSetting.project_name == 'sanparks':
             fields.pop('invasion_status_in_park', None)
             fields.pop('park_or_mpa_name', None)
+            fields.pop('tops', None)
         return fields
 
     class Meta:
