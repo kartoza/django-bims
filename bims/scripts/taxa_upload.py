@@ -21,7 +21,6 @@ from bims.models import (
     ORIGIN_CATEGORIES, TaxonTag, SourceReference,
     SourceReferenceBibliography,
     Invasion, SpeciesGroup,
-    TaxonomyUpdateProposal
 )
 from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
@@ -43,6 +42,11 @@ INFRA_MARKER_RE = re.compile(
     r'\b(?:subsp|ssp|subspecies|var|variety|forma|form|f)\.?\b',
     re.IGNORECASE
 )
+
+IS_FIELD_RE = re.compile(r'^\s*IS[\s_:-]*(.+?)\s*$', re.IGNORECASE)
+
+def _norm_park_label(s: str) -> str:
+    return re.sub(r'\s+', ' ', (s or '').strip()).lower()
 
 def _as_truthy(val) -> bool:
     if val is None:
@@ -246,29 +250,34 @@ class TaxaProcessor(object):
 
     def _clean_additional_data(self, row) -> dict:
         """
-        Build cleaned dict for additional_data WITHOUT boolean coercion.
-        - Trim strings & collapse whitespace
-        - Drop blanks and placeholder zeros (handled via get_row_value)
-        - Keep numbers/bools as-is
-        - Include any extra metadata keys that start with "_" verbatim
+        Build cleaned dict for additional_data
         """
         cleaned = {}
+        is_by_park_norm = {}
+
         for key in row.keys():
-            # Include underscore "meta" keys directly (e.g., _gbif_genus_mismatch)
             if isinstance(key, str) and key.startswith('_') and isinstance(row, dict):
                 meta_val = row.get(key)
                 if meta_val is None:
                     continue
                 try:
-                    json.dumps(meta_val)  # probe
+                    json.dumps(meta_val)
                     cleaned[key] = meta_val
                 except TypeError:
                     cleaned[key] = str(meta_val)
                 continue
 
-            val = self.get_row_value(row, key)  # returns None for 0/"0"
+            val = self.get_row_value(row, key)
             if val is None:
                 continue
+
+            if isinstance(key, str):
+                m = IS_FIELD_RE.match(key)
+                if m:
+                    park_label_raw = re.sub(r'\s+', ' ',
+                                            m.group(1).replace('_', ' ').strip())
+                    if park_label_raw:
+                        is_by_park_norm[_norm_park_label(park_label_raw)] = val
 
             if isinstance(val, str):
                 s = re.sub(r'\s+', ' ', val).strip()
@@ -282,10 +291,14 @@ class TaxaProcessor(object):
                 continue
 
             try:
-                json.dumps(val)  # probe serializability
+                json.dumps(val)
                 cleaned[key] = val
             except TypeError:
                 cleaned[key] = str(val)
+
+        if is_by_park_norm:
+            cleaned['invasion_status_by_park'] = is_by_park_norm
+
         return cleaned
 
     def endemism(self, row):

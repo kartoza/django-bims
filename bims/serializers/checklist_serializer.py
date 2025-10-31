@@ -199,6 +199,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     most_recent_record = serializers.SerializerMethodField()
     origin = serializers.SerializerMethodField()
     invasion = serializers.SerializerMethodField()
+    invasion_status_in_park = serializers.SerializerMethodField()
     endemism = serializers.SerializerMethodField()
     global_conservation_status = serializers.SerializerMethodField()
     national_conservation_status = serializers.SerializerMethodField()
@@ -383,6 +384,34 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             return obj.invasion.category
         return ''
 
+    def get_invasion_status_in_park(self, obj: Taxonomy):
+        addl = getattr(obj, 'additional_data', None) or {}
+        by_park = addl.get('invasion_status_by_park') or {}
+        if not isinstance(by_park, dict) or not by_park:
+            return ''
+
+        parks_str = self.get_park_or_mpa_name(obj)
+        if not parks_str or parks_str == '-':
+            return ''
+
+        parks = [p.strip() for p in str(parks_str).split(',') if p and p.strip()]
+        if not parks:
+            return ''
+
+        matches = []
+        for park in parks:
+            key = ' '.join((park or '').strip().split()).lower()
+            val = by_park.get(key)
+            if isinstance(val, str):
+                val = val.strip()
+            if val:
+                matches.append(val)
+
+        if not matches:
+            return ''
+
+        return ', '.join(dict.fromkeys(matches))
+
     def get_endemism(self, obj: Taxonomy):
         taxon_group_taxon = self.get_taxon_group_taxon_data(obj)
         if not taxon_group_taxon:
@@ -418,6 +447,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'most_recent_record',
             'origin',
             'endemism',
+            'invasion_status_in_park',
             'invasion',
             'global_conservation_status',
             'national_conservation_status',
