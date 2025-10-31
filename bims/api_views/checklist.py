@@ -32,6 +32,7 @@ CSV_HEADER_TITLE = {
     'class_name': 'Class',
     'scientific_name': 'Accepted Scientific name and authority',
     'cites_listing': 'CITES listing',
+    'tops': 'TOPS',
     'park_or_mpa_name': 'Park or MPA name'
 }
 

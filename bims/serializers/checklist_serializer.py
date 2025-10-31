@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
+from preferences import preferences
 from rest_framework import serializers
 
 from bims.models import TaxonGroupTaxonomy, LocationSite
@@ -210,6 +211,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     park_or_mpa_name = serializers.SerializerMethodField()
     creation_date = serializers.SerializerMethodField()
     occurrence_records = serializers.SerializerMethodField()
+    tops = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -384,6 +386,10 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             return obj.invasion.category
         return ''
 
+    def get_tops(self, obj: Taxonomy):
+        addl = getattr(obj, 'additional_data', None) or {}
+        return addl.get('tops') or addl.get('TOPS') or ''
+
     def get_invasion_status_in_park(self, obj: Taxonomy):
         addl = getattr(obj, 'additional_data', None) or {}
         by_park = addl.get('invasion_status_by_park') or {}
@@ -431,6 +437,13 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     def get_cites_listing(self, obj: Taxonomy):
         return obj.cites_listing
 
+    def get_fields(self):
+        fields = super().get_fields()
+        if not preferences.SiteSetting.project_name == 'sanparks':
+            fields.pop('invasion_status_in_park', None)
+            fields.pop('park_or_mpa_name', None)
+        return fields
+
     class Meta:
         model = Taxonomy
         fields = [
@@ -453,9 +466,11 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'national_conservation_status',
             'sources',
             'cites_listing',
+            'tops',
             'certainty',
             'accuracy_of_coordinates',
             'park_or_mpa_name',
             'creation_date',
             'occurrence_records'
         ]
+
