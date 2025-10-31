@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Iterable
 
 from preferences import preferences
@@ -46,28 +47,52 @@ class TaxonSerializer(serializers.ModelSerializer):
     taxonomic_status = serializers.SerializerMethodField()
 
     def _format_distributions(self, qs):
+        qs = qs.order_by('name')
         bio_tags = list(qs.values('name', 'doubtful'))
         return ", ".join(
-            [f'{bio_tag["name"]}{"(?)" if bio_tag["doubtful"] else ""}' for bio_tag in bio_tags]
+            [
+                f'{re.sub(r"\s*/\s*", "/", " ".join((bio_tag["name"] or "").split())).strip()}'
+                f'{"(?)" if bio_tag["doubtful"] else ""}'
+                for bio_tag in bio_tags
+            ]
         )
+
+    def _normalize_tag_token(self, s: str) -> str:
+        s = ' '.join((s or '').split())
+        s = re.sub(r'\s*/\s*', '/', s)
+        return s.lower()
+
+    def _tags_key_set(self, tags_qs):
+        return {self._normalize_tag_token(t.name) for t in tags_qs.all()}
 
     def _format_tags(self, tags_qs):
         tag_info = []
         cached_tag_groups = self.context.setdefault('tag_groups', {})
 
-        for tag in tags_qs.order_by('tag_groups__order'):
+        for tag in tags_qs.order_by('tag_groups__order', 'name'):
             if tag.id in cached_tag_groups:
-                tag_info.append(cached_tag_groups[tag.id])
+                label = cached_tag_groups[tag.id]
             else:
                 tg_qs = tag.tag_groups.all()
+                disp_name = re.sub(r'\s*/\s*', '/', ' '.join((tag.name or '').split())).strip()
                 if tg_qs.exists():
                     group = tg_qs.first()
-                    label = f"{tag.name} ({group.colour})"
+                    label = f"{disp_name} ({group.colour})"
                 else:
-                    label = tag.name
-                tag_info.append(label)
+                    label = disp_name
                 cached_tag_groups[tag.id] = label
-        return ", ".join(tag_info)
+            tag_info.append(label)
+
+        seen = set()
+        ordered = []
+        for lbl in tag_info:
+            key = self._normalize_tag_token(lbl)
+            if key in seen:
+                continue
+            seen.add(key)
+            ordered.append(lbl)
+
+        return ", ".join(ordered)
 
     def get_iucn_url(self, obj: Taxonomy):
         if obj.iucn_data:
@@ -101,8 +126,19 @@ class TaxonSerializer(serializers.ModelSerializer):
         if not proposal:
             return original_str
 
-        proposed_str = self._format_distributions(proposal.biographic_distributions.all())
-        if (original_str or '').strip() != (proposed_str or '').strip():
+        proposed_qs = proposal.biographic_distributions.all()
+        proposed_str = self._format_distributions(proposed_qs)
+
+        orig_set = {
+            (self._normalize_tag_token(x.name), bool(x.doubtful))
+            for x in obj.biographic_distributions.all()
+        }
+        prop_set = {
+            (self._normalize_tag_token(x.name), bool(x.doubtful))
+            for x in proposed_qs
+        }
+
+        if orig_set != prop_set:
             return f"{original_str if original_str else '-'} → {proposed_str}"
         return original_str
 
@@ -333,7 +369,7 @@ class TaxonSerializer(serializers.ModelSerializer):
             return original_str
 
         proposed_str = self._format_tags(proposal.tags)
-        if (original_str or '').strip() != (proposed_str or '').strip():
+        if self._tags_key_set(obj.tags) != self._tags_key_set(proposal.tags):
             return f"{original_str if original_str else '-'} → {proposed_str}"
         return original_str
 

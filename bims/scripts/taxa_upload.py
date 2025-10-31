@@ -502,7 +502,8 @@ class TaxaProcessor(object):
                         logger.warning("Cannot resolve parent '%s' (%s) for '%s'",
                                        csv_parent_name, parent_rank_name,
                                        getattr(cursor, 'canonical_name', 'unknown'))
-                        break
+                        rank_index -= 1
+                        continue
                 else:
                     cursor = current_parent
             else:
@@ -519,7 +520,6 @@ class TaxaProcessor(object):
                     logger.warning("Cannot resolve parent '%s' (%s) for '%s'",
                                    csv_parent_name, parent_rank_name,
                                    getattr(cursor, 'canonical_name', 'unknown'))
-                    break
 
             rank_index -= 1
 
