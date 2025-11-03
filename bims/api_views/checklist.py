@@ -1,6 +1,7 @@
 import csv
 import os
 from django.conf import settings
+from django.db.models import F
 from django.http import Http404
 from preferences import preferences
 from reportlab.lib import colors
@@ -16,13 +17,16 @@ from django.contrib.auth import get_user_model
 
 from bims.api_views.search import CollectionSearch
 from bims.enums import TaxonomicRank
+from bims.models import LocationContext
 from bims.models.taxonomy import Taxonomy
+from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 from bims.utils.domain import get_current_domain
 from bims.models.download_request import DownloadRequest
 from bims.serializers.checklist_serializer import (
     ChecklistSerializer,
     ChecklistPDFSerializer
 )
+from bims.utils.site_code import SANPARK_PARK_KEY
 from bims.utils.url import parse_url_to_filters
 from bims.tasks.checklist import download_checklist
 from bims.tasks.email_csv import send_csv_via_email
@@ -105,6 +109,51 @@ def generate_checklist(download_request_id):
             download_request, module_name, collection_records, batch_size)
 
 
+def _format_park_column_title(park_name):
+    name = (park_name or '').strip()
+    if not name:
+        return ''
+    if 'National Park' in name:
+        name = name.replace('National Park', 'NP').strip()
+    elif not name.endswith('NP'):
+        name = f'{name} NP'
+    return f'{name} invasion status'
+
+
+def _slugify_park_fieldname(park_name):
+    import re
+    base = (park_name or '').strip().lower()
+    base = base.replace('national park', 'np')
+    base = re.sub(r'\W+', '_', base)
+    base = base.strip('_')
+    if not base:
+        return ''
+    return f'invasion_status_{base}'
+
+
+def _get_distinct_parks_for_collection(collection_records):
+    site_ids = (
+        collection_records
+        .exclude(site__isnull=True)
+        .values_list('site_id', flat=True)
+        .distinct()
+    )
+    if not site_ids:
+        return []
+
+    park_names = (
+        LocationContext.objects
+        .filter(
+            site_id__in=site_ids,
+            group__name__icontains=SANPARK_PARK_KEY
+        )
+        .values_list('value', flat=True)
+        .distinct()
+    )
+
+    return [name.strip() for name in park_names if name and name.strip()]
+
+
 def generate_csv_checklist(download_request, module_name, collection_records, batch_size):
     site_domain_name = get_current_domain()
 
@@ -115,7 +164,21 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     fieldnames = [key for key in get_serializer_keys(ChecklistSerializer) if key != 'id']
-    custom_header = get_custom_header(fieldnames, CSV_HEADER_TITLE)
+
+    header_title_dict = dict(CSV_HEADER_TITLE)
+    park_field_map = {}
+
+    if preferences.SiteSetting.project_name == 'sanparks':
+        park_names = _get_distinct_parks_for_collection(collection_records)
+        for park_name in park_names:
+            field_key = _slugify_park_fieldname(park_name)
+            if not field_key:
+                continue
+            park_field_map[park_name] = field_key
+            fieldnames.append(field_key)
+            header_title_dict[field_key] = _format_park_column_title(park_name)
+
+    custom_header = get_custom_header(fieldnames, header_title_dict)
 
     taxonomy_collection_records = (
         collection_records.distinct(
@@ -131,12 +194,17 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         if not written_taxa_ids:
-            # Manually write header using writerow
             writer.writerow(dict(zip(fieldnames, custom_header)))
 
         for start in range(0, taxonomy_collection_records_count, batch_size):
             batch = taxonomy_ids[start:start + batch_size]
-            process_batch(batch, writer, written_taxa_ids, collection_records)
+            process_batch(
+                batch,
+                writer,
+                written_taxa_ids,
+                collection_records,
+                park_field_map,
+            )
             download_request.progress = (
                 f'{start}/{taxonomy_collection_records_count}'
             )
@@ -277,7 +345,28 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     return True
 
 
-def process_batch(record_taxonomy_ids, writer, written_taxa_ids, collection_records):
+def _get_invasion_status_for_taxon_parks(taxon_obj, park_field_map, collection_records):
+    if not park_field_map:
+        return {}
+
+    results = {field_key: '' for field_key in park_field_map.values()}
+
+    for park_name, field_key in park_field_map.items():
+        is_key = f'IS_{park_name}'
+        statuses = set()
+        addl = getattr(taxon_obj, 'additional_data', None) or {}
+        val = addl.get(is_key)
+        if isinstance(val, str):
+            val = val.strip()
+        if val:
+            statuses.add(val)
+        if statuses:
+            results[field_key] = ', '.join(sorted(statuses))
+
+    return results
+
+
+def process_batch(record_taxonomy_ids, writer, written_taxa_ids, collection_records, park_field_map=None):
     """
     Process a batch of collection records and write unique taxa to the CSV file.
     Args:
@@ -285,7 +374,11 @@ def process_batch(record_taxonomy_ids, writer, written_taxa_ids, collection_reco
         writer (csv.DictWriter): CSV writer object.
         written_taxa_ids (set): Set of already written taxa IDs to avoid duplication.
         collection_records (QuerySet): Filtered collection records
+        park_field_map (dict): {park_name: field_key} for dynamic invasion status columns
     """
+    if park_field_map is None:
+        park_field_map = {}
+
     unique_taxonomy_ids = set(record_taxonomy_ids) - written_taxa_ids
 
     if unique_taxonomy_ids:
@@ -300,10 +393,23 @@ def process_batch(record_taxonomy_ids, writer, written_taxa_ids, collection_reco
             }
         )
 
-        for taxon in taxon_serializer.data:
+        taxa_list = list(taxa)
+        serializer_data = list(taxon_serializer.data)
+
+        for taxon_obj, taxon in zip(taxa_list, serializer_data):
             written_taxa_ids.add(taxon['id'])
-            del taxon['id']
-            writer.writerow(taxon)
+            row = dict(taxon)
+            del row['id']
+
+            if park_field_map and preferences.SiteSetting.project_name == 'sanparks':
+                park_statuses = _get_invasion_status_for_taxon_parks(
+                    taxon_obj,
+                    park_field_map,
+                    collection_records,
+                )
+                row.update(park_statuses)
+
+            writer.writerow(row)
 
 
 class DownloadChecklistAPIView(APIView):
