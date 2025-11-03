@@ -1056,7 +1056,7 @@ define([
                     if (category.startsWith("N__")) {
                         $('#conservation-status-national-' + category.replace('N__', '')).prop('checked', true);
                     } else {
-                        $('#conservation-status-global--' + category).prop('checked', true);
+                        $('#conservation-status-global-' + category).prop('checked', true);
                     }
                 });
             }
