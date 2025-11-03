@@ -136,7 +136,7 @@ from bims.models import (
     TaxonGroupCitation,
     HarvestSchedule,
     OccurrenceUploadTemplate,
-    UploadRequest
+    UploadRequest, CertaintyHierarchy
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2569,3 +2569,9 @@ class UploadRequestAdmin(admin.ModelAdmin):
     list_filter = ('upload_type', 'status', 'created_at')
     search_fields = ('name', 'email', 'notes', 'github_issue_url')
     readonly_fields = ('created_at', 'updated_at', 'client_ip', 'github_issue_number', 'github_issue_url')
+
+
+@admin.register(CertaintyHierarchy)
+class CertaintyHierarchyAdmin(OrderedModelAdmin):
+    ordering = ('order',)
+    list_display = ('id', 'move_up_down_links', 'name')

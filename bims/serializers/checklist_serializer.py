@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from preferences import preferences
 from rest_framework import serializers
 
-from bims.models import TaxonGroupTaxonomy, LocationContext
+from bims.models import TaxonGroupTaxonomy, LocationContext, CertaintyHierarchy
 from bims.models.taxonomy import Taxonomy
 from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -20,7 +20,6 @@ HIERARCHY_OF_CERTAINTY = [
     "Unverified",
     "Low",
     "Misidentification",
-    "Potential Distribution",
     "Unknown",
 ]
 
@@ -309,13 +308,22 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             return 0
         return bio.count()
 
+    def get_certainty_hierarchy(self):
+        if not hasattr(self, '_certainty_hierarchy_cache'):
+            db_values = list(
+                CertaintyHierarchy.objects.order_by('order').values_list('name', flat=True)
+            )
+            self._certainty_hierarchy_cache = db_values or HIERARCHY_OF_CERTAINTY
+        return self._certainty_hierarchy_cache
+
     def get_certainty(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return ''
 
         bio_with_certainty = bio.exclude(
-            certainty_of_identification='')
+            certainty_of_identification=''
+        )
         if not bio_with_certainty.exists():
             return ''
 
@@ -325,7 +333,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             if c is not None and c.strip() != ''
         }
 
-        for canonical in HIERARCHY_OF_CERTAINTY:
+        for canonical in self.get_certainty_hierarchy():
             if _norm_confidence(canonical) in certainties_lc:
                 return canonical
 
