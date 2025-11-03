@@ -1,15 +1,15 @@
 from datetime import datetime
 
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import F
+from preferences import preferences
 from rest_framework import serializers
 
-from bims.models import TaxonGroupTaxonomy, LocationSite
+from bims.models import TaxonGroupTaxonomy, LocationContext
 from bims.models.taxonomy import Taxonomy
-from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
 from bims.serializers.bio_collection_serializer import SerializerContextCache
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.models.dataset import Dataset
+from bims.utils.site_code import SANPARK_PARK_KEY
 
 HIERARCHY_OF_CERTAINTY = [
     "High",
@@ -209,6 +209,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     park_or_mpa_name = serializers.SerializerMethodField()
     creation_date = serializers.SerializerMethodField()
     occurrence_records = serializers.SerializerMethodField()
+    tops = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -357,14 +358,29 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         bio = self.get_bio_data(obj)
         if not bio.exists():
             return '-'
-        if bio.exclude(source_collection__iexact='gbif').exists():
-            park_names = list(bio.annotate(
-                    park_name=F(f'additional_data__{PARK_OR_MPA_NAME}')
-                ).values_list('park_name', flat=True)
+
+        site_ids = (
+            bio
+            .exclude(site__isnull=True)
+            .values_list('site_id', flat=True)
+            .distinct()
+        )
+        if not site_ids:
+            return '-'
+
+        park_names = (
+            LocationContext.objects
+            .filter(
+                site_id__in=site_ids,
+                group__name__icontains=SANPARK_PARK_KEY
             )
-            park_names = [name for name in park_names if name is not None]
-            if park_names:
-                return ','.join(set(park_names))
+            .values_list('value', flat=True)
+            .distinct()
+        )
+
+        park_names = [name.strip() for name in park_names if name and name.strip()]
+        if park_names:
+            return ','.join(sorted(set(park_names)))
         return '-'
 
     def get_origin(self, obj: Taxonomy):
@@ -382,6 +398,10 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         if obj.invasion:
             return obj.invasion.category
         return ''
+
+    def get_tops(self, obj: Taxonomy):
+        addl = getattr(obj, 'additional_data', None) or {}
+        return addl.get('tops') or addl.get('TOPS') or ''
 
     def get_endemism(self, obj: Taxonomy):
         taxon_group_taxon = self.get_taxon_group_taxon_data(obj)
@@ -401,6 +421,13 @@ class ChecklistSerializer(ChecklistBaseSerializer):
 
     def get_cites_listing(self, obj: Taxonomy):
         return obj.cites_listing
+
+    def get_fields(self):
+        fields = super().get_fields()
+        if not preferences.SiteSetting.project_name == 'sanparks':
+            fields.pop('park_or_mpa_name', None)
+            fields.pop('tops', None)
+        return fields
 
     class Meta:
         model = Taxonomy
@@ -423,9 +450,11 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'national_conservation_status',
             'sources',
             'cites_listing',
+            'tops',
             'certainty',
             'accuracy_of_coordinates',
             'park_or_mpa_name',
             'creation_date',
             'occurrence_records'
         ]
+

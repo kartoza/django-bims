@@ -1,6 +1,11 @@
-from django.test import TestCase
+import csv
+import os
 
-from bims.api_views.checklist import checklist_collection_records
+from django.test import TestCase
+from preferences import preferences
+
+from bims.api_views.checklist import checklist_collection_records, generate_csv_checklist
+from bims.models import LocationContext, SiteSetting
 from bims.models.dataset import Dataset
 from bims.models.download_request import DownloadRequest
 from bims.models.biological_collection_record import (
@@ -18,6 +23,7 @@ from bims.tests.model_factories import (
     TaxonGroupF,
     UserF
 )
+from bims.utils.site_code import SANPARK_PARK_KEY
 
 
 class TestGetDatasetOccurrences(TestCase):
@@ -89,6 +95,23 @@ class TestGetDatasetOccurrences(TestCase):
             processing=True,
             rejected=False
         )
+        group_model = LocationContext._meta.get_field('group').remote_field.model
+        self.park_name = 'Addo Elephant National Park'
+        self.location_group = group_model.objects.create(
+            name=SANPARK_PARK_KEY
+        )
+        LocationContext.objects.create(
+            site=self.collection_record1.site,
+            group=self.location_group,
+            value=self.park_name,
+        )
+        site_setting = preferences.SiteSetting
+        if not site_setting:
+            site_setting = SiteSetting.objects.create()
+
+        if site_setting:
+            site_setting.default_data_source = 'sanparks'
+            site_setting.save()
 
     def test_get_dataset_occurrences_with_dataset_keys(self):
         occurrences = BiologicalCollectionRecord.objects.filter(
@@ -145,6 +168,10 @@ class TestGetDatasetOccurrences(TestCase):
         self.assertTrue(Dataset.objects.filter(
             citation='Test Citation'
         ).exists())
+        self.assertEqual(
+            serializer_data['park_or_mpa_name'],
+            self.park_name
+        )
 
     def test_checklist_collection_records(self):
         taxon_group = TaxonGroupF.create()
@@ -176,3 +203,52 @@ class TestGetDatasetOccurrences(TestCase):
             collection_records.count(),
             3
         )
+
+    def test_csv_checklist_includes_park_invasion_columns(self):
+
+        park_name = 'Addo Elephant National Park'
+
+        self.taxonomy.additional_data = {
+            **(self.taxonomy.additional_data or {}),
+            f'IS_{park_name}': 'Invasive'
+        }
+        self.taxonomy.save()
+
+        record = BiologicalCollectionRecordF.create(
+            taxonomy=self.taxonomy,
+            source_collection='sanparks',
+        )
+
+        group_model = LocationContext._meta.get_field('group').remote_field.model
+        group = group_model.objects.create(name='SANPARKS checklist group')
+        LocationContext.objects.create(
+            site=record.site,
+            group=group,
+            value=park_name,
+        )
+
+        collection_records = BiologicalCollectionRecord.objects.filter(
+            taxonomy=self.taxonomy
+        )
+
+        generate_csv_checklist(
+            self.download_request,
+            module_name='TestModule',
+            collection_records=collection_records,
+            batch_size=1000
+        )
+
+        self.download_request.refresh_from_db()
+        csv_file = self.download_request.request_file
+        self.assertTrue(os.path.exists(csv_file.path))
+
+        with open(csv_file.path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames
+            expected_header = 'Addo Elephant NP invasion status'
+            self.assertIn(expected_header, fieldnames)
+
+            rows = list(reader)
+            self.assertGreaterEqual(len(rows), 1)
+            row = rows[0]
+            self.assertEqual(row.get(expected_header), 'Invasive')
