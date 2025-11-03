@@ -940,8 +940,6 @@ define([
                 }
             }
 
-            console.log(allFilters)
-
             // Category
             if (allFilters.hasOwnProperty('category')) {
                 var categories = JSON.parse(allFilters['category']);

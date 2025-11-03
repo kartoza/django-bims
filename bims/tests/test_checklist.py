@@ -95,6 +95,25 @@ class TestGetDatasetOccurrences(TestCase):
             processing=True,
             rejected=False
         )
+        self.collection_record2 = BiologicalCollectionRecordF.create(
+            taxonomy=self.taxonomy,
+            source_reference=source_reference_1,
+            additional_data={
+                'datasetKey': '123e4567-e89b-12d3-a456-426614174003',
+                'datasetName': 'Nonexistent Dataset',
+                'Citation': 'Test Citation',
+                'Include/Exclude': 'Include',
+            }
+        )
+        self.collection_record3 = BiologicalCollectionRecordF.create(
+            taxonomy=self.taxonomy,
+            source_reference=source_reference_1,
+            additional_data={
+                'datasetName': 'Standalone Dataset',
+                'Citation': 'Test Citation 2',
+                'Include/Exclude': 'Exclude',
+            }
+        )
         group_model = LocationContext._meta.get_field('group').remote_field.model
         self.park_name = 'Addo Elephant National Park'
         self.location_group = group_model.objects.create(
@@ -172,6 +191,8 @@ class TestGetDatasetOccurrences(TestCase):
             serializer_data['park_or_mpa_name'],
             self.park_name
         )
+        self.assertEqual(serializer_data['include_or_exclude'], 'Exclude')
+        self.assertIn('Test Citation 2', serializer_data['exclude_source'])
 
     def test_checklist_collection_records(self):
         taxon_group = TaxonGroupF.create()
