@@ -83,7 +83,7 @@ class DataUploadView(
             ).order_by('-display_order')
             display_order = 1
             if taxon_groups:
-                display_order = taxon_groups[0].display_order + 1
+                display_order = len(taxon_groups) + 1
             TaxonGroup.objects.create(
                 name=taxon_group_name,
                 logo=taxon_group_logo,
