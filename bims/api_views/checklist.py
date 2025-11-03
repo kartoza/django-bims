@@ -37,7 +37,8 @@ CSV_HEADER_TITLE = {
     'scientific_name': 'Accepted Scientific name and authority',
     'cites_listing': 'CITES listing',
     'tops': 'TOPS',
-    'park_or_mpa_name': 'Park or MPA name'
+    'park_or_mpa_name': 'Park or MPA name',
+    'include or exclude': 'Include/Exclude'
 }
 
 User = get_user_model()

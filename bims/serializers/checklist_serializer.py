@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import F
 from preferences import preferences
 from rest_framework import serializers
 
@@ -210,6 +211,8 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     creation_date = serializers.SerializerMethodField()
     occurrence_records = serializers.SerializerMethodField()
     tops = serializers.SerializerMethodField()
+    include_or_exclude = serializers.SerializerMethodField()
+    exclude_source = serializers.SerializerMethodField()
 
     def taxon_name_by_rank(
             self,
@@ -427,7 +430,83 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         if not preferences.SiteSetting.project_name == 'sanparks':
             fields.pop('park_or_mpa_name', None)
             fields.pop('tops', None)
+            fields.pop('include_or_exclude', None)
+            fields.pop('exclude_source', None)
         return fields
+
+    def get_include_or_exclude(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+
+        qs = (
+            bio
+            .exclude(source_collection__iexact='gbif')
+            .annotate(include_or_exclude=F('additional_data__Include/Exclude'))
+            .values_list('include_or_exclude', flat=True)
+        )
+
+        values = {
+            (v or '').strip()
+            for v in qs
+            if v and str(v).strip()
+        }
+        if not values:
+            return ''
+
+        if 'Exclude' in values:
+            return 'Exclude'
+        if 'Include' in values:
+            return 'Include'
+        return ''
+
+    def get_exclude_source(self, obj: Taxonomy):
+        bio = self.get_bio_data(obj)
+        if not bio.exists():
+            return ''
+
+        exclude_qs = (
+            bio
+            .exclude(source_collection__iexact='gbif')
+            .annotate(include_or_exclude=F('additional_data__Include/Exclude'))
+            .filter(include_or_exclude='Exclude')
+        )
+
+        if not exclude_qs.exists():
+            return ''
+
+        sources = []
+        for collection in exclude_qs:
+            source_ref = collection.source_reference
+            if not source_ref:
+                continue
+
+            if str(source_ref) == 'Global Biodiversity Information Facility (GBIF)':
+                continue
+
+            additional_data = collection.additional_data or {}
+            citation_name = additional_data.get('Citation')
+
+            if citation_name:
+                dataset = Dataset.objects.filter(citation=citation_name).first()
+                if not dataset:
+                    Dataset.objects.create(
+                        citation=citation_name,
+                        abbreviation=citation_name,
+                        name=str(source_ref),
+                    )
+                else:
+                    if dataset.abbreviation != citation_name:
+                        citation_name = dataset.abbreviation
+                sources.append(citation_name)
+            else:
+                sources.append(str(source_ref))
+
+        sources = [s for s in sources if s]
+        if not sources:
+            return ''
+
+        return ', '.join(sorted(set(sources)))
 
     class Meta:
         model = Taxonomy
@@ -455,6 +534,8 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'accuracy_of_coordinates',
             'park_or_mpa_name',
             'creation_date',
-            'occurrence_records'
+            'occurrence_records',
+            'include_or_exclude',
+            'exclude_source'
         ]
 
