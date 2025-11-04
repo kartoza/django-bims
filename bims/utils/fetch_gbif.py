@@ -4,7 +4,6 @@ import requests
 from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
 
-from bims.templatetags import is_fada_site
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
     gbif_name_suggest, gbif_synonyms_by_usage
