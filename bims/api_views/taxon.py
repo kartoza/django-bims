@@ -170,103 +170,136 @@ class FindTaxon(APIView):
     taxon_group_ids = 'taxonGroupIds'
     status = 'status'
 
-    def get(self, request, *args):
+    @staticmethod
+    def _get_taxon_group_and_phylum_keys(taxon_group_name=None, taxon_group_id=None):
+        if not taxon_group_name and not taxon_group_id:
+            return None, []
+
+        try:
+            if taxon_group_id:
+                taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            else:
+                taxon_group = TaxonGroup.objects.get(name=taxon_group_name)
+        except (TaxonGroup.DoesNotExist, TaxonGroup.MultipleObjectsReturned):
+            return None, []
+
+        phylum_keys = list(
+            taxon_group.taxonomies.filter(
+                parent__rank=TaxonomicRank.PHYLUM
+            ).values_list('parent__gbif_key', flat=True)
+        )
+        return taxon_group, phylum_keys
+
+    def get(self, request, *args, **kwargs):
         taxon_list = []
-        taxon_key = []
-        phylum_keys = []
+        seen_keys = set()
 
         query_dict = request.GET.dict()
+        taxon_name = (query_dict.get('q') or '').strip()
 
-        # Find classes to narrow down the results
-        taxon_group = query_dict.get('taxonGroup', None)
-        taxon_group_id = query_dict.get('taxonGroupId', None)
-        taxon_name = query_dict.get('q', None)
-        if taxon_group:
-            del query_dict['taxonGroup']
-            try:
-                taxon_group = TaxonGroup.objects.get(name=taxon_group)
-                phylum_keys = list(taxon_group.taxonomies.filter(
-                    parent__rank=TaxonomicRank.PHYLUM
-                ).values_list('parent__gbif_key', flat=True))
-            except (
-                    TaxonGroup.DoesNotExist,
-                    TaxonGroup.MultipleObjectsReturned):
-                pass
+        taxon_group_name = query_dict.pop('taxonGroup', None)
+        taxon_group_id = query_dict.pop('taxonGroupId', None)
 
-        if taxon_group_id:
-            del query_dict['taxonGroupId']
-            try:
-                taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
-                phylum_keys = list(taxon_group.taxonomies.filter(
-                    parent__rank=TaxonomicRank.PHYLUM
-                ).values_list('parent__gbif_key', flat=True))
-            except (
-                    TaxonGroup.DoesNotExist,
-                    TaxonGroup.MultipleObjectsReturned):
-                pass
+        taxon_group, phylum_keys = self._get_taxon_group_and_phylum_keys(
+            taxon_group_name=taxon_group_name,
+            taxon_group_id=taxon_group_id
+        )
 
         if 'limit' not in query_dict:
-            # If the limit is not set, we set the default limit to 20
             query_dict['limit'] = self.limit_default
-        gbif_response = suggest_search(query_dict)
+
+        gbif_response = suggest_search(query_dict) or []
 
         for gbif in gbif_response:
-            if 'key' not in gbif:
+            key = gbif.get('key')
+            if not key or key in seen_keys:
                 continue
-            if phylum_keys and gbif['phylumKey'] not in phylum_keys:
+
+            phylum_key = gbif.get('phylumKey')
+            if phylum_keys and phylum_key not in phylum_keys:
                 continue
-            key = gbif['key']
-            if key in taxon_key:
-                continue
-            taxa = Taxonomy.objects.filter(gbif_key=key)
-            taxa_id = ''
+
+            seen_keys.add(key)
+
+            taxa_qs = Taxonomy.objects.filter(gbif_key=key)
+            stored_local = taxa_qs.exists()
+            taxa_id = None
             validated = False
             taxon_group_ids = []
-            status = gbif['status']
-            if taxa.exists():
-                taxon = taxa.first()
+            status = gbif.get('status', '')
+
+            if stored_local:
+                taxon = taxa_qs.first()
                 taxa_id = taxon.id
-                validated = taxon.validated
-                taxon_group_ids = taxon.taxongroup_set.all().values_list(
-                    'id', flat=True
-                )
                 status = taxon.taxonomic_status
-            try:
-                canonicalName = gbif['canonicalName']
-            except KeyError:
-                canonicalName = gbif['scientificName']
+
+                taxon_group_ids = list(
+                    taxon.taxongrouptaxonomy_set.values_list('taxongroup_id', flat=True)
+                )
+
+                if taxon_group:
+                    tgt = TaxonGroupTaxonomy.objects.filter(
+                        taxonomy=taxon,
+                        taxongroup=taxon_group
+                    ).order_by('-id').first()
+                    validated = bool(tgt and tgt.is_validated)
+                else:
+                    validated = TaxonGroupTaxonomy.objects.filter(
+                        taxonomy=taxon,
+                        is_validated=True
+                    ).exists()
+
+            canonical_name = gbif.get('canonicalName') or gbif.get('scientificName', '')
+
             taxon_list.append({
-                self.scientific_name: gbif['scientificName'],
-                self.canonical_name: canonicalName,
-                self.rank: gbif['rank'],
+                self.scientific_name: gbif.get('scientificName', ''),
+                self.canonical_name: canonical_name,
+                self.rank: gbif.get('rank', ''),
                 self.key: key,
-                self.taxa_id: taxa_id,
+                self.taxa_id: taxa_id or '',
                 self.source: 'gbif',
-                self.stored_local: taxa.exists(),
+                self.stored_local: stored_local,
                 self.validated: validated,
                 self.taxon_group_ids: taxon_group_ids,
-                self.status: status
+                self.status: status,
             })
 
-        if not taxon_list:
-            # Find from database
-            taxa = Taxonomy.objects.filter(
+        if not taxon_list and taxon_name:
+            taxa_qs = Taxonomy.objects.filter(
                 canonical_name__icontains=taxon_name
             )
-            if taxa.exists():
-                for taxon in taxa:
-                    taxon_list.append({
-                        self.scientific_name: taxon.scientific_name,
-                        self.canonical_name: taxon.canonical_name,
-                        self.rank: taxon.rank,
-                        self.key: taxon.gbif_key,
-                        self.source: 'local' if not taxon.gbif_key else 'gbif',
-                        self.stored_local: True,
-                        self.taxa_id: taxon.id,
-                        self.validated: taxon.validated,
-                        self.taxon_group_ids: [],
-                        self.status: taxon.taxonomic_status
-                    })
+
+            if taxon_group:
+                taxa_qs = taxa_qs.filter(
+                    taxongrouptaxonomy__taxongroup=taxon_group
+                )
+
+            taxa_qs = taxa_qs.distinct()[: self.limit_default]
+
+            for taxon in taxa_qs:
+                tgt_qs = TaxonGroupTaxonomy.objects.filter(
+                    taxonomy=taxon
+                )
+                if taxon_group:
+                    tgt_qs = tgt_qs.filter(taxongroup=taxon_group)
+
+                tgt = tgt_qs.order_by('-id').first()
+                validated = bool(tgt and tgt.is_validated)
+
+                taxon_list.append({
+                    self.scientific_name: taxon.scientific_name,
+                    self.canonical_name: taxon.canonical_name,
+                    self.rank: taxon.rank,
+                    self.key: taxon.gbif_key,
+                    self.source: 'local' if not taxon.gbif_key else 'gbif',
+                    self.stored_local: True,
+                    self.taxa_id: taxon.id,
+                    self.validated: validated,
+                    self.taxon_group_ids: list(
+                        taxon.taxongrouptaxonomy_set.values_list('taxongroup_id', flat=True)
+                    ),
+                    self.status: taxon.taxonomic_status,
+                })
 
         return Response(taxon_list)
 

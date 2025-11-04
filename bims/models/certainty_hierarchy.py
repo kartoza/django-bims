@@ -11,4 +11,4 @@ class CertaintyHierarchy(models.Model):
         verbose_name_plural = 'Certainty hierarchy'
 
     def __str__(self):
-        return self.nam
+        return self.name
