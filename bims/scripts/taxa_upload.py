@@ -637,6 +637,8 @@ class TaxaProcessor(object):
         use_proposal = not auto_validate
 
         taxonomic_status = _safe_strip(self.get_row_value(row, TAXONOMIC_STATUS))
+        is_synonym = 'synonym' in (taxonomic_status or '').lower().strip()
+
         taxon_name = _safe_strip(self.get_row_value(row, TAXON))
         csv_taxon = taxon_name
 
@@ -792,11 +794,7 @@ class TaxaProcessor(object):
         # FADA id (integer part)
         fada_id = self.get_row_value(row, FADA_ID)
 
-        is_synonym = False
-
-        # Synonym support
-        if 'synonym' in (taxonomic_status or '').lower().strip():
-            is_synonym = True
+        if is_synonym:
             accepted_taxon_val = self.get_row_value(row, ACCEPTED_TAXON)
             if accepted_taxon_val:
                 accepted_taxon = Taxonomy.objects.filter(
@@ -869,7 +867,8 @@ class TaxaProcessor(object):
             if not taxonomy and gbif_key:
                 taxonomy = fetch_all_species_from_gbif(
                     gbif_key=gbif_key,
-                    fetch_vernacular_names=should_fetch_vernacular_names
+                    fetch_vernacular_names=should_fetch_vernacular_names,
+                    is_synonym=is_synonym,
                 )
                 if taxonomy:
                     new_taxon = True
@@ -880,7 +879,8 @@ class TaxaProcessor(object):
                     taxonomic_rank=rank,
                     fetch_children=False,
                     fetch_vernacular_names=should_fetch_vernacular_names,
-                    use_name_lookup=False
+                    use_name_lookup=False,
+                    is_synonym=is_synonym,
                 )
                 if taxonomy:
                     new_taxon = True
@@ -919,7 +919,8 @@ class TaxaProcessor(object):
                     taxonomic_rank=rank,
                     fetch_children=False,
                     fetch_vernacular_names=should_fetch_vernacular_names,
-                    use_name_lookup=False
+                    use_name_lookup=False,
+                    is_synonym=is_synonym,
                 )
                 taxonomy = refreshed or taxonomy
 
@@ -1039,12 +1040,9 @@ class TaxaProcessor(object):
                         if use_proposal and proposal:
                             proposal.tags.add(tag_label)
 
-            try:
-                cleaned_row = self._clean_additional_data(row)
-                addl = json.dumps(cleaned_row, ensure_ascii=False, separators=(',', ':'))
-            except Exception:  # noqa
-                addl = json.dumps({str(k): _safe_strip(str(v)) for k, v in row.items()}, ensure_ascii=False)
-            self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'additional_data', addl)
+            cleaned_additional_data = self._clean_additional_data(row)
+            self._update_taxon_and_proposal(
+                taxonomy, proposal, use_proposal, new_taxon, 'additional_data', cleaned_additional_data)
 
             if taxonomy.canonical_name != taxon_name:
                 if accepted_genus_mismatch:

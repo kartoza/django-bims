@@ -3,6 +3,8 @@ import logging
 import requests
 from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
+
+from bims.templatetags import is_fada_site
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
     gbif_name_suggest, gbif_synonyms_by_usage
@@ -295,6 +297,7 @@ def fetch_all_species_from_gbif(
     fetch_children=False,
     fetch_vernacular_names=False,
     use_name_lookup=True,
+    is_synonym=False,
     log_file_path=None,
     _visited=None,
     _depth=0,
@@ -503,7 +506,7 @@ def fetch_all_species_from_gbif(
     except Exception:
         status = ""
 
-    if species_data and 'acceptedKey' in species_data and 'synonym' in status:
+    if is_synonym and species_data and 'acceptedKey' in species_data and 'synonym' in status:
         ak = species_data['acceptedKey']
         if ak and ak != taxonomy.gbif_key and ak not in _visited:
             accepted_preexists = Taxonomy.objects.filter(gbif_key=ak).exists()
