@@ -8,11 +8,10 @@ export const addNewTaxon = (() => {
 
     let selectedTaxonGroup = '';
 
-
     function showNewTaxonForm(taxonName) {
         let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
         $newTaxonNameInput.val(capitalizedTaxonName);
-        $newTaxonParentIdInput.val($newTaxonParent.val())
+        $newTaxonParentIdInput.val($newTaxonParent.val());
         $taxonForm.show();
         const authorAutoComplete = $('#author-auto-complete');
         authorAutoComplete.empty();
@@ -31,7 +30,7 @@ export const addNewTaxon = (() => {
             'authorName': authorName
         };
         if (parentId) {
-            postData['parentId'] = parentId
+            postData['parentId'] = parentId;
         }
         let table = $('.find-taxon-table');
         table.hide();
@@ -48,7 +47,7 @@ export const addNewTaxon = (() => {
                     insertParam('validated', 'False', false, true);
                 }
             });
-            return
+            return;
         }
         $('#addNewTaxonModal').modal('toggle');
         loading.hide();
@@ -91,7 +90,7 @@ export const addNewTaxon = (() => {
             if (stored) {
                 stored = fontAwesomeIcon('check', 'green');
                 if (!validated) {
-                    stored = '<span class="badge badge-secondary">Unvalidated</span>'
+                    stored = '<span class="badge badge-secondary">Unvalidated</span>';
                 }
             } else {
                 stored = fontAwesomeIcon('times', 'red');
@@ -125,15 +124,12 @@ export const addNewTaxon = (() => {
         if (!taxonName) {
             return false;
         }
-        // Show loading div
         let table = $('.find-taxon-table');
         table.hide();
         let loading = $('.find-taxon-loading');
         loading.show();
-        let $newTaxonForm = $('.new-taxon-form');
-        $newTaxonForm.hide();
+        $taxonForm.hide();
 
-        // Show response list
         $.ajax({
             url: `/api/find-taxon/?q=${encodeURIComponent(taxonName)}&taxonGroupId=${currentSelectedTaxonGroup}`,
             type: 'get',
@@ -155,12 +151,33 @@ export const addNewTaxon = (() => {
         const parentId = $newTaxonParent.val();
         if (!parentId) {
             alert("Missing parent");
-            return
+            return;
         }
         addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val());
         $taxonForm.hide();
-        $newTaxonFamilyInput.val("")
-        $newTaxonParentIdInput.val("")
+        $newTaxonFamilyInput.val("");
+        $newTaxonParentIdInput.val("");
+    }
+
+    function clearForm() {
+        $('#add-taxon-input').val('');
+
+        const table = $('.find-taxon-table');
+        table.hide();
+        table.find('tbody').empty();
+
+        $('.find-taxon-loading').hide();
+
+        $taxonForm.show();
+        $newTaxonNameInput.val('');
+        $newTaxonFamilyInput.val('');
+        $newTaxonParentIdInput.val('');
+
+        $newTaxonParent.empty();
+        $newTaxonParent.val(null).trigger('change');
+
+        const authorAutoComplete = $('.author-auto-complete');
+        authorAutoComplete.val(null).trigger('change');
     }
 
     function init(_selectedTaxonGroup) {
@@ -173,19 +190,25 @@ export const addNewTaxon = (() => {
             $newTaxonParent.empty();
             $newTaxonParent.val(null).trigger('change');
         });
-        selectedTaxonGroup = _selectedTaxonGroup
 
-        $('#find-taxon-button').on('click', handleFindTaxonButton)
-        $addNewTaxonBtn.on('click', handleAddNewTaxon)
+        $('#addNewTaxonModal').on('hidden.bs.modal', function () {
+            clearForm();
+        });
+
+        selectedTaxonGroup = _selectedTaxonGroup;
+
+        $('#find-taxon-button').on('click', handleFindTaxonButton);
+        $addNewTaxonBtn.on('click', handleAddNewTaxon);
 
         $(document).on('click', '.add-taxon-btn', function() {
-            const button = $(this); // The clicked button
+            const button = $(this);
             const name = button.data('canonical-name');
             const gbifKey = button.data('key');
             const rank = button.data('rank');
             const taxaId = button.data('taxa-id');
             addNewTaxonToObservedList(name, gbifKey, rank, taxaId);
         });
+
         const authorAutoComplete = $('.author-auto-complete');
         authorAutoComplete.select2({
             width: '100%',
@@ -199,14 +222,13 @@ export const addNewTaxon = (() => {
                     };
                 },
                 processResults: function (data) {
-                    if (data && data !== 'fail') {
-
-                    }
                     return {
-                        results: data.map(item => { return {
-                            id: item.author,
-                            text: item.author
-                        }}),
+                        results: data.map(item => {
+                            return {
+                                id: item.author,
+                                text: item.author
+                            };
+                        }),
                     };
                 },
                 cache: true
@@ -219,7 +241,7 @@ export const addNewTaxon = (() => {
             tags: true,
             createTag: function (params) {
                 if (!this.$element.data('add-new-tag')) {
-                    return null
+                    return null;
                 }
                 let term = $.trim(params.term);
 
@@ -251,5 +273,6 @@ export const addNewTaxon = (() => {
 
     return {
         init,
+        clear: clearForm,
     }
 })()
