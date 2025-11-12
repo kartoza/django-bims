@@ -623,7 +623,9 @@ class CollectionSearch(object):
                 }
             )
         if self.taxon_tags:
-            filters['taxonomy__tags__id__in'] = self.taxon_tags
+            self.filter_taxa_records({
+                'tags__id__in': self.taxon_tags
+            })
         if self.decision_support_tools:
             filters['decisionsupporttool__dst_name__name__in'] = (
                 self.decision_support_tools
