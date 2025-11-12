@@ -132,7 +132,7 @@ class AbstractTaxonomy(AbstractValidation):
 
     scientific_name = models.CharField(
         verbose_name='Scientific Name',
-        max_length=200,
+        max_length=512,
         null=False,
         blank=False
     )
