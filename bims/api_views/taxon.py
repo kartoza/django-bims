@@ -336,17 +336,20 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         parent = None
+
         if family_id:
             parent = Taxonomy.objects.get(id=int(family_id))
         parent_id = self.request.POST.get('parentId', None)
         if parent_id:
             parent = Taxonomy.objects.get(id=int(parent_id))
+
         if gbif_key:
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
                 fetch_parent=True,
                 get_vernacular=True
             )
+
         elif taxon_name and rank:
             if rank.lower() == 'species' and parent and parent.rank.lower() == 'genus':
                 if parent.canonical_name not in taxon_name:
@@ -355,19 +358,29 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 species_name = parent.species_name
                 if species_name not in taxon_name:
                     taxon_name = species_name + ' ' + taxon_name
+
             taxon_name = taxon_name.strip()
-            try:
-                taxonomy, created = Taxonomy.objects.get_or_create(
-                    scientific_name=taxon_name,
-                    canonical_name=taxon_name,
-                    rank=rank
-                )
-            except IntegrityError:
-                taxonomy = Taxonomy.objects.get(
-                    scientific_name=taxon_name,
-                    canonical_name=taxon_name,
-                    rank=rank
-                )
+
+            existing_qs = Taxonomy.objects.filter(
+                canonical_name__iexact=taxon_name
+            )
+
+            if existing_qs.exists():
+                taxonomy = existing_qs.first()
+            else:
+                try:
+                    taxonomy, created = Taxonomy.objects.get_or_create(
+                        scientific_name=taxon_name,
+                        canonical_name=taxon_name,
+                        rank=rank
+                    )
+                except IntegrityError:
+                    taxonomy = Taxonomy.objects.get(
+                        scientific_name=taxon_name,
+                        canonical_name=taxon_name,
+                        rank=rank
+                    )
+
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
             taxon_group.taxonomies.add(
@@ -389,6 +402,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     taxon_group_id = taxon_group.id
                 except TaxonGroup.DoesNotExist:
                     pass
+
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
@@ -397,11 +411,11 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.author = author_name
                 taxonomy.save()
 
-            # Check if it's a new taxonomy
             if not TaxonGroupTaxonomy.objects.filter(
-                    taxonomy=taxonomy,
-                    taxongroup=taxon_group,
-                    is_validated=True).exists():
+                taxonomy=taxonomy,
+                taxongroup=taxon_group,
+                is_validated=True
+            ).exists():
                 taxonomy.owner = self.request.user
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)
@@ -422,7 +436,9 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'biographic_distributions',
                     'accepted_taxonomy',
                     'owner',
-                    'parent'])
+                    'parent'
+                ]
+            )
             taxonomy_update_proposal, created = (
                 TaxonomyUpdateProposal.objects.get_or_create(
                     original_taxonomy=taxonomy,
@@ -440,7 +456,9 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             )
             if created:
                 vernacular_names_instances = list(taxonomy.vernacular_names.all())
-                taxonomy_update_proposal.vernacular_names.set(vernacular_names_instances)
+                taxonomy_update_proposal.vernacular_names.set(
+                    vernacular_names_instances
+                )
 
         return Response(response)
 
