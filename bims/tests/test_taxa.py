@@ -2,7 +2,7 @@ from django.test import TestCase
 from django_tenants.test.cases import FastTenantTestCase
 from mock import patch
 
-from bims.enums import TaxonomicGroupCategory
+from bims.enums import TaxonomicGroupCategory, TaxonomicStatus
 from bims.tasks import clear_taxa_not_associated_in_taxon_group
 from bims.tests.model_factories import (
     TaxonomyF, BiologicalCollectionRecordF, TaxonGroupF, VernacularNameF, TaxonGroupTaxonomyF
@@ -10,6 +10,7 @@ from bims.tests.model_factories import (
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup, IUCNStatus, TaxonExtraAttribute
 from bims.views.download_csv_taxa_list import TaxaCSVSerializer
+from bims.admin import TaxonomyAdminForm
 
 
 class TestTaxaHelpers(TestCase):
@@ -276,3 +277,81 @@ class TestClearTaxaNotAssociatedInTaxonGroup(FastTenantTestCase):
             self.assertIsInstance(breakdown[0], dict)
             self.assertIn("n", breakdown[0])
             self.assertIn("rank", breakdown[0])
+
+
+class TaxonomyAdminFormDuplicateValidationTests(TestCase):
+    """
+    Tests for the duplicate-prevention rules implemented for issue #4844.
+    """
+
+    def test_manual_taxon_duplicate_canonical_name_is_rejected(self):
+        """
+        If a manual taxon (no gbif_key) with the same canonical_name already exists,
+        the form should raise a validation error.
+        """
+        existing = TaxonomyF.create(
+            canonical_name="Duplicata manualis",
+            gbif_key=None,
+        )
+
+        form = TaxonomyAdminForm(
+            data={
+                "canonical_name": existing.canonical_name,
+                "gbif_key": "",  # treated as no gbif_key
+                # other required fields can be omitted; we only assert non-field error
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        errors = " ".join(form.non_field_errors())
+        self.assertIn("A taxon with canonical name", errors)
+
+    def test_gbif_synonym_with_existing_accepted_canonical_is_rejected(self):
+        """
+        If an ACCEPTED taxon with a canonical_name already exists,
+        you cannot add another taxon with the same canonical_name
+        and non-ACCEPTED status (synonym/doubtful/etc).
+        """
+        accepted = TaxonomyF.create(
+            canonical_name="Canonica duplicata",
+            gbif_key="111",
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name,
+        )
+
+        form = TaxonomyAdminForm(
+            data={
+                "canonical_name": accepted.canonical_name,
+                "gbif_key": "222",
+                "taxonomic_status": TaxonomicStatus.SYNONYM.name,
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        errors = " ".join(form.non_field_errors())
+        self.assertIn("already exists in BIMS as an ACCEPTED taxon", errors)
+
+    def test_gbif_accepted_with_different_author_is_rejected(self):
+        """
+        If an ACCEPTED taxon with a canonical_name and author already exists,
+        you cannot add another ACCEPTED taxon with the same canonical_name
+        but different author.
+        """
+        accepted = TaxonomyF.create(
+            canonical_name="Authorensis duplicata",
+            gbif_key="333",
+            author="Smith, 1990",
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name,
+        )
+
+        form = TaxonomyAdminForm(
+            data={
+                "canonical_name": accepted.canonical_name,
+                "gbif_key": "444",
+                "author": "Jones, 2001",
+                "taxonomic_status": TaxonomicStatus.ACCEPTED.name,
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        errors = " ".join(form.non_field_errors())
+        self.assertIn("already an accepted taxon with this canonical name but a different author", errors)

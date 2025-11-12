@@ -27,7 +27,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse, path
@@ -1147,6 +1147,75 @@ class TaxonomyAdminForm(forms.ModelForm):
         }
         fields = '__all__'
 
+    def clean(self):
+        """
+        Enforce duplicate rules for taxa:
+
+        - Manual taxa (no gbif_key):
+          If another taxon with the same canonical_name exists, do not allow
+          creating a duplicate.
+
+        - GBIF taxa:
+          If an ACCEPTED taxon with this canonical_name already exists:
+            * Disallow adding a taxon with non-ACCEPTED status (synonym, doubtful, etc)
+              using the same canonical_name.
+            * Disallow adding another ACCEPTED taxon with a different author.
+        """
+        cleaned_data = super().clean()
+        canonical_name = (cleaned_data.get('canonical_name') or '').strip()
+        author = (cleaned_data.get('author') or '').strip()
+        taxonomic_status = cleaned_data.get('taxonomic_status')
+        gbif_key = cleaned_data.get('gbif_key')
+
+        if not canonical_name:
+            return cleaned_data
+
+        qs = Taxonomy.objects.filter(
+            canonical_name__iexact=canonical_name
+        )
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if not qs.exists():
+            return cleaned_data
+
+        existing = qs.first()
+
+        if not gbif_key:
+            raise forms.ValidationError(
+                _(
+                    "A taxon with canonical name '%(name)s' already exists "
+                    "(ID %(id)s). Please use or update the existing taxon "
+                    "instead of creating a duplicate."
+                ) % {"name": canonical_name, "id": existing.pk}
+            )
+
+        accepted = qs.filter(
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name
+        ).first()
+
+        if accepted:
+            if taxonomic_status and taxonomic_status != TaxonomicStatus.ACCEPTED.name:
+                raise forms.ValidationError(
+                    _(
+                        "This canonical name already exists in BIMS as an "
+                        "ACCEPTED taxon. You cannot add a synonym/doubtful "
+                        "entry with the same canonical name."
+                    )
+                )
+
+            if author and accepted.author and author.strip() != accepted.author.strip():
+                raise forms.ValidationError(
+                    _(
+                        "There is already an accepted taxon with this "
+                        "canonical name but a different author "
+                        "('%(author)s'). Please review the existing record "
+                        "before adding another taxon."
+                    ) % {"author": accepted.author}
+                )
+
+        return cleaned_data
+
 
 class TaxonGroupTaxonomyInline(TabularInlinePaginated):
     model = TaxonGroupTaxonomy
@@ -1208,6 +1277,39 @@ class TaxonGroupListFilter(django_admin.SimpleListFilter):
             return queryset
 
 
+class DuplicateTaxonomyFilter(django_admin.SimpleListFilter):
+    """
+    Filter Taxonomy rows that have duplicate canonical_name values.
+    This is used to help admins find potential duplicate taxa.
+    """
+    title = 'Possible duplicates'
+    parameter_name = 'has_duplicates'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Has duplicates (by canonical name)'),
+            ('no', 'No duplicates'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if not value:
+            return queryset
+        duplicated_names = (
+            Taxonomy.objects
+            .values('canonical_name')
+            .annotate(cnt=Count('id'))
+            .filter(cnt__gt=1)
+            .values_list('canonical_name', flat=True)
+        )
+
+        if value == 'yes':
+            return queryset.filter(canonical_name__in=duplicated_names)
+        if value == 'no':
+            return queryset.exclude(canonical_name__in=duplicated_names)
+        return queryset
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
@@ -1215,6 +1317,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
     autocomplete_fields = (
         'vernacular_names',
     )
+
+    ordering = ('canonical_name', )
 
     list_display = (
         'canonical_name',
@@ -1238,6 +1342,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'taxonomic_status',
         'iucn_status',
         TaxonGroupListFilter,
+        DuplicateTaxonomyFilter,
     )
 
     search_fields = (
