@@ -11,10 +11,13 @@ def forwards(apps, schema_editor):
     ContentType = apps.get_model('contenttypes', 'ContentType')
 
     # ContentType for Taxonomy model
-    taxonomy_ct = ContentType.objects.get(
-        app_label='bims',
-        model='taxonomy',
-    )
+    try:
+        taxonomy_ct = ContentType.objects.get(
+            app_label='bims',
+            model='taxonomy',
+        )
+    except ContentType.DoesNotExist:
+        return
 
     # 1) Copy Tag -> TaxonTag (if not exists yet)
     tag_to_taxontag = {}
