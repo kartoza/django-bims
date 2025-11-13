@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
 from taggit.managers import TaggableManager
-from taggit.models import TaggedItemBase
+from taggit.models import TaggedItemBase, Tag
 
 from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, TaxonTag
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
@@ -52,6 +52,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
     )
 
     tags = TaggableManager(
+        through='bims.TaxonTaggedItem',
         blank=True,
         related_name='taxonomy_proposal_tags'
     )
@@ -314,7 +315,16 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 for field in fields_to_update:
                     if field == 'tags':
                         self.original_taxonomy.tags.clear()
-                        self.original_taxonomy.tags.set(getattr(self, field).all())
+                        taxonomy_tags = []
+                        for tag in getattr(self, field).all():
+                            if isinstance(tag, Tag):
+                                taxon_tag, _ = TaxonTag.objects.get_or_create(
+                                    name=tag.name
+                                )
+                                taxonomy_tags.append(taxon_tag)
+                            else:
+                                taxonomy_tags.append(tag)
+                        self.original_taxonomy.tags.set(taxonomy_tags)
                     elif field == 'biographic_distributions':
                         self.original_taxonomy.biographic_distributions.clear()
                         self.original_taxonomy.biographic_distributions.set(

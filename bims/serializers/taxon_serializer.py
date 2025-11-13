@@ -4,11 +4,9 @@ from collections.abc import Iterable
 
 from preferences import preferences
 from django.contrib.auth import get_user_model
-from django.contrib.sites.models import Site
 from rest_framework import serializers
-from taggit.models import Tag
 
-from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal, TaxonomyUpdateReviewer
+from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProposal, TaxonTag
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup, OccurrenceUploadTemplate
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy

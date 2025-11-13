@@ -9,12 +9,12 @@ class TagSerializer(serializers.ModelSerializer):
 
     def get_name(self, obj):
         if isinstance(obj, TaxonTag):
-            return f'{obj.name} {"(?)" if obj.doubtful else ""}'
-        return obj.name
+            return f'{obj.name} {"(?)" if obj.doubtful else ""}'.strip()
+        return obj.name.strip()
 
     class Meta:
-        model = Tag
-        fields = ['id', 'name']
+        model = TaxonTag
+        fields = ['id', 'name', 'description']
 
 
 class TaxonomyTagUpdateSerializer(serializers.ModelSerializer):

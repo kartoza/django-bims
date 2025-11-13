@@ -43,7 +43,6 @@ define([
             this.bodyRowEl = this.$el.find('.row').eq(1);
 
             this.initSelect2();
-
             this.setInitialSelection();
 
             return this;
@@ -72,7 +71,8 @@ define([
                         for (var i = 0; i < data.length; i++) {
                             results.push({
                                 id: data[i].id,
-                                text: data[i].name
+                                text: data[i].name,
+                                description: data[i].description || ''   // NEW
                             });
                         }
                         return { results: results };
@@ -83,14 +83,64 @@ define([
                 closeOnSelect: false,
 
                 templateSelection: function (item) {
-                    return item.text || item.name || item.id;
+                    var label = item.text || item.name || item.id;
+
+                    var desc = item.description;
+                    if (!desc && item.element) {
+                        desc = $(item.element).data('description');
+                    }
+
+                    if (desc) {
+                        var $el = $('<span class="taxon-tag-selection"></span>');
+                        $el.text(label + ' ');
+
+                        var $icon = $('<i class="fa fa-info-circle taxon-tag-info-icon"></i>')
+                            .attr('title', desc)
+                            .attr('data-toggle', 'tooltip')
+                            .attr('data-placement', 'top');
+
+                        $icon.tooltip({
+                            container: 'body'
+                            // trigger: 'click'
+                        });
+
+                        $el.append($icon);
+                        return $el;
+                    }
+
+                    return label;
                 },
 
                 templateResult: function (item) {
                     if (item.loading) {
                         return item.text;
                     }
-                    return item.text || item.name || item.id;
+
+                    var label = item.text || item.name || item.id;
+
+                    var desc = item.description;
+                    if (!desc && item.element) {
+                        desc = $(item.element).data('description');
+                    }
+
+                    if (desc) {
+                        var $el = $('<span class="taxon-tag-option"></span>');
+                        $el.text(label + ' ');
+
+                        var $icon = $('<i class="fa fa-info-circle taxon-tag-info-icon"></i>')
+                            .attr('title', desc)
+                            .attr('data-toggle', 'tooltip')
+                            .attr('data-placement', 'top');
+
+                        $icon.tooltip({
+                            container: 'body'
+                        });
+
+                        $el.append($icon);
+                        return $el;
+                    }
+
+                    return label;
                 }
             });
         },
@@ -114,7 +164,8 @@ define([
                     if (tagItem.id !== undefined) {
                         knownOptions.push({
                             id: tagItem.id,
-                            text: tagItem.name || ('' + tagItem.id)
+                            text: tagItem.name || ('' + tagItem.id),
+                            description: tagItem.description || ''     // NEW
                         });
                     }
                 } else {
@@ -142,10 +193,6 @@ define([
             }
         },
 
-        /**
-         * Hit /api/taxon-tag-autocomplete/?ids=1,4,9
-         * and convert to [{id:1,text:"Terrestrial"}, ...]
-         */
         bootstrapTagsByIds: function (idsArray) {
             var dfd = $.Deferred();
             var self = this;
@@ -169,7 +216,8 @@ define([
                     for (var j = 0; j < data.length; j++) {
                         opts.push({
                             id: data[j].id,
-                            text: data[j].name
+                            text: data[j].name,
+                            description: data[j].description || ''     // NEW
                         });
                     }
                     dfd.resolve(opts);
@@ -185,20 +233,29 @@ define([
         applyOptionsToSelect: function (optionsList) {
             for (var i = 0; i < optionsList.length; i++) {
                 var opt = optionsList[i];
-                var exists = this.dropdownEl.find('option[value="' + opt.id + '"]').length > 0;
+                var $existing = this.dropdownEl.find('option[value="' + opt.id + '"]');
+                var desc = opt.description || '';
 
-                if (!exists) {
-                    this.dropdownEl.append(
-                        $('<option>')
-                            .val(opt.id)
-                            .text(opt.text)
-                            .prop('selected', true)
-                    );
-                } else {
-                    this.dropdownEl
-                        .find('option[value="' + opt.id + '"]')
-                        .prop('selected', true)
+                if (!$existing.length) {
+                    var $opt = $('<option>')
+                        .val(opt.id)
                         .text(opt.text)
+                        .prop('selected', true);
+
+                    // Store description on the option so Select2 can read it later
+                    if (desc) {
+                        $opt.attr('data-description', desc);         // NEW
+                    }
+
+                    this.dropdownEl.append($opt);
+                } else {
+                    $existing
+                        .prop('selected', true)
+                        .text(opt.text);
+
+                    if (desc) {
+                        $existing.attr('data-description', desc);    // NEW
+                    }
                 }
             }
 

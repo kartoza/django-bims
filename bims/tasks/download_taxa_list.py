@@ -13,11 +13,26 @@ from reportlab.platypus import Paragraph, Spacer, SimpleDocTemplate
 from bims.scripts.species_keys import (
     ACCEPTED_TAXON, TAXON_RANK,
     COMMON_NAME, CLASS, SUBSPECIES,
-    CITES_LISTING, FADA_ID
+    CITES_LISTING, FADA_ID, ON_GBIF, GBIF_LINK
 )
 from bims.utils.domain import get_current_domain
 
 logger = logging.getLogger(__name__)
+
+FIELD_MAPPINGS = {
+    'class_name': CLASS,
+    'taxon_rank': TAXON_RANK,
+    'common_name': COMMON_NAME,
+    'accepted_taxon': ACCEPTED_TAXON,
+    'on_gbif': ON_GBIF,
+    'gbif_link': GBIF_LINK,
+    'fada_id': FADA_ID,
+    'subspecies': SUBSPECIES,
+}
+
+CASE_INSENSITIVE_MAPPINGS = {
+    'cites_listing': CITES_LISTING,
+}
 
 
 def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, download_request_id=''):
@@ -102,39 +117,40 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     additional_attributes_titles = set()
 
     def update_headers(_headers):
+        """
+        Transform raw header names into display-friendly column names.
+        """
+
         _updated_headers = []
+
         for header in _headers:
+            original = header
+
             if header in FADA_ADDITIONAL_KEYS:
                 _updated_headers.append(header)
                 continue
-            original = header
-            if header == 'class_name':
-                header = CLASS
-            elif header == 'taxon_rank':
-                header = TAXON_RANK
-            elif header == 'common_name':
-                header = COMMON_NAME
-            elif header == 'accepted_taxon':
-                header = ACCEPTED_TAXON
-            elif header == 'fada_id':
-                header = FADA_ID
-                _updated_headers.append(header)
+
+            if header in FIELD_MAPPINGS:
+                _updated_headers.append(FIELD_MAPPINGS[header])
                 continue
 
-            header = header.replace('_or_', '/')
+            transformed = header.replace('_or_', '/')
 
-            if (
-                not header.istitle()
-                and original not in tag_titles
-                and original not in additional_attributes_titles
-            ):
-                header = header.replace('_', ' ').capitalize()
-            if header == 'Subspecies':
-                header = SUBSPECIES
-            if header.lower().strip() == 'cites_listing':
-                header = CITES_LISTING
+            should_capitalize = (
+                    not transformed.istitle() and
+                    original not in tag_titles and
+                    original not in additional_attributes_titles
+            )
 
-            _updated_headers.append(header)
+            if should_capitalize:
+                transformed = transformed.replace('_', ' ').capitalize()
+
+            transformed_lower = transformed.lower().strip()
+            if transformed_lower in CASE_INSENSITIVE_MAPPINGS:
+                transformed = CASE_INSENSITIVE_MAPPINGS[transformed_lower]
+
+            _updated_headers.append(transformed)
+
         return _updated_headers
 
     raw_headers = []

@@ -44,6 +44,11 @@ class TaxonTag(TagBase):
         max_length=100
     )
     doubtful = models.BooleanField(default=False)
+    description = models.TextField(
+        blank=True,
+        default="",
+        help_text="Optional description for this taxonomy tag.",
+    )
 
     class Meta:
         verbose_name = "Taxonomy Tag"
@@ -56,6 +61,18 @@ class SpeciesGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TaxonTaggedItem(GenericTaggedItemBase):
+    tag = models.ForeignKey(
+        TaxonTag,
+        on_delete=models.CASCADE,
+        related_name="%(app_label)s_%(class)s_items",
+    )
+
+    class Meta:
+        verbose_name = "Taxon Tagged Item"
+        verbose_name_plural = "Taxon Tagged Items"
 
 
 class CustomTaggedTaxonomy(TaggedItemBase):
@@ -94,6 +111,7 @@ class AbstractTaxonomy(AbstractValidation):
         ('alien-non-invasive', 'Non-native: non-invasive')
     )
     tags = TaggableManager(
+        through='bims.TaxonTaggedItem',
         blank=True,
     )
 

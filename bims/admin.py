@@ -11,7 +11,6 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.utils.timezone import localtime
 from django.db import connection
-from django_tenants.utils import schema_context, get_public_schema_name
 from rangefilter.filters import DateRangeFilterBuilder
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -34,8 +33,6 @@ from django.urls import reverse, path
 from django.contrib.auth.forms import UserCreationForm
 
 from django_json_widget.widgets import JSONEditorWidget
-from taggit.admin import TagAdmin
-from taggit.models import Tag
 
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
@@ -136,7 +133,8 @@ from bims.models import (
     TaxonGroupCitation,
     HarvestSchedule,
     OccurrenceUploadTemplate,
-    UploadRequest, CertaintyHierarchy
+    UploadRequest, CertaintyHierarchy,
+    TaxonTag
 )
 from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2390,6 +2388,7 @@ class DatasetAdmin(admin.ModelAdmin):
         self.message_user(request, 'Fetching datasets in background')
         return HttpResponseRedirect(reverse('admin:bims_dataset_changelist'))
 
+
 class TagGroupAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name', 'colour')
@@ -2556,10 +2555,6 @@ admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 
-admin.site.unregister(Tag)
-@admin.register(Tag)
-class TagAdmin(TagAdmin):
-    inlines = []
 
 @admin.register(TaxonGroupCitation)
 class TaxonGroupCitationAdmin(admin.ModelAdmin):
@@ -2680,3 +2675,25 @@ class UploadRequestAdmin(admin.ModelAdmin):
 class CertaintyHierarchyAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name')
+
+
+@admin.register(TaxonTag)
+class TaxonTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug", "doubtful", "tag_groups_list", "short_description")
+    search_fields = ("name", "slug", "description")
+    list_filter = ("doubtful",)
+    ordering = ("name",)
+
+    def tag_groups_list(self, obj):
+        return ", ".join(obj.tag_groups.values_list("name", flat=True))
+
+    tag_groups_list.short_description = "Tag groups"
+
+    def short_description(self, obj):
+        if not obj.description:
+            return ""
+        if len(obj.description) <= 60:
+            return obj.description
+        return f"{obj.description[:57]}..."
+
+    short_description.short_description = "Description"

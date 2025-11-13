@@ -1,7 +1,7 @@
 from colorfield.fields import ColorField
 from django.db import models
 from ordered_model.models import OrderedModelBase
-from taggit.models import Tag
+from bims.models.taxonomy import TaxonTag
 
 
 class TagGroup(OrderedModelBase):
@@ -11,7 +11,7 @@ class TagGroup(OrderedModelBase):
     order = models.PositiveIntegerField(
         default=0, help_text="Order of the tag group")
     tags = models.ManyToManyField(
-        Tag, related_name='tag_groups')
+        TaxonTag, related_name='tag_groups')
 
     order_field_name = "order"
 
