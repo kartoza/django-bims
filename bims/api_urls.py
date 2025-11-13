@@ -57,6 +57,9 @@ from bims.api_views.validate_object import (
 from bims.api_views.reject_object import (
     RejectSite, RejectTaxon, RejectSiteVisit
 )
+from bims.api_views.bulk_validate_site_visits import (
+    BulkValidateSiteVisits, BulkRejectSiteVisits
+)
 from bims.api_views.taxon_images import TaxonImageList
 from bims.api_views.validate_object import ValidateObject
 from bims.api_views.get_biorecord import (
@@ -206,6 +209,10 @@ urlpatterns = [
         ValidateObject.as_view(), name='validate-object'),
     re_path(r'^reject-site-visit/$',
         RejectSiteVisit.as_view(), name='reject-site-visit'),
+    re_path(r'^bulk-validate-site-visits/$',
+        BulkValidateSiteVisits.as_view(), name='bulk-validate-site-visits'),
+    re_path(r'^bulk-reject-site-visits/$',
+        BulkRejectSiteVisits.as_view(), name='bulk-reject-site-visits'),
     re_path(r'^get-bio-object/$',
         GetBioRecordDetail.as_view(), name='get-bio-object'),
     re_path(r'^get-site-code/$',
