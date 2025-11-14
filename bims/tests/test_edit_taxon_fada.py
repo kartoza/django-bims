@@ -249,6 +249,55 @@ class EditTaxonFadaTest(FastTenantTestCase):
 
         self.client.logout()
 
+    def test_fada_id_preserved_when_proposal_approved(self):
+        """Test that FADA_ID is preserved when proposal is approved."""
+        self.client.login(username='expert', password='password')
+
+        url = reverse('edit_taxon', kwargs={
+            'id': self.taxonomy.id,
+            'taxon_group_id': self.taxon_group.id
+        })
+
+        fada_id_value = 'FADA_APPROVED'
+
+        data = {
+            'taxon_name': 'TestGenus Approved',
+            'rank': 'SPECIES',
+            'author': 'Test Author',
+            'iucn_status': self.iucn_status.id,
+            'taxonomic_status': 'ACCEPTED',
+            'accepted_taxonomy': '',
+            'tags': [],
+            'parent': self.parent.id,
+            'fada_id': fada_id_value,
+        }
+
+        # Create proposal with FADA_ID
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+
+        proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.taxon_group,
+            status='pending'
+        ).first()
+
+        self.assertIsNotNone(proposal)
+        self.assertEqual(proposal.fada_id, fada_id_value)
+
+        # Approve the proposal
+        proposal.approve(self.expert_user)
+
+        # Verify FADA_ID was copied to the taxonomy
+        self.taxonomy.refresh_from_db()
+        self.assertEqual(self.taxonomy.fada_id, fada_id_value)
+
+        # Verify proposal status is approved
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, 'approved')
+
+        self.client.logout()
+
     def test_fada_id_not_required(self):
         """Test that FADA_ID is optional and form works without it."""
         self.client.login(username='superuser', password='password')
