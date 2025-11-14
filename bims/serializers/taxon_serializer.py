@@ -45,6 +45,14 @@ class TaxonSerializer(serializers.ModelSerializer):
     proposal_id = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     taxonomic_status = serializers.SerializerMethodField()
+    fada_id = serializers.SerializerMethodField()
+
+    def get_fada_id(self, obj):
+        """Only return fada_id for FADA sites."""
+        from bims.templatetags import is_fada_site
+        if is_fada_site():
+            return self.get_proposed_or_current(obj, 'fada_id')
+        return None
 
     def _format_distributions(self, qs):
         qs = qs.order_by('name')
