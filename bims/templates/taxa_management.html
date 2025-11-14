@@ -18,11 +18,13 @@
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "css/taxa_management.css" %}" rel="stylesheet">
     <link href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.0.8/fc-5.0.1/fh-4.0.1/datatables.min.css" rel="stylesheet">
+    {% is_fada_site as fada_site %}
     <script>
         const sourceCollection = '';
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
         const isExpert = {% if is_expert %}true{% else %}false{% endif %}
+        const isFadaSite = {% if fada_site %}true{% else %}false{% endif %};
         const rejectUrl = '/api/review-taxon/';
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
@@ -35,7 +37,6 @@
 {% endblock %}
 
 {% block body_content %}
-    {% is_fada_site as fada_site %}
 
     <div class="loading">
         <img src="/static/img/small-loading.svg"

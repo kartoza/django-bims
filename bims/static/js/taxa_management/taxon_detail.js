@@ -199,10 +199,12 @@ export const taxonDetail = (() => {
                                 <div class="col-4"><strong>GBIF Key</strong></div>
                                 <div class="col-8">${data.gbif_key ? data.gbif_key : ''}</div>
                             </div>
+                            ${typeof isFadaSite !== 'undefined' && isFadaSite ? `
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>FADA ID</strong></div>
                                 <div class="col-8">${data.fada_id ? data.fada_id : ''}</div>
                             </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
