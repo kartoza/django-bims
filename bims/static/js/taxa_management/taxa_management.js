@@ -471,6 +471,76 @@ export const taxaManagement = (() => {
         $('.download-button-container').show();
         let tableInitialized = false;
 
+        // Build columns array conditionally before DataTable initialization
+        let tableColumns = [
+             {
+                class: 'dt-control',
+                sortable: false,
+                data: null,
+                defaultContent: '',
+            },
+            {
+              data: "canonical_name",
+              render: function (data, type, row) {
+                const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
+                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+              },
+              className: "min-width-150"
+            },
+            { data: "author", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            { data: "family", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            { data: "taxonomic_status", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            { data: "accepted_taxonomy_name", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            { data: "rank", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            {
+              data: "biographic_distributions",
+              className: "min-width-100",
+              sortable: false,
+              render: function (data) {
+                return renderDiffString(data, { colored: false });
+              }
+            },
+            {
+              data: "tag_list",
+              sortable: false,
+              className: "min-width-100",
+              searchable: false,
+              render: function (data) {
+                return renderDiffString(data, { colored: true });
+              }
+            }
+        ];
+
+        // Only add Records column for non-FADA sites
+        if (typeof isFadaSite === 'undefined' || !isFadaSite) {
+            tableColumns.push({
+              data: "total_records",
+              className: "min-width-80 text-center",
+              orderable: true,
+              render: function (data, type, row) {
+                if (type === 'display') {
+                  const canonicalName = row.canonical_name || row.scientific_name || '';
+                  const taxonGroupId = row.taxon_group?.id || '';
+                  return `<a href="#" class="view-taxon-records"
+                    data-taxon-id="${row.id}"
+                    data-canonical-name="${escapeHtml(canonicalName)}"
+                    data-taxon-group-id="${taxonGroupId}"
+                    title="View records for this taxon">
+                    ${data || 0} <i class="fa fa-search" aria-hidden="true"></i>
+                  </a>`;
+                }
+                return data || 0;
+              }
+            });
+        }
+
+        // Add Actions column
+        tableColumns.push({
+            "data": "rowActionHTML",
+            "sortable": false,
+            "searchable": false
+        });
+
         let table = $('#taxaTable').DataTable({
             "processing": true,
             "serverSide": true,
@@ -557,6 +627,48 @@ export const taxaManagement = (() => {
                     event.preventDefault();
                     taxaTable.handleValidateTaxon($(this).parent().data('id'));
                 });
+
+                $('.view-taxon-records').off('click').on('click', function (event) {
+                    event.preventDefault();
+                    let canonicalName = $(this).data('canonical-name') || '';
+                    let taxonGroupId = $(this).data('taxon-group-id') || '';
+
+                    if (canonicalName) {
+                        let searchParams = new URLSearchParams({
+                            'taxon': '',
+                            'search': canonicalName,
+                            'siteId': '',
+                            'collector': '',
+                            'category': '',
+                            'yearFrom': '',
+                            'yearTo': '',
+                            'months': '',
+                            'boundary': '',
+                            'userBoundary': '',
+                            'referenceCategory': '',
+                            'spatialFilter': '',
+                            'reference': '',
+                            'endemic': '',
+                            'invasions': '',
+                            'conservationStatus': '[]',
+                            'modules': taxonGroupId,
+                            'validated': '',
+                            'sourceCollection': '',
+                            'module': 'occurrence',
+                            'ecologicalCategory': '',
+                            'rank': '',
+                            'tags': '',
+                            'siteIdOpen': '',
+                            'orderBy': 'name',
+                            'polygon': '',
+                            'dst': '',
+                            'ecosystemType': ''
+                        });
+
+                        let url = `/map/#search/${encodeURIComponent(canonicalName)}/${searchParams.toString()}`;
+                        window.location.href = url;
+                    }
+                });
             },
             "displayStart": initialStart,
             "ajax": function (data, callback, settings) {
@@ -632,49 +744,7 @@ export const taxaManagement = (() => {
                     }
                 });
             },
-            "columns": [
-                 {
-                    class: 'dt-control',
-                    orderable: false,
-                    data: null,
-                    defaultContent: '',
-                },
-                {
-                  data: "canonical_name",
-                  render: function (data, type, row) {
-                    const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
-                    return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
-                  },
-                  className: "min-width-150"
-                },
-                { data: "author", className: "min-width-100", render: (d) => renderTextDiff(d) },
-                { data: "family", className: "min-width-100", render: (d) => renderTextDiff(d) },
-                { data: "taxonomic_status", className: "min-width-100", render: (d) => renderTextDiff(d) },
-                { data: "accepted_taxonomy_name", className: "min-width-100", render: (d) => renderTextDiff(d) },
-                { data: "rank", className: "min-width-100", render: (d) => renderTextDiff(d) },
-                {
-                  data: "biographic_distributions",
-                  className: "min-width-100",
-                  sortable: false,
-                  render: function (data) {
-                    return renderDiffString(data, { colored: false });
-                  }
-                },
-                {
-                  data: "tag_list",
-                  sortable: false,
-                  className: "min-width-100",
-                  searchable: false,
-                  render: function (data) {
-                    return renderDiffString(data, { colored: true });
-                  }
-                },
-                {
-                    "data": "rowActionHTML",
-                    "sortable": false,
-                    "searchable": false
-                }
-            ],
+            "columns": tableColumns,
             "pageLength": initialPageSize,
             "pagingType": "simple_numbers",
             "searching": false

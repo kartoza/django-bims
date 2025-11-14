@@ -442,3 +442,32 @@ table {
   padding-top: 0;
   padding-bottom: 0;
 }
+
+/* View taxon records link styling */
+.view-taxon-records {
+  color: #007bff;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.view-taxon-records:hover {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.view-taxon-records i {
+  margin-left: 4px;
+  font-size: 0.9em;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.view-taxon-records:hover i {
+  opacity: 1;
+}
+
+.min-width-80 {
+  min-width: 80px;
+}

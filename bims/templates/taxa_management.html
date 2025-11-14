@@ -37,6 +37,7 @@
 {% endblock %}
 
 {% block body_content %}
+    {% is_fada_site as fada_site %}
 
     <div class="loading">
         <img src="/static/img/small-loading.svg"
@@ -325,6 +326,7 @@
                                 <th scope="col">Biogeographic distribution</th>
                                 <th scope="col">
                                     {% if fada_site %}Environmental Information{% else %}Tags{% endif %}</th>
+                                {% if not fada_site %}<th scope="col">Records</th>{% endif %}
                                 <th scope="col"></th>
                             </tr>
                             </thead>
