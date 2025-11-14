@@ -5,12 +5,11 @@ import re
 
 from django.db import transaction
 from preferences import preferences
-from taggit.models import Tag
 
 from bims.scripts.data_upload import DataCSVUpload
 from bims.scripts.species_keys import *  # noqa
 from bims.models import (
-    Taxonomy, SourceReference
+    Taxonomy, SourceReference, TaxonTag
 )
 from .taxa_upload import TaxaProcessor
 from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
@@ -184,7 +183,7 @@ class WormsTaxaProcessor(TaxaProcessor):
         for col, tag_label in self.HABITAT_TAGS:
             val = row.get(col) if col in row else row.get(WORMS_COLUMN_NAMES[col.lower()])
             if self._boolish(val):
-                tag, _ = Tag.objects.get_or_create(name=tag_label)
+                tag, _ = TaxonTag.objects.get_or_create(name=tag_label)
                 taxonomy.tags.add(tag)
 
     def _attach_citation(self, taxonomy: Taxonomy, row: dict):

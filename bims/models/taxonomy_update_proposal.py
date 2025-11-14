@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
 from taggit.managers import TaggableManager
-from taggit.models import TaggedItemBase, Tag
+from taggit.models import TaggedItemBase
 
 from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, TaxonTag
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy

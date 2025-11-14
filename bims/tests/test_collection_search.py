@@ -4,10 +4,8 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.db import connection
-from django.contrib.sites.models import Site
-from taggit.models import Tag
 
-from bims.models import format_search_result_raw_query
+from bims.models import format_search_result_raw_query, TaxonTag
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF,
@@ -144,7 +142,7 @@ class TestCollectionSearch(TestCase):
         CollectionSearch.taxon_tags parses JSON string -> ['invasive_tag']
         and we add a JOIN filter taxonomy__tags__name__in.
         """
-        taxon_tag_id = Tag.objects.get(name='invasive_tag').id
+        taxon_tag_id = TaxonTag.objects.get(name='invasive_tag').id
         filters = {
             'tags': '["%s"]' % taxon_tag_id
         }
