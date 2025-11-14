@@ -93,6 +93,8 @@ class SiteSettingAdmin(PreferencesAdmin):
         (_("General"), {
             "fields": (
                 "site_notice",
+                "disclaimer_form_text",
+                "disclaimer_doc_text",
                 "default_data_source",
                 "default_site_name",
                 "site_code_generator",
