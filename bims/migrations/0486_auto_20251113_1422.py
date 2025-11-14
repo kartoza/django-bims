@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-       	migrations.RemoveField(
+        migrations.RemoveField(
             model_name='taggroup',
             name='tags',
         ),

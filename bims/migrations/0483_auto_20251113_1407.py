@@ -44,7 +44,7 @@ def forwards(apps, schema_editor):
 
 
 def backwards(apps, schema_editor):
-	pass
+    pass
 
 
 class Migration(migrations.Migration):
@@ -54,5 +54,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-		migrations.RunPython(forwards, backwards),
+        migrations.RunPython(forwards, backwards),
     ]
