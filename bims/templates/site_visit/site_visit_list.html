@@ -71,6 +71,38 @@
             color: #FFFFFF;
             text-decoration: underline;
         }
+
+        .bulk-actions-bar {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .bulk-actions-bar.show {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .selected-count {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .bulk-action-buttons button {
+            margin-left: 5px;
+        }
+
+        .select-all-checkbox {
+            cursor: pointer;
+        }
+
+        .site-visit-checkbox {
+            cursor: pointer;
+        }
     </style>
 
 {% endblock %}
@@ -93,7 +125,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Are you sure you want to validate this data?</p>
+                        <p class="validation-message">Are you sure you want to validate this data?</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary"
@@ -121,7 +153,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>What is the reason for rejecting this data?</p>
+                        <p class="rejection-prompt">What is the reason for rejecting this data?</p>
                         <div class="form-group">
                             <input class="form-control rejection-message">
                         </div>
@@ -209,9 +241,32 @@
                         {% endif %}
                     {% endfor %}
                 {% endif %}
+                {% if validator %}
+                <div class="bulk-actions-bar" id="bulkActionsBar">
+                    <div>
+                        <span class="selected-count"><span id="selectedCount">0</span> site visit(s) selected</span>
+                    </div>
+                    <div class="bulk-action-buttons">
+                        <button type="button" class="btn btn-success btn-sm" id="bulkValidateBtn">
+                            <i class="fa fa-check-circle"></i> Validate Selected
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" id="bulkRejectBtn">
+                            <i class="fa fa-times-circle"></i> Reject Selected
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="clearSelectionBtn">
+                            Clear Selection
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
                 <table class="table table-striped">
                     <thead>
                     <tr>
+                        {% if validator %}
+                        <th scope="col" style="width:3em">
+                            <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox">
+                        </th>
+                        {% endif %}
                         <th scope="col" style="width:10em">Site code <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_code"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_code"></i></th>
                         <th scope="col" style="width:20em">Site description <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="site__site_description"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-site__site_description"></i></th>
                         <th scope="col">Sampling date <i class="fa fa-arrow-up order-button" aria-hidden="true" data-order="date"></i> <i class="fa fa-arrow-down order-button" aria-hidden="true" data-order="-date"></i></th>
@@ -224,6 +279,13 @@
                     {% for site_visit in survey_list %}
                         {% with site_visit_sass=site_visit.sass_site_visit %}
                         <tr>
+                            {% if validator %}
+                            <td>
+                                {% if site_visit.can_be_validated %}
+                                <input type="checkbox" class="site-visit-checkbox" data-site-visit-id="{{ site_visit.id }}">
+                                {% endif %}
+                            </td>
+                            {% endif %}
                             <td>{% if site_visit.site.site_code %}{{ site_visit.site.site_code }}{% else %}-{% endif %}<br>
                                 {% if site_visit_sass %}<span class="badge badge-danger">SASS</span>{% endif %}
                                 {{ site_visit.validation_status | safe }}
@@ -384,44 +446,20 @@
 
         function validateObject(pk) {
             const modal = $('#confirmValidateModal');
+            modal.find('.validation-message').text('Are you sure you want to validate this data?');
             modal.modal('show');
             modal.data('id', pk);
+            modal.data('bulk', false);
         }
-
-        $('#validateBtn').click(function () {
-            const modal = $('#confirmValidateModal');
-            const id = modal.data('id');
-            $.ajax({
-                url: '{% url "validate-object" %}',
-                data: {'pk': id},
-                success: function () {
-                    location.reload()
-                }
-            })
-        });
 
         function rejectObject(pk) {
             const modal = $('#confirmRejectModal');
+            modal.find('.rejection-prompt').text('What is the reason for rejecting this data?');
             modal.find('.rejection-message').val('');
             modal.modal('show');
             modal.data('id', pk);
+            modal.data('bulk', false);
         }
-
-        $('#rejectBtn').click(function () {
-            const modal = $('#confirmRejectModal');
-            const id = modal.data('id');
-            const rejectionMessage = modal.find('.rejection-message');
-            $.ajax({
-                url: '{% url "reject-site-visit" %}',
-                data: {
-                    'pk': id,
-                    'rejection_message': rejectionMessage.val()
-                },
-                success: function () {
-                    location.reload()
-                }
-            })
-        });
 
         $('#delete-form').on('show.bs.modal', function(e) {
             let deleteUrl = $(e.relatedTarget).data('delete-url');
@@ -542,6 +580,183 @@
                 $('#owner').val(u.item.label);
                 insertParam('collectors', `[${userId}]`);
             }
+        });
+
+        // Multi-select functionality
+        function updateBulkActionsBar() {
+            const checkedBoxes = $('.site-visit-checkbox:checked');
+            const count = checkedBoxes.length;
+            $('#selectedCount').text(count);
+
+            if (count > 0) {
+                $('#bulkActionsBar').addClass('show');
+            } else {
+                $('#bulkActionsBar').removeClass('show');
+            }
+        }
+
+        // Handle select all checkbox
+        $('#selectAllCheckbox').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            $('.site-visit-checkbox').prop('checked', isChecked);
+            updateBulkActionsBar();
+        });
+
+        // Handle individual checkbox changes
+        $(document).on('change', '.site-visit-checkbox', function() {
+            const totalCheckboxes = $('.site-visit-checkbox').length;
+            const checkedCheckboxes = $('.site-visit-checkbox:checked').length;
+
+            $('#selectAllCheckbox').prop('checked', totalCheckboxes === checkedCheckboxes);
+            updateBulkActionsBar();
+        });
+
+        // Clear selection button
+        $('#clearSelectionBtn').on('click', function() {
+            $('.site-visit-checkbox').prop('checked', false);
+            $('#selectAllCheckbox').prop('checked', false);
+            updateBulkActionsBar();
+        });
+
+        // Bulk validate
+        $('#bulkValidateBtn').on('click', function() {
+            const checkedBoxes = $('.site-visit-checkbox:checked');
+            const count = checkedBoxes.length;
+
+            if (count === 0) {
+                return;
+            }
+
+            const modal = $('#confirmValidateModal');
+            modal.find('.validation-message').text(
+                `Are you sure you want to validate ${count} site visit(s)?`
+            );
+            modal.modal('show');
+            modal.data('bulk', true);
+        });
+
+        // Bulk reject
+        $('#bulkRejectBtn').on('click', function() {
+            const checkedBoxes = $('.site-visit-checkbox:checked');
+            const count = checkedBoxes.length;
+
+            if (count === 0) {
+                return;
+            }
+
+            const modal = $('#confirmRejectModal');
+            modal.find('.rejection-prompt').text(
+                `What is the reason for rejecting ${count} site visit(s)?`
+            );
+            modal.find('.rejection-message').val('');
+            modal.modal('show');
+            modal.data('bulk', true);
+        });
+
+        // Modified validate button handler to support both single and bulk
+        $('#validateBtn').off('click').on('click', function() {
+            const modal = $('#confirmValidateModal');
+            const isBulk = modal.data('bulk');
+            $('#validateBtn').attr('disabled', true);
+
+            if (isBulk) {
+                const checkedBoxes = $('.site-visit-checkbox:checked');
+                const siteVisitIds = [];
+                checkedBoxes.each(function() {
+                    siteVisitIds.push($(this).data('site-visit-id'));
+                });
+
+                $.ajax({
+                    url: '{% url "bulk-validate-site-visits" %}',
+                    type: 'POST',
+                    data: {
+                        'site_visit_ids': siteVisitIds,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function() {
+                        location.reload();
+                    },
+                    error: function() {
+                        $('#validateBtn').attr('disabled', false);
+                        alert('An error occurred while validating site visits.');
+                    }
+                });
+            } else {
+                const id = modal.data('id');
+                $.ajax({
+                    url: '{% url "validate-object" %}',
+                    data: {'pk': id},
+                    success: function() {
+                        location.reload();
+                    },
+                    error: function() {
+                        $('#validateBtn').attr('disabled', false);
+                        alert('An error occurred while validating the site visit.');
+                    }
+                });
+            }
+        });
+
+        // Modified reject button handler to support both single and bulk
+        $('#rejectBtn').off('click').on('click', function() {
+            const modal = $('#confirmRejectModal');
+            const isBulk = modal.data('bulk');
+            const rejectionMessage = modal.find('.rejection-message').val();
+            $('#rejectBtn').attr('disabled', true);
+
+            if (isBulk) {
+                const checkedBoxes = $('.site-visit-checkbox:checked');
+                const siteVisitIds = [];
+                checkedBoxes.each(function() {
+                    siteVisitIds.push($(this).data('site-visit-id'));
+                });
+
+                $.ajax({
+                    url: '{% url "bulk-reject-site-visits" %}',
+                    type: 'POST',
+                    data: {
+                        'site_visit_ids': siteVisitIds,
+                        'rejection_message': rejectionMessage,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function() {
+                        location.reload();
+                    },
+                    error: function() {
+                        $('#rejectBtn').attr('disabled', false);
+                        alert('An error occurred while rejecting site visits.');
+                    }
+                });
+            } else {
+                const id = modal.data('id');
+                $.ajax({
+                    url: '{% url "reject-site-visit" %}',
+                    data: {
+                        'pk': id,
+                        'rejection_message': rejectionMessage
+                    },
+                    success: function() {
+                        location.reload();
+                    },
+                    error: function() {
+                        $('#rejectBtn').attr('disabled', false);
+                        alert('An error occurred while rejecting the site visit.');
+                    }
+                });
+            }
+        });
+
+        // Reset bulk flag when modals are hidden
+        $('#confirmValidateModal').on('hidden.bs.modal', function() {
+            $(this).data('bulk', false);
+            $(this).find('.validation-message').text('Are you sure you want to validate this data?');
+            $('#validateBtn').attr('disabled', false);
+        });
+
+        $('#confirmRejectModal').on('hidden.bs.modal', function() {
+            $(this).data('bulk', false);
+            $(this).find('.rejection-prompt').text('What is the reason for rejecting this data?');
+            $('#rejectBtn').attr('disabled', false);
         });
     </script>
 {% endblock %}
