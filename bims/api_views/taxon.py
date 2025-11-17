@@ -16,7 +16,6 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_403_FORBIDDEN, HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-from taggit.models import Tag
 
 from bims.api_views.merge_sites import IsSuperUser
 from bims.api_views.taxon_update import is_expert
@@ -818,7 +817,7 @@ class TaxonTagAutocompleteAPIView(APIView):
         if biographic:
             base_qs = TaxonTag.objects.all()
         else:
-            base_qs = Tag.objects.filter(taxonomy__isnull=False)
+            base_qs = TaxonTag.objects.filter(taxonomy__isnull=False)
 
         if ids_param:
             try:

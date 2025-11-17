@@ -52,6 +52,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
     )
 
     tags = TaggableManager(
+        through='bims.TaxonTaggedItem',
         blank=True,
         related_name='taxonomy_proposal_tags'
     )
@@ -315,7 +316,16 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 for field in fields_to_update:
                     if field == 'tags':
                         self.original_taxonomy.tags.clear()
-                        self.original_taxonomy.tags.set(getattr(self, field).all())
+                        taxonomy_tags = []
+                        for tag in getattr(self, field).all():
+                            if isinstance(tag, Tag):
+                                taxon_tag, _ = TaxonTag.objects.get_or_create(
+                                    name=tag.name
+                                )
+                                taxonomy_tags.append(taxon_tag)
+                            else:
+                                taxonomy_tags.append(tag)
+                        self.original_taxonomy.tags.set(taxonomy_tags)
                     elif field == 'biographic_distributions':
                         self.original_taxonomy.biographic_distributions.clear()
                         self.original_taxonomy.biographic_distributions.set(
