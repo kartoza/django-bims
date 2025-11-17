@@ -76,10 +76,19 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         return getattr(settings, "SITE_DOMAIN", "")
 
     class RequestGet:
-        def __init__(self, get_data):
+        def __init__(self, get_data, user=None):
             self.GET = get_data
+            self.user = user
 
-    request_get = RequestGet(request)
+    User = get_user_model()
+    user = None
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            pass
+
+    request_get = RequestGet(request, user)
 
     taxon_group_name = "Taxa checklist"
     tg_id = request.get("taxonGroup") if isinstance(request, dict) else None
@@ -251,8 +260,9 @@ def process_download_pdf_taxa_list(
     from bims.models import TaxonGroupCitation
 
     class RequestGet:
-        def __init__(self, get_data):
+        def __init__(self, get_data, user=None):
             self.GET = get_data
+            self.user = user
 
     def get_checklist_paragraphs(taxon_group, taxonomies):
         """
@@ -376,7 +386,15 @@ def process_download_pdf_taxa_list(
 
     taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
 
-    request_get = RequestGet(request)
+    UserModel = get_user_model()
+    user = None
+    if user_id:
+        try:
+            user = UserModel.objects.get(id=user_id)
+        except UserModel.DoesNotExist:
+            pass
+
+    request_get = RequestGet(request, user)
     taxonomies = TaxaList.get_taxa_by_parameters(request_get)
 
     doc = SimpleDocTemplate(
