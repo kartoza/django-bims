@@ -1,0 +1,4 @@
+Taxon Rank,Kingdom,Phylum,Class,Order,Family,Genus,Species,Taxon,Taxonomic status,Scientific name and authority,On GBIF
+Species,Animalia,Chordata,Mammalia,Carnivora,Felidae,Panthera,leo,Panthera leo,ACCEPTED,Panthera leo (Linnaeus 1758),Yes
+Species,Animalia,Chordata,Mammalia,Carnivora,Felidae,Panthera,tigris,Panthera tigris,SYNONYM,Panthera tigris (Linnaeus 1758),Yes
+Species,Animalia,Chordata,Mammalia,Primates,Hominidae,Homo,sapiens,Homo sapiens,ACCEPTED,Homo sapiens (Linnaeus 1758),Yes

@@ -412,6 +412,9 @@ class TaxaProcessor(object):
         if not common_name_value:
             return None
 
+        else:
+            pass
+
         vernacular_names = []
         raw_str = str(common_name_value)
         parts = raw_str.split(';') if ';' in raw_str else raw_str.split(',')
@@ -553,7 +556,8 @@ class TaxaProcessor(object):
                 species=taxon_name,
                 taxonomic_rank=rank,
                 fetch_children=False,
-                fetch_vernacular_names=False
+                fetch_vernacular_names=False,
+                preserve_taxonomic_status=is_fada_site()
             )
             if taxon:
                 if taxon_name.lower() not in (taxon.scientific_name or '').lower():
@@ -869,6 +873,7 @@ class TaxaProcessor(object):
                     gbif_key=gbif_key,
                     fetch_vernacular_names=should_fetch_vernacular_names,
                     is_synonym=is_synonym,
+                    preserve_taxonomic_status=is_fada_site(),
                 )
                 if taxonomy:
                     new_taxon = True
@@ -881,6 +886,7 @@ class TaxaProcessor(object):
                     fetch_vernacular_names=should_fetch_vernacular_names,
                     use_name_lookup=False,
                     is_synonym=is_synonym,
+                    preserve_taxonomic_status=is_fada_site(),
                 )
                 if taxonomy:
                     new_taxon = True
@@ -921,8 +927,14 @@ class TaxaProcessor(object):
                     fetch_vernacular_names=should_fetch_vernacular_names,
                     use_name_lookup=False,
                     is_synonym=is_synonym,
+                    preserve_taxonomic_status=is_fada_site(),
                 )
                 taxonomy = refreshed or taxonomy
+
+                # For FADA sites, ensure CSV taxonomic_status is always preserved after GBIF refresh
+                if is_fada_site() and taxonomic_status and taxonomy.taxonomic_status != taxonomic_status.upper():
+                    taxonomy.taxonomic_status = taxonomic_status.upper()
+                    taxonomy.save()
 
             # Create proposal only once taxonomy exists and we know we need it
             if use_proposal:
