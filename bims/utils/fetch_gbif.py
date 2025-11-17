@@ -198,11 +198,13 @@ def fetch_gbif_vernacular_names(taxonomy):
 
 def create_or_update_taxonomy(
         gbif_data,
-        fetch_vernacular_names=False):
+        fetch_vernacular_names=False,
+        preserve_taxonomic_status=False):
     """
     Create or update taxonomy data from gbif response data
     :param gbif_data: gbif response data
     :param fetch_vernacular_names: should fetch vernacular names
+    :param preserve_taxonomic_status: if True, preserve existing taxonomic_status from CSV (FADA use case)
     """
     taxa = None
     try:
@@ -218,7 +220,8 @@ def create_or_update_taxonomy(
             logger.debug("UNRANKED record %s; resolving to parent %s", gbif_data.get("key"), parent_key)
             return fetch_all_species_from_gbif(
                 gbif_key=parent_key,
-                fetch_children=False
+                fetch_children=False,
+                preserve_taxonomic_status=preserve_taxonomic_status
             )
         logger.debug("Skipping UNRANKED record (no parentKey) – GBIF key %s", gbif_data.get("key"))
         return None
@@ -270,12 +273,25 @@ def create_or_update_taxonomy(
             rank=rank,
         )
     else:
-        taxa.update(
-            scientific_name=scientific_name,
-            canonical_name=canonical_name,
-            taxonomic_status=taxonomic_status,
-            rank=rank,
-        )
+        # For FADA sites, preserve existing taxonomic_status from CSV
+        if preserve_taxonomic_status:
+            existing_status = taxa[0].taxonomic_status
+            update_fields = {
+                'scientific_name': scientific_name,
+                'canonical_name': canonical_name,
+                'rank': rank,
+            }
+            # Only update taxonomic_status if it's empty
+            if not existing_status:
+                update_fields['taxonomic_status'] = taxonomic_status
+            taxa.update(**update_fields)
+        else:
+            taxa.update(
+                scientific_name=scientific_name,
+                canonical_name=canonical_name,
+                taxonomic_status=taxonomic_status,
+                rank=rank,
+            )
         taxonomy = taxa[0]
     if 'authorship' in gbif_data:
         taxonomy.author = gbif_data['authorship']
@@ -298,6 +314,7 @@ def fetch_all_species_from_gbif(
     use_name_lookup=True,
     is_synonym=False,
     log_file_path=None,
+    preserve_taxonomic_status=False,
     _visited=None,
     _depth=0,
     **classifier):
@@ -310,6 +327,7 @@ def fetch_all_species_from_gbif(
     :param fetch_children: fetch children or not
     :param fetch_vernacular_names: fetch vernacular names or not
     :param use_name_lookup: use name_lookup to search species
+    :param preserve_taxonomic_status: if True, preserve existing taxonomic_status from CSV (FADA use case)
     :return:
     """
     def log_info(message: str):
@@ -385,6 +403,7 @@ def fetch_all_species_from_gbif(
                 gbif_key=parent_key,
                 fetch_children=False,
                 fetch_vernacular_names=fetch_vernacular_names,
+                preserve_taxonomic_status=preserve_taxonomic_status,
                 use_name_lookup=use_name_lookup,
                 log_file_path=log_file_path,
                 _visited=_visited,
@@ -440,7 +459,7 @@ def fetch_all_species_from_gbif(
         return None
     if 'authorship' not in species_data and 'nubKey' in species_data:
         species_data = get_species(species_data['nubKey'])
-    taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names)
+    taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names, preserve_taxonomic_status)
     if not taxonomy:
         log_info('Taxonomy not updated/created')
         return None
@@ -465,6 +484,7 @@ def fetch_all_species_from_gbif(
                 fetch_vernacular_names=fetch_vernacular_names,
                 use_name_lookup=use_name_lookup,
                 log_file_path=log_file_path,
+                preserve_taxonomic_status=preserve_taxonomic_status,
                 _visited=_visited,
                 _depth=_depth + 1,
             )
@@ -486,6 +506,7 @@ def fetch_all_species_from_gbif(
                     fetch_vernacular_names=fetch_vernacular_names,
                     use_name_lookup=use_name_lookup,
                     log_file_path=log_file_path,
+                    preserve_taxonomic_status=preserve_taxonomic_status,
                     _visited=_visited,
                     _depth=_depth + 1,
                 )
@@ -520,6 +541,7 @@ def fetch_all_species_from_gbif(
                     fetch_vernacular_names=fetch_vernacular_names,
                     use_name_lookup=use_name_lookup,
                     log_file_path=log_file_path,
+                    preserve_taxonomic_status=preserve_taxonomic_status,
                     _visited=_visited,
                     _depth=_depth + 1,
                 )
@@ -555,7 +577,8 @@ def fetch_all_species_from_gbif(
             fetch_all_species_from_gbif(
                 gbif_key=children_key,
                 species=child['scientificName'],
-                parent=taxonomy
+                parent=taxonomy,
+                preserve_taxonomic_status=preserve_taxonomic_status
             )
 
     return taxonomy
@@ -625,7 +648,7 @@ def harvest_synonyms_for_accepted_taxonomy(
 
         synonym_tax = create_or_update_taxonomy(
             syn_full,
-            fetch_vernacular_names=fetch_vernacular_names
+            fetch_vernacular_names=fetch_vernacular_names,
         )
         if not synonym_tax:
             log_info(f"Failed to create/update synonym taxonomy for key={syn_key_int}")
