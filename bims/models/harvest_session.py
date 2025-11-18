@@ -101,6 +101,12 @@ class HarvestSession(models.Model):
     since_time = models.DateTimeField(null=True, blank=True)
     until_time = models.DateTimeField(null=True, blank=True)
 
+    additional_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='JSON field for storing resume state and other metadata'
+    )
+
     def __str__(self):
         return '{start} - {finished}'.format(
             start=self.start_time,
