@@ -47,17 +47,107 @@ def find_last_index(pattern_str, filepath) -> int:
     return 0
 
 
+def find_last_batch_info(log_file_path):
+    """
+    Find information about the last batch that was being processed.
+    Returns a dict with 'batch_no', 'first_idx', 'last_idx', 'total' or None.
+    """
+    import re
+    import os
+
+    if not log_file_path or not os.path.exists(log_file_path):
+        return None
+
+    # Pattern to match: "Areas batch X: polygons Y-Z of TOTAL (batch size=N)"
+    pattern = re.compile(r'Areas batch (\d+): polygons (\d+)-(\d+) of (\d+)')
+    last_batch_info = None
+
+    with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            match = pattern.search(line)
+            if match:
+                last_batch_info = {
+                    'batch_no': int(match.group(1)),
+                    'first_idx': int(match.group(2)),
+                    'last_idx': int(match.group(3)),
+                    'total': int(match.group(4))
+                }
+
+    return last_batch_info
+
+
+def find_last_downloaded_zip(log_file_path):
+    """
+    Find the last downloaded zip file from the log that may not have been fully processed.
+    Returns the path to the zip file or None.
+    """
+    import re
+    import os
+    from pathlib import Path
+
+    if not log_file_path or not os.path.exists(log_file_path):
+        return None
+
+    # Pattern to match: "Saved to /path/to/file.zip"
+    pattern = re.compile(r'Saved to (.+\.zip)')
+    last_zip = None
+    last_download_time = None
+
+    with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            match = pattern.search(line)
+            if match:
+                zip_path = match.group(1)
+                # Check if file exists
+                if os.path.exists(zip_path):
+                    last_zip = zip_path
+                    # Extract timestamp from the line if possible
+                    time_match = re.match(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})', line)
+                    if time_match:
+                        last_download_time = time_match.group(1)
+
+    if not last_zip:
+        return None
+
+    # Check if there are any "processed X accepted occurrences from archive" messages after this download
+    # If not, the file might not have been fully processed
+    if last_download_time:
+        found_processing = False
+        found_new_download = False
+        with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            capture = False
+            for line in f:
+                if last_download_time in line and 'Saved to' in line:
+                    capture = True
+                    continue
+                if capture:
+                    if 'processed' in line and 'accepted occurrences from archive' in line:
+                        found_processing = True
+                        break
+                    # If we see another download starting, mark it and stop
+                    if 'POST https://api.gbif.org' in line or 'Downloading https://' in line:
+                        found_new_download = True
+                        break
+
+        # Only return the zip if it wasn't processed AND no new download started
+        if not found_processing and not found_new_download:
+            return last_zip
+
+    return None
+
+
 # tasks.py
 
 @shared_task(name='bims.tasks.harvest_collections', queue='update')
 def harvest_collections(session_id, resume=False, chunk_size=250, schema_name='public'):
     import re
+    import json
     from itertools import islice
     from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
     from bims.utils.logger import log
     from bims.models import HarvestSession
     from django.db.models import Q
-    from bims.scripts.import_gbif_occurrences import import_gbif_occurrences
+    from bims.scripts.import_gbif_occurrences import import_gbif_occurrences, process_gbif_response, log_to_file_or_logger
 
     with schema_context(schema_name):
         try:
@@ -77,11 +167,71 @@ def harvest_collections(session_id, resume=False, chunk_size=250, schema_name='p
         offset = 0
         area_index = 1
 
+        # Try to load resume state from additional_data
+        resume_state = {}
+        if resume and harvest_session.additional_data:
+            try:
+                resume_state = json.loads(harvest_session.additional_data) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
+            except:
+                resume_state = {}
+
         if resume and harvest_session.status:
             # Resume index in human-friendly (1-based) terms
             match = re.search(r'\((\d+)', harvest_session.status)
             start_taxon_idx = int(match.group(1)) if match else 1
-            area_index = find_last_index(r'Area=\((\d+)/(\d+)\)', harvest_session.log_file.path) or 1
+
+            # Try to get area_index from resume state first
+            if 'area_index' in resume_state:
+                area_index = resume_state['area_index']
+            else:
+                # Fallback to parsing log file
+                area_index = find_last_index(r'polygons (\d+)-(\d+)', harvest_session.log_file.path) or 1
+
+            # Check for incomplete zip file processing
+            last_zip_file = resume_state.get('last_zip_file')
+
+            # If no zip file in resume state, try to find it from the log
+            if not last_zip_file and harvest_session.log_file:
+                last_zip_file = find_last_downloaded_zip(harvest_session.log_file.path)
+                if last_zip_file:
+                    log_to_file_or_logger(harvest_session.log_file.path, f'Found incomplete zip file from log: {last_zip_file}')
+
+            if last_zip_file and os.path.exists(last_zip_file):
+                log_to_file = lambda m: log_to_file_or_logger(harvest_session.log_file.path, m)
+                log_to_file(f'Resuming processing of incomplete zip file: {last_zip_file}')
+
+                # Re-process the last zip file
+                from pathlib import Path
+                error, data_count = process_gbif_response(
+                    Path(last_zip_file),
+                    session_id,
+                    harvest_session.module_group,
+                    None,  # habitat
+                    None,  # origin
+                    harvest_session.log_file.path
+                )
+
+                if error:
+                    log_to_file_or_logger(harvest_session.log_file.path, message=f'Error reprocessing zip: {error}\n', is_error=True)
+                else:
+                    log_to_file(f'Successfully reprocessed {data_count} records from {last_zip_file}')
+
+                    # Calculate the next area_index based on the batch that was completed
+                    # Parse the log to find which batch was processed
+                    batch_info = find_last_batch_info(harvest_session.log_file.path)
+                    if batch_info:
+                        last_idx = batch_info['last_idx']
+                        # Next area should start from last_idx + 1
+                        area_index = last_idx + 1
+                        log_to_file(f'Moving to next area: area_index={area_index} (after completing polygons up to {last_idx})')
+
+                        # Update resume state with new area_index
+                        resume_state['area_index'] = area_index
+
+                    # Clear the last_zip_file from resume state
+                    resume_state['last_zip_file'] = None
+                    harvest_session.additional_data = json.dumps(resume_state)
+                    harvest_session.save(update_fields=['additional_data'])
 
         if resume and harvest_session.canceled:
             harvest_session.canceled = False
@@ -109,6 +259,12 @@ def harvest_collections(session_id, resume=False, chunk_size=250, schema_name='p
                 f'Fetching GBIF data for {chunk_first} … {chunk_last} '
                 f'({processed}-{processed + len(chunk) - 1}/{total_taxa})'
             )
+
+            # Save area_index to resume state
+            resume_state['area_index'] = area_index
+            resume_state['start_taxon_idx'] = processed
+            resume_state['last_zip_file'] = None
+            harvest_session.additional_data = json.dumps(resume_state)
             harvest_session.save()
 
             import_gbif_occurrences(
@@ -119,12 +275,18 @@ def harvest_collections(session_id, resume=False, chunk_size=250, schema_name='p
                 area_index=area_index
             )
 
+            # Check if user canceled during import
+            if HarvestSession.objects.get(id=session_id).canceled:
+                connect_bims_signals()
+                return
+
             # Reset per-chunk controls
             area_index = 1
             processed += len(chunk)
 
         harvest_session.status = 'Finished'
         harvest_session.finished = True
+        harvest_session.additional_data = json.dumps({})  # Clear resume state
         harvest_session.save()
 
         connect_bims_signals()

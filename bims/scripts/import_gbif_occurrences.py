@@ -80,7 +80,7 @@ DATE_ISSUES_TO_EXCLUDE = [
     "RECORDED_DATE_UNLIKELY",
     "MODIFIED_DATE_INVALID"
 ]
-BOUNDARY_BATCH_SIZE = 10
+BOUNDARY_BATCH_SIZE = 5
 
 
 def chunked(seq, size):
@@ -651,6 +651,7 @@ def import_gbif_occurrences(
     Import GBIF occurrences based on a taxonomy GBIF key, iterating over offsets
     until all data is fetched. Handles optional boundary polygons or country codes.
     """
+    import json
     harvest_session = HarvestSession.objects.get(
         id=session_id
     )
@@ -762,6 +763,21 @@ def import_gbif_occurrences(
         if not zip_path:
             return "Failed to download archive"
 
+        # Save zip file path to harvest session for resume functionality
+        try:
+            harvest_session.refresh_from_db()
+            resume_state = {}
+            if harvest_session.additional_data:
+                try:
+                    resume_state = json.loads(harvest_session.additional_data) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
+                except:
+                    resume_state = {}
+            resume_state['last_zip_file'] = str(zip_path)
+            harvest_session.additional_data = json.dumps(resume_state)
+            harvest_session.save(update_fields=['additional_data'])
+        except Exception as e:
+            log(f"Warning: Could not save zip file path to session: {e}")
+
         error, data_count = process_gbif_response(
             zip_path,
             session_id,
@@ -774,6 +790,21 @@ def import_gbif_occurrences(
         if error:
             log_to_file_or_logger(log_file_path, message=f'{error}\n', is_error=True)
             return error
+
+        # Clear the last_zip_file from resume state after successful processing
+        try:
+            harvest_session.refresh_from_db()
+            resume_state = {}
+            if harvest_session.additional_data:
+                try:
+                    resume_state = json.loads(harvest_session.additional_data) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
+                except:
+                    resume_state = {}
+            resume_state['last_zip_file'] = None
+            harvest_session.additional_data = json.dumps(resume_state)
+            harvest_session.save(update_fields=['additional_data'])
+        except Exception as e:
+            log(f"Warning: Could not clear zip file path from session: {e}")
 
         return True
 
