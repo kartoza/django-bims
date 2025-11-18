@@ -473,3 +473,102 @@ class TestHarvestCollectionsResume(TestCase):
 
         # Cleanup
         os.remove(zip_path)
+
+    def test_resume_with_different_batch_size(self):
+        """Test that resume continues from correct polygon index when batch size changes.
+
+        Scenario: Original harvest used boundary_batch_size=10 (polygons 1-10).
+        On resume with boundary_batch_size=5, it should:
+        1. Continue from polygon 11 (not restart or use old batch size)
+        2. Use the new batch size of 5 for subsequent batches (11-15, 16-20, etc.)
+        """
+        # Create a taxonomy so the main loop runs at least once
+        taxonomy = TaxonomyF.create(
+            scientific_name='Test Species',
+            canonical_name='Test Species',
+            gbif_key=12345
+        )
+        self.taxon_group.taxonomies.add(taxonomy)
+
+        # Create a dummy zip file representing batch 1 with old batch size of 10
+        zip_path = os.path.join(self.temp_dir, '0028406-251025141854904.zip')
+        with zipfile.ZipFile(zip_path, 'w') as zf:
+            zf.writestr('occurrence.txt',
+                       'gbifID\tdecimalLongitude\tdecimalLatitude\t'
+                       'coordinateUncertaintyInMeters\teventDate\trecordedBy\t'
+                       'institutionCode\treferences\tverbatimLocality\tlocality\t'
+                       'species\tdatasetKey\tmodified\tbasisOfRecord\tprojectId\ttaxonKey\n'
+                       '1\t30\t-25\t\t2021-01-01\tCollector\tINST\thttp://example.org/1\t'
+                       'Site A\tSite A\tSpecies A\tabc123\t2021-01-02\tOBSERVATION\t\t1\n')
+
+        # Log shows batch was processed with batch_size=10 (polygons 1-10 of 20)
+        log_content = f"""
+2025-11-12 08:38:26,312 - INFO - Areas batch 1: polygons 1-10 of 20 (batch size=10)
+2025-11-12 09:06:48,453 - INFO - Saved to {zip_path}
+2025-11-17 12:50:06,473 - ERROR - Could not read {zip_path}: cursor already closed
+"""
+
+        # Resume state shows the incomplete zip from batch with size 10
+        resume_state = {
+            'last_zip_file': zip_path,
+            'area_index': 1  # Was at polygon 1 when it failed
+        }
+
+        harvest_session = HarvestSessionF.create(
+            module_group=self.taxon_group,
+            harvester=self.user,
+            status='Fetching GBIF data (1-250/500)',
+            finished=False,
+            canceled=False,
+            log_file=ContentFile(log_content.encode(), name='harvest.log'),
+            additional_data=json.dumps(resume_state)
+        )
+
+        # Write log content to the actual log file path
+        with open(harvest_session.log_file.path, 'w') as f:
+            f.write(log_content)
+
+        def cancel_after_first_call(*args, **kwargs):
+            """Cancel the harvest after first call to prevent completion."""
+            harvest_session.refresh_from_db()
+            harvest_session.canceled = True
+            harvest_session.save()
+            return True
+
+        with mock.patch('bims.scripts.import_gbif_occurrences.process_gbif_response') as mock_process:
+            with mock.patch('bims.scripts.import_gbif_occurrences.import_gbif_occurrences', side_effect=cancel_after_first_call) as mock_import:
+                with mock.patch('bims.signals.utils.disconnect_bims_signals'):
+                    with mock.patch('bims.signals.utils.connect_bims_signals'):
+                        # Mock successful reprocessing
+                        mock_process.return_value = (None, 50)
+
+                        # Resume with NEW boundary_batch_size=5 (changed from 10)
+                        harvest_collections(
+                            session_id=harvest_session.id,
+                            resume=True,
+                            chunk_size=250,
+                            schema_name='public'
+                        )
+
+                        # Refresh session and check area_index
+                        harvest_session.refresh_from_db()
+                        updated_state = json.loads(harvest_session.additional_data)
+
+                        # After reprocessing batch 1 (polygons 1-10 with old size),
+                        # area_index should be 11 (next unprocessed polygon)
+                        # NOT 6 (which would be 1 + new batch_size of 5)
+                        self.assertEqual(updated_state['area_index'], 11,
+                                       "area_index should continue from 11 (after old batch of 10), "
+                                       "not 6 (which would incorrectly use new batch_size)")
+
+                        # Verify import was called with area_index=11
+                        # This means the NEXT batch will start at polygon 11
+                        # and will use the new batch_size=5 (polygons 11-15)
+                        if mock_import.called:
+                            call_kwargs = mock_import.call_args[1]
+                            self.assertEqual(call_kwargs.get('area_index'), 11,
+                                           "Next batch should start at polygon 11, "
+                                           "then use new batch_size for subsequent batches")
+
+        # Cleanup
+        os.remove(zip_path)
