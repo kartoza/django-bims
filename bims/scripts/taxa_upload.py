@@ -543,7 +543,7 @@ class TaxaProcessor(object):
                      getattr(taxon, 'canonical_name', 'unknown'))
         return True, ''
 
-    def get_taxonomy(self, taxon_name, scientific_name, rank):
+    def get_taxonomy(self, taxon_name, scientific_name, rank, row=None):
         """
         Find or create a taxonomy by canonical name + rank, with GBIF fallback.
         """
@@ -552,12 +552,28 @@ class TaxaProcessor(object):
             rank=rank
         )
         if not taxon_data.exists():
+            classifiers = {}
+            if row:
+                csv_genus = _safe_strip(self.get_row_value(row, GENUS))
+                if csv_genus:
+                    classifiers['genus'] = csv_genus
+
+                for classifier_rank in ['kingdom', 'phylum', 'class', 'order', 'family']:
+                    csv_value = _safe_strip(self.get_row_value(row, classifier_rank.capitalize()))
+                    if csv_value:
+                        if classifier_rank == 'class':
+                            classifiers['class_name'] = csv_value
+                        else:
+                            classifiers[classifier_rank] = csv_value
+
             taxon = fetch_all_species_from_gbif(
                 species=taxon_name,
                 taxonomic_rank=rank,
                 fetch_children=False,
                 fetch_vernacular_names=False,
-                preserve_taxonomic_status=is_fada_site()
+                use_name_lookup=True if classifiers else False,
+                preserve_taxonomic_status=is_fada_site(),
+                **classifiers
             )
             if taxon:
                 if taxon_name.lower() not in (taxon.scientific_name or '').lower():
@@ -604,7 +620,8 @@ class TaxaProcessor(object):
         taxon = self.get_taxonomy(
             taxon_name,
             taxon_name,
-            _safe_upper(current_rank)
+            _safe_upper(current_rank),
+            row=row
         )
 
         # If we already have a parent or reached KINGDOM, stop.
@@ -879,14 +896,30 @@ class TaxaProcessor(object):
                     new_taxon = True
 
             if not taxonomy and on_gbif:
+                # Build classifiers from CSV to ensure we match the correct taxon
+                classifiers = {}
+                csv_genus = _safe_strip(self.get_row_value(row, GENUS))
+                if csv_genus:
+                    classifiers['genus'] = csv_genus
+
+                # Add other taxonomic classifiers if available
+                for classifier_rank in ['kingdom', 'phylum', 'class', 'order', 'family']:
+                    csv_value = _safe_strip(self.get_row_value(row, classifier_rank.capitalize()))
+                    if csv_value:
+                        if classifier_rank == 'class':
+                            classifiers['class_name'] = csv_value
+                        else:
+                            classifiers[classifier_rank] = csv_value
+
                 taxonomy = fetch_all_species_from_gbif(
                     species=taxon_name,
                     taxonomic_rank=rank,
                     fetch_children=False,
                     fetch_vernacular_names=should_fetch_vernacular_names,
-                    use_name_lookup=False,
+                    use_name_lookup=True,  # Changed to True to enable classifier filtering
                     is_synonym=is_synonym,
                     preserve_taxonomic_status=is_fada_site(),
+                    **classifiers
                 )
                 if taxonomy:
                     new_taxon = True

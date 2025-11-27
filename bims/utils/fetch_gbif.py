@@ -470,7 +470,16 @@ def fetch_all_species_from_gbif(
         taxonomy.parent = parent
         taxonomy.save()
     else:
-        desired_parent_key = (species_data or {}).get('parentKey')
+        # For infraspecific ranks (variety, subspecies, form), use speciesKey as parent if available
+        # because parentKey in GBIF often points to genus instead of species for these ranks
+        rank_lower = (taxonomy.rank or '').lower()
+        is_infraspecific = rank_lower in ['variety', 'subspecies', 'subvariety', 'form', 'subform']
+
+        if is_infraspecific and 'speciesKey' in (species_data or {}):
+            desired_parent_key = species_data.get('speciesKey')
+        else:
+            desired_parent_key = (species_data or {}).get('parentKey')
+
         need_fetch_parent = (
             desired_parent_key
             and (not taxonomy.parent or taxonomy.parent.gbif_key != desired_parent_key)
