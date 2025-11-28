@@ -38,7 +38,9 @@ CSV_HEADER_TITLE = {
     'cites_listing': 'CITES listing',
     'tops': 'TOPS',
     'park_or_mpa_name': 'Park or MPA name',
-    'include or exclude': 'Include/Exclude'
+    'include or exclude': 'Include/Exclude',
+    'gbif_coordinate_uncertainty_m': 'GBIF coordinate uncertainty (m)',
+    'gbif_coordinate_precision': 'GBIF coordinate precision'
 }
 
 User = get_user_model()
