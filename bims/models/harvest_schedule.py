@@ -14,10 +14,10 @@ class HarvestPeriod(models.TextChoices):
 
 
 class HarvestSchedule(models.Model):
-    module_group = models.OneToOneField(
+    module_group = models.ForeignKey(
         'bims.TaxonGroup',
         on_delete=models.CASCADE,
-        related_name="harvest_schedule"
+        related_name="harvest_schedules"
     )
     enabled = models.BooleanField(default=False)
 
@@ -53,7 +53,8 @@ class HarvestSchedule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Schedule[{self.module_group_id}] {self.period}"
+        harvest_type = "species" if self.is_fetching_species else "occurrences"
+        return f"Schedule[{self.module_group_id}] {harvest_type} - {self.period}"
 
 
 def _mins_hrs(t):
@@ -69,7 +70,8 @@ def harvest_schedule_post_delete(sender, instance: HarvestSchedule, **kwargs):
 
 @receiver(post_save, sender=HarvestSchedule)
 def sync_periodic_task(sender, instance: HarvestSchedule, **kwargs):
-    name = f"GBIF harvest: taxon_group={instance.module_group_id}"
+    harvest_type = "species" if instance.is_fetching_species else "occurrences"
+    name = f"GBIF harvest: taxon_group={instance.module_group_id} type={harvest_type} id={instance.id}"
 
     if instance.period == HarvestPeriod.CUSTOM and instance.cron_expression:
         m, h, dom, mon, dow = (instance.cron_expression.split() + ["*"]*5)[:5]
