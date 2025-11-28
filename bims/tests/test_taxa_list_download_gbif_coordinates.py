@@ -4,8 +4,14 @@ from unittest import mock
 
 from django.contrib.gis.geos import Point
 from django_tenants.test.cases import FastTenantTestCase
+from preferences import preferences
 
-from bims.models import LocationSite, LocationType, BiologicalCollectionRecord
+from bims.models import (
+    LocationSite,
+    LocationType,
+    BiologicalCollectionRecord,
+    Invasion,
+)
 from bims.views.download_csv_taxa_list import TaxaCSVSerializer
 from bims.tests.model_factories import (
     TaxonomyF,
@@ -33,6 +39,7 @@ class TestTaxaListDownloadGBIFCoordinates(FastTenantTestCase):
         """Clean up test data."""
         BiologicalCollectionRecord.objects.all().delete()
         LocationSite.objects.all().delete()
+        Invasion.objects.all().delete()
         self.taxonomy.delete()
 
     def test_taxa_list_gbif_fields_with_single_record(self, mock_update_location_context):
@@ -179,6 +186,33 @@ class TestTaxaListDownloadGBIFCoordinates(FastTenantTestCase):
         fields = TaxaCSVSerializer.Meta.fields
         self.assertIn('gbif_coordinate_uncertainty_m', fields)
         self.assertIn('gbif_coordinate_precision', fields)
+
+    @mock.patch("bims.views.download_csv_taxa_list.preferences")
+    def test_sanparks_nemba_status_defaults_to_empty(
+        self, mock_preferences, mock_update_location_context
+    ):
+        """Sanparks master list should display empty when invasion missing."""
+        mock_preferences.SiteSetting.project_name = "sanparks"
+        serializer = TaxaCSVSerializer(self.taxonomy)
+        self.assertEqual(serializer.data['invasion'], '')
+
+    @mock.patch("bims.views.download_csv_taxa_list.preferences")
+    def test_sanparks_nemba_status_limited_to_allowed_values(
+        self, mock_preferences, mock_update_location_context
+    ):
+        """Sanparks master list should normalize invasion values to allowed statuses."""
+        mock_preferences.SiteSetting.project_name = "sanparks"
+        invalid_invasion = Invasion.objects.create(category="Alien invasive")
+        self.taxonomy.invasion = invalid_invasion
+        self.taxonomy.save()
+        serializer = TaxaCSVSerializer(self.taxonomy)
+        self.assertEqual(serializer.data['invasion'], '')
+
+        allowed_invasion = Invasion.objects.create(category="Category 1b invasive")
+        self.taxonomy.invasion = allowed_invasion
+        self.taxonomy.save()
+        serializer = TaxaCSVSerializer(self.taxonomy)
+        self.assertEqual(serializer.data['invasion'], 'Category 1b invasive')
 
     @mock.patch('bims.views.download_csv_taxa_list.apply_gbif_record_threshold')
     def test_taxa_list_10000_threshold_for_uncertainty(
