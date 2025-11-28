@@ -5,8 +5,11 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db import connection
 from django_tenants.utils import schema_context
+from django.core.cache import cache
 
 logger = get_task_logger(__name__)
+
+LOCK_EXPIRE = 60 * 5  # Lock expires in 5 minutes
 
 
 @shared_task(name='bims.tasks.generate_module_summary', queue='update')
@@ -19,6 +22,18 @@ def generate_module_summary(schema_name):
     Args:
         schema_name (str): The tenant schema name
     """
+    lock_id = f'module_summary_lock_{schema_name}'
+
+    # Try to acquire lock
+    acquire_lock = cache.add(lock_id, 'true', LOCK_EXPIRE)
+    if not acquire_lock:
+        logger.info(f'Module summary generation already in progress for schema: {schema_name}. Skipping.')
+        return {
+            'status': 'skipped',
+            'schema': schema_name,
+            'message': 'Another task is already processing this schema'
+        }
+
     logger.info(f'Generating module summary for schema: {schema_name}')
 
     try:
@@ -56,3 +71,6 @@ def generate_module_summary(schema_name):
         import traceback
         logger.error(traceback.format_exc())
         raise
+    finally:
+        # Always release the lock
+        cache.delete(lock_id)
