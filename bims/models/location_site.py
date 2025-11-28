@@ -215,6 +215,31 @@ class LocationSite(AbstractValidation):
         choices=HYDROGEOMORPHIC_CHOICES
     )
 
+    coordinate_precision = models.DecimalField(
+        max_digits=10,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        help_text='A decimal representation of the precision of the coordinates. '
+                  'Examples: 0.00001 (GPS limit), 0.000278 (nearest second), '
+                  '0.01667 (nearest minute), 1.0 (nearest degree)'
+    )
+
+    coordinate_uncertainty_in_meters = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text='The horizontal distance (in meters) from the given coordinates '
+                  'describing the smallest circle containing the whole of the Location. '
+                  'Examples: 30 (GPS after 2000-05-01), 100 (GPS before 2000-05-01)'
+    )
+
+    harvested_from_gbif = models.BooleanField(
+        default=False,
+        help_text='Indicates whether this location site was created from GBIF harvesting'
+    )
+
     @property
     def location_site_identifier(self):
         """

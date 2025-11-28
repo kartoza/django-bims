@@ -42,6 +42,7 @@ UPSTREAM_ID_KEY = 'gbifID'
 LON_KEY = 'decimalLongitude'
 LAT_KEY = 'decimalLatitude'
 COORDINATE_UNCERTAINTY_KEY = 'coordinateUncertaintyInMeters'
+COORDINATE_PRECISION_KEY = 'coordinatePrecision'
 EVENT_DATE_KEY = 'eventDate'
 COLLECTOR_KEY = 'recordedBy'
 INSTITUTION_CODE_KEY = 'institutionCode'
@@ -350,8 +351,18 @@ def process_gbif_row(
     upstream_id = row.get(UPSTREAM_ID_KEY)
     longitude = float(row.get(LON_KEY))
     latitude = float(row.get(LAT_KEY))
-    coord_uncertainty = row.get(COORDINATE_UNCERTAINTY_KEY).strip()
-    coord_uncertainty = float(coord_uncertainty) if coord_uncertainty else 0
+    coord_uncertainty = row.get(COORDINATE_UNCERTAINTY_KEY, '').strip()
+    try:
+        coord_uncertainty = float(coord_uncertainty) if coord_uncertainty else None
+    except ValueError:
+        coord_uncertainty = None
+
+    coord_precision = row.get(COORDINATE_PRECISION_KEY, '').strip()
+    try:
+        coord_precision = float(coord_precision) if coord_precision else None
+    except ValueError:
+        coord_precision = None
+
     event_date = row.get(EVENT_DATE_KEY, '')
     collector = row.get(COLLECTOR_KEY, '')
     institution_code = row.get(INSTITUTION_CODE_KEY, source_collection)
@@ -408,7 +419,7 @@ def process_gbif_row(
 
     # Build or find a location site
     site_point = Point(longitude, latitude, srid=4326)
-    if coord_uncertainty > 0:
+    if coord_uncertainty and coord_uncertainty > 0:
         location_sites = LocationSite.objects.filter(
             geometry_point__distance_lte=(site_point, D(m=coord_uncertainty))
         )
@@ -417,6 +428,22 @@ def process_gbif_row(
 
     if location_sites.exists():
         location_site = location_sites[0]
+        update_fields = []
+
+        if coord_precision is not None and location_site.coordinate_precision is None:
+            location_site.coordinate_precision = coord_precision
+            update_fields.append('coordinate_precision')
+
+        if coord_uncertainty is not None and location_site.coordinate_uncertainty_in_meters is None:
+            location_site.coordinate_uncertainty_in_meters = coord_uncertainty
+            update_fields.append('coordinate_uncertainty_in_meters')
+
+        if not location_site.harvested_from_gbif:
+            location_site.harvested_from_gbif = True
+            update_fields.append('harvested_from_gbif')
+
+        if update_fields:
+            location_site.save(update_fields=update_fields)
     else:
         # Create new site
         locality = row.get(LOCALITY_KEY) or \
@@ -430,7 +457,10 @@ def process_gbif_row(
             geometry_point=site_point,
             name=locality[:200],
             location_type=location_type,
-            site_description=locality[:300]
+            site_description=locality[:300],
+            coordinate_precision=coord_precision,
+            coordinate_uncertainty_in_meters=coord_uncertainty,
+            harvested_from_gbif=True
         )
 
         if not location_site.site_code:
