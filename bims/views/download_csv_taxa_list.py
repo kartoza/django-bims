@@ -6,6 +6,7 @@ import json
 from django.http import HttpResponseForbidden, JsonResponse
 from django.conf import settings
 from rest_framework import serializers
+from preferences import preferences
 
 from bims.enums import TaxonomicGroupCategory
 from bims.models.taxonomy import Taxonomy
@@ -18,6 +19,23 @@ from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_taxa_list as download_taxa_list_task
 )
+
+SANPARKS_PROJECT_KEY = 'sanparks'
+NATIONAL_NEMBA_LABEL = 'National NEMBA Status'
+SANPARKS_NEMBA_STATUS_OPTIONS = [
+    'Category 1a invasive',
+    'Category 1b invasive',
+    'Category 2 invasive',
+    'Category 3 invasive',
+    'Not listed',
+]
+SANPARKS_NEMBA_STATUS_MAP = {
+    value.lower(): value for value in SANPARKS_NEMBA_STATUS_OPTIONS
+}
+
+
+def is_sanparks_project():
+    return preferences.SiteSetting.project_name == SANPARKS_PROJECT_KEY
 
 
 def apply_gbif_record_threshold(queryset, threshold=10000, limit=100):
@@ -126,9 +144,13 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         return '-'
 
     def get_invasion(self, obj: Taxonomy):
-        if obj.invasion:
-            return obj.invasion.category
-        return ''
+        status = (obj.invasion.category or '').strip() if obj.invasion else ''
+        if is_sanparks_project():
+            if not status:
+                return ''
+            normalized = SANPARKS_NEMBA_STATUS_MAP.get(status.lower())
+            return normalized if normalized else ''
+        return status
 
     def get_gbif_coordinate_uncertainty_m(self, obj: Taxonomy):
         """
