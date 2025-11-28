@@ -2580,6 +2580,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     list_display = (
         "module_group",
+        "harvest_type_display",
         "enabled",
         "period",
         "schedule_human",
@@ -2587,7 +2588,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
         "last_harvest_until_local",
         "updated_at",
     )
-    list_filter = ("enabled", "period", "timezone")
+    list_filter = ("enabled", "is_fetching_species", "period", "timezone")
     search_fields = ("module_group__name",)
     autocomplete_fields = ("module_group",)
     readonly_fields = ("last_harvest_until", "updated_at", "schedule_preview")
@@ -2620,6 +2621,11 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
             "fields": ("last_harvest_until", "updated_at"),
         }),
     )
+
+    def harvest_type_display(self, obj: HarvestSchedule):
+        return "Species" if obj.is_fetching_species else "Occurrences"
+
+    harvest_type_display.short_description = "Type"
 
     def schedule_human(self, obj: HarvestSchedule):
         if obj.period == HarvestPeriod.CUSTOM and obj.cron_expression:
