@@ -1,6 +1,4 @@
 from django.contrib.sites.models import Site
-import threading
-
 from django.db import connection
 from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
@@ -223,12 +221,15 @@ class ModuleSummary(APIView):
         return {key: value for d in counts for key, value in d.items()}
 
     def _cache_key(self):
-        tenant = connection.tenant
         try:
-            tenant_name = tenant.name
-        except AttributeError:
-            tenant_name = ''
-        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}_{tenant_name}'
+            schema_name = str(connection.schema_name)
+        except (AttributeError, TypeError):
+            # Fallback to tenant name if schema_name not available
+            try:
+                schema_name = connection.tenant.name if connection.tenant else ''
+            except AttributeError:
+                schema_name = ''
+        return f'{LANDING_PAGE_MODULE_SUMMARY_CACHE}_{schema_name}'
 
     def summary_data(self):
         module_summary = dict()
@@ -245,20 +246,23 @@ class ModuleSummary(APIView):
             )
         set_cache(
             self._cache_key(),
-            module_summary
+            module_summary,
+            timeout=86400  # Cache for 24 hours
         )
         return module_summary
-
-    def call_summary_data_in_background(self):
-        delete_cache(self._cache_key())
-        background_thread = threading.Thread(
-            target=self.summary_data,
-        )
-        background_thread.start()
 
     def get(self, request, *args):
         cached_data = get_cache(self._cache_key())
         if cached_data:
             return Response(cached_data)
-        summary_data = self.summary_data()
-        return Response(summary_data)
+        # Cache miss - queue background task to generate summary
+        from bims.tasks.module_summary import generate_module_summary
+        schema_name = str(connection.schema_name)
+        generate_module_summary.delay(schema_name)
+
+        # Return empty response with processing status
+        return Response({
+            'status': 'processing',
+            'message': 'Module summary is being generated. Please refresh in a moment.',
+            'general_summary': {}
+        })

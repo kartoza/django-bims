@@ -322,14 +322,16 @@ def cache_taxon_groups_data(delete_first=False):
 @prevent_recursion
 def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
 
-    from bims.api_views.module_summary import ModuleSummary
+    from bims.tasks.module_summary import generate_module_summary
     from bims.tasks.taxon_group import update_taxon_group_cache
+    from django.db import connection
 
     if not issubclass(sender, TaxonGroup):
         return
 
-    module_summary_api = ModuleSummary()
-    module_summary_api.call_summary_data_in_background()
+    # Queue module summary generation in background
+    schema_name = str(connection.schema_name)
+    generate_module_summary.delay(schema_name)
 
     taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
     if taxon_group_cache:

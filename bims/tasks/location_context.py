@@ -121,12 +121,14 @@ LAYER_NAMES = {
 )
 def generate_filters(tenant_id=None):
     from bims.tasks.source_reference import generate_source_reference_filter
-    from bims.api_views.module_summary import ModuleSummary
+    from bims.tasks.module_summary import generate_module_summary
+    from django.db import connection
     generate_spatial_scale_filter(tenant_id)
     generate_source_reference_filter(tenant_id)
 
-    module_summary_api = ModuleSummary()
-    module_summary_api.call_summary_data_in_background()
+    # Queue module summary generation in background
+    schema_name = str(connection.schema_name)
+    generate_module_summary.delay(schema_name)
 
 
 @shared_task(

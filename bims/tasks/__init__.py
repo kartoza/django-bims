@@ -23,6 +23,7 @@ from bims.tasks.caches import reset_caches
 from bims.tasks.dataset import retrieve_datasets_from_gbif
 from bims.tasks.harvest_schedule import run_scheduled_gbif_harvest
 from bims.tasks.prune_outside_boundary import prune_outside_boundary_gbif
+from bims.tasks.module_summary import generate_module_summary
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')

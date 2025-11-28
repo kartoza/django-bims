@@ -143,33 +143,64 @@
     }
 
     if (showModuleSummaries) {
-        $.get('/api/module-summary').then(
-            function (data) {
-                console.log(data);
-                $('.module-loading').hide();
-                const $container = $('.summary-data');
-                const $generalSummary = $('.general-summary');
-                const $moduleSummary = $('.module-summary');
+        let pollAttempts = 0;
+        const maxPollAttempts = 60; // Poll for up to 60 attempts (60 seconds with 1s interval)
 
-                 $.each(data, function(key, summaryData) {
-                     if (!summaryData['icon']) {
-                       if ($generalSummary && key === 'general_summary') {
-                         $.each(summaryData, function(gsKey, gsData) {
-                           $(`#${gsKey}`).html(getNumberWithCommas(gsData));
-                         });
-                       }
-                       return true;
-                     } else {
-                         let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
-                         $moduleSummary.append(_container);
-                         createModuleCharts(
-                             summaryData,
-                             key,
-                             _container
-                         )
-                     }
-                 });
-            }
-        )
+        function fetchModuleSummary() {
+            $.get('/api/module-summary').then(
+                function (data) {
+                    console.log(data);
+
+                    // Check if data is still processing
+                    if (data.status === 'processing') {
+                        pollAttempts++;
+                        if (pollAttempts < maxPollAttempts) {
+                            // Show processing message if it exists
+                            if (data.message) {
+                                console.log(data.message);
+                            }
+                            // Poll again after 1 second
+                            setTimeout(fetchModuleSummary, 1000);
+                        } else {
+                            // Max attempts reached, hide loading indicator
+                            $('.module-loading').hide();
+                            console.error('Module summary generation timed out');
+                        }
+                        return;
+                    }
+
+                    // Data is ready, process it
+                    $('.module-loading').hide();
+                    const $container = $('.summary-data');
+                    const $generalSummary = $('.general-summary');
+                    const $moduleSummary = $('.module-summary');
+
+                     $.each(data, function(key, summaryData) {
+                         if (!summaryData['icon']) {
+                           if ($generalSummary && key === 'general_summary') {
+                             $.each(summaryData, function(gsKey, gsData) {
+                               $(`#${gsKey}`).html(getNumberWithCommas(gsData));
+                             });
+                           }
+                           return true;
+                         } else {
+                             let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
+                             $moduleSummary.append(_container);
+                             createModuleCharts(
+                                 summaryData,
+                                 key,
+                                 _container
+                             )
+                         }
+                     });
+                }
+            ).fail(function(error) {
+                console.error('Error fetching module summary:', error);
+                $('.module-loading').hide();
+            });
+        }
+
+        // Start fetching
+        fetchModuleSummary();
     }
 </script>
