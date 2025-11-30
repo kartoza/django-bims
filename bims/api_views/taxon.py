@@ -403,6 +403,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 except TaxonGroup.DoesNotExist:
                     pass
 
+        if taxon_group and taxonomy:
+            from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
+            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
+
         if taxonomy:
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name

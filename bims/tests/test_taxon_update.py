@@ -10,6 +10,7 @@ from bims.tests.model_factories import (
     TaxonGroupF,
     TaxonomyUpdateProposalF
 )
+from bims.models import TaxonGroupTaxonomy
 
 User = get_user_model()
 
@@ -110,3 +111,105 @@ class UpdateTaxonTest(FastTenantTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.client.logout()
+
+    def test_update_synonym_adds_accepted_name_to_group(self):
+        """
+        When updating a taxon to change it to a synonym,
+        the accepted taxonomy should automatically be added to the group.
+        """
+        self.client.login(username='testuser', password='password')
+
+        # Create an accepted taxonomy not yet in the group
+        accepted_taxonomy = TaxonomyF.create(
+            canonical_name='Accepted Name',
+            scientific_name='Accepted Name',
+            rank='species',
+            taxonomic_status='ACCEPTED'
+        )
+
+        # Verify the accepted taxonomy is NOT in the group
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=accepted_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists()
+        )
+
+        # Update the taxonomy to make it a synonym
+        url = reverse('update-taxon',
+                      kwargs={
+                          'taxon_id': self.taxonomy.pk,
+                          'taxon_group_id': self.taxon_group.pk
+                      })
+
+        data = {
+            'taxonomic_status': 'SYNONYM',
+            'accepted_taxonomy': accepted_taxonomy.pk,
+        }
+
+        response = self.client.put(url, data, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        # Verify the accepted taxonomy was automatically added to the group
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=accepted_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists(),
+            "Accepted taxonomy should be automatically added when taxon becomes synonym"
+        )
+
+        self.client.logout()
+
+    def test_create_proposal_for_synonym_adds_accepted_name(self):
+        """
+        Test that create_taxon_proposal automatically adds accepted taxonomy to group.
+        """
+        from bims.api_views.taxon_update import create_taxon_proposal
+
+        # Create an accepted taxonomy
+        accepted_taxonomy = TaxonomyF.create(
+            canonical_name='Another Accepted',
+            scientific_name='Another Accepted',
+            rank='species',
+            taxonomic_status='ACCEPTED'
+        )
+
+        # Create a new taxon that will be marked as synonym
+        new_taxon = TaxonomyF.create(
+            canonical_name='New Synonym',
+            scientific_name='New Synonym',
+            rank='species',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted_taxonomy
+        )
+
+        # Add to taxon group
+        self.taxon_group.taxonomies.add(new_taxon)
+
+        # Verify accepted not in group yet
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=accepted_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists()
+        )
+
+        # Create proposal
+        proposal = create_taxon_proposal(
+            taxon=new_taxon,
+            taxon_group=self.taxon_group,
+            data={'taxonomic_status': 'SYNONYM'},
+            creator=self.expert_user
+        )
+
+        self.assertIsNotNone(proposal)
+
+        # Verify accepted taxonomy was automatically added
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=accepted_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists(),
+            "create_taxon_proposal should add accepted taxonomy to group"
+        )

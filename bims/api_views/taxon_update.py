@@ -94,6 +94,44 @@ def _merge_additional(existing: dict | None, data: dict) -> dict:
     return existing
 
 
+def ensure_accepted_taxonomy_in_group(taxonomy, taxon_group):
+    """
+    Ensure that if a taxonomy is a synonym, its accepted taxonomy is added to the taxon group.
+    This prevents having to reupload entire lists or reharvest species to get accepted names.
+
+    Args:
+        taxonomy: The Taxonomy instance (potentially a synonym)
+        taxon_group: The TaxonGroup to which the accepted taxonomy should be added
+
+    Returns:
+        The accepted_taxonomy if added, None otherwise
+    """
+    if not taxonomy or not taxon_group:
+        return None
+
+    # Check if this taxonomy has an accepted taxonomy (i.e., it's a synonym)
+    accepted_taxonomy = taxonomy.accepted_taxonomy
+    if not accepted_taxonomy:
+        return None
+
+    # Check if the accepted taxonomy is already in the taxon group
+    if TaxonGroupTaxonomy.objects.filter(
+        taxonomy=accepted_taxonomy,
+        taxongroup=taxon_group
+    ).exists():
+        return accepted_taxonomy
+
+    # Add the accepted taxonomy to the taxon group
+    taxon_group.taxonomies.add(
+        accepted_taxonomy,
+        through_defaults={
+            'is_validated': False
+        }
+    )
+
+    return accepted_taxonomy
+
+
 @transaction.atomic
 def create_taxon_proposal(
     taxon,
@@ -115,6 +153,12 @@ def create_taxon_proposal(
         accepted_taxonomy = None
     else:
         accepted_taxonomy = data.get('accepted_taxonomy', getattr(taxon, 'accepted_taxonomy', None))
+        # Convert PK to Taxonomy instance if needed
+        if accepted_taxonomy and isinstance(accepted_taxonomy, int):
+            try:
+                accepted_taxonomy = Taxonomy.objects.get(pk=accepted_taxonomy)
+            except Taxonomy.DoesNotExist:
+                accepted_taxonomy = None
 
     additional_data = _merge_additional(getattr(taxon, 'additional_data', {}) or {}, data)
 
@@ -152,6 +196,20 @@ def create_taxon_proposal(
         status='pending',
         defaults=defaults,
     )
+
+    # Ensure accepted taxonomy is added to the taxon group if this is a synonym
+    if accepted_taxonomy and taxon_group:
+        # Add the accepted taxonomy directly to the group
+        if not TaxonGroupTaxonomy.objects.filter(
+            taxonomy=accepted_taxonomy,
+            taxongroup=taxon_group
+        ).exists():
+            taxon_group.taxonomies.add(
+                accepted_taxonomy,
+                through_defaults={
+                    'is_validated': False
+                }
+            )
 
     if proposal:
         if 'tags' in data:
@@ -204,6 +262,12 @@ def update_taxon_proposal(
         accepted_taxonomy = None
     else:
         accepted_taxonomy = data.get('accepted_taxonomy', proposal.accepted_taxonomy)
+        # Convert PK to Taxonomy instance if needed
+        if accepted_taxonomy and isinstance(accepted_taxonomy, int):
+            try:
+                accepted_taxonomy = Taxonomy.objects.get(pk=accepted_taxonomy)
+            except Taxonomy.DoesNotExist:
+                accepted_taxonomy = None
 
     merged_additional = _merge_additional(getattr(proposal, 'additional_data', {}) or {}, data)
 
@@ -239,6 +303,20 @@ def update_taxon_proposal(
     TaxonomyUpdateProposal.objects.filter(id=proposal.id).update(**updates)
 
     proposal.refresh_from_db()
+
+    # Ensure accepted taxonomy is added to the taxon group if this is a synonym
+    if accepted_taxonomy and proposal.taxon_group:
+        # Add the accepted taxonomy directly to the group
+        if not TaxonGroupTaxonomy.objects.filter(
+            taxonomy=accepted_taxonomy,
+            taxongroup=proposal.taxon_group
+        ).exists():
+            proposal.taxon_group.taxonomies.add(
+                accepted_taxonomy,
+                through_defaults={
+                    'is_validated': False
+                }
+            )
 
     if 'tags' in data:
         proposal.tags.set(data.get('tags') or [])
