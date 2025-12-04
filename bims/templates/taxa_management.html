@@ -471,7 +471,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="container new-taxon-form" style="margin-top: 15px;">
+                    <div class="container new-taxon-form" style="margin-top: 15px; max-width: 1500px;">
                         <div class="alert alert-info" role="alert">
                             Whilst the system will accept taxa that are not listed in GBIF,
                             you should use the capability only for taxa where the classification is partly unresolved.
@@ -482,15 +482,27 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 25%">Parent</th>
+                                    <th scope="col" style="width: 12%">Status</th>
+                                    <th scope="col" style="width: 25%"><span id="accepted-taxon-column-label">Accepted Taxon</span></th>
                                     <th scope="col" style="width: 25%">Taxon Name</th>
-                                    <th scope="col" style="width: 25%">Author</th>
-                                    <th scope="col" style="width: 25%">Rank</th>
+                                    <th scope="col" style="width: 18%">Author</th>
+                                    <th scope="col" style="width: 20%">Rank</th>
                                     <th scope="col">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                             <tr>
+                                <td>
+                                    <select class="form-control new-taxon-status" id="new-taxon-status">
+                                        <option value="ACCEPTED" selected>Accepted</option>
+                                        <option value="SYNONYM">Synonym</option>
+                                        <option value="HETEROTYPIC_SYNONYM">Heterotypic synonym</option>
+                                        <option value="HOMOTYPIC_SYNONYM">Homotypic synonym</option>
+                                        <option value="PROPARTE_SYNONYM">Proparte synonym</option>
+                                        <option value="MISAPPLIED">Misapplied</option>
+                                        <option value="DOUBTFUL">Doubtful</option>
+                                    </select>
+                                </td>
                                 <td>
                                     <select name="newTaxonFamilyName" class="taxon-auto-complete form-control" id="new-taxon-parent" style="width: 100%"></select>
                                     <input type="hidden" class="new-taxon-parent-id">
@@ -521,8 +533,12 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td style="border-top-width: 0"><span class="text-muted" style="font-size: 10pt; font-style: italic">
+                                <td style="border-top-width: 0"></td>
+                                <td style="border-top-width: 0" colspan="1"><span class="text-muted" style="font-size: 10pt; font-style: italic">
                                     This is an autocomplete search, if the taxon does not exist in the system, please add it first.</span>
+                                </td>
+                                <td style="border-top-width: 0; vertical-align: top !important;" colspan="1">
+                                    <small class="text-muted" style="font-size: 10pt; font-style: italic" id="taxon-name-helper">Provide the binomial or epithet depending on the status.</small>
                                 </td>
                             </tr>
                             </tbody>

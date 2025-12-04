@@ -109,7 +109,7 @@
                 </div>
             </div>
 
-            <div class="form-group row">
+            <div class="form-group row" id="parent-field">
                 <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
                     Parent
                 </label>
@@ -123,16 +123,22 @@
                     Name
                 </label>
                 <div class="col-sm-10">
+                    {% with object.taxonomic_status|default:''|upper as tax_status_upper %}
                     <input type="text" name="taxon_name" id="taxon_name"
                            class="form-control form-control-sm"
                            placeholder=""
-                           value="{{ object.taxon_name }}" >
+                           value="{% if tax_status_upper == 'DOUBTFUL' or 'SYNONYM' in tax_status_upper %}{% if object.canonical_name %}{{ object.canonical_name }}{% else %}{{ object.scientific_name }}{% endif %}{% elif object.rank == 'SUBSPECIES' %}{{ hierarchy_taxon.sub_species_name|default:object.sub_species_name }}{% elif object.rank == 'SPECIES' %}{{ hierarchy_taxon.specific_epithet|default:object.specific_epithet }}{% elif object.canonical_name %}{{ object.canonical_name }}{% else %}{{ object.scientific_name }}{% endif %}" >
+                    {% endwith %}
                 </div>
             </div>
 
             <div class="form-group row">
                 <label class="col-sm-2 col-form-label col-form-label">
-                    Taxon hierarchy
+                    {% if hierarchy_taxon.id != object.id %}
+                        Accepted Taxon hierarchy
+                    {% else %}
+                        Taxon hierarchy
+                    {% endif %}
                 </label>
                 <div class="col-sm-10">
                     <div id="taxon-tree"></div>
@@ -157,7 +163,7 @@
                         <input type="text"
                                name="{{ taxon.rank.lower }}_name"
                                class="species-name-field form-control form-control-sm" readonly
-                               value="{{ object|get_attr:taxon.field }}">
+                               value="{{ hierarchy_taxon|get_attr:taxon.field }}">
                     </div>
                 </div>
             {% endfor %}
@@ -191,7 +197,8 @@
                 <div class="col-sm-10">
                     <select name="taxonomic_status" id="taxonomic_status" class="form-control form-control-sm">
                         <option value="ACCEPTED" {% if object.taxonomic_status == 'ACCEPTED' or not object.taxonomic_status %}selected{% endif %}>Accepted</option>
-                        <option value="SYNONYM" {% if object.taxonomic_status == 'SYNONYM' %}selected{% endif %}>Synonym</option>
+                        <option value="SYNONYM" {% if object.taxonomic_status and 'SYNONYM' in object.taxonomic_status|upper %}selected{% endif %}>Synonym</option>
+                        <option value="DOUBTFUL" {% if object.taxonomic_status and object.taxonomic_status|upper == 'DOUBTFUL' %}selected{% endif %}>Doubtful</option>
                     </select>
                 </div>
             </div>

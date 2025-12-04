@@ -21,16 +21,42 @@ export const addNewTaxon = (() => {
         $newTaxonParent.val(null).trigger('change');
     }
 
-    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, parentId = "", authorName = "") {
+    function normalizeStatus(status) {
+        const value = (status || '').toString().toUpperCase();
+        return value;
+    }
+
+    function updateAcceptedLabel(status) {
+        const labelEl = document.getElementById('accepted-taxon-column-label');
+        const helperEl = document.getElementById('taxon-name-helper');
+        if (!labelEl) return;
+        const normalized = normalizeStatus(status);
+        labelEl.textContent = (!normalized || normalized === 'ACCEPTED') ? 'Parent' : 'Accepted Taxon';
+        if (helperEl) {
+            helperEl.textContent = (!normalized || normalized === 'ACCEPTED')
+                ? 'Provide the binomial name (e.g. Genus species).'
+                : 'Provide the full synonym name, including genus.';
+        }
+    }
+
+    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, parentId = "", authorName = "", taxonomicStatus = "") {
+        const status = taxonomicStatus || $('#new-taxon-status').val() || '';
+        const normalizedStatus = normalizeStatus(status);
+        const finalStatus = normalizedStatus || 'ACCEPTED';
         let postData = {
             'gbifKey': gbifKey,
             'taxonName': name,
             'rank': rank,
             'taxonGroupId': currentSelectedTaxonGroup,
-            'authorName': authorName
+            'authorName': authorName,
+            'taxonomicStatus': finalStatus,
         };
         if (parentId) {
-            postData['parentId'] = parentId;
+            if (finalStatus === 'ACCEPTED') {
+                postData['parentId'] = parentId;
+            } else {
+                postData['acceptedTaxonomyId'] = parentId;
+            }
         }
         let table = $('.find-taxon-table');
         table.hide();
@@ -96,6 +122,7 @@ export const addNewTaxon = (() => {
                 stored = fontAwesomeIcon('times', 'red');
             }
             let action = '';
+            const normalizedStatus = status || '';
             if (!taxonGroupIds.includes(parseInt(currentSelectedTaxonGroup))) {
                 action = (`<button
                 type="button"
@@ -103,6 +130,7 @@ export const addNewTaxon = (() => {
                 data-canonical-name="${canonicalName}"
                 data-key="${key}"
                 data-rank="${rank}"
+                data-status="${normalizedStatus}"
                 data-taxa-id="${taxaId}">${fontAwesomeIcon('plus')}&nbsp;ADD
                </button>`);
             }
@@ -148,12 +176,17 @@ export const addNewTaxon = (() => {
     function handleAddNewTaxon(event) {
         let $rank = $taxonForm.find('.new-taxon-rank');
         let $author = $taxonForm.find('#author-auto-complete');
+        const status = $('#new-taxon-status').val();
         const parentId = $newTaxonParent.val();
         if (!parentId) {
-            alert("Missing parent");
+            if (status.toLowerCase() === 'accepted') {
+                alert("Missing parent");
+            } else {
+                alert("Missing accepted taxon");
+            }
             return;
         }
-        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val());
+        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val(), status);
         $taxonForm.hide();
         $newTaxonFamilyInput.val("");
         $newTaxonParentIdInput.val("");
@@ -189,6 +222,7 @@ export const addNewTaxon = (() => {
 
             $newTaxonParent.empty();
             $newTaxonParent.val(null).trigger('change');
+            updateAcceptedLabel($('#new-taxon-status').val());
         });
 
         $('#addNewTaxonModal').on('hidden.bs.modal', function () {
@@ -206,8 +240,15 @@ export const addNewTaxon = (() => {
             const gbifKey = button.data('key');
             const rank = button.data('rank');
             const taxaId = button.data('taxa-id');
-            addNewTaxonToObservedList(name, gbifKey, rank, taxaId);
+            const status = button.data('status') || '';
+            addNewTaxonToObservedList(name, gbifKey, rank, taxaId, "", "", status);
         });
+
+        $('#new-taxon-status').on('change', function () {
+            updateAcceptedLabel(this.value);
+        });
+
+        updateAcceptedLabel($('#new-taxon-status').val());
 
         const authorAutoComplete = $('.author-auto-complete');
         authorAutoComplete.select2({
