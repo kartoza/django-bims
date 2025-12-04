@@ -466,7 +466,7 @@ def fetch_all_species_from_gbif(
     species_key = taxonomy.gbif_key
     scientific_name = taxonomy.scientific_name
 
-    if parent:
+    if parent or is_synonym:
         taxonomy.parent = parent
         taxonomy.save()
     else:
@@ -666,10 +666,6 @@ def harvest_synonyms_for_accepted_taxonomy(
         changed = False
         if getattr(synonym_tax, "accepted_taxonomy_id", None) != accepted_taxonomy.id:
             synonym_tax.accepted_taxonomy = accepted_taxonomy
-            changed = True
-
-        if not getattr(synonym_tax, "parent_id", None) and getattr(accepted_taxonomy, "parent_id", None):
-            synonym_tax.parent = accepted_taxonomy.parent
             changed = True
 
         if changed:
