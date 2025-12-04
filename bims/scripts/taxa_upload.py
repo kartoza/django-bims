@@ -889,6 +889,10 @@ class TaxaProcessor(object):
 
                 logger.debug('%s already in the system', taxon_name)
 
+                # Ensure synonyms and doubtful species don't have parents
+                if (is_synonym or is_doubtful) and taxonomy.parent:
+                    taxonomy.parent = None
+
             if not taxonomy and gbif_key:
                 taxonomy = fetch_all_species_from_gbif(
                     gbif_key=gbif_key,
@@ -898,6 +902,9 @@ class TaxaProcessor(object):
                 )
                 if taxonomy:
                     new_taxon = True
+                    # Ensure synonyms and doubtful species don't have parents
+                    if (is_synonym or is_doubtful) and taxonomy.parent:
+                        taxonomy.parent = None
 
             if not taxonomy and on_gbif:
                 # Build classifiers from CSV to ensure we match the correct taxon
@@ -927,6 +934,9 @@ class TaxaProcessor(object):
                 )
                 if taxonomy:
                     new_taxon = True
+                    # Ensure synonyms and doubtful species don't have parents
+                    if (is_synonym or is_doubtful) and taxonomy.parent:
+                        taxonomy.parent = None
 
             # Ensure we have a taxonomy; if GBIF didn't return, construct one with a valid parent
             if not taxonomy:
@@ -943,6 +953,9 @@ class TaxaProcessor(object):
                     if not parent:
                         self.handle_error(row=row, message='Data not found from GBIF for this taxon and its parents')
                         return
+                else:
+                    # Synonyms and doubtful species should not have a parent
+                    parent = None
                 new_taxon = True
                 taxonomy, _ = Taxonomy.objects.get_or_create(
                     scientific_name=scientific_name,
@@ -953,8 +966,8 @@ class TaxaProcessor(object):
                 if taxonomic_status:
                     taxonomy.taxonomic_status = taxonomic_status.upper()
 
-            # Backfill parent and author if missing
-            if taxonomy and not taxonomy.parent:
+            # Backfill parent and author if missing (skip for synonyms and doubtful species)
+            if taxonomy and not taxonomy.parent and not is_synonym and not is_doubtful:
                 taxonomy.parent = parent
 
             if on_gbif and taxonomy and not _safe_strip(getattr(taxonomy, 'author', '')):
@@ -968,6 +981,10 @@ class TaxaProcessor(object):
                     preserve_taxonomic_status=is_fada_site(),
                 )
                 taxonomy = refreshed or taxonomy
+
+                # Ensure synonyms and doubtful species don't have parents after refresh
+                if (is_synonym or is_doubtful) and taxonomy.parent:
+                    taxonomy.parent = None
 
                 # For FADA sites, ensure CSV taxonomic_status is always preserved after GBIF refresh
                 if is_fada_site() and taxonomic_status and taxonomy.taxonomic_status != taxonomic_status.upper():
@@ -999,7 +1016,8 @@ class TaxaProcessor(object):
                     self.handle_error(row=row, message=message)
                     return
 
-            if use_proposal and proposal:
+            # Only set proposal parent for accepted taxa (not synonyms or doubtful species)
+            if use_proposal and proposal and not is_synonym and not is_doubtful:
                 proposal.parent = taxonomy.parent
 
             # Endemism

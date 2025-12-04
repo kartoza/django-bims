@@ -668,10 +668,6 @@ def harvest_synonyms_for_accepted_taxonomy(
             synonym_tax.accepted_taxonomy = accepted_taxonomy
             changed = True
 
-        if not getattr(synonym_tax, "parent_id", None) and getattr(accepted_taxonomy, "parent_id", None):
-            synonym_tax.parent = accepted_taxonomy.parent
-            changed = True
-
         if changed:
             synonym_tax.save()
 
