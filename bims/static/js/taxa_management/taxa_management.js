@@ -752,7 +752,24 @@ export const taxaManagement = (() => {
 
         const detailRows = [];
         const taxonCache = {};
-        const taxonProposalCache = {};
+        const acceptedTaxonCache = {};
+
+        async function fetchTaxonRecord(taxonId) {
+            const response = await fetch(`/api/taxon/${taxonId}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch taxon ${taxonId}`);
+            }
+            return response.json();
+        }
+
+        async function fetchAcceptedHierarchy(taxonId) {
+            if (acceptedTaxonCache[taxonId]) {
+                return acceptedTaxonCache[taxonId];
+            }
+            const accepted = await fetchTaxonRecord(taxonId);
+            acceptedTaxonCache[taxonId] = accepted;
+            return accepted;
+        }
 
         $(window).resize(function () {
             table.columns.adjust().draw();
@@ -776,8 +793,15 @@ export const taxaManagement = (() => {
                 if (!taxonCache[tr.id]) {
                     row.child(formatLoadingMessage()).show();
                     try {
-                        let response = await fetch(`/api/taxon/${tr.id.replace('row_', '')}`);
-                        let data = await response.json();
+                        const taxonId = tr.id.replace('row_', '');
+                        let data = await fetchTaxonRecord(taxonId);
+                        if (taxonDetail.shouldUseAcceptedHierarchy(data) && data.accepted_taxonomy) {
+                            try {
+                                data._accepted_detail = await fetchAcceptedHierarchy(data.accepted_taxonomy);
+                            } catch (acceptedError) {
+                                console.warn('Failed to load accepted taxon for hierarchy', acceptedError);
+                            }
+                        }
                         taxonCache[tr.id] = data;
                         row.child(taxonDetail.formatDetailTaxon(data)).show();
                     } catch (error) {
@@ -786,13 +810,28 @@ export const taxaManagement = (() => {
                         return;
                     }
                 } else {
-                    row.child(taxonDetail.formatDetailTaxon(taxonCache[tr.id])).show();
+                    const cached = taxonCache[tr.id];
+                    if (taxonDetail.shouldUseAcceptedHierarchy(cached) && cached.accepted_taxonomy && !cached._accepted_detail) {
+                        try {
+                            cached._accepted_detail = await fetchAcceptedHierarchy(cached.accepted_taxonomy);
+                        } catch (acceptedError) {
+                            console.warn('Failed to load accepted taxon for hierarchy', acceptedError);
+                        }
+                    }
+                    row.child(taxonDetail.formatDetailTaxon(cached)).show();
                 }
 
                 if (proposalId && proposalId !== 'null') {
                     try {
                         let response = await fetch(`/api/taxon-proposal/${proposalId}`);
                         let data = await response.json();
+                        if (taxonDetail.shouldUseAcceptedHierarchy(data) && data.accepted_taxonomy) {
+                            try {
+                                data._accepted_detail = await fetchAcceptedHierarchy(data.accepted_taxonomy);
+                            } catch (proposalAcceptedError) {
+                                console.warn('Failed to load accepted hierarchy for proposal', proposalAcceptedError);
+                            }
+                        }
                         let $tr = $(row.child())
                         let $changes = $('<div class="taxon_proposal"><div>Updates</div></div>')
                         $changes.append(taxonDetail.formatDetailTaxon(data))

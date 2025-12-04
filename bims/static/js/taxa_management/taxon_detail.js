@@ -49,9 +49,57 @@ export const taxonDetail = (() => {
       }
     }
 
+    function normalizeStatus(status) {
+        return String(status || '').trim().toUpperCase();
+    }
+
+    function shouldUseAcceptedHierarchy(data) {
+        const status = normalizeStatus(data?.taxonomic_status);
+        const isSynonymOrDoubtful = status === 'DOUBTFUL' || status.includes('SYNONYM');
+        return Boolean(isSynonymOrDoubtful && data?.accepted_taxonomy);
+    }
+
+    function getHierarchySource(data) {
+        if (shouldUseAcceptedHierarchy(data) && data?._accepted_detail) {
+            return data._accepted_detail;
+        }
+        return data;
+    }
+
+    function acceptedHierarchyNotice(data, hierarchySource) {
+        if (!shouldUseAcceptedHierarchy(data)) {
+            return '';
+        }
+        if (!hierarchySource || hierarchySource === data) {
+            const statusLabel = (data?.taxonomic_status || 'Synonym').replace(/_/g, ' ');
+            return `
+                <div class="alert alert-warning synonym-summary mb-3 mx-4">
+                    <strong>${statusLabel}</strong>: Accepted hierarchy data is unavailable.
+                </div>
+            `;
+        }
+        const statusLabel = (data?.taxonomic_status || 'Synonym').replace(/_/g, ' ');
+        const acceptedName = hierarchySource.canonical_name
+            || getCleanAcceptedName(data, 'CANONICAL')
+            || 'Accepted taxon';
+        return `
+            <div class="alert alert-info synonym-summary mb-3 mx-4">
+                <strong>${statusLabel}</strong>: Showing hierarchical information for
+                <strong>${acceptedName}</strong>. Metadata below refers to
+                <strong>${data.canonical_name}</strong>.
+            </div>
+        `;
+    }
+
     function formatDetailTaxon(data) {
+        const hierarchySource = getHierarchySource(data);
+        const notice = acceptedHierarchyNotice(data, hierarchySource);
+
         return `
             <div class="container container-fluid" style="padding-left:40px;">
+                <div class="row">
+                    ${notice}
+                </div>
                 <div class="row mb-2">
                     <div class="dt-column">
                         <div class="row">
@@ -60,23 +108,23 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Kingdom</strong></div> 
-                                <div class="col-6">${data.kingdom}</div>
+                                <div class="col-6">${hierarchySource.kingdom}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Phylum</strong></div>
-                                <div class="col-6">${data.phylum}</div>
+                                <div class="col-6">${hierarchySource.phylum}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Class</strong></div>
-                                <div class="col-6">${data.class_name}</div>
+                                <div class="col-6">${hierarchySource.class_name}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Order</strong></div>
-                                <div class="col-6">${data.order}</div>
+                                <div class="col-6">${hierarchySource.order}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>Family</strong></div>
-                                <div class="col-6">${data.family}</div>
+                                <div class="col-6">${hierarchySource.family}</div>
                             </div>
                         </div>
                     </div>
@@ -87,15 +135,15 @@ export const taxonDetail = (() => {
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Subfamily</strong></div>
-                                <div class="col-6">${data.subfamily}</div>
+                                <div class="col-6">${hierarchySource.subfamily}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Tribe</strong></div>
-                                <div class="col-6">${data.tribe}</div>
+                                <div class="col-6">${hierarchySource.tribe}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Subtribe</strong></div>
-                                <div class="col-6">${data.subtribe}</div>
+                                <div class="col-6">${hierarchySource.subtribe}</div>
                             </div>
                         </div>
                     </div>
@@ -109,23 +157,23 @@ export const taxonDetail = (() => {
                                  <div class="col-6">${
                                     data.accepted_taxonomy_name
                                         ? getCleanAcceptedName(data, 'GENUS')
-                                        : data.genus
+                                        : hierarchySource.genus
                                 }</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Subgenus</strong></div>
-                                <div class="col-6">${data.rank == 'SUBGENUS' && data.accepted_taxonomy_name ? data.accepted_taxonomy_name : data.subgenus}</div>
+                                <div class="col-6">${data.rank == 'SUBGENUS' && data.accepted_taxonomy_name ? data.accepted_taxonomy_name : hierarchySource.subgenus}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Species group</strong></div>
-                                <div class="col-6">${data.species_group}</div>
+                                <div class="col-6">${hierarchySource.species_group}</div>
                             </div>
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Species</strong></div>
                                 <div class="col-6">${
                                     data.accepted_taxonomy_name
                                         ? getCleanAcceptedName(data, 'SPECIES')
-                                        : data.species
+                                        : hierarchySource.species
                                 }</div>
                             </div>
                             <div class="dt-item col-12 row">
@@ -133,7 +181,7 @@ export const taxonDetail = (() => {
                                 <div class="col-6">${
                                     data.accepted_taxonomy_name
                                         ? getCleanAcceptedName(data, 'SUBSPECIES')
-                                        : data.subspecies
+                                        : hierarchySource.subspecies
                                 }</div>
                             </div>
                             <div class="dt-item col-12 row">
@@ -141,7 +189,7 @@ export const taxonDetail = (() => {
                                 <div class="col-6">${
                                     data.accepted_taxonomy_name
                                         ? getCleanAcceptedName(data, 'AUTHOR')
-                                        : data.author
+                                        : hierarchySource.author
                                 }</div>
                             </div>
                         </div>
@@ -213,6 +261,7 @@ export const taxonDetail = (() => {
     }
 
     return {
-        formatDetailTaxon
+        formatDetailTaxon,
+        shouldUseAcceptedHierarchy,
     };
 })();
