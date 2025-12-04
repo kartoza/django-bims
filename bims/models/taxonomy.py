@@ -346,9 +346,21 @@ class AbstractTaxonomy(AbstractValidation):
     def get_taxon_rank_name(self, rank):
         limit = 20
         current_try = 0
-        _taxon = self
+
+        status = (self.taxonomic_status or '').upper()
+        is_synonym_or_doubtful = (
+            status == 'DOUBTFUL' or 'SYNONYM' in status
+        )
+        rank_differs = rank and self.rank and self.rank != rank
+
+        if is_synonym_or_doubtful and rank_differs and self.accepted_taxonomy:
+            _taxon = self.accepted_taxonomy
+        else:
+            _taxon = self
+
         _parent = _taxon.parent if _taxon.parent else None
         _rank = _taxon.rank
+
         while (
                 _parent and _rank
                 and _rank != rank
@@ -869,5 +881,4 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
         excluded_taxon=preferred_taxon
     )
     return preferred_taxon
-
 
