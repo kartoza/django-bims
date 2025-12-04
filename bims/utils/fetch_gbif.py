@@ -466,7 +466,7 @@ def fetch_all_species_from_gbif(
     species_key = taxonomy.gbif_key
     scientific_name = taxonomy.scientific_name
 
-    if parent:
+    if parent or is_synonym:
         taxonomy.parent = parent
         taxonomy.save()
     else:

@@ -342,6 +342,63 @@ class TestTaxaUpload(FastTenantTestCase):
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_synonym_and_doubtful_species_have_no_parent(
+            self,
+            mock_fetch_all_species_from_gbif,
+            mock_finish
+    ):
+        """
+        Synonym or doubtful taxa should not keep any parent relationship when
+        imported to avoid polluting the accepted hierarchy.
+        """
+        mock_finish.return_value = None
+        mock_fetch_all_species_from_gbif.return_value = None
+
+        with open(
+                os.path.join(
+                    test_data_directory,
+                    'taxa_upload_synonym_doubtful.csv'
+                ),
+                'rb'
+        ) as file:
+            upload_session = UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(file),
+                module_group=self.taxon_group
+            )
+
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        synonym_taxon = Taxonomy.objects.get(
+            canonical_name='Synonymus primus'
+        )
+        doubtful_taxon = Taxonomy.objects.get(
+            canonical_name='Dubius secundus'
+        )
+        accepted_taxon = Taxonomy.objects.get(
+            canonical_name='Validus primus'
+        )
+
+        self.assertEqual(synonym_taxon.rank, 'SPECIES')
+        self.assertIsNone(
+            synonym_taxon.parent,
+            msg='Synonym species should remain detached from any parent.'
+        )
+
+        self.assertIsNone(
+            doubtful_taxon.parent,
+            msg='Doubtful species should remain detached from any parent.'
+        )
+
+        self.assertIsNotNone(
+            accepted_taxon.parent,
+            msg='Accepted species should still retain the genus parent.'
+        )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
     @mock.patch('bims.templatetags.site.is_fada_site')
     def test_fada_taxonomic_status_preserved_from_csv(
         self,
@@ -470,4 +527,3 @@ class TestTaxaUpload(FastTenantTestCase):
             ['SYNONYM', 'HOMOTYPIC_SYNONYM', 'ACCEPTED', ''],
             msg='Non-FADA taxonomic status should be valid'
         )
-

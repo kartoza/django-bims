@@ -1,0 +1,4 @@
+Taxon,Genus,Species,Taxon Rank,Taxonomic status,On GBIF,Author(s)
+Validus primus,Validus,primus,SPECIES,ACCEPTED,No,Alpha 1900
+Synonymus primus,Synonymus,primus,SPECIES,SYNONYM,No,Beta 1901
+Dubius secundus,Dubius,secundus,SPECIES,DOUBTFUL,No,Gamma 1902
