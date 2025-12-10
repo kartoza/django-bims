@@ -337,11 +337,13 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 data: data.biodiversity_data,
                 is_sass_enabled: is_sass_enabled,
                 is_water_temperature_enabled: is_water_temperature_enabled,
+                is_climate_enabled: is_climate_enabled,
                 is_pesticide_dashboard_enabled: is_pesticide_dashboard_enabled,
                 sass_exist: data.sass_exist,
                 add_data: true,
                 water_temperature_exist: data.water_temperature_exist,
                 physico_chemical_exist: data.physico_chemical_exist,
+                climate_exist: data.climate_exist,
             }));
             $.each(data['biodiversity_data'], function (key, value) {
                 self.charts.push({
@@ -417,6 +419,11 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             });
             $('.sp-physico-chemical').click(function (e) {
                 let url = '/physico-chemical/' + self.siteId + '/';
+                url += self.apiParameters(filterParameters);
+                window.location.href = url;
+            });
+            $('.sp-climate').click(function (e) {
+                let url = '/climate/' + self.siteId + '/';
                 url += self.apiParameters(filterParameters);
                 window.location.href = url;
             });

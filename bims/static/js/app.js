@@ -142,6 +142,11 @@ require([
             $('#general-info-modal').fadeOut();
         });
 
+        // Show/hide climate module option based on feature flag
+        if (typeof is_climate_enabled !== 'undefined' && is_climate_enabled) {
+            $('#climate-module-wrapper').show();
+        }
+
         showSiteNotice();
     });
 });

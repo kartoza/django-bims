@@ -259,6 +259,7 @@ define([
                 $.each(this.sitesData, function (key, data) {
                     let total_water_temperature_data = 0;
                     let total_chemical_records = 0;
+                    let total_climate_records = 0;
                     let _total = 0;
                     let _total_survey = 0;
                     if (data['total_water_temperature_data']) {
@@ -266,6 +267,9 @@ define([
                     }
                     if (data['total_chemical_records']) {
                         total_chemical_records = data['total_chemical_records']
+                    }
+                    if (data['total_climate_records']) {
+                        total_climate_records = data['total_climate_records']
                     }
                     if (typeof data['total'] !== 'undefined') {
                         _total = data['total'];
@@ -279,6 +283,7 @@ define([
                         survey: numberWithCommas(_total_survey),
                         total_thermal: numberWithCommas(total_water_temperature_data),
                         total_chemical_records: numberWithCommas(total_chemical_records),
+                        total_climate_records: numberWithCommas(total_climate_records),
                         name: data['name'],
                         record_type: 'site',
                         module: self.module
@@ -420,11 +425,15 @@ define([
                     for (var i = 0; i < siteData.length; i++) {
                         let total_water_temperature_data = 0;
                         let total_chemical_records = 0;
+                        let total_climate_records = 0;
                         if (siteData[i]['total_water_temperature_data']) {
                             total_water_temperature_data = siteData[i]['total_water_temperature_data']
                         }
                         if (siteData[i]['total_chemical_records']) {
                             total_chemical_records = siteData[i]['total_chemical_records']
+                        }
+                        if (siteData[i]['total_climate_records']) {
+                            total_climate_records = siteData[i]['total_climate_records']
                         }
                         let searchModel = new SearchModel({
                             id: siteData[i]['site_id'],
@@ -434,6 +443,7 @@ define([
                             survey: siteData[i]['total_survey'] ? numberWithCommas(siteData[i]['total_survey']) : 0,
                             total_thermal: numberWithCommas(total_water_temperature_data),
                             total_chemical_records: numberWithCommas(total_chemical_records),
+                            total_climate_records: numberWithCommas(total_climate_records),
                             module: self.module
                         });
                         var searchResultView = new SearchResultView({

@@ -108,6 +108,15 @@
                 </div>
         </div>
 
+        <% if (is_climate_enabled && climate_exist && add_data) { %>
+        <div class="row" style="padding: 10px;">
+                <div class="col-sm-12" style="padding-right: 15px">
+                    <button class="fbis-button-small sp-climate"
+                             style="width: 100%; height: 30px">Climate Data</button>
+                </div>
+        </div>
+        <% } %>
+
         <% if (is_pesticide_dashboard_enabled) { %>
         <div class="row" style="padding: 10px;">
             <div class="col-sm-12">
