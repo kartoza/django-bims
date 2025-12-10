@@ -1,3 +1,589 @@
-from django.shortcuts import render
+import csv
+import json
+import time
+from collections import OrderedDict
+from datetime import date, datetime
 
-# Create your views here.
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse, Http404
+from django.shortcuts import render, get_object_or_404
+from django.views.generic import TemplateView
+from django.db.models import Avg, Min, Max, Sum, Count
+
+from .models import Climate
+from bims.models.location_site import LocationSite
+from bims.models.location_context import LocationContext
+from bims.utils.location_site import overview_site_detail
+from bims.views.data_upload import DataUploadView
+from climate.tasks.climate_upload import climate_upload
+
+EXTREME_HEADERS = [
+    ('hot_days', 'Days above 35°C'),
+    ('cold_days', 'Days below 0°C'),
+    ('heavy_rain_days', 'Rain days >20mm'),
+    ('zero_rain_days', '0 Rainfall days'),
+    ('consecutive_dry_days', 'Consecutive dry days'),
+]
+
+
+def _init_month_bucket():
+    return {
+        'temperature': {'min': None, 'max': None, 'avg_sum': 0.0, 'avg_count': 0},
+        'humidity': {'min': None, 'max': None, 'avg_sum': 0.0, 'avg_count': 0},
+        'rainfall': {
+            'min': None,
+            'max': None,
+            'avg_sum': 0.0,
+            'avg_count': 0,
+            'total': 0.0,
+        },
+        'wind': {'max': None, 'avg_sum': 0.0, 'avg_count': 0},
+        'extremes': {
+            'hot_days': 0,
+            'cold_days': 0,
+            'heavy_rain_days': 0,
+            'zero_rain_days': 0,
+            'consecutive_dry_days': 0,
+            'current_dry_streak': 0,
+        }
+    }
+
+
+def _accumulate_month_bucket(bucket, record):
+    temperature = bucket['temperature']
+    if record.min_temperature is not None:
+        temperature['min'] = (
+            record.min_temperature
+            if temperature['min'] is None
+            else min(temperature['min'], record.min_temperature)
+        )
+    if record.max_temperature is not None:
+        temperature['max'] = (
+            record.max_temperature
+            if temperature['max'] is None
+            else max(temperature['max'], record.max_temperature)
+        )
+    if record.avg_temperature is not None:
+        temperature['avg_sum'] += record.avg_temperature
+        temperature['avg_count'] += 1
+
+    humidity = bucket['humidity']
+    if record.min_humidity is not None:
+        humidity['min'] = (
+            record.min_humidity
+            if humidity['min'] is None
+            else min(humidity['min'], record.min_humidity)
+        )
+    if record.max_humidity is not None:
+        humidity['max'] = (
+            record.max_humidity
+            if humidity['max'] is None
+            else max(humidity['max'], record.max_humidity)
+        )
+    if record.avg_humidity is not None:
+        humidity['avg_sum'] += record.avg_humidity
+        humidity['avg_count'] += 1
+
+    rainfall = bucket['rainfall']
+    rainfall_value = record.daily_rainfall
+    if rainfall_value is not None:
+        rainfall['min'] = (
+            rainfall_value
+            if rainfall['min'] is None
+            else min(rainfall['min'], rainfall_value)
+        )
+        rainfall['max'] = (
+            rainfall_value
+            if rainfall['max'] is None
+            else max(rainfall['max'], rainfall_value)
+        )
+        rainfall['avg_sum'] += rainfall_value
+        rainfall['avg_count'] += 1
+        rainfall['total'] += rainfall_value
+
+    wind = bucket['wind']
+    if record.avg_windspeed is not None:
+        wind['avg_sum'] += record.avg_windspeed
+        wind['avg_count'] += 1
+        wind['max'] = (
+            record.avg_windspeed
+            if wind['max'] is None
+            else max(wind['max'], record.avg_windspeed)
+        )
+
+    extremes = bucket['extremes']
+    if record.max_temperature is not None and record.max_temperature > 35:
+        extremes['hot_days'] += 1
+    if record.min_temperature is not None and record.min_temperature < 0:
+        extremes['cold_days'] += 1
+    if rainfall_value is not None:
+        if rainfall_value > 20:
+            extremes['heavy_rain_days'] += 1
+        if rainfall_value == 0:
+            extremes['zero_rain_days'] += 1
+            extremes['current_dry_streak'] += 1
+            extremes['consecutive_dry_days'] = max(
+                extremes['consecutive_dry_days'],
+                extremes['current_dry_streak']
+            )
+        else:
+            extremes['current_dry_streak'] = 0
+    else:
+        extremes['current_dry_streak'] = 0
+
+
+def _finalize_month_bucket(period, bucket):
+    temperature = bucket['temperature']
+    humidity = bucket['humidity']
+    rainfall = bucket['rainfall']
+    wind = bucket['wind']
+    extremes = bucket['extremes'].copy()
+    extremes.pop('current_dry_streak', None)
+    rainfall_total = rainfall['total'] if rainfall['avg_count'] else None
+
+    return {
+        'period': period,
+        'temperature': {
+            'min': _round_value(temperature['min']),
+            'avg': (
+                _round_value(temperature['avg_sum'] / temperature['avg_count'])
+                if temperature['avg_count'] else None
+            ),
+            'max': _round_value(temperature['max']),
+            'range': _calc_range(temperature['min'], temperature['max']),
+        },
+        'humidity': {
+            'min': _round_value(humidity['min']),
+            'avg': (
+                _round_value(humidity['avg_sum'] / humidity['avg_count'])
+                if humidity['avg_count'] else None
+            ),
+            'max': _round_value(humidity['max']),
+            'range': _calc_range(humidity['min'], humidity['max']),
+        },
+        'rainfall': {
+            'min': _round_value(rainfall['min']),
+            'avg': (
+                _round_value(rainfall['avg_sum'] / rainfall['avg_count'])
+                if rainfall['avg_count'] else None
+            ),
+            'max': _round_value(rainfall['max']),
+            'range': _calc_range(rainfall['min'], rainfall['max']),
+            'total': _round_value(rainfall_total) if rainfall_total is not None else None,
+        },
+        'wind': {
+            'avg': (
+                _round_value(wind['avg_sum'] / wind['avg_count'])
+                if wind['avg_count'] else None
+            ),
+            'max': _round_value(wind['max']),
+        },
+        'extremes': extremes,
+    }
+
+
+def _build_monthly_records(queryset):
+    monthly_data = OrderedDict()
+    for record in queryset:
+        if not record.date:
+            continue
+        period = date(record.date.year, record.date.month, 1)
+        bucket = monthly_data.setdefault(period, _init_month_bucket())
+        _accumulate_month_bucket(bucket, record)
+
+    return [
+        _finalize_month_bucket(period, bucket)
+        for period, bucket in monthly_data.items()
+    ]
+
+
+def _round_value(value):
+    if value is None:
+        return None
+    return round(float(value), 1)
+
+
+def _calc_range(min_val, max_val):
+    if min_val is None or max_val is None:
+        return None
+    return _round_value(max_val - min_val)
+
+
+def _build_temperature_table(records):
+    rows = []
+    min_values, avg_values, max_values = [], [], []
+    for record in records:
+        metrics = record.get('temperature')
+        label = record['period'].strftime('%b')
+        if not metrics:
+            rows.append({'label': label, 'min': None, 'avg': None, 'max': None, 'range': None})
+            continue
+        rows.append({
+            'label': label,
+            'min': metrics.get('min'),
+            'avg': metrics.get('avg'),
+            'max': metrics.get('max'),
+            'range': _calc_range(metrics.get('min'), metrics.get('max')),
+        })
+        if metrics.get('min') is not None:
+            min_values.append(metrics['min'])
+        if metrics.get('avg') is not None:
+            avg_values.append(metrics['avg'])
+        if metrics.get('max') is not None:
+            max_values.append(metrics['max'])
+    annual_row = {
+        'label': 'Annual',
+        'min': min(min_values) if min_values else None,
+        'avg': _round_value(sum(avg_values) / len(avg_values)) if avg_values else None,
+        'max': max(max_values) if max_values else None,
+        'range': _calc_range(min(min_values), max(max_values)) if min_values and max_values else None,
+    }
+    return rows, annual_row
+
+
+def _build_rainfall_table(records):
+    rows = []
+    min_values, avg_values, max_values = [], [], []
+    for record in records:
+        metrics = record.get('rainfall')
+        label = record['period'].strftime('%b')
+        if not metrics:
+            rows.append({'label': label, 'min': None, 'avg': None, 'max': None, 'range': None})
+            continue
+        rows.append({
+            'label': label,
+            'min': metrics.get('min'),
+            'avg': metrics.get('avg'),
+            'max': metrics.get('max'),
+            'range': _calc_range(metrics.get('min'), metrics.get('max')),
+        })
+        if metrics.get('min') is not None:
+            min_values.append(metrics['min'])
+        if metrics.get('avg') is not None:
+            avg_values.append(metrics['avg'])
+        if metrics.get('max') is not None:
+            max_values.append(metrics['max'])
+    annual_row = {
+        'label': 'Annual',
+        'min': min(min_values) if min_values else None,
+        'avg': _round_value(sum(avg_values) / len(avg_values)) if avg_values else None,
+        'max': max(max_values) if max_values else None,
+        'range': _calc_range(min(min_values), max(max_values)) if min_values and max_values else None,
+    }
+    return rows, annual_row
+
+
+def _build_wind_table(records):
+    rows = []
+    avg_values, max_values = [], []
+    for record in records:
+        metrics = record.get('wind')
+        label = record['period'].strftime('%b')
+        if not metrics:
+            rows.append({'label': label, 'avg': None, 'max': None})
+            continue
+        rows.append({
+            'label': label,
+            'avg': metrics.get('avg'),
+            'max': metrics.get('max'),
+        })
+        if metrics.get('avg') is not None:
+            avg_values.append(metrics['avg'])
+        if metrics.get('max') is not None:
+            max_values.append(metrics['max'])
+    annual_row = {
+        'label': 'Annual',
+        'avg': _round_value(sum(avg_values) / len(avg_values)) if avg_values else None,
+        'max': max(max_values) if max_values else None,
+    }
+    return rows, annual_row
+
+
+def _build_extremes_table(records):
+    rows = []
+    totals = [0 for _ in EXTREME_HEADERS]
+    has_value = [False for _ in EXTREME_HEADERS]
+    for record in records:
+        metrics = record.get('extremes') or {}
+        label = record['period'].strftime('%b')
+        values = []
+        for index, (key, _) in enumerate(EXTREME_HEADERS):
+            value = metrics.get(key)
+            values.append(value)
+            if value is not None:
+                has_value[index] = True
+                totals[index] += value
+        rows.append({'label': label, 'values': values})
+    annual_values = [
+        totals[index] if has_value[index] else None
+        for index in range(len(EXTREME_HEADERS))
+    ]
+    annual_row = {'label': 'Annual', 'values': annual_values}
+    return rows, annual_row
+
+
+def _build_chart_payload(records):
+    labels = [record['period'].strftime('%b %Y') for record in records]
+
+    def collect(metric_key, value_key):
+        series = []
+        for record in records:
+            metric = record.get(metric_key) or {}
+            series.append(metric.get(value_key))
+        return series
+
+    payload = {
+        'labels': labels,
+        'temperature': {
+            'min': collect('temperature', 'min'),
+            'avg': collect('temperature', 'avg'),
+            'max': collect('temperature', 'max'),
+        },
+        'humidity': {
+            'min': collect('humidity', 'min'),
+            'avg': collect('humidity', 'avg'),
+            'max': collect('humidity', 'max'),
+        },
+        'rainfall': {
+            'total': [((record.get('rainfall') or {}).get('total')) for record in records],
+        },
+    }
+    return json.dumps(payload, cls=DjangoJSONEncoder)
+
+
+def _build_csv_response(records, start_date, end_date):
+    filename = f"climate_dashboard_{start_date}_{end_date}.csv"
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    writer = csv.writer(response)
+    writer.writerow([
+        'Period',
+        'Temp Min (°C)',
+        'Temp Avg (°C)',
+        'Temp Max (°C)',
+        'Humidity Min (%)',
+        'Humidity Avg (%)',
+        'Humidity Max (%)',
+        'Rainfall Total (mm)',
+        'Wind Avg (km/h)',
+        'Wind Max (km/h)',
+        'Days >35°C',
+        'Days <0°C',
+        'Rain days >20mm',
+        '0 rainfall days',
+        'Consecutive dry days',
+    ])
+    for record in records:
+        period_label = record['period'].strftime('%b %Y')
+        temperature = record.get('temperature') or {}
+        humidity = record.get('humidity') or {}
+        rainfall = record.get('rainfall') or {}
+        wind = record.get('wind') or {}
+        extremes = record.get('extremes') or {}
+        writer.writerow([
+            period_label,
+            temperature.get('min', ''),
+            temperature.get('avg', ''),
+            temperature.get('max', ''),
+            humidity.get('min', ''),
+            humidity.get('avg', ''),
+            humidity.get('max', ''),
+            rainfall.get('total', ''),
+            wind.get('avg', ''),
+            wind.get('max', ''),
+            extremes.get('hot_days', ''),
+            extremes.get('cold_days', ''),
+            extremes.get('heavy_rain_days', ''),
+            extremes.get('zero_rain_days', ''),
+            extremes.get('consecutive_dry_days', ''),
+        ])
+    return response
+
+
+class ClimateSiteView(TemplateView):
+    """View for single site climate data display."""
+    template_name = 'climate/single_site.html'
+    location_site = None
+    location_context = None
+    year = None
+    start_date = None
+    end_date = None
+
+    def get_context_data(self, **kwargs):
+        start_time = time.time()
+        context = super(ClimateSiteView, self).get_context_data(**kwargs)
+
+        # Get climate data for this site
+        climate_data = Climate.objects.filter(
+            location_site=self.location_site
+        )
+
+        if not climate_data.exists():
+            raise Http404('No climate data available for this site')
+
+        # Get available years
+        context['years'] = list(
+            climate_data.values_list(
+                'year', flat=True
+            ).distinct('year').order_by('year')
+        )
+
+        # Parse year if string
+        if self.year and isinstance(self.year, str):
+            self.year = int(self.year.strip())
+
+        # Default to latest year if not specified
+        if not self.year and len(context['years']) > 0:
+            self.year = int(context['years'][-1])
+
+        # Filter by date range or year
+        if self.start_date and self.end_date:
+            self.start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
+            self.end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
+            climate_data = climate_data.filter(
+                date__gte=self.start_date,
+                date__lte=self.end_date
+            )
+        elif self.year:
+            climate_data = climate_data.filter(year=self.year)
+
+        # Site information
+        context['coord'] = [
+            self.location_site.get_centroid().x,
+            self.location_site.get_centroid().y
+        ]
+        context['site_code'] = self.location_site.site_code
+        context['site_id'] = self.location_site.id
+        context['user_site_code'] = self.location_site.legacy_site_code
+        context['user_river_name'] = self.location_site.legacy_river_name
+
+        if len(context['years']) > 0:
+            context['year'] = int(
+                self.year if self.year else context['years'][-1]
+            )
+
+        site_description = self.location_site.site_description
+        if not site_description:
+            site_description = self.location_site.name
+        context['site_description'] = site_description
+
+        try:
+            context['river'] = self.location_site.river.name
+        except AttributeError:
+            context['river'] = '-'
+
+        # Order data
+        climate_data = climate_data.order_by('date')
+
+        monthly_records = _build_monthly_records(climate_data)
+        context['monthly_records'] = monthly_records
+        if monthly_records:
+            chart_payload = _build_chart_payload(monthly_records)
+            availability = {
+                'temperature': any(
+                    (record.get('temperature') or {}).get('avg') is not None
+                    for record in monthly_records
+                ),
+                'humidity': any(
+                    (record.get('humidity') or {}).get('avg') is not None
+                    for record in monthly_records
+                ),
+                'rainfall': any(
+                    (record.get('rainfall') or {}).get('total') is not None
+                    for record in monthly_records
+                ),
+                'wind': any(
+                    (record.get('wind') or {}).get('avg') is not None
+                    for record in monthly_records
+                ),
+            }
+        else:
+            chart_payload = json.dumps({})
+            availability = {
+                'temperature': False,
+                'humidity': False,
+                'rainfall': False,
+                'wind': False,
+            }
+        context['chart_payload'] = chart_payload
+        context['availability'] = availability
+        context['has_chart_data'] = any(availability.values())
+
+        # Calculate statistics
+        stats = climate_data.aggregate(
+            avg_temp=Avg('avg_temperature'),
+            min_temp=Min('min_temperature'),
+            max_temp=Max('max_temperature'),
+            avg_humidity=Avg('avg_humidity'),
+            min_humidity=Min('min_humidity'),
+            max_humidity=Max('max_humidity'),
+            avg_windspeed=Avg('avg_windspeed'),
+            total_rainfall=Sum('daily_rainfall'),
+            max_rainfall=Max('daily_rainfall'),
+            record_count=Count('id')
+        )
+        context['stats'] = stats
+
+        # Get records
+        context['total_records'] = climate_data.count()
+        context['location_site'] = self.location_site
+        context['execution_time'] = time.time() - start_time
+        context['start_date'] = (
+            self.start_date if self.start_date else
+            climate_data.first().date
+        )
+        context['end_date'] = (
+            self.end_date if self.end_date else
+            climate_data.last().date
+        )
+        context['climate_data'] = climate_data.first()
+
+        # Site details
+        context['site_details'] = json.dumps(
+            overview_site_detail(self.location_site.id)
+        )
+
+        # Climate records for display
+        records_list = []
+        for record in climate_data:
+            records_list.append({
+                'date': record.date,
+                'date_formatted': record.date.strftime('%Y-%m-%d'),
+                'avg_temperature': record.avg_temperature,
+                'min_temperature': record.min_temperature,
+                'max_temperature': record.max_temperature,
+                'avg_humidity': record.avg_humidity,
+                'min_humidity': record.min_humidity,
+                'max_humidity': record.max_humidity,
+                'avg_windspeed': record.avg_windspeed,
+                'daily_rainfall': record.daily_rainfall,
+            })
+        context['climate_records'] = records_list
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        site_id = kwargs.get('site_id', None)
+        self.year = kwargs.get('year', None)
+        self.start_date = request.GET.get('startDate', None)
+        self.end_date = request.GET.get('endDate', None)
+
+        if not site_id or not request.GET or not request.GET.get('siteId', None):
+            raise Http404()
+
+        self.location_site = get_object_or_404(
+            LocationSite,
+            pk=site_id
+        )
+        self.location_context = LocationContext.objects.filter(
+            site=self.location_site
+        )
+
+        return super(ClimateSiteView, self).get(request, *args, **kwargs)
+
+
+class ClimateUploadView(DataUploadView):
+    """Climate data upload view."""
+    template_name = 'climate/climate_uploader.html'
+    upload_task = climate_upload
+    category = 'climate'

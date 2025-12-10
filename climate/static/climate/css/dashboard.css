@@ -1,0 +1,75 @@
+.climate-dashboard .dashboard-title h2 {
+  margin-top: 0;
+  font-weight: 600;
+}
+
+.climate-dashboard .dashboard-intro {
+  margin: 10px 0 15px;
+  max-width: 760px;
+}
+
+.climate-dashboard .climate-filter-form input {
+  margin-right: 8px;
+}
+
+.climate-dashboard .climate-filter-form button {
+  margin-left: 8px;
+}
+
+.climate-dashboard .range-separator {
+  font-weight: 600;
+}
+
+.climate-dashboard .climate-panel {
+  margin-bottom: 25px;
+}
+
+.climate-dashboard .chart-container,
+.climate-dashboard .table-container {
+  border: 1px solid #e1e1e1;
+  border-radius: 4px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 15px;
+}
+
+.climate-dashboard .chart-title,
+.climate-dashboard .table-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.climate-dashboard .chart-body {
+  min-height: 200px;
+}
+
+.climate-dashboard .vertical-space {
+  height: 25px;
+}
+
+.climate-dashboard .climate-dl dt {
+  width: 130px;
+}
+
+.climate-dashboard .climate-dl dd {
+  margin-left: 150px;
+}
+
+.climate-dashboard .summary-table th,
+.climate-dashboard .summary-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.climate-dashboard .summary-row td {
+  font-weight: 600;
+  background-color: #f5f5f5;
+}
+
+.climate-dashboard .action-buttons .btn {
+  margin-bottom: 8px;
+}
+
+.climate-dashboard canvas {
+  width: 100%;
+}
