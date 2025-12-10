@@ -252,6 +252,11 @@ class SiteSetting(Preferences):
         help_text='Enable or disable Water Temperature data'
     )
 
+    enable_climate_data = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Climate data'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(
