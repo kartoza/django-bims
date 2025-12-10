@@ -246,11 +246,15 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
-            $siteDetailWrapper.append(
-                '<div id="climate-data" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> Climate Data </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            // Only show climate data panel if not viewing climate module results
+            let currentModule = document.querySelector('input[name="module"]:checked');
+            if (!currentModule || currentModule.value !== 'climate') {
+                $siteDetailWrapper.append(
+                    '<div id="climate-data" class="search-results-wrapper">' +
+                    '<div class="search-results-total" data-visibility="false"> ' +
+                    '<span class="search-result-title"> Climate Data </span> ' +
+                    '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            }
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
@@ -308,8 +312,11 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                     self.renderLegends(self.endemismLegends, $('.endemism-legends'));
                     self.renderLegends(self.consStatusLegends, $('.cons-status-legends'));
 
-                    self.renderClimateData(data, $('#climate-data'));
-                    // $('#climate-data').append(climateDataHTML);
+                    // Only render climate data panel if not viewing climate module results
+                    let currentModule = document.querySelector('input[name="module"]:checked');
+                    if (!currentModule || currentModule.value !== 'climate') {
+                        self.renderClimateData(data, $('#climate-data'));
+                    }
 
                     Shared.LocationSiteDetailXHRRequest = null;
 
