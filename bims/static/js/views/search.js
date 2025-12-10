@@ -90,6 +90,7 @@ define([
             let occurrencesFilter = [
                 'biodiversity-module-container',
                 'data-source-container',
+                'taxon-tags-container',
                 'validation-status-container',
                 'ecological-category-container',
                 'origin-and-endemism-container',
@@ -976,7 +977,6 @@ define([
             // Taxon tags
             self.initialSelectedTaxonTags = allFilters.hasOwnProperty('tags') ? JSON.parse(allFilters['tags']) : [];
             self.taxonTagsView.setInitialSelection();
-            console.log('initialSelectedTaxonTags', self.initialSelectedTaxonTags);
 
             // Collectors
             self.initialSelectedCollectors = [];

@@ -151,6 +151,7 @@ class SiteSettingAdmin(PreferencesAdmin):
             "fields": (
                 "enable_sass",
                 "enable_water_temperature",
+                "enable_climate_data",
                 "enable_ecosystem_type",
                 "enable_download_request_approval",
                 "show_module_summary_on_dashboard",

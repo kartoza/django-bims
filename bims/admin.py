@@ -138,7 +138,6 @@ from bims.models import (
     OccurrenceUploadTemplate,
     UploadRequest, CertaintyHierarchy
 )
-from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
@@ -2123,10 +2122,6 @@ class UnitAdmin(admin.ModelAdmin):
     search_fields = ('unit_name', 'unit',)
 
 
-class ClimateDataAdmin(admin.ModelAdmin):
-    list_display = ('title', 'climate_geocontext_group_key')
-
-
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'get_users', 'site')
 
@@ -2508,7 +2503,6 @@ admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
 admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)
 admin.site.register(Unit, UnitAdmin)
-admin.site.register(ClimateData, ClimateDataAdmin)
 admin.site.register(BimsProfile, BimsProfileAdmin)
 admin.site.register(
     DecisionSupportToolName, DecisionSupportToolNameAdmin)

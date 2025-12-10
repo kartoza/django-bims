@@ -19,6 +19,7 @@ from bims.api_views.search import CollectionSearch, MAX_PAGINATED_SITES
 from bims.models.water_temperature import WaterTemperature
 from bims.utils.api_view import BimsApiView
 from bims.models.chemical_record import ChemicalRecord
+from climate.models import Climate
 
 
 class SiteWaterTemperatureSerializer(serializers.ModelSerializer):
@@ -226,5 +227,42 @@ class PhysicoChemistryModule(SearchModule):
             many=True,
             context={
                 'chemical_records': self.module
+            }
+        ).data
+
+
+class SiteClimateSerializer(serializers.ModelSerializer):
+    site_id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    total_climate_records = serializers.IntegerField()
+
+    def get_site_id(self, obj: LocationSite) -> int:
+        return obj.id
+
+    def get_name(self, obj: LocationSite) -> str:
+        return obj.site_code if obj.site_code else obj.name
+
+    class Meta:
+        model = LocationSite
+        fields = [
+            'site_id', 'name', 'total_climate_records'
+        ]
+
+
+class ClimateModule(SearchModule):
+    module = Climate.objects.all()
+    date_field = 'date'
+
+    def annotate(self):
+        self.sites = self.sites.annotate(
+            total_climate_records=Count('climate_data')
+        )
+
+    def serialize_sites(self):
+        return SiteClimateSerializer(
+            self.sites,
+            many=True,
+            context={
+                'climate': self.module
             }
         ).data
