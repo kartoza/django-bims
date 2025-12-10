@@ -11,6 +11,17 @@
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link rel="stylesheet"
           href="{% static "css/source_reference_list.css" %}">
+    <style>
+        .metadata-ribbon {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 20;
+        }
+        .metadata-ribbon a {
+            pointer-events: auto;
+        }
+    </style>
 {% endblock %}
 
 {% block body_content %}
@@ -85,7 +96,14 @@
                 {% endif %}
                 {% for source_reference in object_list %}
                     <div class="card">
-                        <div class="card-body">
+                        <div class="card-body position-relative">
+                            {% if source_reference.metadata_file %}
+                                <div class="metadata-ribbon">
+                                    <a href="{{ source_reference.metadata_file.url }}" target="_blank" class="badge badge-secondary badge-occurrences">
+                                        Download Metadata file
+                                    </a>
+                                </div>
+                            {% endif %}
                             <div class="row">
                                 <div class="col-12">
                                     <p class="reference-type-label">{{ source_reference.reference_type }}</p>
@@ -114,32 +132,33 @@
                                     <a href='/map/#search//taxon=&module=physico_chemistry&search=&reference=["{{ source_reference.id }}"]'><span
                                             class="badge badge-info badge-occurrences">{{ source_reference.chemical_records | space_separated }} Physico-chemical data</span>
                                     </a>
-                                {% else %}
-                                    <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.chemical_records }} Physico-chemical data</span>
                                 {% endif %}
                                 {% if source_reference.water_temperature > 0 %}
                                     <a href='/map/#search//taxon=&module=water_temperature&search=&reference=["{{ source_reference.id }}"]'><span
                                             class="badge badge-info badge-occurrences">{{ source_reference.water_temperature | space_separated }} Water Temperature data</span>
                                     </a>
-                                {% else %}
-                                    <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.water_temperature }} Water Temperature data</span>
                                 {% endif %}
                                 {% if perms.bims.change_sourcereference %}
-                                    <div class="float-right">
-                                        <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary badge-occurrences">Update</a>
+                                    <div style="display: flex; flex-direction: column; align-items: end" class="float-right">
+                                        <div class="float-right text-right ml-2" style="flex-direction: row; display: flex">
+                                            <a href="#" class="badge badge-danger badge-occurrences delete-reference d-block mb-1"
+                                            data-reference-id="{{ source_reference.id }}">
+                                                Delete source reference
+                                            </a>
+                                            <a href="/edit-source-reference/{{ source_reference.id }}/?next={{ request.get_full_path | urlencode }}" class="badge badge-primary ml-2 badge-occurrences d-block mb-1">Update</a>
+                                        </div>
+                                        {% if source_reference.occurrences > 0 or source_reference.chemical_records > 0 %}
+                                        <div class="float-right text-right ml-2">
+                                            <a href="#" class="badge badge-warning badge-occurrences delete-records d-block mb-1"
+                                                data-reference-id="{{ source_reference.id }}"
+                                                data-total-physico-chemical-data="{{ source_reference.chemical_records }}"
+                                                data-total-records="{{ source_reference.occurrences }}">
+                                                Delete records
+                                            </a>
+                                        </div>
+                                        {% endif %}
                                     </div>
-                                     <div class="float-right">
-                                        <a href="#" class="badge badge-danger badge-occurrences delete-reference" data-reference-id="{{ source_reference.id }}">Delete source reference</a>&nbsp;
-                                    </div>
-                                    {% if source_reference.occurrences > 0 or source_reference.chemical_records > 0 %}
-                                    <div class="float-right">
-                                        <a href="#" class="badge badge-warning badge-occurrences delete-records"
-                                           data-reference-id="{{ source_reference.id }}"
-                                           data-total-physico-chemical-data="{{ source_reference.chemical_records }}"
-                                           data-total-records="{{ source_reference.occurrences }}"
-                                        >Delete records</a>&nbsp;
-                                    </div>
-                                    {% endif %}
+                                    
                                 {% endif %}
                             </div>
                         </div>

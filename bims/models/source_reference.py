@@ -111,6 +111,12 @@ class SourceReference(PolymorphicModel):
         blank=True,
         help_text='Identifies the sites where the source reference is actively used.'
     )
+    metadata_file = models.FileField(
+        upload_to='source_reference_metadata/',
+        null=True,
+        blank=True,
+        help_text='Upload metadata documentation (PDF or Word document) describing this source reference'
+    )
 
     @property
     def reference_source(self):
