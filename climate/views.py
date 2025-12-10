@@ -452,7 +452,10 @@ class ClimateSiteView(TemplateView):
             self.location_site.get_centroid().x,
             self.location_site.get_centroid().y
         ]
-        context['site_code'] = self.location_site.site_code
+        context['site_code'] = (
+            self.location_site.site_code
+            if self.location_site.site_code else self.location_site.name
+        )
         context['site_id'] = self.location_site.id
         context['user_site_code'] = self.location_site.legacy_site_code
         context['user_river_name'] = self.location_site.legacy_river_name
@@ -539,9 +542,12 @@ class ClimateSiteView(TemplateView):
         context['climate_data'] = climate_data.first()
 
         # Site details
-        context['site_details'] = json.dumps(
-            overview_site_detail(self.location_site.id)
-        )
+        site_details = overview_site_detail(self.location_site.id)
+        site_overview = site_details.get('Site details', {})
+        if 'User Site Code' in site_overview:
+            site_overview.pop('User Site Code')
+        context['site_overview'] = site_overview
+        context['site_details'] = json.dumps(site_details)
 
         # Climate records for display
         records_list = []

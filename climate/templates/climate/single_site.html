@@ -3,239 +3,165 @@
 {% load static %}
 
 {% block subtitle %}
-    Climate Data - {{ site_code }}
+    Climate Data 
 {% endblock %}
 
 {% block head %}
-    <!-- Custom styles -->
+    <!-- Custom styles for this template -->
     <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
+    <link rel="stylesheet"
+          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="{% static 'climate/css/dashboard.css' %}">
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
     <script src="{% static 'js/libs/chart/Chart-2.7.2.js' %}"></script>
-
     <script type="text/javascript">
+        const coordinates = [{{ coord.0 }}, {{ coord.1 }}];
         const siteCode = "{{ site_code }}";
         const siteId = "{{ site_id }}";
         const year = "{{ year }}";
         const availableYears = {{ years }};
-        let csrfToken = '{{ csrf_token }}';
         siteDetailsData = {{ site_details | safe }};
     </script>
-
     <style>
         .year-container {
             display: flex;
             max-width: 500px;
             align-items: center;
         }
-        .col-header {
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
-            padding-top: 8px;
-            padding-bottom: 8px;
-            font-size: 13pt;
-            font-weight: bold;
-            background-color: #bebebe;
-            margin-bottom: 1em;
-        }
-        .row-indicator {
-            padding-top: 1em;
-            margin-left: 0.1em;
-            padding-left: 0;
-        }
-        .row-indicator p {
-            border-bottom: 1px solid rgba(138, 138, 138, 0.31);
-            height: 20px;
-        }
         #update-date {
             margin-left: 10px;
-            font-size: 10pt;
         }
-        .stats-value {
-            font-size: 18pt;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .stats-label {
-            font-size: 10pt;
-            color: #7f8c8d;
+        #ui-datepicker-div {
+            top: 100px !important;
         }
     </style>
+
 {% endblock %}
 
 {% block body_content %}
     <div style="padding-bottom: 0.2em">
         <div class="body-form container">
-            <div class="logo hide-logo pull-right">
-                <img width="50" src="{% static 'img/bims-stamp.png' %}">
-            </div>
-
+            <div class="logo hide-logo pull-right"><img width="50"
+                                                        src="{% static 'img/bims-stamp.png' %}"></div>
             <div class="dashboard-title">
-                <h2>Climate Data for {{ site_code }}</h2>
-                <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
-
+                <h2>Climate data for {{ site_code }}</h2>
+                <div class="dashboard-close"><i class="fa fa-times"
+                                                aria-hidden="true"></i></div>
                 <div class="form-group year-container">
-                    <label for="year-select">Year:</label>&nbsp;
+                    <label for="year-select" style="margin-right: 5px; margin-top:5px;">Year:</label>&nbsp;
                     <select id="year-select" class="form-control form-control-sm">
                         {% for y in years %}
                             <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                     &nbsp;or&nbsp;
-                    <input type="text" name="date" class="form-control form-control-sm date-input"
-                           id="startDate" placeholder="Start date" value="{{ start_date|date:"Y-m-d" }}">
-                    &nbsp;-&nbsp;
+                    <input type="text" name="date"
+                           class="form-control form-control-sm date-input"
+                           id="startDate" placeholder="Date start" value="{{ start_date|date:"Y-m-d" }}">
+                    <span>&nbsp;to&nbsp;</span>
                     <input type="text" name="date" id="endDate"
-                           class="form-control form-control-sm date-input" placeholder="End date"
-                           value="{{ end_date|date:"Y-m-d" }}">
-                    <button class="btn btn-sm btn-primary" id="update-date">
-                        <i class="fa fa-arrow-right" aria-hidden="true"></i>
-                    </button>
+                           class="form-control form-control-sm date-input" placeholder="Date end" value="{{ end_date|date:"Y-m-d" }}">
+                    <button class="btn btn-sm btn-primary" id="update-date"><i class="fa fa-arrow-right" aria-hidden="true"></i></button>
                 </div>
             </div>
-
             <div class="row">
                 <div class="col-md-6">
-                    {% include 'includes/overview_table.html' %}
-
-                    <div class="vertical-space"></div>
-
-                    <div class="table-container">
-                        <div class="table-title">Summary Statistics - {{ year }}</div>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Metric</th>
-                                        <th>Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Average Temperature</td>
-                                        <td>{{ stats.avg_temp|floatformat:1|default:"--" }} °C</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Minimum Temperature</td>
-                                        <td>{{ stats.min_temp|floatformat:1|default:"--" }} °C</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Maximum Temperature</td>
-                                        <td>{{ stats.max_temp|floatformat:1|default:"--" }} °C</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Average Humidity</td>
-                                        <td>{{ stats.avg_humidity|floatformat:1|default:"--" }} %</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Min/Max Humidity</td>
-                                        <td>{{ stats.min_humidity|floatformat:1|default:"--" }} / {{ stats.max_humidity|floatformat:1|default:"--" }} %</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Average Wind Speed</td>
-                                        <td>{{ stats.avg_windspeed|floatformat:2|default:"--" }} m/s</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total Rainfall</td>
-                                        <td>{{ stats.total_rainfall|floatformat:2|default:"--" }} mm</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Maximum Daily Rainfall</td>
-                                        <td>{{ stats.max_rainfall|floatformat:2|default:"--" }} mm</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total Records</td>
-                                        <td>{{ total_records }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <div class="map-container">
+                        <div class="chart-title">Map
+                            <i data-download-title="Climate map"
+                               data-toggle="tooltip" data-placement="left"
+                               title="Download map as PNG"
+                               class="fa fa-download pull-right download-icon download-map"></i>
                         </div>
+                        <div id="map"></div>
                     </div>
                 </div>
-
                 <div class="col-md-6 mp">
                     <div class="table-container">
-                        <div class="table-title">Daily Climate Records</div>
+                        <div class="table-title">
+                            Overview
+                            <i data-download-title="Overview"
+                               data-toggle="tooltip" data-placement="left"
+                               class="fa fa-download pull-right download-icon download-table"></i>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered table-sm">
                                 <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Temp (°C)</th>
-                                        <th>Min/Max (°C)</th>
-                                        <th>Humidity (%)</th>
-                                        <th>Wind (m/s)</th>
-                                        <th>Rain (mm)</th>
-                                    </tr>
+                                <tr>
+                                    <th colspan="2">Site details</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {% for record in climate_records %}
-                                        <tr>
-                                            <td>{{ record.date_formatted }}</td>
-                                            <td>{{ record.avg_temperature|floatformat:1|default:"--" }}</td>
-                                            <td>{{ record.min_temperature|floatformat:1|default:"--" }} / {{ record.max_temperature|floatformat:1|default:"--" }}</td>
-                                            <td>{{ record.avg_humidity|floatformat:1|default:"--" }}</td>
-                                            <td>{{ record.avg_windspeed|floatformat:2|default:"--" }}</td>
-                                            <td>{{ record.daily_rainfall|floatformat:2|default:"--" }}</td>
-                                        </tr>
-                                    {% endfor %}
+                                {% for key, value in site_overview.items %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-
                     <div class="vertical-space"></div>
-
                     <div class="table-container">
-                        <div class="table-title">Site Information</div>
-                        <div class="data-content site-overview">
-                            <dl class="dl-horizontal">
-                                <dt>Site Name</dt>
-                                <dd>{{ location_site.name }}</dd>
-                                <dt>Site Code</dt>
-                                <dd>{{ site_code }}</dd>
-                                <dt>Description</dt>
-                                <dd>{{ site_description }}</dd>
-                                <dt>River</dt>
-                                <dd>{{ river }}</dd>
-                                <dt>Coordinates</dt>
-                                <dd>{{ coord.1|floatformat:5 }}, {{ coord.0|floatformat:5 }}</dd>
-                                <dt>Date Range</dt>
-                                <dd>{{ start_date|date:"Y-m-d" }} to {{ end_date|date:"Y-m-d" }}</dd>
-                            </dl>
+                        <div class="table-title">
+                            Summary statistics
+                            <i data-download-title="Summary statistics"
+                               data-toggle="tooltip" data-placement="left"
+                               class="fa fa-download pull-right download-icon download-table"></i>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered">
+                                <tbody>
+                                <tr><td>Average Temperature</td><td>{{ stats.avg_temp|floatformat:1|default:"--" }} °C</td></tr>
+                                <tr><td>Min / Max Temperature</td><td>{{ stats.min_temp|floatformat:1|default:"--" }} / {{ stats.max_temp|floatformat:1|default:"--" }} °C</td></tr>
+                                <tr><td>Average Humidity</td><td>{{ stats.avg_humidity|floatformat:1|default:"--" }} %</td></tr>
+                                <tr><td>Average Wind Speed</td><td>{{ stats.avg_windspeed|floatformat:2|default:"--" }} m/s</td></tr>
+                                <tr><td>Total Rainfall</td><td>{{ stats.total_rainfall|floatformat:2|default:"--" }} mm</td></tr>
+                                <tr><td>Maximum Daily Rainfall</td><td>{{ stats.max_rainfall|floatformat:2|default:"--" }} mm</td></tr>
+                                <tr><td>Total Records</td><td>{{ total_records }}</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="vertical-space"></div>
-
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <div class="chart-title">Temperature overview</div>
+                        <div class="chart-title">
+                            Temperature overview
+                            <i data-download-title="Temperature overview"
+                               data-target="temperature-chart"
+                               class="fa fa-download pull-right download-icon download-chart"></i>
+                        </div>
                         <div class="chart-body">
                             {% if availability.temperature %}
-                                <canvas id="temperature-chart" height="200"></canvas>
+                                <canvas id="temperature-chart" height="220"></canvas>
                             {% else %}
-                                <div class="alert alert-info">
-                                    Temperature data is not available for the selected period.
-                                </div>
+                                <div class="alert alert-info">Temperature data is not available for this station.</div>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="chart-container">
-                        <div class="chart-title">Humidity overview</div>
+                        <div class="chart-title">
+                            Humidity overview
+                            <i data-download-title="Humidity overview"
+                               data-target="humidity-chart"
+                               class="fa fa-download pull-right download-icon download-chart"></i>
+                        </div>
                         <div class="chart-body">
                             {% if availability.humidity %}
-                                <canvas id="humidity-chart" height="200"></canvas>
+                                <canvas id="humidity-chart" height="220"></canvas>
                             {% else %}
-                                <div class="alert alert-info">
-                                    Humidity data is not available for the selected period.
-                                </div>
+                                <div class="alert alert-info">Humidity data is not available for the selected period.</div>
                             {% endif %}
                         </div>
                     </div>
@@ -244,20 +170,55 @@
 
             <div class="vertical-space"></div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="chart-container">
-                        <div class="chart-title">Monthly total rainfall</div>
-                        <div class="chart-body">
-                            {% if availability.rainfall %}
-                                <canvas id="rainfall-chart" height="200"></canvas>
-                            {% else %}
-                                <div class="alert alert-info">
-                                    Rainfall data is not available for the selected period.
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+            <div class="chart-container">
+                <div class="chart-title">
+                    Monthly total rainfall
+                    <i data-download-title="Monthly total rainfall"
+                       data-target="rainfall-chart"
+                       class="fa fa-download pull-right download-icon download-chart"></i>
+                </div>
+                <div class="chart-body">
+                    {% if availability.rainfall %}
+                        <canvas id="rainfall-chart" height="220"></canvas>
+                    {% else %}
+                        <div class="alert alert-info">Rainfall data is not available for the selected period.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="vertical-space"></div>
+            <div class="table-container">
+                <div class="table-title">
+                    Daily Climate Records
+                    <i data-download-title="Daily Climate Records"
+                       data-toggle="tooltip" data-placement="left"
+                       class="fa fa-download pull-right download-icon download-table"></i>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-sm">
+                        <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Temp (°C)</th>
+                            <th>Min/Max (°C)</th>
+                            <th>Humidity (%)</th>
+                            <th>Wind (m/s)</th>
+                            <th>Rain (mm)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for record in climate_records %}
+                            <tr>
+                                <td>{{ record.date_formatted }}</td>
+                                <td>{{ record.avg_temperature|floatformat:1|default:"--" }}</td>
+                                <td>{{ record.min_temperature|floatformat:1|default:"--" }} / {{ record.max_temperature|floatformat:1|default:"--" }}</td>
+                                <td>{{ record.avg_humidity|floatformat:1|default:"--" }}</td>
+                                <td>{{ record.avg_windspeed|floatformat:2|default:"--" }}</td>
+                                <td>{{ record.daily_rainfall|floatformat:2|default:"--" }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -270,38 +231,57 @@
 {% endblock %}
 
 {% block foot %}
-    {{ block.super }}
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/utils/table_download.js" %}"></script>
+    <script src="{% static "js/utils/svg_download.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/map-dashboard.js" %}"></script>
+    <script src="{% static "js/sass_dashboard_close.js" %}"></script>
     <script id="climate-dashboard-data" type="application/json">
         {{ chart_payload|default:'{}'|safe }}
     </script>
     <script src="{% static 'climate/js/dashboard.js' %}"></script>
     <script>
         $(document).ready(function() {
-            // Date picker
             $('.date-input').datepicker({
                 dateFormat: 'yy-mm-dd',
                 changeMonth: true,
                 changeYear: true
             });
-
-            // Year selection
             $('#year-select').change(function() {
                 const selectedYear = $(this).val();
                 window.location.href = `/climate/${siteId}/${selectedYear}/?siteId=${siteId}`;
             });
-
-            // Date range update
             $('#update-date').click(function() {
                 const startDate = $('#startDate').val();
                 const endDate = $('#endDate').val();
                 window.location.href = `/climate/${siteId}/?siteId=${siteId}&startDate=${startDate}&endDate=${endDate}`;
             });
-
-            // Close button
             $('.dashboard-close').click(function() {
                 window.history.back();
             });
+            let map = null;
+            map = createDashboardMap(map, coordinates);
+            $('.download-chart').click(function () {
+                const target = $(this).data('target');
+                const title = $(this).data('downloadTitle');
+                const canvas = document.getElementById(target);
+                if (!canvas) {
+                    return;
+                }
+                showDownloadPopup('IMAGE', title || 'chart', function () {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = `${title || target}.png`;
+                    link.click();
+                });
+            });
         });
     </script>
+
 {% endblock %}
