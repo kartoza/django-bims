@@ -40,7 +40,7 @@ from taggit.models import Tag
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
-from bims.enums import TaxonomicGroupCategory, TaxonomicStatus
+from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
@@ -1313,6 +1313,50 @@ class DuplicateTaxonomyFilter(django_admin.SimpleListFilter):
         return queryset
 
 
+class InvalidParentRankFilter(django_admin.SimpleListFilter):
+    title = _('Invalid parent rank')
+    parameter_name = 'invalid_parent_rank'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('invalid', _('Parent is self or not higher rank')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() != 'invalid':
+            return queryset
+
+        hierarchy = [rank.name for rank in TaxonomicRank.hierarchy()]
+        rank_order = {name: idx for idx, name in enumerate(hierarchy)}
+
+        invalid_ids = []
+        taxa_with_parent = queryset.filter(
+            parent__isnull=False,
+        ).select_related('parent')
+
+        for taxon in taxa_with_parent:
+            parent = taxon.parent
+            if not parent:
+                continue
+
+            if parent.id == taxon.id:
+                invalid_ids.append(taxon.id)
+                continue
+
+            child_rank = (taxon.rank or '').upper()
+            parent_rank = (parent.rank or '').upper()
+            child_idx = rank_order.get(child_rank)
+            parent_idx = rank_order.get(parent_rank)
+
+            if (child_idx is not None and parent_idx is not None and
+                    parent_idx >= child_idx):
+                invalid_ids.append(taxon.id)
+
+        if not invalid_ids:
+            return queryset.none()
+        return queryset.filter(id__in=invalid_ids)
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
@@ -1347,6 +1391,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'iucn_status',
         TaxonGroupListFilter,
         DuplicateTaxonomyFilter,
+        InvalidParentRankFilter,
     )
 
     search_fields = (
