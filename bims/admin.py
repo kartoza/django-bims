@@ -1144,7 +1144,11 @@ class TaxonomyAdminForm(forms.ModelForm):
         widgets = {
             'gbif_data': JSONEditorWidget
         }
-        fields = '__all__'
+        exclude = (
+            'reliability_of_sources',
+            'certainty_of_identification',
+            'accuracy_of_coordinates',
+        )
 
     def clean(self):
         """
@@ -1312,6 +1316,7 @@ class DuplicateTaxonomyFilter(django_admin.SimpleListFilter):
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
+    readonly_fields = ('parent_hierarchy',)
 
     autocomplete_fields = (
         'vernacular_names',
@@ -1363,6 +1368,58 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'fetch_cites_listing', 'extract_author',
         'harvest_synonyms_for_accepted'
     ]
+    fieldsets = (
+        (_('Taxon Details'), {
+            'fields': (
+                ('scientific_name', 'canonical_name'),
+                ('legacy_canonical_name', 'author'),
+                'rank',
+                ('taxonomic_status', 'accepted_taxonomy'),
+                'parent',
+                'parent_hierarchy',
+                ('species_group', 'invasion'),
+                'gbif_key',
+                'fada_id',
+                'verified',
+            )
+        }),
+        (_('Names & Tags'), {
+            'fields': (
+                'vernacular_names',
+                'tags',
+                'biographic_distributions',
+            )
+        }),
+        (_('Conservation & Origin'), {
+            'fields': (
+                ('origin', 'endemism'),
+                ('iucn_status', 'national_conservation_status'),
+                ('iucn_redlist_id', 'iucn_data'),
+            )
+        }),
+        (_('References & Data'), {
+            'fields': (
+                ('source_reference', 'import_date'),
+                'hierarchical_data',
+                'gbif_data',
+                'additional_data',
+            )
+        }),
+        (_('Ownership'), {
+            'classes': ('collapse',),
+            'fields': (
+                ('owner', 'collector_user', 'analyst'),
+            )
+        }),
+        (_('Validation'), {
+            'classes': ('collapse',),
+            'fields': (
+                ('validated', 'ready_for_validation', 'rejected'),
+                'validation_message',
+                'end_embargo_date',
+            )
+        }),
+    )
 
     def extract_author(self, request, queryset):
         author_year_pattern = re.compile(r'^(.*?)(\b\d{4}\b)')
@@ -1465,6 +1522,40 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
+
+    @admin.display(description=_('Parent hierarchy'))
+    def parent_hierarchy(self, obj):
+        """
+        Display the ancestry chain of the selected parent to help admins
+        understand the hierarchy being linked to this taxon.
+        """
+        if not obj or not obj.parent:
+            return _('No parent selected')
+
+        hierarchy = []
+        current = obj.parent
+        seen = set()
+        depth = 0
+        max_depth = 20
+
+        while current and depth < max_depth:
+            label = current.canonical_name or current.scientific_name or str(current.pk)
+            rank = (current.rank or '').title()
+            rank_label = f"{rank}: " if rank else ''
+            hierarchy.append(f"{rank_label}{label}")
+
+            if current.pk in seen:
+                hierarchy.append(_('…cycle detected…'))
+                break
+
+            seen.add(current.pk)
+            current = current.parent
+            depth += 1
+
+        if current:
+            hierarchy.append(_('…truncated…'))
+
+        return ' → '.join(hierarchy)
 
     def harvest_synonyms_for_accepted(self, request, queryset):
         """
