@@ -143,6 +143,33 @@
                         </div>
                     </div>
                 {% endif %}
+                <div class="form-group row">
+                    <label for="metadata_file" class="col-sm-2 col-form-label">Metadata file</label>
+                    <div class="col-sm-10">
+                        {% if object.metadata_file %}
+                            <div class="alert alert-light">
+                                <p>
+                                    Current file:
+                                    <a href="{{ object.metadata_file.url }}" target="_blank">
+                                        {{ object.metadata_file.name|default:"Download metadata" }}
+                                    </a>
+                                </p>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="1"
+                                           id="remove_metadata_file" name="remove_metadata_file">
+                                    <label class="form-check-label" for="remove_metadata_file">
+                                        Remove existing metadata file
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <input type="file" name="metadata_file" id="metadata_file" class="form-control"
+                               accept=".pdf,.doc,.docx,.txt"/>
+                        <small class="form-text text-muted">
+                            Upload a PDF or Word document describing the metadata for this source reference.
+                        </small>
+                    </div>
+                </div>
                 {% if object.is_published_report or object.is_bibliography %}
                 <div class="form-group row">
                     <label for="year" class="col-sm-2 col-form-label">Year</label>
