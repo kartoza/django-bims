@@ -27,7 +27,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, Case, When, IntegerField
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse, path
@@ -1326,35 +1326,35 @@ class InvalidParentRankFilter(django_admin.SimpleListFilter):
         if self.value() != 'invalid':
             return queryset
 
+        # Build rank order mapping as database-level Case/When statements
         hierarchy = [rank.name for rank in TaxonomicRank.hierarchy()]
-        rank_order = {name: idx for idx, name in enumerate(hierarchy)}
+        rank_whens = [When(rank=rank_name, then=idx) for idx, rank_name in enumerate(hierarchy)]
+        parent_rank_whens = [When(parent__rank=rank_name, then=idx) for idx, rank_name in enumerate(hierarchy)]
 
-        invalid_ids = []
-        taxa_with_parent = queryset.filter(
+        queryset_annotated = queryset.filter(
             parent__isnull=False,
-        ).select_related('parent')
+        ).annotate(
+            rank_order=Case(
+                *rank_whens,
+                default=None,
+                output_field=IntegerField()
+            ),
+            parent_rank_order=Case(
+                *parent_rank_whens,
+                default=None,
+                output_field=IntegerField()
+            )
+        )
 
-        for taxon in taxa_with_parent:
-            parent = taxon.parent
-            if not parent:
-                continue
-
-            if parent.id == taxon.id:
-                invalid_ids.append(taxon.id)
-                continue
-
-            child_rank = (taxon.rank or '').upper()
-            parent_rank = (parent.rank or '').upper()
-            child_idx = rank_order.get(child_rank)
-            parent_idx = rank_order.get(parent_rank)
-
-            if (child_idx is not None and parent_idx is not None and
-                    parent_idx >= child_idx):
-                invalid_ids.append(taxon.id)
-
-        if not invalid_ids:
-            return queryset.none()
-        return queryset.filter(id__in=invalid_ids)
+        # Filter using database-level comparisons
+        return queryset_annotated.filter(
+            Q(parent_id=F('id')) |  # Self-referencing parent
+            Q(
+                rank_order__isnull=False,
+                parent_rank_order__isnull=False,
+                parent_rank_order__gte=F('rank_order')  # Parent rank >= child rank (invalid)
+            )
+        )
 
 
 class TaxonomyAdmin(admin.ModelAdmin):
