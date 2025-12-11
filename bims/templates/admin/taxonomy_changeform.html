@@ -60,10 +60,20 @@
 
         (function($) {
             $(document).ready(function() {
-                $('#grp-content').find('.iucn_status ').find('.c-2').append(
+                const $iucnContainer = $('#id_iucn_status').closest('.c-2');
+                const $nationalContainer = $('#id_national_conservation_status').closest('.c-2');
+                const $fallbackIucn = $('#grp-content').find('.iucn_status').find('.c-2');
+                const $fallbackNational = $('#grp-content').find('.national_conservation_status').find('.c-2');
+                const $finalIucnContainer = $iucnContainer.length ? $iucnContainer : $fallbackIucn;
+                const $finalNationalContainer = $nationalContainer.length ? $nationalContainer : $fallbackNational;
+
+                $finalIucnContainer.find('#find-national_conservation_status, #find-iucn').remove();
+                $finalNationalContainer.find('#find-national_conservation_status, #find-iucn').remove();
+
+                $finalIucnContainer.append(
                     `<button class="grp-button" style="width: 250px;" id="find-iucn">Find Global Red List Status (IUCN)</button>`
                 );
-                $('#grp-content').find('.national_conservation_status ').find('.c-2').append(
+                $finalNationalContainer.append(
                     `<button class="grp-button" style="width: 250px;" id="find-national_conservation_status">Find National Conservation Status</button>`
                 );
                $('#find-iucn').click(function (e) {

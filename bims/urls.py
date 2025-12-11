@@ -19,10 +19,6 @@ from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
 
-from bims.api_views.collection import (
-    CollectionDownloader,
-)
-
 from bims.api_views.get_feature_info import GetFeatureInfo
 from bims.api_views.database_record import DatabaseRecordsList
 from bims.views.links import LinksCategoryView
@@ -133,8 +129,6 @@ urlpatterns = [
     re_path(r'^get_feature/$',
             GetFeatureInfo.as_view(),
             name='get-feature'),
-    re_path(r'^collection/check_process/$',
-            CollectionDownloader.as_view()),
     re_path(r'^download-taxa-list/$',
             download_taxa_list,
             name='taxa-list-download'),
