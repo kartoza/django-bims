@@ -21,6 +21,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
+from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Permission
@@ -43,7 +44,7 @@ from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
-from bims.tasks import fetch_vernacular_names
+from bims.tasks import fetch_vernacular_names, fetch_iucn_status
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
@@ -1411,7 +1412,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
     actions = [
         'merge_taxa', 'update_taxa', 'fetch_common_names',
         'fetch_cites_listing', 'extract_author',
-        'harvest_synonyms_for_accepted'
+        'harvest_synonyms_for_accepted',
+        'harvest_iucn_status_action'
     ]
     fieldsets = (
         (_('Taxon Details'), {
@@ -1649,6 +1651,21 @@ class TaxonomyAdmin(admin.ModelAdmin):
     harvest_synonyms_for_accepted.short_description = (
         "Harvest synonyms for accepted taxa (GBIF)"
     )
+
+    def harvest_iucn_status_action(self, request, queryset):
+        """Trigger the background IUCN sync for selected taxa or all when empty."""
+        taxa_ids = list(queryset.values_list('id', flat=True))
+
+        fetch_iucn_status.delay(taxa_ids or None)
+        count = len(taxa_ids) if taxa_ids else Taxonomy.objects.count()
+
+        self.message_user(
+            request,
+            f"Harvesting IUCN status for {count} taxon record(s) in the background.",
+            level=messages.INFO,
+        )
+
+    harvest_iucn_status_action.short_description = "Harvest IUCN status"
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
