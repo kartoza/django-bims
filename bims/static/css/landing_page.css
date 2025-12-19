@@ -66,6 +66,34 @@ img::-moz-selection {
     background: transparent;
 }
 
+.general-summary {
+    margin: 30px auto 10px;
+    max-width: 1000px;
+}
+
+.general-summary .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.general-summary .module-container {
+    text-align: center;
+}
+
+.general-summary .gs-total {
+    color: #263c4c;
+    font-weight: bold;
+    font-size: 20pt;
+    margin-top: 5px;
+}
+
+.general-summary .gs-text {
+    color: #595959;
+    font-size: 15pt;
+}
+
 /*header.masthead {*/
 /*    padding-top: 20px;*/
 /*    padding-bottom: 0px;*/

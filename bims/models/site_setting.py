@@ -271,6 +271,10 @@ class SiteSetting(Preferences):
             'Show summative figure for data by taxon group'
         )
     )
+    show_general_summary_on_landing = models.BooleanField(
+        default=False,
+        help_text='Display the general statistics block on the landing page.'
+    )
 
     enable_remove_all_occurrences_tool = models.BooleanField(
         default=False,
