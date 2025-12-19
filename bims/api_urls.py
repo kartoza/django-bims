@@ -131,8 +131,10 @@ from bims.api_views.download_request import (
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
 from mobile.api_views.taxon_group import TaxonGroupTotalValidated
+from bims.api_views.filter_panel_info import FilterPanelInfoView
 
 urlpatterns = [
+    path('filter-panel-info/', FilterPanelInfoView.as_view(), name='filter-panel-info'),
     re_path(r'^location-type/(?P<pk>[0-9]+)/allowed-geometry/$',
         LocationTypeAllowedGeometryDetail.as_view()),
     re_path(r'^location-site/$', LocationSiteList.as_view()),
