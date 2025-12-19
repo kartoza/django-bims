@@ -136,7 +136,8 @@ from bims.models import (
     TaxonGroupCitation,
     HarvestSchedule,
     OccurrenceUploadTemplate,
-    UploadRequest, CertaintyHierarchy
+    UploadRequest, CertaintyHierarchy,
+    FilterPanelInfo
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -2833,3 +2834,8 @@ class UploadRequestAdmin(admin.ModelAdmin):
 class CertaintyHierarchyAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name')
+@admin.register(FilterPanelInfo)
+class FilterPanelInfoAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('title', 'description')
