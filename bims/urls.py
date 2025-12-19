@@ -40,7 +40,6 @@ from bims.views.download_csv_taxa_list import (
 from bims.views.autocomplete_search import (
     autocomplete,
     user_autocomplete,
-    data_source_autocomplete,
     species_autocomplete,
     site_autocomplete,
     abiotic_autocomplete,
@@ -145,9 +144,6 @@ urlpatterns = [
     re_path(r'^species-group-autocomplete/$',
             species_group_autocomplete,
             name='species-group-autocomplete-search'),
-    re_path(r'^data-source-autocomplete/$',
-            data_source_autocomplete,
-            name='data-source-autocomplete-search'),
     re_path(r'^location-site-autocomplete/$',
             site_autocomplete,
             name='location-site-autocomplete-search'),

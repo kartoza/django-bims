@@ -50,30 +50,27 @@ define([
                 this.$el.hide();
                 return false;
             }
-            for (var i = 0; i < data.length; i++) {
+            let dataSources = data[0].attributes;
+            for (const [label, desc] of Object.entries(dataSources)) {
                 var checked = '';
-                var label = data[i].get('source_collection');
                 if (label === null) {
                     continue;
                 }
-                label = label.charAt(0).toUpperCase() + label.slice(1);
-                if ($.inArray(data[i].get('source_collection'), this.parent.initialSelectedSourceCollection) > -1) {
+                let updatedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+                if ($.inArray(label, this.parent.initialSelectedSourceCollection) > -1) {
                     checked = 'checked';
                 }
 
-                // If source_collection named fbis is first => set the checkbox disabled
-                if (data[i].get('source_collection') === 'fbis' && i === 0) {
+                if (Object.keys(dataSources).hasOwnProperty('fbis')) {
                     isFBIS = true;
                 }
 
                 let dataSourceCaption = '';
-                if (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase()) && isFBIS) {
-                    dataSourceCaption = '<div class="data-source-desc" style="display: none"><small class="text-muted">'+ this.dataSourceCaptions[label.toLowerCase()] +'</small></div>';
-                }
+                dataSourceCaption = '<div class="data-source-desc" style="display: none"><small class="text-muted">'+ desc +'</small></div>';
                 this.listWrapper.append('<div style="padding-bottom: 10px;">' +
-                    '<input type="checkbox" id="source-collection-list-'+i+'" name="source-collection-value" value="' + data[i].get('source_collection') + '"  ' + checked + ' >&nbsp;' +
-                    '<label for="source-collection-list-'+i+'" style="margin-bottom: 0 !important;">'+ label.replace('_', ' ').toUpperCase() + '</label>' +
-                    (this.dataSourceCaptions.hasOwnProperty(label.toLowerCase()) && isFBIS ? '<span>&nbsp;<i class="fa fa-info-circle layer-source data-source" aria-hidden="true"></i></span>' : '') +
+                    '<input type="checkbox" id="source-collection-list-'+label+'" name="source-collection-value" value="' + label + '"  ' + checked + ' >&nbsp;' +
+                    '<label for="source-collection-list-'+label+'" style="margin-bottom: 0 !important;">'+ updatedLabel.replace('_', ' ').toUpperCase() + '</label>' +
+                    (desc ? '<span>&nbsp;<i class="fa fa-info-circle layer-source data-source" aria-hidden="true"></i></span>' : '') +
                     dataSourceCaption +
                     '</div>');
 
