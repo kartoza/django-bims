@@ -1753,6 +1753,9 @@ class DataSourceAdmin(admin.ModelAdmin):
     list_filter = (
         'category',
     )
+    readonly_fields = (
+        'name',
+    )
     fields = (
         'name',
         'category',
