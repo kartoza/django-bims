@@ -1742,7 +1742,21 @@ class SassBiotopeAdmin(admin.ModelAdmin):
 class DataSourceAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'category'
+        'category',
+        'description'
+    )
+    search_fields = (
+        'name',
+        'category',
+        'description'
+    )
+    list_filter = (
+        'category',
+    )
+    fields = (
+        'name',
+        'category',
+        'description'
     )
 
 

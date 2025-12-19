@@ -98,6 +98,7 @@ from bims.api_views.location_site_overview import (
     SingleLocationSiteOverview, MultiLocationSitesBackgroundOverview
 )
 from bims.api_views.source_collection import SourceCollectionList
+from bims.api_views.data_source import DataSourceDescriptionList
 from bims.api_views.site_code import GetSiteCode
 from bims.api_views.geomorphological_zone import GetGeomorphologicalZone
 from bims.api_views.chemical_record import ChemicalRecordDownloader
@@ -241,6 +242,8 @@ urlpatterns = [
         ReferenceCategoryList.as_view(), name='list-reference-category'),
     re_path(r'^list-source-collection/$',
         SourceCollectionList.as_view(), name='list-source-collection'),
+    re_path(r'^data-source-descriptions/$',
+        DataSourceDescriptionList.as_view(), name='data-source-descriptions'),
     # re_path(r'^docs/', include_docs_urls(title='BIMS API')),
     re_path(r'^module-summary/$',
         ModuleSummary.as_view(),
