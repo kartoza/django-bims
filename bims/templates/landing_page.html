@@ -57,6 +57,39 @@
                     {% endif %}
                 </div>
             </section>
+            {% if preferences.SiteSetting.show_general_summary_on_landing %}
+            <section id="fish-data">
+                <div class="container general-summary">
+                    <div class="row">
+                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                            <img height="100px" src="{% static "img/occurrences-icon.png" %}"/>
+                            <h3 class="gs-total" id="total_occurrences">...</h3>
+                            <div class="gs-text">Occurrence Records</div>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                            <img height="100px" src="{% static "img/taxa-icon.png" %}"/>
+                            <h3 class="gs-total" id="total_taxa">...</h3>
+                            <div class="gs-text">Taxa</div>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                            <img height="100px" src="{% static "img/users-icon.png" %}"/>
+                            <h3 class="gs-total" id="total_users">...</h3>
+                            <div class="gs-text">Users</div>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                            <img height="90px" style="margin-bottom: 5px; margin-top: 5px" src="{% static "img/upload-icon.png" %}"/>
+                            <h3 class="gs-total" id="total_uploads">...</h3>
+                            <div class="gs-text">User uploads</div>
+                        </div>
+                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                            <img height="90px" style="margin-bottom: 10px" src="{% static "img/download-icon.png" %}"/>
+                            <h3 class="gs-total" id="total_downloads">...</h3>
+                            <div class="gs-text">User downloads</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
             {% endif %}
             {% if custom_theme.landing_page_sections %}
               {% for landing_page_section in custom_theme.landing_page_sections.all %}
