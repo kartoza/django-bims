@@ -114,10 +114,16 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
                 )
                 status_assessment = None
                 if normalized_code and normalized_code in valid_categories:
-                    status_assessment, _ = IUCNStatus.objects.get_or_create(
-                        category=normalized_code,
-                        national=False
-                    )
+                    try:
+                        status_assessment, _ = IUCNStatus.objects.get_or_create(
+                            category=normalized_code,
+                            national=False
+                        )
+                    except IUCNStatus.MultipleObjectsReturned:
+                        status_assessment = IUCNStatus.objects.filter(
+                            category=normalized_code,
+                            national=False
+                        ).first()
 
                 data_by_id[assessment_id] = {
                     "assessment_id": assessment_id,
