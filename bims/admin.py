@@ -1462,6 +1462,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
     actions = [
         'merge_taxa', 'update_taxa', 'fetch_common_names',
         'fetch_cites_listing', 'extract_author',
+        'fetch_iucn_assessments',
         'harvest_synonyms_for_accepted',
     ]
     fieldsets = (
