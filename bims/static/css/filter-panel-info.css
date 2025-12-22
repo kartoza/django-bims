@@ -1,0 +1,19 @@
+/* Styles for the info icons shown next to each filter title in the search panel */
+.filter-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    color: var(--main-accent-color);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.filter-info-icon:focus {
+    outline: none;
+    color: var(--main-accent-color);
+}
+
+.filter-info-icon .fa {
+    pointer-events: none;
+}

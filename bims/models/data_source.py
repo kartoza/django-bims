@@ -21,10 +21,13 @@ class DataSource(models.Model):
         blank=True
     )
 
-    def __unicode__(self):
+    def __str__(self):
         if self.category:
             return '{name} - {category}'.format(
                 name=self.name,
                 category=self.category
             )
         return self.name
+
+    def __unicode__(self):
+        return self.__str__()

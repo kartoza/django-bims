@@ -48,6 +48,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             this.csvDownloadsUrl = '';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
+            this.iucnAssessmentsBody = this.$el.find('#fsdd-iucn-assessments-body');
             this.metadataTableList = this.$el.find('#metadata-table-list-taxon');
 
             let biodiversityLayersOptions = {
@@ -337,6 +338,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             ;
             cons_status_block_data['value_title'] = cons_status_block_data['value'];
             this.conservationStatusList.append(self.renderFBISRPanelBlocks(cons_status_block_data));
+            this.renderIucnAssessments(data);
 
             var overViewTable = _.template($('#taxon-overview-table').html());
             this.overviewTaxaTable.html(overViewTable({
@@ -496,6 +498,56 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             self.recordsAreaTable.html($tableArea);
             this.imagesCard.append(Shared.TaxonImagesUtil.renderTaxonImages(data['gbif_id'], self.taxonId));
         },
+        renderIucnAssessments: function (data) {
+            var assessments = data['iucn_assessments'] || [];
+            this.iucnAssessmentsBody.html('');
+
+            if (!assessments.length) {
+                this.iucnAssessmentsBody.append(
+                    $('<div></div>').text('No assessment history available.')
+                );
+                return;
+            }
+
+            var table = $('<table class="table table-sm table-hover"></table>');
+            var thead = $('<thead><tr>' +
+                '<th>Year</th>' +
+                '<th>Status</th>' +
+                '<th>Latest</th>' +
+                '<th>Scope</th>' +
+                '<th>Link</th>' +
+                '</tr></thead>');
+            var tbody = $('<tbody></tbody>');
+
+            for (var i = 0; i < assessments.length; i++) {
+                var item = assessments[i] || {};
+                var row = $('<tr></tr>');
+                var status = item.red_list_category_code || '-';
+                var statusLabel = status;
+                if (status && data['iucn_choice_list']) {
+                    statusLabel = this.iucn_title_from_choices(status, data);
+                }
+                row.append($('<td></td>').text(item.year_published || '-'));
+                row.append($('<td></td>').text(statusLabel));
+                row.append($('<td></td>').text(item.latest ? 'Yes' : 'No'));
+                row.append($('<td></td>').text(item.scope_label || '-'));
+                if (item.url) {
+                    row.append($('<td></td>').append(
+                        $('<a></a>')
+                            .attr('href', item.url)
+                            .attr('target', '_blank')
+                            .text('View')
+                    ));
+                } else {
+                    row.append($('<td></td>').text('-'));
+                }
+                tbody.append(row);
+            }
+
+            table.append(thead);
+            table.append(tbody);
+            this.iucnAssessmentsBody.append(table);
+        },
         downloadElementEvent: function (button_el) {
             let button = $(button_el.target);
             let that = this;
@@ -530,17 +582,41 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
 
         },
         downloadElement: function (title, element) {
-            element[0].scrollIntoView();
+            var domElement = element[0];
+            if (!domElement || !document.body.contains(domElement)) {
+                return;
+            }
+            let self = this;
+            domElement.scrollIntoView();
             showDownloadPopup('TABLE', title, function () {
-                html2canvas(element, {
-                    onrendered: function (canvas) {
-                        var link = document.createElement('a');
-                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                        link.download = title + '.png';
-                        link.click();
-                    }
-                })
+                var options = {};
+                options.onrendered = function (canvas) {
+                    self.triggerCanvasDownload(title, canvas);
+                }
+                var render = Html2Canvas(domElement, options);
+                if (render && typeof render.then === 'function') {
+                    render.then(function (canvas) {
+                        self.triggerCanvasDownload(title, canvas);
+                    });
+                }
             })
+        },
+        triggerCanvasDownload: function (title, canvas) {
+            if (!canvas) {
+                return;
+            }
+            if (canvas.toBlob && FileSaver && FileSaver.saveAs) {
+                canvas.toBlob(function (blob) {
+                    FileSaver.saveAs(blob, title + '.png');
+                });
+                return;
+            }
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+            link.download = title + '.png';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         },
         clearDashboard: function () {
             $.each(this.conservationStatusList.children(), function (key, data) {
@@ -617,24 +693,29 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             return chart;
         },
         exportTaxasiteMap: function () {
+            let self = this;
             this.mapTaxaSite.once('postcompose', function (event) {
                 showDownloadPopup('IMAGE', 'Taxa Map', function () {
-                    let canvas = $('#taxasite-map');
-                    html2canvas(canvas, {
+                    let canvas = $('#taxasite-map')[0];
+                    if (!canvas || !document.body.contains(canvas)) {
+                        return;
+                    }
+                    var options = {
                         useCORS: false,
                         background: '#FFFFFF',
                         allowTaint: true,
-                        onrendered: function (canvas) {
+                    };
+                    options.onrendered = function (renderedCanvas) {
+                        $('.ol-control').show();
+                        self.triggerCanvasDownload('map', renderedCanvas);
+                    };
+                    var render = Html2Canvas(canvas, options);
+                    if (render && typeof render.then === 'function') {
+                        render.then(function (renderedCanvas) {
                             $('.ol-control').show();
-                            let link = document.createElement('a');
-                            link.setAttribute("type", "hidden");
-                            link.href = canvas.toDataURL("image/png");
-                            link.download = 'map.png';
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
-                        }
-                    });
+                            self.triggerCanvasDownload('map', renderedCanvas);
+                        });
+                    }
                 })
             });
             this.mapTaxaSite.renderSync();
@@ -652,14 +733,19 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
                     graph_canvas.scrollHeight - img.height - 5);
                 canvas = graph_canvas;
-                html2canvas(canvas, {
-                    onrendered: function (canvas) {
-                        var link = document.createElement('a');
-                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                        link.download = title + '.png';
-                        link.click();
-                    }
-                })
+                if (!canvas || !document.body.contains(canvas)) {
+                    return;
+                }
+                var options = {};
+                options.onrendered = function (renderedCanvas) {
+                    this.triggerCanvasDownload(title, renderedCanvas);
+                }.bind(this);
+                var render = Html2Canvas(canvas, options);
+                if (render && typeof render.then === 'function') {
+                    render.then(function (renderedCanvas) {
+                        this.triggerCanvasDownload(title, renderedCanvas);
+                    }.bind(this));
+                }
             }
         },
         renderFBISRPanelBlocks: function (data, stretch_selection = false) {

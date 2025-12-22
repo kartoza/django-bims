@@ -143,6 +143,19 @@ class BioCollectionSummary(APIView):
         response_data['origin_choices_list'] = (
             BiologicalCollectionRecord.CATEGORY_CHOICES)
         response_data['iucn_choice_list'] = IUCNStatus.CATEGORY_CHOICES
+        iucn_assessments = taxonomy.iucn_assessments.filter(
+            scope_label__iexact='Global'
+        ).order_by('-year_published', '-id')
+        response_data['iucn_assessments'] = list(
+            iucn_assessments.values(
+                'assessment_id',
+                'year_published',
+                'red_list_category_code',
+                'latest',
+                'url',
+                'scope_label',
+            )
+        )
 
         taxonomy_rank = {
             taxonomy.rank: taxonomy.scientific_name

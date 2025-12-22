@@ -211,8 +211,8 @@ class ModuleSummary(APIView):
                 taxongrouptaxonomy__taxongroup__id__in=taxon_group_ids
             ).aggregate(total_taxa=Count('id')),
             get_user_model().objects.filter(
-                last_login__isnull=False
-            ).aggregate(total_users=Count('id')),
+                Q(last_login__isnull=False) | Q(email__isnull=False)
+            ).exclude(email='').distinct().aggregate(total_users=Count('id')),
             {'total_uploads': upload_counts},
             DownloadRequest.objects.all().aggregate(
                 total_downloads=Count('id'))

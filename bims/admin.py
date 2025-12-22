@@ -44,7 +44,8 @@ from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
-from bims.tasks import fetch_vernacular_names, fetch_iucn_status
+from bims.tasks import fetch_vernacular_names
+from bims.tasks.taxa import fetch_iucn_status as fetch_iucn_status_task
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
@@ -60,6 +61,7 @@ from django_admin_inline_paginator.admin import TabularInlinePaginated
 from bims.models import (
     LocationType,
     LocationSite,
+    IUCNAssessment,
     IUCNStatus,
     Survey,
     SurveyData,
@@ -137,7 +139,8 @@ from bims.models import (
     TaxonGroupCitation,
     HarvestSchedule,
     OccurrenceUploadTemplate,
-    UploadRequest, CertaintyHierarchy
+    UploadRequest, CertaintyHierarchy,
+    FilterPanelInfo
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -483,6 +486,53 @@ class IUCNStatusAdmin(OrderedModelAdmin):
         )
 
     iucn_colour.allow_tags = True
+
+
+class IUCNAssessmentAdmin(admin.ModelAdmin):
+    class GlobalScopeFilter(SimpleListFilter):
+        title = 'Scope'
+        parameter_name = 'scope_label'
+
+        def value(self):
+            return self.used_parameters.get(self.parameter_name, 'global')
+
+        def lookups(self, request, model_admin):
+            return [
+                ('global', 'Global'),
+                ('all', 'All'),
+            ]
+
+        def queryset(self, request, queryset):
+            value = self.value()
+            if value == 'all':
+                return queryset
+            return queryset.filter(scope_label__iexact='Global')
+
+    list_display = (
+        'id',
+        'taxonomy',
+        'year_published',
+        'red_list_category_code',
+        'latest',
+        'sis_taxon_id',
+        'assessment_id',
+    )
+    list_filter = (
+        GlobalScopeFilter,
+        'latest',
+        'year_published',
+        'red_list_category_code',
+        'scope_code',
+    )
+    search_fields = (
+        'taxonomy__scientific_name',
+        'taxonomy__canonical_name',
+        'assessment_id',
+        'sis_taxon_id',
+        'url',
+    )
+    raw_id_fields = ('taxonomy', 'normalized_status')
+    ordering = ('-year_published', '-id')
 
 
 class BoundaryAdmin(admin.ModelAdmin):
@@ -1413,7 +1463,6 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'merge_taxa', 'update_taxa', 'fetch_common_names',
         'fetch_cites_listing', 'extract_author',
         'harvest_synonyms_for_accepted',
-        'harvest_iucn_status_action'
     ]
     fieldsets = (
         (_('Taxon Details'), {
@@ -1503,6 +1552,20 @@ class TaxonomyAdmin(admin.ModelAdmin):
     def fetch_common_names(self, request, queryset):
         taxa_ids = list(queryset.values_list('id', flat=True))
         fetch_vernacular_names.delay([str(taxa_id) for taxa_id in taxa_ids])
+
+    def fetch_iucn_assessments(self, request, queryset):
+        taxa_ids = list(queryset.values_list('id', flat=True))
+        chunk_size = 1000
+        for chunk in chunk_list(taxa_ids, chunk_size):
+            fetch_iucn_status_task.delay(chunk)
+        self.message_user(
+            request,
+            "IUCN status and assessment fetching initiated for selected taxa."
+        )
+
+    fetch_iucn_assessments.short_description = (
+        "Fetch IUCN assessment history"
+    )
 
     def update_taxa(self, request, queryset):
         for taxa in queryset:
@@ -1652,21 +1715,6 @@ class TaxonomyAdmin(admin.ModelAdmin):
         "Harvest synonyms for accepted taxa (GBIF)"
     )
 
-    def harvest_iucn_status_action(self, request, queryset):
-        """Trigger the background IUCN sync for selected taxa or all when empty."""
-        taxa_ids = list(queryset.values_list('id', flat=True))
-
-        fetch_iucn_status.delay(taxa_ids or None)
-        count = len(taxa_ids) if taxa_ids else Taxonomy.objects.count()
-
-        self.message_user(
-            request,
-            f"Harvesting IUCN status for {count} taxon record(s) in the background.",
-            level=messages.INFO,
-        )
-
-    harvest_iucn_status_action.short_description = "Harvest IUCN status"
-
 
 class VernacularNameAdmin(admin.ModelAdmin):
     search_fields = (
@@ -1759,7 +1807,24 @@ class SassBiotopeAdmin(admin.ModelAdmin):
 class DataSourceAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'category'
+        'category',
+        'description'
+    )
+    search_fields = (
+        'name',
+        'category',
+        'description'
+    )
+    list_filter = (
+        'category',
+    )
+    readonly_fields = (
+        'name',
+    )
+    fields = (
+        'name',
+        'category',
+        'description'
     )
 
 
@@ -2584,6 +2649,7 @@ admin.site.register(Profile, CustomUserAdmin)
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
+admin.site.register(IUCNAssessment, IUCNAssessmentAdmin)
 admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey, SurveyAdmin)
 admin.site.register(SurveyData)
@@ -2833,3 +2899,8 @@ class UploadRequestAdmin(admin.ModelAdmin):
 class CertaintyHierarchyAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name')
+@admin.register(FilterPanelInfo)
+class FilterPanelInfoAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('title', 'description')
