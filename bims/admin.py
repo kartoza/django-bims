@@ -44,7 +44,7 @@ from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
-from bims.tasks.taxa import fetch_iucn_assessments as fetch_iucn_assessments_task
+from bims.tasks.taxa import fetch_iucn_status as fetch_iucn_status_task
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
@@ -526,7 +526,6 @@ class IUCNAssessmentAdmin(admin.ModelAdmin):
     search_fields = (
         'taxonomy__scientific_name',
         'taxonomy__canonical_name',
-        'taxonomy__species_name',
         'assessment_id',
         'sis_taxon_id',
         'url',
@@ -1557,10 +1556,10 @@ class TaxonomyAdmin(admin.ModelAdmin):
         taxa_ids = list(queryset.values_list('id', flat=True))
         chunk_size = 1000
         for chunk in chunk_list(taxa_ids, chunk_size):
-            fetch_iucn_assessments_task.delay(chunk)
+            fetch_iucn_status_task.delay(chunk)
         self.message_user(
             request,
-            "IUCN assessment fetching initiated for selected taxa."
+            "IUCN status and assessment fetching initiated for selected taxa."
         )
 
     fetch_iucn_assessments.short_description = (
