@@ -800,6 +800,41 @@ class Taxonomy(AbstractTaxonomy):
         send_mail_notification.delay(subject, email_body, from_email, recipient_list)
 
 
+def _has_meaningful_iucn_data(taxon: Taxonomy | None) -> bool:
+    """Return True when a taxon already carries a usable IUCN category or URL."""
+    if not taxon:
+        return False
+
+    status = getattr(taxon, "iucn_status", None)
+    if status and getattr(status, "category", None) and status.category != "NE":
+        return True
+
+    data = getattr(taxon, "iucn_data", None) or {}
+    if isinstance(data, dict):
+        return bool(data.get("url"))
+    return bool(data)
+
+
+def _extract_iucn_payload(taxon: Taxonomy) -> dict[str, object]:
+    """Build field/value mapping for propagating IUCN info."""
+    payload: dict[str, object] = {}
+
+    status = getattr(taxon, "iucn_status", None)
+    if status and getattr(status, "category", None) and status.category != "NE":
+        if getattr(taxon, "iucn_status_id", None):
+            payload["iucn_status_id"] = taxon.iucn_status_id
+
+    sis_id = getattr(taxon, "iucn_redlist_id", None)
+    if sis_id:
+        payload["iucn_redlist_id"] = sis_id
+
+    data = getattr(taxon, "iucn_data", None)
+    if isinstance(data, dict) and data.get("url"):
+        payload["iucn_data"] = {"url": data["url"]}
+
+    return payload
+
+
 @receiver(models.signals.pre_save, sender=Taxonomy)
 def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
     """Set IUCN status and redlist ID before saving taxonomy."""
@@ -807,13 +842,6 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
         if iucn_status:
             instance.iucn_status = iucn_status
-        else:
-            try:
-                instance.iucn_status = IUCNStatus.objects.get(category='NE')
-            except IUCNStatus.DoesNotExist:
-                instance.iucn_status = IUCNStatus.objects.create(category='NE')
-            except IUCNStatus.MultipleObjectsReturned:
-                instance.iucn_status = IUCNStatus.objects.filter(category='NE').first()
 
         if sis_id:
             instance.iucn_redlist_id = sis_id
@@ -822,6 +850,20 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
             instance.iucn_data = {
                 'url': iucn_url
             }
+
+    accepted = getattr(instance, "accepted_taxonomy", None)
+    is_synonym = "SYNONYM" in (instance.taxonomic_status or "").upper()
+
+    if (
+        is_synonym
+        and accepted
+        and getattr(accepted, "id", None)
+        and _has_meaningful_iucn_data(instance)
+        and not _has_meaningful_iucn_data(accepted)
+    ):
+        update_payload = _extract_iucn_payload(instance)
+        if update_payload:
+            Taxonomy.objects.filter(pk=accepted.pk).update(**update_payload)
 
 
 class TaxonImage(models.Model):

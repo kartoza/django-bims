@@ -41,6 +41,25 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
         normalize_iucn_category_code,
     )
 
+    def _has_meaningful_iucn_data(taxon_obj: Taxonomy | None) -> bool:
+        """Return True if the taxon already has a non-placeholder IUCN status/url."""
+        if not taxon_obj:
+            return False
+
+        status = getattr(taxon_obj, "iucn_status", None)
+        if status and getattr(status, "category", None) and status.category != "NE":
+            return True
+
+        data = getattr(taxon_obj, "iucn_data", None) or {}
+        if isinstance(data, dict):
+            return bool(data.get("url"))
+        return bool(data)
+
+    def _queue_for_update(obj: Taxonomy, bucket: list[Taxonomy], seen: set[int]):
+        if obj.id not in seen:
+            bucket.append(obj)
+            seen.add(obj.id)
+
     t0 = time.perf_counter()
 
     qs = Taxonomy.objects.all()
@@ -48,12 +67,17 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
     if taxa_ids:
         qs = qs.filter(id__in=taxa_ids)
 
-    qs = qs.filter(rank__in=["SPECIES", "SUBSPECIES"])
+    qs = qs.filter(rank__in=["SPECIES", "SUBSPECIES"]).select_related(
+        "accepted_taxonomy",
+        "iucn_status",
+        "accepted_taxonomy__iucn_status",
+    )
 
     total = qs.count()
     logger.info("Starting IUCN sync for %s taxon record(s).", total)
 
     to_update: list[Taxonomy] = []
+    queued_ids: set[int] = set()
     valid_categories = {c[0] for c in IUCNStatus.CATEGORY_CHOICES}
     assessments_created = 0
     assessments_updated = 0
@@ -89,7 +113,39 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
                 status_obj.category,
                 sis_id or "—",
             )
-            to_update.append(taxon)
+            _queue_for_update(taxon, to_update, queued_ids)
+
+        accepted = taxon.accepted_taxonomy
+        is_synonym = "SYNONYM" in (taxon.taxonomic_status or "").upper()
+        accepted_changed = False
+
+        if (
+            is_synonym
+            and accepted
+            and status_obj.category != "NE"
+            and not _has_meaningful_iucn_data(accepted)
+        ):
+            if accepted.iucn_status_id != status_obj.id:
+                accepted.iucn_status = status_obj
+                accepted_changed = True
+
+            if sis_id and accepted.iucn_redlist_id != sis_id:
+                accepted.iucn_redlist_id = sis_id
+                accepted_changed = True
+
+            if url:
+                accepted_data = accepted.iucn_data if isinstance(accepted.iucn_data, dict) else {}
+                if accepted_data.get("url") != url:
+                    accepted.iucn_data = {"url": url}
+                    accepted_changed = True
+
+            if accepted_changed:
+                logger.debug(
+                    "Propagated IUCN data from synonym %s → accepted %s",
+                    taxon.id,
+                    accepted.id,
+                )
+                _queue_for_update(accepted, to_update, queued_ids)
 
         assessments, assessment_sis_id = get_iucn_assessments(taxon=taxon)
         if assessments:

@@ -21,6 +21,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
+from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Permission
@@ -1460,8 +1461,9 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     actions = [
         'merge_taxa', 'update_taxa', 'fetch_common_names',
-        'fetch_cites_listing', 'fetch_iucn_assessments', 'extract_author',
-        'harvest_synonyms_for_accepted'
+        'fetch_cites_listing', 'extract_author',
+        'fetch_iucn_assessments',
+        'harvest_synonyms_for_accepted',
     ]
     fieldsets = (
         (_('Taxon Details'), {
