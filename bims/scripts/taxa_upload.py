@@ -206,6 +206,7 @@ class TaxaProcessor(object):
         """
         Add or update the relationship between a taxonomy and a taxon group,
         ensuring the 'is_validated' field is properly set in the through table.
+        Also ensures that if the taxonomy is a synonym, its accepted taxonomy is added to the group.
         """
         taxon_group.taxonomies.add(
             taxonomy,
@@ -216,6 +217,11 @@ class TaxaProcessor(object):
                 taxongroup=taxon_group,
                 taxonomy=taxonomy
             ).update(is_validated=False)
+
+        # Ensure accepted taxonomy is added if this is a synonym
+        if taxonomy.accepted_taxonomy:
+            from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
+            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
 
     def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
         """

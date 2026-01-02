@@ -527,3 +527,76 @@ class TestTaxaUpload(FastTenantTestCase):
             ['SYNONYM', 'HOMOTYPIC_SYNONYM', 'ACCEPTED', ''],
             msg='Non-FADA taxonomic status should be valid'
         )
+
+
+    def test_csv_upload_synonym_adds_accepted_name(self):
+        """
+        Test that when a synonym is uploaded via CSV,
+        the accepted taxonomy is automatically added to the taxon group.
+        """
+        # Create an accepted taxonomy
+        accepted_taxonomy = TaxonomyF.create(
+            canonical_name='Accepted Name CSV',
+            scientific_name='Accepted Name CSV',
+            rank='SPECIES',
+            taxonomic_status='ACCEPTED'
+        )
+
+        # Create a synonym taxonomy
+        synonym_taxonomy = TaxonomyF.create(
+            canonical_name='Synonym Name CSV',
+            scientific_name='Synonym Name CSV',
+            rank='SPECIES',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted_taxonomy
+        )
+
+        # Verify neither is in the taxon group yet
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=accepted_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists()
+        )
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=synonym_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists()
+        )
+
+        # Use the add_taxon_to_taxon_group method (simulating CSV upload)
+        from bims.scripts.taxa_upload import TaxaProcessor
+        processor = TaxaProcessor()
+        processor.add_taxon_to_taxon_group(synonym_taxonomy, self.taxon_group, validated=False)
+
+        # Verify the synonym was added
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=synonym_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists(),
+            "Synonym should be added to the group"
+        )
+
+        # Verify the accepted taxonomy was AUTOMATICALLY added
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxonomy=accepted_taxonomy,
+                taxongroup=self.taxon_group
+            ).exists(),
+            "Accepted taxonomy should be automatically added when synonym is uploaded"
+        )
+
+        # Verify both are marked as not validated
+        synonym_in_group = TaxonGroupTaxonomy.objects.get(
+            taxonomy=synonym_taxonomy,
+            taxongroup=self.taxon_group
+        )
+        self.assertFalse(synonym_in_group.is_validated)
+
+        accepted_in_group = TaxonGroupTaxonomy.objects.get(
+            taxonomy=accepted_taxonomy,
+            taxongroup=self.taxon_group
+        )
+        self.assertFalse(accepted_in_group.is_validated)
