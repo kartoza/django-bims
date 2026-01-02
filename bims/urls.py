@@ -228,7 +228,8 @@ urlpatterns = [
             name='add-source-reference'),
     re_path(r'^summary-report/$', SummaryReportView.as_view(),
             name='summary-report'),
-    re_path(r'^profile/(?P<slug>\w+)/$', ProfileView.as_view(),
+    # Updated pattern to accept email addresses as usernames (after allauth upgrade)
+    re_path(r'^profile/(?P<slug>[^/]+)/$', ProfileView.as_view(),
             name='profile'),
     re_path(r'^download-request/$', DownloadRequestListView.as_view(),
             name='download-request'),
