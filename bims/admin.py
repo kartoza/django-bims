@@ -21,13 +21,14 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
+from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Permission
 from django.contrib.flatpages.admin import FlatPageAdmin
 from django.contrib.flatpages.models import FlatPage
 from django.db import models
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F, Case, When, IntegerField
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
 from django.urls import reverse, path
@@ -40,10 +41,11 @@ from taggit.models import Tag
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
-from bims.enums import TaxonomicGroupCategory, TaxonomicStatus
+from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
+from bims.tasks.taxa import fetch_iucn_status as fetch_iucn_status_task
 from bims.utils.endemism import merge_endemism
 from bims.utils.sampling_method import merge_sampling_method
 from bims.tasks.cites_info import fetch_and_save_cites_listing
@@ -59,6 +61,7 @@ from django_admin_inline_paginator.admin import TabularInlinePaginated
 from bims.models import (
     LocationType,
     LocationSite,
+    IUCNAssessment,
     IUCNStatus,
     Survey,
     SurveyData,
@@ -136,9 +139,9 @@ from bims.models import (
     TaxonGroupCitation,
     HarvestSchedule,
     OccurrenceUploadTemplate,
-    UploadRequest, CertaintyHierarchy
+    UploadRequest, CertaintyHierarchy,
+    FilterPanelInfo
 )
-from bims.models.climate_data import ClimateData
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
@@ -483,6 +486,53 @@ class IUCNStatusAdmin(OrderedModelAdmin):
         )
 
     iucn_colour.allow_tags = True
+
+
+class IUCNAssessmentAdmin(admin.ModelAdmin):
+    class GlobalScopeFilter(SimpleListFilter):
+        title = 'Scope'
+        parameter_name = 'scope_label'
+
+        def value(self):
+            return self.used_parameters.get(self.parameter_name, 'global')
+
+        def lookups(self, request, model_admin):
+            return [
+                ('global', 'Global'),
+                ('all', 'All'),
+            ]
+
+        def queryset(self, request, queryset):
+            value = self.value()
+            if value == 'all':
+                return queryset
+            return queryset.filter(scope_label__iexact='Global')
+
+    list_display = (
+        'id',
+        'taxonomy',
+        'year_published',
+        'red_list_category_code',
+        'latest',
+        'sis_taxon_id',
+        'assessment_id',
+    )
+    list_filter = (
+        GlobalScopeFilter,
+        'latest',
+        'year_published',
+        'red_list_category_code',
+        'scope_code',
+    )
+    search_fields = (
+        'taxonomy__scientific_name',
+        'taxonomy__canonical_name',
+        'assessment_id',
+        'sis_taxon_id',
+        'url',
+    )
+    raw_id_fields = ('taxonomy', 'normalized_status')
+    ordering = ('-year_published', '-id')
 
 
 class BoundaryAdmin(admin.ModelAdmin):
@@ -1145,7 +1195,11 @@ class TaxonomyAdminForm(forms.ModelForm):
         widgets = {
             'gbif_data': JSONEditorWidget
         }
-        fields = '__all__'
+        exclude = (
+            'reliability_of_sources',
+            'certainty_of_identification',
+            'accuracy_of_coordinates',
+        )
 
     def clean(self):
         """
@@ -1310,9 +1364,54 @@ class DuplicateTaxonomyFilter(django_admin.SimpleListFilter):
         return queryset
 
 
+class InvalidParentRankFilter(django_admin.SimpleListFilter):
+    title = _('Invalid parent rank')
+    parameter_name = 'invalid_parent_rank'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('invalid', _('Parent is self or not higher rank')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() != 'invalid':
+            return queryset
+
+        # Build rank order mapping as database-level Case/When statements
+        hierarchy = [rank.name for rank in TaxonomicRank.hierarchy()]
+        rank_whens = [When(rank=rank_name, then=idx) for idx, rank_name in enumerate(hierarchy)]
+        parent_rank_whens = [When(parent__rank=rank_name, then=idx) for idx, rank_name in enumerate(hierarchy)]
+
+        queryset_annotated = queryset.filter(
+            parent__isnull=False,
+        ).annotate(
+            rank_order=Case(
+                *rank_whens,
+                default=None,
+                output_field=IntegerField()
+            ),
+            parent_rank_order=Case(
+                *parent_rank_whens,
+                default=None,
+                output_field=IntegerField()
+            )
+        )
+
+        # Filter using database-level comparisons
+        return queryset_annotated.filter(
+            Q(parent_id=F('id')) |  # Self-referencing parent
+            Q(
+                rank_order__isnull=False,
+                parent_rank_order__isnull=False,
+                parent_rank_order__gte=F('rank_order')  # Parent rank >= child rank (invalid)
+            )
+        )
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
+    readonly_fields = ('parent_hierarchy',)
 
     autocomplete_fields = (
         'vernacular_names',
@@ -1343,6 +1442,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'iucn_status',
         TaxonGroupListFilter,
         DuplicateTaxonomyFilter,
+        InvalidParentRankFilter,
     )
 
     search_fields = (
@@ -1362,8 +1462,61 @@ class TaxonomyAdmin(admin.ModelAdmin):
     actions = [
         'merge_taxa', 'update_taxa', 'fetch_common_names',
         'fetch_cites_listing', 'extract_author',
-        'harvest_synonyms_for_accepted'
+        'fetch_iucn_assessments',
+        'harvest_synonyms_for_accepted',
     ]
+    fieldsets = (
+        (_('Taxon Details'), {
+            'fields': (
+                ('scientific_name', 'canonical_name'),
+                ('legacy_canonical_name', 'author'),
+                'rank',
+                ('taxonomic_status', 'accepted_taxonomy'),
+                'parent',
+                'parent_hierarchy',
+                ('species_group', 'invasion'),
+                'gbif_key',
+                'fada_id',
+                'verified',
+            )
+        }),
+        (_('Names & Tags'), {
+            'fields': (
+                'vernacular_names',
+                'tags',
+                'biographic_distributions',
+            )
+        }),
+        (_('Conservation & Origin'), {
+            'fields': (
+                ('origin', 'endemism'),
+                ('iucn_status', 'national_conservation_status'),
+                ('iucn_redlist_id', 'iucn_data'),
+            )
+        }),
+        (_('References & Data'), {
+            'fields': (
+                ('source_reference', 'import_date'),
+                'hierarchical_data',
+                'gbif_data',
+                'additional_data',
+            )
+        }),
+        (_('Ownership'), {
+            'classes': ('collapse',),
+            'fields': (
+                ('owner', 'collector_user', 'analyst'),
+            )
+        }),
+        (_('Validation'), {
+            'classes': ('collapse',),
+            'fields': (
+                ('validated', 'ready_for_validation', 'rejected'),
+                'validation_message',
+                'end_embargo_date',
+            )
+        }),
+    )
 
     def extract_author(self, request, queryset):
         author_year_pattern = re.compile(r'^(.*?)(\b\d{4}\b)')
@@ -1400,6 +1553,20 @@ class TaxonomyAdmin(admin.ModelAdmin):
     def fetch_common_names(self, request, queryset):
         taxa_ids = list(queryset.values_list('id', flat=True))
         fetch_vernacular_names.delay([str(taxa_id) for taxa_id in taxa_ids])
+
+    def fetch_iucn_assessments(self, request, queryset):
+        taxa_ids = list(queryset.values_list('id', flat=True))
+        chunk_size = 1000
+        for chunk in chunk_list(taxa_ids, chunk_size):
+            fetch_iucn_status_task.delay(chunk)
+        self.message_user(
+            request,
+            "IUCN status and assessment fetching initiated for selected taxa."
+        )
+
+    fetch_iucn_assessments.short_description = (
+        "Fetch IUCN assessment history"
+    )
 
     def update_taxa(self, request, queryset):
         for taxa in queryset:
@@ -1466,6 +1633,40 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
+
+    @admin.display(description=_('Parent hierarchy'))
+    def parent_hierarchy(self, obj):
+        """
+        Display the ancestry chain of the selected parent to help admins
+        understand the hierarchy being linked to this taxon.
+        """
+        if not obj or not obj.parent:
+            return _('No parent selected')
+
+        hierarchy = []
+        current = obj.parent
+        seen = set()
+        depth = 0
+        max_depth = 20
+
+        while current and depth < max_depth:
+            label = current.canonical_name or current.scientific_name or str(current.pk)
+            rank = (current.rank or '').title()
+            rank_label = f"{rank}: " if rank else ''
+            hierarchy.append(f"{rank_label}{label}")
+
+            if current.pk in seen:
+                hierarchy.append(_('…cycle detected…'))
+                break
+
+            seen.add(current.pk)
+            current = current.parent
+            depth += 1
+
+        if current:
+            hierarchy.append(_('…truncated…'))
+
+        return ' → '.join(hierarchy)
 
     def harvest_synonyms_for_accepted(self, request, queryset):
         """
@@ -1607,7 +1808,24 @@ class SassBiotopeAdmin(admin.ModelAdmin):
 class DataSourceAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'category'
+        'category',
+        'description'
+    )
+    search_fields = (
+        'name',
+        'category',
+        'description'
+    )
+    list_filter = (
+        'category',
+    )
+    readonly_fields = (
+        'name',
+    )
+    fields = (
+        'name',
+        'category',
+        'description'
     )
 
 
@@ -2123,10 +2341,6 @@ class UnitAdmin(admin.ModelAdmin):
     search_fields = ('unit_name', 'unit',)
 
 
-class ClimateDataAdmin(admin.ModelAdmin):
-    list_display = ('title', 'climate_geocontext_group_key')
-
-
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'get_users', 'site')
 
@@ -2436,6 +2650,7 @@ admin.site.register(Profile, CustomUserAdmin)
 admin.site.register(LocationSite, LocationSiteAdmin)
 admin.site.register(LocationType)
 admin.site.register(IUCNStatus, IUCNStatusAdmin)
+admin.site.register(IUCNAssessment, IUCNAssessmentAdmin)
 admin.site.register(Endemism, EndemismAdmin)
 admin.site.register(Survey, SurveyAdmin)
 admin.site.register(SurveyData)
@@ -2508,7 +2723,6 @@ admin.site.register(WaterTemperature, WaterTemperatureAdmin)
 admin.site.register(TaxonExtraAttribute, TaxonExtraAttributeAdmin)
 admin.site.register(DecisionSupportTool, DecisionSupportToolAdmin)
 admin.site.register(Unit, UnitAdmin)
-admin.site.register(ClimateData, ClimateDataAdmin)
 admin.site.register(BimsProfile, BimsProfileAdmin)
 admin.site.register(
     DecisionSupportToolName, DecisionSupportToolNameAdmin)
@@ -2580,6 +2794,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     list_display = (
         "module_group",
+        "harvest_type_display",
         "enabled",
         "period",
         "schedule_human",
@@ -2587,7 +2802,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
         "last_harvest_until_local",
         "updated_at",
     )
-    list_filter = ("enabled", "period", "timezone")
+    list_filter = ("enabled", "is_fetching_species", "period", "timezone")
     search_fields = ("module_group__name",)
     autocomplete_fields = ("module_group",)
     readonly_fields = ("last_harvest_until", "updated_at", "schedule_preview")
@@ -2620,6 +2835,11 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
             "fields": ("last_harvest_until", "updated_at"),
         }),
     )
+
+    def harvest_type_display(self, obj: HarvestSchedule):
+        return "Species" if obj.is_fetching_species else "Occurrences"
+
+    harvest_type_display.short_description = "Type"
 
     def schedule_human(self, obj: HarvestSchedule):
         if obj.period == HarvestPeriod.CUSTOM and obj.cron_expression:
@@ -2680,3 +2900,8 @@ class UploadRequestAdmin(admin.ModelAdmin):
 class CertaintyHierarchyAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'name')
+@admin.register(FilterPanelInfo)
+class FilterPanelInfoAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('title', 'description')

@@ -19,18 +19,33 @@ class DatabaseRecordAdmin(admin.ModelAdmin):
 
 
 class SourceReferenceBibliographyAdmin(PolymorphicChildModelAdmin):
-    list_display = ('source', 'note')
+    list_display = ('source', 'note', 'has_metadata')
     base_model = SourceReferenceBibliography
+    fields = ('source', 'document', 'note', 'source_name', 'verified', 'mobile', 'active_sites', 'metadata_file')
+
+    def has_metadata(self, obj):
+        return 'Yes' if obj.metadata_file else 'No'
+    has_metadata.short_description = 'Has Metadata'
 
 
 class SourceReferenceDatabaseAdmin(PolymorphicChildModelAdmin):
-    list_display = ('source', 'note')
+    list_display = ('source', 'note', 'has_metadata')
     base_model = SourceReferenceDatabase
+    fields = ('source', 'document', 'note', 'source_name', 'verified', 'mobile', 'active_sites', 'metadata_file')
+
+    def has_metadata(self, obj):
+        return 'Yes' if obj.metadata_file else 'No'
+    has_metadata.short_description = 'Has Metadata'
 
 
 class SourceReferenceDocumentAdmin(PolymorphicChildModelAdmin):
-    list_display = ('source', 'note')
+    list_display = ('source', 'note', 'has_metadata')
     base_model = SourceReferenceDocument
+    fields = ('source', 'note', 'source_name', 'verified', 'mobile', 'active_sites', 'metadata_file')
+
+    def has_metadata(self, obj):
+        return 'Yes' if obj.metadata_file else 'No'
+    has_metadata.short_description = 'Has Metadata'
 
 
 class SourceReferenceAdmin(PolymorphicParentModelAdmin):
@@ -40,7 +55,8 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
         'source_reference_title',
         'reference_type',
         'verified',
-        'total_records'
+        'total_records',
+        'has_metadata'
     )
     child_models = (
         SourceReferenceBibliography,
@@ -91,9 +107,13 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
             source_reference=obj
         ).count()
 
+    def has_metadata(self, obj):
+        return 'Yes' if obj.metadata_file else 'No'
+
     source_reference_title.short_description = 'Title'
     reference_type.short_description = 'Reference Type'
     total_records.short_description = 'Total Occurrences'
+    has_metadata.short_description = 'Has Metadata'
 
     actions = ['merge_source_references']
 

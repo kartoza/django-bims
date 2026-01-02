@@ -200,24 +200,6 @@ def author_autocomplete(request):
 def is_ajax(request):
     return request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
 
-def data_source_autocomplete(request):
-    q = request.GET.get('term', '').capitalize()
-    if not is_ajax(request) and len(q) < 2:
-        data = 'fail'
-    else:
-        search_qs = DataSource.objects.filter(
-            name__icontains=q
-        )
-        results = []
-        for r in search_qs:
-            results.append({
-                'id': r.id,
-                'name': r.name,
-            })
-        data = json.dumps(results)
-    mime_type = 'application/json'
-    return HttpResponse(data, mime_type)
-
 
 @require_http_methods(["GET", "POST"])
 @login_required

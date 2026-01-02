@@ -40,7 +40,7 @@
     "core-js": "^3.12.1",
     "css-loader": "^6.5.1",
     "exifr": "^6.0.0",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.2",
     "follow-redirects": "^1.15.6",

@@ -335,6 +335,11 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         author_name = self.request.POST.get('authorName', '')
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
+        accepted_taxonomy_id = self.request.POST.get('acceptedTaxonomyId', None)
+        taxonomic_status = (self.request.POST.get('taxonomicStatus') or '').strip().upper()
+        is_synonym_or_doubtful = (
+            taxonomic_status == 'DOUBTFUL' or 'SYNONYM' in taxonomic_status
+        )
         parent = None
 
         if family_id:
@@ -346,8 +351,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if gbif_key:
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
-                fetch_parent=True,
-                get_vernacular=True
+                fetch_parent=not is_synonym_or_doubtful,
+                get_vernacular=not is_synonym_or_doubtful
             )
 
         elif taxon_name and rank:
@@ -411,6 +416,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             response['id'] = taxonomy.id
             response['taxon_name'] = taxonomy.canonical_name
 
+            if not taxonomy.taxonomic_status:
+                taxonomy.taxonomic_status = taxonomic_status
+                taxonomy.save()
+
             if author_name:
                 taxonomy.author = author_name
                 taxonomy.save()
@@ -424,9 +433,17 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)
 
-            if parent:
+            if parent and not is_synonym_or_doubtful:
                 taxonomy.parent = parent
                 taxonomy.save()
+
+            if accepted_taxonomy_id:
+                try:
+                    accepted_taxonomy = Taxonomy.objects.get(id=int(accepted_taxonomy_id))
+                    taxonomy.accepted_taxonomy = accepted_taxonomy
+                    taxonomy.save()
+                except (Taxonomy.DoesNotExist, ValueError):
+                    pass
 
         with transaction.atomic():
             taxonomy_data = model_to_dict(
@@ -443,6 +460,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'parent'
                 ]
             )
+            proposal_author = author_name or taxonomy.author
             taxonomy_update_proposal, created = (
                 TaxonomyUpdateProposal.objects.get_or_create(
                     original_taxonomy=taxonomy,
@@ -453,7 +471,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     parent=taxonomy.parent,
                     accepted_taxonomy=taxonomy.accepted_taxonomy,
                     taxon_group_under_review=taxon_group,
-                    author=author_name,
+                    author=proposal_author,
                     iucn_status=taxonomy.iucn_status,
                     **taxonomy_data
                 )

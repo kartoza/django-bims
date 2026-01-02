@@ -51,6 +51,15 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             'order', 'category', 'national'
         )
         context['next'] = self.request.GET.get('next', '')
+        taxon_obj = self.object
+        status = (taxon_obj.taxonomic_status or '').upper()
+        is_synonym_or_doubtful = (
+            status == 'DOUBTFUL' or 'SYNONYM' in status
+        )
+        if is_synonym_or_doubtful and getattr(taxon_obj, 'accepted_taxonomy', None):
+            context['hierarchy_taxon'] = taxon_obj.accepted_taxonomy
+        else:
+            context['hierarchy_taxon'] = taxon_obj
         context['taxon_ranks'] = [
             {'rank': 'Kingdom', 'field': 'kingdom_name'},
             {'rank': 'Phylum', 'field': 'phylum_name'},
@@ -114,16 +123,18 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 data['species_group'] = None
 
         parent = data.get('parent')
+        status = (data.get('taxonomic_status') or taxon.taxonomic_status or '').upper()
+        is_synonym_or_doubtful = status == 'DOUBTFUL' or 'SYNONYM' in status
 
-        if 'subspecies' in current_rank.lower():
-            if parent.rank.lower() == 'species':
-                if len(taxon_name.split(' ')) > 1 and not taxon_name.startswith(parent.specific_epithet):
-                    taxon_name = f'{parent.specific_epithet} {taxon_name}'
-
-        if 'species' in current_rank.lower():
-            genus_name = parent.genus_name
-            if not taxon_name.startswith(genus_name):
-                taxon_name = f'{genus_name} {taxon_name}'
+        if parent:
+            if 'subspecies' in current_rank.lower():
+                if parent.rank and parent.rank.lower() == 'species':
+                    if len(taxon_name.split(' ')) > 1 and not taxon_name.startswith(parent.specific_epithet or ''):
+                        taxon_name = f'{parent.specific_epithet or ''} {taxon_name}'.strip()
+            if 'species' in current_rank.lower():
+                genus_name = parent.genus_name or ''
+                if genus_name and not taxon_name.startswith(genus_name):
+                    taxon_name = f'{genus_name} {taxon_name}'
 
         data['common_name'] = self.request.POST.get('common_name', '')
         data['tags'] = self.request.POST.getlist('tags')

@@ -246,11 +246,15 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
-            $siteDetailWrapper.append(
-                '<div id="climate-data" class="search-results-wrapper">' +
-                '<div class="search-results-total" data-visibility="false"> ' +
-                '<span class="search-result-title"> Climate Data </span> ' +
-                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            // Only show climate data panel if not viewing climate module results
+            let currentModule = document.querySelector('input[name="module"]:checked');
+            if (!currentModule || currentModule.value !== 'climate') {
+                $siteDetailWrapper.append(
+                    '<div id="climate-data" class="search-results-wrapper">' +
+                    '<div class="search-results-total" data-visibility="false"> ' +
+                    '<span class="search-result-title"> Climate Data </span> ' +
+                    '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
+            }
 
             Shared.Dispatcher.trigger('sidePanel:openSidePanel', {});
             Shared.Dispatcher.trigger('sidePanel:fillSidePanelHtml', $siteDetailWrapper);
@@ -308,8 +312,11 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                     self.renderLegends(self.endemismLegends, $('.endemism-legends'));
                     self.renderLegends(self.consStatusLegends, $('.cons-status-legends'));
 
-                    self.renderClimateData(data, $('#climate-data'));
-                    // $('#climate-data').append(climateDataHTML);
+                    // Only render climate data panel if not viewing climate module results
+                    let currentModule = document.querySelector('input[name="module"]:checked');
+                    if (!currentModule || currentModule.value !== 'climate') {
+                        self.renderClimateData(data, $('#climate-data'));
+                    }
 
                     Shared.LocationSiteDetailXHRRequest = null;
 
@@ -337,11 +344,13 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 data: data.biodiversity_data,
                 is_sass_enabled: is_sass_enabled,
                 is_water_temperature_enabled: is_water_temperature_enabled,
+                is_climate_enabled: is_climate_enabled,
                 is_pesticide_dashboard_enabled: is_pesticide_dashboard_enabled,
                 sass_exist: data.sass_exist,
                 add_data: true,
                 water_temperature_exist: data.water_temperature_exist,
                 physico_chemical_exist: data.physico_chemical_exist,
+                climate_exist: data.climate_exist,
             }));
             $.each(data['biodiversity_data'], function (key, value) {
                 self.charts.push({
@@ -417,6 +426,11 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             });
             $('.sp-physico-chemical').click(function (e) {
                 let url = '/physico-chemical/' + self.siteId + '/';
+                url += self.apiParameters(filterParameters);
+                window.location.href = url;
+            });
+            $('.sp-climate').click(function (e) {
+                let url = '/climate/' + self.siteId + '/';
                 url += self.apiParameters(filterParameters);
                 window.location.href = url;
             });

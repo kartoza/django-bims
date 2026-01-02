@@ -13,7 +13,7 @@ from reportlab.platypus import Paragraph, Spacer, SimpleDocTemplate
 from bims.scripts.species_keys import (
     ACCEPTED_TAXON, TAXON_RANK,
     COMMON_NAME, CLASS, SUBSPECIES,
-    CITES_LISTING, FADA_ID
+    CITES_LISTING, FADA_ID, ON_GBIF, GBIF_LINK
 )
 from bims.utils.domain import get_current_domain
 
@@ -26,7 +26,11 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from django.conf import settings
 
     from bims.api_views.taxon import TaxaList
-    from bims.views.download_csv_taxa_list import TaxaCSVSerializer
+    from bims.views.download_csv_taxa_list import (
+        TaxaCSVSerializer,
+        is_sanparks_project,
+        NATIONAL_NEMBA_LABEL,
+    )
     from bims.tasks import send_csv_via_email
     from bims.models.download_request import DownloadRequest
     from bims.scripts.species_keys import BIOGRAPHIC_DISTRIBUTIONS
@@ -35,6 +39,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from bims.templatetags import is_fada_site
 
     is_fada = is_fada_site()
+    sanparks_project = is_sanparks_project()
 
     # FADA-only additional_data keys (column names)
     FADA_ADDITIONAL_KEYS = [
@@ -127,6 +132,18 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 header = ACCEPTED_TAXON
             elif header == 'fada_id':
                 header = FADA_ID
+                _updated_headers.append(header)
+                continue
+            elif header.lower().strip() in ['on_gbif', 'on gbif']:
+                header = ON_GBIF
+                _updated_headers.append(header)
+                continue
+            elif header.lower().strip() in ['gbif_link', 'gbif link']:
+                header = GBIF_LINK
+                _updated_headers.append(header)
+                continue
+            elif header.lower().strip() == 'invasion':
+                header = NATIONAL_NEMBA_LABEL if sanparks_project else 'Invasion'
                 _updated_headers.append(header)
                 continue
 

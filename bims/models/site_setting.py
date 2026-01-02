@@ -252,6 +252,11 @@ class SiteSetting(Preferences):
         help_text='Enable or disable Water Temperature data'
     )
 
+    enable_climate_data = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Climate data'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(
@@ -265,6 +270,10 @@ class SiteSetting(Preferences):
         help_text=(
             'Show summative figure for data by taxon group'
         )
+    )
+    show_general_summary_on_landing = models.BooleanField(
+        default=False,
+        help_text='Display the general statistics block on the landing page.'
     )
 
     enable_remove_all_occurrences_tool = models.BooleanField(

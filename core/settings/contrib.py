@@ -107,6 +107,7 @@ SHARED_APPS = (
     'mobile',
     'pesticide',
     'cloud_native_gis',
+    'climate',
     'django_celery_beat',
 )
 
@@ -138,6 +139,7 @@ TENANT_APPS = (
     'mobile',
     'pesticide',
     'cloud_native_gis',
+    'climate',
 )
 
 MIDDLEWARE = (
@@ -568,4 +570,3 @@ customColorPalette = [
             'label': 'Blue'
         },
     ]
-

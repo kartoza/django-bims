@@ -19,10 +19,6 @@ from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
 
-from bims.api_views.collection import (
-    CollectionDownloader,
-)
-
 from bims.api_views.get_feature_info import GetFeatureInfo
 from bims.api_views.database_record import DatabaseRecordsList
 from bims.views.links import LinksCategoryView
@@ -44,7 +40,6 @@ from bims.views.download_csv_taxa_list import (
 from bims.views.autocomplete_search import (
     autocomplete,
     user_autocomplete,
-    data_source_autocomplete,
     species_autocomplete,
     site_autocomplete,
     abiotic_autocomplete,
@@ -133,8 +128,6 @@ urlpatterns = [
     re_path(r'^get_feature/$',
             GetFeatureInfo.as_view(),
             name='get-feature'),
-    re_path(r'^collection/check_process/$',
-            CollectionDownloader.as_view()),
     re_path(r'^download-taxa-list/$',
             download_taxa_list,
             name='taxa-list-download'),
@@ -151,9 +144,6 @@ urlpatterns = [
     re_path(r'^species-group-autocomplete/$',
             species_group_autocomplete,
             name='species-group-autocomplete-search'),
-    re_path(r'^data-source-autocomplete/$',
-            data_source_autocomplete,
-            name='data-source-autocomplete-search'),
     re_path(r'^location-site-autocomplete/$',
             site_autocomplete,
             name='location-site-autocomplete-search'),

@@ -343,15 +343,82 @@ class AbstractTaxonomy(AbstractValidation):
             return _taxon
         return None
 
+    def _get_rank_name_from_canonical(self, rank):
+        """Infer a higher-rank name from the canon when parents disagree."""
+        canonical = (self.canonical_name or '').strip()
+        if not canonical or not rank:
+            return ''
+
+        rank_name = rank.name if isinstance(rank, TaxonomicRank) else rank
+        rank_name = (rank_name or '').upper()
+        rank_depth = {
+            TaxonomicRank.GENUS.name: 1,
+            TaxonomicRank.SPECIES.name: 2,
+            TaxonomicRank.SUBSPECIES.name: 3,
+            TaxonomicRank.VARIETY.name: 3,
+            TaxonomicRank.FORMA.name: 3,
+            TaxonomicRank.FORM.name: 3,
+        }
+
+        depth = rank_depth.get(rank_name)
+        if not depth:
+            return ''
+
+        tokens = canonical.split()
+        if not tokens:
+            return ''
+
+        markers = {
+            'sp', 'spp', 'subsp', 'ssp', 'var', 'subvar', 'forma',
+            'form', 'f', 'subspecies', 'variety'
+        }
+        cleaned_tokens = []
+        for token in tokens:
+            if '(' in token or ')' in token:
+                continue
+            normalized = token.lower().strip('.').strip('()')
+            if normalized in markers:
+                continue
+            cleaned_tokens.append(token)
+            if len(cleaned_tokens) >= depth:
+                break
+
+        if len(cleaned_tokens) < depth:
+            return ''
+
+        return ' '.join(cleaned_tokens[:depth])
+
     def get_taxon_rank_name(self, rank):
         limit = 20
         current_try = 0
-        _taxon = self
+
+        target_rank = rank.name if isinstance(rank, TaxonomicRank) else rank
+
+        status = (self.taxonomic_status or '').upper()
+        is_synonym_or_doubtful = (
+            status == 'DOUBTFUL' or 'SYNONYM' in status
+        )
+        rank_differs = target_rank and self.rank and self.rank != target_rank
+
+        if is_synonym_or_doubtful and rank_differs:
+            canonical_rank_name = self._get_rank_name_from_canonical(target_rank)
+            if canonical_rank_name:
+                return canonical_rank_name
+
+        if (
+                is_synonym_or_doubtful and rank_differs and
+                self.accepted_taxonomy
+        ):
+            _taxon = self.accepted_taxonomy
+        else:
+            _taxon = self
+
         _parent = _taxon.parent if _taxon.parent else None
         _rank = _taxon.rank
+
         while (
                 _parent and _rank
-                and _rank != rank
+                and _rank != target_rank
                 and current_try < limit
         ):
             current_try += 1
@@ -359,7 +426,7 @@ class AbstractTaxonomy(AbstractValidation):
             _rank = _taxon.rank
             _parent = _taxon.parent if _taxon.parent else None
 
-        if _rank == rank:
+        if _rank == target_rank:
             return _taxon.canonical_name
         return ''
 
@@ -662,7 +729,6 @@ class Taxonomy(AbstractTaxonomy):
             from bims.utils.fetch_gbif import fetch_all_species_from_gbif
             fetch_all_species_from_gbif(
                 species=self.scientific_name,
-                parent=self.parent,
                 gbif_key=self.gbif_key,
                 fetch_vernacular_names=True)
 
@@ -734,6 +800,41 @@ class Taxonomy(AbstractTaxonomy):
         send_mail_notification.delay(subject, email_body, from_email, recipient_list)
 
 
+def _has_meaningful_iucn_data(taxon: Taxonomy | None) -> bool:
+    """Return True when a taxon already carries a usable IUCN category or URL."""
+    if not taxon:
+        return False
+
+    status = getattr(taxon, "iucn_status", None)
+    if status and getattr(status, "category", None) and status.category != "NE":
+        return True
+
+    data = getattr(taxon, "iucn_data", None) or {}
+    if isinstance(data, dict):
+        return bool(data.get("url"))
+    return bool(data)
+
+
+def _extract_iucn_payload(taxon: Taxonomy) -> dict[str, object]:
+    """Build field/value mapping for propagating IUCN info."""
+    payload: dict[str, object] = {}
+
+    status = getattr(taxon, "iucn_status", None)
+    if status and getattr(status, "category", None) and status.category != "NE":
+        if getattr(taxon, "iucn_status_id", None):
+            payload["iucn_status_id"] = taxon.iucn_status_id
+
+    sis_id = getattr(taxon, "iucn_redlist_id", None)
+    if sis_id:
+        payload["iucn_redlist_id"] = sis_id
+
+    data = getattr(taxon, "iucn_data", None)
+    if isinstance(data, dict) and data.get("url"):
+        payload["iucn_data"] = {"url": data["url"]}
+
+    return payload
+
+
 @receiver(models.signals.pre_save, sender=Taxonomy)
 def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
     """Set IUCN status and redlist ID before saving taxonomy."""
@@ -741,13 +842,6 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
         if iucn_status:
             instance.iucn_status = iucn_status
-        else:
-            try:
-                instance.iucn_status = IUCNStatus.objects.get(category='NE')
-            except IUCNStatus.DoesNotExist:
-                instance.iucn_status = IUCNStatus.objects.create(category='NE')
-            except IUCNStatus.MultipleObjectsReturned:
-                instance.iucn_status = IUCNStatus.objects.filter(category='NE').first()
 
         if sis_id:
             instance.iucn_redlist_id = sis_id
@@ -756,6 +850,20 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
             instance.iucn_data = {
                 'url': iucn_url
             }
+
+    accepted = getattr(instance, "accepted_taxonomy", None)
+    is_synonym = "SYNONYM" in (instance.taxonomic_status or "").upper()
+
+    if (
+        is_synonym
+        and accepted
+        and getattr(accepted, "id", None)
+        and _has_meaningful_iucn_data(instance)
+        and not _has_meaningful_iucn_data(accepted)
+    ):
+        update_payload = _extract_iucn_payload(instance)
+        if update_payload:
+            Taxonomy.objects.filter(pk=accepted.pk).update(**update_payload)
 
 
 class TaxonImage(models.Model):
@@ -869,5 +977,3 @@ def check_taxa_duplicates(taxon_name, taxon_rank):
         excluded_taxon=preferred_taxon
     )
     return preferred_taxon
-
-

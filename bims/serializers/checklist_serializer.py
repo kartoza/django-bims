@@ -38,6 +38,28 @@ HIERARCHY_OF_ACCURACY_OF_COORDINATES = [
 ]
 
 
+def apply_gbif_record_threshold(queryset, threshold=10000, limit=100):
+    """
+    Apply the GBIF record threshold rule to a queryset.
+
+    If the queryset has more than `threshold` records, limit it to the first `limit` records.
+    This is used to avoid performance issues when calculating aggregate statistics
+    on large datasets.
+
+    Args:
+        queryset: Django QuerySet to potentially limit
+        threshold: Maximum number of records before limiting (default: 10000)
+        limit: Number of records to keep if threshold is exceeded (default: 100)
+
+    Returns:
+        QuerySet: Either the original queryset or a limited version
+    """
+    total_count = queryset.count()
+    if total_count > threshold:
+        return queryset[:limit]
+    return queryset
+
+
 def _norm_confidence(s):
     return (s or "").strip().lower()
 
@@ -206,6 +228,8 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     cites_listing = serializers.SerializerMethodField()
     certainty = serializers.SerializerMethodField()
     accuracy_of_coordinates = serializers.SerializerMethodField()
+    gbif_coordinate_uncertainty_m = serializers.SerializerMethodField()
+    gbif_coordinate_precision = serializers.SerializerMethodField()
     park_or_mpa_name = serializers.SerializerMethodField()
     creation_date = serializers.SerializerMethodField()
     occurrence_records = serializers.SerializerMethodField()
@@ -364,6 +388,68 @@ class ChecklistSerializer(ChecklistBaseSerializer):
                 return canonical
 
         return 'Unknown'
+
+    def get_gbif_coordinate_uncertainty_m(self, obj: Taxonomy):
+        """
+        Get the lowest coordinate uncertainty in meters from GBIF sources.
+        Rule: If total records > 10,000, use only first 100 records.
+        """
+        from django.db.models import Min
+
+        bio = self.get_bio_data(obj)
+
+        # Get GBIF records with coordinate uncertainty
+        gbif_records = bio.filter(
+            site__harvested_from_gbif=True,
+            site__coordinate_uncertainty_in_meters__isnull=False
+        )
+
+        # Check if we have any records
+        if not gbif_records.exists():
+            return ''
+
+        # Apply the 10,000 threshold rule
+        gbif_records = apply_gbif_record_threshold(gbif_records)
+
+        result = gbif_records.aggregate(
+            min_uncertainty=Min('site__coordinate_uncertainty_in_meters')
+        )
+
+        min_uncertainty = result.get('min_uncertainty')
+        if min_uncertainty is not None:
+            return f"{min_uncertainty:.2f}"
+        return ''
+
+    def get_gbif_coordinate_precision(self, obj: Taxonomy):
+        """
+        Get the highest coordinate precision from GBIF sources.
+        Rule: If total records > 10,000, use only first 100 records.
+        Higher precision = smaller decimal value (e.g., 0.00001 is more precise than 0.01667)
+        """
+        from django.db.models import Min
+
+        bio = self.get_bio_data(obj)
+
+        # Get GBIF records with coordinate precision
+        gbif_records = bio.filter(
+            site__harvested_from_gbif=True,
+            site__coordinate_precision__isnull=False
+        )
+
+        # Check if we have any records
+        if not gbif_records.exists():
+            return ''
+
+        gbif_records = apply_gbif_record_threshold(gbif_records)
+
+        result = gbif_records.aggregate(
+            max_precision=Min('site__coordinate_precision')
+        )
+
+        max_precision = result.get('max_precision')
+        if max_precision is not None:
+            return f"{max_precision:.6f}"
+        return ''
 
     def get_park_or_mpa_name(self, obj: Taxonomy):
         bio = self.get_bio_data(obj)
@@ -540,6 +626,8 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             'tops',
             'certainty',
             'accuracy_of_coordinates',
+            'gbif_coordinate_uncertainty_m',
+            'gbif_coordinate_precision',
             'park_or_mpa_name',
             'creation_date',
             'occurrence_records',

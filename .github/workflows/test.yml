@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'multi-tenant'
+      - 'main'
   pull_request:
     branches:
-      - 'multi-tenant'
+      - 'main'
 
 jobs:
   tests:

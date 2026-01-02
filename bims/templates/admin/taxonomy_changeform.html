@@ -42,28 +42,56 @@
             }
         });
 
-        function comfirmGBIF(event, key, scientificName, canonicalName, taxonomicStatus) {
-            // Get data from gbif
-            event.preventDefault();
-            document.getElementById('id_scientific_name').value = scientificName;
-            document.getElementById('id_canonical_name').value = canonicalName;
-            document.getElementById('id_taxonomic_status').value = taxonomicStatus;
-            document.getElementById('id_gbif_key').value = key;
-            {#let container = document.getElementById("id_additional_data");#}
-            {#let containerValue = {}#}
-            {#if (container.value !== 'null' && container.value !== '') {#}
-            {#    containerValue = JSON.parse(container.value);#}
-            {#}#}
-            {#containerValue['fetch_gbif'] = true;#}
-            {#container.value = JSON.stringify(containerValue);#}
+        function updateGbifJsonField(data) {
+            if (!data) {
+                return;
+            }
+            let serialized = '';
+            try {
+                serialized = JSON.stringify(data, null, 2);
+            } catch (err) {
+                serialized = data;
+            }
+
+            const targets = document.querySelectorAll('#id_gbif_data, [name="gbif_data"]');
+            targets.forEach((field) => {
+                if (!field) {
+                    return;
+                }
+                field.value = serialized;
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        }
+
+        function confirmGBIF(payload) {
+            if (!payload) {
+                return;
+            }
+
+            document.getElementById('id_scientific_name').value = payload.scientificName || '';
+            document.getElementById('id_canonical_name').value = payload.canonicalName || '';
+            document.getElementById('id_taxonomic_status').value = payload.taxonomicStatus || '';
+            document.getElementById('id_gbif_key').value = payload.key || '';
+            updateGbifJsonField(payload.gbifData);
         }
 
         (function($) {
             $(document).ready(function() {
-                $('#grp-content').find('.iucn_status ').find('.c-2').append(
+                const $iucnContainer = $('#id_iucn_status').closest('.c-2');
+                const $nationalContainer = $('#id_national_conservation_status').closest('.c-2');
+                const $fallbackIucn = $('#grp-content').find('.iucn_status').find('.c-2');
+                const $fallbackNational = $('#grp-content').find('.national_conservation_status').find('.c-2');
+                const $finalIucnContainer = $iucnContainer.length ? $iucnContainer : $fallbackIucn;
+                const $finalNationalContainer = $nationalContainer.length ? $nationalContainer : $fallbackNational;
+
+                $finalIucnContainer.find('#find-national_conservation_status, #find-iucn').remove();
+                $finalNationalContainer.find('#find-national_conservation_status, #find-iucn').remove();
+
+                $finalIucnContainer.append(
                     `<button class="grp-button" style="width: 250px;" id="find-iucn">Find Global Red List Status (IUCN)</button>`
                 );
-                $('#grp-content').find('.national_conservation_status ').find('.c-2').append(
+                $finalNationalContainer.append(
                     `<button class="grp-button" style="width: 250px;" id="find-national_conservation_status">Find National Conservation Status</button>`
                 );
                $('#find-iucn').click(function (e) {
@@ -118,6 +146,7 @@
                                    `<th>Key</th><th>Kingdom</th><th>Scientific Name</th><th>Canonical Name</th><th>Rank</th><th>Status</th><th>Parent</th><th>Action</th>`
                         let suggest = JSON.parse(results);
                         suggest.forEach(function (value){
+                            const encodedPayload = encodeURIComponent(JSON.stringify(value));
                             row += `<tr><td>`+value.key+`</td>
                                     <td>`+value.kingdom+`</td>
                                     <td>`+value.scientificName+`</td>
@@ -125,12 +154,8 @@
                                     <td>`+value.rank+`</td>
                                     <td>`+value.status+`</td>
                                     <td>`+value.parent+`</td>
-                                    <td><button class="grp-button" style="width: 150px; margin-left: 10px"
-                                    id="confirm-gbif" data-taxonomic-status="`+value.status+`" data-key="`+value.key+`"
-                                    data-scientific-name="`+value.scientificName+`"data-canonical-name="`+value.canonicalName+`"
-                                    onclick="comfirmGBIF(event, '`+value.key+`', '`+value.scientificName+`',
-                                    '`+value.canonicalName+`', '`+value.status+`'
-                                    );">
+                                    <td><button class="grp-button confirm-gbif-button" style="width: 150px; margin-left: 10px"
+                                    data-gbif="`+encodedPayload+`">
                                     Update</button></td></tr>`
 
                         });
@@ -138,6 +163,7 @@
                         $('#grp-content').find('.gbif_key').find('.c-2').append(
                             row
                         );
+                        $target.html(originalButtonText);
                         $target.attr('disabled', 'disabled')
 
                     }
@@ -148,6 +174,26 @@
                         $target.css('border-color', '#adadad')
                     }
 
+                });
+
+                $('#grp-content').on('click', '.confirm-gbif-button', function(e) {
+                    e.preventDefault();
+                    const encoded = $(this).data('gbif');
+                    if (!encoded) {
+                        return;
+                    }
+                    try {
+                        const payload = JSON.parse(decodeURIComponent(encoded));
+                        confirmGBIF({
+                            key: payload.key,
+                            scientificName: payload.scientificName,
+                            canonicalName: payload.canonicalName,
+                            taxonomicStatus: payload.status,
+                            gbifData: payload
+                        });
+                    } catch (err) {
+                        console.error('Failed to parse GBIF payload', err);
+                    }
                 });
             }
             );

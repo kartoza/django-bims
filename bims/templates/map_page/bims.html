@@ -22,6 +22,7 @@
     <link rel="stylesheet"
           href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <link href="{% static "css/bug_report_panel_style.css" %}" rel="stylesheet">
+    <link href="{% static "css/filter-panel-info.css" %}" rel="stylesheet">
 
     {% if preferences.SiteSetting.default_data_source.lower == 'fbis' %}
        <style>
@@ -60,7 +61,7 @@
         const geocontextUrl = '{{ geocontext_url }}';
         const geocontextCollectionKey = '{{ geocontext_collection_key }}';
         const listCollectorAPIUrl = '{% url "list-collector" %}';
-        const listSourceCollectionAPIUrl = '{% url "list-source-collection" %}';
+        const listSourceCollectionAPIUrl = '{% url "data-source-descriptions" %}';
         const listReferenceAPIUrl = '{% url "list-reference" %}';
         const centerPointMap = '{{ center_point_map }}';
         const listCategoryAPIUrl = '{% url "list-date-category" %}';
@@ -83,6 +84,7 @@
         var filterParameters = {};
         const is_sass_enabled = {% if preferences.SiteSetting.enable_sass %}true{% else %}false{% endif %};
         const is_water_temperature_enabled = {% if preferences.SiteSetting.enable_water_temperature %}true{% else %}false{% endif %};
+        const is_climate_enabled = {% if preferences.SiteSetting.enable_climate_data %}true{% else %}false{% endif %};
         const is_pesticide_dashboard_enabled = {% if preferences.SiteSetting.pesticide_quaternary_data_file %}true{% else %}false{% endif %};
         const locationSiteGeoserverLayer = '{{ preferences.SiteSetting.geoserver_location_site_layer }}';
         const defaultWMSSiteParameters = '{{ preferences.SiteSetting.default_location_site_cluster }}';
@@ -97,6 +99,7 @@
         const userID = {% if user.id %}{{ user.id }}{% else %}null{% endif %};
         const virtualMuseumExists = {% if preferences.SiteSetting.virtual_museum_source_filter != '' %} true {% else %} false {% endif %};
         const siteCodeGeneratorMethod = '{{ preferences.SiteSetting.site_code_generator }}';
+        const filterPanelInfoAPIUrl = '{% url "filter-panel-info" %}';
     </script>
     {% block extra_head %}
 
@@ -187,5 +190,6 @@
     <script src="https://cdn.jsdelivr.net/npm/ol-mapbox-style@12.6.1/dist/olms.js"></script>
 
     {% grunt_module "map_view" %}
+    <script src="{% static "js/filter_panel_info.js" %}"></script>
 
 {% endblock %}

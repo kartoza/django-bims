@@ -521,6 +521,17 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                 post_dict
             )
 
+        metadata_file = self.request.FILES.get('metadata_file')
+        remove_metadata = self.request.POST.get('remove_metadata_file')
+        if remove_metadata:
+            self.object.metadata_file.delete(save=False)
+            self.object.metadata_file = None
+        if metadata_file:
+            if self.object.metadata_file:
+                self.object.metadata_file.delete(save=False)
+            self.object.metadata_file = metadata_file
+        self.object.save()
+
         return super(EditSourceReferenceView, self).form_valid(
             form
         )

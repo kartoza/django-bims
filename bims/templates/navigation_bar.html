@@ -216,6 +216,9 @@
                                 {% if not fada_site %}
                                     <a class="dropdown-item" href="/upload-collections/">Occurrence Data</a>
                                     <a class="dropdown-item" href="/upload-physico-chemical/">Physico-chemical Data</a>
+                                    {% if preferences.SiteSetting.enable_climate_data %}
+                                        <a class="dropdown-item" href="/climate/upload/">Climate Data</a>
+                                    {% endif %}
                                 {% endif %}
                                 <div class="dropdown-divider"></div>
                                 {% if not fada_site %}

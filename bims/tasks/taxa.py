@@ -34,8 +34,31 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
     """
     Harvest (or update) IUCN Red-List information for the requested taxa.
     """
-    from bims.models import Taxonomy, IUCNStatus
-    from bims.utils.iucn import get_iucn_status
+    from bims.models import Taxonomy, IUCNAssessment, IUCNStatus
+    from bims.utils.iucn import (
+        get_iucn_status,
+        get_iucn_assessments,
+        normalize_iucn_category_code,
+    )
+
+    def _has_meaningful_iucn_data(taxon_obj: Taxonomy | None) -> bool:
+        """Return True if the taxon already has a non-placeholder IUCN status/url."""
+        if not taxon_obj:
+            return False
+
+        status = getattr(taxon_obj, "iucn_status", None)
+        if status and getattr(status, "category", None) and status.category != "NE":
+            return True
+
+        data = getattr(taxon_obj, "iucn_data", None) or {}
+        if isinstance(data, dict):
+            return bool(data.get("url"))
+        return bool(data)
+
+    def _queue_for_update(obj: Taxonomy, bucket: list[Taxonomy], seen: set[int]):
+        if obj.id not in seen:
+            bucket.append(obj)
+            seen.add(obj.id)
 
     t0 = time.perf_counter()
 
@@ -44,15 +67,20 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
     if taxa_ids:
         qs = qs.filter(id__in=taxa_ids)
 
-    qs = qs.filter(rank__in=["SPECIES", "SUBSPECIES"])
+    qs = qs.filter(rank__in=["SPECIES", "SUBSPECIES"]).select_related(
+        "accepted_taxonomy",
+        "iucn_status",
+        "accepted_taxonomy__iucn_status",
+    )
 
     total = qs.count()
     logger.info("Starting IUCN sync for %s taxon record(s).", total)
 
-    if not taxa_ids:
-        qs = qs.exclude(iucn_data__icontains='url')
-
     to_update: list[Taxonomy] = []
+    queued_ids: set[int] = set()
+    valid_categories = {c[0] for c in IUCNStatus.CATEGORY_CHOICES}
+    assessments_created = 0
+    assessments_updated = 0
 
     for taxon in qs:
         status_obj, sis_id, url = get_iucn_status(taxon=taxon)
@@ -85,7 +113,148 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
                 status_obj.category,
                 sis_id or "—",
             )
-            to_update.append(taxon)
+            _queue_for_update(taxon, to_update, queued_ids)
+
+        accepted = taxon.accepted_taxonomy
+        is_synonym = "SYNONYM" in (taxon.taxonomic_status or "").upper()
+        accepted_changed = False
+
+        if (
+            is_synonym
+            and accepted
+            and status_obj.category != "NE"
+            and not _has_meaningful_iucn_data(accepted)
+        ):
+            if accepted.iucn_status_id != status_obj.id:
+                accepted.iucn_status = status_obj
+                accepted_changed = True
+
+            if sis_id and accepted.iucn_redlist_id != sis_id:
+                accepted.iucn_redlist_id = sis_id
+                accepted_changed = True
+
+            if url:
+                accepted_data = accepted.iucn_data if isinstance(accepted.iucn_data, dict) else {}
+                if accepted_data.get("url") != url:
+                    accepted.iucn_data = {"url": url}
+                    accepted_changed = True
+
+            if accepted_changed:
+                logger.debug(
+                    "Propagated IUCN data from synonym %s → accepted %s",
+                    taxon.id,
+                    accepted.id,
+                )
+                _queue_for_update(accepted, to_update, queued_ids)
+
+        assessments, assessment_sis_id = get_iucn_assessments(taxon=taxon)
+        if assessments:
+            data_by_id = {}
+            for assessment in assessments:
+                assessment_id = assessment.get("assessment_id")
+                if not assessment_id:
+                    continue
+
+                scope = (assessment.get("scopes") or [{}])[0] or {}
+                scope_desc = scope.get("description") or {}
+                scope_label = scope_desc.get("en", "")
+
+                year = assessment.get("year_published")
+                try:
+                    year_published = int(year) if year else None
+                except (TypeError, ValueError):
+                    year_published = None
+
+                normalized_code = normalize_iucn_category_code(
+                    assessment.get("red_list_category_code")
+                )
+                status_assessment = None
+                if normalized_code and normalized_code in valid_categories:
+                    try:
+                        status_assessment, _ = IUCNStatus.objects.get_or_create(
+                            category=normalized_code,
+                            national=False
+                        )
+                    except IUCNStatus.MultipleObjectsReturned:
+                        status_assessment = IUCNStatus.objects.filter(
+                            category=normalized_code,
+                            national=False
+                        ).first()
+
+                data_by_id[assessment_id] = {
+                    "assessment_id": assessment_id,
+                    "sis_taxon_id": assessment.get("sis_taxon_id") or assessment_sis_id,
+                    "year_published": year_published,
+                    "latest": bool(assessment.get("latest")),
+                    "possibly_extinct": bool(assessment.get("possibly_extinct")),
+                    "possibly_extinct_in_the_wild": bool(
+                        assessment.get("possibly_extinct_in_the_wild")
+                    ),
+                    "red_list_category_code": assessment.get("red_list_category_code") or "",
+                    "normalized_status": status_assessment,
+                    "url": assessment.get("url") or "",
+                    "scope_code": scope.get("code") or "",
+                    "scope_label": scope_label,
+                    "raw_data": assessment,
+                }
+
+            assessment_ids = list(data_by_id.keys())
+            if assessment_ids:
+                existing = IUCNAssessment.objects.filter(
+                    taxonomy=taxon,
+                    assessment_id__in=assessment_ids
+                )
+                existing_by_id = {a.assessment_id: a for a in existing}
+
+                to_create = [
+                    IUCNAssessment(taxonomy=taxon, **data_by_id[assessment_id])
+                    for assessment_id in assessment_ids
+                    if assessment_id not in existing_by_id
+                ]
+                if to_create:
+                    IUCNAssessment.objects.bulk_create(
+                        to_create,
+                        batch_size=batch_size,
+                        ignore_conflicts=True,
+                    )
+
+                all_objects = IUCNAssessment.objects.filter(
+                    taxonomy=taxon,
+                    assessment_id__in=assessment_ids
+                )
+                assessments_created += max(
+                    0, all_objects.count() - len(existing_by_id)
+                )
+
+                to_update_assessments = []
+                for obj in all_objects:
+                    data = data_by_id.get(obj.assessment_id)
+                    if not data:
+                        continue
+                    for field, value in data.items():
+                        setattr(obj, field, value)
+                    to_update_assessments.append(obj)
+
+                if to_update_assessments:
+                    IUCNAssessment.objects.bulk_update(
+                        to_update_assessments,
+                        [
+                            "assessment_id",
+                            "sis_taxon_id",
+                            "year_published",
+                            "latest",
+                            "possibly_extinct",
+                            "possibly_extinct_in_the_wild",
+                            "red_list_category_code",
+                            "normalized_status",
+                            "url",
+                            "scope_code",
+                            "scope_label",
+                            "raw_data",
+                        ],
+                        batch_size,
+                    )
+                    assessments_updated += len(to_update_assessments)
 
     if to_update:
         with transaction.atomic():
@@ -97,9 +266,17 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
 
     dt = time.perf_counter() - t0
     logger.info(
-        "IUCN sync finished: %s/%s updated in %.2f s.", len(to_update), total, dt
+        "IUCN sync finished: %s/%s taxa updated, %s created, %s updated in %.2f s.",
+        len(to_update),
+        total,
+        assessments_created,
+        assessments_updated,
+        dt,
     )
-    return f"Updated {len(to_update)} taxonomy record(s)."
+    return (
+        f"Updated {len(to_update)} taxonomy record(s). "
+        f"Assessments: {assessments_created} created, {assessments_updated} updated."
+    )
 
 
 def _iter_queryset(qs, *, chunk_size: int = 1000) -> Iterable:

@@ -1,7 +1,9 @@
-![Staging Tag](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lgkgh/889dd6c34a68d9461b1fd8cdb56b8a21/raw/bims_multitenant_build-tag.json)
-![Staging Status](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/lgkgh/889dd6c34a68d9461b1fd8cdb56b8a21/raw/bims_multitenant_build-status.json)
+![Test Badge](https://github.com/kartoza/django-bims/actions/workflows/test.yml/badge.svg)
+![Build Badge](https://github.com/kartoza/django-bims/actions/workflows/dockerimage.yml/badge.svg)
 
 Documentation : https://kartoza.github.io/bims-website/
+
+Developer Guide : https://github.com/kartoza/django-bims/blob/develop/README-dev.md
 
 ## Welcome
 
@@ -71,10 +73,8 @@ The keys are:
 2. To show openmaptile map (terrain and other style), use your key of maptile (https://www.maptiler.com/cloud/) and put it in `core/settings/secret.py` with key MAP_TILER_KEY
 
 
-
 ## Thank you
 _________
-
 
 
 Thank you to the individual contributors who have helped to build BIMS:
@@ -87,12 +87,3 @@ Thank you to the individual contributors who have helped to build BIMS:
 * Fanevanjanahary: faneva@kartoza.com
 * Anita Hapsari: anita@kartoza.com
 
-.. |Test Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/test.yml/badge.svg
-.. |Build Badge| image:: https://github.com/kartoza/django-bims/actions/workflows/dockerimage.yml/badge.svg
-.. _developer guide: https://github.com/kartoza/django-bims/blob/develop/README-dev.md
-.. _docker: http://docker.com
-.. _project setup guide: deployment/ansible/README.md
-.. |test_status_master| image:: https://travis-ci.org/kartoza/django-bims.svg?branch=master
-.. |test_status_develop| image:: https://travis-ci.org/kartoza/django-bims.svg?branch=develop
-.. |nbsp| unicode:: 0xA0
-   :trim:

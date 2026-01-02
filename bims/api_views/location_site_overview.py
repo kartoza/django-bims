@@ -21,6 +21,7 @@ from bims.models import (
     Taxonomy,
     IUCNStatus, ChemicalRecord,
 )
+from climate.models import Climate
 from bims.enums import TaxonomicGroupCategory
 from bims.tasks import location_sites_overview
 from bims.utils.api_view import BimsApiView
@@ -46,6 +47,7 @@ class LocationSiteOverviewData(object):
     WATER_TEMPERATURE_EXIST = 'water_temperature_exist'
     WATER_TEMPERATURE_DATA = 'water_temperature_data'
     PHYSICO_CHEMICAL_EXIST = 'physico_chemical_exist'
+    CLIMATE_EXIST = 'climate_exist'
 
     search_filters = None
     is_sass_exist = False
@@ -246,6 +248,11 @@ class SingleLocationSiteOverview(APIView, LocationSiteOverviewData):
             ChemicalRecord.objects.filter(
                 Q(location_site=location_site) |
                 Q(survey__site=location_site)
+            ).exists()
+        )
+        response_data[self.CLIMATE_EXIST] = (
+            Climate.objects.filter(
+                location_site=location_site
             ).exists()
         )
         serializer = LocationSiteDetailSerializer(
