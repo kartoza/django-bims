@@ -536,9 +536,11 @@ ACCOUNT_FORMS = {
     'signup': 'bims.forms.CustomSignupForm',
 }
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+# For django-allauth 65.x: Updated to new settings format
+# No username field in signup form - it's auto-generated from first_name and last_name
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# Replaced ACCOUNT_AUTHENTICATION_METHOD = 'username_email' with:
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = False
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 

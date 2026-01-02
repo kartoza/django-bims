@@ -23,9 +23,6 @@ class CustomSignupForm(SignupForm):
         queryset=Role.objects.all().order_by('order'),
         required=True
     )
-    username = forms.CharField(
-        widget=forms.HiddenInput(),
-        required=False)
 
     def __init__(self, *args, **kwargs):
         super(CustomSignupForm, self).__init__(*args, **kwargs)
@@ -35,6 +32,10 @@ class CustomSignupForm(SignupForm):
                 self.fields['role'].initial = first_role
         except Role.DoesNotExist:
             pass
+        # For django-allauth 65.x: properly configure username field
+        if 'username' in self.fields:
+            self.fields['username'].required = False
+            self.fields['username'].widget = forms.HiddenInput()
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
@@ -57,7 +58,24 @@ class CustomSignupForm(SignupForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.organization = self.cleaned_data['organization']
-        user.username = self.cleaned_data.get('username', user.email)
+
+        # Generate username from first_name and last_name if not already set
+        username = self.cleaned_data.get('username')
+        if not username:
+            username = '{first_name}_{last_name}'.format(
+                first_name=self.cleaned_data['first_name'].lower(),
+                last_name=self.cleaned_data['last_name'].lower()
+            )
+            # Ensure uniqueness
+            if Profile.objects.filter(user__username=username).exists():
+                counter = 1
+                unique_username = username
+                while Profile.objects.filter(user__username=unique_username).exists():
+                    unique_username = f'{username}_{counter}'
+                    counter += 1
+                username = unique_username
+
+        user.username = username
         user.save()
         bims_profile, created = Profile.objects.get_or_create(
             user=user
