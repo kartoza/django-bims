@@ -488,7 +488,15 @@ export const taxaManagement = (() => {
               className: "min-width-150"
             },
             { data: "author", className: "min-width-100", render: (d) => renderTextDiff(d) },
-            { data: "family", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            {
+              data: "family",
+              className: "min-width-100",
+              render: (data, type, row) => {
+                const status = String(row.taxonomic_status || '').trim().toUpperCase();
+                const isSynonym = status.includes('SYNONYM');
+                return isSynonym ? '' : renderTextDiff(data);
+              }
+            },
             { data: "taxonomic_status", className: "min-width-100", render: (d) => renderTextDiff(d) },
             { data: "accepted_taxonomy_name", className: "min-width-100", render: (d) => renderTextDiff(d) },
             { data: "rank", className: "min-width-100", render: (d) => renderTextDiff(d) },
