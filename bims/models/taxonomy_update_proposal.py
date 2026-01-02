@@ -299,6 +299,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'legacy_canonical_name',
                     'rank',
                     'taxonomic_status',
+                    'author',
                     'endemism',
                     'iucn_status',
                     'accepted_taxonomy',
