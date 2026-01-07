@@ -23,9 +23,6 @@ class CustomSignupForm(SignupForm):
         queryset=Role.objects.all().order_by('order'),
         required=True
     )
-    username = forms.CharField(
-        widget=forms.HiddenInput(),
-        required=False)
 
     def __init__(self, *args, **kwargs):
         super(CustomSignupForm, self).__init__(*args, **kwargs)
@@ -35,35 +32,49 @@ class CustomSignupForm(SignupForm):
                 self.fields['role'].initial = first_role
         except Role.DoesNotExist:
             pass
+        # For django-allauth 65.x: properly configure username field
+        if 'username' in self.fields:
+            self.fields['username'].required = False
+            self.fields['username'].widget = forms.HiddenInput()
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if not username:
-            new_username = '{first_name}_{last_name}'.format(
-                first_name=self.data.get('first_name').lower(),
-                last_name=self.data.get('last_name').lower()
-            )
-            if Profile.objects.filter(user__username=new_username).exists():
+    def clean(self):
+        """Override clean to generate username before form validation completes."""
+        cleaned_data = super().clean()
+
+        # Generate username from first_name and last_name if not provided
+        if not cleaned_data.get('username'):
+            first_name = cleaned_data.get('first_name', '').lower()
+            last_name = cleaned_data.get('last_name', '').lower()
+
+            if first_name and last_name:
+                base_username = f'{first_name}_{last_name}'
+                username = base_username
+
+                # Ensure uniqueness
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
                 counter = 1
-                unique_username = new_username
-                while Profile.objects.filter(user__username=unique_username).exists():
-                    unique_username = f'{new_username}_{counter}'
+                while User.objects.filter(username=username).exists():
+                    username = f'{base_username}_{counter}'
                     counter += 1
-                return unique_username
-            return new_username
-        return username
+
+                cleaned_data['username'] = username
+
+        return cleaned_data
 
     def custom_signup(self, request, user):
+        """Called after the user is created to set additional fields."""
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.organization = self.cleaned_data['organization']
-        user.username = self.cleaned_data.get('username', user.email)
+        # Username is already set from clean() method
         user.save()
-        bims_profile, created = Profile.objects.get_or_create(
-            user=user
-        )
+
+        # Create or get the BIMS profile
+        bims_profile, created = Profile.objects.get_or_create(user=user)
         bims_profile.role = self.cleaned_data['role']
         bims_profile.save()
+
         return user
 
 
