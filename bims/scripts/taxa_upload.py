@@ -828,6 +828,9 @@ class TaxaProcessor(object):
                 accepted_taxon = Taxonomy.objects.filter(
                     canonical_name__iexact=accepted_taxon_val
                 ).first()
+                if not accepted_taxon:
+                    self.handle_error(row=row, message=f'Accepted taxon not found: {accepted_taxon_val}')
+                    return
 
         authors = _safe_strip(self.get_row_value(row, AUTHORS))
 
