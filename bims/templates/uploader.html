@@ -143,12 +143,13 @@
                         </label>
                         <select id="id_upload_type" name="upload_type" class="form-control" required>
                             <option value="">{% trans "Select an option" %}</option>
-                            <option value="occurrence" {% if form and form.data.upload_type == 'occurrence' %}selected{% endif %}>
-                                {% trans "Upload Occurrence Data" %}
-                            </option>
-                            <option value="spatial" {% if form and form.data.upload_type == 'spatial' %}selected{% endif %}>
-                                {% trans "Upload Spatial Layer" %}
-                            </option>
+                            {% for choice_value, choice_label in form.upload_type.field.choices %}
+                                {% if choice_value %}
+                                    <option value="{{ choice_value }}" {% if form and form.data.upload_type == choice_value %}selected{% endif %}>
+                                        {{ choice_label }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
                         </select>
                         {% if form and form.upload_type and form.upload_type.errors %}
                             <p class="help-block text-danger">{{ form.upload_type.errors|join:", " }}</p>
@@ -157,7 +158,7 @@
 
                     <div id="upload-file-wrapper" class="form-group d-none {% if form and form.upload_file and form.upload_file.errors %}has-error{% endif %}">
                         <label for="id_upload_file" class="control-label">
-                            <span data-occurrence-label>{% trans "Select file (CSV/XLSX/ZIP for occurrences)" %}</span>
+                            <span data-occurrence-label>{% trans "Select file (CSV/XLSX/ZIP)" %}</span>
                             <span data-spatial-label class="d-none">{% trans "Select file (GeoPackage/GeoJSON/ZIP Shapefile) for spatial layer" %}</span> *
                         </label>
                         <input type="file"
@@ -175,15 +176,15 @@
                         {% endif %}
                     </div>
 
-                    <div id="spatial-notes-wrapper" class="form-group d-none">
+                    <div class="form-group">
                         <label for="id_notes" class="control-label">
-                            {% trans "Notes (Spatial Layer)" %}
+                            {% trans "Notes" %}
                         </label>
                         <textarea id="id_notes"
                                   name="notes"
                                   rows="3"
                                   class="form-control"
-                                  placeholder="{% trans 'Any context about the layer (extent, scale, licensing, etc.)' %}"></textarea>
+                                  placeholder="{% trans 'Any additional context or information about the upload' %}"></textarea>
                         <p class="help-block">{% trans "Optional, but helpful to admins." %}</p>
                     </div>
 

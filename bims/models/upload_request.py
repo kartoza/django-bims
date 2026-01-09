@@ -8,14 +8,44 @@ def upload_path(instance, filename):
     base, ext = os.path.splitext(filename)
     return f"uploads/{instance.created_at:%Y/%m/%d}/{uuid.uuid4().hex}{ext.lower()}"
 
-class UploadRequest(models.Model):
-    OCCURRENCE = 'occurrence'
-    SPATIAL = 'spatial'
-    TYPE_CHOICES = (
-        (OCCURRENCE, 'Occurrence Data'),
-        (SPATIAL, 'Spatial Layer'),
+
+class UploadType(models.Model):
+    """Upload type model for categorizing upload requests"""
+    name = models.CharField(
+        max_length=255,
+        blank=False,
+        null=False,
+        help_text='Display name for the upload type'
+    )
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        blank=False,
+        null=False,
+        help_text='Unique identifier code (e.g., occurrence, spatial, species-checklist)'
+    )
+    description = models.TextField(
+        help_text='Optional description',
+        null=True,
+        blank=True
+    )
+    order = models.IntegerField(
+        default=0,
+        blank=False,
+        null=False,
+        help_text='Display order in forms'
     )
 
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ('order',)
+        verbose_name = 'Upload Type'
+        verbose_name_plural = 'Upload Types'
+
+
+class UploadRequest(models.Model):
     STATUS_SUBMITTED = 'submitted'
     STATUS_TICKETED = 'ticketed'
     STATUS_ERROR = 'error'
@@ -35,7 +65,12 @@ class UploadRequest(models.Model):
     title = models.CharField(max_length=255, blank=True, default='')
     name = models.CharField(max_length=255)
     email = models.EmailField()
-    upload_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    upload_type = models.ForeignKey(
+        UploadType,
+        on_delete=models.PROTECT,
+        related_name='upload_requests',
+        help_text='Type of upload request'
+    )
     upload_file = models.FileField(upload_to=upload_path)
     notes = models.TextField(blank=True)
     source = models.CharField(max_length=255, blank=True)
@@ -50,7 +85,7 @@ class UploadRequest(models.Model):
         ordering = ('-created_at',)
 
     def __str__(self):
-        return f"{self.get_upload_type_display()} by {self.name} on {self.created_at:%Y-%m-%d}"
+        return f"{self.upload_type.name} by {self.name} on {self.created_at:%Y-%m-%d}"
 
     @property
     def file_name(self):

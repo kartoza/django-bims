@@ -3,7 +3,6 @@
         var val = $('#id_upload_type').val();
         var isSpatial = (val === 'spatial');
 
-        $('#spatial-notes-wrapper').toggleClass('d-none', !isSpatial);
         $('#upload-file-wrapper').toggleClass('d-none', val === '');
 
         $('[data-occurrence-label]').toggleClass('d-none', isSpatial);

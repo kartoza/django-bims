@@ -139,7 +139,7 @@ from bims.models import (
     TaxonGroupCitation,
     HarvestSchedule,
     OccurrenceUploadTemplate,
-    UploadRequest, CertaintyHierarchy,
+    UploadRequest, UploadType, CertaintyHierarchy,
     FilterPanelInfo
 )
 from bims.utils.fetch_gbif import merge_taxa_data
@@ -2886,6 +2886,13 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
         updated = queryset.update(enabled=False)
         self.message_user(
             request, f"Disabled {updated} schedule(s).", messages.SUCCESS)
+
+
+@admin.register(UploadType)
+class UploadTypeAdmin(admin.ModelAdmin):
+    list_display = ('order', 'name', 'code')
+    search_fields = ('name', 'code', 'description')
+    ordering = ('order',)
 
 
 @admin.register(UploadRequest)

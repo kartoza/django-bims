@@ -175,7 +175,7 @@ class UploadView(UserPassesTestMixin, FormView):
             f"**New Upload**\n\n"
             f"- **Name:** {instance.name}\n"
             f"- **Email:** {instance.email}\n"
-            f"- **Type:** {instance.get_upload_type_display()}\n"
+            f"- **Type:** {instance.upload_type.name}\n"
             f"- **Notes:** {instance.notes or '-'}\n"
             f"- **File:** [{instance.file_name}]({file_url})\n"
             f"- **Upload ID:** {instance.pk}\n"
