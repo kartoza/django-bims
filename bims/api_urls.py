@@ -87,6 +87,7 @@ from bims.api_views.site_search_result import SiteSearchResult
 from bims.api_views.site_by_coord import SiteByCoord
 from bims.api_views.spatial_scale_filter import SpatialScaleFilterList
 from bims.api_views.module_list import ModuleList
+from bims_theme.api_views.chart_colors import ChartColorsList
 from bims.api_views.location_site_dashboard import (
     LocationSitesEndemismChartData,
     OccurrencesChartData,
@@ -270,6 +271,9 @@ urlpatterns = [
     re_path(r'^module-list/$',
         ModuleList.as_view(),
         name='module-list'),
+    re_path(r'^chart-colors/$',
+        ChartColorsList.as_view(),
+        name='chart-colors'),
     re_path(r'^find-taxon/$',
         FindTaxon.as_view(),
         name='find-taxon'),

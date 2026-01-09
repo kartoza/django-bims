@@ -3,6 +3,7 @@
 from django.contrib import admin
 from django import forms
 from django.conf import settings
+from django.utils.html import format_html
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from ordered_model.admin import OrderedModelAdmin
 
@@ -13,7 +14,8 @@ from bims_theme.models import (
     Partner,
     LandingPageSection,
     LandingPageSectionContent,
-    MenuItem
+    MenuItem,
+    ChartColor
 )
 from bims_theme.models.font import CustomFont
 
@@ -146,9 +148,23 @@ class CustomFontAdmin(OrderedModelAdmin):
     search_fields = ("name", "css_url")
 
 
+class ChartColorAdmin(OrderedModelAdmin):
+    list_display = ('order', 'color_display', 'color', 'move_up_down_links')
+    list_editable = ('color',)
+
+    def color_display(self, obj):
+        return format_html(
+            '<div style="background:{}; width: 50px; height: 15px;"></div>',
+            obj.color
+        )
+
+    color_display.short_description = 'Color Preview'
+
+
 admin.site.register(CustomTheme, CustomThemeAdmin)
 admin.site.register(CarouselHeader, CarouselHeaderAdmin)
 admin.site.register(Partner, PartnerAdmin)
 admin.site.register(LandingPageSection, LandingPageSectionAdmin)
 admin.site.register(LandingPageSectionContent, LandingPageSectionContentAdmin)
 admin.site.register(MenuItem, MenuItemAdmin)
+admin.site.register(ChartColor, ChartColorAdmin)
