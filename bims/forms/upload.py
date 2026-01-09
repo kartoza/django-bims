@@ -2,7 +2,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from bims.models.upload_request import UploadRequest
+from bims.models.upload_request import UploadRequest, UploadType
 
 ALLOWED_EXTENSIONS = [
     'csv', 'xlsx', 'xls', 'zip',
@@ -16,8 +16,11 @@ class UploadForm(forms.Form):
     title = forms.CharField(max_length=255)
     name = forms.CharField(max_length=200)
     email = forms.EmailField()
-    upload_type = forms.ChoiceField(
-        choices=UploadRequest.TYPE_CHOICES)
+    upload_type = forms.ModelChoiceField(
+        queryset=UploadType.objects.all().order_by('order'),
+        empty_label=None,
+        to_field_name='code'
+    )
     upload_file = forms.FileField(
         validators=[FileExtensionValidator(
             allowed_extensions=ALLOWED_EXTENSIONS)
