@@ -8,7 +8,7 @@
                     <img class="close-icon" src="/static/img/reset.svg">
                 </div>
                 <span class="title">
-                        SEARCH
+                        QUERY DATA
                     </span>
                 <div class="close-button map-search-close pull-right">
                     <img class="close-icon" src="/static/img/close_icon.svg">
@@ -899,8 +899,8 @@
 {% if not user.is_authenticated %}no-upload{% endif %}">
         <div id="search-control" class="search-control sub-control-panel"
         data-toggle="popover"
-             data-placement="right" data-trigger="hover" data-content="Search">
-            <i class="fa fa-search" aria-hidden="true"></i>
+             data-placement="right" data-trigger="hover" data-content="Query Data">
+            <img src="<%= window.SEARCH_ICON_URL %>" alt="Search" class="search-control-icon">
         </div>
         <div id="lasso-control" class="lasso-control sub-control-panel"
         data-toggle="popover"

@@ -258,6 +258,20 @@ html, body, .map, .map-wrapper, #map-container {
     color: #d6d6d6;
 }
 
+.search-control-icon {
+    width: 30px;
+    height: 30px;
+    vertical-align: middle;
+}
+
+.search-control-icon:active {
+    filter: brightness(0) invert(1);
+}
+
+.control-panel-selected .search-control-icon {
+    filter: brightness(0) invert(1);
+}
+
 .control-panel-selected {
     background-color: var(--main-accent-color);
     padding-right: 0;
