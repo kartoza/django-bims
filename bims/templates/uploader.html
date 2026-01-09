@@ -149,6 +149,9 @@
                             <option value="spatial" {% if form and form.data.upload_type == 'spatial' %}selected{% endif %}>
                                 {% trans "Upload Spatial Layer" %}
                             </option>
+                            <option value="species-checklist" {% if form and form.data.upload_type == 'species-checklist' %}selected{% endif %}>
+                                {% trans "Upload Species Checklist or Taxonomic Resource" %}
+                            </option>
                         </select>
                         {% if form and form.upload_type and form.upload_type.errors %}
                             <p class="help-block text-danger">{{ form.upload_type.errors|join:", " }}</p>
@@ -157,7 +160,7 @@
 
                     <div id="upload-file-wrapper" class="form-group d-none {% if form and form.upload_file and form.upload_file.errors %}has-error{% endif %}">
                         <label for="id_upload_file" class="control-label">
-                            <span data-occurrence-label>{% trans "Select file (CSV/XLSX/ZIP for occurrences)" %}</span>
+                            <span data-occurrence-label>{% trans "Select file (CSV/XLSX/ZIP)" %}</span>
                             <span data-spatial-label class="d-none">{% trans "Select file (GeoPackage/GeoJSON/ZIP Shapefile) for spatial layer" %}</span> *
                         </label>
                         <input type="file"

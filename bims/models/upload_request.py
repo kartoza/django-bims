@@ -11,9 +11,12 @@ def upload_path(instance, filename):
 class UploadRequest(models.Model):
     OCCURRENCE = 'occurrence'
     SPATIAL = 'spatial'
+    SPECIES_CHECKLIST_OR_TAXONOMIC_RESOURCE = 'species-checklist'
+    
     TYPE_CHOICES = (
         (OCCURRENCE, 'Occurrence Data'),
         (SPATIAL, 'Spatial Layer'),
+        (SPECIES_CHECKLIST_OR_TAXONOMIC_RESOURCE, 'Species Checklist or Taxonomic Resource'),
     )
 
     STATUS_SUBMITTED = 'submitted'
