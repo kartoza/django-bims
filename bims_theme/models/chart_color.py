@@ -2,19 +2,15 @@
 """Chart color model definition."""
 
 from django.db import models
+from ordered_model.models import OrderedModel
 
 
-class ChartColor(models.Model):
+class ChartColor(OrderedModel):
     """Model for storing chart colors that can be used across the application."""
 
     color = models.CharField(
         max_length=7,
         help_text='Hex color code (e.g., #FF5733)'
-    )
-
-    order = models.IntegerField(
-        default=0,
-        help_text='Order of the color in the palette'
     )
 
     class Meta:
