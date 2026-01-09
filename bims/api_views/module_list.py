@@ -20,7 +20,7 @@ class ModuleList(APIView):
         for _module in taxon_groups:
             try:
                 logo = get_thumbnail(
-                    _module.logo, 'x40', crop='center'
+                    _module.logo, 'x80', crop='center'
                 ).name
             except ValueError:
                 logo = ''

@@ -2019,6 +2019,8 @@ div:hover::-webkit-scrollbar {
     left: 0;
     right: 0;
     margin: auto;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .tooltip {

@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from sorl.thumbnail import get_thumbnail
 from bims.models import (
     BiologicalCollectionRecord,
     TaxonGroup,
@@ -29,10 +30,16 @@ class LandingPageSummary(APIView):
                 ).count()
                 _summary_data[str(source_collection)] = total_records
                 total_all_records += total_records
+            try:
+                icon_url = get_thumbnail(
+                    taxon_group.logo, 'x140', crop='center'
+                ).url if taxon_group.logo else None
+            except (ValueError, AttributeError):
+                icon_url = taxon_group.logo.url if taxon_group.logo else None
             summary_data.append({
                 'name': taxon_group.name,
                 'records': _summary_data,
-                'icon': taxon_group.logo.url,
+                'icon': icon_url,
                 'total_records': total_all_records,
                 'site_visit': BiologicalCollectionRecord.objects.filter(
                     module_group=taxon_group

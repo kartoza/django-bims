@@ -72,7 +72,7 @@ class LocationSiteOverviewData(object):
             group_data = {}
             try:
                 group_data[self.GROUP_ICON] = get_thumbnail(
-                    group.logo, 'x50', crop='center'
+                    group.logo, 'x140', crop='center'
                 ).name
             except ValueError:
                 pass

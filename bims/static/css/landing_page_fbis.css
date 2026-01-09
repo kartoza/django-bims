@@ -478,7 +478,10 @@ html, body {
 
 .module-icon {
     width: 70px !important;
+    height: auto;
     position: absolute;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
 .module-name {
