@@ -487,9 +487,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             if (typeof name === 'undefined') {
                 name = id;
             }
-            var scr = url + '?request=GetLegendGraphic&format=image/png&width=40&height=40&layer=' + layer;
+            var scr = url + '?request=GetLegendGraphic&format=image/png&width=30&height=30&layer=' + layer;
             if (url.indexOf('.qgs') != -1) {
-                scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=40&height=40&layer=' + layer;
+                scr = url + '&service=WMS&request=GetLegendGraphic&format=image/png&transparent=true&width=30&height=30&layer=' + layer;
             }
             scr += '&STYLE=' + style;
             let html = '<div data-name="' + id + '" class="legend-row"';

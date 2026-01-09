@@ -11,6 +11,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
         originLegends: {},
         endemismLegends: {},
         consStatusLegends: {},
+        chartColors: null,
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
         months: {
             'january': 1,
@@ -37,6 +38,28 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             Shared.Dispatcher.on('siteDetail:show', this.show, this);
             Shared.Dispatcher.on('siteDetail:panelClosed', this.panelClosed, this);
             Shared.Dispatcher.on('siteDetail:updateCurrentSpeciesSearchResult', this.updateCurrentSpeciesSearchResult, this);
+            this.fetchChartColors();
+        },
+        fetchChartColors: function () {
+            var self = this;
+            $.ajax({
+                url: '/api/chart-colors/',
+                method: 'GET',
+                success: function (data) {
+                    self.chartColors = data;
+                },
+                error: function () {
+                    // Fallback to default colors if API fails
+                    self.chartColors = [
+                        '#8D2641', '#641f30',
+                        '#E6E188', '#D7CD47',
+                        '#9D9739', '#525351',
+                        '#618295', '#2C495A',
+                        '#39B2A3', '#17766B',
+                        '#859FAC', '#1E2F38'
+                    ];
+                }
+            });
         },
         updateCurrentSpeciesSearchResult: function (newList) {
             this.currentSpeciesSearchResult = newList;
@@ -87,13 +110,8 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             if (typeof data == 'undefined') {
                 return null;
             }
-            var backgroundColours = [
-                '#8D2641',
-                '#D7CD47',
-                '#18A090',
-                '#A2CE89',
-                '#4E6440',
-                '#525351']
+            // Use chart colors from API or fallback to chartBackgroundColours
+            var backgroundColours = this.chartColors || this.chartBackgroundColours;
             var chartConfig = {
                 type: 'pie',
                 data: {
@@ -474,8 +492,9 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                         colours.push(legends[value['name']]);
                     } else {
                         let length = Object.keys(legends).length;
-                        colours.push(self.chartBackgroundColours[length]);
-                        legends[value['name']] = self.chartBackgroundColours[length];
+                        let chartColors = self.chartColors || self.chartBackgroundColours;
+                        colours.push(chartColors[length]);
+                        legends[value['name']] = chartColors[length];
                     }
                 }
             });

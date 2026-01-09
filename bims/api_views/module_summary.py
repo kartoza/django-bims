@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
 from django.db.models import Count, F, Case, When, Value, Q, Subquery
+from sorl.thumbnail import get_thumbnail
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
@@ -70,7 +71,12 @@ class ModuleSummary(APIView):
 
         # Add additional details
         if taxon_group.logo:
-            summary['icon'] = taxon_group.logo.url
+            try:
+                summary['icon'] = get_thumbnail(
+                    taxon_group.logo, 'x140', crop='center'
+                ).url
+            except (ValueError, AttributeError):
+                summary['icon'] = taxon_group.logo.url
 
         summary['total'] = collections.count()
         summary['total_site'] = collections.distinct('site').count()

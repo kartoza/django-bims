@@ -196,7 +196,7 @@ h6 {
 }
 
 .fbis-button-small {
-    font-size: 9pt;
+    font-size: 11px;
     background-color: var(--main-accent-color);
     border-radius: 2.5px;
     font-weight: normal;

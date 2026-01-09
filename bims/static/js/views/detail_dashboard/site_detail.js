@@ -42,6 +42,7 @@ define([
         currentModule: '',
         currentFiltersUrl: '',
         chartConfigs: [],
+        chartColors: null,
         pieOptions: {
             legend: {
                 display: true
@@ -73,6 +74,28 @@ define([
             this.parent = options.parent;
             this.$el.hide();
             this.mapLocationSite = null;
+            this.fetchChartColors();
+        },
+        fetchChartColors: function () {
+            var self = this;
+            $.ajax({
+                url: '/api/chart-colors/',
+                method: 'GET',
+                success: function (data) {
+                    self.chartColors = data;
+                },
+                error: function () {
+                    // Fallback to default colors if API fails
+                    self.chartColors = [
+                        '#8D2641', '#641f30',
+                        '#E6E188', '#D7CD47',
+                        '#9D9739', '#525351',
+                        '#618295', '#2C495A',
+                        '#39B2A3', '#17766B',
+                        '#859FAC', '#1E2F38'
+                    ];
+                }
+            });
         },
         render: function () {
             var self = this;
@@ -932,7 +955,9 @@ define([
             if (dataIn.hasOwnProperty('colours')) {
                 colorMap = dataIn['colours'];
             }
-            let colours = ['#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC'];
+            let colours = this.chartColors || [
+                '#D7CD47', '#8D2641', '#18A090', '#3D647D', '#B77282', '#E6E188', '#6BC0B5', '#859FAC'
+            ];
             var myDataset = {};
             var count = dataIn['dataset_labels'].length;
             for (let i = 0; i < count; i++) {
@@ -1190,8 +1215,8 @@ define([
                 data: {
                     datasets: [{
                         data: data_in[chartName + '_chart']['values'],
-                        backgroundColor: '#D7CD47',
-                        borderColor: '#D7CD47',
+                        backgroundColor: this.chartColors[0] || '#D7CD47',
+                        borderColor: this.chartColors[0] || '#D7CD47',
                         fill: false
                     }],
                     labels: data_in[chartName + '_chart']['keys']
@@ -1423,14 +1448,15 @@ define([
 
             let chartData = data[speciesType][chartName + '_chart']
 
-            let chartColours = [
+            // Use chart colors from API or fallback to default
+            let chartColours = this.chartColors || [
                 '#8D2641', '#641f30',
                 '#E6E188', '#D7CD47',
                 '#9D9739', '#525351',
                 '#618295', '#2C495A',
                 '#39B2A3', '#17766B',
                 '#859FAC', '#1E2F38'
-                ]
+            ];
 
             if (chartData.hasOwnProperty('colours')) {
                 chartColours = chartData['colours'];
