@@ -115,6 +115,7 @@ TENANT_APPS = (
     'django_celery_results',
     'rest_framework',
     'rest_framework_gis',
+    'taggit',
     'allauth',
     'allauth.account',
     'django.contrib.auth',
