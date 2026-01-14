@@ -711,6 +711,15 @@ class ProfileInline(admin.StackedInline):
     model = BimsProfile
 
 
+class TaxonGroupExpertInline(admin.TabularInline):
+    """Inline to assign user as expert for taxon groups."""
+    model = TaxonGroup.experts.through
+    extra = 1
+    verbose_name = 'Expert for Taxon Group'
+    verbose_name_plural = 'Expert for Taxon Groups'
+    autocomplete_fields = ['taxongroup']
+
+
 class BimsProfileAdmin(admin.ModelAdmin):
     model = BimsProfile
     list_display = [
@@ -841,7 +850,7 @@ class SignedUpFilter(SimpleListFilter):
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
     change_form_template = 'admin/user_changeform.html'
-    inlines = [ProfileInline]
+    inlines = [ProfileInline, TaxonGroupExpertInline]
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -861,6 +870,7 @@ class CustomUserAdmin(ProfileAdmin):
         'is_active',
         'signed_up',
         'sass_accredited_status',
+        'expert_taxon_groups',
         'date_joined',
         'last_login'
     )
@@ -1016,6 +1026,15 @@ class CustomUserAdmin(ProfileAdmin):
         except (ValueError, TypeError, BimsProfile.DoesNotExist):
             pass
         return true_response
+
+    def expert_taxon_groups(self, obj):
+        """Return the taxon groups where this user is an expert."""
+        taxon_groups = TaxonGroup.objects.filter(experts=obj)
+        if not taxon_groups.exists():
+            return '-'
+        return ', '.join([str(tg.name) for tg in taxon_groups])
+
+    expert_taxon_groups.short_description = 'Expert for Taxon Groups'
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
