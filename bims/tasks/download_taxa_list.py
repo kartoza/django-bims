@@ -13,11 +13,15 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, SimpleDocTemplate
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
 
 from bims.scripts.species_keys import (
     ACCEPTED_TAXON, TAXON_RANK,
     COMMON_NAME, CLASS, SUBSPECIES,
-    CITES_LISTING, FADA_ID, ON_GBIF, GBIF_LINK
+    CITES_LISTING, FADA_ID, ON_GBIF, GBIF_LINK,
+    SPECIES_GROUP, SUBGENUS, SUBTRIBE, SUBFAMILY,
+    SUBORDER, SUBCLASS, SUBPHYLUM, SPECIES, GENUS,
+    TRIBE, FAMILY, ORDER, PHYLUM, KINGDOM, AUTHORS
 )
 from bims.utils.domain import get_current_domain
 
@@ -41,21 +45,13 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from bims.models.taxon_group import TaxonGroup
     from bims.models import TaxonGroupCitation
     from bims.templatetags import is_fada_site
+    from bims.fada.taxa_list import (
+        FADA_ADDITIONAL_KEYS,
+        reorder_headers_for_fada,
+    )
 
     is_fada = is_fada_site()
     sanparks_project = is_sanparks_project()
-
-    # FADA-only additional_data keys (column names)
-    FADA_ADDITIONAL_KEYS = [
-        'Taxonomic Comments',
-        'Taxonomic References',
-        'Biogeographic Comments',
-        'Biogeographic References',
-        'Environmental Comments',
-        'Environmental References',
-        'Conservation Comments',
-        'Conservation References',
-    ]
 
     def _from_additional_data(instance, k):
         data = getattr(instance, 'additional_data', None)
@@ -120,25 +116,45 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     additional_attributes_titles = set()
 
     def update_headers(_headers):
+        header_map = {
+            'class_name': CLASS,
+            'taxon_rank': TAXON_RANK,
+            'common_name': COMMON_NAME,
+            'accepted_taxon': ACCEPTED_TAXON,
+            'fada_id': FADA_ID,
+            'species_group': SPECIES_GROUP,
+            'subgenus': SUBGENUS,
+            'subtribe': SUBTRIBE,
+            'subfamily': SUBFAMILY,
+            'suborder': SUBORDER,
+            'subclass': SUBCLASS,
+            'subphylum': SUBPHYLUM,
+            'subspecies': SUBSPECIES,
+            'species': SPECIES,
+            'genus': GENUS,
+            'tribe': TRIBE,
+            'family': FAMILY,
+            'order': ORDER,
+            'phylum': PHYLUM,
+            'kingdom': KINGDOM,
+            'cites_listing': CITES_LISTING,
+            'author': AUTHORS,
+            'taxonomic_status': 'Taxonomic Status',
+        }
+
         _updated_headers = []
         for header in _headers:
             if header in FADA_ADDITIONAL_KEYS:
                 _updated_headers.append(header)
                 continue
             original = header
-            if header == 'class_name':
-                header = CLASS
-            elif header == 'taxon_rank':
-                header = TAXON_RANK
-            elif header == 'common_name':
-                header = COMMON_NAME
-            elif header == 'accepted_taxon':
-                header = ACCEPTED_TAXON
-            elif header == 'fada_id':
-                header = FADA_ID
+
+            if header.lower() in header_map:
+                header = header_map[header.lower()]
                 _updated_headers.append(header)
                 continue
-            elif header.lower().strip() in ['on_gbif', 'on gbif']:
+
+            if header.lower().strip() in ['on_gbif', 'on gbif']:
                 header = ON_GBIF
                 _updated_headers.append(header)
                 continue
@@ -159,10 +175,6 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 and original not in additional_attributes_titles
             ):
                 header = header.replace('_', ' ').capitalize()
-            if header == 'Subspecies':
-                header = SUBSPECIES
-            if header.lower().strip() == 'cites_listing':
-                header = CITES_LISTING
 
             _updated_headers.append(header)
         return _updated_headers
@@ -189,6 +201,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         for k in FADA_ADDITIONAL_KEYS:
             if k not in raw_headers:
                 raw_headers.append(k)
+        raw_headers = reorder_headers_for_fada(raw_headers)
 
     updated_headers = update_headers(raw_headers)
 
@@ -296,8 +309,6 @@ def process_download_pdf_taxa_list(
         pdfmetrics.registerFont(TTFont('Garamond-Italic', os.path.join(font_dir, 'EBGaramond-Italic.ttf')))
         pdfmetrics.registerFont(TTFont('Garamond-BoldItalic', os.path.join(font_dir, 'EBGaramond-BoldItalic.ttf')))
 
-        # Register font family so <i> and <b> tags work in Paragraphs
-        from reportlab.pdfbase.pdfmetrics import registerFontFamily
         registerFontFamily(
             'Garamond',
             normal='Garamond',
@@ -401,7 +412,7 @@ def process_download_pdf_taxa_list(
             genus_line = g_obj.canonical_name
             genus_author = ''
             if g_obj.author and g_obj.author not in genus_line:
-                genus_author += f", {g_obj.author}"
+                genus_author += f" {g_obj.author}"
 
             paragraphs.append(Paragraph(f"<i>{genus_line}</i>{genus_author}", genus_style))
             paragraphs.append(Spacer(1, 10))
@@ -409,7 +420,7 @@ def process_download_pdf_taxa_list(
             for s_obj in info['species']:
                 sp_line = f'<i>{s_obj.canonical_name}</i>'
                 if s_obj.author:
-                    sp_line += f", {s_obj.author}"
+                    sp_line += f" {s_obj.author}"
                 if s_obj.origin:
                     sp_line += f" : {s_obj.origin.upper()}"
                 if "type species" in (s_obj.additional_data or {}):
