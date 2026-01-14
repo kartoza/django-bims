@@ -3,12 +3,16 @@ import csv
 import datetime
 import json
 import logging
+import os
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from celery import shared_task
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, SimpleDocTemplate
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 from bims.scripts.species_keys import (
     ACCEPTED_TAXON, TAXON_RANK,
@@ -284,15 +288,31 @@ def process_download_pdf_taxa_list(
     def get_checklist_paragraphs(taxon_group, taxonomies):
         """
         Build a list of Paragraph objects for the textual "checklist" portion,
-        using Times-style fonts.
+        using CormorantGaramond Serif fonts.
         """
+        font_dir = os.path.join(settings.STATIC_ROOT, 'fonts', 'garamond')
+        pdfmetrics.registerFont(TTFont('Garamond', os.path.join(font_dir, 'EBGaramond-Regular.ttf')))
+        pdfmetrics.registerFont(TTFont('Garamond-Bold', os.path.join(font_dir, 'EBGaramond-Bold.ttf')))
+        pdfmetrics.registerFont(TTFont('Garamond-Italic', os.path.join(font_dir, 'EBGaramond-Italic.ttf')))
+        pdfmetrics.registerFont(TTFont('Garamond-BoldItalic', os.path.join(font_dir, 'EBGaramond-BoldItalic.ttf')))
+
+        # Register font family so <i> and <b> tags work in Paragraphs
+        from reportlab.pdfbase.pdfmetrics import registerFontFamily
+        registerFontFamily(
+            'Garamond',
+            normal='Garamond',
+            bold='Garamond-Bold',
+            italic='Garamond-Italic',
+            boldItalic='Garamond-BoldItalic'
+        )
+
         # Get the default stylesheet
         styles = getSampleStyleSheet()
 
         title_style = ParagraphStyle(
             name="TitleStyle",
             parent=styles['Normal'],
-            fontName='Times-Bold',
+            fontName='Garamond-Bold',
             fontSize=22,
             leading=22,
             alignment=TA_LEFT,
@@ -301,7 +321,7 @@ def process_download_pdf_taxa_list(
         generated_style = ParagraphStyle(
             name="GeneratedStyle",
             parent=styles['Normal'],
-            fontName='Times-Italic',
+            fontName='Garamond-Italic',
             fontSize=10,
             leading=12,
             alignment=TA_LEFT,
@@ -310,7 +330,7 @@ def process_download_pdf_taxa_list(
         genus_style = ParagraphStyle(
             name="GenusStyle",
             parent=styles['Normal'],
-            fontName='Times-Bold',
+            fontName='Garamond-Bold',
             fontSize=12,
             leading=14,
         )
@@ -318,18 +338,18 @@ def process_download_pdf_taxa_list(
         species_style = ParagraphStyle(
             name="SpeciesStyle",
             parent=styles['Normal'],
-            fontName='Times-Roman',
+            fontName='Garamond',
             fontSize=11,
             leading=14,
         )
 
         heading_style = ParagraphStyle(
             name="HeadingStyle", parent=styles['Normal'],
-            fontName='Times-Bold', fontSize=12, leading=14, alignment=TA_LEFT,
+            fontName='Garamond-Bold', fontSize=12, leading=14, alignment=TA_LEFT,
         )
         citation_style = ParagraphStyle(
             name="CitationStyle", parent=styles['Normal'],
-            fontName='Times-Roman', fontSize=10, leading=12, alignment=TA_LEFT,
+            fontName='Garamond', fontSize=10, leading=12, alignment=TA_LEFT,
         )
 
         paragraphs = []
