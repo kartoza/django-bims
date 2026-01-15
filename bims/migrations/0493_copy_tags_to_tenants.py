@@ -63,8 +63,29 @@ def copy_tags_to_tenants(apps, schema_editor):
             table_exists = cursor.fetchone()[0]
 
             if not table_exists:
-                print(f"  Skipping {schema_name}: taggit_tag table doesn't exist yet. Run migrate_schemas first.")
-                continue
+                print(f"  Creating taggit tables in {schema_name} by copying from public schema...")
+
+                # Copy taggit_tag table structure (including constraints and indexes)
+                cursor.execute(f"""
+                    CREATE TABLE {schema_name}.taggit_tag
+                    (LIKE public.taggit_tag INCLUDING ALL)
+                """)
+
+                # Copy taggit_taggeditem table structure
+                cursor.execute(f"""
+                    CREATE TABLE {schema_name}.taggit_taggeditem
+                    (LIKE public.taggit_taggeditem INCLUDING ALL)
+                """)
+
+                # Recreate foreign key constraint to point to tenant schema
+                cursor.execute(f"""
+                    ALTER TABLE {schema_name}.taggit_taggeditem
+                    ADD CONSTRAINT taggit_taggeditem_tag_id_fkey
+                    FOREIGN KEY (tag_id) REFERENCES {schema_name}.taggit_tag(id)
+                    ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+                """)
+
+                print(f"  ✓ Created taggit tables in {schema_name}")
 
             # Check if tags have already been migrated to this tenant
             cursor.execute(f"""
@@ -128,10 +149,10 @@ def copy_tags_to_tenants(apps, schema_editor):
                 if cursor.fetchone():
                     items_skipped += 1
                 else:
-                    # Check if the content_type and object still exist in this tenant
+                    # Check if the content_type exists in public schema
                     cursor.execute(f"""
                         SELECT EXISTS (
-                            SELECT 1 FROM {schema_name}.django_content_type
+                            SELECT 1 FROM public.django_content_type
                             WHERE id = %s
                         )
                     """, [content_type_id])
