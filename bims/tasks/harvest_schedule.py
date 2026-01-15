@@ -22,9 +22,17 @@ def pg_advisory_lock(key1: int, key2: int):
                 cur.execute("SELECT pg_advisory_unlock(%s, %s)", [key1, key2])
 
 
+def _to_signed_int32(val: int) -> int:
+    """Convert unsigned 32-bit int to signed 32-bit int for PostgreSQL."""
+    val = val & 0xFFFFFFFF
+    if val >= 0x80000000:
+        val -= 0x100000000
+    return val
+
+
 def _tenant_lock_keys(schema_name: str, module_group_id: int) -> tuple[int, int]:
-    tkey = zlib.crc32(schema_name.encode("utf-8")) & 0xFFFFFFFF
-    return tkey, int(module_group_id) & 0xFFFFFFFF
+    tkey = zlib.crc32(schema_name.encode("utf-8"))
+    return _to_signed_int32(tkey), _to_signed_int32(module_group_id)
 
 
 @shared_task(
@@ -77,9 +85,12 @@ def run_scheduled_gbif_harvest(self, schema_name: str, schedule_id: int):
                 since = sched.last_harvest_until or (now - dt.timedelta(days=7))
                 until = now
 
+                parent_species = sched.parent_species or sched.module_group.gbif_parent_species
+
                 session = HarvestSession.objects.create(
                     harvester=None,
                     module_group=sched.module_group,
+                    parent_species=parent_species,
                     start_time=now,
                     category="gbif",
                     finished=False,

@@ -2813,6 +2813,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     list_display = (
         "module_group",
+        "parent_species_display",
         "harvest_type_display",
         "enabled",
         "period",
@@ -2823,13 +2824,17 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
     )
     list_filter = ("enabled", "is_fetching_species", "period", "timezone")
     search_fields = ("module_group__name",)
-    autocomplete_fields = ("module_group",)
+    autocomplete_fields = ("module_group", "parent_species")
     readonly_fields = ("last_harvest_until", "updated_at", "schedule_preview")
     actions = ["action_run_now", "action_enable", "action_disable"]
 
     fieldsets = (
         ("Target", {
-            "fields": ("module_group", "enabled"),
+            "fields": ("module_group", "parent_species", "enabled"),
+            "description": (
+                "Select a module group and optionally override the parent species. "
+                "If parent species is not set, the module group's default GBIF parent will be used."
+            ),
         }),
         ("When to run", {
             "fields": (
@@ -2859,6 +2864,15 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
         return "Species" if obj.is_fetching_species else "Occurrences"
 
     harvest_type_display.short_description = "Type"
+
+    def parent_species_display(self, obj: HarvestSchedule):
+        if obj.parent_species:
+            return obj.parent_species.canonical_name
+        if obj.module_group and obj.module_group.gbif_parent_species:
+            return f"({obj.module_group.gbif_parent_species.canonical_name})"
+        return "—"
+
+    parent_species_display.short_description = "Parent Species"
 
     def schedule_human(self, obj: HarvestSchedule):
         if obj.period == HarvestPeriod.CUSTOM and obj.cron_expression:

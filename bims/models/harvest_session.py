@@ -37,6 +37,15 @@ class HarvestSession(models.Model):
         on_delete=models.CASCADE
     )
 
+    parent_species = models.ForeignKey(
+        'bims.Taxonomy',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='harvest_sessions',
+        help_text='GBIF parent species used for this harvest session'
+    )
+
     start_time = models.DateTimeField(
         default=datetime.now
     )
