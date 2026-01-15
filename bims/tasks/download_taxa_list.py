@@ -421,8 +421,6 @@ def process_download_pdf_taxa_list(
                 sp_line = f'<i>{s_obj.canonical_name}</i>'
                 if s_obj.author:
                     sp_line += f" {s_obj.author}"
-                if s_obj.origin:
-                    sp_line += f" : {s_obj.origin.upper()}"
                 if "type species" in (s_obj.additional_data or {}):
                     sp_line += " (Type species for genus)"
 
