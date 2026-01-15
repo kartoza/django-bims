@@ -66,17 +66,29 @@ def copy_tags_to_tenants(apps, schema_editor):
                 print(f"  Skipping {schema_name}: taggit_tag table doesn't exist yet. Run migrate_schemas first.")
                 continue
 
+            # Check if tags have already been migrated to this tenant
+            cursor.execute(f"""
+                SELECT COUNT(*) FROM {schema_name}.taggit_tag
+            """)
+            existing_tag_count = cursor.fetchone()[0]
+
+            if existing_tag_count > 0 and existing_tag_count >= len(public_tags):
+                print(f"  Skipping {schema_name}: Tags already migrated ({existing_tag_count} tags found)")
+                continue
+            elif existing_tag_count > 0:
+                print(f"  Found {existing_tag_count} existing tags in {schema_name}, will merge with public tags")
+
             # Copy tags
             tag_id_map = {}  # Maps public tag IDs to tenant tag IDs
             tags_copied = 0
             tags_skipped = 0
 
             for tag_id, name, slug in public_tags:
-                # Check if tag already exists in tenant schema
+                # Check if tag already exists in tenant schema (by slug or name)
                 cursor.execute(f"""
                     SELECT id FROM {schema_name}.taggit_tag
-                    WHERE slug = %s
-                """, [slug])
+                    WHERE slug = %s OR name = %s
+                """, [slug, name])
                 existing = cursor.fetchone()
 
                 if existing:
@@ -152,7 +164,7 @@ def reverse_migration(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0491_uploadtype_model'),
+        ('bims', '0492_harvestschedule_harvestsession_parent_species'),
         ('tenants', '0001_initial'),
         ('taggit', '0006_rename_taggeditem_content_type_object_id_taggit_tagg_content_8fc721_idx'),
     ]

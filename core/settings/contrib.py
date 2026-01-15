@@ -62,7 +62,6 @@ SHARED_APPS = (
 
     # Utility
     'dj_pagination',
-    'taggit',
     'mptt',
 
     'corsheaders',
