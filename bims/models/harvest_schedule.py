@@ -19,6 +19,15 @@ class HarvestSchedule(models.Model):
         on_delete=models.CASCADE,
         related_name="harvest_schedules"
     )
+    parent_species = models.ForeignKey(
+        'bims.Taxonomy',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='harvest_schedules',
+        help_text='Override GBIF parent species for this schedule. '
+                  'If not set, uses the module group default.'
+    )
     enabled = models.BooleanField(default=False)
 
     period = models.CharField(
@@ -54,7 +63,10 @@ class HarvestSchedule(models.Model):
 
     def __str__(self):
         harvest_type = "species" if self.is_fetching_species else "occurrences"
-        return f"Schedule[{self.module_group_id}] {harvest_type} - {self.period}"
+        parent_info = ""
+        if self.parent_species:
+            parent_info = f" ({self.parent_species.canonical_name})"
+        return f"Schedule[{self.module_group_id}] {harvest_type}{parent_info} - {self.period}"
 
 
 def _mins_hrs(t):

@@ -27,12 +27,16 @@ def harvest_gbif_species(session_id, schema_name: str):
             harvest_session.status = 'Processing'
             harvest_session.save()
 
-        with open(harvest_session.log_file.path, 'a') as log_file:
-            log_file.write('Fetching species in area {}\n'.format(
-                harvest_session.boundary.name
-            ))
+        parent_species = (
+            harvest_session.parent_species or
+            harvest_session.module_group.gbif_parent_species
+        )
 
-        parent_species = harvest_session.module_group.gbif_parent_species
+        with open(harvest_session.log_file.path, 'a') as log_file:
+            log_file.write('Fetching species in area {} using parent: {}\n'.format(
+                harvest_session.boundary.name,
+                parent_species.canonical_name if parent_species else 'None'
+            ))
 
         find_species_by_area(
             harvest_session.boundary_id,

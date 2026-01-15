@@ -1,0 +1,83 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Django with debugpy",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "exec",
+        "-d",
+        "bims_dev_django",
+        "python",
+        "-m",
+        "debugpy",
+        "--listen",
+        "0.0.0.0:5678",
+        "--wait-for-client",
+        "manage.py",
+        "runserver",
+        "0.0.0.0:8080",
+        "--noreload"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Stop Django debugpy",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "exec",
+        "bims_dev_django",
+        "pkill",
+        "-f",
+        "debugpy"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Restart Celery Worker (from host)",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "restart",
+        "bims_dev_worker"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Restart Celery Worker (from container)",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "exec",
+        "-it",
+        "bims_dev_worker",
+        "bash",
+        "-c",
+        "celery -A bims.celery:app control shutdown && sleep 2"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    }
+  ]
+}

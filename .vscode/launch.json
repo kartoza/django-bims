@@ -1,0 +1,73 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Django: Runserver (inside container)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "runserver",
+        "0.0.0.0:8080",
+        "--noreload"
+      ],
+      "django": true,
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "core.settings.dev_docker",
+        "DATABASE_HOST": "db",
+        "DATABASE_NAME": "${env:POSTGRES_DBNAME}",
+        "DATABASE_USERNAME": "${env:POSTGRES_USER}",
+        "DATABASE_PASSWORD": "${env:POSTGRES_PASS}",
+        "PYTHONPATH": "/home/web/django_project/"
+      }
+    },
+    {
+      "name": "Django: Runserver (with auto-reload)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "runserver",
+        "0.0.0.0:8080"
+      ],
+      "django": true,
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "core.settings.dev_docker",
+        "DATABASE_HOST": "db",
+        "DATABASE_NAME": "${env:POSTGRES_DBNAME}",
+        "DATABASE_USERNAME": "${env:POSTGRES_USER}",
+        "DATABASE_PASSWORD": "${env:POSTGRES_PASS}",
+        "PYTHONPATH": "/home/web/django_project/"
+      }
+    },
+    {
+      "name": "Django: Shell",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "shell"
+      ],
+      "django": true,
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Django: Test",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "test",
+        "--keepdb"
+      ],
+      "django": true,
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    }
+  ]
+}

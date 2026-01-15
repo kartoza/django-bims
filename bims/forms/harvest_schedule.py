@@ -14,6 +14,23 @@ class HarvestScheduleAdminForm(forms.ModelForm):
         dow = (cleaned.get("day_of_week") or "").strip()
         dom = cleaned.get("day_of_month")
         cron = (cleaned.get("cron_expression") or "").strip()
+        is_fetching_species = cleaned.get("is_fetching_species")
+        parent_species = cleaned.get("parent_species")
+        module_group = cleaned.get("module_group")
+
+        # Validate parent species is available when fetching species
+        if is_fetching_species:
+            has_schedule_parent = parent_species is not None
+            has_module_parent = (
+                module_group is not None and
+                module_group.gbif_parent_species is not None
+            )
+            if not has_schedule_parent and not has_module_parent:
+                self.add_error(
+                    "parent_species",
+                    "A GBIF parent species is required for species harvests. "
+                    "Either set it here or add one to the module group."
+                )
 
         if period in {HarvestPeriod.DAILY, HarvestPeriod.WEEKLY, HarvestPeriod.MONTHLY} and not run_at:
             self.add_error("run_at", "run_at is required for daily/weekly/monthly schedules.")

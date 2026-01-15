@@ -42,8 +42,6 @@ x-common-django:
     - PYTHONPATH=/home/web/django_project/
   restart: unless-stopped
   user: root
-  extra_hosts:
-    - 'localhost: 192.168.1.197'
   volumes:
     - ../../django-bims:/home/web/django_project
     - ./static:/home/web/static:rw
@@ -160,16 +158,10 @@ services:
       - db
       - rabbitmq
       - worker
-      - smtp
     ports:
       # for django test server
       - "63302:8080"
       # for ssh
       - "63303:22"
-
-  smtp:
-    image: catatnight/postfix
-    container_name: postfix
-    environment:
-      - maildomain=kartoza.com
-      - smtp_user=noreply:docker
+      # for debugpy
+      - "5678:5678"
