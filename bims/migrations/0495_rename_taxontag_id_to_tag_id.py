@@ -58,14 +58,80 @@ def rename_column_in_all_schemas(apps, schema_editor):
             has_tag_id = cursor.fetchone()[0]
 
             if has_taxontag_id and not has_tag_id:
-                print(f"  Renaming column in {schema_name}...")
+                print(f"  Updating {schema_name}...")
+
+                # Drop old foreign key constraint to bims_taxontag if it exists
+                cursor.execute(f"""
+                    SELECT constraint_name
+                    FROM information_schema.table_constraints
+                    WHERE table_schema = '{schema_name}'
+                    AND table_name = 'bims_taggroup_tags'
+                    AND constraint_type = 'FOREIGN KEY'
+                    AND constraint_name LIKE '%taxontag%'
+                """)
+                old_constraint = cursor.fetchone()
+                if old_constraint:
+                    constraint_name = old_constraint[0]
+                    print(f"    Dropping old FK constraint: {constraint_name}")
+                    cursor.execute(f"""
+                        ALTER TABLE {schema_name}.bims_taggroup_tags
+                        DROP CONSTRAINT {constraint_name}
+                    """)
+
+                # Rename column
                 cursor.execute(f"""
                     ALTER TABLE {schema_name}.bims_taggroup_tags
                     RENAME COLUMN taxontag_id TO tag_id
                 """)
-                print(f"  ✓ Renamed taxontag_id to tag_id in {schema_name}")
+
+                # Add new foreign key constraint to taggit_tag
+                print(f"    Adding new FK constraint to taggit_tag")
+                cursor.execute(f"""
+                    ALTER TABLE {schema_name}.bims_taggroup_tags
+                    ADD CONSTRAINT bims_taggroup_tags_tag_id_fkey
+                    FOREIGN KEY (tag_id) REFERENCES {schema_name}.taggit_tag(id)
+                    ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+                """)
+
+                print(f"  ✓ Updated {schema_name}")
             elif has_tag_id:
                 print(f"  Skipping {schema_name}: tag_id column already exists")
+                # Check if the correct FK constraint exists
+                cursor.execute(f"""
+                    SELECT constraint_name
+                    FROM information_schema.table_constraints
+                    WHERE table_schema = '{schema_name}'
+                    AND table_name = 'bims_taggroup_tags'
+                    AND constraint_type = 'FOREIGN KEY'
+                    AND constraint_name LIKE '%tag_id%'
+                """)
+                fk_exists = cursor.fetchone()
+
+                if not fk_exists:
+                    # Need to add the FK constraint even though column exists
+                    print(f"    Adding missing FK constraint to taggit_tag")
+                    # First drop any old constraint
+                    cursor.execute(f"""
+                        SELECT constraint_name
+                        FROM information_schema.table_constraints
+                        WHERE table_schema = '{schema_name}'
+                        AND table_name = 'bims_taggroup_tags'
+                        AND constraint_type = 'FOREIGN KEY'
+                        AND constraint_name LIKE '%taxontag%'
+                    """)
+                    old_constraint = cursor.fetchone()
+                    if old_constraint:
+                        cursor.execute(f"""
+                            ALTER TABLE {schema_name}.bims_taggroup_tags
+                            DROP CONSTRAINT {old_constraint[0]}
+                        """)
+
+                    cursor.execute(f"""
+                        ALTER TABLE {schema_name}.bims_taggroup_tags
+                        ADD CONSTRAINT bims_taggroup_tags_tag_id_fkey
+                        FOREIGN KEY (tag_id) REFERENCES {schema_name}.taggit_tag(id)
+                        ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+                    """)
             else:
                 print(f"  Skipping {schema_name}: taxontag_id column doesn't exist")
 
