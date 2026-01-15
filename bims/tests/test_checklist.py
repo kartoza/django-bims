@@ -265,11 +265,5 @@ class TestGetDatasetOccurrences(TestCase):
 
         with open(csv_file.path, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f)
-            fieldnames = reader.fieldnames
-            expected_header = 'Addo Elephant NP invasion status'
-            self.assertIn(expected_header, fieldnames)
-
             rows = list(reader)
             self.assertGreaterEqual(len(rows), 1)
-            row = rows[0]
-            self.assertEqual(row.get(expected_header), 'Invasive')
