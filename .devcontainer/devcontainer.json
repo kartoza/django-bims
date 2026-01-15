@@ -1,0 +1,63 @@
+{
+  "name": "Django BIMS Dev",
+  "dockerComposeFile": [
+    "../deployment/docker-compose.dev.yml"
+  ],
+  "service": "dev",
+  "workspaceFolder": "/home/web/django_project",
+  "shutdownAction": "none",
+
+  // Configure VSCode settings inside the container
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.provider": "none",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.analysis.extraPaths": [
+          "/home/web/django_project"
+        ],
+        "files.watcherExclude": {
+          "**/node_modules/**": true,
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/static/**": true,
+          "**/media/**": true
+        }
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "batisteo.vscode-django",
+        "wholroyd.jinja"
+      ]
+    }
+  },
+
+  // Run commands after the container is created
+  "postCreateCommand": "pip install -q debugpy",
+
+  // Keep container running
+  "overrideCommand": false,
+  "runServices": ["db", "rabbitmq", "worker", "dev"],
+
+  // Forward ports
+  "forwardPorts": [8080, 5678],
+  "portsAttributes": {
+    "8080": {
+      "label": "Django Server",
+      "onAutoForward": "notify"
+    },
+    "5678": {
+      "label": "Debugger",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Set remote user
+  "remoteUser": "root"
+}

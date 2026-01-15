@@ -711,6 +711,15 @@ class ProfileInline(admin.StackedInline):
     model = BimsProfile
 
 
+class TaxonGroupExpertInline(admin.TabularInline):
+    """Inline to assign user as expert for taxon groups."""
+    model = TaxonGroup.experts.through
+    extra = 1
+    verbose_name = 'Expert for Taxon Group'
+    verbose_name_plural = 'Expert for Taxon Groups'
+    autocomplete_fields = ['taxongroup']
+
+
 class BimsProfileAdmin(admin.ModelAdmin):
     model = BimsProfile
     list_display = [
@@ -841,7 +850,7 @@ class SignedUpFilter(SimpleListFilter):
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
     change_form_template = 'admin/user_changeform.html'
-    inlines = [ProfileInline]
+    inlines = [ProfileInline, TaxonGroupExpertInline]
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -861,6 +870,7 @@ class CustomUserAdmin(ProfileAdmin):
         'is_active',
         'signed_up',
         'sass_accredited_status',
+        'expert_taxon_groups',
         'date_joined',
         'last_login'
     )
@@ -1016,6 +1026,15 @@ class CustomUserAdmin(ProfileAdmin):
         except (ValueError, TypeError, BimsProfile.DoesNotExist):
             pass
         return true_response
+
+    def expert_taxon_groups(self, obj):
+        """Return the taxon groups where this user is an expert."""
+        taxon_groups = TaxonGroup.objects.filter(experts=obj)
+        if not taxon_groups.exists():
+            return '-'
+        return ', '.join([str(tg.name) for tg in taxon_groups])
+
+    expert_taxon_groups.short_description = 'Expert for Taxon Groups'
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
@@ -2794,6 +2813,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     list_display = (
         "module_group",
+        "parent_species_display",
         "harvest_type_display",
         "enabled",
         "period",
@@ -2804,13 +2824,17 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
     )
     list_filter = ("enabled", "is_fetching_species", "period", "timezone")
     search_fields = ("module_group__name",)
-    autocomplete_fields = ("module_group",)
+    autocomplete_fields = ("module_group", "parent_species")
     readonly_fields = ("last_harvest_until", "updated_at", "schedule_preview")
     actions = ["action_run_now", "action_enable", "action_disable"]
 
     fieldsets = (
         ("Target", {
-            "fields": ("module_group", "enabled"),
+            "fields": ("module_group", "parent_species", "enabled"),
+            "description": (
+                "Select a module group and optionally override the parent species. "
+                "If parent species is not set, the module group's default GBIF parent will be used."
+            ),
         }),
         ("When to run", {
             "fields": (
@@ -2840,6 +2864,15 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
         return "Species" if obj.is_fetching_species else "Occurrences"
 
     harvest_type_display.short_description = "Type"
+
+    def parent_species_display(self, obj: HarvestSchedule):
+        if obj.parent_species:
+            return obj.parent_species.canonical_name
+        if obj.module_group and obj.module_group.gbif_parent_species:
+            return f"({obj.module_group.gbif_parent_species.canonical_name})"
+        return "—"
+
+    parent_species_display.short_description = "Parent Species"
 
     def schedule_human(self, obj: HarvestSchedule):
         if obj.period == HarvestPeriod.CUSTOM and obj.cron_expression:
