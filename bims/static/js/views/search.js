@@ -10,9 +10,10 @@ define([
     'views/filter_panel/reference_category',
     'views/filter_panel/spatial_filter',
     'views/filter_panel/source_collection',
-    'views/filter_panel/taxon_tags'
+    'views/filter_panel/taxon_tags',
+    'views/filter_panel/gbif_dataset'
 ], function (Backbone, _, Shared, NoUiSlider, SearchResultCollection, SearchPanelView, $, Chosen,
-             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView) {
+             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView, GbifDatasetView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -26,13 +27,15 @@ define([
             'invasions': false,
             'collector': false,
             'study-reference': false,
-            'referenceCategory': false
+            'referenceCategory': false,
+            'gbifDataset': false
         },
         initialSelectedStudyReference: [],
         initialSelectedCollectors: [],
         initialSelectedDST: [],
         initialSelectedReferenceCategory: [],
         initialSelectedSourceCollection: [],
+        initialSelectedGbifDatasets: [],
         initialSelectedEndemic: [],
         initialSelectedInvasions: [],
         initialSelectedModules: [],
@@ -171,6 +174,11 @@ define([
 
             this.sourceCollectionView = new SourceCollectionView({parent: this});
             this.$el.find('.source-collection-wrapper').append(this.sourceCollectionView.render().$el);
+
+            this.gbifDatasetView = new GbifDatasetView({parent: this});
+            this.gbifDatasetView.render();
+            // Pass reference to source collection view so it can append after rendering
+            this.sourceCollectionView.gbifDatasetView = this.gbifDatasetView;
 
             this.taxonTagsView = new TaxonTagsView({parent: this});
             this.$el.find('.taxon-tags-wrapper').append(this.taxonTagsView.render().$el);
@@ -439,6 +447,25 @@ define([
             }
             filterParameters['sourceCollection'] = sourceCollection;
 
+            // GBIF Dataset filter
+            var gbifDatasets = self.gbifDatasetView.getSelected();
+            if (gbifDatasets.length > 0) {
+                gbifDatasets = JSON.stringify(gbifDatasets);
+                self.gbifDatasetView.highlight(true);
+
+                // Auto-select GBIF if datasets are selected
+                var sourceCollectionArray = sourceCollection ? JSON.parse(sourceCollection) : [];
+                if (sourceCollectionArray.indexOf('gbif') === -1) {
+                    sourceCollectionArray.push('gbif');
+                    sourceCollection = JSON.stringify(sourceCollectionArray);
+                    filterParameters['sourceCollection'] = sourceCollection;
+                }
+            } else {
+                gbifDatasets = '';
+                self.gbifDatasetView.highlight(false);
+            }
+            filterParameters['datasetKeys'] = gbifDatasets;
+
             // Collector filter
             var collectorValue = $("#filter-collectors").val();
             self.highlightPanel('.filter-collectors-row', collectorValue.length > 0);
@@ -632,7 +659,7 @@ define([
                 'search', 'collector', 'validated', 'ecosystemType', 'category',
                 'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory', 'reference',
                 'endemic', 'modules', 'conservationStatus', 'spatialFilter',
-                'ecologicalCategory', 'sourceCollection', 'abioticData', 'polygon',
+                'ecologicalCategory', 'sourceCollection', 'datasetKeys', 'abioticData', 'polygon',
                 'boundary', 'dst', 'thermalModule'
             ];
             const hasAnyTruthyValue = keysToCheck.some(key => filterParameters[key]);
@@ -1027,6 +1054,18 @@ define([
                 self.initialSelectedSourceCollection = JSON.parse(allFilters['sourceCollection']);
                 if (!firstCall) {
                     self.sourceCollectionView.updateChecked();
+                }
+            }
+
+            // GBIF Datasets
+            if (allFilters.hasOwnProperty('datasetKeys')) {
+                self.initialSelectedGbifDatasets = JSON.parse(allFilters['datasetKeys']);
+                if (!firstCall) {
+                    // Show dataset filter if GBIF is selected
+                    if (self.initialSelectedSourceCollection.indexOf('gbif') !== -1) {
+                        self.gbifDatasetView.show();
+                    }
+                    self.gbifDatasetView.setInitialSelection();
                 }
             }
 

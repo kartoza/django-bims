@@ -367,6 +367,30 @@ class CollectionSearch(object):
         return [t.strip() for t in raw_tags.split(',') if t.strip()]
 
     @property
+    def dataset_keys(self):
+        """
+        Returns a list of dataset UUIDs to filter GBIF records by.
+        Converts dataset IDs from the URL to UUIDs.
+        """
+        from bims.models.dataset import Dataset
+
+        dataset_ids = self.parse_request_json('datasetKeys')
+        if not dataset_ids:
+            return []
+
+        # Convert dataset IDs to UUIDs
+        try:
+            dataset_ids = [int(id) for id in dataset_ids]
+            dataset_uuids = list(
+                Dataset.objects.filter(
+                    id__in=dataset_ids
+                ).values_list('uuid', flat=True)
+            )
+            return dataset_uuids
+        except (ValueError, TypeError):
+            return []
+
+    @property
     def polygon(self):
         try:
             layer_param = self.parse_request_json('polygon')
@@ -669,6 +693,13 @@ class CollectionSearch(object):
                     source_collection_filters.append(source_collection)
         if source_collection_filters:
             filters['source_collection__in'] = source_collection_filters
+        if self.dataset_keys:
+            filters['dataset_key__in'] = self.dataset_keys
+            # Ensure GBIF is included when datasets are specified
+            if 'source_collection__in' not in filters:
+                filters['source_collection__in'] = ['gbif']
+            elif 'gbif' not in filters['source_collection__in']:
+                filters['source_collection__in'].append('gbif')
         if self.endemic:
             endemism_list = []
             for endemic in self.endemic:

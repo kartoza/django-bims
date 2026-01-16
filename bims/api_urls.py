@@ -40,6 +40,7 @@ from bims.api_views.taxon import (
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
     HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup
 )
+from bims.api_views.dataset import DatasetAutocompleteAPIView
 from bims.api_views.cluster import ClusterList
 from bims.api_views.collection import (
     CollectionDownloader
@@ -380,6 +381,9 @@ urlpatterns = [
     re_path(r'^taxon-tag-autocomplete/$',
             TaxonTagAutocompleteAPIView.as_view(),
             name='taxon-tag-autocomplete'),
+    re_path(r'^dataset-autocomplete/$',
+            DatasetAutocompleteAPIView.as_view(),
+            name='dataset-autocomplete'),
     path('taxonomy/<int:pk>/add-tag/',
          AddTagAPIView.as_view(),
          name='add-tag-taxon'),

@@ -12,7 +12,7 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', '
             "&reference=<%= reference %>&endemic=<%= endemic %>&invasions=<%= invasions %>&conservationStatus=<%= conservationStatus %>" +
             "&modules=<%= modules %>&validated=<%= validated %>&sourceCollection=<%= sourceCollection %>" +
             "&module=<%= module %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
-            "&tags=<%= tags %>" +
+            "&tags=<%= tags %>&datasetKeys=<%= datasetKeys %>" +
             "&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>&polygon=<%= polygon %>&dst=<%= dst %>&ecosystemType=<%= ecosystemType %>",
         LocationSiteDetailXHRRequest: null,
         WetlandDashboardXHRRequest: null,
