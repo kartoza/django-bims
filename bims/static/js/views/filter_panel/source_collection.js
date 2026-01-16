@@ -6,7 +6,8 @@ define([
     return Backbone.View.extend({
         template: _.template($('#source-collection-template').html()),
         events: {
-            'click .data-source': 'toggleDataSourceDescription'
+            'click .data-source': 'toggleDataSourceDescription',
+            'change #source-collection-list-gbif': 'handleGbifCheckboxChange'
         },
         listWrapper: '',
         dataSourceCaptions: {
@@ -27,11 +28,17 @@ define([
         initialize: function (options) {
             _.bindAll(this, 'render');
             this.parent = options.parent;
+            this.gbifDatasetView = null;
             this.collection = new SourceCollection();
             var self = this;
             this.fetchXhr = this.collection.fetch({
                 success: function () {
                     self.renderList();
+                    // Append dataset view after list is rendered
+                    if (self.gbifDatasetView) {
+                        self.$el.find('.gbif-dataset-container').append(self.gbifDatasetView.$el);
+                        self.gbifDatasetView.renderIntoDOM();
+                    }
                     self.parent.filtersReady['sourceCollection'] = true;
                 }
                 , error: function (xhr, text_status, error_thrown) {
@@ -74,6 +81,11 @@ define([
                     dataSourceCaption +
                     '</div>');
 
+                // Add container for dataset filter after GBIF checkbox
+                if (label === 'gbif') {
+                    this.listWrapper.append('<div class="gbif-dataset-container"></div>');
+                }
+
             }
         },
         toggleDataSourceDescription: function (e) {
@@ -84,6 +96,10 @@ define([
             let self = this;
             $.each(this.parent.initialSelectedSourceCollection, function (index, sourceCollection) {
                 self.listWrapper.find(':input[value="'+sourceCollection+'"]').prop('checked', true);
+                // Show dataset filter if GBIF is checked (for default filters)
+                if (sourceCollection === 'gbif' && self.gbifDatasetView) {
+                    self.gbifDatasetView.show();
+                }
             });
         },
         getSelected: function () {
@@ -98,6 +114,17 @@ define([
                 this.$el.find('.subtitle').addClass('filter-panel-selected');
             } else {
                 this.$el.find('.subtitle').removeClass('filter-panel-selected');
+            }
+        },
+        handleGbifCheckboxChange: function(e) {
+            if (!this.gbifDatasetView) return;
+
+            const isChecked = $(e.target).is(':checked');
+            if (isChecked) {
+                this.gbifDatasetView.show();
+            } else {
+                this.gbifDatasetView.hide();
+                this.gbifDatasetView.clearSelection();
             }
         }
     })
