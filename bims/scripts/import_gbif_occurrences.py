@@ -939,5 +939,9 @@ def import_gbif_occurrences(
     except Exception as e:
         log_to_file_or_logger(log_file_path, message=str(e))
         return str(e)
+    finally:
+        # Clear the dataset keys cache after GBIF import
+        from bims.api_views.dataset import clear_dataset_cache
+        clear_dataset_cache()
 
     return message

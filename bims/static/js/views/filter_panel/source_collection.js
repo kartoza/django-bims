@@ -96,6 +96,10 @@ define([
             let self = this;
             $.each(this.parent.initialSelectedSourceCollection, function (index, sourceCollection) {
                 self.listWrapper.find(':input[value="'+sourceCollection+'"]').prop('checked', true);
+                // Show dataset filter if GBIF is checked (for default filters)
+                if (sourceCollection === 'gbif' && self.gbifDatasetView) {
+                    self.gbifDatasetView.show();
+                }
             });
         },
         getSelected: function () {

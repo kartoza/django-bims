@@ -1061,10 +1061,6 @@ define([
             if (allFilters.hasOwnProperty('datasetKeys')) {
                 self.initialSelectedGbifDatasets = JSON.parse(allFilters['datasetKeys']);
                 if (!firstCall) {
-                    // Show dataset filter if GBIF is selected
-                    if (self.initialSelectedSourceCollection.indexOf('gbif') !== -1) {
-                        self.gbifDatasetView.show();
-                    }
                     self.gbifDatasetView.setInitialSelection();
                 }
             }

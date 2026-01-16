@@ -1,8 +1,22 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.core.cache import cache
 from bims.models.dataset import Dataset
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.serializers.dataset_serializer import DatasetSerializer
+
+
+# Cache key for GBIF dataset keys
+GBIF_DATASET_KEYS_CACHE_KEY = 'gbif_dataset_keys'
+GBIF_DATASET_KEYS_CACHE_TIMEOUT = 86400  # 24 hours
+
+
+def clear_dataset_cache():
+    """
+    Clear the GBIF dataset keys cache.
+    Call this function after importing new GBIF data.
+    """
+    cache.delete(GBIF_DATASET_KEYS_CACHE_KEY)
 
 
 class DatasetAutocompleteAPIView(APIView):
@@ -18,14 +32,19 @@ class DatasetAutocompleteAPIView(APIView):
         query = request.query_params.get('q', '')
         ids_param = request.query_params.get('ids', '')
 
-        # TODO: Cache this daily as the underlying data changes infrequently
-        dataset_keys = BiologicalCollectionRecord.objects.filter(
-            source_collection='gbif'
-        ).exclude(
-            dataset_key__isnull=True
-        ).values_list('dataset_key', flat=True).distinct()
+        dataset_keys = cache.get(GBIF_DATASET_KEYS_CACHE_KEY)
 
-        dataset_keys = list(filter(None, set(dataset_keys)))
+        if dataset_keys is None:
+            dataset_keys = BiologicalCollectionRecord.objects.filter(
+                source_collection='gbif'
+            ).exclude(
+                dataset_key__isnull=True
+            ).values_list('dataset_key', flat=True).distinct()
+
+            dataset_keys = list(filter(None, set(dataset_keys)))
+            # Cache for 24 hours
+            cache.set(GBIF_DATASET_KEYS_CACHE_KEY, dataset_keys, GBIF_DATASET_KEYS_CACHE_TIMEOUT)
+
         # Base queryset: only datasets with GBIF records
         base_qs = Dataset.objects.filter(
             uuid__in=dataset_keys
