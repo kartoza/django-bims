@@ -784,10 +784,11 @@ class TaxaProcessor(object):
                     gbif_genus = _safe_strip(gbif_rec.get("genus")) or ""
 
                     # Handle genus mismatch more gracefully if the specific epithet matches
+                    # For FADA sites, keep csv_genus even if there's a mismatch
                     genus_mismatch = (
                         rank.lower() != 'genus' and csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower()
                     )
-                    if genus_mismatch:
+                    if genus_mismatch and not is_fada_site():
                         csv_ep = self._specific_epithet(expected_name) or self._specific_epithet(taxon_name) or _canon(_safe_strip(self.get_row_value(row, SPECIES)))
                         gbif_ep = _canon(_safe_strip(gbif_rec.get("specificEpithet"))) or self._specific_epithet(gbif_canonical)
                         if csv_ep and gbif_ep and csv_ep == gbif_ep:
