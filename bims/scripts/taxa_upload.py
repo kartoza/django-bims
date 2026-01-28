@@ -753,7 +753,8 @@ class TaxaProcessor(object):
             else:
                 expected_rank = _safe_upper(rank)
                 gbif_rank = _safe_upper(gbif_rec.get("rank"))
-                if expected_rank and gbif_rank and gbif_rank != expected_rank:
+                # For FADA sites, skip rank mismatch validation
+                if expected_rank and gbif_rank and gbif_rank != expected_rank and not is_fada_site():
                     self.handle_error(
                         row=row,
                         message=(
@@ -810,7 +811,8 @@ class TaxaProcessor(object):
                             )
                             return
 
-                    if ratio < NAME_SIM_THRESHOLD:
+                    # For FADA sites, skip name similarity validation
+                    if ratio < NAME_SIM_THRESHOLD and not is_fada_site():
                         self.handle_error(
                             row=row,
                             message=(
