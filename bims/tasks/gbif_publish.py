@@ -42,14 +42,16 @@ def _tenant_lock_keys(schema_name: str, publish_id: int) -> tuple[int, int]:
     time_limit=35*60,
     queue="update",
 )
-def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int):
+def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger: str = "scheduled"):
     """
     Execute a scheduled GBIF publish job.
 
     Publishes occurrence data to GBIF using the configuration specified
     in the GbifPublish schedule.
     """
-    from bims.models.gbif_publish import GbifPublish
+    from bims.models.gbif_publish import (
+        GbifPublish, GbifPublishSession, PublishStatus, PublishTrigger
+    )
 
     Tenant = get_tenant_model()
     with schema_context(get_public_schema_name()):
@@ -86,30 +88,70 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int):
                 config = publish_schedule.gbif_config
                 module_group = publish_schedule.module_group
 
-                from bims.utils.gbif_publish import publish_gbif_data_with_config
+                # Create session record
+                session = GbifPublishSession.objects.create(
+                    schedule=publish_schedule,
+                    module_group=module_group,
+                    gbif_config=config,
+                    status=PublishStatus.RUNNING,
+                    trigger=trigger if trigger in [t.value for t in PublishTrigger] else PublishTrigger.SCHEDULED,
+                )
 
-                try:
-                    result = publish_gbif_data_with_config(
-                        config=config,
-                        module_group=module_group,
-                    )
+            from bims.utils.gbif_publish import publish_gbif_data_with_config
 
-                    publish_schedule.last_publish = timezone.now()
-                    publish_schedule.save(update_fields=["last_publish"])
+            try:
+                result = publish_gbif_data_with_config(
+                    config=config,
+                    module_group=module_group,
+                )
 
-                    return {
-                        "status": "success",
-                        "schema": schema_name,
-                        "publish_id": publish_id,
-                        "module_group": module_group.name if module_group else None,
-                        "dataset_key": result.get("dataset_key"),
-                        "records_published": result.get("records_published", 0),
-                    }
+                # Update session with success
+                session.status = PublishStatus.SUCCESS
+                session.end_time = timezone.now()
+                session.dataset_key = result.get("dataset_key", "")
+                session.records_published = result.get("records_published", 0)
+                session.archive_url = result.get("archive_url", "")
+                session.save()
 
-                except Exception as e:
-                    return {
-                        "status": "error",
-                        "schema": schema_name,
-                        "publish_id": publish_id,
-                        "error": str(e),
-                    }
+                publish_schedule.last_publish = timezone.now()
+                publish_schedule.save(update_fields=["last_publish"])
+
+                return {
+                    "status": "success",
+                    "schema": schema_name,
+                    "publish_id": publish_id,
+                    "session_id": session.id,
+                    "module_group": module_group.name if module_group else None,
+                    "dataset_key": result.get("dataset_key"),
+                    "records_published": result.get("records_published", 0),
+                }
+
+            except ValueError as e:
+                # No records to publish
+                session.status = PublishStatus.NO_RECORDS
+                session.end_time = timezone.now()
+                session.error_message = str(e)
+                session.save()
+
+                return {
+                    "status": "no_records",
+                    "schema": schema_name,
+                    "publish_id": publish_id,
+                    "session_id": session.id,
+                    "error": str(e),
+                }
+
+            except Exception as e:
+                # Update session with error
+                session.status = PublishStatus.ERROR
+                session.end_time = timezone.now()
+                session.error_message = str(e)
+                session.save()
+
+                return {
+                    "status": "error",
+                    "schema": schema_name,
+                    "publish_id": publish_id,
+                    "session_id": session.id,
+                    "error": str(e),
+                }

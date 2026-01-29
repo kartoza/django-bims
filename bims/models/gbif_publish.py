@@ -21,8 +21,10 @@ class GbifPublishConfig(models.Model):
     )
     gbif_api_url = models.URLField(
         default="https://api.gbif-uat.org/v1",
-        help_text="GBIF API URL (e.g., https://api.gbif.org/v1 for production, "
-                  "https://api.gbif-uat.org/v1 for UAT)"
+        help_text="GBIF API URL: https://api.gbif.org/v1 (production), "
+                  "https://api.gbif-uat.org/v1 (UAT), "
+                  "https://api.gbif-test.org/v1 (test). "
+                  "Ensure credentials match the environment."
     )
     license_url = models.URLField(
         default="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
@@ -102,6 +104,95 @@ class GbifPublish(models.Model):
 
     def __str__(self):
         return f"GBIF Publish[{self.module_group_id}] - {self.period}"
+
+
+class PublishTrigger(models.TextChoices):
+    MANUAL = "manual", "Manual"
+    SCHEDULED = "scheduled", "Scheduled"
+
+
+class PublishStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    RUNNING = "running", "Running"
+    SUCCESS = "success", "Success"
+    ERROR = "error", "Error"
+    NO_RECORDS = "no_records", "No Records"
+
+
+class GbifPublishSession(models.Model):
+    """Stores results of each GBIF publish run."""
+    schedule = models.ForeignKey(
+        GbifPublish,
+        on_delete=models.CASCADE,
+        related_name="sessions",
+        help_text="The publish schedule that triggered this session"
+    )
+    module_group = models.ForeignKey(
+        'bims.TaxonGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="gbif_publish_sessions"
+    )
+    gbif_config = models.ForeignKey(
+        GbifPublishConfig,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sessions"
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=PublishStatus.choices,
+        default=PublishStatus.PENDING
+    )
+    trigger = models.CharField(
+        max_length=10,
+        choices=PublishTrigger.choices,
+        default=PublishTrigger.MANUAL
+    )
+
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+
+    dataset_key = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="GBIF dataset UUID returned after successful registration"
+    )
+    records_published = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of records published in this session"
+    )
+    archive_url = models.URLField(
+        blank=True,
+        help_text="URL to the DwC-A archive file"
+    )
+
+    error_message = models.TextField(
+        blank=True,
+        help_text="Error message if the publish failed"
+    )
+    log_file = models.FileField(
+        upload_to='gbif-publish-session-log/',
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = "GBIF Publish Session"
+        verbose_name_plural = "GBIF Publish Sessions"
+        ordering = ["-start_time"]
+
+    def __str__(self):
+        return f"Publish Session {self.id} - {self.status} ({self.start_time})"
+
+    @property
+    def duration(self):
+        if self.end_time and self.start_time:
+            return self.end_time - self.start_time
+        return None
 
 
 def _mins_hrs(t):

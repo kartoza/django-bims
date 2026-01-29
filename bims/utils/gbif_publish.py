@@ -9,6 +9,7 @@ from typing import Iterable, Tuple, List
 import requests
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils.timezone import now
 from requests.auth import HTTPBasicAuth
 
@@ -41,10 +42,14 @@ INSTALLATION_KEY = getattr(settings, "GBIF_TEST_INSTALLATION_KEY", "")
 def gather_data() -> Iterable[BiologicalCollectionRecord]:
     return (
         BiologicalCollectionRecord.objects
-        .filter(validated=True, data_type="public")
+        .filter(
+            Q(data_type="public") | Q(data_type__isnull=True) | Q(data_type=""),
+            survey__validated=True,
+        )
         .exclude(source_collection__iexact="gbif")
-        .select_related("taxonomy", "site", "record_type")
-    )[:10]
+        .select_related("taxonomy", "site", "record_type", "survey")
+        .distinct()
+    )
 
 
 def _lat_lon_from_site(site) -> Tuple[str, str]:
@@ -273,9 +278,14 @@ def _gather_data_for_module_group(module_group) -> Iterable[BiologicalCollection
     """Gather publishable records for a specific module group."""
     queryset = (
         BiologicalCollectionRecord.objects
-        .filter(validated=True, data_type="public", module_group=module_group)
+        .filter(
+            Q(data_type="public") | Q(data_type__isnull=True) | Q(data_type=""),
+            survey__validated=True,
+            module_group=module_group
+        )
         .exclude(source_collection__iexact="gbif")
-        .select_related("taxonomy", "site", "record_type")
+        .select_related("taxonomy", "site", "record_type", "survey")
+        .distinct()
     )
     return queryset
 
@@ -309,6 +319,19 @@ def _register_dataset_with_config(
         timeout=30,
         headers={"Content-Type": "application/json"},
     )
+
+    if r.status_code == 403:
+        raise RuntimeError(
+            f"GBIF API returned 403 Forbidden. Please verify: "
+            f"1) Username/password are correct for {api_url}, "
+            f"2) User has permission to publish for org {config.publishing_org_key}, "
+            f"3) Installation key {config.installation_key} is valid for this environment."
+        )
+    if r.status_code == 401:
+        raise RuntimeError(
+            f"GBIF API returned 401 Unauthorized. Invalid username or password for {api_url}."
+        )
+
     r.raise_for_status()
     dataset_key = r.json()
     if not isinstance(dataset_key, str) or len(dataset_key) < 32:

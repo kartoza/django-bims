@@ -43,7 +43,7 @@ from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
-from bims.models.gbif_publish import PublishPeriod, GbifPublishConfig
+from bims.models.gbif_publish import PublishPeriod, PublishStatus, GbifPublishConfig
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.tasks.taxa import fetch_iucn_status as fetch_iucn_status_task
@@ -141,6 +141,7 @@ from bims.models import (
     HarvestSchedule,
     GbifPublish,
     GbifPublishConfig,
+    GbifPublishSession,
     OccurrenceUploadTemplate,
     UploadRequest, UploadType, CertaintyHierarchy,
     FilterPanelInfo
@@ -155,7 +156,7 @@ from bims.tasks.location_site import (
     update_location_context as update_location_context_task,
     update_site_code as update_site_code_task
 )
-from bims.tasks import run_scheduled_gbif_harvest
+from bims.tasks import run_scheduled_gbif_harvest, run_scheduled_gbif_publish
 from bims.forms.harvest_schedule import HarvestScheduleAdminForm
 from bims.forms.gbif_publish import GbifPublishAdminForm
 
@@ -2978,7 +2979,7 @@ class GbifPublishAdmin(admin.ModelAdmin):
     search_fields = ("module_group__name", "gbif_config__name")
     autocomplete_fields = ("module_group",)
     readonly_fields = ("last_publish", "updated_at", "schedule_preview")
-    actions = ["action_enable", "action_disable"]
+    actions = ["action_run_now", "action_enable", "action_disable"]
 
     fieldsets = (
         ("Target", {
@@ -3029,6 +3030,16 @@ class GbifPublishAdmin(admin.ModelAdmin):
         return format_html("<code>{}</code>", text) if text else "—"
     schedule_preview.short_description = "Schedule preview"
 
+    @admin.action(description="Run now (enqueue Celery task)")
+    def action_run_now(self, request, queryset):
+        count = 0
+        for publish in queryset:
+            schema_name = str(connection.schema_name)
+            run_scheduled_gbif_publish.delay(schema_name, publish.id)
+            count += 1
+        self.message_user(
+            request, f"Queued {count} publish job(s).", messages.SUCCESS)
+
     @admin.action(description="Enable schedule")
     def action_enable(self, request, queryset):
         updated = queryset.update(enabled=True)
@@ -3040,6 +3051,76 @@ class GbifPublishAdmin(admin.ModelAdmin):
         updated = queryset.update(enabled=False)
         self.message_user(
             request, f"Disabled {updated} schedule(s).", messages.SUCCESS)
+
+
+@admin.register(GbifPublishSession)
+class GbifPublishSessionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "schedule",
+        "module_group",
+        "status",
+        "trigger",
+        "dataset_key_short",
+        "records_published",
+        "start_time",
+        "duration_display",
+    )
+    list_filter = ("status", "trigger", "module_group", "gbif_config")
+    search_fields = ("dataset_key", "error_message", "schedule__module_group__name")
+    readonly_fields = (
+        "schedule",
+        "module_group",
+        "gbif_config",
+        "status",
+        "trigger",
+        "start_time",
+        "end_time",
+        "dataset_key",
+        "records_published",
+        "archive_url",
+        "error_message",
+        "log_file",
+        "duration_display",
+    )
+    ordering = ("-start_time",)
+
+    fieldsets = (
+        ("Session Info", {
+            "fields": ("schedule", "module_group", "gbif_config", "trigger"),
+        }),
+        ("Status", {
+            "fields": ("status", "start_time", "end_time", "duration_display"),
+        }),
+        ("Results", {
+            "fields": ("dataset_key", "records_published", "archive_url"),
+        }),
+        ("Errors & Logs", {
+            "fields": ("error_message", "log_file"),
+            "classes": ("collapse",),
+        }),
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def dataset_key_short(self, obj):
+        if obj.dataset_key:
+            return obj.dataset_key[:8] + "..."
+        return "—"
+    dataset_key_short.short_description = "Dataset Key"
+
+    def duration_display(self, obj):
+        duration = obj.duration
+        if duration:
+            total_seconds = int(duration.total_seconds())
+            minutes, seconds = divmod(total_seconds, 60)
+            return f"{minutes}m {seconds}s"
+        return "—"
+    duration_display.short_description = "Duration"
 
 
 @admin.register(UploadType)
