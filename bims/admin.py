@@ -43,6 +43,7 @@ from bims.admins.site_setting import SiteSettingAdmin
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
+from bims.models.gbif_publish import PublishPeriod, GbifPublishConfig
 from bims.models.record_type import merge_record_types
 from bims.tasks import fetch_vernacular_names
 from bims.tasks.taxa import fetch_iucn_status as fetch_iucn_status_task
@@ -138,6 +139,8 @@ from bims.models import (
     SpeciesGroup,
     TaxonGroupCitation,
     HarvestSchedule,
+    GbifPublish,
+    GbifPublishConfig,
     OccurrenceUploadTemplate,
     UploadRequest, UploadType, CertaintyHierarchy,
     FilterPanelInfo
@@ -154,6 +157,7 @@ from bims.tasks.location_site import (
 )
 from bims.tasks import run_scheduled_gbif_harvest
 from bims.forms.harvest_schedule import HarvestScheduleAdminForm
+from bims.forms.gbif_publish import GbifPublishAdminForm
 
 
 logger = logging.getLogger('bims')
@@ -2907,6 +2911,123 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
             count += 1
         self.message_user(
             request, f"Queued {count} run(s).", messages.SUCCESS)
+
+    @admin.action(description="Enable schedule")
+    def action_enable(self, request, queryset):
+        updated = queryset.update(enabled=True)
+        self.message_user(
+            request, f"Enabled {updated} schedule(s).", messages.SUCCESS)
+
+    @admin.action(description="Disable schedule")
+    def action_disable(self, request, queryset):
+        updated = queryset.update(enabled=False)
+        self.message_user(
+            request, f"Disabled {updated} schedule(s).", messages.SUCCESS)
+
+
+@admin.register(GbifPublishConfig)
+class GbifPublishConfigAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "gbif_api_url",
+        "publishing_org_key",
+        "is_active",
+        "updated_at",
+    )
+    list_filter = ("is_active",)
+    search_fields = ("name", "gbif_api_url", "publishing_org_key")
+    readonly_fields = ("created_at", "updated_at")
+
+    fieldsets = (
+        ("General", {
+            "fields": ("name", "is_active"),
+        }),
+        ("GBIF API Settings", {
+            "fields": (
+                "gbif_api_url",
+                "username",
+                "password",
+                "publishing_org_key",
+                "installation_key",
+            ),
+        }),
+        ("Dataset Settings", {
+            "fields": ("license_url", "export_base_url"),
+        }),
+        ("Audit", {
+            "fields": ("created_at", "updated_at"),
+        }),
+    )
+
+
+@admin.register(GbifPublish)
+class GbifPublishAdmin(admin.ModelAdmin):
+    form = GbifPublishAdminForm
+
+    list_display = (
+        "module_group",
+        "gbif_config",
+        "enabled",
+        "period",
+        "schedule_human",
+        "timezone",
+        "last_publish_local",
+        "updated_at",
+    )
+    list_filter = ("enabled", "period", "timezone", "gbif_config")
+    search_fields = ("module_group__name", "gbif_config__name")
+    autocomplete_fields = ("module_group",)
+    readonly_fields = ("last_publish", "updated_at", "schedule_preview")
+    actions = ["action_enable", "action_disable"]
+
+    fieldsets = (
+        ("Target", {
+            "fields": ("module_group", "gbif_config", "enabled"),
+        }),
+        ("When to run", {
+            "fields": (
+                "period",
+                "run_at",
+                "day_of_week",
+                "day_of_month",
+                "cron_expression",
+                "timezone",
+                "schedule_preview",
+            ),
+            "description": (
+                "Daily/Weekly/Monthly use run_at (+ day fields). "
+                "Custom uses standard 5-field cron: 'm h dom mon dow' (e.g. '15 */6 * * *'). "
+                "Day of week accepts 'mon,tue' or '0-6' (0=Sunday)."
+            ),
+        }),
+        ("Audit", {
+            "fields": ("last_publish", "updated_at"),
+        }),
+    )
+
+    def schedule_human(self, obj: GbifPublish):
+        if obj.period == PublishPeriod.CUSTOM and obj.cron_expression:
+            return obj.cron_expression
+        if obj.period == PublishPeriod.DAILY:
+            return f"Daily at {obj.run_at}"
+        if obj.period == PublishPeriod.WEEKLY:
+            return f"Weekly {obj.day_of_week or 'mon'} at {obj.run_at}"
+        if obj.period == PublishPeriod.MONTHLY:
+            return f"Monthly day {obj.day_of_month or 1} at {obj.run_at}"
+        return "-"
+
+    schedule_human.short_description = "Schedule"
+
+    def last_publish_local(self, obj):
+        return localtime(
+            obj.last_publish
+        ).strftime("%Y-%m-%d %H:%M") if obj.last_publish else "—"
+    last_publish_local.short_description = "Last Publish"
+
+    def schedule_preview(self, obj):
+        text = self.schedule_human(obj)
+        return format_html("<code>{}</code>", text) if text else "—"
+    schedule_preview.short_description = "Schedule preview"
 
     @admin.action(description="Enable schedule")
     def action_enable(self, request, queryset):

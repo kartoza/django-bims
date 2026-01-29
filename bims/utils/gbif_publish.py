@@ -267,3 +267,143 @@ def publish_gbif_data() -> str:
     ).update(dataset_key=dataset_key)
 
     return dataset_key
+
+
+def _gather_data_for_module_group(module_group) -> Iterable[BiologicalCollectionRecord]:
+    """Gather publishable records for a specific module group."""
+    queryset = (
+        BiologicalCollectionRecord.objects
+        .filter(validated=True, data_type="public", module_group=module_group)
+        .exclude(source_collection__iexact="gbif")
+        .select_related("taxonomy", "site", "record_type")
+    )
+    return queryset
+
+
+def _register_dataset_with_config(
+    config,
+    title: str,
+    description: str,
+) -> str:
+    """Register a dataset on GBIF using config credentials."""
+    if not config.publishing_org_key or not config.installation_key:
+        raise RuntimeError("Missing publishing_org_key or installation_key in config.")
+
+    payload = {
+        "publishingOrganizationKey": config.publishing_org_key,
+        "installationKey": config.installation_key,
+        "type": "OCCURRENCE",
+        "title": title,
+        "description": description,
+        "language": "eng",
+        "license": config.license_url,
+    }
+
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+
+    r = requests.post(
+        f"{api_url}/dataset",
+        json=payload,
+        auth=auth,
+        timeout=30,
+        headers={"Content-Type": "application/json"},
+    )
+    r.raise_for_status()
+    dataset_key = r.json()
+    if not isinstance(dataset_key, str) or len(dataset_key) < 32:
+        raise RuntimeError(f"Unexpected dataset key response: {dataset_key}")
+    return dataset_key
+
+
+def _add_endpoint_with_config(config, dataset_key: str, archive_url: str):
+    """Add a DWC_ARCHIVE endpoint to a dataset using config credentials."""
+    payload = {
+        "type": "DWC_ARCHIVE",
+        "url": archive_url,
+    }
+
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+
+    r = requests.post(
+        f"{api_url}/dataset/{dataset_key}/endpoint",
+        json=payload,
+        auth=auth,
+        timeout=30,
+        headers={"Content-Type": "application/json"},
+    )
+    r.raise_for_status()
+
+
+def _build_dwca_with_config(
+    config,
+    records: Iterable[BiologicalCollectionRecord],
+    module_group=None
+) -> Tuple[str, str, List[int]]:
+    """Build DwC-A using config for base URL."""
+    out_dir = _dwca_dir()
+    occ_path = os.path.join(out_dir, "occurrence.txt")
+    meta_path = os.path.join(out_dir, "meta.xml")
+    eml_path = os.path.join(out_dir, "eml.xml")
+
+    written_ids = _write_occurrence_txt(occ_path, records)
+    if not written_ids:
+        raise ValueError("No eligible records to export.")
+
+    module_name = module_group.name if module_group else _site_name()
+    title = f"{module_name} occurrence dataset ({datetime.utcnow().isoformat(timespec='seconds')} UTC)"
+    abstract = f"Occurrence export from {_site_name()} for GBIF ingestion."
+
+    _write_meta_xml(meta_path)
+    _write_eml_xml(eml_path, title, abstract)
+    zip_path = _zip_dwca(out_dir)
+
+    base_url = config.export_base_url.rstrip("/") if config.export_base_url else _base_url()
+    rel_media = os.path.relpath(zip_path, settings.MEDIA_ROOT)
+    archive_url = f"{base_url}{_media_url()}/{rel_media}".replace("//", "/").replace(":/", "://")
+
+    return zip_path, archive_url, written_ids
+
+
+@transaction.atomic
+def publish_gbif_data_with_config(config, module_group=None) -> dict:
+    """
+    Build a DwC-A for public, validated records, register it on GBIF,
+    add the DWC_ARCHIVE endpoint, and store dataset_key back to those records.
+
+    Args:
+        config: GbifPublishConfig instance with API credentials and settings
+        module_group: Optional TaxonGroup to filter records by
+
+    Returns:
+        dict with dataset_key and records_published count
+    """
+    if module_group:
+        records = list(_gather_data_for_module_group(module_group))
+    else:
+        records = list(gather_data())
+
+    if not records:
+        raise ValueError("No records to publish (need public+validated).")
+
+    zip_path, archive_url, written_ids = _build_dwca_with_config(
+        config, records, module_group
+    )
+
+    module_name = module_group.name if module_group else _site_name()
+    title = f"{module_name} occurrence dataset"
+    description = f"Occurrence dataset from {_site_name()} registered via GBIF API."
+
+    dataset_key = _register_dataset_with_config(config, title, description)
+    _add_endpoint_with_config(config, dataset_key, archive_url)
+
+    BiologicalCollectionRecord.objects.filter(
+        id__in=written_ids
+    ).update(dataset_key=dataset_key)
+
+    return {
+        "dataset_key": dataset_key,
+        "records_published": len(written_ids),
+        "archive_url": archive_url,
+    }
