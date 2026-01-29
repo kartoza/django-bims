@@ -604,13 +604,20 @@ class TaxaProcessor(object):
                 **classifiers
             )
             if taxon:
-                if taxon_name.lower() not in (taxon.scientific_name or '').lower():
-                    taxon.scientific_name = scientific_name
-                    taxon.legacy_canonical_name = taxon_name
-                    taxon.canonical_name = taxon_name
-                    taxon.gbif_key = None
-                    taxon.gbif_data = {}
+                if (
+                        taxon.rank == rank.upper() and
+                        taxon.canonical_name and
+                        taxon.canonical_name.lower() == taxon_name.lower()
+                ):
+                    if taxon_name.lower() not in (taxon.scientific_name or '').lower():
+                        taxon.scientific_name = scientific_name
+                        taxon.legacy_canonical_name = taxon_name
+                        taxon.canonical_name = taxon_name
+                        taxon.gbif_key = None
+                        taxon.gbif_data = {}
                     taxon.save()
+                else:
+                    taxon = None
             else:
                 taxon, _ = Taxonomy.objects.get_or_create(
                     canonical_name=taxon_name,

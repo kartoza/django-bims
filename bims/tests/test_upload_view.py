@@ -15,7 +15,7 @@ from rest_framework import status
 from preferences import preferences
 from github.GithubException import UnknownObjectException
 
-from bims.models.upload_request import UploadRequest
+from bims.models.upload_request import UploadRequest, UploadType
 
 
 UPLOAD_URL_NAME = "upload"
@@ -29,6 +29,14 @@ class TestUploadView(FastTenantTestCase):
             self.url = reverse(UPLOAD_URL_NAME)
         except Exception:
             self.url = "/upload/"
+
+        # Create UploadType for tests
+        self.upload_type = UploadType.objects.create(
+            name='Occurrence Data',
+            code='occurrence',
+            description='Occurrence data upload',
+            order=1
+        )
 
     def _make_file(self, name="data.csv", content=b"col1,col2\nx,y\n"):
         return SimpleUploadedFile(name, content, content_type="text/csv")

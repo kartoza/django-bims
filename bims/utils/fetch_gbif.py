@@ -361,7 +361,7 @@ def fetch_all_species_from_gbif(
                 if taxon.rank.upper() == taxonomic_rank.upper():
                     species_data = taxon.gbif_data
                 else:
-                    taxon = None
+                    return None
             else:
                 species_data = taxon.gbif_data
         except Taxonomy.MultipleObjectsReturned:
@@ -401,6 +401,11 @@ def fetch_all_species_from_gbif(
             )
 
     raw_rank = species_data.get('rank', '').upper() if species_data else ''
+
+    if taxonomic_rank:
+        if raw_rank != taxonomic_rank.upper():
+            return None
+
     if raw_rank == "UNRANKED":
         parent_key = (species_data or {}).get("parentKey")
         if parent_key and parent_key != species_data.get("key") and parent_key not in _visited:
