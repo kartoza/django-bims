@@ -15,7 +15,7 @@ from rest_framework import status
 from preferences import preferences
 from github.GithubException import UnknownObjectException
 
-from bims.models.upload_request import UploadRequest
+from bims.models.upload_request import UploadRequest, UploadType
 
 
 UPLOAD_URL_NAME = "upload"

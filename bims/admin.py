@@ -1685,7 +1685,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         if current:
             hierarchy.append(_('…truncated…'))
 
-        return ' → '.join(hierarchy)
+        return ' → '.join(str(h) for h in hierarchy)
 
     def harvest_synonyms_for_accepted(self, request, queryset):
         """
