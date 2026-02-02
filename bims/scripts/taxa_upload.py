@@ -673,11 +673,11 @@ class TaxaProcessor(object):
                 break
             parent = self.get_parent(row, parent_rank_name)
             if parent:
-                # Check for literal circular reference (same record)
+                # Check for literal circular reference
                 if taxon.pk and parent.pk == taxon.pk:
                     logger.error(f"Circular parent reference detected for '{taxon.canonical_name}' - cannot be its own parent")
                     break
-                # Allow sub-ranks to have same name as parent non-sub rank (e.g., subgenus can have same name as genus)
+                # Allow sub-ranks to have same name as parent non-sub rank
                 if _safe_strip(taxon.canonical_name).lower() == _safe_strip(parent.canonical_name).lower():
                     taxon_rank = _safe_upper(taxon.rank) if taxon.rank else ''
                     parent_rank_val = _safe_upper(parent.rank) if parent.rank else ''
@@ -893,26 +893,29 @@ class TaxaProcessor(object):
 
         # Parent check: parent must not have same name as the taxon
         # Exception: sub-ranks can have the same name as their parent non-sub rank
-        # (e.g., subgenus can have same name as parent genus)
         if not is_synonym and not is_doubtful:
             parent = self.get_parent(row, parent_rank(rank))
             if parent:
                 current_rank_upper = _safe_upper(rank)
                 parent_rank_upper = _safe_upper(parent.rank) if parent.rank else ''
 
-                # Check if parent and current taxon have the same name and rank (should not happen)
+                # Check if parent and current taxon have the same name and rank
                 if _safe_strip(parent.canonical_name) == taxon_name and current_rank_upper == parent_rank_upper:
-                    self.handle_error(row=row, message='Taxonomy cannot be its own parent (same name and rank)')
+                    self.handle_error(
+                        row=row,
+                        message='Taxonomy cannot be its own parent (same name and rank)')
                     return
 
-                # Check if parent has same name but different rank (allowed for sub-ranks only)
+                # Check if parent has same name but different rank (allowed for sub-ranks)
                 if _safe_strip(parent.canonical_name) == taxon_name:
                     is_sub_to_nonsub = (
                         current_rank_upper.startswith('SUB') and
                         current_rank_upper[3:] == parent_rank_upper
                     )
                     if not is_sub_to_nonsub:
-                        self.handle_error(row=row, message='Parent cannot have the same name as the taxon')
+                        self.handle_error(
+                            row=row,
+                            message='Parent cannot have the same name as the taxon')
                         return
         else:
             parent = None
@@ -954,14 +957,24 @@ class TaxaProcessor(object):
                 taxa_same_rank = taxa.filter(rank=_safe_upper(rank))
                 if taxa_same_rank.exists():
                     taxonomy = taxa_same_rank.first()
-                    logger.debug('%s already in the system', taxon_name)
+                    logger.debug(
+                        '%s already in the system',
+                        taxon_name)
 
                     if (is_synonym or is_doubtful) and taxonomy.parent:
                         taxonomy.parent = None
                 else:
-                    taxonomy = None
-                    logger.debug('%s exists with different rank, treating as new taxon', taxon_name)
+                    taxonomy = taxa.first()
 
+                    if fada_id and taxonomy.fada_id != fada_id:
+                        # New taxon
+                        taxonomy = None
+                        logger.debug(
+                            '%s exists with different rank, treating as new taxon',
+                            taxon_name)
+                    else:
+                        taxonomy.rank = _safe_upper(rank)
+                        
             if not taxonomy and gbif_key:
                 taxonomy = fetch_all_species_from_gbif(
                     gbif_key=gbif_key,
