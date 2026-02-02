@@ -30,14 +30,6 @@ class TestUploadView(FastTenantTestCase):
         except Exception:
             self.url = "/upload/"
 
-        # Create UploadType for tests
-        self.upload_type = UploadType.objects.create(
-            name='Occurrence Data',
-            code='occurrence',
-            description='Occurrence data upload',
-            order=1
-        )
-
     def _make_file(self, name="data.csv", content=b"col1,col2\nx,y\n"):
         return SimpleUploadedFile(name, content, content_type="text/csv")
 
