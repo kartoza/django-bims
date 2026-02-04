@@ -28,7 +28,6 @@ from bims.enums.ecosystem_type import (
     ECOSYSTEM_TYPE_CHOICES, HYDROGEOMORPHIC_NONE, HYDROGEOMORPHIC_CHOICES
 )
 from bims.utils.uuid import is_uuid
-from cloud_native_gis.models import Layer
 from cloud_native_gis.utils.geometry import query_features
 
 LOGGER = logging.getLogger(__name__)
@@ -346,6 +345,7 @@ class LocationSite(AbstractValidation):
 
     def add_context_group(self, group_key):
         from bims.models import LocationContext
+        from cloud_native_gis.models import Layer
 
         context_key = ''
         if ':' in group_key:

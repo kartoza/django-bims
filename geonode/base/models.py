@@ -46,9 +46,6 @@ from geonode.base.enumerations import (
     DEFAULT_SUPPLEMENTAL_INFORMATION)
 from geonode.people.enumerations import ROLE_VALUES
 
-from geonode.notifications_helper import (
-    send_notification,
-    get_notification_recipients)
 from geonode.groups.models import GroupProfile
 
 logger = logging.getLogger(__name__)
@@ -784,6 +781,11 @@ class ResourceBase(PolymorphicModel, ItemBase):
         """
         Send a notification when a resource is created or updated
         """
+        from geonode.notifications_helper import (
+            send_notification,
+            get_notification_recipients
+        )
+
         if hasattr(self, 'class_name') and (self.pk is None or notify):
             if self.pk is None and self.title:
                 # Resource Created
@@ -834,6 +836,11 @@ class ResourceBase(PolymorphicModel, ItemBase):
         Send a notification when a layer, map or document is deleted
         """
         if hasattr(self, 'class_name') and notify:
+            from geonode.notifications_helper import (
+                send_notification,
+                get_notification_recipients
+            )
+
             notice_type_label = '%s_deleted' % self.class_name.lower()
             recipients = get_notification_recipients(notice_type_label, resource=self)
             send_notification(recipients, notice_type_label, {'resource': self})

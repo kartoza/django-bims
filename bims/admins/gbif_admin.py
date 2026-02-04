@@ -22,7 +22,6 @@ from bims.tasks import run_scheduled_gbif_publish
 class GbifPublishConfigProxy(GbifPublishConfig):
     class Meta:
         proxy = True
-        app_label = 'gbif_publishing'
         verbose_name = 'GBIF Config'
         verbose_name_plural = 'GBIF Configs'
 
@@ -30,7 +29,6 @@ class GbifPublishConfigProxy(GbifPublishConfig):
 class GbifPublishProxy(GbifPublish):
     class Meta:
         proxy = True
-        app_label = 'gbif_publishing'
         verbose_name = 'GBIF Publish Schedule'
         verbose_name_plural = 'GBIF Publish Schedules'
 
@@ -38,7 +36,6 @@ class GbifPublishProxy(GbifPublish):
 class GbifPublishSessionProxy(GbifPublishSession):
     class Meta:
         proxy = True
-        app_label = 'gbif_publishing'
         verbose_name = 'GBIF Publish Session'
         verbose_name_plural = 'GBIF Publish Sessions'
 

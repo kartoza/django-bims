@@ -5,6 +5,8 @@ from django.utils import timezone
 from celery import shared_task
 from django_tenants.utils import schema_context, get_public_schema_name, get_tenant_model
 
+from bims.utils.gbif_publish import publish_gbif_data_with_config
+
 
 @contextmanager
 def pg_advisory_lock(key1: int, key2: int):
@@ -97,7 +99,6 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
                     trigger=trigger if trigger in [t.value for t in PublishTrigger] else PublishTrigger.SCHEDULED,
                 )
 
-            from bims.utils.gbif_publish import publish_gbif_data_with_config
 
             try:
                 result = publish_gbif_data_with_config(
