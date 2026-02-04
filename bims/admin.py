@@ -40,6 +40,8 @@ from taggit.models import Tag
 
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
+import bims.admin_site
+import bims.admins.gbif_admin
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
