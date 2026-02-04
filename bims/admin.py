@@ -142,8 +142,10 @@ from bims.models import (
     HarvestSchedule,
     OccurrenceUploadTemplate,
     UploadRequest, UploadType, CertaintyHierarchy,
-    FilterPanelInfo
+    FilterPanelInfo,
+    TaxonTagDescription
 )
+from bims.models.taxonomy import TaxonTag
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
@@ -2947,3 +2949,23 @@ class FilterPanelInfoAdmin(admin.ModelAdmin):
     list_display = ('title', 'is_active', 'updated_at')
     list_filter = ('is_active',)
     search_fields = ('title', 'description')
+
+
+@admin.register(TaxonTag)
+class TaxonTagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'doubtful')
+    search_fields = ('name',)
+    list_filter = ('doubtful',)
+
+
+@admin.register(TaxonTagDescription)
+class TaxonTagDescriptionAdmin(admin.ModelAdmin):
+    list_display = ('tag', 'description_preview')
+    search_fields = ('tag__name', 'description')
+    autocomplete_fields = ('tag',)
+
+    def description_preview(self, obj):
+        if obj.description:
+            return obj.description[:100] + '...' if len(obj.description) > 100 else obj.description
+        return '-'
+    description_preview.short_description = 'Description'

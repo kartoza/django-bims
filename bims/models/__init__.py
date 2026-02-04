@@ -78,3 +78,4 @@ from bims.models.gbif_publish import GbifPublish, GbifPublishConfig, GbifPublish
 from bims.models.upload_request import UploadRequest, UploadType
 from bims.models.certainty_hierarchy import CertaintyHierarchy
 from bims.models.filter_panel_info import FilterPanelInfo
+from bims.models.taxon_tag_description import TaxonTagDescription
