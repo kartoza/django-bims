@@ -61,7 +61,7 @@ class TestTaxaUpload(FastTenantTestCase):
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
     def test_taxa_upload(self, mock_fetch_all_species_from_gbif, mock_finish):
         mock_finish.return_value = None
-        mock_fetch_all_species_from_gbif.return_value = self.taxonomy
+        mock_fetch_all_species_from_gbif.return_value = None
 
         taxa_csv_upload = TaxaCSVUpload()
         taxa_csv_upload.upload_session = self.upload_session
@@ -195,7 +195,7 @@ class TestTaxaUpload(FastTenantTestCase):
         # Force proposals / unvalidated path
         mock_preferences.SiteSetting.auto_validate_taxa_on_upload = False
         mock_finish.return_value = None
-        mock_fetch_all_species_from_gbif.return_value = self.taxonomy
+        mock_fetch_all_species_from_gbif.return_value = None
 
         with open(os.path.join(
             test_data_directory, 'taxa_upload_family_2.csv'
@@ -226,7 +226,7 @@ class TestTaxaUpload(FastTenantTestCase):
         mock_finish
     ):
         mock_finish.return_value = None
-        mock_fetch_all_species_from_gbif.return_value = self.taxonomy
+        mock_fetch_all_species_from_gbif.return_value = None
 
         with open(os.path.join(
             test_data_directory, 'variety_forma_example.csv'
@@ -287,7 +287,7 @@ class TestTaxaUpload(FastTenantTestCase):
         # taxonomy instance so the code can attach parents etc.
         # We don't really care about its initial values because the uploader
         # will mutate it heavily.
-        mock_fetch_all_species_from_gbif.return_value = TaxonomyF.create()
+        mock_fetch_all_species_from_gbif.return_value = None
 
         # use the CSV with species + subspecies cases
         with open(

@@ -357,7 +357,13 @@ def fetch_all_species_from_gbif(
 
         try:
             taxon = Taxonomy.objects.get(gbif_key=gbif_key)
-            species_data = taxon.gbif_data
+            if taxonomic_rank:
+                if taxon.rank.upper() == taxonomic_rank.upper():
+                    species_data = taxon.gbif_data
+                else:
+                    return None
+            else:
+                species_data = taxon.gbif_data
         except Taxonomy.MultipleObjectsReturned:
             taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
             taxon = taxa.first()
@@ -371,6 +377,8 @@ def fetch_all_species_from_gbif(
 
         gbif_data = get_species(gbif_key)
         if gbif_data:
+            if taxonomic_rank and gbif_data['rank'] != taxonomic_rank.upper():
+                return None
             if taxon:
                 taxon.gbif_data = gbif_data
                 taxon.save()
@@ -393,6 +401,11 @@ def fetch_all_species_from_gbif(
             )
 
     raw_rank = species_data.get('rank', '').upper() if species_data else ''
+
+    if taxonomic_rank:
+        if raw_rank != taxonomic_rank.upper():
+            return None
+
     if raw_rank == "UNRANKED":
         parent_key = (species_data or {}).get("parentKey")
         if parent_key and parent_key != species_data.get("key") and parent_key not in _visited:
