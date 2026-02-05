@@ -22,6 +22,7 @@ SITES_SUMMARY = 'sites_summary'
 SPATIAL_DASHBOARD_MODULE_TOTALS = 'spatial_dashboard_module_totals'
 SPATIAL_DASHBOARD_CONS_STATUS = 'spatial_dashboard_cons_status'
 SPATIAL_DASHBOARD_RLI = 'spatial_dashboard_rli'
+SPATIAL_DASHBOARD_MAP = 'spatial_dashboard_map'
 TAXON_SUMMARY = 'taxon_summary'
 
 SEARCH_PROCESSING = 'processing'
@@ -81,6 +82,7 @@ class SearchProcess(models.Model):
         (SPATIAL_DASHBOARD_MODULE_TOTALS, 'Spatial Dashboard Module Totals'),
         (SPATIAL_DASHBOARD_CONS_STATUS, 'Spatial Dashboard Conservation Status'),
         (SPATIAL_DASHBOARD_RLI, 'Spatial Dashboard Red List Index'),
+        (SPATIAL_DASHBOARD_MAP, 'Spatial Dashboard Map'),
     )
     objects = SearchProcessManager()
 

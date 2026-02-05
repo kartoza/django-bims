@@ -6,60 +6,6 @@ from celery import shared_task
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name='bims.tasks.spatial_dashboard_module_totals', queue='search')
-def spatial_dashboard_module_totals(search_parameters=None, search_process_id=None):
-    from bims.utils.celery import memcache_lock
-    from bims.api_views.location_site_overview import LocationSiteOverviewData
-    from bims.models.search_process import (
-        SearchProcess,
-        SEARCH_PROCESSING,
-        SEARCH_FINISHED
-    )
-
-    if search_parameters is None:
-        search_parameters = {}
-
-    try:
-        search_process = SearchProcess.objects.get(id=search_process_id)
-    except SearchProcess.DoesNotExist:
-        return
-
-    lock_id = '{0}-lock-{1}'.format(
-        search_process.file_path,
-        search_process.process_id
-    )
-    oid = '{0}'.format(search_process.process_id)
-    with memcache_lock(lock_id, oid) as acquired:
-        if acquired:
-            search_process.set_status(SEARCH_PROCESSING)
-
-            overview_data = LocationSiteOverviewData()
-            if search_process.requester and 'requester' not in search_parameters:
-                search_parameters['requester'] = search_process.requester.id
-            overview_data.search_filters = search_parameters
-
-            biodiversity_data = overview_data.biodiversity_data() or {}
-            module_totals = []
-            for module_name, module_data in biodiversity_data.items():
-                module_totals.append({
-                    'name': module_name,
-                    'occurrences': module_data.get(
-                        LocationSiteOverviewData.GROUP_OCCURRENCES, 0
-                    ),
-                })
-
-            results = {
-                'module_totals': module_totals
-            }
-            search_process.set_status(SEARCH_FINISHED, False)
-            search_process.save_to_file(results)
-            return
-    logger.info(
-        'Search %s is already being processed by another worker',
-        search_process.process_id
-    )
-
-
 @shared_task(name='bims.tasks.spatial_dashboard_cons_status', queue='search')
 def spatial_dashboard_cons_status(search_parameters=None, search_process_id=None):
     from bims.utils.celery import memcache_lock
@@ -250,6 +196,61 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
             results = {
                 'series': series,
                 'aggregate': aggregate
+            }
+            search_process.set_status(SEARCH_FINISHED, False)
+            search_process.save_to_file(results)
+            return
+    logger.info(
+        'Search %s is already being processed by another worker',
+        search_process.process_id
+    )
+
+
+@shared_task(name='bims.tasks.spatial_dashboard_map', queue='search')
+def spatial_dashboard_map(search_parameters=None, search_process_id=None):
+    from bims.utils.celery import memcache_lock
+    from bims.api_views.search import CollectionSearch
+    from bims.models.search_process import (
+        SearchProcess,
+        SEARCH_PROCESSING,
+        SEARCH_FINISHED
+    )
+
+    if search_parameters is None:
+        search_parameters = {}
+
+    try:
+        search_process = SearchProcess.objects.get(id=search_process_id)
+    except SearchProcess.DoesNotExist:
+        return
+
+    lock_id = '{0}-lock-{1}'.format(
+        search_process.file_path,
+        search_process.process_id
+    )
+    oid = '{0}'.format(search_process.process_id)
+    with memcache_lock(lock_id, oid) as acquired:
+        if acquired:
+            search_process.set_status(SEARCH_PROCESSING)
+
+            if search_process.requester and 'requester' not in search_parameters:
+                search_parameters['requester'] = search_process.requester.id
+
+            search = CollectionSearch(search_parameters)
+            search.process_search()
+
+            if search.location_sites_raw_query:
+                search_process.set_search_raw_query(
+                    search.location_sites_raw_query
+                )
+                search_process.create_view()
+                view_name = search_process.process_id
+            else:
+                view_name = None
+
+            results = {
+                'extent': search.extent(),
+                'sites_raw_query': view_name
             }
             search_process.set_status(SEARCH_FINISHED, False)
             search_process.save_to_file(results)

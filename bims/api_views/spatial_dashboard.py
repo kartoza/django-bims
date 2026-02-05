@@ -9,12 +9,15 @@ from rest_framework.response import Response
 from bims.models.search_process import (
     SPATIAL_DASHBOARD_CONS_STATUS,
     SPATIAL_DASHBOARD_RLI,
+    SPATIAL_DASHBOARD_MAP,
+    SEARCH_RESULTS,
     SEARCH_PROCESSING
 )
+from bims.models.search_process import SearchProcess
 from bims.tasks.spatial_dashboard import (
-    spatial_dashboard_module_totals,
     spatial_dashboard_cons_status,
-    spatial_dashboard_rli
+    spatial_dashboard_rli,
+    spatial_dashboard_map
 )
 from bims.utils.search_process import get_or_create_search_process
 
@@ -69,3 +72,33 @@ class SpatialDashboardConsStatusApiView(SpatialDashboardBaseApiView):
 class SpatialDashboardRliApiView(SpatialDashboardBaseApiView):
     search_type = SPATIAL_DASHBOARD_RLI
     task = spatial_dashboard_rli
+
+
+class SpatialDashboardMapApiView(SpatialDashboardBaseApiView):
+    search_type = SPATIAL_DASHBOARD_MAP
+    task = spatial_dashboard_map
+
+    def get(self, request):
+        search_url = request.build_absolute_uri().replace(
+            '/api/spatial-dashboard/map/',
+            '/api/collection-search/'
+        )
+        existing = (
+            SearchProcess.objects.filter(
+                category=SEARCH_RESULTS,
+                query=search_url,
+                requester=request.user,
+                finished=True
+            )
+            .exclude(search_raw_query__isnull=True)
+            .exclude(process_id__isnull=True)
+            .first()
+        )
+        if existing:
+            existing_data = existing.get_file_if_exits()
+            if existing_data:
+                return Response({
+                    'extent': existing_data.get('extent', []),
+                    'sites_raw_query': existing.process_id
+                })
+        return super(SpatialDashboardMapApiView, self).get(request)

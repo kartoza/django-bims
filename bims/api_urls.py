@@ -136,7 +136,8 @@ from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 from bims.api_views.filter_panel_info import FilterPanelInfoView
 from bims.api_views.spatial_dashboard import (
     SpatialDashboardConsStatusApiView,
-    SpatialDashboardRliApiView
+    SpatialDashboardRliApiView,
+    SpatialDashboardMapApiView
 )
 
 urlpatterns = [
@@ -177,6 +178,9 @@ urlpatterns = [
     re_path(r'^spatial-dashboard/rli/$',
         SpatialDashboardRliApiView.as_view(),
         name='spatial-dashboard-rli'),
+    re_path(r'^spatial-dashboard/map/$',
+        SpatialDashboardMapApiView.as_view(),
+        name='spatial-dashboard-map'),
     re_path(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
     re_path(r'^taxon-proposal/(?P<pk>[0-9]+)/$',

@@ -1,5 +1,6 @@
 {% extends 'main_base.html' %}
 {% load static %}
+{% load jsonify %}
 
 {% block subtitle %}
     Spatial Dashboard
@@ -8,6 +9,7 @@
 {% block head %}
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
     <style>
         .spatial-dashboard-placeholder {
             border: 2px dashed rgba(0, 0, 0, 0.15);
@@ -55,6 +57,12 @@
             min-height: 180px;
         }
     </style>
+    <script>
+        const baseMapLayers = {{ basemap_layers|jsonify|safe }};
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ preferences.SiteSetting.geoserver_location_site_layer }}';
+        const emptyWMSSiteParameter = 'public.empty_location_site_view';
+    </script>
 {% endblock %}
 
 {% block body_content %}
@@ -62,6 +70,35 @@
         <div class="dashboard-title">
             <h2>Spatial Dashboard</h2>
         </div>
+
+        <div class="table-container">
+            <div class="table-title">
+                Filter History
+            </div>
+            <table class="table table-condensed table-striped filter-history-table"></table>
+        </div>
+
+        <div class="vertical-space"></div>
+
+        <div class="map-container" id="distribution-map-section">
+            <div class="chart-title">
+                Distribution Map
+                <i data-download="map"
+                   data-toggle="tooltip" data-placement="left"
+                   title="Download map"
+                   class="fa fa-download pull-right download-icon download-map"></i>
+            </div>
+            <div class="section-loading" data-loading>
+                <div class="spinner"></div>
+                <div>Loading map…</div>
+            </div>
+            <div class="section-error d-none" data-error></div>
+            <div class="d-none" data-body>
+                <div id="spatial-dashboard-map" style="height: 360px; width: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="vertical-space"></div>
 
         <div class="chart-container" id="cons-status-section">
             <div class="chart-title">
@@ -110,10 +147,18 @@
 {% endblock %}
 
 {% block extra_foot %}
+    <script src="{% static "js/libs/openlayers-10.2.0/ol.js" %}"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    
+    <script src="{% static 'js/utils/filter_list.js' %}"></script>
+    <script src="{% static 'js/libs/html2canvas.js' %}"></script>
     <script src="{% static 'js/libs/chart/Chart-2.7.2.js' %}"></script>
     <script>
         (function () {
             const queryString = window.location.search || '';
+            if (typeof renderFilterList !== 'undefined') {
+                renderFilterList($('.filter-history-table'));
+            }
 
             function setSectionState(section, state) {
                 const loading = section.querySelector('[data-loading]');
@@ -158,6 +203,128 @@
                 link.click();
                 link.remove();
             }
+
+            const mapSection = document.getElementById('distribution-map-section');
+            const mapError = mapSection.querySelector('[data-error]');
+            const mapTarget = document.getElementById('spatial-dashboard-map');
+            let map = null;
+            let siteLayerSource = null;
+
+            function buildBaseLayer() {
+                let baseLayer = new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                });
+                if (Array.isArray(baseMapLayers) && baseMapLayers.length > 0) {
+                    const reversed = baseMapLayers.slice().reverse();
+                    reversed.forEach(function (baseMapData) {
+                        if (!baseMapData.default_basemap) {
+                            return;
+                        }
+                        if (baseMapData.source_type === 'xyz') {
+                            baseLayer = new ol.layer.Tile({
+                                title: baseMapData.title,
+                                source: new ol.source.XYZ({
+                                    attributions: [baseMapData.attributions],
+                                    url: '/bims_proxy/' + baseMapData.url
+                                })
+                            });
+                        } else if (baseMapData.source_type === 'bing') {
+                            baseLayer = new ol.layer.Tile({
+                                title: baseMapData.title,
+                                source: new ol.source.BingMaps({
+                                    key: baseMapData.key,
+                                    imagerySet: 'AerialWithLabels'
+                                })
+                            });
+                        } else if (baseMapData.source_type === 'stamen') {
+                            baseLayer = new ol.layer.Tile({
+                                title: baseMapData.title,
+                                source: new ol.source.XYZ({
+                                    attributions: [
+                                        '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a>',
+                                        '&copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a>',
+                                        '&copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>',
+                                        '&copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>'
+                                    ],
+                                    url: '/bims_proxy/' + 'https://tiles-eu.stadiamaps.com/tiles/' + baseMapData.layer_name + '/{z}/{x}/{y}.jpg?api_key=' + baseMapData.key,
+                                    tilePixelRatio: 2,
+                                    maxZoom: 20
+                                })
+                            });
+                        }
+                    });
+                }
+                return baseLayer;
+            }
+
+            function initMap() {
+                if (map) {
+                    return;
+                }
+                const baseLayer = buildBaseLayer();
+                siteLayerSource = new ol.source.ImageWMS({
+                    url: geoserverPublicUrl + 'wms',
+                    params: {
+                        LAYERS: locationSiteGeoserverLayer,
+                        FORMAT: 'image/png8',
+                        viewparams: 'where:' + emptyWMSSiteParameter
+                    },
+                    ratio: 1,
+                    serverType: 'geoserver'
+                });
+                const siteLayer = new ol.layer.Image({
+                    source: siteLayerSource
+                });
+                map = new ol.Map({
+                    controls: ol.control.defaults.defaults().extend([
+                        new ol.control.ScaleLine()
+                    ]),
+                    layers: [baseLayer, siteLayer],
+                    target: mapTarget,
+                    view: new ol.View({
+                        center: [0, 0],
+                        zoom: 2
+                    })
+                });
+                const graticule = new ol.layer.Graticule({
+                    strokeStyle: new ol.style.Stroke({
+                        color: 'rgba(0,0,0,1)',
+                        width: 1,
+                        lineDash: [2.5, 4]
+                    }),
+                    showLabels: true
+                });
+                graticule.setMap(map);
+            }
+
+            setSectionState(mapSection, 'loading');
+            initMap();
+            fetchWithPoll('/api/spatial-dashboard/map/' + queryString, function (data) {
+                const extent = data && data.extent ? data.extent : [];
+                const viewName = data && data.sites_raw_query ? data.sites_raw_query : null;
+                if (siteLayerSource) {
+                    const viewParam = viewName ? ('where:' + tenant + '."' + viewName + '"') : ('where:' + emptyWMSSiteParameter);
+                    siteLayerSource.updateParams({
+                        viewparams: viewParam
+                    });
+                    siteLayerSource.refresh();
+                }
+                if (Array.isArray(extent) && extent.length === 4 && map) {
+                    const ext = ol.proj.transformExtent(
+                        extent,
+                        ol.proj.get('EPSG:4326'),
+                        ol.proj.get('EPSG:3857')
+                    );
+                    map.getView().fit(ext, map.getSize());
+                    if (map.getView().getZoom() > 8) {
+                        map.getView().setZoom(8);
+                    }
+                }
+                setSectionState(mapSection, 'ready');
+            }, function () {
+                mapError.textContent = 'Failed to load map.';
+                setSectionState(mapSection, 'error');
+            });
 
             const consSection = document.getElementById('cons-status-section');
             const consChartEl = document.getElementById('cons-status-chart');
@@ -338,6 +505,31 @@
             document.querySelectorAll('[data-download]').forEach(function (button) {
                 button.addEventListener('click', function () {
                     const type = button.getAttribute('data-download');
+                    if (type === 'map') {
+                        if (!map) {
+                            return;
+                        }
+                        map.once('postrender', function () {
+                            showDownloadPopup('IMAGE', 'Distribution Map', function () {
+                                const canvas = $('#spatial-dashboard-map');
+                                html2canvas(canvas, {
+                                    useCORS: true,
+                                    background: '#FFFFFF',
+                                    allowTaint: false,
+                                    onrendered: function (canvasEl) {
+                                        let link = document.createElement('a');
+                                        link.setAttribute("type", "hidden");
+                                        link.href = canvasEl.toDataURL("image/png");
+                                        link.download = 'distribution-map.png';
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        link.remove();
+                                    }
+                                });
+                            });
+                        });
+                        map.renderSync();
+                    }
                     if (type === 'cons-status') {
                         showDownloadPopup('CHART', 'Conservation Status Per Module', function () {
                             downloadCanvasAsPng(consChartEl, 'conservation-status-per-module');
