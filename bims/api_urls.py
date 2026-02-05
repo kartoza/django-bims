@@ -134,6 +134,10 @@ from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
 from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 from bims.api_views.filter_panel_info import FilterPanelInfoView
+from bims.api_views.spatial_dashboard import (
+    SpatialDashboardConsStatusApiView,
+    SpatialDashboardRliApiView
+)
 
 urlpatterns = [
     path('filter-panel-info/', FilterPanelInfoView.as_view(), name='filter-panel-info'),
@@ -167,6 +171,12 @@ urlpatterns = [
     re_path(r'^location-sites-coordinate/$',
         LocationSitesCoordinate.as_view(),
         name='location-sites-coordinate'),
+    re_path(r'^spatial-dashboard/cons-status/$',
+        SpatialDashboardConsStatusApiView.as_view(),
+        name='spatial-dashboard-cons-status'),
+    re_path(r'^spatial-dashboard/rli/$',
+        SpatialDashboardRliApiView.as_view(),
+        name='spatial-dashboard-rli'),
     re_path(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
     re_path(r'^taxon-proposal/(?P<pk>[0-9]+)/$',

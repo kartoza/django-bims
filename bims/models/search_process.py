@@ -19,6 +19,9 @@ from django.dispatch.dispatcher import receiver
 CLUSTER_GENERATION = 'cluster_generation'
 SEARCH_RESULTS = 'search_results'
 SITES_SUMMARY = 'sites_summary'
+SPATIAL_DASHBOARD_MODULE_TOTALS = 'spatial_dashboard_module_totals'
+SPATIAL_DASHBOARD_CONS_STATUS = 'spatial_dashboard_cons_status'
+SPATIAL_DASHBOARD_RLI = 'spatial_dashboard_rli'
 TAXON_SUMMARY = 'taxon_summary'
 
 SEARCH_PROCESSING = 'processing'
@@ -75,6 +78,9 @@ class SearchProcess(models.Model):
         (SEARCH_RESULTS, 'Search Results'),
         (SITES_SUMMARY, 'Site Summary'),
         (TAXON_SUMMARY, 'Taxon Summary'),
+        (SPATIAL_DASHBOARD_MODULE_TOTALS, 'Spatial Dashboard Module Totals'),
+        (SPATIAL_DASHBOARD_CONS_STATUS, 'Spatial Dashboard Conservation Status'),
+        (SPATIAL_DASHBOARD_RLI, 'Spatial Dashboard Red List Index'),
     )
     objects = SearchProcessManager()
 
