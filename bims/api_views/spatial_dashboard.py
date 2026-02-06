@@ -10,6 +10,7 @@ from bims.models.search_process import (
     SPATIAL_DASHBOARD_CONS_STATUS,
     SPATIAL_DASHBOARD_RLI,
     SPATIAL_DASHBOARD_MAP,
+    SPATIAL_DASHBOARD_SUMMARY,
     SEARCH_RESULTS,
     SEARCH_PROCESSING
 )
@@ -17,7 +18,8 @@ from bims.models.search_process import SearchProcess
 from bims.tasks.spatial_dashboard import (
     spatial_dashboard_cons_status,
     spatial_dashboard_rli,
-    spatial_dashboard_map
+    spatial_dashboard_map,
+    spatial_dashboard_summary
 )
 from bims.utils.search_process import get_or_create_search_process
 
@@ -102,3 +104,8 @@ class SpatialDashboardMapApiView(SpatialDashboardBaseApiView):
                     'sites_raw_query': existing.process_id
                 })
         return super(SpatialDashboardMapApiView, self).get(request)
+
+
+class SpatialDashboardSummaryApiView(SpatialDashboardBaseApiView):
+    search_type = SPATIAL_DASHBOARD_SUMMARY
+    task = spatial_dashboard_summary

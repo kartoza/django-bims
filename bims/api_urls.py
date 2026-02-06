@@ -137,7 +137,8 @@ from bims.api_views.filter_panel_info import FilterPanelInfoView
 from bims.api_views.spatial_dashboard import (
     SpatialDashboardConsStatusApiView,
     SpatialDashboardRliApiView,
-    SpatialDashboardMapApiView
+    SpatialDashboardMapApiView,
+    SpatialDashboardSummaryApiView
 )
 
 urlpatterns = [
@@ -181,6 +182,9 @@ urlpatterns = [
     re_path(r'^spatial-dashboard/map/$',
         SpatialDashboardMapApiView.as_view(),
         name='spatial-dashboard-map'),
+    re_path(r'^spatial-dashboard/summary/$',
+        SpatialDashboardSummaryApiView.as_view(),
+        name='spatial-dashboard-summary'),
     re_path(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
     re_path(r'^taxon-proposal/(?P<pk>[0-9]+)/$',

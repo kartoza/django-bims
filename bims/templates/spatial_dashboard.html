@@ -80,6 +80,22 @@
 
         <div class="vertical-space"></div>
 
+        <div class="table-container" id="summary-section">
+            <div class="table-title">
+                Overview
+            </div>
+            <div class="section-loading" data-loading>
+                <div class="spinner"></div>
+                <div>Loading summary…</div>
+            </div>
+            <div class="section-error d-none" data-error></div>
+            <div class="d-none" data-body>
+                <table class="table table-condensed table-striped" id="summary-table"></table>
+            </div>
+        </div>
+
+        <div class="vertical-space"></div>
+
         <div class="map-container" id="distribution-map-section">
             <div class="chart-title">
                 Distribution Map
@@ -324,6 +340,74 @@
             }, function () {
                 mapError.textContent = 'Failed to load map.';
                 setSectionState(mapSection, 'error');
+            });
+
+            const summarySection = document.getElementById('summary-section');
+            const summaryTable = document.getElementById('summary-table');
+            const summaryError = summarySection.querySelector('[data-error]');
+            setSectionState(summarySection, 'loading');
+            fetchWithPoll('/api/spatial-dashboard/summary/' + queryString, function (data) {
+                const modules = data && data.modules ? data.modules : [];
+                const overview = data && data.overview ? data.overview : {};
+                const origin = data && data.origin ? data.origin : {};
+                const endemism = data && data.endemism ? data.endemism : {};
+                const consGlobal = data && data.cons_status_global ? data.cons_status_global : {};
+                const consNational = data && data.cons_status_national ? data.cons_status_national : {};
+
+                if (modules.length === 0) {
+                    summaryTable.innerHTML = '<tr><td>No results found.</td></tr>';
+                    setSectionState(summarySection, 'ready');
+                    return;
+                }
+
+                function renderHeaderRow() {
+                    const headerCells = ['<th></th>'];
+                    headerCells.push('<th colspan="' + modules.length + '">Number of taxa</th>');
+                    return '<tr>' + headerCells.join('') + '</tr>';
+                }
+
+                function renderModuleHeaderRow() {
+                    const headerCells = ['<th></th>'];
+                    modules.forEach(function (moduleName) {
+                        headerCells.push('<th>' + moduleName + '</th>');
+                    });
+                    return '<tr>' + headerCells.join('') + '</tr>';
+                }
+
+                function renderSectionTitle(title) {
+                    return '<tr class="table-active"><th colspan="' + (modules.length + 1) + '">' + title + '</th></tr>';
+                }
+
+                function renderRows(rows) {
+                    const html = [];
+                    Object.keys(rows).forEach(function (label) {
+                        const values = rows[label] || {};
+                        const cells = ['<td>' + label + '</td>'];
+                        modules.forEach(function (moduleName) {
+                            cells.push('<td>' + (values[moduleName] || 0) + '</td>');
+                        });
+                        html.push('<tr>' + cells.join('') + '</tr>');
+                    });
+                    return html.join('');
+                }
+
+                let html = '';
+                html += renderHeaderRow();
+                html += renderModuleHeaderRow();
+                html += renderSectionTitle('Origin');
+                html += renderRows(origin);
+                html += renderSectionTitle('Endemism');
+                html += renderRows(endemism);
+                html += renderSectionTitle('Conservation status global');
+                html += renderRows(consGlobal);
+                html += renderSectionTitle('Conservation status national');
+                html += renderRows(consNational);
+
+                summaryTable.innerHTML = html;
+                setSectionState(summarySection, 'ready');
+            }, function () {
+                summaryError.textContent = 'Failed to load summary.';
+                setSectionState(summarySection, 'error');
             });
 
             const consSection = document.getElementById('cons-status-section');
