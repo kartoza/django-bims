@@ -10,53 +10,7 @@
     <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
     <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
     <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
-    <style>
-        .spatial-dashboard-placeholder {
-            border: 2px dashed rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-            color: #666;
-            padding: 48px 24px;
-            text-align: center;
-        }
-        .spatial-dashboard-table {
-            background: #fff;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 8px;
-            padding: 16px;
-        }
-        .spatial-dashboard-table table {
-            margin-bottom: 0;
-        }
-        .spatial-dashboard-table th {
-            font-weight: 600;
-        }
-        .section-loading {
-            align-items: center;
-            color: #666;
-            display: flex;
-            gap: 10px;
-            padding: 12px 0;
-        }
-        .spinner {
-            animation: spin 0.8s linear infinite;
-            border: 3px solid rgba(0, 0, 0, 0.15);
-            border-top-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            height: 22px;
-            width: 22px;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .section-error {
-            color: #a00;
-            padding: 8px 0;
-        }
-        .cons-status-chart-wrap {
-            width: 100%;
-            min-height: 180px;
-        }
-    </style>
+    <link href="{% static "css/spatial_dashboard.css" %}" rel="stylesheet">
     <script>
         const baseMapLayers = {{ basemap_layers|jsonify|safe }};
         const geoserverPublicUrl = '{{ geoserver_public_location }}';
@@ -66,57 +20,200 @@
 {% endblock %}
 
 {% block body_content %}
-    <div class="body-container container">
+    <div class="body-form container">
         <div class="dashboard-title">
             <h2>Spatial Dashboard</h2>
         </div>
 
-        <div class="table-container">
-            <div class="table-title">
-                Filter History
+        <div class="row">
+            <div class="col-5">
+                <div class="table-container">
+                    <div class="table-title">
+                        Filter History
+                    </div>
+                    <table class="table table-condensed table-striped filter-history-table"></table>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="map-container" id="distribution-map-section">
+                    <div class="chart-title">
+                        Distribution
+                        <i data-download="map"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download map"
+                           class="fa fa-download pull-right download-icon download-map"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading map…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div id="spatial-dashboard-map" style="height: 360px; width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="table-container" id="summary-section">
+                    <div class="table-title">
+                        Overview
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading summary…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none summary-table-container" data-body>
+                        <table class="table table-condensed table-striped" id="summary-table"></table>
+                    </div>
+                </div>
+
+
+
             </div>
-            <table class="table table-condensed table-striped filter-history-table"></table>
+            <div class="col-7">
+                <div class="chart-container" id="occurrence-pies-section">
+                    <div class="chart-title">
+                        Occurrence Breakdown
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading occurrence breakdown…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none occurrence-pies" data-body>
+                        <div class="occurrence-pies-row">
+                            <div class="occurrence-pie-item">
+                                <div class="chart-bottom-title">Origin</div>
+                                <canvas id="occurrence-origin-pie" height="180"></canvas>
+                                <div id="occurrence-origin-legend"></div>
+                            </div>
+                            <div class="occurrence-pie-item">
+                                <div class="chart-bottom-title">Endemism</div>
+                                <canvas id="occurrence-endemism-pie" height="180"></canvas>
+                                <div id="occurrence-endemism-legend"></div>
+                            </div>
+                            <div class="occurrence-pie-item">
+                                <div class="chart-bottom-title">Conservation Status</div>
+                                <canvas id="occurrence-cons-status-pie" height="180"></canvas>
+                                <div id="occurrence-cons-status-legend"></div>
+                            </div>
+                            <div class="occurrence-pie-item">
+                                <div class="chart-bottom-title">Sampling Method</div>
+                                <canvas id="occurrence-sampling-pie" height="180"></canvas>
+                                <div id="occurrence-sampling-legend"></div>
+                            </div>
+                            <div class="occurrence-pie-item">
+                                <div class="chart-bottom-title">Biotope</div>
+                                <canvas id="occurrence-biotope-pie" height="180"></canvas>
+                                <div id="occurrence-biotope-legend"></div>
+                            </div>
+                            <div class="occurrence-pie-item" id="occurrence-cons-status-national-wrapper">
+                                <div class="chart-bottom-title">Conservation Status National</div>
+                                <canvas id="occurrence-cons-status-national-pie" height="180"></canvas>
+                                <div id="occurrence-cons-status-national-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="occurrences-section">
+                    <div class="chart-title">
+                        Occurrences
+                        <i data-download="occurrences"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading occurrences…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="occurrences-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="cons-status-section">
+                    <div class="chart-title">
+                        Conservation Status
+                        <i data-download="cons-status"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading conservation status…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="cons-status-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="origin-section">
+                    <div class="chart-title">
+                        Origin
+                        <i data-download="origin"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading origin…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="origin-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="endemism-section">
+                    <div class="chart-title">
+                        Endemism
+                        <i data-download="endemism"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading endemism…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="endemism-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
         </div>
 
         <div class="vertical-space"></div>
-
-        <div class="table-container" id="summary-section">
-            <div class="table-title">
-                Overview
-            </div>
-            <div class="section-loading" data-loading>
-                <div class="spinner"></div>
-                <div>Loading summary…</div>
-            </div>
-            <div class="section-error d-none" data-error></div>
-            <div class="d-none" data-body>
-                <table class="table table-condensed table-striped" id="summary-table"></table>
-            </div>
-        </div>
-
-        <div class="vertical-space"></div>
-
-        <div class="map-container" id="distribution-map-section">
-            <div class="chart-title">
-                Distribution Map
-                <i data-download="map"
-                   data-toggle="tooltip" data-placement="left"
-                   title="Download map"
-                   class="fa fa-download pull-right download-icon download-map"></i>
-            </div>
-            <div class="section-loading" data-loading>
-                <div class="spinner"></div>
-                <div>Loading map…</div>
-            </div>
-            <div class="section-error d-none" data-error></div>
-            <div class="d-none" data-body>
-                <div id="spatial-dashboard-map" style="height: 360px; width: 100%;"></div>
-            </div>
-        </div>
-
-        <div class="vertical-space"></div>
-
-        <div class="chart-container" id="cons-status-section">
+        
+         <div class="chart-container" id="cons-status-per-module-section">
             <div class="chart-title">
                 Conservation Status Per Module
                 <i data-download="cons-status"
@@ -130,11 +227,11 @@
             </div>
             <div class="section-error d-none" data-error></div>
             <div class="d-none" data-body>
-                <div class="cons-status-chart-wrap">
-                    <canvas id="cons-status-chart" height="160"></canvas>
+                <div class="cons-status-chart-per-module-wrap">
+                    <canvas id="cons-status-chart-per-module" height="160"></canvas>
                 </div>
             </div>
-        </div>
+         </div>
 
         <div class="vertical-space"></div>
 
@@ -169,464 +266,5 @@
     <script src="{% static 'js/utils/filter_list.js' %}"></script>
     <script src="{% static 'js/libs/html2canvas.js' %}"></script>
     <script src="{% static 'js/libs/chart/Chart-2.7.2.js' %}"></script>
-    <script>
-        (function () {
-            const queryString = window.location.search || '';
-            if (typeof renderFilterList !== 'undefined') {
-                renderFilterList($('.filter-history-table'));
-            }
-
-            function setSectionState(section, state) {
-                const loading = section.querySelector('[data-loading]');
-                const error = section.querySelector('[data-error]');
-                const body = section.querySelector('[data-body]');
-                if (state === 'loading') {
-                    loading.classList.remove('d-none');
-                    error.classList.add('d-none');
-                    body.classList.add('d-none');
-                } else if (state === 'error') {
-                    loading.classList.add('d-none');
-                    error.classList.remove('d-none');
-                    body.classList.add('d-none');
-                } else if (state === 'ready') {
-                    loading.classList.add('d-none');
-                    error.classList.add('d-none');
-                    body.classList.remove('d-none');
-                }
-            }
-
-            function fetchWithPoll(url, onDone, onError) {
-                fetch(url, {credentials: 'same-origin'})
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (data && data.status === 'processing') {
-                            setTimeout(() => fetchWithPoll(url, onDone, onError), 2000);
-                            return;
-                        }
-                        onDone(data || {});
-                    })
-                    .catch(onError);
-            }
-
-            function downloadCanvasAsPng(canvasEl, title) {
-                if (!canvasEl) {
-                    return;
-                }
-                const link = document.createElement('a');
-                link.href = canvasEl.toDataURL('image/png');
-                link.download = title + '.png';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            }
-
-            const mapSection = document.getElementById('distribution-map-section');
-            const mapError = mapSection.querySelector('[data-error]');
-            const mapTarget = document.getElementById('spatial-dashboard-map');
-            let map = null;
-            let siteLayerSource = null;
-
-            function buildBaseLayer() {
-                let baseLayer = new ol.layer.Tile({
-                    source: new ol.source.OSM()
-                });
-                if (Array.isArray(baseMapLayers) && baseMapLayers.length > 0) {
-                    const reversed = baseMapLayers.slice().reverse();
-                    reversed.forEach(function (baseMapData) {
-                        if (!baseMapData.default_basemap) {
-                            return;
-                        }
-                        if (baseMapData.source_type === 'xyz') {
-                            baseLayer = new ol.layer.Tile({
-                                title: baseMapData.title,
-                                source: new ol.source.XYZ({
-                                    attributions: [baseMapData.attributions],
-                                    url: '/bims_proxy/' + baseMapData.url
-                                })
-                            });
-                        } else if (baseMapData.source_type === 'bing') {
-                            baseLayer = new ol.layer.Tile({
-                                title: baseMapData.title,
-                                source: new ol.source.BingMaps({
-                                    key: baseMapData.key,
-                                    imagerySet: 'AerialWithLabels'
-                                })
-                            });
-                        } else if (baseMapData.source_type === 'stamen') {
-                            baseLayer = new ol.layer.Tile({
-                                title: baseMapData.title,
-                                source: new ol.source.XYZ({
-                                    attributions: [
-                                        '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a>',
-                                        '&copy; <a href="https://stamen.com/" target="_blank">Stamen Design</a>',
-                                        '&copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a>',
-                                        '&copy; <a href="https://www.openstreetmap.org/about/" target="_blank">OpenStreetMap contributors</a>'
-                                    ],
-                                    url: '/bims_proxy/' + 'https://tiles-eu.stadiamaps.com/tiles/' + baseMapData.layer_name + '/{z}/{x}/{y}.jpg?api_key=' + baseMapData.key,
-                                    tilePixelRatio: 2,
-                                    maxZoom: 20
-                                })
-                            });
-                        }
-                    });
-                }
-                return baseLayer;
-            }
-
-            function initMap() {
-                if (map) {
-                    return;
-                }
-                const baseLayer = buildBaseLayer();
-                siteLayerSource = new ol.source.ImageWMS({
-                    url: geoserverPublicUrl + 'wms',
-                    params: {
-                        LAYERS: locationSiteGeoserverLayer,
-                        FORMAT: 'image/png8',
-                        viewparams: 'where:' + emptyWMSSiteParameter
-                    },
-                    ratio: 1,
-                    serverType: 'geoserver'
-                });
-                const siteLayer = new ol.layer.Image({
-                    source: siteLayerSource
-                });
-                map = new ol.Map({
-                    controls: ol.control.defaults.defaults().extend([
-                        new ol.control.ScaleLine()
-                    ]),
-                    layers: [baseLayer, siteLayer],
-                    target: mapTarget,
-                    view: new ol.View({
-                        center: [0, 0],
-                        zoom: 2
-                    })
-                });
-                const graticule = new ol.layer.Graticule({
-                    strokeStyle: new ol.style.Stroke({
-                        color: 'rgba(0,0,0,1)',
-                        width: 1,
-                        lineDash: [2.5, 4]
-                    }),
-                    showLabels: true
-                });
-                graticule.setMap(map);
-            }
-
-            setSectionState(mapSection, 'loading');
-            initMap();
-            fetchWithPoll('/api/spatial-dashboard/map/' + queryString, function (data) {
-                const extent = data && data.extent ? data.extent : [];
-                const viewName = data && data.sites_raw_query ? data.sites_raw_query : null;
-                if (siteLayerSource) {
-                    const viewParam = viewName ? ('where:' + tenant + '."' + viewName + '"') : ('where:' + emptyWMSSiteParameter);
-                    siteLayerSource.updateParams({
-                        viewparams: viewParam
-                    });
-                    siteLayerSource.refresh();
-                }
-                if (Array.isArray(extent) && extent.length === 4 && map) {
-                    const ext = ol.proj.transformExtent(
-                        extent,
-                        ol.proj.get('EPSG:4326'),
-                        ol.proj.get('EPSG:3857')
-                    );
-                    map.getView().fit(ext, map.getSize());
-                    if (map.getView().getZoom() > 8) {
-                        map.getView().setZoom(8);
-                    }
-                }
-                setSectionState(mapSection, 'ready');
-            }, function () {
-                mapError.textContent = 'Failed to load map.';
-                setSectionState(mapSection, 'error');
-            });
-
-            const summarySection = document.getElementById('summary-section');
-            const summaryTable = document.getElementById('summary-table');
-            const summaryError = summarySection.querySelector('[data-error]');
-            setSectionState(summarySection, 'loading');
-            fetchWithPoll('/api/spatial-dashboard/summary/' + queryString, function (data) {
-                const modules = data && data.modules ? data.modules : [];
-                const overview = data && data.overview ? data.overview : {};
-                const origin = data && data.origin ? data.origin : {};
-                const endemism = data && data.endemism ? data.endemism : {};
-                const consGlobal = data && data.cons_status_global ? data.cons_status_global : {};
-                const consNational = data && data.cons_status_national ? data.cons_status_national : {};
-
-                if (modules.length === 0) {
-                    summaryTable.innerHTML = '<tr><td>No results found.</td></tr>';
-                    setSectionState(summarySection, 'ready');
-                    return;
-                }
-
-                function renderHeaderRow() {
-                    const headerCells = ['<th></th>'];
-                    headerCells.push('<th colspan="' + modules.length + '">Number of taxa</th>');
-                    return '<tr>' + headerCells.join('') + '</tr>';
-                }
-
-                function renderModuleHeaderRow() {
-                    const headerCells = ['<th></th>'];
-                    modules.forEach(function (moduleName) {
-                        headerCells.push('<th>' + moduleName + '</th>');
-                    });
-                    return '<tr>' + headerCells.join('') + '</tr>';
-                }
-
-                function renderSectionTitle(title) {
-                    return '<tr class="table-active"><th colspan="' + (modules.length + 1) + '">' + title + '</th></tr>';
-                }
-
-                function renderRows(rows) {
-                    const html = [];
-                    Object.keys(rows).forEach(function (label) {
-                        const values = rows[label] || {};
-                        const cells = ['<td>' + label + '</td>'];
-                        modules.forEach(function (moduleName) {
-                            cells.push('<td>' + (values[moduleName] || 0) + '</td>');
-                        });
-                        html.push('<tr>' + cells.join('') + '</tr>');
-                    });
-                    return html.join('');
-                }
-
-                let html = '';
-                html += renderHeaderRow();
-                html += renderModuleHeaderRow();
-                html += renderSectionTitle('Origin');
-                html += renderRows(origin);
-                html += renderSectionTitle('Endemism');
-                html += renderRows(endemism);
-                html += renderSectionTitle('Conservation status global');
-                html += renderRows(consGlobal);
-                html += renderSectionTitle('Conservation status national');
-                html += renderRows(consNational);
-
-                summaryTable.innerHTML = html;
-                setSectionState(summarySection, 'ready');
-            }, function () {
-                summaryError.textContent = 'Failed to load summary.';
-                setSectionState(summarySection, 'error');
-            });
-
-            const consSection = document.getElementById('cons-status-section');
-            const consChartEl = document.getElementById('cons-status-chart');
-            const consError = consSection.querySelector('[data-error]');
-            setSectionState(consSection, 'loading');
-            fetchWithPoll('/api/spatial-dashboard/cons-status/' + queryString, function (data) {
-                const modules = (data && data.modules) ? data.modules : [];
-                if (modules.length === 0) {
-                    consChartEl.parentNode.innerHTML = '<div class="spatial-dashboard-placeholder">No results found.</div>';
-                    setSectionState(consSection, 'ready');
-                    return;
-                }
-                const categoryMap = {};
-                modules.forEach(function (module) {
-                    (module.cons_status || []).forEach(function (item) {
-                        const key = item.name || item.category || 'Unknown';
-                        if (!categoryMap[key]) {
-                            categoryMap[key] = item.colour || '#999';
-                        }
-                    });
-                });
-                const categories = Object.keys(categoryMap);
-                const moduleLabels = modules.map(function (module) { return module.name; });
-                const totals = modules.map(function (module) {
-                    return (module.cons_status || []).reduce(function (sum, item) {
-                        return sum + (item.count || 0);
-                    }, 0);
-                });
-                const datasets = categories.map(function (category) {
-                    return {
-                        label: category,
-                        backgroundColor: categoryMap[category],
-                        data: modules.map(function (module, idx) {
-                            const total = totals[idx] || 0;
-                            if (total === 0) {
-                                return 0;
-                            }
-                            const match = (module.cons_status || []).find(function (item) {
-                                return (item.name || item.category || 'Unknown') === category;
-                            });
-                            const count = match ? (match.count || 0) : 0;
-                            return Math.round((count / total) * 1000) / 10;
-                        })
-                    };
-                });
-                if (typeof Chart !== 'undefined') {
-                    new Chart(consChartEl.getContext('2d'), {
-                        type: 'horizontalBar',
-                        data: {
-                            labels: moduleLabels,
-                            datasets: datasets
-                        },
-                        options: {
-                            responsive: true,
-                            legend: {position: 'bottom'},
-                            scales: {
-                                xAxes: [{
-                                    stacked: true,
-                                    ticks: {
-                                        beginAtZero: true,
-                                        max: 100,
-                                        callback: function (value) { return value + '%'; }
-                                    }
-                                }],
-                                yAxes: [{
-                                    stacked: true,
-                                    barThickness: 10,
-                                    maxBarThickness: 12
-                                }]
-                            },
-                            tooltips: {
-                                callbacks: {
-                                    label: function (tooltipItem, chartData) {
-                                        const dataset = chartData.datasets[tooltipItem.datasetIndex];
-                                        return dataset.label + ': ' + tooltipItem.xLabel + '%';
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-                setSectionState(consSection, 'ready');
-            }, function () {
-                consError.textContent = 'Failed to load conservation status.';
-                setSectionState(consSection, 'error');
-            });
-
-            const rliSection = document.getElementById('rli-section');
-            const rliChartEl = document.getElementById('rli-chart');
-            const rliError = rliSection.querySelector('[data-error]');
-            setSectionState(rliSection, 'loading');
-            fetchWithPoll('/api/spatial-dashboard/rli/' + queryString, function (data) {
-                const series = (data && data.series) ? data.series : [];
-                const aggregate = (data && data.aggregate) ? data.aggregate : [];
-                if (series.length === 0 && aggregate.length === 0) {
-                    rliChartEl.parentNode.innerHTML = '<div class="spatial-dashboard-placeholder">No results found.</div>';
-                    setSectionState(rliSection, 'ready');
-                    return;
-                }
-
-                const palette = [
-                    '#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#00796b',
-                    '#c2185b', '#5d4037', '#455a64', '#512da8', '#0097a7',
-                    '#689f38', '#fbc02d'
-                ];
-
-                const datasets = series.map(function (item, idx) {
-                    return {
-                        label: item.name,
-                        data: item.points.map(function (point) {
-                            return {x: point.year, y: point.value};
-                        }),
-                        borderColor: palette[idx % palette.length],
-                        backgroundColor: 'transparent',
-                        fill: false,
-                        lineTension: 0,
-                        pointRadius: 3
-                    };
-                });
-
-                if (aggregate.length > 0) {
-                    datasets.unshift({
-                        label: 'Aggregate',
-                        data: aggregate.map(function (point) {
-                            return {x: point.year, y: point.value};
-                        }),
-                        borderColor: '#000',
-                        backgroundColor: 'transparent',
-                        fill: false,
-                        borderDash: [6, 4],
-                        lineTension: 0,
-                        pointRadius: 2
-                    });
-                }
-
-                if (typeof Chart !== 'undefined') {
-                    new Chart(rliChartEl.getContext('2d'), {
-                        type: 'line',
-                        data: {datasets: datasets},
-                        options: {
-                            responsive: true,
-                            legend: {position: 'right'},
-                            scales: {
-                                xAxes: [{
-                                    type: 'linear',
-                                    position: 'bottom',
-                                    ticks: {
-                                        callback: function (value) { return value; }
-                                    },
-                                    scaleLabel: {display: true, labelString: 'Year'}
-                                }],
-                                yAxes: [{
-                                    ticks: {
-                                        min: 0,
-                                        max: 1,
-                                        callback: function (value) { return value.toFixed(2); }
-                                    },
-                                    scaleLabel: {display: true, labelString: 'Red List Index'}
-                                }]
-                            },
-                            tooltips: {
-                                callbacks: {
-                                    label: function (tooltipItem, chartData) {
-                                        const dataset = chartData.datasets[tooltipItem.datasetIndex];
-                                        return dataset.label + ': ' + tooltipItem.yLabel.toFixed(3);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-                setSectionState(rliSection, 'ready');
-            }, function () {
-                rliError.textContent = 'Failed to load red list index.';
-                setSectionState(rliSection, 'error');
-            });
-
-            document.querySelectorAll('[data-download]').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    const type = button.getAttribute('data-download');
-                    if (type === 'map') {
-                        if (!map) {
-                            return;
-                        }
-                        map.once('postrender', function () {
-                            showDownloadPopup('IMAGE', 'Distribution Map', function () {
-                                const canvas = $('#spatial-dashboard-map');
-                                html2canvas(canvas, {
-                                    useCORS: true,
-                                    background: '#FFFFFF',
-                                    allowTaint: false,
-                                    onrendered: function (canvasEl) {
-                                        let link = document.createElement('a');
-                                        link.setAttribute("type", "hidden");
-                                        link.href = canvasEl.toDataURL("image/png");
-                                        link.download = 'distribution-map.png';
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        link.remove();
-                                    }
-                                });
-                            });
-                        });
-                        map.renderSync();
-                    }
-                    if (type === 'cons-status') {
-                        showDownloadPopup('CHART', 'Conservation Status Per Module', function () {
-                            downloadCanvasAsPng(consChartEl, 'conservation-status-per-module');
-                        });
-                    }
-                    if (type === 'rli') {
-                        showDownloadPopup('CHART', 'Red List Index', function () {
-                            downloadCanvasAsPng(rliChartEl, 'red-list-index');
-                        });
-                    }
-                });
-            });
-            $('[data-toggle="tooltip"]').tooltip();
-        })();
-    </script>
+    <script src="{% static 'js/spatial_dashboard.js' %}"></script>
 {% endblock %}

@@ -378,11 +378,19 @@ def generate_location_site_summary(
 
     # Check module
     modules = []
-    if 'modules' in filters:
-        modules = list(TaxonGroup.objects.filter(
-            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
-            id=filters['modules']
-        ).values_list('name', flat=True))
+    module_filter = filters.get('modules')
+    if module_filter:
+        module_ids = []
+        if isinstance(module_filter, str):
+            if ',' in module_filter:
+                module_ids = [int(x) for x in module_filter.split(',') if x.isdigit()]
+            elif module_filter.isdigit():
+                module_ids = [int(module_filter)]
+        if module_ids:
+            modules = list(TaxonGroup.objects.filter(
+                category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+                id__in=module_ids
+            ).values_list('name', flat=True))
 
     # - Survey
     survey_list = []

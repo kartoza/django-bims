@@ -92,6 +92,7 @@ from bims_theme.api_views.chart_colors import ChartColorsList
 from bims.api_views.location_site_dashboard import (
     LocationSitesEndemismChartData,
     OccurrencesChartData,
+    OccurrencesTotalChartData,
     LocationSitesConservationChartData,
     LocationSitesTaxaChartData
 )
@@ -164,6 +165,9 @@ urlpatterns = [
     re_path(r'^location-sites-occurrences-chart-data/$',
         OccurrencesChartData.as_view(),
         name='location-sites-occurrences-chart-data'),
+    re_path(r'^location-sites-total-occurrences-chart-data/$',
+        OccurrencesTotalChartData.as_view(),
+        name='location-sites-total-occurrences-chart-data'),
     re_path(r'^location-sites-cons-chart-data/$',
         LocationSitesConservationChartData.as_view(),
         name='location-sites-cons-chart-data'),
