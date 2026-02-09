@@ -25,6 +25,7 @@ from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.upload import UploadView
 from bims.views.taxa_upload import TaxaUploadView
+from bims.views.taxa_validation_upload import TaxaValidationUploadView
 from bims.views.collections_upload import CollectionsUploadView
 from bims.views.boundary_upload import (
     ShapefileUploadView,
@@ -109,6 +110,8 @@ urlpatterns = [
             name='csv-upload'),
     re_path(r'^upload-taxa/$', TaxaUploadView.as_view(),
             name='csv-upload-taxa'),
+    re_path(r'^validate-taxa/$', TaxaValidationUploadView.as_view(),
+            name='validate-taxa'),
     re_path(r'^upload_shp/$', ShapefileUploadView.as_view(),
             name='shapefile-upload'),
     re_path(r'^process_shapefiles/$', process_shapefiles,
