@@ -400,6 +400,18 @@ def fetch_all_species_from_gbif(
                 rank=taxonomic_rank
             )
 
+        # Check if the taxon name from GBIF is different from the query
+        # If different, return None to avoid incorrect matches
+        if species_data and species:
+            gbif_canonical = (species_data.get('canonicalName') or '').strip().lower()
+            input_name = species.strip().lower()
+            if gbif_canonical and input_name and gbif_canonical != input_name:
+                log_info(
+                    f"GBIF name mismatch: input '{species}' does not match "
+                    f"GBIF canonical name '{species_data.get('canonicalName')}' - skipping"
+                )
+                return None
+
     raw_rank = species_data.get('rank', '').upper() if species_data else ''
 
     if taxonomic_rank:
