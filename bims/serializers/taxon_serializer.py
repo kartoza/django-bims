@@ -150,6 +150,35 @@ class TaxonSerializer(serializers.ModelSerializer):
             return f"{original_str if original_str else '-'} → {proposed_str}"
         return original_str
 
+    def _find_ancestor_by_rank(self, obj: Taxonomy, target_rank: str, max_depth: int = 10):
+        """Traverse parent hierarchy to find an ancestor with the specified rank."""
+        current = obj.parent
+        depth = 0
+        while current and depth < max_depth:
+            if current.rank and current.rank.upper() == target_rank.upper():
+                return current
+            current = current.parent
+            depth += 1
+        return None
+
+    def _get_genus_name(self, obj: Taxonomy):
+        """Get genus name from hierarchy or hierarchical_data."""
+        if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
+            return obj.hierarchical_data['genus_name']
+        genus_ancestor = self._find_ancestor_by_rank(obj, 'GENUS')
+        if genus_ancestor:
+            return genus_ancestor.canonical_name
+        return obj.genus_name
+
+    def _get_subgenus_name(self, obj: Taxonomy):
+        """Get subgenus name from hierarchy."""
+        if obj.rank and obj.rank.upper() == 'SUBGENUS':
+            return obj.canonical_name
+        subgenus_ancestor = self._find_ancestor_by_rank(obj, 'SUBGENUS')
+        if subgenus_ancestor:
+            return subgenus_ancestor.canonical_name
+        return None
+
     def get_genus(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
         if not validated:
@@ -304,7 +333,37 @@ class TaxonSerializer(serializers.ModelSerializer):
             return '-'
 
     def get_canonical_name(self, obj):
-        return self.get_proposed_or_current(obj, 'canonical_name')
+        canonical_name = self.get_proposed_or_current(obj, 'canonical_name')
+
+        if not obj.rank:
+            return canonical_name
+
+        current_rank = obj.rank.upper()
+
+        if current_rank == 'SUBGENUS':
+            genus_name = self._get_genus_name(obj)
+            if genus_name and canonical_name:
+                subgenus_name = canonical_name
+                if (
+                    len(canonical_name.split(' ')) > 1
+                    and canonical_name.lower().startswith(genus_name.lower())
+                ):
+                    subgenus_name = canonical_name[len(genus_name):].strip()
+                return f"{genus_name} ({subgenus_name})"
+            return canonical_name
+
+        subgenus_name = self._get_subgenus_name(obj)
+        if subgenus_name:
+            genus_name = self._get_genus_name(obj)
+            if genus_name:
+                name_parts = canonical_name.split()
+                if len(name_parts) > 1:
+                    epithet = ' '.join(name_parts[1:])
+                    if epithet.lower().startswith(subgenus_name.lower()):
+                        epithet = epithet[len(subgenus_name):].strip()
+                    return f"{genus_name} ({subgenus_name}) {epithet}"
+
+        return canonical_name
 
     def get_rank(self, obj):
         return self.get_proposed_or_current(obj, 'rank')
