@@ -2448,6 +2448,10 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         'resume_harvest',
     ]
 
+    autocomplete_fields = [
+        'parent_species',
+    ]
+
     def resume_harvest(self, request, queryset):
         from bims.tasks.harvest_collections import (
             harvest_collections
