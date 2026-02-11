@@ -184,6 +184,11 @@ class TaxaProcessor(object):
         rank_l = (rank or '').lower()
         status_l = (taxonomic_status or '').strip().lower()
         is_species_like = 'species' in rank_l
+        is_subgenus = 'subgenus' in rank_l
+
+        if is_subgenus:
+            subgenus_name = _safe_strip(self.get_row_value(row, SUBGENUS))
+            return subgenus_name or composed_taxon
 
         if _canon(csv_taxon) == _canon(composed_taxon):
             return composed_taxon
