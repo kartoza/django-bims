@@ -633,7 +633,8 @@ class TaxaList(LoginRequiredMixin, APIView):
         if taxon_name:
             taxon_list = taxon_list.filter(
                 Q(canonical_name__icontains=taxon_name) |
-                Q(accepted_taxonomy__canonical_name__icontains=taxon_name)
+                Q(accepted_taxonomy__canonical_name__icontains=taxon_name) |
+                Q(scientific_name__icontains=taxon_name)
             )
         if family_name:
             taxon_list = taxon_list.filter(

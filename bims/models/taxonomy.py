@@ -681,7 +681,6 @@ class Taxonomy(AbstractTaxonomy):
             return taxon
         return None
 
-
     def save(self, *args, **kwargs):
         update_taxon_with_gbif = False
 
@@ -837,7 +836,20 @@ def _extract_iucn_payload(taxon: Taxonomy) -> dict[str, object]:
 
 @receiver(models.signals.pre_save, sender=Taxonomy)
 def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
-    """Set IUCN status and redlist ID before saving taxonomy."""
+    if 'subgenus' in instance.rank.lower():
+        canonical_name = instance.canonical_name
+        genus_name = instance.parent.canonical_name if instance.parent else ''
+        if len(canonical_name.split(' ')) < 2 and genus_name:
+            instance.scientific_name = f'{genus_name} ({canonical_name})'
+            if instance.author:
+                instance.scientific_name += f' {instance.author}'
+
+    if instance.author and len(instance.scientific_name.split(instance.author)) > 2:
+        instance.scientific_name = instance.scientific_name.replace(
+            f'{instance.scientific_name} ', instance.author, 1
+        )
+
+    # Set IUCN status and redlist ID before saving taxonomy
     if instance.is_species and not instance.iucn_status:
         iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
         if iucn_status:
