@@ -12,6 +12,7 @@ FADA_ADDITIONAL_KEYS = [
     'Biogeographic References',
     'Environmental Comments',
     'Environmental References',
+    'Conservation Status',
     'Conservation Comments',
     'Conservation References',
 ]
@@ -63,7 +64,7 @@ def reorder_headers_for_fada(headers):
     environmental_comments = ['Environmental References', 'Environmental Comments']
     # Taxonomic Reference before Taxonomic Comments
     taxonomic_comments = ['Taxonomic References', 'Taxonomic Comments']
-    conservation_comments = ['Conservation Comments', 'Conservation References']
+    conservation_comments = ['Conservation Status', 'Conservation Comments', 'Conservation References']
 
     base_headers = []
     biographic_headers = []

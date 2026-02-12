@@ -1,0 +1,229 @@
+{% extends 'main_base.html' %}
+{% load static %}
+
+{% block subtitle %}
+    Taxa Validation
+{% endblock %}
+
+{% block head %}
+    <!-- Custom styles for this template -->
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+
+            <div class="help-block-space"></div>
+            <h3>Validate Taxa Data</h3>
+            <p class="text-muted">
+                Upload a CSV or Excel file to validate for duplicate GBIF keys and FADA IDs.
+                No data will be imported - this is for validation only.
+            </p>
+            <div id="csv-alert" class="alert alert-warning" role="alert" style="display: none;">
+            </div>
+            <div class="modal-body">
+            <form action="{{ request.path }}" method="post" id="validation-upload-form" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="help-block">
+                    {% if not upload_sessions %}
+                    <div class="help-block-space"></div>
+                    <div class="alert alert-info">
+                        <strong>Validation checks:</strong>
+                        <ul class="mb-0">
+                            <li>Duplicate GBIF keys within the file (ERROR)</li>
+                            <li>Duplicate FADA IDs within the file (ERROR)</li>
+                            <li>GBIF keys that already exist in the database (WARNING)</li>
+                            <li>FADA IDs that already exist in the database (WARNING)</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-block-space"></div>
+                    <div class="form-group row">
+                        <label for="taxon-group"
+                               class="col-sm-2 col-form-label"><b>Taxon Group</b></label>
+                        <div class="col-sm-10">
+                            <select class="form-control" name="taxon_group" id="taxon-group">
+                                {% for taxon_group in taxa_groups %}
+                                    <option value="{{ taxon_group.id }}"> {{ taxon_group.name }} </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Select the taxon group for context (optional)</small>
+                        </div>
+                    </div>
+                    <div class="help-block-space"></div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label" for="file"><b>Upload file</b></label>
+                        <div class="col-sm-10">
+                             <input id="fileupload" type="file" name="csv_file" accept=".csv,.xls,.xlsx">
+                             <small class="form-text text-muted">Supported formats: CSV, XLS, XLSX</small>
+                        </div>
+                    </div>
+                    <button id="main-upload-btn" class="btn btn-primary" type="submit" disabled>
+                        Validate File
+                    </button>
+                    <a href="{% url 'csv-upload-taxa' %}" class="btn btn-secondary">
+                        Go to Taxa Upload
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+
+            {# Active validation sessions #}
+            {% if upload_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Validation in progress:</h5>
+                    {% for upload_session in upload_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">File: {{ upload_session.process_file.name }}</h5>
+                                <div style="float: right; margin-top: -40px">
+                                    {% if upload_session.module_group.logo %}
+                                    <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                    {% endif %}
+                                </div>
+                                <p>Uploaded at {{ upload_session.uploaded_at }}</p>
+                                <p class="card-text">Progress: <span class="progress-text">{% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</span></p>
+                                <div class="progress">
+                                    <div data-progress="{{ upload_session.progress }}" data-id="{{ upload_session.id }}"
+                                         class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0"></div>
+                                </div>
+                                <br/>
+                                <button class="btn btn-danger" data-toggle="modal" data-target="#cancelModal" data-id="{{ upload_session.id }}">Cancel</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# Finished validation sessions #}
+            {% if finished_sessions %}
+                <div class="upload-progress-container">
+                    <h5>Finished validations:</h5>
+                    {% for upload_session in finished_sessions %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">File: {{ upload_session.process_file.name }}</h5>
+                                <div style="float: right; margin-top: -40px">
+                                    {% if upload_session.module_group.logo %}
+                                        <img src="{{ upload_session.module_group.logo.url }}" width="40"/>
+                                    {% endif %}
+                                </div>
+                                <p>Uploaded at {{ upload_session.uploaded_at }}</p>
+                                <p class="card-text">Result: {% if upload_session.progress %}{{ upload_session.progress }}{% else %}Processing{% endif %}</p>
+                                {% if upload_session.error_file %}
+                                    <a href="{{ upload_session.error_file.url }}" target="_blank" class="btn btn-primary">
+                                        Download Validated CSV
+                                    </a>
+                                {% endif %}
+                                {% if upload_session.canceled and not upload_session.error_notes %}
+                                    <p style="color:red">Canceled</p>
+                                {% endif %}
+                                {% if upload_session.error_notes %}
+                                    <p style="color:red">{{ upload_session.error_notes }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Cancel Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog"
+         aria-labelledby="cancelModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelModalTitle">Cancel Validation</h5>
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to cancel this validation?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                            data-dismiss="modal">Close
+                    </button>
+                    <button type="button" class="btn btn-danger" id="cancel-session">Cancel Validation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+
+    <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script type="text/javascript">
+
+        const updateUrl = "/api/upload-status/";
+        let currentSessionId = 0;
+
+        const updateProgress = (id, $elm) => {
+            setTimeout(function () {
+                $.get(updateUrl + id).then(
+                    (response) => {
+                        if (!response['processed'] && !response['canceled']) {
+                            let currentProgress = response['progress'];
+                            $elm.parent().parent().find('.progress-text').html(currentProgress);
+                            if (currentProgress && currentProgress.indexOf('/') > -1) {
+                                let [indexProgress, totalProgress] = currentProgress.split('/');
+                                let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
+                                $elm.css({'width': `${percentProgress}%`});
+                            }
+                            updateProgress(id, $elm);
+                        } else {
+                            location.reload();
+                        }
+                    }
+                )
+            }, 1000);
+        }
+
+        $(function () {
+            let progressBar = $('.progress-bar');
+            $.each(progressBar, function (index, elm) {
+                let $elm = $(elm);
+                let currentProgress = $elm.data('progress');
+                let sessionId = $elm.data('id');
+                if (currentProgress && currentProgress.indexOf('/') > -1) {
+                    let [indexProgress, totalProgress] = currentProgress.split('/');
+                    let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
+                    $elm.css({'width': `${percentProgress}%`});
+                }
+                updateProgress(sessionId, $(elm));
+            });
+
+            $('#cancel-session').click(function () {
+                let $form = $("#validation-upload-form");
+                $form.append(`<input type="hidden" name="cancel" value="True"/>`);
+                $form.append(`<input type="hidden" name="canceled_session_id" value="${currentSessionId}"/>`);
+                $form.submit();
+            });
+
+            $('#cancelModal').on('shown.bs.modal', function (event) {
+                let triggerElement = $(event.relatedTarget);
+                currentSessionId = triggerElement.data('id');
+            });
+
+            $('#fileupload').on('change', function () {
+                $('button[type="submit"]').prop('disabled', !$(this).val());
+            });
+        });
+    </script>
+
+{% endblock %}

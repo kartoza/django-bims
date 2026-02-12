@@ -100,13 +100,13 @@ class DataUploadView(
             if file_extension in ['.xls', '.xlsx']:
                 df = pd.read_excel(
                     upload_file,
-                    keep_default_na=False,
-                    na_filter=False
+                    dtype=str,
+                    na_values=[''],
+                    keep_default_na=False
                 )
-                for col in df.columns:
-                    if pd.api.types.is_numeric_dtype(df[col]):
-                        if (df[col].dropna() % 1 == 0).all():
-                            df[col] = df[col].astype('Int64')
+                # Replace NaN with empty strings
+                df = df.fillna('')
+                df = df.replace(['nan', '0'], '')
 
                 with NamedTemporaryFile(delete=False, suffix=".csv") as temp_csv_file:
                     csv_file_path = temp_csv_file.name
