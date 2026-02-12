@@ -150,7 +150,7 @@
                 return;
             }
             if (canvasEl) {
-                canvasEl.width = 180;
+                canvasEl.width = 200;
                 canvasEl.height = 180;
             }
             const colors = colorsOverride || chartColors || defaultChartColors;

@@ -77,45 +77,66 @@
             <div class="col-7">
                 <div class="chart-container" id="occurrence-pies-section">
                     <div class="chart-title">
-                        Occurrence Breakdown
+                        Occurrence Charts
                     </div>
                     <div class="section-loading" data-loading>
                         <div class="spinner"></div>
-                        <div>Loading occurrence breakdown…</div>
+                        <div>Loading occurrence charts…</div>
                     </div>
                     <div class="section-error d-none" data-error></div>
                     <div class="d-none occurrence-pies" data-body>
                         <div class="occurrence-pies-row">
-                            <div class="occurrence-pie-item">
-                                <div class="chart-bottom-title">Origin</div>
-                                <canvas id="occurrence-origin-pie" height="180"></canvas>
-                                <div id="occurrence-origin-legend"></div>
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <div class="occurrence-pie-item">
+                                            <div class="chart-bottom-title">Origin</div>
+                                            <canvas id="occurrence-origin-pie"></canvas>
+                                            <div class="occurrence-pie-chart-label" id="occurrence-origin-legend"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Endemism</div>
+                                        <canvas id="occurrence-endemism-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-endemism-legend"></div>
+                                    </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Conservation Status</div>
+                                        <canvas id="occurrence-cons-status-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-cons-status-legend"></div>
+                                    </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item" id="occurrence-cons-status-national-wrapper">
+                                        <div class="chart-bottom-title">Conservation Status National</div>
+                                        <canvas id="occurrence-cons-status-national-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-cons-status-national-legend"></div>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Sampling Method</div>
+                                        <canvas id="occurrence-sampling-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-sampling-legend"></div>
+                                    </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Biotope</div>
+                                        <canvas id="occurrence-biotope-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-biotope-legend"></div>
+                                    </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="occurrence-pie-item">
-                                <div class="chart-bottom-title">Endemism</div>
-                                <canvas id="occurrence-endemism-pie" height="180"></canvas>
-                                <div id="occurrence-endemism-legend"></div>
-                            </div>
-                            <div class="occurrence-pie-item">
-                                <div class="chart-bottom-title">Conservation Status</div>
-                                <canvas id="occurrence-cons-status-pie" height="180"></canvas>
-                                <div id="occurrence-cons-status-legend"></div>
-                            </div>
-                            <div class="occurrence-pie-item">
-                                <div class="chart-bottom-title">Sampling Method</div>
-                                <canvas id="occurrence-sampling-pie" height="180"></canvas>
-                                <div id="occurrence-sampling-legend"></div>
-                            </div>
-                            <div class="occurrence-pie-item">
-                                <div class="chart-bottom-title">Biotope</div>
-                                <canvas id="occurrence-biotope-pie" height="180"></canvas>
-                                <div id="occurrence-biotope-legend"></div>
-                            </div>
-                            <div class="occurrence-pie-item" id="occurrence-cons-status-national-wrapper">
-                                <div class="chart-bottom-title">Conservation Status National</div>
-                                <canvas id="occurrence-cons-status-national-pie" height="180"></canvas>
-                                <div id="occurrence-cons-status-national-legend"></div>
-                            </div>
+
+
                         </div>
                     </div>
                 </div>
