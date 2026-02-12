@@ -538,26 +538,44 @@
                 return;
             }
 
-            const categoryMap = {};
+            // Order from worst (highest extinction risk) to best (least risk)
+            var CATEGORY_ORDER = [
+                'EX', 'RE', 'EW', 'CR PE', 'CR', 'EN', 'VU',
+                'D', 'NT', 'LR/cd', 'LR/nt', 'CA', 'RA', 'LC', 'LR/lc'
+            ];
+
+            var categoryMap = {};
             modules.forEach(function (module) {
                 (module.cons_status || []).forEach(function (item) {
-                    const key = item.name || item.category || 'Unknown';
+                    var key = item.name || item.category || 'Unknown';
                     if (!categoryMap[key]) {
-                        categoryMap[key] = item.colour || '#999';
+                        categoryMap[key] = {
+                            colour: item.colour || '#999',
+                            code: item.category || ''
+                        };
                     }
                 });
             });
-            const categories = Object.keys(categoryMap);
+            var categories = Object.keys(categoryMap);
+            categories.sort(function (a, b) {
+                var idxA = CATEGORY_ORDER.indexOf(categoryMap[a].code);
+                var idxB = CATEGORY_ORDER.indexOf(categoryMap[b].code);
+                if (idxA === -1) idxA = CATEGORY_ORDER.length;
+                if (idxB === -1) idxB = CATEGORY_ORDER.length;
+                return idxA - idxB;
+            });
             const moduleLabels = modules.map(function (module) { return module.name; });
             const totals = modules.map(function (module) {
                 return (module.cons_status || []).reduce(function (sum, item) {
                     return sum + (item.count || 0);
                     }, 0);
             });
-            const datasets = categories.map(function (category) {
+            var datasets = categories.map(function (category) {
                 return {
                     label: category,
-                    backgroundColor: categoryMap[category],
+                    backgroundColor: categoryMap[category].colour,
+                    borderColor: '#555555',
+                    borderWidth: 1,
                     data: modules.map(function (module, idx) {
                         const total = totals[idx] || 0;
                         if (total === 0) {
