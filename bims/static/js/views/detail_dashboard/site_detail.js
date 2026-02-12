@@ -1175,7 +1175,6 @@ define([
                         }
                     });
                     let chartCanvas = container.find('canvas')[0];
-                    console.log(responseData)
                     this.consChartCanvas = self.renderStackedBarChart(
                         responseData, 'cons_status_bar', chartCanvas);
                 }
