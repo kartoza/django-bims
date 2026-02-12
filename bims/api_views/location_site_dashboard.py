@@ -127,6 +127,44 @@ class OccurrencesChartData(ChartDataApiView):
         ).order_by('year')
 
 
+class OccurrencesTotalChartData(ChartDataApiView):
+    """
+    Total occurrences per year/month (single series).
+    """
+
+    def categories(self, collection_results):
+        return ['Occurrences']
+
+    def chart_data_per_month(self, collection_results):
+        return collection_results.annotate(
+            y=ExtractYear('collection_date'),
+            m=LPad(Cast(ExtractMonth('collection_date'), CharField()), 2, Value('0')),
+            year=Concat(
+                'm', Value('-'), 'y',
+                output_field=CharField()
+            ),
+            name=Value('Occurrences')
+        ).values(
+            'year', 'name'
+        ).annotate(
+            count=Count('year'),
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('collection_date')
+
+    def chart_data(self, collection_results):
+        return collection_results.annotate(
+            year=ExtractYear('collection_date'),
+            name=Value('Occurrences')
+        ).values(
+            'year', 'name'
+        ).annotate(
+            count=Count('year'),
+        ).values(
+            'year', 'name', 'count'
+        ).order_by('year')
+
+
 class LocationSitesConservationChartData(ChartDataApiView):
     """
     Conservation status chart data from filtered collection records

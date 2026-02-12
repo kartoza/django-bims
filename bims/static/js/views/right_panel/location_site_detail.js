@@ -415,6 +415,11 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 }
                 window.location = url;
             });
+            $('.spatial-dashboard-btn').click(function () {
+                let url = '/spatial-dashboard/';
+                url += self.apiParameters(filterParameters);
+                window.location.href = url;
+            });
             $('.sp-sass-dashboard').click(function () {
                 let sassUrl = '';
                 if (typeof self.siteId !== 'undefined') {
@@ -456,7 +461,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 let url = '/pesticide-dashboard/' + self.siteId + '/';
                 url += self.apiParameters(filterParameters);
                 window.location.href = url;
-            })
+            });
         },
         flatten_arr: function (arr) {
             let self = this;

@@ -15,6 +15,7 @@ from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
 from bims.views.spatial_layer import SpatialLayerUploadView, VisualizationLayerView
+from bims.views.spatial_dashboard import SpatialDashboardView
 from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
@@ -324,4 +325,7 @@ urlpatterns += [
     re_path(r'^thermal-dashboard/$',
             ThermalDashboardView.as_view(),
             name='thermal-dashboard'),
+    re_path(r'^spatial-dashboard/$',
+            SpatialDashboardView.as_view(),
+            name='spatial-dashboard'),
 ]

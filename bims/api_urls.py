@@ -92,6 +92,7 @@ from bims_theme.api_views.chart_colors import ChartColorsList
 from bims.api_views.location_site_dashboard import (
     LocationSitesEndemismChartData,
     OccurrencesChartData,
+    OccurrencesTotalChartData,
     LocationSitesConservationChartData,
     LocationSitesTaxaChartData
 )
@@ -134,6 +135,12 @@ from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
 from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 from bims.api_views.filter_panel_info import FilterPanelInfoView
+from bims.api_views.spatial_dashboard import (
+    SpatialDashboardConsStatusApiView,
+    SpatialDashboardRliApiView,
+    SpatialDashboardMapApiView,
+    SpatialDashboardSummaryApiView
+)
 
 urlpatterns = [
     path('filter-panel-info/', FilterPanelInfoView.as_view(), name='filter-panel-info'),
@@ -158,6 +165,9 @@ urlpatterns = [
     re_path(r'^location-sites-occurrences-chart-data/$',
         OccurrencesChartData.as_view(),
         name='location-sites-occurrences-chart-data'),
+    re_path(r'^location-sites-total-occurrences-chart-data/$',
+        OccurrencesTotalChartData.as_view(),
+        name='location-sites-total-occurrences-chart-data'),
     re_path(r'^location-sites-cons-chart-data/$',
         LocationSitesConservationChartData.as_view(),
         name='location-sites-cons-chart-data'),
@@ -167,6 +177,18 @@ urlpatterns = [
     re_path(r'^location-sites-coordinate/$',
         LocationSitesCoordinate.as_view(),
         name='location-sites-coordinate'),
+    re_path(r'^spatial-dashboard/cons-status/$',
+        SpatialDashboardConsStatusApiView.as_view(),
+        name='spatial-dashboard-cons-status'),
+    re_path(r'^spatial-dashboard/rli/$',
+        SpatialDashboardRliApiView.as_view(),
+        name='spatial-dashboard-rli'),
+    re_path(r'^spatial-dashboard/map/$',
+        SpatialDashboardMapApiView.as_view(),
+        name='spatial-dashboard-map'),
+    re_path(r'^spatial-dashboard/summary/$',
+        SpatialDashboardSummaryApiView.as_view(),
+        name='spatial-dashboard-summary'),
     re_path(r'^taxon/(?P<pk>[0-9]+)/$',
         TaxonDetail.as_view()),
     re_path(r'^taxon-proposal/(?P<pk>[0-9]+)/$',
