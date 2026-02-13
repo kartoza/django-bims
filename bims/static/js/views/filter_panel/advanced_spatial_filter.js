@@ -63,6 +63,7 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     self.parseSpatialScaleData(data);
+                    self.addGroup();
                 }
             });
         },
@@ -509,7 +510,7 @@ define([
                     '<button class="btn btn-sm adv-btn-remove-group" type="button"><i class="fa fa-times"></i></button>' +
                     '<span class="adv-group-title">Filter Group</span>' +
                     '<span style="flex:1"></span>' +
-                    '<button class="btn btn-sm adv-btn-add-clause" type="button">+ Add Filter</button>' +
+                    '<button class="btn btn-sm adv-btn-add-clause adv-spatial-filter-btn" type="button">+ Add Filter</button>' +
                 '</div>' +
                 '<div class="adv-clauses"></div>' +
             '</div>');

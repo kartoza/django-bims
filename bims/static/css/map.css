@@ -2314,7 +2314,7 @@ div:hover::-webkit-scrollbar {
 .adv-header {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 4px;
+    margin-bottom: -16px;
 }
 
 .adv-logic-hint {
@@ -2417,11 +2417,7 @@ div:hover::-webkit-scrollbar {
 
 .adv-values-wrap .select2-container {
     width: 100% !important;
-    font-size: 10px;
-}
-
-.adv-values-wrap>.select2-selection__choice {
-    height: 100% !important;
+    font-size: 15px;
 }
 
 .adv-preview {
@@ -3004,6 +3000,24 @@ div:hover::-webkit-scrollbar {
 }
 
 .apply-filter:hover, .clear-filter:hover, .spatial-scale-apply-filter:hover, .spatial-scale-clear-filter:hover {
+    cursor: pointer;
+    border-color: #5e5e5e;
+    color: #404040;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.adv-spatial-filter-btn {
+    font-size: 9pt;
+    font-weight: bold;
+    padding: 5px 10px 5px 10px;
+    background-color: white;
+    color: #5e5e5e;
+    border: 1px solid #afafaf;
+    -webkit-transition-duration: 0.4s;
+    transition-duration: 0.4s;
+}
+
+.adv-spatial-filter-btn:hover {
     cursor: pointer;
     border-color: #5e5e5e;
     color: #404040;

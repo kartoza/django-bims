@@ -17,8 +17,8 @@ def search_task(parameters, search_process_id, background=True):
     )
     from bims.models.search_process import (
         SearchProcess,
-        SEARCH_PROCESSING,dadasdad
-        SEARCH_FINISHEDasdasda
+        SEARCH_PROCESSING,
+        SEARCH_FINISHED,
         SEARCH_FAILED
     )
 
