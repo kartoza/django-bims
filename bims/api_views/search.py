@@ -523,7 +523,10 @@ class CollectionSearch(object):
           - key: LocationContextGroup key (e.g. "uuid.layer_id")
           - field: display name (for human readability)
           - values: list of selected values
-        Returns a Q object or None.
+        Returns a list of Q objects (one per group) or None.
+        Each Q object should be applied as a separate .filter() call
+        so that AND across groups works correctly with multi-valued
+        relations (each .filter() creates a separate JOIN).
         """
         ALL_ID = '__ALL__'
         CharField.register_lookup(Length, 'length')
@@ -578,11 +581,7 @@ class CollectionSearch(object):
         if not group_conditions:
             return None
 
-        # AND all group conditions together
-        combined = group_conditions[0]
-        for cond in group_conditions[1:]:
-            combined &= cond
-        return combined
+        return group_conditions
 
     @property
     def thermal_module(self):
@@ -945,12 +944,10 @@ class CollectionSearch(object):
 
         if adv_spatial_filter:
             if not isinstance(filtered_location_sites, QuerySet):
-                filtered_location_sites = LocationSite.objects.filter(
-                    adv_spatial_filter
-                )
-            else:
+                filtered_location_sites = LocationSite.objects.all()
+            for group_q in adv_spatial_filter:
                 filtered_location_sites = filtered_location_sites.filter(
-                    adv_spatial_filter
+                    group_q
                 )
 
         if self.user_boundary:
