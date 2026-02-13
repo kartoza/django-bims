@@ -389,6 +389,33 @@ def _build_dwca_with_config(
     return zip_path, archive_url, written_ids
 
 
+def create_new_installation(config, title = "", description = "") -> str:
+    """Creates a new installation"""
+    if not title:
+        title = f"{config.name} Installation"
+    payload = {
+        "organizationKey": config.publishing_org_key,
+        "type": "HTTP_INSTALLATION",
+        "title": title,
+        "description": description,
+        "disabled": False
+    }
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+    r = requests.post(
+        f"{api_url}/installation",
+        json=payload,
+        auth=auth,
+        timeout=30,
+        headers={"Content-Type": "application/json"},
+    )
+    r.raise_for_status()
+    installation_key = r.json()
+    if not isinstance(installation_key, str) or len(installation_key) < 32:
+        raise RuntimeError(f"Unexpected installation key response: {installation_key}")
+    return installation_key
+
+
 @transaction.atomic
 def publish_gbif_data_with_config(config, module_group=None) -> dict:
     """
