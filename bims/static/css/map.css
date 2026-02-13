@@ -2295,6 +2295,150 @@ div:hover::-webkit-scrollbar {
     background-color: #e4e4e4;
 }
 
+.boundary-search-input {
+    width: 100%;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    font-size: 8pt;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.boundary-search-input:focus {
+    outline: none;
+    border-color: #5b9bd5;
+}
+
+/* Advanced Spatial Filter Panel */
+.adv-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
+
+.adv-logic-hint {
+    font-size: 10px;
+    color: #8892b0;
+    margin-bottom: 8px;
+}
+
+.adv-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.adv-group {
+    border: 1px solid #d0d7e2;
+    border-radius: 4px;
+    padding: 8px;
+    background: #fafbfc;
+}
+
+.adv-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.adv-group-title {
+    font-weight: bold;
+    font-size: 11px;
+    color: #4e565f;
+}
+
+.adv-badge {
+    font-size: 9px;
+    background: #e8ecf1;
+    color: #5a6270;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.adv-btn-add-clause,
+.adv-btn-remove-group {
+    font-size: 10px;
+    padding: 2px 8px;
+}
+
+.adv-clause {
+    margin: 6px 0;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid #e3e7ed;
+    border-radius: 3px;
+}
+
+.adv-clause-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.adv-field-select {
+    flex: 1;
+    font-size: 10px;
+    padding: 3px 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.adv-btn-remove-clause {
+    font-size: 10px;
+    padding: 2px 6px;
+    color: #c0392b;
+    border: none;
+    background: none;
+}
+
+.adv-btn-remove-group {
+    border: none;
+    background: none;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.adv-btn-remove-clause:hover {
+    color: #e74c3c;
+}
+
+.adv-clause-note {
+    font-size: 10px;
+    color: #e74c3c;
+}
+
+.adv-values-wrap {
+    margin-top: 4px;
+}
+
+.adv-values-wrap .select2-container {
+    width: 100% !important;
+    font-size: 10px;
+}
+
+.adv-values-wrap>.select2-selection__choice {
+    height: 100% !important;
+}
+
+.adv-preview {
+    margin-top: 10px;
+    padding: 6px 8px;
+    font-size: 10px;
+    color: #5a6270;
+    background: #f0f2f5;
+    border-radius: 3px;
+    word-break: break-word;
+}
+
+.adv-add-group {
+    font-size: 10px;
+    padding: 3px 10px;
+}
+
 .btn-ud-new-site {
     text-transform: none;
     font-size: 8pt;

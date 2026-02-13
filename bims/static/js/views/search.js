@@ -11,9 +11,11 @@ define([
     'views/filter_panel/spatial_filter',
     'views/filter_panel/source_collection',
     'views/filter_panel/taxon_tags',
-    'views/filter_panel/gbif_dataset'
+    'views/filter_panel/gbif_dataset',
+    'views/filter_panel/advanced_spatial_filter'
 ], function (Backbone, _, Shared, NoUiSlider, SearchResultCollection, SearchPanelView, $, Chosen,
-             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView, GbifDatasetView) {
+             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView, GbifDatasetView,
+             AdvancedSpatialFilterView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -171,6 +173,9 @@ define([
 
             this.spatialFilterView = new SpatialFilterView();
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
+
+            this.advancedSpatialFilterView = new AdvancedSpatialFilterView({parent: this});
+            this.$el.find('.advanced-spatial-filter-wrapper').append(this.advancedSpatialFilterView.render().$el);
 
             this.sourceCollectionView = new SourceCollectionView({parent: this});
             this.$el.find('.source-collection-wrapper').append(this.sourceCollectionView.render().$el);
@@ -575,6 +580,14 @@ define([
             filterParameters['spatialFilter'] = spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters);
             this.spatialFilterView.highlight(spatialFilters.length !== 0);
             this.spatialFilterView.showBoundary();
+
+            // Advanced spatial filter
+            var advSpatialData = this.advancedSpatialFilterView.getSelected();
+            var advHasFilters = advSpatialData.groups.some(function (g) {
+                return g.clauses.some(function (c) { return c.values && c.values.length > 0; });
+            });
+            filterParameters['advancedSpatialFilter'] = advHasFilters ? JSON.stringify(advSpatialData.groups) : '';
+            this.advancedSpatialFilterView.highlight(advHasFilters);
 
             // Validation filter
             let validationFilter = [];

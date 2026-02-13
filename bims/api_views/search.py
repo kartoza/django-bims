@@ -514,6 +514,77 @@ class CollectionSearch(object):
         return spatial_filter_group_ids
 
     @property
+    def advanced_spatial_filter(self):
+        """
+        Parse advanced spatial filter parameter.
+        Format: JSON array of groups, each with clauses.
+        Groups are ANDed, clauses within a group are ORed.
+        Each clause has:
+          - key: LocationContextGroup key (e.g. "uuid.layer_id")
+          - field: display name (for human readability)
+          - values: list of selected values
+        Returns a Q object or None.
+        """
+        ALL_ID = '__ALL__'
+        CharField.register_lookup(Length, 'length')
+        adv_filter_data = self.parse_request_json('advancedSpatialFilter')
+        if not adv_filter_data:
+            return None
+
+        group_conditions = []
+        for group in adv_filter_data:
+            clauses = group.get('clauses', [])
+            or_condition = Q()
+            has_valid_clause = False
+
+            for clause in clauses:
+                spatial_key = clause.get('key', '')
+                values = clause.get('values', [])
+                if not spatial_key or not values:
+                    continue
+
+                # Look up LocationContextGroup by key,
+                # same logic as the existing spatial_filter property
+                if '.' in spatial_key:
+                    key, layer_identifier = spatial_key.split('.', 1)
+                    ctx_group = LocationContextGroup.objects.filter(
+                        key=key, layer_identifier=layer_identifier
+                    ).first()
+                else:
+                    ctx_group = LocationContextGroup.objects.filter(
+                        key=spatial_key
+                    ).first()
+
+                if not ctx_group:
+                    continue
+
+                if ALL_ID in values:
+                    clause_q = (
+                        Q(locationcontext__group=ctx_group) &
+                        Q(locationcontext__value__length__gt=0)
+                    )
+                else:
+                    clause_q = (
+                        Q(locationcontext__group=ctx_group) &
+                        Q(locationcontext__value__in=values)
+                    )
+
+                or_condition |= clause_q
+                has_valid_clause = True
+
+            if has_valid_clause:
+                group_conditions.append(or_condition)
+
+        if not group_conditions:
+            return None
+
+        # AND all group conditions together
+        combined = group_conditions[0]
+        for cond in group_conditions[1:]:
+            combined &= cond
+        return combined
+
+    @property
     def thermal_module(self):
         thermal_module = self.get_request_data('thermalModule')
         if thermal_module:
@@ -868,6 +939,17 @@ class CollectionSearch(object):
             else:
                 filtered_location_sites = filtered_location_sites.filter(
                     spatial_filters
+                )
+
+        adv_spatial_filter = self.advanced_spatial_filter
+        if adv_spatial_filter:
+            if not isinstance(filtered_location_sites, QuerySet):
+                filtered_location_sites = LocationSite.objects.filter(
+                    adv_spatial_filter
+                )
+            else:
+                filtered_location_sites = filtered_location_sites.filter(
+                    adv_spatial_filter
                 )
 
         if self.user_boundary:
