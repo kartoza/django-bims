@@ -527,7 +527,7 @@ class CollectionSearch(object):
         """
         ALL_ID = '__ALL__'
         CharField.register_lookup(Length, 'length')
-        adv_filter_data = self.parse_request_json('advancedSpatialFilter')
+        adv_filter_data = self.parse_request_json('asf')
         if not adv_filter_data:
             return None
 
@@ -931,7 +931,9 @@ class CollectionSearch(object):
                 filtered_location_sites = LocationSite.objects.none()
 
         spatial_filters = self.spatial_filter
-        if spatial_filters:
+        adv_spatial_filter = self.advanced_spatial_filter
+
+        if spatial_filters and not adv_spatial_filter:
             if not isinstance(filtered_location_sites, QuerySet):
                 filtered_location_sites = LocationSite.objects.filter(
                     spatial_filters
@@ -941,7 +943,6 @@ class CollectionSearch(object):
                     spatial_filters
                 )
 
-        adv_spatial_filter = self.advanced_spatial_filter
         if adv_spatial_filter:
             if not isinstance(filtered_location_sites, QuerySet):
                 filtered_location_sites = LocationSite.objects.filter(

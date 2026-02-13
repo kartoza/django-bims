@@ -12,6 +12,8 @@ define([
         DATA: {},
         // Maps field display name → child key (e.g. "SA KBA Name" → "902d304a...kba_name")
         FIELD_KEYS: {},
+        // Maps field key → { layer_name, wms_url, wms_format, layer_identifier }
+        LAYER_META: {},
         // For fields with autocomplete children, store their group keys
         AUTOCOMPLETE_FIELDS: {},
 
@@ -22,12 +24,10 @@ define([
         groups: null,
         groupSeq: 0,
         clauseSeq: 0,
-        isOpen: false,
         dataLoaded: false,
 
         events: {
-            'click .subtitle': 'togglePanel',
-            'click .adv-add-group': 'onAddGroupClick'
+            'click .adv-add-group': 'onAddGroupClick',
         },
 
         initialize: function (options) {
@@ -35,17 +35,16 @@ define([
             this.groups = [];
             this.groupSeq = 0;
             this.clauseSeq = 0;
-            this.isOpen = false;
             this.dataLoaded = false;
             this.DATA = {};
             this.FIELD_KEYS = {};
+            this.LAYER_META = {};
             this.AUTOCOMPLETE_FIELDS = {};
             this.FIELDS_WITH_ALL = new Set();
         },
 
         render: function () {
             this.$el.html(this.template());
-            this.bodyRowEl = this.$el.find('.advanced-spatial-body');
             this.$groups = this.$el.find('.adv-groups');
             this.$preview = this.$el.find('.adv-preview');
             this.$addGroupBtn = this.$el.find('.adv-add-group');
@@ -63,7 +62,12 @@ define([
                 dataType: 'json',
                 success: function (data) {
                     self.parseSpatialScaleData(data);
-                    self.addGroup();
+                    if (self.pendingRestore) {
+                        self._doRestore(self.pendingRestore);
+                        self.pendingRestore = null;
+                    } else {
+                        self.addGroup();
+                    }
                 }
             });
         },
@@ -72,6 +76,7 @@ define([
             var self = this;
             self.DATA = {};
             self.FIELD_KEYS = {};
+            self.LAYER_META = {};
             self.AUTOCOMPLETE_FIELDS = {};
             self.FIELDS_WITH_ALL = new Set();
 
@@ -84,6 +89,14 @@ define([
                 $.each(spatialData['children'], function (ci, child) {
                     var fieldName = child['name'];
                     var childKey = child['key'];
+
+                    // Store layer metadata for boundary display
+                    self.LAYER_META[childKey] = {
+                        layer_name: child['layer_name'] || '',
+                        wms_url: child['wms_url'] || '',
+                        wms_format: child['wms_format'] || '',
+                        layer_identifier: child['layer_identifier'] || ''
+                    };
 
                     if (child['autocomplete']) {
                         self.DATA[fieldName] = [];
@@ -215,6 +228,7 @@ define([
         refreshPreview: function () {
             if (!this.$preview) return;
             this.$preview.text(this.toHuman());
+            if (this.onChanged) this.onChanged();
         },
 
         // ---- Field disable management ----
@@ -575,20 +589,6 @@ define([
             this.addGroup();
         },
 
-        // ---- Panel toggle ----
-        togglePanel: function () {
-            this.isOpen = !this.isOpen;
-            if (this.isOpen) {
-                this.bodyRowEl.slideDown(150);
-                this.$el.find('.fa-angle-up').show();
-                this.$el.find('.fa-angle-down').hide();
-            } else {
-                this.bodyRowEl.slideUp(150);
-                this.$el.find('.fa-angle-up').hide();
-                this.$el.find('.fa-angle-down').show();
-            }
-        },
-
         // ---- Public interface ----
         getSelected: function () {
             return {
@@ -598,12 +598,97 @@ define([
             };
         },
 
-        highlight: function (state) {
-            if (state) {
-                this.$el.find('.subtitle').addClass('filter-panel-selected');
-            } else {
-                this.$el.find('.subtitle').removeClass('filter-panel-selected');
+        hasFilters: function () {
+            for (var i = 0; i < this.groups.length; i++) {
+                var clauses = this.groups[i].clauses;
+                for (var j = 0; j < clauses.length; j++) {
+                    if (clauses[j].values && clauses[j].values.length > 0) {
+                        return true;
+                    }
+                }
             }
+            return false;
+        },
+
+        /**
+         * Restore groups from URL/saved data.
+         * If data hasn't loaded yet, queues the restore for after load.
+         * @param {Array} groupsData - array of group objects with clauses
+         */
+        restoreGroups: function (groupsData) {
+            if (!this.dataLoaded) {
+                this.pendingRestore = groupsData;
+                return;
+            }
+            this._doRestore(groupsData);
+        },
+
+        _doRestore: function (groupsData) {
+            var self = this;
+            // Clear existing groups
+            this.groups = [];
+            this.groupSeq = 0;
+            this.clauseSeq = 0;
+            this.$groups.empty();
+
+            // Build a reverse map: key → field name
+            var keyToField = {};
+            var fields = Object.keys(this.FIELD_KEYS);
+            for (var i = 0; i < fields.length; i++) {
+                keyToField[this.FIELD_KEYS[fields[i]]] = fields[i];
+            }
+
+            for (var g = 0; g < groupsData.length; g++) {
+                var savedGroup = groupsData[g];
+                if (!savedGroup.clauses || !savedGroup.clauses.length) continue;
+                var clauses = [];
+                for (var c = 0; c < savedGroup.clauses.length; c++) {
+                    var sc = savedGroup.clauses[c];
+                    // Resolve field name from key if field is missing
+                    var field = sc.field || keyToField[sc.key] || '';
+                    if (!field) continue;
+                    clauses.push({ field: field, values: sc.values || [] });
+                }
+                if (clauses.length > 0) {
+                    this.addGroup({ clauses: clauses });
+                }
+            }
+
+            // If nothing was restored, add a default empty group
+            if (this.groups.length === 0) {
+                this.addGroup();
+            }
+        },
+
+        clearAll: function () {
+            this.groups = [];
+            this.groupSeq = 0;
+            this.clauseSeq = 0;
+            this.$groups.empty();
+            this.addGroup();
+        },
+
+        /**
+         * Returns selected filter layers and their metadata for boundary display.
+         * Format: { layers: { key: [values] }, meta: { key: { layer_name, wms_url, ... } } }
+         */
+        getSelectedLayers: function () {
+            var self = this;
+            var layers = {};
+            for (var i = 0; i < this.groups.length; i++) {
+                var clauses = this.groups[i].clauses;
+                for (var j = 0; j < clauses.length; j++) {
+                    var c = clauses[j];
+                    if (!c.values || !c.values.length || !c.key) continue;
+                    if (self.isAllSelected(c.values)) {
+                        layers[c.key] = ['__group__'];
+                    } else {
+                        layers[c.key] = c.values.slice();
+                    }
+                }
+            }
+            return { layers: layers, meta: self.LAYER_META };
         }
+
     });
 });
