@@ -25,13 +25,15 @@ define([
                 'highlight',
                 'togglePanel',
                 'onApplyClick',
-                'onClearClick'
+                'onClearClick',
+                'initPopovers'
             );
 
             this.parent = options.parent;
             this.dropdownEl = null;
             this.bodyRowEl = null;
             this.isOpen = false;
+            this.tagDescriptions = {}; // Cache for tag descriptions
 
             this.parent.filtersReady['taxonTags'] = false;
         },
@@ -70,9 +72,15 @@ define([
                     processResults: function (data) {
                         var results = [];
                         for (var i = 0; i < data.length; i++) {
+                            var description = data[i].description || '';
+                            // Store description in cache
+                            if (description) {
+                                self.tagDescriptions[data[i].id] = description;
+                            }
                             results.push({
                                 id: data[i].id,
-                                text: data[i].name
+                                text: data[i].name,
+                                description: description
                             });
                         }
                         return { results: results };
@@ -82,8 +90,18 @@ define([
 
                 closeOnSelect: false,
 
-                templateSelection: function (item) {
-                    return item.text || item.name || item.id;
+                templateSelection: function (item, container) {
+                    var text = item.text || item.name || item.id;
+                    // Get description from item or from cache
+                    var description = item.description || self.tagDescriptions[item.id] || '';
+
+                    if (description) {
+                        var $el = $('<span class="taxon-tag-selection">' + text +
+                            '<i class="fa fa-info-circle taxon-tag-info" data-description="' +
+                            description.replace(/"/g, '&quot;') + '"></i></span>');
+                        return $el;
+                    }
+                    return text;
                 },
 
                 templateResult: function (item) {
@@ -91,6 +109,34 @@ define([
                         return item.text;
                     }
                     return item.text || item.name || item.id;
+                }
+            });
+            this.dropdownEl.on('select2:select select2:unselect', function() {
+                self.initPopovers();
+            });
+            this.dropdownEl.on('change', function() {
+                setTimeout(function() {
+                    self.initPopovers();
+                }, 50);
+            });
+        },
+
+        initPopovers: function() {
+            var container = $('#map-container').length ? '#map-container' : 'body';
+            this.$el.find('.taxon-tag-info').each(function() {
+                var $icon = $(this);
+                var description = $icon.data('description');
+                if (description) {
+                    try {
+                        $icon.popover('dispose');
+                    } catch (e) {
+                    }
+                    $icon.popover({
+                        content: description,
+                        placement: 'top',
+                        container: container,
+                        trigger: 'hover focus'
+                    });
                 }
             });
         },
@@ -144,7 +190,7 @@ define([
 
         /**
          * Hit /api/taxon-tag-autocomplete/?ids=1,4,9
-         * and convert to [{id:1,text:"Terrestrial"}, ...]
+         * and convert to [{id:1,text:"Terrestrial",description:"..."}, ...]
          */
         bootstrapTagsByIds: function (idsArray) {
             var dfd = $.Deferred();
@@ -167,9 +213,15 @@ define([
                 success: function (data) {
                     var opts = [];
                     for (var j = 0; j < data.length; j++) {
+                        var description = data[j].description || '';
+                        // Store description in cache
+                        if (description) {
+                            self.tagDescriptions[data[j].id] = description;
+                        }
                         opts.push({
                             id: data[j].id,
-                            text: data[j].name
+                            text: data[j].name,
+                            description: description
                         });
                     }
                     dfd.resolve(opts);
@@ -183,26 +235,36 @@ define([
         },
 
         applyOptionsToSelect: function (optionsList) {
+            var self = this;
             for (var i = 0; i < optionsList.length; i++) {
                 var opt = optionsList[i];
                 var exists = this.dropdownEl.find('option[value="' + opt.id + '"]').length > 0;
 
+                // Store description in cache
+                if (opt.description) {
+                    this.tagDescriptions[opt.id] = opt.description;
+                }
+
                 if (!exists) {
-                    this.dropdownEl.append(
-                        $('<option>')
-                            .val(opt.id)
-                            .text(opt.text)
-                            .prop('selected', true)
-                    );
+                    var $option = $('<option>')
+                        .val(opt.id)
+                        .text(opt.text)
+                        .prop('selected', true);
+                    this.dropdownEl.append($option);
                 } else {
                     this.dropdownEl
                         .find('option[value="' + opt.id + '"]')
                         .prop('selected', true)
-                        .text(opt.text)
+                        .text(opt.text);
                 }
             }
 
             this.dropdownEl.trigger('change', {silentInit: true});
+
+            // Initialize tooltips after Select2 has rendered
+            setTimeout(function() {
+                self.initPopovers();
+            }, 100);
         },
 
         togglePanel: function () {

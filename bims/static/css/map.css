@@ -2889,6 +2889,22 @@ div:hover::-webkit-scrollbar {
     background-color: rgba(var(--secondary-accent-color), 0.3) !important;
 }
 
+.taxon-tag-selection {
+    display: inline-flex;
+    align-items: center;
+}
+
+.taxon-tag-info {
+    margin-left: 5px;
+    color: var(--main-accent-color);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.taxon-tag-info:hover {
+    color: var(--main-accent-color);
+}
+
 .coming-soon-filter {
     margin-left: -15px !important;
     margin-right: -15px !important;

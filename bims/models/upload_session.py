@@ -16,6 +16,7 @@ class UploadSession(models.Model):
     """
     CATEGORY_CHOICES = (
         ('taxa', 'Taxa'),
+        ('taxa_validation', 'Taxa Validation'),
         ('collections', 'Collections'),
         ('water_temperature', 'Water Temperature'),
         ('physico_chemical', 'Physico Chemical')

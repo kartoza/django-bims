@@ -184,6 +184,11 @@ class TaxaProcessor(object):
         rank_l = (rank or '').lower()
         status_l = (taxonomic_status or '').strip().lower()
         is_species_like = 'species' in rank_l
+        is_subgenus = 'subgenus' in rank_l
+
+        if is_subgenus:
+            subgenus_name = _safe_strip(self.get_row_value(row, SUBGENUS))
+            return subgenus_name or composed_taxon
 
         if _canon(csv_taxon) == _canon(composed_taxon):
             return composed_taxon
@@ -765,6 +770,28 @@ class TaxaProcessor(object):
             if gbif_link:
                 last = str(gbif_link).rstrip('/').split('/')[-1]
                 gbif_key = last[:-2] if last.endswith('.0') else last
+
+        # For FADA sites, check if a species with this GBIF key already exists
+        # If it has a different rank and taxon name, remove the GBIF key from input
+        if gbif_key and is_fada_site():
+            try:
+                existing_taxonomy = Taxonomy.objects.filter(gbif_key=int(gbif_key)).first()
+                if existing_taxonomy:
+                    existing_rank = _safe_upper(existing_taxonomy.rank) if existing_taxonomy.rank else ''
+                    input_rank = _safe_upper(rank) if rank else ''
+                    existing_name = _canon(existing_taxonomy.canonical_name) if existing_taxonomy.canonical_name else ''
+                    input_name = _canon(taxon_name) if taxon_name else ''
+                    if existing_rank != input_rank and existing_name != input_name:
+                        logger.info(
+                            "FADA: GBIF key %s already exists with different rank (%s vs %s) "
+                            "and name (%s vs %s); removing GBIF key from input",
+                            gbif_key, existing_rank, input_rank,
+                            existing_taxonomy.canonical_name, taxon_name
+                        )
+                        gbif_key = None
+            except (ValueError, TypeError):
+                # gbif_key is not a valid integer, will be handled later
+                pass
 
         accepted_genus_mismatch = False
 

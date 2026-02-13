@@ -129,6 +129,11 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 parameters['modules'] = $target.data('module');
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
+            $sectionWrapper.find('.spatial-dashboard-btn').click(function () {
+                let url = '/spatial-dashboard/';
+                url += self.apiParameters(filterParameters);
+                window.location.href = url;
+            });
             $sectionWrapper.find('.sp-sass-dashboard').click(function () {
                 let sassUrl = '';
                 if (typeof self.siteId !== 'undefined') {

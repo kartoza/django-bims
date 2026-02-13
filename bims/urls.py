@@ -15,6 +15,7 @@ from bims.views.proxy import proxy_request
 
 from bims.views.map import MapPageView
 from bims.views.spatial_layer import SpatialLayerUploadView, VisualizationLayerView
+from bims.views.spatial_dashboard import SpatialDashboardView
 from bims.views.thermal_dashboard import ThermalDashboardView
 from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
@@ -25,6 +26,7 @@ from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
 from bims.views.upload import UploadView
 from bims.views.taxa_upload import TaxaUploadView
+from bims.views.taxa_validation_upload import TaxaValidationUploadView
 from bims.views.collections_upload import CollectionsUploadView
 from bims.views.boundary_upload import (
     ShapefileUploadView,
@@ -109,6 +111,8 @@ urlpatterns = [
             name='csv-upload'),
     re_path(r'^upload-taxa/$', TaxaUploadView.as_view(),
             name='csv-upload-taxa'),
+    re_path(r'^validate-taxa/$', TaxaValidationUploadView.as_view(),
+            name='validate-taxa'),
     re_path(r'^upload_shp/$', ShapefileUploadView.as_view(),
             name='shapefile-upload'),
     re_path(r'^process_shapefiles/$', process_shapefiles,
@@ -321,4 +325,7 @@ urlpatterns += [
     re_path(r'^thermal-dashboard/$',
             ThermalDashboardView.as_view(),
             name='thermal-dashboard'),
+    re_path(r'^spatial-dashboard/$',
+            SpatialDashboardView.as_view(),
+            name='spatial-dashboard'),
 ]

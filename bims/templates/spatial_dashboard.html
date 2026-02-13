@@ -1,0 +1,294 @@
+{% extends 'main_base.html' %}
+{% load static %}
+{% load jsonify %}
+
+{% block subtitle %}
+    Spatial Dashboard
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link href="{% static "css/spatial_dashboard.css" %}" rel="stylesheet">
+    <script>
+        const baseMapLayers = {{ basemap_layers|jsonify|safe }};
+        const geoserverPublicUrl = '{{ geoserver_public_location }}';
+        const locationSiteGeoserverLayer = '{{ preferences.SiteSetting.geoserver_location_site_layer }}';
+        const emptyWMSSiteParameter = 'public.empty_location_site_view';
+    </script>
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="dashboard-title">
+            <h2>Spatial Dashboard</h2>
+            <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
+
+        <div class="row">
+            <div class="col-5">
+                <div class="table-container">
+                    <div class="table-title">
+                        Filter History
+                    </div>
+                    <table class="table table-condensed table-striped filter-history-table"></table>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="map-container" id="distribution-map-section">
+                    <div class="chart-title">
+                        Distribution
+                        <i data-download="map"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download map"
+                           class="fa fa-download pull-right download-icon download-map"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading map…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div id="spatial-dashboard-map" style="height: 360px; width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="table-container" id="summary-section">
+                    <div class="table-title">
+                        Overview
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading summary…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none summary-table-container" data-body>
+                        <table class="table table-condensed table-striped" id="summary-table"></table>
+                    </div>
+                </div>
+
+
+
+            </div>
+            <div class="col-7">
+                <div class="chart-container" id="occurrence-pies-section">
+                    <div class="chart-title">
+                        Occurrence Charts
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading occurrence charts…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none occurrence-pies" data-body>
+                        <div class="occurrence-pies-row">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <div class="occurrence-pie-item">
+                                            <div class="chart-bottom-title">Origin</div>
+                                            <canvas id="occurrence-origin-pie"></canvas>
+                                            <div class="occurrence-pie-chart-label" id="occurrence-origin-legend"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Endemism</div>
+                                        <canvas id="occurrence-endemism-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-endemism-legend"></div>
+                                    </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Conservation Status</div>
+                                        <canvas id="occurrence-cons-status-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-cons-status-legend"></div>
+                                    </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item" id="occurrence-cons-status-national-wrapper">
+                                        <div class="chart-bottom-title">Conservation Status National</div>
+                                        <canvas id="occurrence-cons-status-national-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-cons-status-national-legend"></div>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Sampling Method</div>
+                                        <canvas id="occurrence-sampling-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-sampling-legend"></div>
+                                    </div>
+                                    </div>
+                                    <div class="col-sm-3">
+                                    <div class="occurrence-pie-item">
+                                        <div class="chart-bottom-title">Biotope</div>
+                                        <canvas id="occurrence-biotope-pie"></canvas>
+                                        <div class="occurrence-pie-chart-label" id="occurrence-biotope-legend"></div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="occurrences-section">
+                    <div class="chart-title">
+                        Occurrences
+                        <i data-download="occurrences"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading occurrences…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="occurrences-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="cons-status-section">
+                    <div class="chart-title">
+                        Conservation Status
+                        <i data-download="cons-status"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading conservation status…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="cons-status-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="origin-section">
+                    <div class="chart-title">
+                        Origin
+                        <i data-download="origin"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading origin…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="origin-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vertical-space"></div>
+
+                <div class="chart-container" id="endemism-section">
+                    <div class="chart-title">
+                        Endemism
+                        <i data-download="endemism"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download chart"
+                           class="fa fa-download pull-right download-icon"></i>
+                    </div>
+                    <div class="section-loading" data-loading>
+                        <div class="spinner"></div>
+                        <div>Loading endemism…</div>
+                    </div>
+                    <div class="section-error d-none" data-error></div>
+                    <div class="d-none" data-body>
+                        <div class="cons-status-chart-wrap">
+                            <canvas id="endemism-chart" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div class="vertical-space"></div>
+        
+         <div class="chart-container" id="cons-status-per-module-section">
+            <div class="chart-title">
+                Conservation Status Per Module
+                <i data-download="cons-status"
+                   data-toggle="tooltip" data-placement="left"
+                   title="Download chart"
+                   class="fa fa-download pull-right download-icon"></i>
+            </div>
+            <div class="section-loading" data-loading>
+                <div class="spinner"></div>
+                <div>Loading conservation status…</div>
+            </div>
+            <div class="section-error d-none" data-error></div>
+            <div class="d-none" data-body>
+                <div class="cons-status-chart-per-module-wrap">
+                    <canvas id="cons-status-chart-per-module" height="160"></canvas>
+                </div>
+            </div>
+         </div>
+
+        <div class="vertical-space"></div>
+
+        <div class="chart-container" id="rli-section">
+            <div class="chart-title">
+                Red List Index
+                <i data-download="rli"
+                   data-toggle="tooltip" data-placement="left"
+                   title="Download chart"
+                   class="fa fa-download pull-right download-icon"></i>
+            </div>
+            <div class="section-loading" data-loading>
+                <div class="spinner"></div>
+                <div>Loading red list index…</div>
+            </div>
+            <div class="section-error d-none" data-error></div>
+            <div class="d-none" data-body>
+                <div class="cons-status-chart-wrap">
+                    <canvas id="rli-chart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+{% endblock %}
+
+{% block extra_foot %}
+    <script src="{% static "js/libs/openlayers-10.2.0/ol.js" %}"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    
+    <script src="{% static 'js/utils/filter_list.js' %}"></script>
+    <script src="{% static 'js/libs/html2canvas.js' %}"></script>
+    <script src="{% static 'js/libs/chart/Chart-2.7.2.js' %}"></script>
+    <script src="{% static 'js/spatial_dashboard.js' %}"></script>
+    <script src="{% static 'js/dashboard_close.js' %}"></script>
+{% endblock %}
