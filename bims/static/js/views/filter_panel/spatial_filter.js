@@ -17,6 +17,7 @@ define([
         layerGroup: null,
         groupKeyLabel: '__group__',
         topLevel: 2,
+        advancedMode: false,
         events: {
             'click .close-button': 'close',
             'click #spatial-filter-panel-upload': 'panelUploadClicked',
@@ -29,9 +30,12 @@ define([
             'click .spatial-scale-clear-filter': 'clearSpatialFilter',
             'click .boundary-item-input': 'itemInputClicked',
             'click .boundary-item': 'toggleChildFilters',
-            'click .spatial-scale-sub-panel': 'subPanelClicked'
+            'click .spatial-scale-sub-panel': 'subPanelClicked',
+            'change .spatial-mode-toggle-input': 'toggleAdvancedMode'
         },
-        initialize: function () {
+        initialize: function (options) {
+            options = options || {};
+            this.advancedSpatialFilterView = options.advancedSpatialFilterView || null;
             Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearAllSelected, this);
         },
         render: function () {
@@ -117,7 +121,39 @@ define([
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
 
+            // Render advanced spatial filter inside the panel
+            if (this.advancedSpatialFilterView) {
+                this.advancedFilterContainer = self.$el.find('.advanced-spatial-filter-container');
+                this.advancedFilterContainer.append(this.advancedSpatialFilterView.render().$el);
+                this.advancedSpatialFilterView.onChanged = function () {
+                    self.updateChecked();
+                };
+            }
+
             return this;
+        },
+        setAdvancedMode: function (on) {
+            this.advancedMode = on;
+            this.$el.find('.spatial-mode-toggle-input').prop('checked', on);
+            var normalContainer = this.$el.find('.spatial-filter-container');
+            var advContainer = this.$el.find('.advanced-spatial-filter-container');
+            var otherFilters = this.$el.find('.other-filters');
+
+            if (this.advancedMode) {
+                normalContainer.hide();
+                otherFilters.hide();
+                this.$el.find('.spatial-scale-sub-panel').hide();
+                this.$el.find('.spatial-scale-sub-panel').next('.filter-content').hide();
+                advContainer.show();
+            } else {
+                normalContainer.show();
+                otherFilters.show();
+                this.$el.find('.spatial-scale-sub-panel').show();
+                advContainer.hide();
+            }
+        },
+        toggleAdvancedMode: function (e) {
+            this.setAdvancedMode($(e.target).is(':checked'));
         },
         getUserBoundary: function () {
             var self = this;
@@ -496,20 +532,22 @@ define([
             }
         },
         updateChecked: function () {
-            var checked = this.$el.find('input:checkbox:checked');
-            let selectedFilters = checked.length;
+            var hasFilters = false;
 
-            for (let spatialFilterAutocomplete of $('.spatial-filter-autocomplete')) {
-                selectedFilters += $(spatialFilterAutocomplete).find(':selected').length;
-            }
-
-            if (selectedFilters > 0) {
-                this.applyScaleFilterButton.prop('disabled', false);
-                this.clearScaleFilterButton.prop('disabled', false);
+            if (this.advancedMode && this.advancedSpatialFilterView) {
+                hasFilters = this.advancedSpatialFilterView.hasFilters();
             } else {
-                this.applyScaleFilterButton.prop('disabled', true);
-                this.clearScaleFilterButton.prop('disabled', true);
+                var checked = this.$el.find('.spatial-filter-container input:checkbox:checked');
+                var selectedFilters = checked.length;
+
+                for (let spatialFilterAutocomplete of $('.spatial-filter-autocomplete')) {
+                    selectedFilters += $(spatialFilterAutocomplete).find(':selected').length;
+                }
+                hasFilters = selectedFilters > 0;
             }
+
+            this.applyScaleFilterButton.prop('disabled', !hasFilters);
+            this.clearScaleFilterButton.prop('disabled', !hasFilters);
         },
         boundaryListClicked: function (e) {
             var self = this;
@@ -637,8 +675,10 @@ define([
             }
         },
         clearSpatialFilter: function (e) {
-            var target = $(e.target);
-            target.closest('.row').find('input:checkbox:checked').prop('checked', false);
+            if (this.advancedMode && this.advancedSpatialFilterView) {
+                this.advancedSpatialFilterView.clearAll();
+                this.toggleAdvancedMode(e);
+            }
             this.clearAllSelected(e);
             this.clearLayers();
             if (Shared.CurrentState.SEARCH) {
@@ -652,9 +692,9 @@ define([
         },
         highlight: function (state) {
             if (state) {
-                this.$el.find('.subtitle').addClass('filter-panel-selected');
+                this.$el.find('.spatial-scale-menu .subtitle').addClass('filter-panel-selected');
             } else {
-                this.$el.find('.subtitle').removeClass('filter-panel-selected');
+                this.$el.find('.spatial-scale-menu .subtitle').removeClass('filter-panel-selected');
             }
         },
         isUUID: function (value) {
@@ -663,16 +703,46 @@ define([
         },
         showBoundary: function () {
             // Show border in red outline / red boundary to map for selected filter
-            if (this.selectedSpatialFilterLayers.length < 1) {
-                return true;
-            }
             let self = this;
             Shared.Dispatcher.trigger('map:removeLayer', this.layerGroup);
             this.layerGroup = new ol.layer.Group();
             Shared.Dispatcher.trigger('map:addLayer', this.layerGroup);
-            $.each(this.selectedSpatialFilterLayers, function (key, selectedLayer) {
-                let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0])
-                let layerIdentifier = $filterContainer.data('layer-identifier');
+
+            // Determine which layers to show based on mode
+            let layersToShow = {};
+            let metaLookup = null;
+
+            if (this.advancedMode && this.advancedSpatialFilterView) {
+                let advData = this.advancedSpatialFilterView.getSelectedLayers();
+                layersToShow = advData.layers;
+                metaLookup = advData.meta;
+            } else {
+                layersToShow = this.selectedSpatialFilterLayers;
+            }
+
+            if (Object.keys(layersToShow).length < 1) {
+                return true;
+            }
+
+            $.each(layersToShow, function (key, selectedLayer) {
+                let layerIdentifier, wmsUrl, wmsLayer, wmsFormat;
+
+                if (metaLookup && metaLookup[key]) {
+                    // Advanced mode: get metadata from stored layer info
+                    let meta = metaLookup[key];
+                    layerIdentifier = meta.layer_identifier;
+                    wmsUrl = meta.wms_url ? '/bims_proxy/' + meta.wms_url : '';
+                    wmsLayer = meta.layer_name;
+                    wmsFormat = meta.wms_format;
+                } else {
+                    // Normal mode: get metadata from DOM data attributes
+                    let $filterContainer = $(self.$el.find(`[name="${key}"]`)[0]);
+                    layerIdentifier = $filterContainer.data('layer-identifier');
+                    wmsUrl = '/bims_proxy/' + $filterContainer.data('wms-url');
+                    wmsLayer = $filterContainer.data('layer-name');
+                    wmsFormat = $filterContainer.data('wms-format');
+                }
+
                 let uuid = key.split('.')[0];
 
                 if (self.isUUID(uuid)) {
@@ -724,9 +794,6 @@ define([
                     })
                 }
 
-                let wmsUrl = '/bims_proxy/' + $filterContainer.data('wms-url');
-                let wmsLayer = $filterContainer.data('layer-name');
-                let wmsFormat = $filterContainer.data('wms-format');
                 let cqlFilters = null;
                 if (!wmsUrl) {
                     return true;

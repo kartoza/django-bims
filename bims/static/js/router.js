@@ -19,7 +19,7 @@ define(['backbone', 'views/olmap', 'utils/events_connector', 'shared'], function
                 'boundary', 'reference', 'endemic', 'invasions', 'conservationStatus', 'spatialFilter',
                 'taxon', 'validated', 'modules', 'sourceCollection', 'datasetKeys', 'ecologicalCategory',
                 'module', 'tags', 'rank', 'orderBy', 'siteIdOpen', 'polygon',
-                'dst', 'ecosystemType'
+                'dst', 'ecosystemType', 'asf'
             ];
 
             parameterKeys.forEach(key => {

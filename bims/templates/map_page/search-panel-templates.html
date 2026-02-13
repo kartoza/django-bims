@@ -716,6 +716,17 @@
 </script>
 
 
+<script type="text/html" id="advanced-spatial-filter-template">
+    <div class="col-lg-12 filter-content">
+        <div class="adv-header">
+            <button class="btn btn-sm adv-add-group adv-spatial-filter-btn">+ Add Group</button>
+        </div>
+        <div class="small adv-logic-hint">AND across groups &bull; OR within a group</div>
+        <div class="adv-groups"></div>
+        <div class="adv-preview"></div>
+    </div>
+</script>
+
 <script type="text/html" id="spatial-filter-panel">
     <div class="row sub-filter content spatial-scale-menu">
         <div class="col-lg-12 subtitle">
@@ -725,7 +736,15 @@
         </div>
     </div>
     <div class="row spatial-scale-panel" style="display: none">
+        <div class="spatial-filter-mode-toggle">
+            <span class="toggle-label">Advanced</span>
+            <label class="spatial-toggle-switch">
+                <input type="checkbox" class="spatial-mode-toggle-input">
+                <span class="spatial-toggle-slider"></span>
+            </label>
+        </div>
         <div class="spatial-filter-container" style="width: 100%"></div>
+        <div class="advanced-spatial-filter-container" style="display: none; width: 100%"></div>
         {% if bims_preferences.enable_catchmet_filter %}
         <div class="small-subtitle spatial-scale-sub-panel">
             Catchment

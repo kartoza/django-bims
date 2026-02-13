@@ -11,9 +11,11 @@ define([
     'views/filter_panel/spatial_filter',
     'views/filter_panel/source_collection',
     'views/filter_panel/taxon_tags',
-    'views/filter_panel/gbif_dataset'
+    'views/filter_panel/gbif_dataset',
+    'views/filter_panel/advanced_spatial_filter'
 ], function (Backbone, _, Shared, NoUiSlider, SearchResultCollection, SearchPanelView, $, Chosen,
-             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView, GbifDatasetView) {
+             ReferenceCategoryView, SpatialFilterView, SourceCollectionView, TaxonTagsView, GbifDatasetView,
+             AdvancedSpatialFilterView) {
 
     return Backbone.View.extend({
         template: _.template($('#map-search-container').html()),
@@ -169,7 +171,10 @@ define([
             this.referenceCategoryView = new ReferenceCategoryView({parent: this});
             this.$el.find('.reference-category-wrapper').append(this.referenceCategoryView.render().$el);
 
-            this.spatialFilterView = new SpatialFilterView();
+            this.advancedSpatialFilterView = new AdvancedSpatialFilterView({parent: this});
+            this.spatialFilterView = new SpatialFilterView({
+                advancedSpatialFilterView: this.advancedSpatialFilterView
+            });
             this.$el.find('.spatial-filter-wrapper').append(this.spatialFilterView.render().$el);
 
             this.sourceCollectionView = new SourceCollectionView({parent: this});
@@ -573,8 +578,19 @@ define([
             // Spatial filter
             var spatialFilters = this.spatialFilterView.selectedSpatialFilters;
             filterParameters['spatialFilter'] = spatialFilters.length === 0 ? '' : JSON.stringify(spatialFilters);
-            this.spatialFilterView.highlight(spatialFilters.length !== 0);
             this.spatialFilterView.showBoundary();
+
+            // Advanced spatial filter
+            var advSpatialData = this.advancedSpatialFilterView.getSelected();
+            var advHasFilters = advSpatialData.groups.some(function (g) {
+                return g.clauses.some(function (c) { return c.values && c.values.length > 0; });
+            });
+            filterParameters['asf'] = advHasFilters ? JSON.stringify(advSpatialData.groups) : '';
+            if (filterParameters['asf']) {
+                filterParameters['spatialFilter'] = '';
+            }
+
+            this.spatialFilterView.highlight(spatialFilters.length !== 0 || advHasFilters);
 
             // Validation filter
             let validationFilter = [];
@@ -660,7 +676,7 @@ define([
                 'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory', 'reference',
                 'endemic', 'modules', 'conservationStatus', 'spatialFilter',
                 'ecologicalCategory', 'sourceCollection', 'datasetKeys', 'abioticData', 'polygon',
-                'boundary', 'dst', 'thermalModule'
+                'boundary', 'dst', 'thermalModule', 'asf'
             ];
             const hasAnyTruthyValue = keysToCheck.some(key => filterParameters[key]);
             if (!hasAnyTruthyValue) {
@@ -1098,6 +1114,15 @@ define([
             if (allFilters.hasOwnProperty('spatialFilter') && firstCall) {
                 this.spatialFilterView.selectedSpatialFilters = JSON.parse(allFilters['spatialFilter']);
                 this.spatialFilterView.addSelectedSpatialFilterLayerFromJSON(allFilters['spatialFilter']);
+            }
+
+            // Advanced spatial filter
+            if (allFilters.hasOwnProperty('asf') && allFilters['asf'] && firstCall) {
+                var asfGroups = JSON.parse(allFilters['asf']);
+                if (asfGroups && asfGroups.length > 0) {
+                    this.spatialFilterView.setAdvancedMode(true);
+                    this.advancedSpatialFilterView.restoreGroups(asfGroups);
+                }
             }
 
             // Boundary
