@@ -2295,6 +2295,21 @@ div:hover::-webkit-scrollbar {
     background-color: #e4e4e4;
 }
 
+.boundary-search-input {
+    width: 100%;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+    font-size: 8pt;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-sizing: border-box;
+}
+
+.boundary-search-input:focus {
+    outline: none;
+    border-color: #5b9bd5;
+}
+
 .btn-ud-new-site {
     text-transform: none;
     font-size: 8pt;

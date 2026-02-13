@@ -203,6 +203,23 @@ define([
                 wrapper.append($itemWrapper);
                 wrapper = $itemWrapper;
             }
+            if (data.length > 3) {
+                var $searchBox = $('<input type="text" class="boundary-search-input" placeholder="Search...">');
+                $searchBox.on('click', function(e) { e.stopPropagation(); });
+                $searchBox.on('keyup', function() {
+                    var query = $(this).val().toLowerCase();
+                    var $siblings = $(this).siblings('.boundary-item');
+                    $siblings.each(function() {
+                        var text = $(this).find('> label').text().toLowerCase();
+                        if (text.indexOf(query) > -1) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                });
+                wrapper.append($searchBox);
+            }
             for (var i = 0; i < data.length; i++) {
                 var label = '';
                 var checked = '';
