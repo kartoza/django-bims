@@ -48,7 +48,9 @@ class GbifPublishConfig(models.Model):
     )
     installation_key = models.CharField(
         max_length=64,
-        help_text="GBIF Installation Key (UUID)"
+        help_text="GBIF Installation Key (UUID)",
+        blank=True,
+        default="",
     )
     is_active = models.BooleanField(
         default=True,
