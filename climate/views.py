@@ -197,6 +197,47 @@ def _build_monthly_records(queryset):
     ]
 
 
+def _build_daily_records(queryset):
+    """Build daily records from queryset."""
+    daily_records = []
+    for record in queryset:
+        if not record.date:
+            continue
+        daily_records.append({
+            'period': record.date,
+            'temperature': {
+                'min': _round_value(record.min_temperature),
+                'avg': _round_value(record.avg_temperature),
+                'max': _round_value(record.max_temperature),
+            },
+            'humidity': {
+                'min': _round_value(record.min_humidity),
+                'avg': _round_value(record.avg_humidity),
+                'max': _round_value(record.max_humidity),
+            },
+            'rainfall': {
+                'total': _round_value(record.daily_rainfall),
+            },
+        })
+    return daily_records
+
+
+def _build_annual_records(queryset):
+    """Build annual records from queryset."""
+    annual_data = OrderedDict()
+    for record in queryset:
+        if not record.date:
+            continue
+        year = record.date.year
+        bucket = annual_data.setdefault(year, _init_month_bucket())
+        _accumulate_month_bucket(bucket, record)
+
+    return [
+        _finalize_month_bucket(date(year, 1, 1), bucket)
+        for year, bucket in annual_data.items()
+    ]
+
+
 def _round_value(value):
     if value is None:
         return None
@@ -322,8 +363,14 @@ def _build_extremes_table(records):
     return rows, annual_row
 
 
-def _build_chart_payload(records):
-    labels = [record['period'].strftime('%b %Y') for record in records]
+def _build_chart_payload(records, granularity='monthly'):
+    """Build chart payload with appropriate date formatting based on granularity."""
+    if granularity == 'daily':
+        labels = [record['period'].strftime('%Y-%m-%d') for record in records]
+    elif granularity == 'annual':
+        labels = [record['period'].strftime('%Y') for record in records]
+    else:  # monthly
+        labels = [record['period'].strftime('%b %Y') for record in records]
 
     def collect(metric_key, value_key):
         series = []
@@ -348,7 +395,7 @@ def _build_chart_payload(records):
             'total': [((record.get('rainfall') or {}).get('total')) for record in records],
         },
     }
-    return json.dumps(payload, cls=DjangoJSONEncoder)
+    return payload
 
 
 def _build_csv_response(records, start_date, end_date):
@@ -481,10 +528,20 @@ class ClimateSiteView(TemplateView):
         # Order data
         climate_data = climate_data.order_by('date')
 
+        # Build records for all granularities
+        daily_records = _build_daily_records(climate_data)
         monthly_records = _build_monthly_records(climate_data)
+        annual_records = _build_annual_records(climate_data)
+
         context['monthly_records'] = monthly_records
         if monthly_records:
-            chart_payload = _build_chart_payload(monthly_records)
+            # Build chart payloads for all granularities
+            chart_payloads = {
+                'daily': _build_chart_payload(daily_records, 'daily'),
+                'monthly': _build_chart_payload(monthly_records, 'monthly'),
+                'annual': _build_chart_payload(annual_records, 'annual'),
+            }
+            chart_payload = json.dumps(chart_payloads, cls=DjangoJSONEncoder)
             availability = {
                 'temperature': any(
                     (record.get('temperature') or {}).get('avg') is not None
