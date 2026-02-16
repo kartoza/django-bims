@@ -363,7 +363,34 @@ def _build_extremes_table(records):
     return rows, annual_row
 
 
-def _build_chart_payload(records, granularity='monthly'):
+def _build_historical_monthly_rainfall(queryset):
+    """
+    Build historical average monthly rainfall from all data.
+    Returns a dict with month numbers (1-12) as keys and average rainfall as values.
+    """
+    monthly_totals = {}
+    year_months = queryset.values('year', 'month').annotate(
+        monthly_total=Sum('daily_rainfall')
+    ).order_by('year', 'month')
+
+    month_data = {}
+    for item in year_months:
+        month = item['month']
+        if month not in month_data:
+            month_data[month] = []
+        if item['monthly_total'] is not None:
+            month_data[month].append(float(item['monthly_total']))
+
+    for month, totals in month_data.items():
+        if totals:
+            monthly_totals[month] = round(sum(totals) / len(totals), 1)
+        else:
+            monthly_totals[month] = None
+
+    return monthly_totals
+
+
+def _build_chart_payload(records, granularity='monthly', historical_rainfall=None):
     """Build chart payload with appropriate date formatting based on granularity."""
     if granularity == 'daily':
         labels = [record['period'].strftime('%Y-%m-%d') for record in records]
@@ -379,6 +406,16 @@ def _build_chart_payload(records, granularity='monthly'):
             series.append(metric.get(value_key))
         return series
 
+    rainfall_data = {
+        'total': [((record.get('rainfall') or {}).get('total')) for record in records],
+    }
+    if granularity == 'monthly' and historical_rainfall:
+        historical_totals = []
+        for record in records:
+            month = record['period'].month
+            historical_totals.append(historical_rainfall.get(month))
+        rainfall_data['historical'] = historical_totals
+
     payload = {
         'labels': labels,
         'temperature': {
@@ -391,9 +428,7 @@ def _build_chart_payload(records, granularity='monthly'):
             'avg': collect('humidity', 'avg'),
             'max': collect('humidity', 'max'),
         },
-        'rainfall': {
-            'total': [((record.get('rainfall') or {}).get('total')) for record in records],
-        },
+        'rainfall': rainfall_data,
     }
     return payload
 
@@ -528,17 +563,26 @@ class ClimateSiteView(TemplateView):
         # Order data
         climate_data = climate_data.order_by('date')
 
-        # Build records for all granularities
+        is_private_user = False
+        if self.request.user.is_authenticated:
+            is_private_user = self.request.user.groups.filter(
+                name='PrivateDataGroup'
+            ).exists()
+
         daily_records = _build_daily_records(climate_data)
         monthly_records = _build_monthly_records(climate_data)
         annual_records = _build_annual_records(climate_data)
+
+        historical_rainfall = _build_historical_monthly_rainfall(climate_data_by_site)
 
         context['monthly_records'] = monthly_records
         if monthly_records:
             # Build chart payloads for all granularities
             chart_payloads = {
                 'daily': _build_chart_payload(daily_records, 'daily'),
-                'monthly': _build_chart_payload(monthly_records, 'monthly'),
+                'monthly': _build_chart_payload(
+                    monthly_records, 'monthly', historical_rainfall
+                ),
                 'annual': _build_chart_payload(annual_records, 'annual'),
             }
             chart_payload = json.dumps(chart_payloads, cls=DjangoJSONEncoder)
@@ -622,22 +666,44 @@ class ClimateSiteView(TemplateView):
         context['site_overview'] = site_overview
         context['site_details'] = json.dumps(site_details)
 
-        # Climate records for display
-        records_list = []
-        for record in climate_data:
-            records_list.append({
-                'date': record.date,
-                'date_formatted': record.date.strftime('%Y-%m-%d'),
-                'avg_temperature': record.avg_temperature,
-                'min_temperature': record.min_temperature,
-                'max_temperature': record.max_temperature,
-                'avg_humidity': record.avg_humidity,
-                'min_humidity': record.min_humidity,
-                'max_humidity': record.max_humidity,
-                'avg_windspeed': record.avg_windspeed,
-                'daily_rainfall': record.daily_rainfall,
+        context['is_private_user'] = is_private_user
+
+        # Monthly averaged records for display table (visible to all)
+        monthly_records_list = []
+        for record in monthly_records:
+            period = record['period']
+            temp = record.get('temperature') or {}
+            humidity = record.get('humidity') or {}
+            wind = record.get('wind') or {}
+            rainfall = record.get('rainfall') or {}
+            monthly_records_list.append({
+                'period': period,
+                'period_formatted': period.strftime('%b %Y'),
+                'avg_temperature': temp.get('avg'),
+                'min_temperature': temp.get('min'),
+                'max_temperature': temp.get('max'),
+                'avg_humidity': humidity.get('avg'),
+                'avg_windspeed': wind.get('avg'),
+                'total_rainfall': rainfall.get('total'),
             })
-        context['climate_records'] = records_list
+        context['climate_records'] = monthly_records_list
+
+        # Daily records for CSV download (private users only)
+        if is_private_user:
+            daily_records_list = []
+            for record in climate_data:
+                daily_records_list.append({
+                    'date': record.date.strftime('%Y-%m-%d'),
+                    'avg_temperature': float(record.avg_temperature) if record.avg_temperature else None,
+                    'min_temperature': float(record.min_temperature) if record.min_temperature else None,
+                    'max_temperature': float(record.max_temperature) if record.max_temperature else None,
+                    'avg_humidity': float(record.avg_humidity) if record.avg_humidity else None,
+                    'min_humidity': float(record.min_humidity) if record.min_humidity else None,
+                    'max_humidity': float(record.max_humidity) if record.max_humidity else None,
+                    'avg_windspeed': float(record.avg_windspeed) if record.avg_windspeed else None,
+                    'daily_rainfall': float(record.daily_rainfall) if record.daily_rainfall else None,
+                })
+            context['daily_records_json'] = json.dumps(daily_records_list, cls=DjangoJSONEncoder)
 
         return context
 

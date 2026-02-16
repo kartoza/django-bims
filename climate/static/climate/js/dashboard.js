@@ -254,6 +254,24 @@
       if (charts.rainfall) {
         charts.rainfall.destroy();
       }
+
+      let rainfallSeries = [];
+
+      if (granularity === 'monthly' && data.rainfall.historical) {
+        rainfallSeries.push({
+          name: 'Monthly average over all time',
+          data: data.rainfall.historical,
+          color: '#146082'
+        });
+      }
+
+      rainfallSeries.push(
+        {
+          name: 'Average monthly total rainfall (for dates selected)',
+          data: data.rainfall.total,
+          color: '#E97132'
+        });
+
       charts.rainfall = Highcharts.chart('rainfall-chart', {
         chart: {
           type: 'column',
@@ -292,13 +310,7 @@
           }
         },
         exporting: exportingOptions,
-        series: [
-          {
-            name: 'Total rainfall (mm)',
-            data: data.rainfall.total,
-            color: '#4FC3F7'
-          }
-        ]
+        series: rainfallSeries
       });
     }
   }
