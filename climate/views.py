@@ -414,7 +414,10 @@ class ClimateSiteView(TemplateView):
         context = super(ClimateSiteView, self).get_context_data(**kwargs)
 
         # Get climate data for this site
-        climate_data = Climate.objects.filter(
+        climate_data_by_site = Climate.objects.filter(
+            location_site=self.location_site
+        )
+        climate_data = climate_data_by_site.filter(
             location_site=self.location_site
         )
 
@@ -525,10 +528,23 @@ class ClimateSiteView(TemplateView):
             max_rainfall=Max('daily_rainfall'),
             record_count=Count('id')
         )
+        stats_overall = climate_data_by_site.aggregate(
+            avg_temp=Avg('avg_temperature'),
+            min_temp=Min('min_temperature'),
+            max_temp=Max('max_temperature'),
+            avg_humidity=Avg('avg_humidity'),
+            min_humidity=Min('min_humidity'),
+            max_humidity=Max('max_humidity'),
+            avg_windspeed=Avg('avg_windspeed'),
+            total_rainfall=Sum('daily_rainfall'),
+            max_rainfall=Max('daily_rainfall'),
+        )
         context['stats'] = stats
+        context['stats_overall'] = stats_overall
 
         # Get records
         context['total_records'] = climate_data.count()
+        context['total_overall_records'] = climate_data_by_site.count()
         context['location_site'] = self.location_site
         context['execution_time'] = time.time() - start_time
         context['start_date'] = (

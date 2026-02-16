@@ -17,6 +17,12 @@ def climate_upload(session_id):
         log('Session does not exist')
         return
 
+    def clean_headers(headers):
+        """Clean headers by removing BOM and extra whitespace."""
+        if not headers:
+            return []
+        return [h.strip().lstrip('\ufeff') for h in headers]
+
     def check_header(headers):
         """Validate required headers."""
         required_headers = [
@@ -36,13 +42,12 @@ def climate_upload(session_id):
             return False
         return True
 
-    # Read and validate headers
     csv_headers = []
     try:
         with open(upload_session.process_file.path, encoding='utf-8') as csv_file:
             reader = csv.DictReader(csv_file)
             csv_headers = reader.fieldnames
-            checked = check_header(csv_headers)
+            rows = list(reader)
     except UnicodeDecodeError:
         try:
             with open(
@@ -51,7 +56,7 @@ def climate_upload(session_id):
             ) as csv_file:
                 reader = csv.DictReader(csv_file)
                 csv_headers = reader.fieldnames
-                checked = check_header(csv_headers)
+                rows = list(reader)
         except Exception as e:
             upload_session.progress = f'Error reading file: {e}'
             upload_session.canceled = True
@@ -63,7 +68,26 @@ def climate_upload(session_id):
         upload_session.save()
         return
 
-    if not checked:
+    cleaned_headers = clean_headers(csv_headers)
+    if not check_header(cleaned_headers):
+        return
+
+    try:
+        with open(
+            upload_session.process_file.path, 'w',
+            encoding='utf-8', newline=''
+        ) as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=cleaned_headers)
+            writer.writeheader()
+            # Map old headers to cleaned headers for each row
+            header_map = dict(zip(csv_headers, cleaned_headers))
+            for row in rows:
+                cleaned_row = {header_map[k]: v for k, v in row.items()}
+                writer.writerow(cleaned_row)
+    except Exception as e:
+        upload_session.progress = f'Error rewriting file: {e}'
+        upload_session.canceled = True
+        upload_session.save()
         return
 
     # Start processing
