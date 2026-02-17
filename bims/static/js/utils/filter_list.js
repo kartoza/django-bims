@@ -82,6 +82,9 @@ let filterParametersJSON = {
     }
 };
 
+let spatialFilterData = null;
+let spatialFilterPromise = null;
+
 function getUrlVars() {
     let vars = [], hash;
     let hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
@@ -93,12 +96,35 @@ function getUrlVars() {
     return vars;
 }
 
-function renderFilterList($div, asTable = true) {
+function getSpatialFilterData () {
+    if (spatialFilterData) {
+        return $.Deferred().resolve(spatialFilterData).promise();
+    }
+    if (!spatialFilterPromise) {
+        spatialFilterPromise = $.ajax({
+            type: 'GET',
+            url: '/api/spatial-scale-filter-list/',
+            dataType: 'json',
+            success: function (data) {
+                spatialFilterData = data;
+            },
+            error: function () {
+                spatialFilterPromise = null;
+            }
+        });
+    }
+    return spatialFilterPromise;
+}
+
+async function renderFilterList($div, asTable = true) {
     let urlParams = getUrlVars();
     let tableData = {};
     if (asTable) {
-        $div.html('<div class="row" style="font-weight: bold;"><div class="col-4">Category</div><div class="col-8">Selection</div></div>');
+        $div.html('<div class="row" style="font-weight: bold;">' +
+            '<div class="col-4">Category</div><div class="col-8">Selection</div></div>');
     }
+
+    await getSpatialFilterData();
 
     $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
@@ -110,10 +136,21 @@ function renderFilterList($div, asTable = true) {
                 let spatialFilterContainer = $('.spatial-filter-container');
                 let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
                 let table_data = '';
+
                 $.each(json_data, function (index, spatial_filter) {
                     let spatial_filter_values = spatial_filter.split(',');
                     let spatial_filter_name = spatial_filter_values[1];
                     spatial_filter_name = spatialFilterContainer.find(`input[name ="${spatial_filter_name}"]`).next().html();
+
+                    if (typeof spatial_filter_name === 'undefined') {
+                        let spatialFilterKey = spatial_filter_values[1];
+                        for (let _sfData of spatialFilterData) {
+                            if (!_sfData.children) continue;
+                            let found = _sfData.children.find(child => child.key === spatialFilterKey);
+                            spatial_filter_name = found ? found.name : spatialFilterKey;
+                        }
+                    }
+
                     let spatial_filter_value = 'All';
                     if (spatial_filter_values[0] === 'value') {
                         spatial_filter_value = spatial_filter_values[2];

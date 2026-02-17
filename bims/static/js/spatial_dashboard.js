@@ -590,6 +590,10 @@
                 };
             });
             if (typeof Chart !== 'undefined') {
+                var barHeight = 30;
+                var chartHeight = Math.max(160, moduleLabels.length * (barHeight + 10) + 60);
+                consChartPerModuleEl.parentNode.style.height = chartHeight + 'px';
+                consChartPerModuleEl.height = chartHeight;
                 new Chart(consChartPerModuleEl.getContext('2d'), {
                     type: 'horizontalBar',
                     data: {
@@ -598,6 +602,7 @@
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
                         legend: {position: 'bottom'},
                         scales: {
                             xAxes: [{
@@ -610,8 +615,8 @@
                             }],
                             yAxes: [{
                                 stacked: true,
-                                barThickness: 30,
-                                maxBarThickness: 30
+                                barThickness: barHeight,
+                                maxBarThickness: barHeight
                             }]
                         },
                         tooltips: {
