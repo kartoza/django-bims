@@ -145,6 +145,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "occurrence_upload_guidelines",  # NEW
                 "occurrence_upload_template",
                 "auto_validate_taxa_on_upload",
+                "invasion_label",
             ),
         }),
         (_("Features / Toggles"), {

@@ -33,11 +33,10 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     from django.contrib.auth import get_user_model
     from django.conf import settings
 
+    from preferences import preferences
     from bims.api_views.taxon import TaxaList
     from bims.views.download_csv_taxa_list import (
         TaxaCSVSerializer,
-        is_sanparks_project,
-        NATIONAL_NEMBA_LABEL,
     )
     from bims.tasks import send_csv_via_email
     from bims.models.download_request import DownloadRequest
@@ -51,7 +50,6 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
     )
 
     is_fada = is_fada_site()
-    sanparks_project = is_sanparks_project()
 
     def _from_additional_data(instance, k):
         data = getattr(instance, 'additional_data', None)
@@ -163,7 +161,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 _updated_headers.append(header)
                 continue
             elif header.lower().strip() == 'invasion':
-                header = NATIONAL_NEMBA_LABEL if sanparks_project else 'Invasion'
+                header = preferences.SiteSetting.invasion_label or 'Invasion'
                 _updated_headers.append(header)
                 continue
 
