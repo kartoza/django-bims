@@ -84,6 +84,26 @@
     annual: 'Annual total rainfall'
   };
 
+  function labelToTimestamp(label, granularity) {
+    if (granularity === 'daily') {
+      return Date.parse(label);
+    } else if (granularity === 'annual') {
+      return Date.parse(label + '-01-01');
+    } else {
+      // "Mon YYYY" format
+      return Date.parse('01 ' + label);
+    }
+  }
+
+  function pairedData(labels, values, granularity) {
+    var result = [];
+    for (var i = 0; i < labels.length; i++) {
+      var ts = labelToTimestamp(labels[i], granularity);
+      result.push([ts, values[i]]);
+    }
+    return result;
+  }
+
   function renderCharts(granularity) {
     var data = allData[granularity];
     if (!data || !data.labels || !data.labels.length) {
@@ -120,7 +140,7 @@
           enabled: true
         },
         xAxis: {
-          categories: data.labels,
+          type: 'datetime',
           title: {
             text: ''
           },
@@ -156,17 +176,17 @@
         series: [
           {
             name: 'Min (°C)',
-            data: data.temperature.min,
+            data: pairedData(data.labels, data.temperature.min, granularity),
             color: '#3F51B5'
           },
           {
             name: 'Ave (°C)',
-            data: data.temperature.avg,
+            data: pairedData(data.labels, data.temperature.avg, granularity),
             color: '#009688'
           },
           {
             name: 'Max (°C)',
-            data: data.temperature.max,
+            data: pairedData(data.labels, data.temperature.max, granularity),
             color: '#E91E63'
           }
         ]
@@ -196,7 +216,7 @@
           enabled: true
         },
         xAxis: {
-          categories: data.labels,
+          type: 'datetime',
           title: {
             text: ''
           },
@@ -232,17 +252,17 @@
         series: [
           {
             name: 'Min (%)',
-            data: data.humidity.min,
+            data: pairedData(data.labels, data.humidity.min, granularity),
             color: '#5C6BC0'
           },
           {
             name: 'Ave (%)',
-            data: data.humidity.avg,
+            data: pairedData(data.labels, data.humidity.avg, granularity),
             color: '#26A69A'
           },
           {
             name: 'Max (%)',
-            data: data.humidity.max,
+            data: pairedData(data.labels, data.humidity.max, granularity),
             color: '#FF7043'
           }
         ]
