@@ -447,6 +447,16 @@ class SiteSetting(Preferences):
         help_text="Google Analytics Measurement ID or API key."
     )
 
+    invasion_label = models.CharField(
+        max_length=100,
+        default='Invasion',
+        blank=True,
+        help_text=(
+            "Label for the invasion column in taxa checklist downloads. "
+            "Default is 'Invasion'. SANParks uses 'National NEMBA Status'."
+        )
+    )
+
     def _tenant_default_exclusions(self) -> set[str]:
         """Default per tenant: for FBIS tenant, exclude 'fbis'."""
         schema = (getattr(connection, "schema_name", "") or "").lower()
