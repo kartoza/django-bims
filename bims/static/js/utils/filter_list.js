@@ -76,6 +76,10 @@ let filterParametersJSON = {
         'label': 'Spatial filter',
         'type': 'spatial_filter'
     },
+    'asf': {
+        'label': 'Spatial filter',
+        'type': 'advanced_spatial_filter'
+    },
     'tags': {
         'label': 'Taxon tags',
         'type': 'json'
@@ -157,6 +161,44 @@ async function renderFilterList($div, asTable = true) {
                     }
                     table_data += spatial_filter_name + ' : ' + spatial_filter_value;
                     table_data += '<br/>';
+                });
+                tableData[data['label']] = table_data;
+            } else if (data['type'] === 'advanced_spatial_filter') {
+                let asfGroups = JSON.parse(decodeURIComponent(urlParams[key]));
+                let table_data = '';
+
+                // Build a key-to-name lookup from spatialFilterData
+                let keyToName = {};
+                if (spatialFilterData) {
+                    for (let sfData of spatialFilterData) {
+                        if (!sfData.children) continue;
+                        for (let child of sfData.children) {
+                            keyToName[child.key] = child.name;
+                        }
+                    }
+                }
+
+                $.each(asfGroups, function (gIndex, group) {
+                    if (!group.clauses || !group.clauses.length) return true;
+                    let clauseParts = [];
+                    $.each(group.clauses, function (cIndex, clause) {
+                        if (!clause.values || !clause.values.length) return true;
+                        let fieldName = clause.field || keyToName[clause.key] || clause.key || 'Unknown';
+                        let valuesStr;
+                        if (clause.values.length === 1 && clause.values[0] === '__ALL__') {
+                            valuesStr = 'All';
+                        } else {
+                            valuesStr = clause.values.join(', ');
+                        }
+                        clauseParts.push(fieldName + ': ' + valuesStr);
+                    });
+                    if (clauseParts.length > 0) {
+                        if (gIndex > 0) {
+                            table_data += '<strong>AND</strong><br/>';
+                        }
+                        table_data += clauseParts.join(' <em>OR</em> ');
+                        table_data += '<br/>';
+                    }
                 });
                 tableData[data['label']] = table_data;
             } else if (data['type'] === 'unicode') {
