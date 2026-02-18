@@ -9,11 +9,19 @@
 
     <!-- Custom styles for this template -->
     <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}"
+          rel="stylesheet">
     <style>
         #log-container {
             background-color: black !important;
             color: white !important;
             font-size: 10pt;
+        }
+        #boundary-map {
+            width: 100%;
+            max-height: 500px;
+            height: 300px;
+            padding-bottom: 15px;
         }
     </style>
 
@@ -56,11 +64,27 @@
 
                     <div class="help-block-space"></div>
                     <div class="form-group row">
+                        <label class="col-sm-2 col-form-label"><b>Boundary</b></label>
+                        <div class="col-sm-10">
+                            <select class="form-control" name="boundary"
+                                    id="boundary" {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}>
+                                <option value="" disabled {% if not preferences.SiteSetting.site_boundary %}selected{% endif %}>Choose a boundary</option>
+                                {% for boundary in boundaries %}
+                                    <option value="{{ boundary.id }}" {% if preferences.SiteSetting.site_boundary and boundary.id == preferences.SiteSetting.site_boundary.id %}selected{% endif %}> {{ boundary.name }} </option>
+                                {% endfor %}
+                            </select>
+                            <div id="boundary-map"></div>
+                            <a href="/upload-boundary" class="text-muted" style="font-size: 10pt; position: absolute; margin-top: -15px">Link to layer uploader</a>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
                         <label for="inputPassword"
                                class="col-sm-2 col-form-label"><b>Taxon Group</b></label>
                         <div class="col-sm-8">
                             <select class="form-control" name="taxon_group"
                                     id="taxon-group">
+                                <option value="" disabled selected>Choose a taxon group</option>
                                 {% for taxon_group in taxa_groups %}
                                     <option value="{{ taxon_group.id }}"> {{ taxon_group.name }} </option>
                                 {% endfor %}
@@ -73,7 +97,7 @@
                     </div>
                     <div class="help-block-space"></div>
 
-                    <button class="btn btn-primary" type="submit" {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}>Start harvesting</button>
+                    <button class="btn btn-primary" type="submit" disabled id="harvesting-btn">Start harvesting</button>
 
 
                     {% endif %}
@@ -209,6 +233,7 @@
 {% block foot %}
 
     <!-- Plugin JavaScript -->
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script type="text/javascript">
@@ -240,6 +265,74 @@
         }
 
         $(function () {
+            let map = new ol.Map({
+                target: 'boundary-map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM()
+                    })
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([0, 0]),
+                    zoom: 2
+                })
+            });
+            function updateMapForBoundaries(boundaryIds) {
+                $.ajax({
+                    url: `/api/boundary/geojson?ids=${JSON.stringify(boundaryIds)}`,
+                    method: 'GET',
+                    success: function(data) {
+                        var features = new ol.format.GeoJSON().readFeatures(data, {
+                            dataProjection: 'EPSG:4326',
+                            featureProjection: 'EPSG:3857'
+                        });
+
+                        map.getLayers().getArray().slice(1).forEach(layer => map.removeLayer(layer));
+
+                        var vectorSource = new ol.source.Vector({
+                            features: features
+                        });
+                        var vectorLayer = new ol.layer.Vector({
+                            source: vectorSource
+                        });
+                        map.addLayer(vectorLayer);
+
+                        map.getView().fit(vectorSource.getExtent(), {
+                            padding: [50, 50, 50, 50],
+                            duration: 1000
+                        });
+                    },
+                    error: function(error) {
+                        console.error('Error fetching boundary data:', error);
+                    }
+                });
+            }
+
+            function checkEnableHarvesting() {
+                let taxonGroupId = $('#taxon-group').val();
+                let selectedBoundaryId = $('#boundary').val();
+                if (taxonGroupId && selectedBoundaryId) {
+                    $('#harvesting-btn').attr('disabled', false);
+                }
+            }
+
+            // Load default boundary on page load
+            let defaultBoundaryId = $('#boundary').val();
+            if (defaultBoundaryId) {
+                updateMapForBoundaries([defaultBoundaryId]);
+                checkEnableHarvesting();
+            }
+
+            $('#boundary').change(function() {
+                let selectedBoundaryId = $(this).val();
+                if (selectedBoundaryId) {
+                    updateMapForBoundaries([selectedBoundaryId]);
+                }
+                checkEnableHarvesting();
+            });
+            $('#taxon-group').change(function () {
+                checkEnableHarvesting();
+            });
             let textarea = document.getElementById('log-container');
             if (textarea) {
                 textarea.scrollTop = textarea.scrollHeight;
