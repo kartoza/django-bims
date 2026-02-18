@@ -1247,6 +1247,12 @@ class TaxonomyAdminForm(forms.ModelForm):
         if not canonical_name:
             return cleaned_data
 
+        duplicate_fields = (
+            'canonical_name', 'author', 'taxonomic_status', 'gbif_key'
+        )
+        if self.instance.pk and not any(f in self.changed_data for f in duplicate_fields):
+            return cleaned_data
+
         qs = Taxonomy.objects.filter(
             canonical_name__iexact=canonical_name
         )
@@ -1487,6 +1493,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'fetch_cites_listing', 'extract_author',
         'fetch_iucn_assessments',
         'harvest_synonyms_for_accepted',
+        'export_taxa_list',
     ]
     fieldsets = (
         (_('Taxon Details'), {
@@ -1738,6 +1745,50 @@ class TaxonomyAdmin(admin.ModelAdmin):
     harvest_synonyms_for_accepted.short_description = (
         "Harvest synonyms for accepted taxa (GBIF)"
     )
+
+    def export_taxa_list(self, request, queryset):
+        import os
+        from bims.models.download_request import DownloadRequest
+        from bims.tasks.download_taxa_list import download_taxa_list
+
+        taxa_ids = list(queryset.values_list('id', flat=True))
+        filename = 'taxa_list_export'
+        folder = settings.PROCESSED_CSV_PATH
+        path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+        os.makedirs(path_folder, exist_ok=True)
+        csv_file_path = os.path.join(path_folder, '{}.csv'.format(filename))
+
+        download_request = DownloadRequest.objects.create(
+            resource_name='Taxa List',
+            resource_type=DownloadRequest.CSV,
+            approved=True,
+            dashboard_url=request.get_full_path(),
+            requester=request.user,
+        )
+
+        download_taxa_list.delay(
+            {},
+            csv_file_path,
+            filename,
+            request.user.id,
+            download_request_id=download_request.id,
+            taxa_ids=taxa_ids,
+            order_by='canonical_name',
+        )
+
+        self.message_user(
+            request,
+            'Export is being processed. You will receive an email when it\'s ready.',
+            level=messages.SUCCESS,
+        )
+
+    export_taxa_list.short_description = 'Export taxa list'
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'has_duplicates' not in request.GET:
+            actions.pop('export_taxa_list', None)
+        return actions
 
 
 class VernacularNameAdmin(admin.ModelAdmin):

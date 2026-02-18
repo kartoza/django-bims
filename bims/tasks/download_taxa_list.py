@@ -28,7 +28,15 @@ from bims.utils.domain import get_current_domain
 logger = logging.getLogger(__name__)
 
 
-def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, download_request_id=''):
+def process_download_csv_taxa_list(
+        request,
+        csv_file_path,
+        filename,
+        user_id,
+        download_request_id='',
+        taxa_ids=None,
+        order_by=None
+    ):
     import csv
     from django.contrib.auth import get_user_model
     from django.conf import settings
@@ -69,7 +77,7 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
 
     def _current_domain():
         try:
-            from bims.utils import get_current_domain
+            from bims.utils.domain import get_current_domain
             return get_current_domain()
         except Exception:  # noqa
             pass
@@ -104,7 +112,13 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
         except TaxonGroup.DoesNotExist:
             pass
 
-    taxa_qs = TaxaList.get_taxa_by_parameters(request_get)
+    if taxa_ids:
+        from bims.models import Taxonomy
+        taxa_qs = Taxonomy.objects.filter(id__in=taxa_ids)
+        if order_by:
+            taxa_qs = taxa_qs.order_by(order_by)
+    else:
+        taxa_qs = TaxaList.get_taxa_by_parameters(request_get)
     try:
         taxa_qs = taxa_qs.prefetch_related('tags', 'biographic_distributions', 'vernacular_names')
     except Exception:
@@ -203,6 +217,9 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 raw_headers.append(k)
         raw_headers = reorder_headers_for_fada(raw_headers)
 
+    if taxa_ids:
+        raw_headers.append('admin_url')
+
     updated_headers = update_headers(raw_headers)
 
     progress = 1
@@ -211,11 +228,20 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
 
         writer.writerow(updated_headers)
 
-        taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
+        if taxa_ids:
+            taxa_qs_write = Taxonomy.objects.filter(id__in=taxa_ids)
+            if order_by:
+                taxa_qs_write = taxa_qs_write.order_by(order_by)
+        else:
+            taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
         try:
             taxa_qs_write = taxa_qs_write.prefetch_related('tags', 'biographic_distributions', 'vernacular_names')
         except Exception:
             pass
+
+        if taxa_ids:
+            from django.urls import reverse
+            current_domain = _current_domain()
 
         for taxon in taxa_qs_write.iterator():
             ser = TaxaCSVSerializer(taxon)
@@ -225,6 +251,12 @@ def process_download_csv_taxa_list(request, csv_file_path, filename, user_id, do
                 for k in FADA_ADDITIONAL_KEYS:
                     if k not in row:
                         row[k] = _from_additional_data(taxon, k)
+
+            if taxa_ids:
+                admin_path = reverse(
+                    'admin:bims_taxonomy_change', args=[taxon.pk]
+                )
+                row['admin_url'] = f'{current_domain}{admin_path}'
 
             writer.writerow([row.get(k, '') for k in raw_headers])
 
@@ -474,7 +506,8 @@ def process_download_pdf_taxa_list(
 
 @shared_task(name='bims.tasks.download_csv_taxa_list', queue='update')
 def download_taxa_list(
-        request, csv_file, filename, user_id, output = 'csv', download_request_id='', taxon_group_id = None):
+        request, csv_file, filename, user_id, output = 'csv', download_request_id='',
+        taxon_group_id = None, taxa_ids=None, order_by=None):
     from bims.utils.celery import memcache_lock
     lock_id = '{0}-lock-{1}'.format(
         filename,
@@ -485,7 +518,8 @@ def download_taxa_list(
         if acquired:
             if output == 'csv':
                 return process_download_csv_taxa_list(
-                    request, csv_file, filename, user_id, download_request_id
+                    request, csv_file, filename, user_id, download_request_id,
+                    taxa_ids=taxa_ids, order_by=order_by
                 )
             else:
                 return process_download_pdf_taxa_list(

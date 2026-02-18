@@ -169,7 +169,7 @@ def generate_location_site_summary(
         start_time = time.time()
         origin_data = collection_records.annotate(
             name=Case(When(taxonomy__origin='',
-                           then=Value('Unknown')),
+                           then=Value('unknown')),
                       default=F('taxonomy__origin'))
         ).values(
             'name'

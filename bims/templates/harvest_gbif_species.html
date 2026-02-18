@@ -77,9 +77,9 @@
                         <div class="col-sm-10">
                             <select class="form-control" name="boundary"
                                     id="boundary" {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}>
-                                <option value="" disabled selected>Choose a boundary</option>
+                                <option value="" disabled {% if not preferences.SiteSetting.site_boundary %}selected{% endif %}>Choose a boundary</option>
                                 {% for boundary in boundaries %}
-                                    <option value="{{ boundary.id }}"> {{ boundary.name }} </option>
+                                    <option value="{{ boundary.id }}" {% if preferences.SiteSetting.site_boundary and boundary.id == preferences.SiteSetting.site_boundary.id %}selected{% endif %}> {{ boundary.name }} </option>
                                 {% endfor %}
                             </select>
                             <div id="boundary-map"></div>
@@ -343,24 +343,31 @@
                 });
             }
 
-            // Handle boundary select change
-            $('#boundary').change(function() {
-                let selectedBoundaryId = $(this).val();
+            function checkEnableHarvesting() {
                 let taxonGroupId = $('#taxon-group').val();
-                if (selectedBoundaryId) {
-                    updateMapForBoundaries([selectedBoundaryId]);
-                }
-                console.log(taxonGroupId, selectedBoundaryId)
-                if (taxonGroupId && selectedBoundaryId) {
-                    $('#harvesting-btn').attr('disabled', false);
-                }
-            });
-            $('#taxon-group').change(function () {
-                let taxonGroupId = $(this).val();
                 let selectedBoundaryId = $('#boundary').val();
                 if (taxonGroupId && selectedBoundaryId) {
                     $('#harvesting-btn').attr('disabled', false);
                 }
+            }
+
+            // Load default boundary on page load
+            let defaultBoundaryId = $('#boundary').val();
+            if (defaultBoundaryId) {
+                updateMapForBoundaries([defaultBoundaryId]);
+                checkEnableHarvesting();
+            }
+
+            // Handle boundary select change
+            $('#boundary').change(function() {
+                let selectedBoundaryId = $(this).val();
+                if (selectedBoundaryId) {
+                    updateMapForBoundaries([selectedBoundaryId]);
+                }
+                checkEnableHarvesting();
+            });
+            $('#taxon-group').change(function () {
+                checkEnableHarvesting();
             })
             let textarea = document.getElementById('log-container');
             if (textarea) {

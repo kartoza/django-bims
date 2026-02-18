@@ -137,6 +137,8 @@ class ClimateCSVUpload(DataCSVUpload):
     def get_float_value(self, row, key):
         """Get float value from row, return None if empty or invalid."""
         value = self.row_value(row, key)
+        if value == '-999':
+            return None
         if not value:
             return None
         try:

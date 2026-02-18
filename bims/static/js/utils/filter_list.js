@@ -76,11 +76,18 @@ let filterParametersJSON = {
         'label': 'Spatial filter',
         'type': 'spatial_filter'
     },
+    'asf': {
+        'label': 'Spatial filter',
+        'type': 'advanced_spatial_filter'
+    },
     'tags': {
         'label': 'Taxon tags',
         'type': 'json'
     }
 };
+
+let spatialFilterData = null;
+let spatialFilterPromise = null;
 
 function getUrlVars() {
     let vars = [], hash;
@@ -93,12 +100,35 @@ function getUrlVars() {
     return vars;
 }
 
-function renderFilterList($div, asTable = true) {
+function getSpatialFilterData () {
+    if (spatialFilterData) {
+        return $.Deferred().resolve(spatialFilterData).promise();
+    }
+    if (!spatialFilterPromise) {
+        spatialFilterPromise = $.ajax({
+            type: 'GET',
+            url: '/api/spatial-scale-filter-list/',
+            dataType: 'json',
+            success: function (data) {
+                spatialFilterData = data;
+            },
+            error: function () {
+                spatialFilterPromise = null;
+            }
+        });
+    }
+    return spatialFilterPromise;
+}
+
+async function renderFilterList($div, asTable = true) {
     let urlParams = getUrlVars();
     let tableData = {};
     if (asTable) {
-        $div.html('<div class="row" style="font-weight: bold;"><div class="col-4">Category</div><div class="col-8">Selection</div></div>');
+        $div.html('<div class="row" style="font-weight: bold;">' +
+            '<div class="col-4">Category</div><div class="col-8">Selection</div></div>');
     }
+
+    await getSpatialFilterData();
 
     $.each(filterParametersJSON, function (key, data) {
         if (urlParams[key]) {
@@ -110,16 +140,68 @@ function renderFilterList($div, asTable = true) {
                 let spatialFilterContainer = $('.spatial-filter-container');
                 let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
                 let table_data = '';
+
                 $.each(json_data, function (index, spatial_filter) {
                     let spatial_filter_values = spatial_filter.split(',');
                     let spatial_filter_name = spatial_filter_values[1];
                     spatial_filter_name = spatialFilterContainer.find(`input[name ="${spatial_filter_name}"]`).next().html();
+
+                    if (typeof spatial_filter_name === 'undefined') {
+                        let spatialFilterKey = spatial_filter_values[1];
+                        for (let _sfData of spatialFilterData) {
+                            if (!_sfData.children) continue;
+                            let found = _sfData.children.find(child => child.key === spatialFilterKey);
+                            spatial_filter_name = found ? found.name : spatialFilterKey;
+                            if (found) {
+                                break;
+                            }
+                        }
+                    }
+
                     let spatial_filter_value = 'All';
                     if (spatial_filter_values[0] === 'value') {
                         spatial_filter_value = spatial_filter_values[2];
                     }
                     table_data += spatial_filter_name + ' : ' + spatial_filter_value;
                     table_data += '<br/>';
+                });
+                tableData[data['label']] = table_data;
+            } else if (data['type'] === 'advanced_spatial_filter') {
+                let asfGroups = JSON.parse(decodeURIComponent(urlParams[key]));
+                let table_data = '';
+
+                // Build a key-to-name lookup from spatialFilterData
+                let keyToName = {};
+                if (spatialFilterData) {
+                    for (let sfData of spatialFilterData) {
+                        if (!sfData.children) continue;
+                        for (let child of sfData.children) {
+                            keyToName[child.key] = child.name;
+                        }
+                    }
+                }
+
+                $.each(asfGroups, function (gIndex, group) {
+                    if (!group.clauses || !group.clauses.length) return true;
+                    let clauseParts = [];
+                    $.each(group.clauses, function (cIndex, clause) {
+                        if (!clause.values || !clause.values.length) return true;
+                        let fieldName = clause.field || keyToName[clause.key] || clause.key || 'Unknown';
+                        let valuesStr;
+                        if (clause.values.length === 1 && clause.values[0] === '__ALL__') {
+                            valuesStr = 'All';
+                        } else {
+                            valuesStr = clause.values.join(', ');
+                        }
+                        clauseParts.push(fieldName + ': ' + valuesStr);
+                    });
+                    if (clauseParts.length > 0) {
+                        if (gIndex > 0) {
+                            table_data += '<strong>AND</strong><br/>';
+                        }
+                        table_data += clauseParts.join(' <em>OR</em> ');
+                        table_data += '<br/>';
+                    }
                 });
                 tableData[data['label']] = table_data;
             } else if (data['type'] === 'unicode') {

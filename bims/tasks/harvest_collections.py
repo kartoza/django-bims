@@ -171,7 +171,9 @@ def harvest_collections(session_id, resume=False, chunk_size=250, schema_name='p
         resume_state = {}
         if resume and harvest_session.additional_data:
             try:
-                resume_state = json.loads(harvest_session.additional_data) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
+                resume_state = json.loads(
+                    harvest_session.additional_data
+                ) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
             except:
                 resume_state = {}
 
