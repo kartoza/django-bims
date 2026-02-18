@@ -152,6 +152,9 @@ async function renderFilterList($div, asTable = true) {
                             if (!_sfData.children) continue;
                             let found = _sfData.children.find(child => child.key === spatialFilterKey);
                             spatial_filter_name = found ? found.name : spatialFilterKey;
+                            if (found) {
+                                break;
+                            }
                         }
                     }
 

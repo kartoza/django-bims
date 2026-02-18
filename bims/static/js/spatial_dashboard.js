@@ -1,4 +1,11 @@
 (function () {
+        const ORIGIN_DISPLAY_MAP = {
+            'alien':'Non-Native',
+            'indigenous': 'Native',
+            'unknown': 'Unknown',
+            'alien-invasive': 'Non-native: invasive',
+            'alien-non-invasive': 'Non-native: non-invasive'
+        }
         const queryString = window.location.search || '';
         if (typeof renderFilterList !== 'undefined') {
             renderFilterList($('.filter-history-table'));
@@ -311,6 +318,11 @@
         const summarySection = document.getElementById('summary-section');
         const summaryTable = document.getElementById('summary-table');
         const summaryError = summarySection.querySelector('[data-error]');
+        let summaryModules = [];
+        let summaryOrigin = {};
+        let summaryEndemism = {};
+        let summaryConsGlobal = {};
+        let summaryConsNational = {};
         setSectionState(summarySection, 'loading');
         fetchWithPoll('/api/spatial-dashboard/summary/' + queryString, function (data) {
             const modules = data && data.modules ? data.modules : [];
@@ -319,6 +331,11 @@
             const endemism = data && data.endemism ? data.endemism : {};
             const consGlobal = data && data.cons_status_global ? data.cons_status_global : {};
             const consNational = data && data.cons_status_national ? data.cons_status_national : {};
+            summaryModules = modules;
+            summaryOrigin = origin;
+            summaryEndemism = endemism;
+            summaryConsGlobal = consGlobal;
+            summaryConsNational = consNational;
 
             if (modules.length === 0) {
                 summaryTable.innerHTML = '<tr><td>No results found.</td></tr>';
@@ -344,10 +361,13 @@
                 return '<tr class="table-active"><th colspan="' + (modules.length + 1) + '">' + title + '</th></tr>';
             }
 
-            function renderRows(rows) {
+            function renderRows(rows, labelDisplayMap = {}) {
                 const html = [];
                 Object.keys(rows).forEach(function (label) {
-                    const values = rows[label] || {};
+                    const values = rows[label] || {}
+                    if (labelDisplayMap.hasOwnProperty(label)) {
+                        label = labelDisplayMap[label];
+                    }
                     const cells = ['<td>' + label + '</td>'];
                     modules.forEach(function (moduleName) {
                         cells.push('<td>' + (values[moduleName] || 0) + '</td>');
@@ -361,7 +381,7 @@
             html += renderHeaderRow();
             html += renderModuleHeaderRow();
             html += renderSectionTitle('Origin');
-            html += renderRows(origin);
+            html += renderRows(origin, ORIGIN_DISPLAY_MAP);
             html += renderSectionTitle('Endemism');
             html += renderRows(endemism);
             html += renderSectionTitle('Conservation status global');
@@ -783,6 +803,48 @@
                     showDownloadPopup('CHART', 'Red List Index', function () {
                         downloadCanvasAsPng(rliChartEl, 'red-list-index');
                     });
+                }
+                if (type === 'overview') {
+                    showDownloadPopup('CSV', 'Overview', function () {
+                        const rows = [];
+                        const headerCols = [''];
+                        summaryModules.forEach(function (m) { headerCols.push(m); });
+                        rows.push(headerCols);
+
+                        function addSectionRows(title, sectionData, labelDisplayMap) {
+                            rows.push([title]);
+                            Object.keys(sectionData).forEach(function (label) {
+                                const values = sectionData[label] || {};
+                                const displayLabel = labelDisplayMap && labelDisplayMap.hasOwnProperty(label) ? labelDisplayMap[label] : label;
+                                const row = [displayLabel];
+                                summaryModules.forEach(function (m) { row.push(values[m] || 0); });
+                                rows.push(row);
+                            });
+                        }
+
+                        addSectionRows('Origin', summaryOrigin, ORIGIN_DISPLAY_MAP);
+                        addSectionRows('Endemism', summaryEndemism, {});
+                        addSectionRows('Conservation status global', summaryConsGlobal, {});
+                        addSectionRows('Conservation status national', summaryConsNational, {});
+
+                        const csvContent = rows.map(function (row) {
+                            return row.map(function (cell) {
+                                const s = String(cell);
+                                return (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1)
+                                    ? '"' + s.replace(/"/g, '""') + '"' : s;
+                            }).join(',');
+                        }).join('\n');
+
+                        const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'overview.csv';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        URL.revokeObjectURL(url);
+                    }, false);
                 }
             });
         });
