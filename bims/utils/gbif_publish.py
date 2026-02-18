@@ -385,9 +385,10 @@ def _build_dwca_with_config(
     zip_path = _zip_dwca(out_dir)
 
     domain_name = get_domain_name()
+    base_url = config.export_base_url.rstrip("/") if config.export_base_url else f'https://{domain_name}/'
 
     rel_media = os.path.relpath(zip_path, settings.MEDIA_ROOT)
-    archive_url = f"https://{domain_name}/{_media_url()}/{rel_media}".replace(
+    archive_url = f"{base_url}{_media_url()}/{rel_media}".replace(
         "//", "/").replace(":/", "://")
 
     return zip_path, archive_url, written_ids
