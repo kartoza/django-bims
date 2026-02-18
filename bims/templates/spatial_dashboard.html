@@ -20,7 +20,7 @@
 {% endblock %}
 
 {% block body_content %}
-    <div class="body-form container">
+    <div class="body-form container-fluid" style="width: 97.5%">
         <div class="dashboard-title">
             <h2>Spatial Dashboard</h2>
             <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
@@ -92,45 +92,42 @@
                         <div class="occurrence-pies-row">
                             <div class="container-fluid">
                                 <div class="row">
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                         <div class="occurrence-pie-item">
                                             <div class="chart-bottom-title">Origin</div>
                                             <canvas id="occurrence-origin-pie"></canvas>
                                             <div class="occurrence-pie-chart-label" id="occurrence-origin-legend"></div>
                                         </div>
                                     </div>
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                     <div class="occurrence-pie-item">
                                         <div class="chart-bottom-title">Endemism</div>
                                         <canvas id="occurrence-endemism-pie"></canvas>
                                         <div class="occurrence-pie-chart-label" id="occurrence-endemism-legend"></div>
                                     </div>
                                     </div>
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                     <div class="occurrence-pie-item">
                                         <div class="chart-bottom-title">Conservation Status</div>
                                         <canvas id="occurrence-cons-status-pie"></canvas>
                                         <div class="occurrence-pie-chart-label" id="occurrence-cons-status-legend"></div>
                                     </div>
                                     </div>
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                     <div class="occurrence-pie-item" id="occurrence-cons-status-national-wrapper">
                                         <div class="chart-bottom-title">Conservation Status National</div>
                                         <canvas id="occurrence-cons-status-national-pie"></canvas>
                                         <div class="occurrence-pie-chart-label" id="occurrence-cons-status-national-legend"></div>
                                     </div>
                                     </div>
-                                </div>
-                                <div class="row">
-
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                     <div class="occurrence-pie-item">
                                         <div class="chart-bottom-title">Sampling Method</div>
                                         <canvas id="occurrence-sampling-pie"></canvas>
                                         <div class="occurrence-pie-chart-label" id="occurrence-sampling-legend"></div>
                                     </div>
                                     </div>
-                                    <div class="col-sm-3">
+                                    <div class="col-sm-2">
                                     <div class="occurrence-pie-item">
                                         <div class="chart-bottom-title">Biotope</div>
                                         <canvas id="occurrence-biotope-pie"></canvas>

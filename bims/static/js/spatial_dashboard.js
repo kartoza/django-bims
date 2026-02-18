@@ -55,7 +55,7 @@
             link.remove();
         }
 
-        function renderStackedBarChart(responseData, chartCanvas) {
+        function renderStackedBarChart(responseData, chartCanvas, labelsDisplayMap = {}) {
             const labels = responseData.labels || [];
             const datasetLabels = responseData.dataset_labels || [];
             const colours = responseData.colours || {};
@@ -63,7 +63,7 @@
             const palette = chartColors || defaultChartColors;
             const datasets = datasetLabels.map(function (label, idx) {
                 return {
-                    label: label,
+                    label: labelsDisplayMap.hasOwnProperty(label) ? labelsDisplayMap[label] : label,
                     backgroundColor: colours[label] || palette[idx % palette.length],
                     data: data[label] || []
                 };
@@ -370,7 +370,7 @@
                     }
                     const cells = ['<td>' + label + '</td>'];
                     modules.forEach(function (moduleName) {
-                        cells.push('<td>' + (values[moduleName] || 0) + '</td>');
+                        cells.push('<td>' + (values[moduleName] || '-') + '</td>');
                     });
                     html.push('<tr>' + cells.join('') + '</tr>');
                 });
@@ -447,9 +447,13 @@
                 }
                 const originNames = data.origin_name_list || {};
                 if (originChart.keys) {
-                    originChart.keys = originChart.keys.map(function (k) {
-                        return originNames[k] || k;
+                    const merged = {};
+                    originChart.keys.forEach(function (k, idx) {
+                        const label = originNames[k] !== undefined ? originNames[k] : (k || 'Unknown');
+                        merged[label] = (merged[label] || 0) + (originChart.data[idx] || 0);
                     });
+                    originChart.keys = Object.keys(merged);
+                    originChart.data = Object.values(merged);
                 }
 
                 renderPieChart(originChart, document.getElementById('occurrence-origin-pie'),
@@ -491,7 +495,7 @@
                 return;
             }
             fetchChartColors(function () {
-                renderStackedBarChart(data, originChartEl);
+                renderStackedBarChart(data, originChartEl, ORIGIN_DISPLAY_MAP);
                 setSectionState(originSection, 'ready');
             });
         }, function () {
