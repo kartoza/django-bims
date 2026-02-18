@@ -16,6 +16,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.conf import settings
 from django.db.models import Q
 from django.core.files import File
+from bims.models.boundary import Boundary
 from bims.models.harvest_session import HarvestSession, HarvestTrigger
 from bims.models.taxon_group import TaxonGroup
 from bims.tasks.harvest_collections import harvest_collections
@@ -65,6 +66,9 @@ class HarvestCollectionView(
         ).order_by(
             '-start_time'
         )
+        context['boundaries'] = Boundary.objects.filter(
+            geometry__isnull=False
+        ).order_by('-id')
         context['taxa_groups'] = TaxonGroup.objects.filter(
             category='SPECIES_MODULE'
         ).order_by('display_order')
@@ -72,6 +76,7 @@ class HarvestCollectionView(
 
     def post(self, request, *args, **kwargs):
         taxon_group_id = request.POST.get('taxon_group', None)
+        boundary_id = request.POST.get('boundary', None)
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
         cancel = ast.literal_eval(request.POST.get(
@@ -107,6 +112,7 @@ class HarvestCollectionView(
             start_time=datetime.now(),
             module_group_id=taxon_group_id,
             category=self.category,
+            boundary_id=boundary_id,
         )
         log_file_folder = os.path.join(
             settings.MEDIA_ROOT, 'harvest-session-log'
