@@ -365,6 +365,8 @@ def _build_dwca_with_config(
     module_group=None
 ) -> Tuple[str, str, List[int]]:
     """Build DwC-A using config for base URL."""
+    from bims.utils.mail import get_domain_name
+
     out_dir = _dwca_dir()
     occ_path = os.path.join(out_dir, "occurrence.txt")
     meta_path = os.path.join(out_dir, "meta.xml")
@@ -382,9 +384,11 @@ def _build_dwca_with_config(
     _write_eml_xml(eml_path, title, abstract)
     zip_path = _zip_dwca(out_dir)
 
-    base_url = config.export_base_url.rstrip("/") if config.export_base_url else _base_url()
+    domain_name = get_domain_name()
+
     rel_media = os.path.relpath(zip_path, settings.MEDIA_ROOT)
-    archive_url = f"{base_url}{_media_url()}/{rel_media}".replace("//", "/").replace(":/", "://")
+    archive_url = f"https://{domain_name}/{_media_url()}/{rel_media}".replace(
+        "//", "/").replace(":/", "://")
 
     return zip_path, archive_url, written_ids
 
