@@ -52,6 +52,7 @@ class GbifPublishConfigAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("name", "gbif_api_url", "publishing_org_key")
     readonly_fields = ("created_at", "updated_at")
+    actions = ["create_new_installation"]
 
     fieldsets = (
         ("General", {
@@ -73,6 +74,24 @@ class GbifPublishConfigAdmin(admin.ModelAdmin):
             "fields": ("created_at", "updated_at"),
         }),
     )
+
+    @admin.action(description="Create new installation")
+    def create_new_installation(self, request, queryset):
+        from bims.utils.gbif_publish import create_new_installation
+        obj = queryset.first()
+        installation_key = create_new_installation(
+            obj
+        )
+        if installation_key:
+            obj.installation_key = installation_key
+            obj.save()
+            self.message_user(
+                request,
+                f"Installation key created", messages.SUCCESS)
+        else:
+            self.message_user(
+                request,
+                f"Failed to create installation key", messages.ERROR)
 
 
 @admin.register(GbifPublishProxy)

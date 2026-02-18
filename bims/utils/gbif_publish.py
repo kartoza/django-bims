@@ -365,6 +365,8 @@ def _build_dwca_with_config(
     module_group=None
 ) -> Tuple[str, str, List[int]]:
     """Build DwC-A using config for base URL."""
+    from bims.utils.mail import get_domain_name
+
     out_dir = _dwca_dir()
     occ_path = os.path.join(out_dir, "occurrence.txt")
     meta_path = os.path.join(out_dir, "meta.xml")
@@ -382,11 +384,41 @@ def _build_dwca_with_config(
     _write_eml_xml(eml_path, title, abstract)
     zip_path = _zip_dwca(out_dir)
 
-    base_url = config.export_base_url.rstrip("/") if config.export_base_url else _base_url()
+    domain_name = get_domain_name()
+    base_url = config.export_base_url.rstrip("/") if config.export_base_url else f'https://{domain_name}/'
+
     rel_media = os.path.relpath(zip_path, settings.MEDIA_ROOT)
-    archive_url = f"{base_url}{_media_url()}/{rel_media}".replace("//", "/").replace(":/", "://")
+    archive_url = f"{base_url}{_media_url()}/{rel_media}".replace(
+        "//", "/").replace(":/", "://")
 
     return zip_path, archive_url, written_ids
+
+
+def create_new_installation(config, title = "", description = "") -> str:
+    """Creates a new installation"""
+    if not title:
+        title = f"{config.name} Installation"
+    payload = {
+        "organizationKey": config.publishing_org_key,
+        "type": "HTTP_INSTALLATION",
+        "title": title,
+        "description": description,
+        "disabled": False
+    }
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+    r = requests.post(
+        f"{api_url}/installation",
+        json=payload,
+        auth=auth,
+        timeout=30,
+        headers={"Content-Type": "application/json"},
+    )
+    r.raise_for_status()
+    installation_key = r.json()
+    if not isinstance(installation_key, str) or len(installation_key) < 32:
+        raise RuntimeError(f"Unexpected installation key response: {installation_key}")
+    return installation_key
 
 
 @transaction.atomic
