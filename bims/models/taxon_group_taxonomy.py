@@ -1,5 +1,4 @@
 from django.db import models
-from bims.models.taxonomy import Taxonomy
 
 
 class TaxonGroupTaxonomy(models.Model):
@@ -31,11 +30,11 @@ class TaxonGroupTaxonomy(models.Model):
         blank=True
     )
 
-    origin = models.CharField(
-        max_length=50,
-        choices=Taxonomy.CATEGORY_CHOICES,
+    origin = models.ForeignKey(
+        'bims.TaxonOrigin',
+        null=True,
         blank=True,
-        default='',
+        on_delete=models.SET_NULL,
         help_text='Origin'
     )
 

@@ -7,7 +7,7 @@ from bims.models import (
 
 def get_landing_page_summary():
     taxonomy_filter = 'taxonomy__id'
-    category = 'taxonomy__origin'
+    category = 'taxonomy__origin__category'
     summaries = BiologicalCollectionRecord.objects.values(
         taxonomy_filter,
         category,

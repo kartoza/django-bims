@@ -393,13 +393,9 @@ class BioCollectionOneRowSerializer(
         return lon
 
     def get_origin(self, obj):
-        category = obj.taxonomy.origin.lower()
-        if category in Taxonomy.CATEGORY_CHOICES_DICT:
-            return Taxonomy.CATEGORY_CHOICES_DICT[category]
-        else:
-            if category:
-                return category
-            return 'Unknown'
+        if obj.taxonomy and obj.taxonomy.origin:
+            return obj.taxonomy.origin.category
+        return 'Unknown'
 
     def get_endemism(self, obj):
         if obj.taxonomy.endemism:

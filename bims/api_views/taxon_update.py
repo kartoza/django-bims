@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bims.models import TaxonGroupTaxonomy, IUCNStatus, Endemism, VernacularName
+from bims.models.taxon_origin import TaxonOrigin
 from bims.models.taxonomy import Taxonomy
 from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal
@@ -169,12 +170,18 @@ def create_taxon_proposal(
         taxonomic_status=taxonomic_status,
     )
 
+    origin_key = data.get('origin')
+    if origin_key and isinstance(origin_key, str):
+        origin = TaxonOrigin.objects.filter(origin_key=origin_key).first()
+    else:
+        origin = taxon.origin
+
     defaults = {
         'author': data.get('author', taxon.author),
         'rank': data.get('rank', taxon.rank),
         'scientific_name': data.get('scientific_name', taxon.scientific_name),
         'canonical_name': canonical_name,
-        'origin': data.get('origin', taxon.origin),
+        'origin': origin,
         'iucn_status': iucn_status,
         'endemism': endemism,
         'taxon_group_under_review': taxon_group,
@@ -280,6 +287,13 @@ def update_taxon_proposal(
         taxonomic_status=taxonomic_status,
     )
 
+    proposal_origin_key = data.get('origin')
+    if proposal_origin_key and isinstance(proposal_origin_key, str):
+        proposal_origin = TaxonOrigin.objects.filter(
+            origin_key=proposal_origin_key).first()
+    else:
+        proposal_origin = proposal.origin
+
     updates = {
         'status': 'pending',
         'author': data.get('author', proposal.author),
@@ -287,7 +301,7 @@ def update_taxon_proposal(
         'rank': new_rank,
         'scientific_name': data.get('scientific_name', proposal.scientific_name),
         'canonical_name': canonical_name,
-        'origin': data.get('origin', proposal.origin),
+        'origin': proposal_origin,
         'iucn_status': iucn_status,
         'endemism': endemism,
         'species_group': data.get('species_group', proposal.species_group),

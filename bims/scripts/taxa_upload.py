@@ -20,7 +20,7 @@ from bims.models import (
     VernacularName,
     ORIGIN_CATEGORIES, TaxonTag, SourceReference,
     SourceReferenceBibliography,
-    Invasion, SpeciesGroup,
+    Invasion, SpeciesGroup, TaxonOrigin,
 )
 from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
@@ -447,7 +447,7 @@ class TaxaProcessor(object):
     def origin(self, row):
         """
         Parse origin + invasion status.
-        Returns: (origin_category_str | '', invasion_instance | None)
+        Returns: (TaxonOrigin instance | None, invasion_instance | None)
         """
         origin_value = _safe_strip(self.get_row_value(row, ORIGIN))
         invasion_category = _safe_strip(self.get_row_value(row, INVASION))
@@ -457,17 +457,19 @@ class TaxaProcessor(object):
             invasion_instance, _ = Invasion.objects.get_or_create(category=invasion_category)
 
         if not origin_value:
-            return '', invasion_instance
+            return None, invasion_instance
 
         if 'invasive' in origin_value.lower() and not invasion_category:
             invasion_instance, _ = Invasion.objects.get_or_create(category=origin_value)
-            return ORIGIN_CATEGORIES.get('non-native', ''), invasion_instance
+            key = ORIGIN_CATEGORIES.get('non-native', '')
+        else:
+            key = ORIGIN_CATEGORIES.get(origin_value.lower(), '')
 
-        key = origin_value.lower()
-        if key not in ORIGIN_CATEGORIES:
-            return '', invasion_instance
+        if not key:
+            return None, invasion_instance
 
-        return ORIGIN_CATEGORIES[key], invasion_instance
+        origin_instance = TaxonOrigin.objects.filter(origin_key=key).first()
+        return origin_instance, invasion_instance
 
     def _specific_epithet(self, name: str) -> str:
         """Return specific epithet (2nd token) from a binomial/trinomial string."""

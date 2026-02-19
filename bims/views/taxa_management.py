@@ -15,6 +15,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.taxonomy import Taxonomy
 from bims.models.endemism import Endemism
 from bims.models.iucn_status import IUCNStatus
+from bims.models.taxon_origin import TaxonOrigin
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
@@ -72,7 +73,8 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         ]
         context['all_ranks'] = [rank.name for rank in TaxonomicRank]
         context['all_origins'] = [
-            {'value': origin[0], 'label': origin[1]} for origin in Taxonomy.CATEGORY_CHOICES]
+            {'value': o.origin_key, 'label': o.category}
+            for o in TaxonOrigin.objects.order_by('order')]
         context['all_endemism'] = Endemism.objects.exclude(
             name='').values_list('name', flat=True).distinct()
         context['all_cons_status'] = [

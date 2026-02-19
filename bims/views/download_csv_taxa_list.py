@@ -106,11 +106,7 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             return vernacular_names[0]
 
     def get_origin(self, obj):
-        if obj.origin:
-            for value in Taxonomy.CATEGORY_CHOICES:
-                if value[0] == obj.origin:
-                    return value[1]
-        return 'Unknown'
+        return obj.origin.category if obj.origin else 'Unknown'
 
     def get_endemism(self, obj):
         return obj.endemism.name if obj.endemism else 'Unknown'

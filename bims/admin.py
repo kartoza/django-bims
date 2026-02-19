@@ -134,6 +134,7 @@ from bims.models import (
     CITESListingInfo,
     ImportTask,
     Invasion,
+    TaxonOrigin,
     FlatPageExtension,
     TagGroup,
     Dataset, LayerGroup,
@@ -461,6 +462,11 @@ class LocationSiteAdmin(admin.GeoModelAdmin):
         obj.save()
 
 
+class TaxonOriginAdmin(OrderedModelAdmin):
+    ordering = ('order',)
+    list_display = ('id', 'move_up_down_links', 'category', 'origin_key')
+
+
 class InvasionAdmin(OrderedModelAdmin):
     ordering = ('order',)
     list_display = ('id', 'move_up_down_links', 'category')
@@ -653,10 +659,9 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         return queryset, use_distinct
 
     def get_origin(self, obj):
-        try:
-            return dict(Taxonomy.CATEGORY_CHOICES)[obj.taxonomy.origin]
-        except KeyError:
-            return 'Unknown'
+        if obj.taxonomy and obj.taxonomy.origin:
+            return obj.taxonomy.origin.category
+        return 'Unknown'
 
     get_origin.short_description = 'Origin'
     get_origin.admin_order_field = 'taxonomy__origin'
@@ -2841,6 +2846,10 @@ admin.site.register(
 admin.site.register(
     Invasion,
     InvasionAdmin
+)
+admin.site.register(
+    TaxonOrigin,
+    TaxonOriginAdmin
 )
 
 admin.site.unregister(FlatPage)

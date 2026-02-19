@@ -24,6 +24,7 @@ from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from sass.enums.chem_unit import ChemUnit
 from bims.models.survey import Survey
 from bims.models.taxonomy import Taxonomy
+from bims.models.taxon_origin import TaxonOrigin
 from bims.models.location_context_filter_group_order import (
     LocationContextFilterGroupOrder
 )
@@ -85,9 +86,10 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
         self.iucn_category = dict(
             (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
 
-        self.origin_name_list = dict(
-            (x, y) for x, y in Taxonomy.CATEGORY_CHOICES
-        )
+        self.origin_name_list = {
+            o.origin_key: o.category
+            for o in TaxonOrigin.objects.all()
+        }
 
         site_details = overview_site_detail(site_id)
         site_details['Species and Occurrences'] = (
@@ -192,9 +194,9 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
         occurrence_table_data = collection_results.annotate(
             taxon=F('taxonomy__scientific_name'),
             site_visit_id=F('survey_id'),
-            origin=Case(When(taxonomy__origin='',
+            origin=Case(When(taxonomy__origin__isnull=True,
                              then=Value('Unknown')),
-                        default=F('taxonomy__origin')),
+                        default=F('taxonomy__origin__origin_key')),
             cons_status=Case(When(taxonomy__iucn_status__isnull=False,
                                   then=F('taxonomy__iucn_status__category')),
                              default=Value('Not evaluated')),
@@ -244,7 +246,7 @@ class LocationSiteSummaryPublic(RequestLogViewMixin, APIView):
 
     def get_origin_data(self, collection_results):
         origin_data = collection_results.annotate(
-            value=F('taxonomy__origin')
+            value=F('taxonomy__origin__category')
         ).values(
             'value'
         ).annotate(

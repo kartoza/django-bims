@@ -3,6 +3,7 @@ from django.urls import reverse
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 
+from bims.models.taxon_origin import TaxonOrigin
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     LocationSiteF,
@@ -30,13 +31,17 @@ class TestLocationSiteDashboard(FastTenantTestCase):
             category='NE'
         )
         taxa = TaxonomyF.create(
-            origin='Native',
+            origin=TaxonOrigin.objects.get_or_create(
+                category='Native', origin_key='indigenous',
+                defaults={'order': 1})[0],
             scientific_name='taxa_1',
             iucn_status=iucn_status_lc,
             endemism=endemism
         )
         taxa_2 = TaxonomyF.create(
-            origin='Unknown',
+            origin=TaxonOrigin.objects.get_or_create(
+                category='Unknown', origin_key='unknown',
+                defaults={'order': 2})[0],
             scientific_name='taxa_2',
             iucn_status=iucn_status_ne,
             endemism=endemism_2

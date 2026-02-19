@@ -481,15 +481,11 @@ class ChecklistSerializer(ChecklistBaseSerializer):
         return '-'
 
     def get_origin(self, obj: Taxonomy):
-        origin_categories = dict(Taxonomy.CATEGORY_CHOICES)
         taxon_group_taxon = self.get_taxon_group_taxon_data(obj)
         if not taxon_group_taxon:
             taxon_group_taxon = obj
-        return (
-            origin_categories[taxon_group_taxon.origin]
-            if taxon_group_taxon.origin in origin_categories
-            else ''
-        )
+        origin = taxon_group_taxon.origin
+        return origin.category if origin else ''
 
     def get_invasion(self, obj: Taxonomy):
         if obj.invasion:

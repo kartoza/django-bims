@@ -100,8 +100,8 @@ class ModuleSummary(APIView):
         origin_data = collections.annotate(
             origin_value=Coalesce(
                 Case(
-                    When(taxonomy__origin='', then=Value('Unknown')),
-                    default=F('taxonomy__origin')
+                    When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                    default=F('taxonomy__origin__category')
                 ),
                 Value('Unknown')
             )
@@ -109,15 +109,7 @@ class ModuleSummary(APIView):
             count=Count('origin_value')
         ).values_list('origin_value', 'count')
 
-        origin_data_dict = dict(origin_data)
-        updated_origin_data = {}
-        origin_category = dict(Taxonomy.CATEGORY_CHOICES)
-
-        for key, count in origin_data_dict.items():
-            category_name = origin_category.get(key, 'Unknown')
-            updated_origin_data[category_name] = count
-
-        return updated_origin_data
+        return dict(origin_data)
 
     def get_endemism_summary(self, collections):
         """

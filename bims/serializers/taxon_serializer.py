@@ -259,23 +259,13 @@ class TaxonSerializer(serializers.ModelSerializer):
         )
 
     def get_origin_name(self, obj):
-        try:
-            origin_name = dict(Taxonomy.CATEGORY_CHOICES)[obj.origin]
-        except Exception:  # noqa
-            origin_name = 'Unknown'
+        origin_name = obj.origin.category if obj.origin else 'Unknown'
         proposal = self.get_pending_proposal(obj)
         if proposal:
-            try:
-                proposal_value = (
-                    dict(Taxonomy.CATEGORY_CHOICES)[getattr(proposal, 'origin')]
-                )
-                if proposal_value != origin_name:
-                    return (
-                        f"{origin_name} → "
-                        f"{proposal_value}"
-                    )
-            except KeyError:
-                pass
+            proposal_origin = getattr(proposal, 'origin', None)
+            proposal_value = proposal_origin.category if proposal_origin else ''
+            if proposal_value and proposal_value != origin_name:
+                return f"{origin_name} → {proposal_value}"
         return origin_name
 
     def get_can_edit(self, obj):
