@@ -291,20 +291,15 @@ class SassSummaryDataSerializer(
             key=key)
         if context_identifier in self.context['context_cache']:
             return self.context['context_cache'][context_identifier]
-        data = (
-            self.context['location_contexts'].filter(
-                site_id=obj['site_id'],
-                group__key__icontains=key)
-        )
-        if data.exists():
-            if data[0].value:
-                self.context['context_cache'][context_identifier] = (
-                    data[0].value
-                )
-                return data[0].value
-        self.context['context_cache'][context_identifier] = (
-            '-'
-        )
+        location_contexts = self.context['location_contexts'].filter(
+            site_id=obj['site_id']).order_by('-fetch_time')
+        data = location_contexts.filter(group__name__iexact=key)
+        if data.exists() and data.first().value:
+            self.context['context_cache'][context_identifier] = (
+                data.first().value
+            )
+            return data.first().value
+        self.context['context_cache'][context_identifier] = '-'
         return '-'
 
     def get_source_reference(self, obj):
@@ -406,37 +401,37 @@ class SassSummaryDataSerializer(
         return obj['count']
 
     def get_primary_catchment(self, obj):
-        return self.spatial_data(obj, 'primary_catchment_area')
+        return self.spatial_data(obj, 'primary catchment')
 
     def get_secondary_catchment(self, obj):
-        return self.spatial_data(obj, 'secondary_catchment_area')
+        return self.spatial_data(obj, 'secondary catchment')
 
     def get_tertiary_catchment(self, obj):
-        return self.spatial_data(obj, 'tertiary_catchment_area')
+        return self.spatial_data(obj, 'tertiary catchment')
 
     def get_quaternary_catchment(self, obj):
-        return self.spatial_data(obj, 'quaternary_catchment_area')
+        return self.spatial_data(obj, 'quaternary catchment')
 
     def get_water_management_area(self, obj):
-        return self.spatial_data(obj, 'water_management_area')
+        return self.spatial_data(obj, 'water management areas')
 
     def get_sub_water_management_area(self, obj):
-        return self.spatial_data(obj, 'sub_wmas')
+        return self.spatial_data(obj, 'sub water management area')
 
     def get_river_management_unit(self, obj):
-        return self.spatial_data(obj, 'river_management_unit')
+        return self.spatial_data(obj, 'river management unit')
 
     def get_sa_ecoregion_level_1(self, obj):
-        return self.spatial_data(obj, 'eco_region_1')
+        return self.spatial_data(obj, 'SA Ecoregion Level 1')
 
     def get_sa_ecoregion_level_2(self, obj):
-        return self.spatial_data(obj, 'eco_region_2')
+        return self.spatial_data(obj, 'SA Ecoregion Level 2')
 
     def get_freshwater_ecoregion(self, obj):
-        return self.spatial_data(obj, 'feow_hydrosheds')
+        return self.spatial_data(obj, 'Freshwater Ecoregions of the World')
 
     def get_province(self, obj):
-        return self.spatial_data(obj, 'sa_provinces')
+        return self.spatial_data(obj, 'SA Province and SADC boundaries')
 
     def get_ASPT(self, obj):
         return '{0:.2f}'.format(obj['aspt'])
