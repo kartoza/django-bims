@@ -98,11 +98,10 @@ class TaxonDetail(APIView):
 
         # Origins
         origin_value = ''
-        origin = records.values_list('taxonomy__origin', flat=True).distinct()
+        origin = records.values_list(
+            'taxonomy__origin__category', flat=True).distinct()
         if origin:
-            for category in Taxonomy.CATEGORY_CHOICES:
-                if category[0] == origin[0]:
-                    origin_value = category[1]
+            origin_value = origin[0] or ''
         data['origin'] = origin_value
 
         data['count'] = records.count()
@@ -615,7 +614,7 @@ class TaxaList(LoginRequiredMixin, APIView):
             )
         if len(origins) > 0:
             taxon_list = taxon_list.filter(
-                origin__in=origins
+                origin__origin_key__in=origins
             )
         if len(cons_status) > 0:
             taxon_list = taxon_list.filter(
@@ -749,19 +748,11 @@ class TaxaList(LoginRequiredMixin, APIView):
             elif 'origin' not in order:
                 taxon_list = taxon_list.order_by(order)
             else:
-                origin_order = [
-                    'indigenous',
-                    'alien',
-                    'alien-invasive',
-                    'alien-non-invasive',
-                    'unknown',
-                    ''
-                ]
-                if '-' in order:
-                    origin_order.reverse()
+                reverse = '-' in order
                 taxon_list = sorted(
                     taxon_list,
-                    key=lambda x: origin_order.index(x.origin)
+                    key=lambda x: x.origin.order if x.origin else 9999,
+                    reverse=reverse,
                 )
         return taxon_list
 

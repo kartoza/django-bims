@@ -487,9 +487,9 @@ def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
             ).values('module_name', 'count')
 
             origin_field = Case(
-                When(taxonomy__origin='', then=Value('Unknown')),
-                When(taxonomy__origin__icontains='unknown', then=Value('Unknown')),
-                default=F('taxonomy__origin'),
+                When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                When(taxonomy__origin__origin_key='unknown', then=Value('Unknown')),
+                default=F('taxonomy__origin__category'),
                 output_field=CharField()
             )
 

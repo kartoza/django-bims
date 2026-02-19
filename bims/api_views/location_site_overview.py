@@ -18,7 +18,6 @@ from django.http import Http404
 from bims.api_views.search import CollectionSearch
 from bims.models import (
     TaxonGroup,
-    Taxonomy,
     IUCNStatus, ChemicalRecord,
 )
 from climate.models import Climate
@@ -88,8 +87,8 @@ class LocationSiteOverviewData(object):
                     output_field=CharField()
                 ),
                 origin_name=Case(
-                    When(taxonomy__origin='', then=Value('Unknown')),
-                    default=F('taxonomy__origin'),
+                    When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                    default=F('taxonomy__origin__category'),
                     output_field=CharField()
                 ),
                 iucn_category=Case(
@@ -139,10 +138,8 @@ class LocationSiteOverviewData(object):
                 count=Count('origin_name')
             ).order_by('origin_name')
             if group_origins:
-                category = dict(Taxonomy.CATEGORY_CHOICES)
                 for group_origin in group_origins:
-                    if group_origin['origin_name'] in category:
-                        group_origin['name'] = category[group_origin['origin_name']]
+                    group_origin['name'] = group_origin['origin_name']
             group_data[self.GROUP_ORIGIN] = list(group_origins)
 
             # Conservation status counts

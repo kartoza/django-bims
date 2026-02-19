@@ -126,7 +126,7 @@ class BioCollectionSummary(APIView):
         response_data['total_records'] = len(collection_results)
         response_data['conservation_status'] = iucn_status
         if taxonomy.origin:
-            response_data['origin'] = taxonomy.origin
+            response_data['origin'] = taxonomy.origin.category
         else:
             response_data['origin'] = '-'
         response_data['endemism'] = endemic

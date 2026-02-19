@@ -32,7 +32,7 @@ def generate_location_site_summary(
         self, filters, search_process_id):
     from bims.models import (
         IUCNStatus, Taxonomy, BiologicalCollectionRecord, TaxonGroup, DashboardConfiguration,
-        ChemicalRecord, Survey, SiteImage, SEARCH_FINISHED, Biotope, SearchProcess
+        ChemicalRecord, Survey, SiteImage, SEARCH_FINISHED, Biotope, SearchProcess, TaxonOrigin
     )
     from bims.api_views.location_site_dashboard import (
         PER_YEAR_FREQUENCY, PER_MONTH_FREQUENCY
@@ -168,9 +168,9 @@ def generate_location_site_summary(
 
         start_time = time.time()
         origin_data = collection_records.annotate(
-            name=Case(When(taxonomy__origin='',
+            name=Case(When(taxonomy__origin__isnull=True,
                            then=Value('unknown')),
-                      default=F('taxonomy__origin'))
+                      default=F('taxonomy__origin__category'))
         ).values(
             'name'
         ).annotate(
@@ -280,9 +280,9 @@ def generate_location_site_summary(
         """
         occurrence_table_data = collection_records.annotate(
             taxon=F('taxonomy__scientific_name'),
-            origin=Case(When(taxonomy__origin='',
+            origin=Case(When(taxonomy__origin__isnull=True,
                              then=Value('Unknown')),
-                        default=F('taxonomy__origin')),
+                        default=F('taxonomy__origin__category')),
             cons_status=Case(
                 When(taxonomy__iucn_status__isnull=False,
                      then=F('taxonomy__iucn_status__category')),
@@ -313,9 +313,10 @@ def generate_location_site_summary(
     iucn_category = dict(
         (x, y) for x, y in IUCNStatus.CATEGORY_CHOICES)
 
-    origin_name_list = dict(
-        (x, y) for x, y in Taxonomy.CATEGORY_CHOICES
-    )
+    origin_name_list = {
+        o.origin_key: o.category
+        for o in TaxonOrigin.objects.all()
+    }
 
     if data_frequency == PER_MONTH_FREQUENCY:
         taxa_occurrence = site_taxa_occurrences_per_date(
@@ -326,9 +327,9 @@ def generate_location_site_summary(
             collection_results)
 
     category_summary = collection_results.exclude(
-        taxonomy__origin=''
+        taxonomy__origin__isnull=True
     ).annotate(
-        origin=F('taxonomy__origin')
+        origin=F('taxonomy__origin__category')
     ).values_list(
         'origin'
     ).annotate(

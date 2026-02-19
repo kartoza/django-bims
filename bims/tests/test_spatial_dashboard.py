@@ -13,6 +13,7 @@ from bims.models.search_process import (
     SPATIAL_DASHBOARD_SUMMARY,
 )
 from bims.models.iucn_assessment import IUCNAssessment
+from bims.models.taxon_origin import TaxonOrigin
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     LocationSiteF,
@@ -82,13 +83,13 @@ class TestSpatialDashboardApis(FastTenantTestCase):
 
         self.taxa_1 = TaxonomyF.create(
             scientific_name='Species A',
-            origin='Native',
+            origin=TaxonOrigin.objects.get_or_create(category='Native', origin_key='indigenous', defaults={'order': 1})[0],
             iucn_status=iucn_lc,
             endemism=endemism,
         )
         self.taxa_2 = TaxonomyF.create(
             scientific_name='Species B',
-            origin='Non-native',
+            origin=TaxonOrigin.objects.get_or_create(category='Non-Native', origin_key='alien', defaults={'order': 0})[0],
             iucn_status=iucn_vu,
             endemism=endemism_2,
         )
@@ -201,14 +202,14 @@ class TestSpatialDashboardTasks(FastTenantTestCase):
         self.taxa_1 = TaxonomyF.create(
             scientific_name='Species A',
             canonical_name='Species A',
-            origin='Native',
+            origin=TaxonOrigin.objects.get_or_create(category='Native', origin_key='indigenous', defaults={'order': 1})[0],
             iucn_status=iucn_lc,
             endemism=endemism,
         )
         self.taxa_2 = TaxonomyF.create(
             scientific_name='Species B',
             canonical_name='Species B',
-            origin='Non-native',
+            origin=TaxonOrigin.objects.get_or_create(category='Non-Native', origin_key='alien', defaults={'order': 0})[0],
             iucn_status=iucn_vu,
             endemism=endemism,
         )

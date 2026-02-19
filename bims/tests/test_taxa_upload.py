@@ -171,7 +171,7 @@ class TestTaxaUpload(FastTenantTestCase):
         self.assertTrue(
             Taxonomy.objects.filter(
                 invasion__category='Category 1a invasive',
-                origin='indigenous',
+                origin__origin_key='indigenous',
             ).exists()
         )
 

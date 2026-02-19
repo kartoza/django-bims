@@ -216,11 +216,11 @@ class AbstractTaxonomy(AbstractValidation):
         blank=True
     )
 
-    origin = models.CharField(
-        max_length=50,
-        choices=CATEGORY_CHOICES,
+    origin = models.ForeignKey(
+        'bims.TaxonOrigin',
+        null=True,
         blank=True,
-        default='',
+        on_delete=models.SET_NULL,
         help_text='Origin'
     )
 

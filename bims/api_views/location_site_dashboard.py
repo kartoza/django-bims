@@ -81,10 +81,10 @@ class OccurrencesChartData(ChartDataApiView):
     def categories(self, collection_results):
         return list(collection_results.annotate(
             name=Case(
-                When(taxonomy__origin='', then=Value('Unknown')),
-                When(taxonomy__origin__icontains='unknown',
+                When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                When(taxonomy__origin__origin_key='unknown',
                      then=Value('Unknown')),
-                default=F('taxonomy__origin'))
+                default=F('taxonomy__origin__category'))
         ).values_list(
             'name', flat=True
         ).distinct('name'))
@@ -98,10 +98,10 @@ class OccurrencesChartData(ChartDataApiView):
                 output_field=CharField()
             ),
             name=Case(
-                When(taxonomy__origin='', then=Value('Unknown')),
-                When(taxonomy__origin__icontains='unknown',
+                When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                When(taxonomy__origin__origin_key='unknown',
                      then=Value('Unknown')),
-                default=F('taxonomy__origin'))
+                default=F('taxonomy__origin__category'))
         ).values(
             'year', 'name'
         ).annotate(
@@ -114,10 +114,10 @@ class OccurrencesChartData(ChartDataApiView):
         return collection_results.annotate(
             year=ExtractYear('collection_date'),
             name=Case(
-                When(taxonomy__origin='', then=Value('Unknown')),
-                When(taxonomy__origin__icontains='unknown',
+                When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                When(taxonomy__origin__origin_key='unknown',
                      then=Value('Unknown')),
-                default=F('taxonomy__origin'))
+                default=F('taxonomy__origin__category'))
         ).values(
             'year', 'name'
         ).annotate(
