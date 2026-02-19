@@ -1504,7 +1504,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 ('taxonomic_status', 'accepted_taxonomy'),
                 'parent',
                 'parent_hierarchy',
-                ('species_group', 'invasion'),
+                'species_group',
                 'gbif_key',
                 'fada_id',
                 'verified',
@@ -1517,9 +1517,9 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'biographic_distributions',
             )
         }),
-        (_('Conservation & Origin'), {
+        (_('Conservation & Origin & Invasion'), {
             'fields': (
-                ('origin', 'endemism'),
+                ('origin', 'endemism', 'invasion'),
                 ('iucn_status', 'national_conservation_status'),
                 ('iucn_redlist_id', 'iucn_data'),
             )
