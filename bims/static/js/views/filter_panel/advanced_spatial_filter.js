@@ -303,8 +303,8 @@ define([
             $valuesWrap.append($select);
             $wrap.append($valuesWrap);
 
-            var fullOptions = self.getOptionsForField(clause.field);
-            var autocompleteKeys = self.AUTOCOMPLETE_FIELDS[clause.field];
+            let fullOptions = self.getOptionsForField(clause.field);
+            let autocompleteKeys = self.AUTOCOMPLETE_FIELDS[clause.field];
 
             // If this field has autocomplete children, use AJAX Select2
             if (autocompleteKeys && autocompleteKeys.length > 0) {
@@ -331,29 +331,24 @@ define([
 
             mountSelect(fullOptions, clause.values);
 
-            if (self.isAllSelected(clause.values)) {
-                mountSelect([{ id: self.ALL_ID, text: self.ALL_TEXT }], [self.ALL_ID]);
-            }
-
             $select.on('change', function (_e, meta) {
                 if (meta && meta.programmatic) return;
 
-                var vals = $(this).val() || [];
+                let vals = $(this).val() || [];
 
-                if (self.isAllSelected(vals)) {
+                if (self.isAllSelected(vals) && !self.isAllSelected(clause.values)) {
                     vals = [self.ALL_ID];
                     clause.values = vals;
-                    mountSelect([{ id: self.ALL_ID, text: self.ALL_TEXT }], [self.ALL_ID]);
+                    $select.val(vals).trigger('change', { programmatic: true });
                     self.refreshPreview();
-                    return;
+                } else {
+                    if (clause.values.indexOf(self.ALL_ID) > -1) {
+                        if (vals.indexOf(self.ALL_ID) > -1) vals.splice(vals.indexOf(self.ALL_ID), 1);
+                        $select.val(vals).trigger('change', { programmatic: true });
+                    }
+                    clause.values = vals;
+                    self.refreshPreview();
                 }
-
-                if (!self.isAllSelected(vals) && clause.values.indexOf(self.ALL_ID) > -1) {
-                    mountSelect(fullOptions, vals);
-                }
-
-                clause.values = vals;
-                self.refreshPreview();
             });
         },
 
