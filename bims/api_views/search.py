@@ -990,9 +990,10 @@ class CollectionSearch(object):
                 survey__chemical_collection_record__isnull=False
             )
 
+        # If advanced spatial filter is applied, we should filter the bio even if the filtered_location_sites is empty
         if (
             isinstance(filtered_location_sites, QuerySet) and
-            filtered_location_sites.count() > 0
+            (filtered_location_sites.count() > 0 or adv_spatial_filter)
         ):
             bio = bio.filter(
                 site__in=filtered_location_sites
