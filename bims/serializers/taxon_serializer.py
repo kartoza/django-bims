@@ -455,11 +455,15 @@ class TaxonSerializer(serializers.ModelSerializer):
                 'name': taxon_group.name
             }
         taxonomy_obj = self.taxonomy_obj(obj)
-        taxon_module = taxonomy_obj.taxongroup_set.first()
+        taxon_module = taxonomy_obj.taxongroup_set.filter(
+            category='SPECIES_MODULE', parent__isnull=True
+        ).first() or taxonomy_obj.taxongroup_set.filter(
+            category='SPECIES_MODULE'
+        ).first()
         if taxon_module:
             return {
                 'id': taxon_module.id,
-                'logo': taxon_module.logo.name,
+                'logo': taxon_module.logo.name if taxon_module.logo else '',
                 'name': taxon_module.name
             }
         return {}

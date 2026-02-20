@@ -90,6 +90,8 @@
                         </button>
                     </div>
 
+                    <div id="active-filters-container"></div>
+
                     <div class="row" style="font-size: 0.9em;">
                         <div class="col-md-6">
                             <div class="collapse" id="collapseFilter"  style="width: 100%; position: absolute;">
@@ -195,7 +197,7 @@
                                                 </div>
                                             </div>
                                             {% endif %}
-                                            <div class="form-group row">
+                                            <div class="form-group row" id="validated-filter-row" style="display:none">
                                                 <label for="validated" class="col-sm-3 col-form-label">Validated</label>
                                                 <div class="col-sm-9 d-flex">
                                                     <div class="form-check form-check-inline">
