@@ -232,6 +232,8 @@ export const taxaManagement = (() => {
 
         if (userCanEditTaxonGroup) {
             $sortable.sortable({
+                handle: '.tg-drag-handle',
+                axis: 'y',
                 stop: function (event, ui) {
                     let $li = $(event.target).find('li');
                     let ids = [];
