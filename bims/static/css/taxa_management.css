@@ -169,6 +169,10 @@ ul.pagination li.current a {
     cursor: pointer;
 }
 
+.ui-sortable .ui-state-default {
+    cursor: default;
+}
+
 .taxa-table {
     display: block;
     max-height: 100vh; /* Sets the height to be the same as the viewport */
@@ -368,10 +372,43 @@ table {
 
 .cell-diff .badge { margin-right: 2px; }
 
+.tg-item {
+  position: relative;
+}
+
 .tg-item .img-container img {
   max-width: 100%;
   height: auto;
   display: block;
+}
+
+.tg-drag-handle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  color: #888;
+  cursor: grab;
+  z-index: 1;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 6px;
+}
+
+.sortable-placeholder {
+  height: 4px;
+  background: #aaa;
+  border-radius: 2px;
+  margin: 2px 0;
+  list-style: none;
+}
+
+.tg-drag-handle:hover {
+  color: #555;
+}
+
+.ui-sortable-helper .tg-drag-handle {
+  cursor: grabbing;
 }
 
 .tg-expert-badge {

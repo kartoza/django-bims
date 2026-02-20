@@ -4,6 +4,11 @@
 <li data-id="{{ taxon_group.id }}" data-name="{{ taxon_group.name }}"
     class="ui-state-default {% if user_is_expert %}taxon-group-expert{% endif %}">
   <div class="tg-item">
+    {% if perms.bims.change_taxongroup %}
+      <div class="tg-drag-handle" title="Drag to reorder">
+        <i class="fa fa-bars" aria-hidden="true"></i>
+      </div>
+    {% endif %}
     <div class="row">
       <div class="col-sm-2 img-container">
         {% if taxon_group.logo %}
