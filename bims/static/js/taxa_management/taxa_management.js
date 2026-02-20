@@ -197,14 +197,10 @@ export const taxaManagement = (() => {
 
     function init() {
         loading.hide();
-        if (!urlParams.get('selected')) {
-            selectedTaxonGroup = $($('#sortable').children()[0]).data('id');
-            if (selectedTaxonGroup) {
-                urlParams.set('selected', selectedTaxonGroup);
-                history.pushState({}, null, fullUrl.href);
-            }
-        } else {
-            selectedTaxonGroup = urlParams.get('selected');
+        selectedTaxonGroup = urlParams.get('selected') || '';
+
+        if (selectedTaxonGroup) {
+            $('#validated-filter-row').show();
         }
 
         taxaSidebar.init(updateTaxonGroup, selectedTaxonGroup)
@@ -212,6 +208,12 @@ export const taxaManagement = (() => {
         addNewTaxon.init(selectedTaxonGroup)
 
         getTaxonGroupValidatedCount();
+
+        $(document).on('click', '.taxon-group-link', function (e) {
+            e.preventDefault();
+            const groupId = $(this).data('id');
+            $('#sortable [data-id="' + groupId + '"]').first().trigger('click');
+        });
 
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
         $('#download-csv').on('click', handleDownloadCsv)
@@ -394,23 +396,32 @@ export const taxaManagement = (() => {
         selectedTaxonGroup = taxonGroupId;
         let table = $('#taxaTable').DataTable();
         table.destroy();
-        let newParams = new URLSearchParams(window.location.search);
-        newParams.set('selected', taxonGroupId);
 
-        if (newParams) {
-            let urlParams = new URLSearchParams(newParams);
-            let currentUrl = new URL(window.location);
-            for (let param of urlParams.entries()) {
-                currentUrl.searchParams.set(param[0], param[1]);
-            }
-            window.history.pushState({}, '', currentUrl);
+        let currentUrl = new URL(window.location);
+        let taxaUrlObj = new URL(taxaUrlList, window.location.origin);
+
+        currentUrl.searchParams.delete('page');
+        taxaUrlObj.searchParams.delete('page');
+
+        if (taxonGroupId) {
+            currentUrl.searchParams.set('selected', taxonGroupId);
+            taxaUrlObj.searchParams.set('taxonGroup', taxonGroupId);
+            $('#validated-filter-row').show();
+        } else {
+            currentUrl.searchParams.delete('selected');
+            taxaUrlObj.searchParams.delete('taxonGroup');
+            currentUrl.searchParams.set('validated', 'True');
+            taxaUrlObj.searchParams.set('validated', 'True');
+            $('input[name="validated"][value="True"]').prop('checked', true);
+            taxaTable.removeValidatedFilter();
+            $('#validated-filter-row').hide();
         }
 
-        let taxaUrlParams = new URLSearchParams(taxaUrlList)
-        if (taxaUrlParams.get('taxonGroup') !== newParams.get('selected')) {
-            taxaUrlList = replaceTaxonGroup(taxaUrlList, newParams.get('selected'))
-        }
-        getTaxaList(taxaUrlList, newParams);
+        window.history.pushState({}, '', currentUrl);
+        taxaUrlList = taxaUrlObj.pathname + taxaUrlObj.search;
+
+        getTaxonGroupValidatedCount();
+        getTaxaList(taxaUrlList);
     }
 
     const isColorDark = (hexColor) => {
@@ -467,7 +478,7 @@ export const taxaManagement = (() => {
         let initialPageSize = urlParams.get('page_size') ? parseInt(urlParams.get('page_size')) : 25;
         let initialSortOrder = urlParams.get('o') ? urlParams.get('o').replace('-', '') : 'canonical_name';
         let initialSortBy = urlParams.get('o') ? (urlParams.get('o').includes('-') ? '-' : '') : '';
-        let initialStart = (initialPage - 1) * 20;
+        let initialStart = (initialPage - 1) * initialPageSize;
 
 
         $('.download-button-container').show();
@@ -485,7 +496,10 @@ export const taxaManagement = (() => {
               data: "canonical_name",
               render: function (data, type, row) {
                 const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
-                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+                const moduleLink = !selectedTaxonGroup && row.taxon_group && row.taxon_group.id
+                    ? ` <a href="#" class="taxon-group-link" data-id="${row.taxon_group.id}"><span class="badge badge-info">${row.taxon_group.name}</span></a>`
+                    : '';
+                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${moduleLink}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${selectedTaxonGroup && !row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
               },
               className: "min-width-150"
             },

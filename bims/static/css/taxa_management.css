@@ -1,3 +1,51 @@
+a.badge-module {
+  background-color: #5a7fa8;
+  color: #fff !important;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+a.badge-module:hover {
+  background-color: #3f618a;
+  text-decoration: none;
+  color: #fff !important;
+}
+
+#active-filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+  min-height: 0;
+  position: absolute;
+  margin-left: 425px;
+}
+
+.active-filter-pill {
+  align-items: center;
+  gap: 4px;
+  background: #eef2f7;
+  border: 1px solid #ccd6e0;
+  border-radius: 20px;
+  padding: 2px 10px 2px 8px;
+  font-size: 0.72rem;
+  color: #3a3a3a;
+  white-space: nowrap;
+}
+
+.filter-pill-label {
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  margin-right: 2px;
+}
+
+.filter-pill-label::after {
+  content: ':';
+}
+
 .total-data {
     color: #444444;
     border-radius: 10px;

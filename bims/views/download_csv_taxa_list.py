@@ -318,18 +318,25 @@ def download_taxa_list(request):
 
     output = request.GET.get('output', 'csv')
 
-    taxon_group_id = request.GET.get('taxonGroup')
+    taxon_group_id = request.GET.get('taxonGroup', '')
     download_request_id = request.GET.get('downloadRequestId', '')
-    taxon_group = TaxonGroup.objects.get(
-        id=taxon_group_id
-    )
+
+    if taxon_group_id:
+        try:
+            taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            group_label = taxon_group.name
+        except TaxonGroup.DoesNotExist:
+            taxon_group_id = ''
+            group_label = 'All_Taxa'
+    else:
+        group_label = 'All_Taxa'
 
     current_time = datetime.datetime.now()
     filter_hash = hash(json.dumps(request.GET.dict()))
 
     # Check if the file exists in the processed directory
     filename = (
-        f'{taxon_group.name}-{current_time.year}-'
+        f'{group_label}-{current_time.year}-'
         f'{current_time.month}-{current_time.day}-'
         f'{current_time.hour}-{filter_hash}'
     ).replace(' ', '_')

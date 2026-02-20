@@ -61,11 +61,6 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
             except TaxonGroup.DoesNotExist:
                 pass
 
-        if not context['selected_taxon_group']:
-            context['selected_taxon_group'] = TaxonGroup.objects.filter(
-                category='SPECIES_MODULE',
-            ).first()
-
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
         context['taxon_rank'] = [
             rank.name for rank in TaxonomicRank

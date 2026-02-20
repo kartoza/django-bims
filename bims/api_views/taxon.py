@@ -592,14 +592,19 @@ class TaxaList(LoginRequiredMixin, APIView):
         if taxon_group:
             taxon_group_ids = TaxaList.get_descendant_group_ids(
                 taxon_group)
-            taxon_list = taxon_list.filter(
-                taxongroup__id__in=taxon_group_ids,
-                taxongrouptaxonomy__is_rejected=False,
-            ).distinct().order_by('canonical_name')
         else:
-            taxon_list = taxon_list.filter(
-                taxongrouptaxonomy__is_rejected=False,
-            ).distinct().order_by('canonical_name')
+            # No specific group: scope to all SPECIES_MODULE groups
+            species_module_groups = TaxonGroup.objects.filter(
+                category='SPECIES_MODULE'
+            )
+            taxon_group_ids = []
+            for grp in species_module_groups:
+                taxon_group_ids.extend(TaxaList.get_descendant_group_ids(grp))
+
+        taxon_list = taxon_list.filter(
+            taxongroup__id__in=taxon_group_ids,
+            taxongrouptaxonomy__is_rejected=False,
+        ).distinct().order_by('canonical_name')
 
         if len(authors) > 0:
             taxon_list = taxon_list.filter(
@@ -672,15 +677,20 @@ class TaxaList(LoginRequiredMixin, APIView):
                 taxon_list = taxon_list.filter(
                     customtaggedtaxonomy__tag__name__in=biodiversity_distributions
                 ).distinct()
+        if not taxon_group:
+            validated = 'True'
         if validated:
             try:
                 validated = ast.literal_eval(validated.replace('/', ''))
                 if not validated:
                     # Check if the user is a superuser or has expert permissions for the taxon group
-                    is_user_expert = is_expert(
-                        request.user,
-                        TaxonGroup.objects.get(id=taxon_group_id)
-                    )
+                    if taxon_group_id:
+                        is_user_expert = is_expert(
+                            request.user,
+                            TaxonGroup.objects.get(id=taxon_group_id)
+                        )
+                    else:
+                        is_user_expert = False
                     if request.user.is_superuser or is_user_expert:
                         validated_filters = {
                             'taxongrouptaxonomy__is_validated': False,
