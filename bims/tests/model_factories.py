@@ -1,4 +1,5 @@
 # noinspection PyUnresolvedReferences,PyPackageRequirements
+import datetime
 import factory
 import random
 
@@ -187,9 +188,8 @@ class UserF(factory.django.DjangoModelFactory):
     is_staff = False
     is_active = True
     is_superuser = False
-    last_login = timezone.datetime(2000, 1, 1).replace(tzinfo=timezone.utc)
-    date_joined = timezone.datetime(1999, 1, 1).replace(
-        tzinfo=timezone.utc)
+    last_login = timezone.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
+    date_joined = timezone.datetime(1999, 1, 1, tzinfo=datetime.timezone.utc)
 
     @classmethod
     def _prepare(cls, create, **kwargs):

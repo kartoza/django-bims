@@ -6,6 +6,7 @@ from django_tenants.test.client import TenantClient
 from mock import mock
 
 from bims.models import TaxonGroupTaxonomy
+from bims.models.taxon_origin import TaxonOrigin
 from bims.scripts.taxa_upload import TaxaCSVUpload
 from bims.tests.model_factories import (
     UploadSessionF,
@@ -47,6 +48,13 @@ class TestTaxaUpload(FastTenantTestCase):
             category='NE',
             national=False
         )
+
+        # Create TaxonOrigin records used by the upload script
+        for key in ('indigenous', 'alien', 'unknown', 'alien-invasive', 'alien-non-invasive'):
+            TaxonOrigin.objects.get_or_create(
+                origin_key=key,
+                defaults={'category': key}
+            )
 
         with open(os.path.join(
             test_data_directory, 'taxa_upload_family.csv'

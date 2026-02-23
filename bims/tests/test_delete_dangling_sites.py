@@ -155,7 +155,7 @@ class DanglingCleanupTests(FastTenantTestCase):
         qs = _dangling_queryset(
             LocationSite, skip_models=frozenset({LocationContext})
         )
-        self.assertQuerysetEqual(
+        self.assertQuerySetEqual(
             qs.order_by("id"),
             [site1, site3],
             transform=lambda x: x,

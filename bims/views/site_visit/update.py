@@ -402,10 +402,10 @@ class SiteVisitUpdateView(
         session_uuid = '%s' % uuid.uuid4()
         self.add_last_session(self.request, session_uuid, {
             'edited_at': int(time.mktime(libdatetime.now().timetuple())),
-            'records': BiologicalCollectionRecord.objects.filter(
+            'records': list(BiologicalCollectionRecord.objects.filter(
                 survey=self.object
-            ),
-            'location_site': self.object.site,
+            ).values_list('id', flat=True)),
+            'location_site': self.object.site.id if self.object.site else None,
             'form': 'site-visit-form'
         })
         next_url = '/site-visit/detail/{}/'.format(self.object.id)
