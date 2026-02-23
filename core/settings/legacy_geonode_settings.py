@@ -239,7 +239,9 @@ AUTH_USER_MODEL = os.getenv('AUTH_USER_MODEL', 'people.Profile')
 
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
     'django.contrib.auth.hashers.ScryptPasswordHasher',
+    'bims.hashers.LegacySHA1PasswordHasher',
     # 'django.contrib.auth.hashers.Argon2PasswordHasher',
     # 'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
