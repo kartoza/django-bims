@@ -188,7 +188,7 @@ header.masthead p {
 }
 
 .general-summary .gs-total {
-    color: #595959;
+    color: var(--main-accent-color);
     font-weight: bold;
     font-size: 18pt;
     margin-top: 5px;
