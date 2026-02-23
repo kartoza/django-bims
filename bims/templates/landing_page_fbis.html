@@ -69,28 +69,39 @@
         <section id="fish-data">
             <div class="container general-summary">
                 <div class="row">
+                    <div class="col-lg-8 mx-auto text-center">
+                        <div class="section-heading-container">
+                            <h2 class="section-heading" style="margin-bottom: 50px;">Platform overview stats</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                        <img height="100px" src="{% static "img/occurrences-icon.png" %}"/>
+                        <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/occurrences-icon.png" %}'); mask-image: url('{% static "img/occurrences-icon.png" %}');"></span>
                         <h3 class="gs-total" id="total_occurrences">...</h3>
                         <div class="gs-text">Occurrence Records</div>
                     </div>
                     <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                        <img height="100px" src="{% static "img/taxa-icon.png" %}"/>
+                        <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/taxa-icon.png" %}'); mask-image: url('{% static "img/taxa-icon.png" %}');"></span>
                         <h3 class="gs-total" id="total_taxa">...</h3>
                         <div class="gs-text">Taxa</div>
                     </div>
                     <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                        <img height="100px" src="{% static "img/users-icon.png" %}"/>
+                        <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/users-icon.png" %}'); mask-image: url('{% static "img/users-icon.png" %}');"></span>
                         <h3 class="gs-total" id="total_users">...</h3>
                         <div class="gs-text">Users</div>
                     </div>
                     <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                        <img height="90px" style="margin-bottom: 5px; margin-top: 5px" src="{% static "img/upload-icon.png" %}"/>
+                        <div class="gs-icon-container">
+                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/upload-icon.png" %}'); mask-image: url('{% static "img/upload-icon.png" %}');width: 70px; height: 70px;"></span>
+                        </div>
                         <h3 class="gs-total" id="total_uploads">...</h3>
                         <div class="gs-text">User uploads</div>
                     </div>
                     <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                        <img height="90px" style="margin-bottom: 10px" src="{% static "img/download-icon.png" %}"/>
+                        <div class="gs-icon-container">
+                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/download-icon.png" %}'); mask-image: url('{% static "img/download-icon.png" %}');width: 70px; height: 70px;"></span>
+                        </div>
                         <h3 class="gs-total" id="total_downloads">...</h3>
                         <div class="gs-text">User downloads</div>
                     </div>

@@ -60,31 +60,56 @@
             {% if preferences.SiteSetting.show_general_summary_on_landing %}
             <section id="fish-data">
                 <div class="container general-summary">
+                    <div class="row" style="margin-bottom: 50px;">
+                        <div class="col-lg-8 mx-auto text-center">
+                            <h2 class="section-heading"
+                                style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
+                                        font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
+                                        color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
+                                        font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
+                                Platform overview stats
+                            </h2>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <img height="100px" src="{% static "img/occurrences-icon.png" %}"/>
-                            <h3 class="gs-total" id="total_occurrences">...</h3>
-                            <div class="gs-text">Occurrence Records</div>
+                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/occurrences-icon.png" %}'); mask-image: url('{% static "img/occurrences-icon.png" %}');"></span>
+                            <h3 class="gs-total" id="total_occurrences"
+                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                            <div class="gs-text"
+                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Occurrence Records</div>
                         </div>
                         <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <img height="100px" src="{% static "img/taxa-icon.png" %}"/>
-                            <h3 class="gs-total" id="total_taxa">...</h3>
-                            <div class="gs-text">Taxa</div>
+                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/taxa-icon.png" %}'); mask-image: url('{% static "img/taxa-icon.png" %}');"></span>
+                            <h3 class="gs-total" id="total_taxa"
+                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                            <div class="gs-text"
+                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Taxa</div>
                         </div>
                         <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <img height="100px" src="{% static "img/users-icon.png" %}"/>
-                            <h3 class="gs-total" id="total_users">...</h3>
-                            <div class="gs-text">Users</div>
+                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/users-icon.png" %}'); mask-image: url('{% static "img/users-icon.png" %}');"></span>
+                            <h3 class="gs-total" id="total_users"
+                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                            <div class="gs-text"
+                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Users</div>
                         </div>
                         <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <img height="90px" style="margin-bottom: 5px; margin-top: 5px" src="{% static "img/upload-icon.png" %}"/>
-                            <h3 class="gs-total" id="total_uploads">...</h3>
-                            <div class="gs-text">User uploads</div>
+                            <div class="gs-icon-container" >
+                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/upload-icon.png" %}'); mask-image: url('{% static "img/upload-icon.png" %}');width: 70px; height: 70px;"></span>
+                            </div>
+                            <h3 class="gs-total" id="total_uploads"
+                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                            <div class="gs-text"
+                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">User uploads</div>
                         </div>
                         <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <img height="90px" style="margin-bottom: 10px" src="{% static "img/download-icon.png" %}"/>
-                            <h3 class="gs-total" id="total_downloads">...</h3>
-                            <div class="gs-text">User downloads</div>
+                            <div class="gs-icon-container" >
+                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/download-icon.png" %}'); mask-image: url('{% static "img/download-icon.png" %}');width: 70px; height: 70px;"></span>
+                            </div>
+                            <h3 class="gs-total" id="total_downloads"
+                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                            <div class="gs-text"
+                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">User downloads</div>
                         </div>
                     </div>
                 </div>
