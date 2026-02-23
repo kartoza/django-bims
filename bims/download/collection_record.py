@@ -7,7 +7,7 @@ import tempfile
 import shutil
 
 from bims.models.download_request import DownloadRequest
-from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME
+from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME, END_EMBARGO_DATE
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,8 @@ HEADER_TITLES = {
     'sub_species': 'SubSpecies',
     'cites_listing': 'CITES listing',
     'park_or_mpa_name': PARK_OR_MPA_NAME,
-    'authors': 'Author(s)'
+    'authors': 'Author(s)',
+    'end_embargo_date': END_EMBARGO_DATE,
 }
 
 

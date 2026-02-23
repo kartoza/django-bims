@@ -7,6 +7,7 @@ from preferences import preferences
 
 from bims.scripts.collection_csv_keys import *  # noqa
 from datetime import datetime
+from dateutil.parser import parse as parse_datetime
 
 from django.contrib.gis.geos import Point
 from django.db.models import Q
@@ -642,6 +643,20 @@ class OccurrenceProcessor(object):
             if not sampling_date:
                 return
 
+            # -- End embargo date
+            end_embargo_date = None
+            end_embargo_date_str = DataCSVUpload.row_value(row, END_EMBARGO_DATE)
+            if end_embargo_date_str:
+                try:
+                    end_embargo_date = parse_datetime(
+                        timestr=end_embargo_date_str, dayfirst=True)
+                except Exception:
+                    self.handle_error(
+                        row=row,
+                        message=f"Incorrect end embargo date format: {end_embargo_date_str}"
+                    )
+                    return
+
             # -- Processing Taxonomy
             taxonomy = self.taxonomy(row)
             if not taxonomy:
@@ -684,6 +699,12 @@ class OccurrenceProcessor(object):
                 sampling_date,
                 collector=collectors[0],
             )
+
+            # -- Apply end embargo date to the survey
+            if end_embargo_date and self.survey:
+                Survey.objects.filter(id=self.survey.id).update(
+                    end_embargo_date=end_embargo_date
+                )
 
             # -- Optional data - Present
             if PRESENT in row:
@@ -793,6 +814,10 @@ class OccurrenceProcessor(object):
             else:
                 wetland_indicator_status = None
             optional_data["wetland_indicator_status"] = wetland_indicator_status
+
+            # -- End embargo date on the occurrence record
+            if end_embargo_date:
+                optional_data["end_embargo_date"] = end_embargo_date
 
             # -- Processing chemical records
             self.chemical_records(row, location_site, sampling_date)

@@ -161,6 +161,7 @@ class BioCollectionOneRowSerializer(
     cites_listing = serializers.SerializerMethodField()
     data_type = serializers.SerializerMethodField()
     dataset = serializers.SerializerMethodField()
+    end_embargo_date = serializers.SerializerMethodField()
 
     @staticmethod
     def _has_value(v) -> bool:
@@ -703,6 +704,11 @@ class BioCollectionOneRowSerializer(
             return obj.data_type.capitalize()
         return 'Public'
 
+    def get_end_embargo_date(self, obj: BiologicalCollectionRecord):
+        if obj.end_embargo_date:
+            return obj.end_embargo_date.isoformat()
+        return ''
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -769,7 +775,8 @@ class BioCollectionOneRowSerializer(
             'dataset',
             'dataset_key',
             'cites_listing',
-            'data_type'
+            'data_type',
+            'end_embargo_date',
         ]
 
     def _get_geocontext_parks_group(self):
