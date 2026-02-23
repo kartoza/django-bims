@@ -104,11 +104,11 @@ class ProfileAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.user_change_password))
         ] + super(ProfileAdmin, self).get_urls()
 
-    def lookup_allowed(self, lookup, value):
+    def lookup_allowed(self, lookup, value, request=None):
         # See #20078: we don't want to allow any lookups involving passwords.
         if lookup.startswith('password'):
             return False
-        return super(ProfileAdmin, self).lookup_allowed(lookup, value)
+        return super().lookup_allowed(lookup, value, request)
 
     @sensitive_post_parameters_m
     @csrf_protect_m

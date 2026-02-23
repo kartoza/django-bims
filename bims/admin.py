@@ -248,7 +248,7 @@ class InsideSiteBoundaryFilter(SimpleListFilter):
         return queryset
 
 
-class LocationSiteAdmin(admin.GeoModelAdmin):
+class LocationSiteAdmin(admin.GISModelAdmin):
     change_list_template = 'admin/location_site_changelist.html'
     form = LocationSiteForm
     default_zoom = 5
@@ -483,16 +483,18 @@ class IUCNStatusAdmin(OrderedModelAdmin):
     )
 
     def iucn_colour(self, obj):
-        return format_html('<div style="background:%s; ' \
-                           'width: 50px; height: 15px;"></div>' % obj.colour)
+        return format_html(
+            '<div style="background:{}; width: 50px; height: 15px;"></div>',
+            obj.colour)
 
     def total_species(self, obj):
         total_taxa = Taxonomy.objects.filter(
             iucn_status=obj
         ).count()
         return format_html(
-            f'<a href="/admin/bims/taxonomy/?iucn_status__id__exact={obj.id}">'
-            f'{total_taxa}</a>'
+            '<a href="/admin/bims/taxonomy/?iucn_status__id__exact={}">'
+            '{}</a>',
+            obj.id, total_taxa
         )
 
     iucn_colour.allow_tags = True
@@ -974,9 +976,9 @@ class CustomUserAdmin(ProfileAdmin):
     merge_users.short_description = 'Merge users'
 
     def sass_accredited_status(self, obj):
-        false_response = format_html(
+        false_response = mark_safe(
             '<img src="/static/admin/img/icon-no.svg" alt="False">')
-        true_response = format_html(
+        true_response = mark_safe(
             '<img src="/static/admin/img/icon-yes.svg" alt="True">')
 
     def role(self, obj):
@@ -995,9 +997,9 @@ class CustomUserAdmin(ProfileAdmin):
             false_response = 'False'
             true_response = 'True'
         else:
-            false_response = format_html(
+            false_response = mark_safe(
                 '<img src="/static/admin/img/icon-no.svg" alt="False">')
-            true_response = format_html(
+            true_response = mark_safe(
                 '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         try:
             profile = BimsProfile.objects.get(user=obj)
@@ -1018,9 +1020,9 @@ class CustomUserAdmin(ProfileAdmin):
             false_response = 'False'
             true_response = 'True'
         else:
-            false_response = format_html(
+            false_response = mark_safe(
                 '<img src="/static/admin/img/icon-no.svg" alt="False">')
-            true_response = format_html(
+            true_response = mark_safe(
                 '<img src="/static/admin/img/icon-yes.svg" alt="True">')
         if not obj.email:
             return false_response
@@ -1078,13 +1080,15 @@ class CustomUserAdmin(ProfileAdmin):
             request, obj, post_url_continue)
 
     def changelist_view(self, request, extra_context=None):
-        test = request.META['HTTP_REFERER'].split(request.META['PATH_INFO'])
-        if test[-1] and not test[-1].startswith('?'):
-            if 'signed_up' not in request.GET:
-                q = request.GET.copy()
-                q['signed_up'] = 'True'
-                request.GET = q
-                request.META['QUERY_STRING'] = request.GET.urlencode()
+        referer = request.META.get('HTTP_REFERER', '')
+        if referer:
+            test = referer.split(request.META['PATH_INFO'])
+            if test[-1] and not test[-1].startswith('?'):
+                if 'signed_up' not in request.GET:
+                    q = request.GET.copy()
+                    q['signed_up'] = 'True'
+                    request.GET = q
+                    request.META['QUERY_STRING'] = request.GET.urlencode()
         return super().changelist_view(request, extra_context=extra_context)
 
 class BaseMapLayerAdmin(OrderedModelAdmin):
@@ -1336,8 +1340,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
         'category',
     )
     filter_horizontal = (
-        'taxonomies',
-        'experts'
+        'experts',
     )
     raw_id_fields = (
         'gbif_parent_species',
@@ -1836,9 +1839,9 @@ class SassBiotopeAdmin(admin.ModelAdmin):
 
     def used_in_SASS(self, obj: Biotope):
         if obj.sassbiotopefraction_set.all().exists():
-            return format_html(
+            return mark_safe(
                 '<img src="/static/admin/img/icon-yes.svg" alt="True">')
-        return format_html(
+        return mark_safe(
             '<img src="/static/admin/img/icon-no.svg" alt="False">')
 
     list_display = (
