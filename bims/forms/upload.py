@@ -17,10 +17,14 @@ class UploadForm(forms.Form):
     name = forms.CharField(max_length=200)
     email = forms.EmailField()
     upload_type = forms.ModelChoiceField(
-        queryset=UploadType.objects.all().order_by('order'),
+        queryset=UploadType.objects.none(),
         empty_label=None,
         to_field_name='code'
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['upload_type'].queryset = UploadType.objects.all().order_by('order')
     upload_file = forms.FileField(
         validators=[FileExtensionValidator(
             allowed_extensions=ALLOWED_EXTENSIONS)

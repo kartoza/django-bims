@@ -9,10 +9,14 @@ class AppConfig(AppConfig):
 
     def ready(self):
         super(AppConfig, self).ready()
-        # check settings
         from django.conf import settings
-        from bims.utils.add_index import add_indexes_for_taxonomy
-        add_indexes_for_taxonomy()
+        from django.db.models.signals import post_migrate
+
+        def create_taxonomy_indexes(sender, **kwargs):
+            from bims.utils.add_index import add_indexes_for_taxonomy
+            add_indexes_for_taxonomy()
+
+        post_migrate.connect(create_taxonomy_indexes, sender=self)
 
         installed_apps = []
 

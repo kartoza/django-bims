@@ -238,12 +238,10 @@ EXTRA_LANG_INFO = {
 AUTH_USER_MODEL = os.getenv('AUTH_USER_MODEL', 'people.Profile')
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
     # 'django.contrib.auth.hashers.Argon2PasswordHasher',
     # 'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    # 'django.contrib.auth.hashers.BCryptPasswordHasher',
 ]
 
 MODELTRANSLATION_LANGUAGES = ['en', ]
@@ -743,7 +741,7 @@ SRID = {
     'DETAIL': 'never',
 }
 
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
 try:
     # try to parse python notation, default in dockerized env
