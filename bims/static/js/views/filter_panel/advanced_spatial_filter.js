@@ -409,34 +409,21 @@ define([
             $select.on('change', function (_e, meta) {
                 if (meta && meta.programmatic) return;
 
-                var vals = $(this).val() || [];
+                let vals = $(this).val() || [];
 
-                if (self.isAllSelected(vals)) {
+                if (self.isAllSelected(vals) && !self.isAllSelected(clause.values)) {
                     vals = [self.ALL_ID];
                     clause.values = vals;
-                    // Re-init with just All
-                    try { $select.select2('destroy'); } catch (e) {}
-                    $select.empty();
-                    $select.append(new Option(self.ALL_TEXT, self.ALL_ID, true, true));
-                    $select.select2({
-                        placeholder: 'Search ' + clause.field + '\u2026',
-                        allowClear: true,
-                        width: 'resolve'
-                    });
+                    $select.val(vals).trigger('change', { programmatic: true });
                     self.refreshPreview();
-                    return;
-                }
-
-                // If was All before and now deselected, rebuild AJAX select
-                if (!self.isAllSelected(vals) && clause.values.indexOf(self.ALL_ID) > -1) {
+                } else {
+                    if (clause.values.indexOf(self.ALL_ID) > -1) {
+                        if (vals.indexOf(self.ALL_ID) > -1) vals.splice(vals.indexOf(self.ALL_ID), 1);
+                        $select.val(vals).trigger('change', { programmatic: true });
+                    }
                     clause.values = vals;
-                    self.buildValuesSelect($select.closest('.adv-clause'), clause);
                     self.refreshPreview();
-                    return;
                 }
-
-                clause.values = vals;
-                self.refreshPreview();
             });
         },
 
