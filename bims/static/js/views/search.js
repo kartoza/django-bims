@@ -757,6 +757,13 @@ define([
             Shared.Dispatcher.trigger('politicalRegion:clear');
 
             Shared.Dispatcher.trigger('spatialFilter:clearSelected');
+
+            // If advanced spatial filter mode was active, switch back to normal mode and clear it
+            if (this.spatialFilterView.advancedMode) {
+                this.advancedSpatialFilterView.clearAll();
+                this.spatialFilterView.setAdvancedMode(false);
+            }
+
             Shared.Dispatcher.trigger('siteDetail:updateCurrentSpeciesSearchResult', []);
             Shared.Dispatcher.trigger('cluster:updateAdministrative', '');
             Shared.Dispatcher.trigger('clusterBiological:clearClusters');
