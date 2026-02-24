@@ -383,14 +383,13 @@ def location_context_value_autocomplete(request) -> HttpResponse:
         except LocationContextGroup.DoesNotExist:
             return HttpResponse(data, 'application/json')
 
-        data = list(LocationContext.objects.filter(
+        values = list(LocationContext.objects.filter(
             group_id=group.id,
             value__istartswith=query
-        ).order_by(
-            'value'
-        ).annotate(context_id=F('value')).values(
-            'context_id', 'value',
-        ).distinct('value'))[:MAX_SPATIAL_DATA_VALUES]
+        ).order_by('value').values_list(
+            'value', flat=True
+        ).distinct())[:MAX_SPATIAL_DATA_VALUES]
+        data = [{'context_id': v, 'value': v} for v in values]
 
     return HttpResponse(
         json.dumps(data), 'application/json')
