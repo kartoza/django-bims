@@ -34,7 +34,7 @@ class CustomCKEditorAdmin(OrderedModelAdmin):
             dynamic_config={
                 "toolbar": "Custom",
                 "allowedContent": True,
-                "extraPlugins": "font,colorbutton,justify",
+                "extraPlugins": "font,colorbutton,justify,youtube",
                 "font_names": ";".join(font_names) + ";",
                 "contentsCss": contents_css,
             },
