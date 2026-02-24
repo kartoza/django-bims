@@ -54,6 +54,27 @@
     .site-visit-list {
         margin-top: -51px;
     }
+
+    #navbar-upload {
+        margin-right: 10px;
+        background: {{ custom_theme.main_accent_color|default:'#2b8a3e' }};
+        color: {{ custom_theme.main_button_text_color|default:'#ffffff' }} !important;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        border-radius: .375rem;
+        padding: .275rem .675rem !important;
+        border: 2px solid transparent;
+        line-height: 1.2;
+        transition: filter 0.2s ease;
+    }
+    #navbar-upload:hover,
+    #navbar-upload:focus {
+        background: {{ custom_theme.main_accent_color|default:'#2b8a3e' }};
+        filter: brightness(0.85);
+        color: {{ custom_theme.main_button_text_color|default:'#ffffff' }} !important;
+    }
 </style>
 <div class="hr-navbar d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 border-bottom">
     <h5 class="my-0 mr-md-auto font-weight-normal">
@@ -88,6 +109,11 @@
                 <a class="p-2" href="/source-references/">Source References</a>
             {% endif %}
             <span class="p-2"></span>
+{#            {% if preferences.SiteSetting.github_app_id %}#}
+{#                <a id="navbar-upload" class="p-2" href="/upload/">#}
+{#                    Upload <i class="fa fa-upload" aria-hidden="true"></i>#}
+{#                </a>#}
+{#            {% endif %}#}
             {% if not user.is_authenticated %}
                 <a class="nav-login-button" href="/accounts/login">LOG IN</a>
                 <a class="nav-login-button" href="/accounts/signup">SIGN UP</a>
