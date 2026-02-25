@@ -82,10 +82,11 @@ export const taxonDetail = (() => {
         const acceptedName = hierarchySource.canonical_name
             || getCleanAcceptedName(data, 'CANONICAL')
             || 'Accepted taxon';
+        const safeAcceptedName = acceptedName.replace(/"/g, '&quot;');
         return `
             <div class="alert alert-info synonym-summary mb-3 mx-4">
                 <strong>${statusLabel}</strong>: Showing hierarchical information for
-                <strong>${acceptedName}</strong>. Metadata below refers to
+                <a href="#" class="accepted-taxon-link" data-accepted-name="${safeAcceptedName}"><strong>${acceptedName}</strong></a>. Metadata below refers to
                 <strong>${data.canonical_name}</strong>.
             </div>
         `;
@@ -260,8 +261,13 @@ export const taxonDetail = (() => {
 `;
     }
 
+    function getCanonicalName(name) {
+        return parseAcceptedTaxonomyName(name).canonical;
+    }
+
     return {
         formatDetailTaxon,
         shouldUseAcceptedHierarchy,
+        getCanonicalName,
     };
 })();

@@ -234,8 +234,9 @@ export const taxaManagement = (() => {
             $sortable.sortable({
                 handle: '.tg-drag-handle',
                 axis: 'y',
+                items: '> li',
                 stop: function (event, ui) {
-                    let $li = $(event.target).find('li');
+                    let $li = $(event.target).children('li');
                     let ids = [];
                     $.each($li, function (index, element) {
                         ids.push($(element).data('id'));
@@ -255,6 +256,36 @@ export const taxaManagement = (() => {
                         }
                     });
                 }
+            });
+
+            $('.taxon-children-list').each(function () {
+                let $childList = $(this);
+                $childList.sortable({
+                    handle: '.tg-drag-handle',
+                    axis: 'y',
+                    items: '> li',
+                    stop: function (event, ui) {
+                        let $li = $(event.target).children('li');
+                        let ids = [];
+                        $.each($li, function (index, element) {
+                            ids.push($(element).data('id'));
+                        });
+                        $childList.sortable("disable");
+                        loading.show();
+                        $.ajax({
+                            url: '/api/update-taxon-group-order/',
+                            headers: {"X-CSRFToken": csrfToken},
+                            type: 'POST',
+                            data: {
+                                'taxonGroups': JSON.stringify(ids)
+                            },
+                            success: function (response) {
+                                loading.hide();
+                                $childList.sortable("enable");
+                            }
+                        });
+                    }
+                });
             });
         }
 
@@ -500,7 +531,20 @@ export const taxaManagement = (() => {
               }
             },
             { data: "taxonomic_status", className: "min-width-100", render: (d) => renderTextDiff(d) },
-            { data: "accepted_taxonomy_name", className: "min-width-100", render: (d) => renderTextDiff(d) },
+            {
+              data: "accepted_taxonomy_name",
+              className: "min-width-100",
+              render: function(d) {
+                if (!d) return '';
+                // Extract plain name from possible diff string ("old → new")
+                const parts = String(d).split(/\s*→\s*|\s*->\s*/);
+                const rawName = (parts.length === 2 ? parts[1] : parts[0]).trim();
+                const canonicalName = taxonDetail.getCanonicalName(rawName);
+                if (!canonicalName) return renderTextDiff(d);
+                const safeName = canonicalName.replace(/"/g, '&quot;');
+                return `<a href="#" class="accepted-taxon-link" data-accepted-name="${safeName}">${renderTextDiff(d)}</a>`;
+              }
+            },
             { data: "rank", className: "min-width-100", render: (d) => renderTextDiff(d) },
             {
               data: "biographic_distributions",
@@ -866,6 +910,24 @@ export const taxaManagement = (() => {
                     el.dispatchEvent(new Event('click', { bubbles: true }));
                 }
             });
+        });
+
+        // Navigate to accepted taxon when link in detail row is clicked
+        $(document).on('click', '.accepted-taxon-link', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const acceptedName = $(this).data('accepted-name');
+            if (acceptedName) {
+                const currentUrl = new URL(window.location.href);
+                const newParams = new URLSearchParams();
+                const selected = currentUrl.searchParams.get('selected') || '';
+                if (selected) {
+                    newParams.set('selected', selected);
+                }
+                newParams.set('taxonomic_status', 'ACCEPTED');
+                newParams.set('taxon', acceptedName);
+                window.location.search = newParams.toString();
+            }
         });
 
         $("#add-taxon-input").on("keydown", function(event) {
