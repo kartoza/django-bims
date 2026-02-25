@@ -234,8 +234,9 @@ export const taxaManagement = (() => {
             $sortable.sortable({
                 handle: '.tg-drag-handle',
                 axis: 'y',
+                items: '> li',
                 stop: function (event, ui) {
-                    let $li = $(event.target).find('li');
+                    let $li = $(event.target).children('li');
                     let ids = [];
                     $.each($li, function (index, element) {
                         ids.push($(element).data('id'));
@@ -255,6 +256,36 @@ export const taxaManagement = (() => {
                         }
                     });
                 }
+            });
+
+            $('.taxon-children-list').each(function () {
+                let $childList = $(this);
+                $childList.sortable({
+                    handle: '.tg-drag-handle',
+                    axis: 'y',
+                    items: '> li',
+                    stop: function (event, ui) {
+                        let $li = $(event.target).children('li');
+                        let ids = [];
+                        $.each($li, function (index, element) {
+                            ids.push($(element).data('id'));
+                        });
+                        $childList.sortable("disable");
+                        loading.show();
+                        $.ajax({
+                            url: '/api/update-taxon-group-order/',
+                            headers: {"X-CSRFToken": csrfToken},
+                            type: 'POST',
+                            data: {
+                                'taxonGroups': JSON.stringify(ids)
+                            },
+                            success: function (response) {
+                                loading.hide();
+                                $childList.sortable("enable");
+                            }
+                        });
+                    }
+                });
             });
         }
 

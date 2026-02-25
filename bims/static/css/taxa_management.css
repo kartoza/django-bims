@@ -384,8 +384,8 @@ table {
 
 .tg-drag-handle {
   position: absolute;
-  top: 50%;
-  right: 6px;
+  top: 10px;
+  right: 12px;
   transform: translateY(-50%);
   color: #888;
   cursor: grab;
