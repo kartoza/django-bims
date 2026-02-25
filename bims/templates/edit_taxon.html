@@ -24,7 +24,7 @@
         const taxonGroupId = "{{ taxon_group_id }}";
         const parent = {% if object.parent %}"{{ object.parent.canonical_name }} ({{ object.parent.rank }})"{% else %}null{% endif %};
         const parentId = {% if object.parent %}{{ object.parent.id }}{% else %}null{% endif %};
-        const taxonId = {{ object.id }};
+        const taxonId = {{ object.original_taxonomy.id|default:object.id }};
         let acceptedTaxonomy = null;
         let acceptedTaxonomyId = null;
         const speciesGroup = {% if object.species_group %}"{{ object.species_group.name }}"{% else %}""{% endif %};
@@ -49,36 +49,34 @@
                 </h2>
             </div>
 
+            {% if object.created_at_date %}
             <div class="form-group row">
-                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
-                    Created at
-                </label>
+                <label class="col-sm-2 col-form-label">Date added</label>
                 <div class="col-sm-10">
                     <input type="text" disabled
                            class="form-control form-control-sm"
-                           placeholder="" value="{{ object.import_date }}" >
+                           value="{{ object.created_at_date|date:'N j, Y' }}">
                 </div>
             </div>
+            {% endif %}
 
+            {% if object.last_modified %}
             <div class="form-group row">
-                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
-                    Last modified
-                </label>
+                <label class="col-sm-2 col-form-label">Last modified</label>
                 <div class="col-sm-10">
                     <input type="text" disabled
                            class="form-control form-control-sm"
-                           placeholder="" value="{{ object.last_modified }}" >
+                           value="{{ object.last_modified|date:'N j, Y' }}">
                 </div>
             </div>
+            {% endif %}
 
             <div class="form-group row">
-                <label for="canonical_name" class="col-sm-2 col-form-label col-form-label">
-                    Last modified by
-                </label>
+                <label class="col-sm-2 col-form-label">Last modified by</label>
                 <div class="col-sm-10">
                     <input type="text" disabled
                            class="form-control form-control-sm"
-                           placeholder="" value="{% if object and object.last_modified_by %}{{ object.last_modified_by }}{% else %}Admin{% endif %}" >
+                           placeholder="" value="{% if object and object.user_last_modified %}{{ object.user_last_modified }}{% else %}Admin{% endif %}" >
                 </div>
             </div>
 

@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from typing import Mapping
 
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -176,6 +177,13 @@ def create_taxon_proposal(
     else:
         origin = taxon.origin
 
+    taxon_import_date = getattr(taxon, 'import_date', None)
+    if taxon_import_date:
+        created_at = datetime.combine(
+            taxon_import_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+    else:
+        created_at = datetime.now(tz=timezone.utc)
+
     defaults = {
         'author': data.get('author', taxon.author),
         'rank': data.get('rank', taxon.rank),
@@ -195,6 +203,7 @@ def create_taxon_proposal(
         'gbif_key': data.get('gbif_key', getattr(taxon, 'gbif_key', None)),
         'fada_id': data.get('fada_id', getattr(taxon, 'fada_id', None)),
         'species_group': data.get('species_group', getattr(taxon, 'species_group', None)),
+        'last_modified_by': creator,
     }
 
     proposal, created = TaxonomyUpdateProposal.objects.update_or_create(
@@ -203,6 +212,9 @@ def create_taxon_proposal(
         status='pending',
         defaults=defaults,
     )
+
+    if created:
+        proposal.created_at = created_at
 
     # Ensure accepted taxonomy is added to the taxon group if this is a synonym
     if accepted_taxonomy and taxon_group:
@@ -256,6 +268,7 @@ def update_taxon_proposal(
     data=None,
     iucn_status=None,
     endemism=None,
+    user=None,
 ):
     data = data or {}
 
@@ -312,6 +325,7 @@ def update_taxon_proposal(
         'gbif_data': data.get('gbif_data', proposal.gbif_data),
         'hierarchical_data': data.get('hierarchical_data', proposal.hierarchical_data or {}),
         'additional_data': merged_additional,
+        'last_modified_by': user,
     }
 
     TaxonomyUpdateProposal.objects.filter(id=proposal.id).update(**updates)
@@ -455,7 +469,8 @@ class UpdateTaxon(UserPassesTestMixin, APIView):
                     proposal=proposal,
                     data=data,
                     iucn_status=iucn_status,
-                    endemism=endemism
+                    endemism=endemism,
+                    user=request.user
                 )
                 success_message = (
                     'Taxonomy updated successfully'

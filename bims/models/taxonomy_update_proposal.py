@@ -153,8 +153,11 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         related_name='taxonomy_update_proposals_reviewers',
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def last_modified(self):
+        return self.updated_at or None
 
     class Meta:
         db_table = 'bims_taxonomy_update_proposal'
@@ -171,7 +174,8 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'comments': comments
                 }
             )
-            self.save()
+            # Only save status — do not update last_modified_by or other data fields
+            self.save(update_fields=['status'])
 
             current_site = get_current_domain()
             from_email = settings.DEFAULT_FROM_EMAIL
@@ -330,6 +334,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                             self.original_taxonomy,
                             field, getattr(self, field))
                 self.original_taxonomy.hierarchical_data = {}
+                self.original_taxonomy.last_modified_by = self.last_modified_by
                 self.original_taxonomy.save()
                 self.status = 'approved'
                 self.save()

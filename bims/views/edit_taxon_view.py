@@ -223,7 +223,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                     proposal=proposal,
                     data=data,
                     iucn_status=iucn_status,
-                    endemism=endemism
+                    endemism=endemism,
+                    user=self.request.user
                 )
                 messages.success(
                     self.request,
