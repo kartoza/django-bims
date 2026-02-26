@@ -10,7 +10,7 @@ from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
     TaxonExtraAttribute, TaxonomicGroupCategory,
-    TaxonomyUpdateProposal, OccurrenceUploadTemplate
+    TaxonomyUpdateProposal, OccurrenceUploadTemplate, TaxonGroupTaxonomy
 )
 
 
@@ -31,11 +31,31 @@ def update_taxon_group_orders(taxon_group_ids):
             continue
 
 
-def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id):
+def _remove_single_taxon(taxonomy, taxon_group, delete_if_orphaned=True):
     """
-    Remove taxa from taxon group
-    :param taxa_ids: list of taxon taxon ids
+    Remove one taxonomy from a taxon group.
+    :param delete_if_orphaned: when True, permanently delete the taxonomy if it no longer
+                               belongs to any other group. Defaults to True.
+    """
+    taxon_group.taxonomies.remove(taxonomy)
+    BiologicalCollectionRecord.objects.filter(
+        taxonomy=taxonomy
+    ).update(module_group=None)
+    if delete_if_orphaned and not TaxonGroupTaxonomy.objects.filter(taxonomy=taxonomy).exists():
+        taxonomy.delete()
+
+
+def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id, include_children=False):
+    """
+    Remove taxa from a taxon group.
+    - When include_children=True: parent and all child taxa are removed; orphaned taxa are
+      permanently deleted.
+    - When include_children=False: only the parent is removed. If the parent still has children
+      remaining in the group it is only unlinked (not permanently deleted), to preserve the
+      parent–child relationship. If it has no children in the group it is deleted if orphaned.
+    :param taxa_ids: list of taxon ids
     :param taxon_group_id: id of the taxon group
+    :param include_children: if True, also remove child taxa from the group
     """
     taxa = Taxonomy.objects.filter(
         id__in=taxa_ids
@@ -47,10 +67,27 @@ def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id):
     except TaxonGroup.DoesNotExist:
         return
     for taxonomy in taxa:
-        taxon_group.taxonomies.remove(taxonomy)
-        BiologicalCollectionRecord.objects.filter(
-            taxonomy=taxonomy
-        ).update(module_group=None)
+        children_in_group = taxonomy.get_all_children().filter(
+            taxongrouptaxonomy__taxongroup=taxon_group
+        ).distinct()
+
+        if include_children:
+            for child in children_in_group:
+                _remove_single_taxon(child, taxon_group, delete_if_orphaned=True)
+            # Do not permanently delete the parent if it still has children in OTHER groups;
+            # those children reference it via the parent FK and must not be left orphaned.
+            has_children_in_other_groups = Taxonomy.objects.filter(
+                parent=taxonomy
+            ).exclude(
+                taxongrouptaxonomy__taxongroup=taxon_group
+            ).filter(
+                taxongrouptaxonomy__isnull=False
+            ).distinct().exists()
+            _remove_single_taxon(taxonomy, taxon_group, delete_if_orphaned=not has_children_in_other_groups)
+        else:
+            # Protect the parent from permanent deletion if it still has children in this group
+            has_children_in_group = children_in_group.exists()
+            _remove_single_taxon(taxonomy, taxon_group, delete_if_orphaned=not has_children_in_group)
 
 
 def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
@@ -107,17 +144,19 @@ class RemoveTaxaFromTaxonGroup(TaxaUpdateMixin):
     Post data required:
     {
         'taxaIds': [1,2], // List of taxa id
-        'taxonGroupId': 1 // id of the taxon group
+        'taxonGroupId': 1, // id of the taxon group
+        'includeChildren': 'true' // optional, also remove child taxa
     }
     """
     def post(self, request, *args):
         taxa_ids = self.request.POST.get('taxaIds', None)
         taxon_group_id = self.request.POST.get('taxonGroupId', None)
+        include_children = self.request.POST.get('includeChildren', 'false').lower() == 'true'
         if not taxa_ids or not taxon_group_id:
             raise Http404('Missing required parameter')
         taxa_ids = json.loads(taxa_ids)
         taxon_group_id = int(taxon_group_id)
-        remove_taxa_from_taxon_group(taxa_ids, taxon_group_id)
+        remove_taxa_from_taxon_group(taxa_ids, taxon_group_id, include_children)
         return Response(
             {
                 'taxonomy_count': TaxonGroup.objects.get(

@@ -46,6 +46,8 @@ class TaxonSerializer(serializers.ModelSerializer):
     can_edit = serializers.SerializerMethodField()
     taxonomic_status = serializers.SerializerMethodField()
     fada_id = serializers.SerializerMethodField()
+    children_count = serializers.SerializerMethodField()
+    other_group_count = serializers.SerializerMethodField()
 
     def get_fada_id(self, obj):
         """Only return fada_id for FADA sites."""
@@ -481,6 +483,23 @@ class TaxonSerializer(serializers.ModelSerializer):
             return obj.iucn_status.colour
         else:
             return None
+
+    def get_children_count(self, obj):
+        taxon_group_id = self.context.get('taxon_group_id')
+        if not taxon_group_id:
+            return 0
+        return Taxonomy.objects.filter(
+            parent=obj,
+            taxongrouptaxonomy__taxongroup_id=taxon_group_id
+        ).distinct().count()
+
+    def get_other_group_count(self, obj):
+        """Number of groups this taxon belongs to, excluding the current taxon group."""
+        taxon_group_id = self.context.get('taxon_group_id')
+        qs = TaxonGroupTaxonomy.objects.filter(taxonomy=obj)
+        if taxon_group_id:
+            qs = qs.exclude(taxongroup_id=taxon_group_id)
+        return qs.values('taxongroup').distinct().count()
 
     class Meta:
         model = Taxonomy

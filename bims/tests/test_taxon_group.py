@@ -21,6 +21,7 @@ from bims.models.taxon_group import (
     TAXON_GROUP_LEVEL_3, TAXON_GROUP_LEVEL_2
 )
 from bims.models.biological_collection_record import BiologicalCollectionRecord
+from bims.models import Taxonomy
 from mobile.api_views.taxon_group import TaxonGroupTotalValidated
 
 
@@ -85,6 +86,132 @@ class TestTaxonGroup(TestCase):
             BiologicalCollectionRecord.objects.filter(
                 module_group=taxon_group_1
             ).exists()
+        )
+
+    def test_remove_taxa_deletes_when_no_other_group(self):
+        """A taxon with no other group membership is permanently deleted after removal."""
+        taxonomy = TaxonomyF.create()
+        taxon_group = TaxonGroupF.create(taxonomies=(taxonomy,))
+        taxonomy_id = taxonomy.id
+
+        remove_taxa_from_taxon_group([taxonomy_id], taxon_group.id)
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=taxonomy_id).exists(),
+            "Taxonomy should be permanently deleted when it belongs to no other group"
+        )
+
+    def test_remove_taxa_keeps_record_when_in_other_group(self):
+        """A taxon still belonging to another group is only unlinked, not deleted."""
+        taxonomy = TaxonomyF.create()
+        taxon_group_1 = TaxonGroupF.create(taxonomies=(taxonomy,))
+        taxon_group_2 = TaxonGroupF.create(taxonomies=(taxonomy,))
+        taxonomy_id = taxonomy.id
+
+        remove_taxa_from_taxon_group([taxonomy_id], taxon_group_1.id)
+
+        self.assertTrue(
+            Taxonomy.objects.filter(id=taxonomy_id).exists(),
+            "Taxonomy should remain in the database if it still belongs to another group"
+        )
+        self.assertTrue(
+            taxon_group_2.taxonomies.filter(id=taxonomy_id).exists(),
+            "Taxonomy should still be linked to the other group"
+        )
+
+    def test_remove_taxa_with_include_children_deletes_orphaned_parent_and_children(self):
+        """include_children=True permanently deletes orphaned parent and child taxa."""
+        parent = TaxonomyF.create()
+        child = TaxonomyF.create(parent=parent)
+        taxon_group = TaxonGroupF.create(taxonomies=(parent, child))
+
+        remove_taxa_from_taxon_group([parent.id], taxon_group.id, include_children=True)
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=parent.id).exists(),
+            "Orphaned parent should be permanently deleted when include_children=True"
+        )
+        self.assertFalse(
+            Taxonomy.objects.filter(id=child.id).exists(),
+            "Orphaned child should be permanently deleted when include_children=True"
+        )
+
+    def test_remove_taxa_with_include_children_keeps_child_in_other_group(self):
+        """A child linked to another group is only unlinked from the current group, not deleted."""
+        parent = TaxonomyF.create()
+        child = TaxonomyF.create(parent=parent)
+        taxon_group_1 = TaxonGroupF.create(taxonomies=(parent, child))
+        taxon_group_2 = TaxonGroupF.create(taxonomies=(child,))
+        child_id = child.id
+
+        remove_taxa_from_taxon_group([parent.id], taxon_group_1.id, include_children=True)
+
+        self.assertTrue(
+            Taxonomy.objects.filter(id=child_id).exists(),
+            "Child in another group should not be deleted"
+        )
+        self.assertTrue(
+            taxon_group_2.taxonomies.filter(id=child_id).exists(),
+            "Child should remain linked to the other group"
+        )
+
+    def test_remove_taxa_with_include_children_does_not_delete_parent_with_child_in_other_group(self):
+        """Parent should not be permanently deleted if it has children in other groups, even with include_children=True."""
+        parent = TaxonomyF.create()
+        child_in_current = TaxonomyF.create(parent=parent)
+        child_in_other = TaxonomyF.create(parent=parent)
+        taxon_group_1 = TaxonGroupF.create(taxonomies=(parent, child_in_current))
+        taxon_group_2 = TaxonGroupF.create(taxonomies=(child_in_other,))
+        parent_id = parent.id
+
+        remove_taxa_from_taxon_group([parent_id], taxon_group_1.id, include_children=True)
+
+        self.assertTrue(
+            Taxonomy.objects.filter(id=parent_id).exists(),
+            "Parent should NOT be permanently deleted because it has a child in another group"
+        )
+        self.assertFalse(
+            taxon_group_1.taxonomies.filter(id=parent_id).exists(),
+            "Parent should be unlinked from the current group"
+        )
+        self.assertTrue(
+            taxon_group_2.taxonomies.filter(id=child_in_other.id).exists(),
+            "Child in other group should remain untouched"
+        )
+
+    def test_remove_taxa_without_include_children_does_not_permanently_delete_parent_with_children(self):
+        """When include_children=False and the parent has children in the group, the parent is only unlinked."""
+        parent = TaxonomyF.create()
+        child = TaxonomyF.create(parent=parent)
+        taxon_group = TaxonGroupF.create(taxonomies=(parent, child))
+        parent_id = parent.id
+
+        remove_taxa_from_taxon_group([parent_id], taxon_group.id, include_children=False)
+
+        self.assertTrue(
+            Taxonomy.objects.filter(id=parent_id).exists(),
+            "Parent should NOT be permanently deleted when it still has children in the group"
+        )
+        self.assertFalse(
+            taxon_group.taxonomies.filter(id=parent_id).exists(),
+            "Parent should be unlinked from the group"
+        )
+        self.assertTrue(
+            taxon_group.taxonomies.filter(id=child.id).exists(),
+            "Child should remain in the group"
+        )
+
+    def test_remove_taxa_without_children_deletes_if_orphaned(self):
+        """A taxon with no children in the group and no other group is permanently deleted."""
+        taxonomy = TaxonomyF.create()
+        taxon_group = TaxonGroupF.create(taxonomies=(taxonomy,))
+        taxonomy_id = taxonomy.id
+
+        remove_taxa_from_taxon_group([taxonomy_id], taxon_group.id, include_children=False)
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=taxonomy_id).exists(),
+            "Orphaned taxon with no children in the group should be permanently deleted"
         )
 
     def test_add_taxa_to_taxon_group(self):
