@@ -669,7 +669,11 @@ export const taxaManagement = (() => {
                 });
 
                 $('.remove-taxon-from-group').off('click').on('click', function (event) {
-                    taxaTable.handleRemoveTaxonFromGroup($(this).parent().data('id'));
+                    let taxaId = $(this).parent().data('id');
+                    let taxon = taxaData.find(t => t.id === taxaId);
+                    let childrenCount = taxon ? (taxon.children_count || 0) : 0;
+                    let otherGroupCount = taxon ? (taxon.other_group_count || 0) : 0;
+                    taxaTable.handleRemoveTaxonFromGroup(taxaId, childrenCount, otherGroupCount);
                 });
 
                 $('.reject-taxon').off('click').on('click', function (event) {

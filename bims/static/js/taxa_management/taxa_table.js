@@ -496,7 +496,7 @@ export const taxaTable = (() => {
         })
     }
 
-    function removeTaxonFromTaxonGroup(taxaId) {
+    function removeTaxonFromTaxonGroup(taxaId, includeChildren) {
         let $taxonGroupCard = $(`#taxon_group_${currentSelectedTaxonGroup}`);
         $.ajax({
             url: '/api/remove-taxa-from-taxon-group/',
@@ -504,7 +504,8 @@ export const taxaTable = (() => {
             type: 'POST',
             data: {
                 'taxaIds': JSON.stringify([taxaId]),
-                'taxonGroupId': currentSelectedTaxonGroup
+                'taxonGroupId': currentSelectedTaxonGroup,
+                'includeChildren': includeChildren ? 'true' : 'false'
             },
             success: function (response) {
                 $taxonGroupCard.html(response['taxonomy_count']);
@@ -513,11 +514,41 @@ export const taxaTable = (() => {
         });
     }
 
-    function handleRemoveTaxonFromGroup(taxaId) {
-        let r = confirm("Are you sure you want to remove this taxon from the group?");
-        if (r === true) {
-            removeTaxonFromTaxonGroup(taxaId);
+    function handleRemoveTaxonFromGroup(taxaId, childrenCount, otherGroupCount) {
+        let $modal = $('#removeTaxonModal');
+
+        // Parent taxon info message
+        let parentMsg, parentClass;
+        if (otherGroupCount === 0 && childrenCount === 0) {
+            parentMsg = '<i class="fa fa-exclamation-triangle"></i> This taxon does not belong to any other group and has no child taxa in this group. It will be <strong>permanently deleted</strong> from the system.';
+            parentClass = 'alert-warning';
+        } else if (otherGroupCount === 0 && childrenCount > 0) {
+            parentMsg = '<i class="fa fa-info-circle"></i> This taxon does not belong to any other group, but it has child taxa in this group. It will only be <strong>unlinked</strong> from this group (not permanently deleted) unless you also choose to remove its child taxa.';
+            parentClass = 'alert-info';
+        } else {
+            parentMsg = `<i class="fa fa-info-circle"></i> This taxon belongs to ${otherGroupCount} other group${otherGroupCount > 1 ? 's' : ''}. It will only be unlinked from this group and will remain in the system.`;
+            parentClass = 'alert-info';
         }
+        $modal.find('#parent-taxon-info').removeClass('alert-warning alert-info').addClass(parentClass).html(parentMsg);
+
+        // Children section
+        let $childrenOption = $modal.find('#include-children-option');
+        if (childrenCount > 0) {
+            $modal.find('#children-count-label').text(
+                `Also remove ${childrenCount} child tax${childrenCount > 1 ? 'a' : 'on'}`
+            );
+            $modal.find('#includeChildrenCheckbox').prop('checked', false);
+            $childrenOption.show();
+        } else {
+            $childrenOption.hide();
+        }
+
+        $modal.modal('show');
+        $('#confirmRemoveTaxonBtn').off('click').on('click', function () {
+            let includeChildren = childrenCount > 0 && $('#includeChildrenCheckbox').is(':checked');
+            $modal.modal('hide');
+            removeTaxonFromTaxonGroup(taxaId, includeChildren);
+        });
     }
 
     function handleSortButtonClicked(e) {
