@@ -4,7 +4,6 @@ from datetime import date
 
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from taggit.managers import TaggableManager
 from taggit.models import GenericTaggedItemBase, TagBase, TaggedItemBase
@@ -277,6 +276,19 @@ class AbstractTaxonomy(AbstractValidation):
         blank=True,
         on_delete=models.SET_NULL,
         help_text='Informal group of closely related species'
+    )
+
+    created_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    last_modified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='%(class)s_last_modified_by',
     )
 
     class Meta:
@@ -561,6 +573,13 @@ class AbstractTaxonomy(AbstractValidation):
             return self.scientific_name
         return '-'
 
+    @property
+    def created_at_date(self):
+        """Return import_date as the canonical creation date for this taxon."""
+        if self.import_date:
+            return self.import_date
+        return self.created_at
+
     @cached_property
     def last_modified(self):
         from easyaudit.models import CRUDEvent
@@ -571,27 +590,41 @@ class AbstractTaxonomy(AbstractValidation):
         ).order_by('-datetime').first()
 
         if last_update_event:
-            return date_format(
-                last_update_event.datetime, format='F j, Y', use_l10n=True)
+            return last_update_event.datetime
         return self.import_date
 
     @cached_property
-    def last_modified_by(self):
-        from bims.models.taxonomy_update_proposal import (
-            TaxonomyUpdateProposal
-        )
-        from easyaudit.models import CRUDEvent
-        taxon_proposal = TaxonomyUpdateProposal.objects.filter(
-            original_taxonomy=self
-        ).order_by('-id')
-        if taxon_proposal.exists():
-            return taxon_proposal.first().collector_user
+    def user_last_modified(self):
+        if self.last_modified_by:
+            return self.last_modified_by
 
+        # For legacy data
+        if isinstance(self, Taxonomy):
+            from bims.models.taxonomy_update_proposal import (
+                TaxonomyUpdateProposal
+            )
+            taxon_proposal = TaxonomyUpdateProposal.objects.filter(
+                original_taxonomy=self
+            ).exclude(status='rejected').order_by('-id')
+            if taxon_proposal.exists():
+                latest = taxon_proposal.first()
+                return latest.last_modified_by or latest.collector_user
+
+        from easyaudit.models import CRUDEvent
         crud_event = CRUDEvent.objects.filter(
             content_type__model=self._meta.model_name,
             object_id=self.id,
             event_type=CRUDEvent.UPDATE
         ).order_by('-datetime')
+        if not crud_event.exists():
+            from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+            if isinstance(self, TaxonomyUpdateProposal):
+                orig_taxon = self.original_taxonomy
+                crud_event = CRUDEvent.objects.filter(
+                    content_type__model=orig_taxon._meta.model_name,
+                    object_id=orig_taxon.id,
+                    event_type=CRUDEvent.UPDATE
+                ).order_by('-datetime')
 
         if crud_event.exists():
             return crud_event.first().user

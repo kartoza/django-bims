@@ -17,6 +17,7 @@ from bims.tests.model_factories import (
     TaxonomyUpdateProposalF,
     IUCNStatusF
 )
+from bims.api_views.taxon_update import create_taxon_proposal, update_taxon_proposal
 
 User = get_user_model()
 
@@ -440,3 +441,112 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         # proposal = TaxonomyUpdateProposal.objects.get(original_taxonomy=self.taxonomy)
         # self.assertIsNotNone(proposal)
         # self.assertEqual(proposal.status, 'approved')
+
+    def test_approve_sets_taxonomy_last_modified_by_from_proposal(self):
+        """
+        When a proposal is approved, Taxonomy.last_modified_by should reflect
+        the user who last modified the proposal (last_modified_by), not just
+        the original creator (collector_user).
+        """
+        editor = User.objects.create_user(
+            'editor_user', 'editor@example.com', 'password'
+        )
+
+        proposal = create_taxon_proposal(
+            taxon=self.taxonomy,
+            taxon_group=self.taxon_group,
+            creator=self.normal_user,
+        )
+        # Editor modifies the proposal data after creation
+        update_taxon_proposal(
+            proposal=proposal,
+            data={'canonical_name': 'Editor Changed Name'},
+            user=editor,
+        )
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.last_modified_by, editor)
+
+        # Superuser approves
+        proposal.approve(self.superuser, suppress_emails=True)
+
+        # Taxonomy.last_modified_by (DB field) should now reflect the editor
+        taxonomy = Taxonomy.objects.get(id=self.taxonomy.id)
+        self.assertEqual(taxonomy.last_modified_by, editor)
+
+    def test_approve_last_modified_by_falls_back_to_collector_user(self):
+        """
+        When a proposal has no last_modified_by set (e.g. created before the
+        field existed), approve() sets Taxonomy.last_modified_by to None.
+        The user_last_modified cached_property implements the fallback and
+        returns collector_user in that case.
+        """
+        proposal = TaxonomyUpdateProposalF.create(
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.taxon_group,
+            taxon_group_under_review=self.taxon_group,
+            collector_user=self.normal_user,
+            last_modified_by=None,
+        )
+
+        proposal.approve(self.superuser, suppress_emails=True)
+
+        taxonomy = Taxonomy.objects.get(id=self.taxonomy.id)
+        # DB field is None because the proposal had no last_modified_by
+        self.assertIsNone(taxonomy.last_modified_by)
+        # user_last_modified falls back to collector_user via the proposal
+        self.assertEqual(taxonomy.user_last_modified, self.normal_user)
+
+    def test_approve_without_prior_edit_uses_creator_as_last_modified_by(self):
+        """
+        When a proposal is created and approved without any intermediate edits,
+        last_modified_by on the taxonomy should be the creator.
+        """
+        proposal = create_taxon_proposal(
+            taxon=self.taxonomy,
+            taxon_group=self.taxon_group,
+            creator=self.normal_user,
+        )
+        self.assertEqual(proposal.last_modified_by, self.normal_user)
+
+        proposal.approve(self.superuser, suppress_emails=True)
+
+        taxonomy = Taxonomy.objects.get(id=self.taxonomy.id)
+        self.assertEqual(taxonomy.last_modified_by, self.normal_user)
+
+    def test_reject_via_api_does_not_update_last_modified_by(self):
+        """
+        Rejecting a proposal via the review API must not change last_modified_by
+        on the proposal.
+        """
+        proposal = create_taxon_proposal(
+            taxon=self.taxonomy,
+            taxon_group=self.taxon_group,
+            creator=self.normal_user,
+        )
+        update_taxon_proposal(
+            proposal=proposal,
+            data={'canonical_name': 'API Reject Edit'},
+            user=self.user_2,
+        )
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.last_modified_by, self.user_2)
+
+        self.client.login(username='testuser', password='password')
+        url = reverse(
+            'review-taxon-proposal',
+            kwargs={'taxonomy_update_proposal_id': proposal.pk},
+        )
+        response = self.client.put(
+            url,
+            {'action': 'reject', 'comments': 'rejected by expert'},
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, 'rejected')
+        self.assertEqual(
+            proposal.last_modified_by,
+            self.user_2,
+            'Rejection must not overwrite last_modified_by',
+        )

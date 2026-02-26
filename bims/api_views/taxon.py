@@ -429,6 +429,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 is_validated=True
             ).exists():
                 taxonomy.owner = self.request.user
+                taxonomy.last_modified_by = self.request.user
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)
 
@@ -456,7 +457,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'biographic_distributions',
                     'accepted_taxonomy',
                     'owner',
-                    'parent'
+                    'parent',
+                    'last_modified_by',
                 ]
             )
             proposal_author = author_name or taxonomy.author
@@ -472,6 +474,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     taxon_group_under_review=taxon_group,
                     author=proposal_author,
                     iucn_status=taxonomy.iucn_status,
+                    last_modified_by=self.request.user,
                     **taxonomy_data
                 )
             )

@@ -1515,6 +1515,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'species_group',
                 'gbif_key',
                 'fada_id',
+                'last_modified_by',
                 'verified',
             )
         }),
