@@ -599,15 +599,16 @@ class AbstractTaxonomy(AbstractValidation):
             return self.last_modified_by
 
         # For legacy data
-        from bims.models.taxonomy_update_proposal import (
-            TaxonomyUpdateProposal
-        )
-        taxon_proposal = TaxonomyUpdateProposal.objects.filter(
-            original_taxonomy=self
-        ).exclude(status='rejected').order_by('-id')
-        if taxon_proposal.exists():
-            latest = taxon_proposal.first()
-            return latest.last_modified_by or latest.collector_user
+        if isinstance(self, Taxonomy):
+            from bims.models.taxonomy_update_proposal import (
+                TaxonomyUpdateProposal
+            )
+            taxon_proposal = TaxonomyUpdateProposal.objects.filter(
+                original_taxonomy=self
+            ).exclude(status='rejected').order_by('-id')
+            if taxon_proposal.exists():
+                latest = taxon_proposal.first()
+                return latest.last_modified_by or latest.collector_user
 
         from easyaudit.models import CRUDEvent
         crud_event = CRUDEvent.objects.filter(
@@ -615,6 +616,15 @@ class AbstractTaxonomy(AbstractValidation):
             object_id=self.id,
             event_type=CRUDEvent.UPDATE
         ).order_by('-datetime')
+        if not crud_event.exists():
+            from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
+            if isinstance(self, TaxonomyUpdateProposal):
+                orig_taxon = self.original_taxonomy
+                crud_event = CRUDEvent.objects.filter(
+                    content_type__model=orig_taxon._meta.model_name,
+                    object_id=orig_taxon.id,
+                    event_type=CRUDEvent.UPDATE
+                ).order_by('-datetime')
 
         if crud_event.exists():
             return crud_event.first().user

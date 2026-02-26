@@ -42,6 +42,9 @@ class AddNewTaxonTestCase(FastTenantTestCase):
         self.assertTrue('id' in response.data)
         self.assertTrue('taxon_name' in response.data)
         self.assertEqual(response.data['taxon_name'], 'Mocked Canonical Name')
+        from bims.models import Taxonomy
+        taxonomy = Taxonomy.objects.get(id=response.data['id'])
+        self.assertEqual(taxonomy.last_modified_by, self.user)
 
     @patch('bims.api_views.taxon.update_taxonomy_from_gbif', side_effect=mock_update_taxonomy_from_gbif)
     def test_add_new_taxon_without_gbif_key(self, mock_update):
@@ -57,6 +60,9 @@ class AddNewTaxonTestCase(FastTenantTestCase):
         self.assertTrue('id' in response.data)
         self.assertTrue('taxon_name' in response.data)
         self.assertEqual(response.data['taxon_name'], 'Test Taxon Without GBIF')
+        from bims.models import Taxonomy
+        taxonomy = Taxonomy.objects.get(id=response.data['id'])
+        self.assertEqual(taxonomy.last_modified_by, self.user)
 
         data = {
             'taxonName': 'Test Taxon Without GBIF 2',
