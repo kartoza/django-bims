@@ -33,6 +33,9 @@ from bims.models.algae_data import AlgaeData
 from bims.models.survey import SurveyData, SurveyDataValue, Survey
 from bims.scripts.collection_csv_keys import *  # noqa
 from bims.models.location_context_group import LocationContextGroup
+from bims.models.location_context_filter_group_order import (
+    LocationContextFilterGroupOrder
+)
 from bims.models.taxonomy import Taxonomy
 
 ORIGIN = {
@@ -1074,7 +1077,31 @@ class BioCollectionOneRowSerializer(
                 'parks_and_mpas', 'sanparks_and_mpas',
                 'sanparks_mpas', 'parks_mpas'
             }
-            for grp in LocationContextGroup.objects.filter(filters):
+            matching_groups = list(LocationContextGroup.objects.filter(filters))
+            if matching_groups:
+                matching_group_ids = [g.id for g in matching_groups]
+                ordered_group_ids = list(
+                    LocationContextFilterGroupOrder.objects
+                    .filter(group_id__in=matching_group_ids)
+                    .order_by('filter__display_order', 'group_display_order')
+                    .values_list('group_id', flat=True)
+                    .distinct()
+                )
+                group_lookup = {g.id: g for g in matching_groups}
+                seen = set()
+                ordered_groups = []
+                for gid in ordered_group_ids:
+                    if gid not in seen and gid in group_lookup:
+                        ordered_groups.append(group_lookup[gid])
+                        seen.add(gid)
+                # Append groups not referenced in LocationContextFilterGroupOrder
+                for grp in matching_groups:
+                    if grp.id not in seen:
+                        ordered_groups.append(grp)
+            else:
+                ordered_groups = []
+
+            for grp in ordered_groups:
                 if (grp.key and grp.key.lower() in park_keys) or (
                         'park' in grp.name.lower() and 'mpa' in grp.name.lower()
                 ):
