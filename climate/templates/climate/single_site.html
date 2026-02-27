@@ -117,8 +117,8 @@
                                 <thead>
                                 <tr>
                                     <th></th>
-                                    <th>Average over record period</th>
-                                    <th>Average for (date range selected)</th>
+                                    <th>Average across all available data</th>
+                                    <th>Average across selected date range</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -231,10 +231,10 @@
                     {% endif %}
                     <i data-download-title="Monthly Climate Summary"
                        data-toggle="tooltip" data-placement="left"
-                       title="Download monthly summary"
-                       class="fa fa-download pull-right download-icon download-table"></i>
+                       title="Download monthly summary (CSV)"
+                       class="fa fa-download pull-right download-icon download-monthly-csv"></i>
                 </div>
-                <div class="table-responsive">
+                <div id="monthly-climate-summary-container" class="table-responsive">
                     <table class="table table-striped table-bordered table-sm">
                         <thead>
                         <tr>
@@ -326,6 +326,12 @@
             });
             let map = null;
             map = createDashboardMap(map, coordinates);
+
+            // Monthly Climate Summary CSV download
+            $('.download-monthly-csv').click(function() {
+                const title = $(this).data('downloadTitle') || 'Monthly Climate Summary';
+                exportTableToCSV(title + '.csv', 'monthly-climate-summary-container');
+            });
 
             // Daily CSV download for private users
             $('.download-daily-csv').click(function() {
