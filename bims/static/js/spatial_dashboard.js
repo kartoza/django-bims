@@ -572,8 +572,19 @@
                 'D', 'NT', 'LR/cd', 'LR/nt', 'CA', 'RA', 'LC', 'LR/lc'
             ];
 
+            const filteredModules = modules.filter(function (module) {
+                return (module.cons_status || []).reduce(function (sum, item) {
+                    return sum + (item.count || 0);
+                }, 0) > 0;
+            });
+            if (filteredModules.length === 0) {
+                consChartPerModuleEl.parentNode.innerHTML = '<div class="spatial-dashboard-placeholder">No results found.</div>';
+                setSectionState(consPerModuleSection, 'ready');
+                return;
+            }
+
             var categoryMap = {};
-            modules.forEach(function (module) {
+            filteredModules.forEach(function (module) {
                 (module.cons_status || []).forEach(function (item) {
                     var key = item.name || item.category || 'Unknown';
                     if (!categoryMap[key]) {
@@ -592,8 +603,8 @@
                 if (idxB === -1) idxB = CATEGORY_ORDER.length;
                 return idxA - idxB;
             });
-            const moduleLabels = modules.map(function (module) { return module.name; });
-            const totals = modules.map(function (module) {
+            const moduleLabels = filteredModules.map(function (module) { return module.name; });
+            const totals = filteredModules.map(function (module) {
                 return (module.cons_status || []).reduce(function (sum, item) {
                     return sum + (item.count || 0);
                     }, 0);
@@ -604,11 +615,8 @@
                     backgroundColor: categoryMap[category].colour,
                     borderColor: '#555555',
                     borderWidth: 1,
-                    data: modules.map(function (module, idx) {
+                    data: filteredModules.map(function (module, idx) {
                         const total = totals[idx] || 0;
-                        if (total === 0) {
-                            return 0;
-                        }
                         const match = (module.cons_status || []).find(function (item) {
                             return (item.name || item.category || 'Unknown') === category;
                         });

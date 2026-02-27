@@ -179,6 +179,12 @@ def _build_rli_output(per_module_year, aggregate_year):
 
     series = []
     for mod, points in module_series.items():
+        # Skip modules where no point has any real IUCN category assigned
+        # (all taxa were Not Evaluated, NE, NA, or otherwise unrecognised).
+        # NE/''/unknown taxa are excluded before populating `categories`, so
+        # an empty categories dict across all points means no real assessment.
+        if not any(point['categories'] for point in points):
+            continue
         series.append({
             'name': mod,
             'points': sorted(points, key=lambda x: x['year']),
