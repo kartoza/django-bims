@@ -45,6 +45,7 @@ ORIGIN = {
 
 logger = logging.getLogger(__name__)
 TEMPLATE_HEADER_KEYS = 'upload_template_headers'
+SANPARK_PARK_NAME = 'SANParks and MPAs'
 
 
 class BioCollectionSerializer(serializers.ModelSerializer):
@@ -797,10 +798,10 @@ class BioCollectionOneRowSerializer(
                 return g
         try:
             grp = LocationContextGroup.objects.filter(
-                Q(key__in=list(park_keys)) | Q(name__iexact='SANParks and MPAs')
+                Q(key__in=list(park_keys)) | Q(name__iexact=SANPARK_PARK_NAME)
             ).first()
             if grp:
-                display_name = 'SANParks and MPAs'
+                display_name = SANPARK_PARK_NAME
                 if 'header' not in self.context:
                     self.context['header'] = []
                 if display_name not in self.context['header']:

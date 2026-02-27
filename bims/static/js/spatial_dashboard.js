@@ -298,18 +298,21 @@
                 });
                 siteLayerSource.refresh();
             }
+            setSectionState(mapSection, 'ready');
             if (Array.isArray(extent) && extent.length === 4 && map) {
                 const ext = ol.proj.transformExtent(
                     extent,
                     ol.proj.get('EPSG:4326'),
                     ol.proj.get('EPSG:3857')
                 );
-                map.getView().fit(ext, map.getSize());
-                if (map.getView().getZoom() > 8) {
-                    map.getView().setZoom(8);
-                }
+                setTimeout(function () {
+                    map.updateSize();
+                    map.getView().fit(ext, map.getSize());
+                    if (map.getView().getZoom() > 8) {
+                        map.getView().setZoom(8);
+                    }
+                }, 0);
             }
-            setSectionState(mapSection, 'ready');
         }, function () {
             mapError.textContent = 'Failed to load map.';
             setSectionState(mapSection, 'error');
@@ -553,6 +556,7 @@
         const consPerModuleSection = document.getElementById('cons-status-per-module-section');
         const consChartPerModuleEl = document.getElementById('cons-status-chart-per-module');
         const consErrorPerModule = consSection.querySelector('[data-error]');
+        var consPerModuleData = null;
         setSectionState(consPerModuleSection, 'loading');
         fetchWithPoll('/api/spatial-dashboard/cons-status/' + queryString, function (data) {
             const modules = (data && data.modules) ? data.modules : [];
@@ -613,6 +617,11 @@
                     })
                 };
             });
+            consPerModuleData = {
+                moduleLabels: moduleLabels,
+                categories: categories,
+                datasets: datasets
+            };
             if (typeof Chart !== 'undefined') {
                 var barHeight = 30;
                 var chartHeight = Math.max(160, moduleLabels.length * (barHeight + 10) + 60);
@@ -755,6 +764,29 @@
             setSectionState(rliSection, 'error');
         });
 
+        var speciesDownloadBtn = document.getElementById('species-download-btn');
+        var speciesDownloadStatus = document.getElementById('species-download-status');
+        if (speciesDownloadBtn) {
+            speciesDownloadBtn.addEventListener('click', function () {
+                showDownloadPopup('CSV', 'Species List', function (downloadRequestId) {
+                    speciesDownloadBtn.disabled = true;
+                    speciesDownloadStatus.textContent = '';
+
+                    $('#alertModalBody').html(downloadRequestMessage);
+                    $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+
+                    var sep = queryString ? '&' : '?';
+                    var downloadUrl = '/api/spatial-dashboard/species-download/' + queryString +
+                        sep + 'downloadRequestId=' + (downloadRequestId || '');
+
+                    fetchWithPoll(downloadUrl,
+                        function () { speciesDownloadBtn.disabled = false; },
+                        function () { speciesDownloadBtn.disabled = false; }
+                    );
+                }, false, null, false);
+            });
+        }
+
         document.querySelectorAll('[data-download]').forEach(function (button) {
             button.addEventListener('click', function () {
                 const type = button.getAttribute('data-download');
@@ -807,6 +839,49 @@
                     showDownloadPopup('CHART', 'Red List Index', function () {
                         downloadCanvasAsPng(rliChartEl, 'red-list-index');
                     });
+                }
+                if (type === 'cons-status-per-module') {
+                    showDownloadPopup('CHART', 'Conservation Status Per Module', function () {
+                        downloadCanvasAsPng(consChartPerModuleEl, 'conservation-status-per-module');
+                    });
+                }
+                if (type === 'cons-status-per-module-csv') {
+                    if (!consPerModuleData) {
+                        return;
+                    }
+                    showDownloadPopup('CSV', 'Conservation Status Per Module', function () {
+                        var moduleLabels = consPerModuleData.moduleLabels;
+                        var categories = consPerModuleData.categories;
+                        var datasets = consPerModuleData.datasets;
+
+                        function escapeCell(cell) {
+                            var s = String(cell);
+                            return (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1)
+                                ? '"' + s.replace(/"/g, '""') + '"' : s;
+                        }
+
+                        var rows = [];
+                        rows.push(['Module'].concat(categories).map(escapeCell).join(','));
+                        moduleLabels.forEach(function (moduleName, moduleIdx) {
+                            var row = [moduleName];
+                            categories.forEach(function (category, catIdx) {
+                                var value = datasets[catIdx] ? (datasets[catIdx].data[moduleIdx] || 0) : 0;
+                                row.push(value + '%');
+                            });
+                            rows.push(row.map(escapeCell).join(','));
+                        });
+
+                        var csvContent = rows.join('\n');
+                        var blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+                        var url = URL.createObjectURL(blob);
+                        var link = document.createElement('a');
+                        link.href = url;
+                        link.download = 'conservation-status-per-module.csv';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        URL.revokeObjectURL(url);
+                    }, false);
                 }
                 if (type === 'overview') {
                     showDownloadPopup('CSV', 'Overview', function () {
