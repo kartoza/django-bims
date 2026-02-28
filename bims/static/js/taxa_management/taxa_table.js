@@ -11,6 +11,22 @@ export const taxaTable = (() => {
     let url = '';
     let selectedTaxonGroup = '';
 
+    const FILTER_LABELS = {
+        ranks:             'Rank',
+        origins:           'Origin',
+        tags:              'Tags',
+        bD:                'Biogeographic dist.',
+        author:            'Author',
+        endemism:          'Endemism',
+        taxonomic_status:  'Tax. status',
+        cons_status:       'Cons. status',
+        validated:         'Validated',
+        family:            'Family',
+        genus:             'Genus',
+        species:           'Species',
+        parent:            'Parent taxon',
+    };
+
     function convertAuthorStringToArray(authorString) {
         authorString = decodeURIComponent(authorString)
         // Split the string by comma between quotes
@@ -133,52 +149,43 @@ export const taxaTable = (() => {
 
     function handleUrlParameters() {
         let taxonName = '';
+        url = '/api/taxa-list/?';
         if (currentSelectedTaxonGroup) {
             $('#sortable').find(`[data-id="${currentSelectedTaxonGroup}"]`).addClass('selected');
-            url = `/api/taxa-list/?taxonGroup=${currentSelectedTaxonGroup}`
+            url += `taxonGroup=${currentSelectedTaxonGroup}`;
         }
 
         let validated = 'True'
         if (urlParams.get('validated')) {
             validated = urlParams.get('validated');
         }
-        if (url) {
-            url += `&validated=${validated}`;
-        }
+        url += `&validated=${validated}`;
         $(`input[name="validated"][value="${validated}"]`).prop('checked', true);
 
         let tagFilterType = 'OR';
         if (urlParams.get('tagFT')) {
             tagFilterType = urlParams.get('tagFT');
         }
-        if (url) {
-            url += `&tagFT=${tagFilterType}`;
-        }
+        url += `&tagFT=${tagFilterType}`;
         $(`input[name="tag-filter-type"][value="${tagFilterType}"]`).prop('checked', true);
 
         let bDFilterType = 'OR';
         if (urlParams.get('bDFT')) {
             bDFilterType = urlParams.get('bDFT');
         }
-        if (url) {
-            url += `&bDFT=${bDFilterType}`;
-        }
+        url += `&bDFT=${bDFilterType}`;
         $(`input[name="biographic-distributions-filter-type"][value="${bDFilterType}"]`).prop('checked', true);
 
         if (urlParams.get('taxon')) {
             taxonName = urlParams.get('taxon');
-            if (url) {
-                url += `&taxon=${taxonName}`
-                $('#taxon-name-input').val(taxonName)
-                $clearSearchBtn.show();
-            }
+            url += `&taxon=${taxonName}`;
+            $('#taxon-name-input').val(taxonName);
+            $clearSearchBtn.show();
         }
         if (urlParams.get('o')) {
             const order = urlParams.get('o');
-            if (url) {
-                $(`.sort-button[data-order="${order}"]`).addClass('sort-button-selected');
-                url += `&o=${order}`
-            }
+            $(`.sort-button[data-order="${order}"]`).addClass('sort-button-selected');
+            url += `&o=${order}`;
         }
         if (urlParams.get('page')) {
             url += `&page=${urlParams.get('page')}`;
@@ -344,6 +351,7 @@ export const taxaTable = (() => {
             $clearSearchBtn.show();
             $('#total-selected-filter').html(totalAllFilters);
         }
+        renderActiveFilters();
     }
 
     function handleFilters(event) {
@@ -419,6 +427,44 @@ export const taxaTable = (() => {
         }
         urlParams = insertParam('taxon', '', true, false, urlParams);
         document.location.search = urlParams;
+    }
+
+    function renderActiveFilters() {
+        const $container = $('#active-filters-container');
+        $container.empty();
+
+        const taxonSearch = $('#taxon-name-input').val();
+        if (taxonSearch) {
+            $container.append(
+                `<span class="active-filter-pill"><span class="filter-pill-label">Search</span>${taxonSearch}</span>`
+            );
+        }
+
+        $.each(filterSelected, function (key, value) {
+            const label = FILTER_LABELS[key] || key;
+            let displayValue;
+            if (key === 'validated') {
+                displayValue = 'Unvalidated';
+            } else if (Array.isArray(value)) {
+                displayValue = value.join(', ');
+            } else {
+                displayValue = value;
+            }
+            $container.append(
+                `<span class="active-filter-pill"><span class="filter-pill-label">${label}</span>${displayValue}</span>`
+            );
+        });
+    }
+
+    function removeValidatedFilter() {
+        if (!filterSelected['validated']) return;
+        delete filterSelected['validated'];
+        totalAllFilters = Math.max(0, totalAllFilters - 1);
+        $('#total-selected-filter').html(totalAllFilters || '');
+        if (Object.keys(filterSelected).length === 0) {
+            $clearSearchBtn.hide();
+        }
+        renderActiveFilters();
     }
 
     function handleSearch(event) {
@@ -563,6 +609,8 @@ export const taxaTable = (() => {
         init,
         handleRemoveTaxonFromGroup,
         handleRejectTaxon,
-        handleValidateTaxon
+        handleValidateTaxon,
+        removeValidatedFilter,
+        renderActiveFilters
     };
 })();
