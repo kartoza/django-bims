@@ -202,7 +202,7 @@ class TaxonSerializer(serializers.ModelSerializer):
         species_name = ''
         if not validated:
             species_name = obj.species_name
-        if obj.hierarchical_data and 'species_name' in obj.hierarchical_data:
+        if not species_name and obj.hierarchical_data and 'species_name' in obj.hierarchical_data:
             species_name = obj.hierarchical_data['species_name']
         if not species_name:
             species_name = obj.species_name
@@ -496,7 +496,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     def get_other_group_count(self, obj):
         """Number of groups this taxon belongs to, excluding the current taxon group."""
         taxon_group_id = self.context.get('taxon_group_id')
-        qs = TaxonGroupTaxonomy.objects.filter(taxonomy=obj)
+        qs = TaxonGroupTaxonomy.objects.filter(taxonomy=self.taxonomy_obj(obj))
         if taxon_group_id:
             qs = qs.exclude(taxongroup_id=taxon_group_id)
         return qs.values('taxongroup').distinct().count()
@@ -650,15 +650,18 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         return ''
 
     def get_taxa_count(self, obj: TaxonGroup):
+        from bims.templatetags.site import is_fada_site
+        fada = is_fada_site()
         unique_taxonomy_ids = set()
 
         def collect_taxonomy_ids(taxon_group):
-            ids = TaxonGroupTaxonomy.objects.filter(
-                taxongroup=taxon_group
-            ).values_list('id', flat=True)
-            unique_taxonomy_ids.update(ids)
-            for child in TaxonGroup.objects.filter(
-                    parent=taxon_group):
+            qs = TaxonGroupTaxonomy.objects.filter(taxongroup=taxon_group)
+            if fada:
+                qs = qs.exclude(
+                    taxonomy__fada_id__isnull=True
+                ).exclude(taxonomy__fada_id='')
+            unique_taxonomy_ids.update(qs.values_list('id', flat=True))
+            for child in TaxonGroup.objects.filter(parent=taxon_group):
                 collect_taxonomy_ids(child)
 
         collect_taxonomy_ids(obj)

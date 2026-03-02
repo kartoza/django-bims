@@ -445,6 +445,11 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 except (Taxonomy.DoesNotExist, ValueError):
                     pass
 
+            from bims.templatetags.site import is_fada_site
+            if is_fada_site() and not taxonomy.fada_id:
+                taxonomy.fada_id = f'FADA-{taxonomy.id}'
+                taxonomy.save(update_fields=['fada_id'])
+
         with transaction.atomic():
             taxonomy_data = model_to_dict(
                 taxonomy,
@@ -730,6 +735,12 @@ class TaxaList(LoginRequiredMixin, APIView):
                     )
             except ValueError:
                 pass
+        from bims.templatetags.site import is_fada_site
+        if is_fada_site():
+            taxon_list = taxon_list.exclude(
+                Q(fada_id__isnull=True) | Q(fada_id='')
+            )
+
         if order and not summary_only:
             if 'total_records' in order:
                 taxon_list = taxon_list.annotate(

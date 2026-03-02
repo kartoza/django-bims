@@ -117,6 +117,9 @@ def process_download_csv_taxa_list(
         taxa_qs = Taxonomy.objects.filter(id__in=taxa_ids)
         if order_by:
             taxa_qs = taxa_qs.order_by(order_by)
+        if is_fada:
+            from django.db.models import Q
+            taxa_qs = taxa_qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
     else:
         taxa_qs = TaxaList.get_taxa_by_parameters(request_get)
     try:
@@ -194,7 +197,7 @@ def process_download_csv_taxa_list(
         return _updated_headers
 
     raw_headers = []
-    for taxon in taxa_qs.iterator():
+    for taxon in taxa_qs.iterator(chunk_size=2000):
         ser = TaxaCSVSerializer(taxon)
         row = ser.data
 
@@ -232,6 +235,9 @@ def process_download_csv_taxa_list(
             taxa_qs_write = Taxonomy.objects.filter(id__in=taxa_ids)
             if order_by:
                 taxa_qs_write = taxa_qs_write.order_by(order_by)
+            if is_fada:
+                from django.db.models import Q
+                taxa_qs_write = taxa_qs_write.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
         else:
             taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
         try:
@@ -243,7 +249,7 @@ def process_download_csv_taxa_list(
             from django.urls import reverse
             current_domain = _current_domain()
 
-        for taxon in taxa_qs_write.iterator():
+        for taxon in taxa_qs_write.iterator(chunk_size=2000):
             ser = TaxaCSVSerializer(taxon)
             row = ser.data
 
