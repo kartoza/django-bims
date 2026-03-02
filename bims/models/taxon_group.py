@@ -330,17 +330,13 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
     if not issubclass(sender, TaxonGroup):
         return
 
-    # Skip background tasks during tests
-    if getattr(settings, 'TESTING', False):
-        return
+    if not getattr(settings, 'TESTING', False):
+        schema_name = str(connection.schema_name)
+        generate_module_summary.delay(schema_name)
 
-    # Queue module summary generation in background
-    schema_name = str(connection.schema_name)
-    generate_module_summary.delay(schema_name)
-
-    taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
-    if taxon_group_cache:
-        update_taxon_group_cache.delay(delete_first=True)
+        taxon_group_cache = get_cache(TAXON_GROUP_CACHE)
+        if taxon_group_cache:
+            update_taxon_group_cache.delay(delete_first=True)
 
     if not instance.site:
         return
