@@ -82,6 +82,9 @@ ul.pagination li.current a {
 .taxon-group-title {
     display: flex;
     font-size: 1.3em;
+    max-width: 175px;
+    word-break: break-word;
+    white-space: normal;
 }
 
 .update-logo-btn {

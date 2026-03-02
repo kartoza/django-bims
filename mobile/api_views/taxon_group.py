@@ -66,12 +66,15 @@ class TaxonGroupTotalValidated(APIView):
         """
         Recursively aggregate counts for the given taxon group + children.
         """
+        from bims.templatetags.site import is_fada_site
         accepted_q, synonym_q = self._status_queries()
 
         is_user_expert = is_expert(self.request.user, get_object_or_404(TaxonGroup, id=taxon_group.id))
         can_view_unvalidated = self.request.user.is_superuser or is_user_expert
 
         qs = taxon_group.taxonomies.all()
+        if is_fada_site():
+            qs = qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
 
         # Validated
         self.accepted_validated += qs.filter(

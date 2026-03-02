@@ -560,7 +560,13 @@ def fetch_all_species_from_gbif(
     except Exception:
         status = ""
 
-    if is_synonym and species_data and 'acceptedKey' in species_data and 'synonym' in status:
+    if (
+            is_synonym and
+            not preserve_taxonomic_status and
+            species_data and
+            'acceptedKey' in species_data and
+            'synonym' in status
+    ):
         ak = species_data['acceptedKey']
         if ak and ak != taxonomy.gbif_key and ak not in _visited:
             accepted_preexists = Taxonomy.objects.filter(gbif_key=ak).exists()

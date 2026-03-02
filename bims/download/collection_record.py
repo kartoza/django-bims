@@ -26,7 +26,7 @@ def queryset_iterator(qs, batch_size=500, gc_collect=True):
             eof = True
         for obj in qs.filter(
                 pk__in=primary_key_buffer
-        ).order_by('pk').iterator():
+        ).order_by('pk').iterator(chunk_size=batch_size):
             yield obj
         if gc_collect:
             gc.collect()

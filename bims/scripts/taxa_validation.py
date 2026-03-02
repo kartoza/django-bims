@@ -1,11 +1,13 @@
 """Taxa validation script for validating CSV uploads without importing.
 
 This script validates taxa CSV files for:
+- Required and recommended header columns
 - Duplicate GBIF keys within the file
 - Duplicate FADA IDs within the file
 - Existing GBIF keys in the database
 - Existing FADA IDs in the database
 - GBIF key validation against GBIF API (rank and taxon name)
+- Missing FADA ID per row (on FADA sites)
 """
 import csv
 import copy
@@ -14,7 +16,10 @@ import logging
 from io import StringIO
 from collections import defaultdict
 
-from bims.scripts.species_keys import GBIF_LINK, GBIF_URL, FADA_ID, TAXON, TAXON_RANK, GENUS, SPECIES
+from bims.scripts.species_keys import (
+    GBIF_LINK, GBIF_URL, FADA_ID, TAXON, TAXON_RANK, GENUS, SPECIES,
+    TAXONOMIC_STATUS, ACCEPTED_TAXON, SYNONYM, KINGDOM
+)
 from bims.scripts.data_upload import FALLBACK_ENCODINGS
 from bims.models import Taxonomy, UploadSession
 from bims.utils.domain import get_current_domain
@@ -32,6 +37,7 @@ class TaxaValidator:
     """Validates taxa data without creating records."""
 
     def __init__(self, upload_session):
+        from bims.templatetags.site import is_fada_site
         self.upload_session = upload_session
         self.file_gbif_keys = defaultdict(list)  # {gbif_key: [row_numbers]}
         self.file_fada_ids = defaultdict(list)   # {fada_id: [row_numbers]}
@@ -41,11 +47,18 @@ class TaxaValidator:
         self.headers = []
         self.total_rows = 0
         self.domain = get_current_domain()
+        self.is_fada = is_fada_site()
 
     @staticmethod
     def row_value(row, key):
-        """Get cleaned value from row."""
+        """Get cleaned value from row, with case-insensitive key fallback."""
         value = row.get(key, '')
+        if not value:
+            key_lower = key.lower().strip()
+            for k, v in row.items():
+                if k.lower().strip() == key_lower:
+                    value = v
+                    break
         if value:
             value = str(value).strip()
         return value
@@ -88,6 +101,32 @@ class TaxaValidator:
                 warnings.append(warning_message)
         return warnings
 
+    def _check_required_headers(self):
+        """Check that important headers are present in the CSV.
+
+        Returns (errors, warnings) as lists of message strings.
+        """
+        errors = []
+        warnings = []
+        headers_lower = {h.lower().strip() for h in self.headers}
+
+        # At least one taxon name column is required
+        name_cols = [TAXON, GENUS, SPECIES]
+        if not any(col.lower() in headers_lower for col in name_cols):
+            errors.append(
+                f"Missing taxon name column — expected at least one of: "
+                f"{', '.join(name_cols)}"
+            )
+
+        if TAXON_RANK.lower() not in headers_lower:
+            errors.append(f"Missing required column: '{TAXON_RANK}'")
+        if TAXONOMIC_STATUS.lower() not in headers_lower:
+            errors.append(f"Missing recommended column: '{TAXONOMIC_STATUS}'")
+        if self.is_fada and FADA_ID.lower() not in headers_lower:
+            errors.append(f"Missing required column for FADA site: '{FADA_ID}'")
+
+        return errors, warnings
+
     def _normalize_name(self, name):
         """Normalize taxon name for comparison."""
         if not name:
@@ -108,6 +147,39 @@ class TaxaValidator:
             return genus
 
         return ''
+
+    def _check_synonym_accepted_taxon(self, row):
+        """Check that the accepted taxon exists in the system for synonym taxa.
+
+        Returns a list of error messages.
+        """
+        messages = []
+
+        taxonomic_status = self.row_value(row, TAXONOMIC_STATUS).upper()
+        synonym_flag = self.row_value(row, SYNONYM).lower()
+
+        is_synonym = (
+            'SYNONYM' in taxonomic_status or
+            synonym_flag in ('true', 'yes', '1')
+        )
+
+        if not is_synonym:
+            return messages
+
+        accepted_taxon_name = self.row_value(row, ACCEPTED_TAXON)
+        if not accepted_taxon_name:
+            return messages
+
+        exists = Taxonomy.objects.filter(
+            canonical_name__iexact=accepted_taxon_name
+        ).exists()
+
+        if not exists:
+            messages.append(
+                f"ERROR: Accepted taxon '{accepted_taxon_name}' is not in the system"
+            )
+
+        return messages
 
     def _validate_gbif_key(self, row, gbif_key):
         """Validate GBIF key against GBIF API. Returns list of messages."""
@@ -201,6 +273,10 @@ class TaxaValidator:
                 f"ERROR: Duplicate FADA ID {fada_id} (also in row(s) {', '.join(map(str, other_rows))})"
             )
 
+        # On FADA sites, every taxon must have a FADA ID
+        if self.is_fada and not fada_id:
+            messages.append("ERROR: FADA ID is missing")
+
         # Check for within-file duplicates (same taxon name + same rank = ERROR)
         taxon_name = self._get_input_taxon_name(row)
         taxon_rank = self.row_value(row, TAXON_RANK)
@@ -220,6 +296,10 @@ class TaxaValidator:
         # Validate GBIF key against GBIF API (rank and name check)
         gbif_validation = self._validate_gbif_key(row, gbif_key)
         messages.extend(gbif_validation)
+
+        # Check that accepted taxon exists in the system for synonym taxa
+        synonym_validation = self._check_synonym_accepted_taxon(row)
+        messages.extend(synonym_validation)
 
         return messages
 
@@ -261,6 +341,20 @@ class TaxaValidator:
             self.total_rows = len(self.all_rows)
         except Exception as e:
             self.upload_session.error_notes = f"Error parsing CSV: {e}"
+            self.upload_session.canceled = True
+            self.upload_session.save()
+            return
+
+        header_errors, header_warnings = self._check_required_headers()
+        if header_errors or header_warnings:
+            notes = []
+            if header_errors:
+                notes.extend(header_errors)
+            if header_warnings:
+                notes.extend(header_warnings)
+            self.upload_session.error_notes = '; '.join(notes)
+            self.upload_session.save()
+        if header_errors:
             self.upload_session.canceled = True
             self.upload_session.save()
             return
