@@ -24,6 +24,7 @@ SPATIAL_DASHBOARD_CONS_STATUS = 'spatial_dashboard_cons_status'
 SPATIAL_DASHBOARD_RLI = 'spatial_dashboard_rli'
 SPATIAL_DASHBOARD_MAP = 'spatial_dashboard_map'
 SPATIAL_DASHBOARD_SUMMARY = 'spatial_dashboard_summary'
+SPATIAL_DASHBOARD_SPECIES_DOWNLOAD = 'spatial_dashboard_species_download'
 TAXON_SUMMARY = 'taxon_summary'
 
 SEARCH_PROCESSING = 'processing'
@@ -85,6 +86,7 @@ class SearchProcess(models.Model):
         (SPATIAL_DASHBOARD_RLI, 'Spatial Dashboard Red List Index'),
         (SPATIAL_DASHBOARD_MAP, 'Spatial Dashboard Map'),
         (SPATIAL_DASHBOARD_SUMMARY, 'Spatial Dashboard Summary'),
+        (SPATIAL_DASHBOARD_SPECIES_DOWNLOAD, 'Spatial Dashboard Species Download'),
     )
     objects = SearchProcessManager()
 

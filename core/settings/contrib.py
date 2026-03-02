@@ -327,7 +327,9 @@ DJANGO_EASY_AUDIT_UNREGISTERED_CLASSES_EXTRA = [
     'bims.ImportTask',
     'bims.IngestedData',
     'bims.CustomTaggedUpdateTaxonomy',
-    'bims.TaxonGroupTaxonomy'
+    'bims.TaxonGroupTaxonomy',
+    'bims.HarvestSession',
+    'django_celery_beat.PeriodicTask',
 ]
 
 DJANGO_EASY_AUDIT_CRUD_EVENT_NO_CHANGED_FIELDS_SKIP = True

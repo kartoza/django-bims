@@ -179,6 +179,12 @@ def _build_rli_output(per_module_year, aggregate_year):
 
     series = []
     for mod, points in module_series.items():
+        # Skip modules where no point has any real IUCN category assigned
+        # (all taxa were Not Evaluated, NE, NA, or otherwise unrecognised).
+        # NE/''/unknown taxa are excluded before populating `categories`, so
+        # an empty categories dict across all points means no real assessment.
+        if not any(point['categories'] for point in points):
+            continue
         series.append({
             'name': mod,
             'points': sorted(points, key=lambda x: x['year']),
@@ -583,6 +589,142 @@ def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
                                 values.setdefault(module, 0)
 
             results = summary
+            search_process.set_status(SEARCH_FINISHED, False)
+            search_process.save_to_file(results)
+            return
+    logger.info(
+        'Search %s is already being processed by another worker',
+        search_process.process_id
+    )
+
+
+@shared_task(name='bims.tasks.spatial_dashboard_species_download', queue='search')
+def spatial_dashboard_species_download(search_parameters=None, search_process_id=None):
+    import csv
+    from bims.utils.celery import memcache_lock
+    from bims.api_views.search import CollectionSearch
+    from bims.models.taxonomy import Taxonomy
+    from bims.models.iucn_status import IUCNStatus
+    from bims.models.location_context import LocationContext
+    from bims.models.location_context_group import LocationContextGroup
+    from bims.views.download_csv_taxa_list import is_sanparks_project
+    from bims.serializers.bio_collection_serializer import SANPARK_PARK_NAME
+    from bims.models.search_process import (
+        SearchProcess,
+        SEARCH_PROCESSING,
+        SEARCH_FINISHED
+    )
+    from django.db.models import Q
+
+    PARK_GROUP_KEYS = {
+        'park_or_mpa_name', 'park_or_mpa',
+        'parks_and_mpas', 'sanparks_and_mpas',
+        'sanparks_mpas', 'parks_mpas'
+    }
+
+    if search_parameters is None:
+        search_parameters = {}
+
+    try:
+        search_process = SearchProcess.objects.get(id=search_process_id)
+    except SearchProcess.DoesNotExist:
+        return
+
+    lock_id = '{0}-lock-{1}'.format(
+        search_process.file_path,
+        search_process.process_id
+    )
+    oid = '{0}'.format(search_process.process_id)
+    with memcache_lock(lock_id, oid) as acquired:
+        if acquired:
+            search_process.set_status(SEARCH_PROCESSING)
+
+            if search_process.requester and 'requester' not in search_parameters:
+                search_parameters['requester'] = search_process.requester.id
+
+            search = CollectionSearch(search_parameters)
+            collection_results = search.process_search()
+
+            park_group = LocationContextGroup.objects.filter(
+                Q(key__in=list(PARK_GROUP_KEYS)) | Q(name__iexact=SANPARK_PARK_NAME)
+            ).first()
+
+            taxon_parks = {}
+            if park_group:
+                site_ids = list(
+                    collection_results.values_list('site_id', flat=True).distinct()
+                )
+                site_park = {}
+                for lc in LocationContext.objects.filter(
+                    site_id__in=site_ids,
+                    group=park_group
+                ).values('site_id', 'value'):
+                    val = (lc['value'] or '').strip()
+                    if val:
+                        site_park[lc['site_id']] = val
+
+                for row in collection_results.values(
+                    'taxonomy_id', 'site_id'
+                ).distinct():
+                    tid = row['taxonomy_id']
+                    park = site_park.get(row['site_id'], '')
+                    if park:
+                        taxon_parks.setdefault(tid, set()).add(park)
+            else:
+                for row in collection_results.values(
+                    'taxonomy_id', 'site__name'
+                ).distinct():
+                    tid = row['taxonomy_id']
+                    name = (row['site__name'] or '').strip()
+                    if name:
+                        taxon_parks.setdefault(tid, set()).add(name)
+
+            taxa_ids = list(
+                collection_results.values_list('taxonomy_id', flat=True).distinct()
+            )
+
+            category_labels = dict(IUCNStatus.CATEGORY_CHOICES)
+
+            taxa = Taxonomy.objects.filter(
+                id__in=taxa_ids
+            ).select_related(
+                'iucn_status',
+            ).order_by('canonical_name')
+
+            location_col = 'Park Name' if is_sanparks_project() else 'Site Name'
+
+            csv_path = search_process.file_path + '.csv'
+            headers = ['Scientific Name', location_col, 'Conservation Status Global']
+
+            with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=headers)
+                writer.writeheader()
+                for taxon in taxa:
+                    iucn_global = ''
+                    if taxon.iucn_status:
+                        iucn_global = category_labels.get(
+                            taxon.iucn_status.category,
+                            taxon.iucn_status.category
+                        )
+                    writer.writerow({
+                        'Scientific Name': taxon.canonical_name or '',
+                        location_col: ', '.join(sorted(taxon_parks.get(taxon.id, set()))),
+                        'Conservation Status Global': iucn_global,
+                    })
+
+            if search_process.requester:
+                from bims.tasks.email_csv import send_csv_via_email
+                download_request_id = search_parameters.get('downloadRequestId')
+                send_csv_via_email.delay(
+                    user_id=search_process.requester.id,
+                    csv_file=csv_path,
+                    file_name='species-list',
+                    download_request_id=download_request_id
+                )
+
+            results = {
+                'status': SEARCH_FINISHED,
+            }
             search_process.set_status(SEARCH_FINISHED, False)
             search_process.save_to_file(results)
             return
