@@ -325,8 +325,13 @@ def taxon_group_post_save(sender, instance: TaxonGroup, created, **kwargs):
     from bims.tasks.module_summary import generate_module_summary
     from bims.tasks.taxon_group import update_taxon_group_cache
     from django.db import connection
+    from django.conf import settings
 
     if not issubclass(sender, TaxonGroup):
+        return
+
+    # Skip background tasks during tests
+    if getattr(settings, 'TESTING', False):
         return
 
     # Queue module summary generation in background
