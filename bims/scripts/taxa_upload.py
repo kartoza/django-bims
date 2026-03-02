@@ -1207,7 +1207,12 @@ class TaxaProcessor(object):
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'species_group', species_group)
 
             if fada_id:
-                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'fada_id', fada_id)
+                # fada_id is an identifier and must always be applied directly to
+                # the taxonomy, even when proposals are enabled and the taxon is
+                # not yet validated.
+                taxonomy.fada_id = fada_id
+                if use_proposal and proposal is not None:
+                    proposal.fada_id = fada_id
 
             if gbif_key:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'gbif_key', gbif_key)
