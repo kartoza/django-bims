@@ -156,21 +156,17 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         from bims.models import BiologicalCollectionRecord
         from django.db.models import Min
 
-        # Get all GBIF records for this taxon
         gbif_records = BiologicalCollectionRecord.objects.filter(
             taxonomy=obj,
             site__harvested_from_gbif=True,
             site__coordinate_uncertainty_in_meters__isnull=False
         )
 
-        # Check if we have any records
         if not gbif_records.exists():
             return ''
 
-        # Apply the 10,000 threshold rule
         gbif_records = apply_gbif_record_threshold(gbif_records)
 
-        # Get the minimum (lowest) uncertainty
         result = gbif_records.aggregate(
             min_uncertainty=Min('site__coordinate_uncertainty_in_meters')
         )
@@ -189,21 +185,17 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         from bims.models import BiologicalCollectionRecord
         from django.db.models import Min
 
-        # Get all GBIF records for this taxon
         gbif_records = BiologicalCollectionRecord.objects.filter(
             taxonomy=obj,
             site__harvested_from_gbif=True,
             site__coordinate_precision__isnull=False
         )
 
-        # Check if we have any records
         if not gbif_records.exists():
             return ''
 
-        # Apply the 10,000 threshold rule
         gbif_records = apply_gbif_record_threshold(gbif_records)
 
-        # Get the minimum (highest precision = smallest value)
         result = gbif_records.aggregate(
             max_precision=Min('site__coordinate_precision')
         )
@@ -307,6 +299,9 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
+        if not is_sanparks_project():
+            result.pop('gbif_coordinate_uncertainty_m', None)
+            result.pop('gbif_coordinate_precision', None)
         self._ensure_headers(result.keys())
         self._add_additional_attributes(instance, result)
         self._add_tags(instance, result)
