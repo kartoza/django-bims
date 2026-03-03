@@ -25,8 +25,6 @@ FADA_EXCLUDED_COLUMNS = [
     'invasion', 'Invasion',
     'conservation_status_global', 'Conservation status global',
     'conservation_status_national', 'Conservation status national',
-    'gbif_coordinate_uncertainty_m', 'Gbif coordinate uncertainty m',
-    'gbif_coordinate_precision', 'Gbif coordinate precision',
     'cites_listing', 'Cites listing', 'CITES listing',
     # Scientific name and authority is excluded for FADA (author is separate)
     'scientific_name_and_authority', 'Scientific name and authority',
