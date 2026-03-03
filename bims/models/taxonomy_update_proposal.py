@@ -329,6 +329,10 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                         self.original_taxonomy.vernacular_names.clear()
                         self.original_taxonomy.vernacular_names.set(
                             getattr(self, field).all())
+                    elif field == 'endemism' and getattr(self, field) is None:
+                        # Don't overwrite existing endemism with None unless
+                        # the original taxonomy also has no endemism
+                        pass
                     else:
                         setattr(
                             self.original_taxonomy,
