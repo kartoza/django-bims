@@ -352,7 +352,10 @@ class BioCollectionOneRowSerializer(
         return '-'
 
     def get_conservation_status_global(self, obj):
-        if obj.taxonomy.iucn_status:
+        taxon = obj.taxonomy
+        if taxon.is_synonym_or_doubtful and taxon.accepted_taxonomy:
+            taxon = taxon.accepted_taxon
+        if taxon.iucn_status:
             category = dict(IUCNStatus.CATEGORY_CHOICES)
             try:
                 return category[obj.taxonomy.iucn_status.category]
