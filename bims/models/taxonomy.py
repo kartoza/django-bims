@@ -443,6 +443,10 @@ class AbstractTaxonomy(AbstractValidation):
         return ''
 
     @property
+    def is_synonym_or_doubtful(self):
+        return self.taxonomic_status == 'DOUBTFUL' or 'SYNONYM' in self.taxonomic_status
+
+    @property
     def class_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.CLASS.name)
 
@@ -909,6 +913,33 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         update_payload = _extract_iucn_payload(instance)
         if update_payload:
             Taxonomy.objects.filter(pk=accepted.pk).update(**update_payload)
+
+    if (
+        is_synonym
+        and accepted
+        and getattr(accepted, "id", None)
+        and (not instance.iucn_status or not instance.iucn_redlist_id)
+        and _has_meaningful_iucn_data(accepted)
+    ):
+        if not instance.iucn_status and accepted.iucn_status_id:
+            instance.iucn_status_id = accepted.iucn_status_id
+        if not instance.iucn_redlist_id and accepted.iucn_redlist_id:
+            instance.iucn_redlist_id = accepted.iucn_redlist_id
+        if not instance.iucn_data:
+            accepted_data = getattr(accepted, "iucn_data", None)
+            if isinstance(accepted_data, dict) and accepted_data.get("url"):
+                instance.iucn_data = {"url": accepted_data["url"]}
+
+    if (
+        not is_synonym
+        and getattr(instance, "pk", None)
+        and _has_meaningful_iucn_data(instance)
+    ):
+        update_payload = _extract_iucn_payload(instance)
+        if update_payload:
+            for synonym in Taxonomy.objects.filter(accepted_taxonomy=instance):
+                if not _has_meaningful_iucn_data(synonym) or not synonym.iucn_redlist_id:
+                    Taxonomy.objects.filter(pk=synonym.pk).update(**update_payload)
 
 
 class TaxonImage(models.Model):

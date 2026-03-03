@@ -1225,7 +1225,8 @@ class TaxonomyAdminForm(forms.ModelForm):
     class Meta:
         model = Taxonomy
         widgets = {
-            'gbif_data': JSONEditorWidget
+            'gbif_data': JSONEditorWidget,
+            'additional_data': JSONEditorWidget,
         }
         exclude = (
             'reliability_of_sources',
@@ -1727,7 +1728,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         total_synonyms_linked = 0
         errors = 0
 
-        for taxon in accepted_qs.iterator():
+        for taxon in accepted_qs.iterator(chunk_size=100):
             try:
                 processed = harvest_synonyms_for_accepted_taxonomy(
                     taxon,
