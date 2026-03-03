@@ -34,7 +34,9 @@ from bims.models import (
     RecordType,
     AbundanceType,
     SamplingEffortMeasure,
+    ORIGIN_CATEGORIES,
 )
+from bims.models.taxon_origin import TaxonOrigin
 from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
 from bims.utils.feature_info import get_feature_centroid
 from bims.utils.user import create_users_from_string
@@ -587,11 +589,27 @@ class OccurrenceProcessor(object):
 
         if taxonomy and DataCSVUpload.row_value(record, SPECIES_NAME) not in str(taxonomy.canonical_name):
             taxonomy.legacy_canonical_name = DataCSVUpload.row_value(record, SPECIES_NAME)
-        # update the taxonomy endemism if different or empty
-        if not taxonomy.endemism or taxonomy.endemism != endemism:
+
+        origin = None
+        if ORIGIN in record and DataCSVUpload.row_value(record, ORIGIN):
+            origin_key = ORIGIN_CATEGORIES.get(
+                DataCSVUpload.row_value(record, ORIGIN).lower().strip(), ''
+            )
+            if origin_key:
+                origin = TaxonOrigin.objects.filter(origin_key=origin_key).first()
+
+        needs_save = False
+        if endemism and taxonomy.endemism != endemism:
             taxonomy.endemism = endemism
-            taxonomy.save()
+            needs_save = True
             self._log(logging.DEBUG, "Updated taxonomy endemism")
+        if origin and taxonomy.origin != origin:
+            taxonomy.origin = origin
+            needs_save = True
+            self._log(logging.DEBUG, "Updated taxonomy origin")
+
+        if needs_save:
+            taxonomy.save()
         return taxonomy
 
     def process_data(self, row):
