@@ -477,6 +477,7 @@
                     const wrapper = document.getElementById('occurrence-cons-status-national-wrapper');
                     if (wrapper) {
                         wrapper.style.display = 'none';
+                        wrapper.parentNode.style.display = 'none'
                     }
                 }
 
@@ -849,7 +850,7 @@
                     });
                 }
                 if (type === 'cons-status-per-module') {
-                    showDownloadPopup('CHART', 'Conservation Status Per Module', function () {
+                    showDownloadPopup('CHART', 'IUCN Conservation Status', function () {
                         downloadCanvasAsPng(consChartPerModuleEl, 'conservation-status-per-module');
                     });
                 }
@@ -857,7 +858,7 @@
                     if (!consPerModuleData) {
                         return;
                     }
-                    showDownloadPopup('CSV', 'Conservation Status Per Module', function () {
+                    showDownloadPopup('CSV', 'IUCN Conservation Status', function () {
                         var moduleLabels = consPerModuleData.moduleLabels;
                         var categories = consPerModuleData.categories;
                         var datasets = consPerModuleData.datasets;
