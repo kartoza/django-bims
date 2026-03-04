@@ -110,12 +110,14 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
                 .first()
             )
             existing_dataset_key = last_success.dataset_key if last_success else ""
+            existing_archive_url = last_success.archive_url if last_success else ""
 
             try:
                 result = publish_gbif_data_with_config(
                     config=config,
                     module_group=module_group,
                     existing_dataset_key=existing_dataset_key,
+                    existing_archive_url=existing_archive_url,
                 )
 
                 # Update session with success
