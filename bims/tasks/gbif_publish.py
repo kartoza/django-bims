@@ -100,10 +100,22 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
                 )
 
 
+            # Reuse the existing GBIF dataset if this schedule has published
+            # successfully before (one dataset per module per platform).
+            last_success = (
+                GbifPublishSession.objects
+                .filter(schedule=publish_schedule, status=PublishStatus.SUCCESS)
+                .exclude(dataset_key="")
+                .order_by("-start_time")
+                .first()
+            )
+            existing_dataset_key = last_success.dataset_key if last_success else ""
+
             try:
                 result = publish_gbif_data_with_config(
                     config=config,
                     module_group=module_group,
+                    existing_dataset_key=existing_dataset_key,
                 )
 
                 # Update session with success
