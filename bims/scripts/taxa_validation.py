@@ -42,6 +42,8 @@ class TaxaValidator:
         self.file_gbif_keys = defaultdict(list)  # {gbif_key: [row_numbers]}
         self.file_fada_ids = defaultdict(list)   # {fada_id: [row_numbers]}
         self.file_taxon_name_rank = defaultdict(list)  # {(name_lower, rank_upper): [row_numbers]}
+        self.file_taxon_names_lower = set()  # lowercase taxon names present in the CSV
+        self.db_accepted_taxon_names_lower = set()  # lowercase names confirmed in the DB
         self.validation_results = []  # List of (row_dict, status_messages)
         self.all_rows = []
         self.headers = []
@@ -149,7 +151,10 @@ class TaxaValidator:
         return ''
 
     def _check_synonym_accepted_taxon(self, row):
-        """Check that the accepted taxon exists in the system for synonym taxa.
+        """Check that the accepted taxon exists in the system or the CSV for synonym taxa.
+
+        Uses pre-built sets populated in _first_pass_collect_keys to avoid
+        per-row database queries (important for CSVs with 1000+ rows).
 
         Returns a list of error messages.
         """
@@ -170,13 +175,13 @@ class TaxaValidator:
         if not accepted_taxon_name:
             return messages
 
-        exists = Taxonomy.objects.filter(
-            canonical_name__iexact=accepted_taxon_name
-        ).exists()
+        name_lower = accepted_taxon_name.lower()
+        in_csv = name_lower in self.file_taxon_names_lower
+        in_db = name_lower in self.db_accepted_taxon_names_lower
 
-        if not exists:
+        if not in_csv and not in_db:
             messages.append(
-                f"ERROR: Accepted taxon '{accepted_taxon_name}' is not in the system"
+                f"ERROR: Accepted taxon '{accepted_taxon_name}' is not in the system or the upload file"
             )
 
         return messages
@@ -236,7 +241,15 @@ class TaxaValidator:
         return messages
 
     def _first_pass_collect_keys(self, rows):
-        """First pass: collect all GBIF keys, FADA IDs, and taxon names to detect duplicates."""
+        """First pass: collect all GBIF keys, FADA IDs, and taxon names to detect duplicates.
+
+        Also collects all taxon names present in the CSV and all accepted taxon names
+        referenced by synonym rows, then performs a single bulk DB query so that
+        _check_synonym_accepted_taxon() can do O(1) set lookups instead of one
+        query per row.
+        """
+        accepted_taxon_names_to_check = set()
+
         for row_number, row in enumerate(rows, start=2):  # Start at 2 (row 1 is header)
             gbif_key = self._extract_gbif_key(row)
             fada_id = self.row_value(row, FADA_ID)
@@ -251,6 +264,32 @@ class TaxaValidator:
                 # Store as (name_lower, rank_upper) tuple for comparison
                 name_rank_key = (taxon_name.lower(), (taxon_rank or '').upper())
                 self.file_taxon_name_rank[name_rank_key].append(row_number)
+                self.file_taxon_names_lower.add(taxon_name.lower())
+
+            # Collect accepted taxon names referenced by synonym rows
+            taxonomic_status = self.row_value(row, TAXONOMIC_STATUS).upper()
+            synonym_flag = self.row_value(row, SYNONYM).lower()
+            is_synonym = (
+                'SYNONYM' in taxonomic_status or
+                synonym_flag in ('true', 'yes', '1')
+            )
+            if is_synonym:
+                accepted_taxon_name = self.row_value(row, ACCEPTED_TAXON)
+                if accepted_taxon_name:
+                    accepted_taxon_names_to_check.add(accepted_taxon_name.lower())
+
+        # Single bulk DB query for all accepted taxon names not already in the CSV.
+        # Use LOWER() annotation so the lookup is case-insensitive without N queries.
+        names_not_in_csv = accepted_taxon_names_to_check - self.file_taxon_names_lower
+        if names_not_in_csv:
+            from django.db.models.functions import Lower
+            existing = (
+                Taxonomy.objects
+                .annotate(name_lower=Lower('canonical_name'))
+                .filter(name_lower__in=names_not_in_csv)
+                .values_list('name_lower', flat=True)
+            )
+            self.db_accepted_taxon_names_lower = set(existing)
 
     def _validate_row(self, row, row_number):
         """Validate a single row. Returns list of error/warning messages."""
