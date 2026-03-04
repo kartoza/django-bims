@@ -38,28 +38,6 @@ def is_sanparks_project():
     return preferences.SiteSetting.project_name == SANPARKS_PROJECT_KEY
 
 
-def apply_gbif_record_threshold(queryset, threshold=10000, limit=100):
-    """
-    Apply the GBIF record threshold rule to a queryset.
-
-    If the queryset has more than `threshold` records, limit it to the first `limit` records.
-    This is used to avoid performance issues when calculating aggregate statistics
-    on large datasets.
-
-    Args:
-        queryset: Django QuerySet to potentially limit
-        threshold: Maximum number of records before limiting (default: 10000)
-        limit: Number of records to keep if threshold is exceeded (default: 100)
-
-    Returns:
-        QuerySet: Either the original queryset or a limited version
-    """
-    total_count = queryset.count()
-    if total_count > threshold:
-        return queryset[:limit]
-    return queryset
-
-
 class TaxaCSVSerializer(TaxonHierarchySerializer):
 
     taxon_rank = serializers.SerializerMethodField()
@@ -71,8 +49,6 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
     conservation_status_national = serializers.SerializerMethodField()
     on_gbif = serializers.SerializerMethodField()
     gbif_link = serializers.SerializerMethodField()
-    gbif_coordinate_uncertainty_m = serializers.SerializerMethodField()
-    gbif_coordinate_precision = serializers.SerializerMethodField()
     cites_listing = serializers.SerializerMethodField()
     invasion = serializers.SerializerMethodField()
     accepted_taxon = serializers.SerializerMethodField()
@@ -148,63 +124,6 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             return normalized if normalized else ''
         return status
 
-    def get_gbif_coordinate_uncertainty_m(self, obj: Taxonomy):
-        """
-        Get the lowest coordinate uncertainty in meters from GBIF sources.
-        Rule: If total records > 10,000, use only first 100 records.
-        """
-        from bims.models import BiologicalCollectionRecord
-        from django.db.models import Min
-
-        gbif_records = BiologicalCollectionRecord.objects.filter(
-            taxonomy=obj,
-            site__harvested_from_gbif=True,
-            site__coordinate_uncertainty_in_meters__isnull=False
-        )
-
-        if not gbif_records.exists():
-            return ''
-
-        gbif_records = apply_gbif_record_threshold(gbif_records)
-
-        result = gbif_records.aggregate(
-            min_uncertainty=Min('site__coordinate_uncertainty_in_meters')
-        )
-
-        min_uncertainty = result.get('min_uncertainty')
-        if min_uncertainty is not None:
-            return f"{min_uncertainty:.2f}"
-        return ''
-
-    def get_gbif_coordinate_precision(self, obj: Taxonomy):
-        """
-        Get the highest coordinate precision from GBIF sources.
-        Rule: If total records > 10,000, use only first 100 records.
-        Higher precision = smaller decimal value (e.g., 0.00001 is more precise than 0.01667)
-        """
-        from bims.models import BiologicalCollectionRecord
-        from django.db.models import Min
-
-        gbif_records = BiologicalCollectionRecord.objects.filter(
-            taxonomy=obj,
-            site__harvested_from_gbif=True,
-            site__coordinate_precision__isnull=False
-        )
-
-        if not gbif_records.exists():
-            return ''
-
-        gbif_records = apply_gbif_record_threshold(gbif_records)
-
-        result = gbif_records.aggregate(
-            max_precision=Min('site__coordinate_precision')
-        )
-
-        max_precision = result.get('max_precision')
-        if max_precision is not None:
-            return f"{max_precision:.6f}"
-        return ''
-
     class Meta:
         model = Taxonomy
         fields = (
@@ -236,8 +155,6 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             'conservation_status_national',
             'on_gbif',
             'gbif_link',
-            'gbif_coordinate_uncertainty_m',
-            'gbif_coordinate_precision',
             'fada_id',
             'cites_listing'
         )
@@ -299,9 +216,6 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
 
     def to_representation(self, instance):
         result = super().to_representation(instance)
-        if not is_sanparks_project():
-            result.pop('gbif_coordinate_uncertainty_m', None)
-            result.pop('gbif_coordinate_precision', None)
         self._ensure_headers(result.keys())
         self._add_additional_attributes(instance, result)
         self._add_tags(instance, result)

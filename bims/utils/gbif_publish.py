@@ -362,12 +362,26 @@ def _add_endpoint_with_config(config, dataset_key: str, archive_url: str):
 def _build_dwca_with_config(
     config,
     records: Iterable[BiologicalCollectionRecord],
-    module_group=None
+    module_group=None,
+    stable_key: str = None,
 ) -> Tuple[str, str, List[int]]:
-    """Build DwC-A using config for base URL."""
+    """Build DwC-A using config for base URL.
+
+    If *stable_key* is provided the archive is written to a fixed directory
+    (``exports/gbif/<stable_key>/``) so the public URL never changes between
+    runs.  When reusing an existing GBIF dataset this is the preferred mode
+    because GBIF only needs to re-crawl the same URL rather than having a new
+    endpoint registered each time.
+    """
     from bims.utils.mail import get_domain_name
 
-    out_dir = _dwca_dir()
+    if stable_key:
+        rel_dir = os.path.join("exports", "gbif", stable_key)
+        abs_dir = os.path.join(settings.MEDIA_ROOT, rel_dir)
+        os.makedirs(abs_dir, exist_ok=True)
+        out_dir = abs_dir
+    else:
+        out_dir = _dwca_dir()
     occ_path = os.path.join(out_dir, "occurrence.txt")
     meta_path = os.path.join(out_dir, "meta.xml")
     eml_path = os.path.join(out_dir, "eml.xml")
@@ -392,6 +406,18 @@ def _build_dwca_with_config(
         "//", "/").replace(":/", "://")
 
     return zip_path, archive_url, written_ids
+
+
+def _trigger_crawl_with_config(config, dataset_key: str) -> None:
+    """Ask GBIF to re-crawl an existing dataset (after its archive is updated)."""
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+    r = requests.post(
+        f"{api_url}/dataset/{dataset_key}/crawl",
+        auth=auth,
+        timeout=30,
+    )
+    r.raise_for_status()
 
 
 def create_new_installation(config, title = "", description = "") -> str:
@@ -422,17 +448,29 @@ def create_new_installation(config, title = "", description = "") -> str:
 
 
 @transaction.atomic
-def publish_gbif_data_with_config(config, module_group=None) -> dict:
+def publish_gbif_data_with_config(
+    config,
+    module_group=None,
+    existing_dataset_key: str = "",
+) -> dict:
     """
-    Build a DwC-A for public, validated records, register it on GBIF,
-    add the DWC_ARCHIVE endpoint, and store dataset_key back to those records.
+    Build a DwC-A for public, validated records and publish it to GBIF.
+
+    When *existing_dataset_key* is supplied the function reuses that dataset.
+    The archive is written to a stable path so the public URL never changes,
+    and a crawl is triggered so GBIF re-indexes the updated file.
+
+    When no *existing_dataset_key* is supplied a new dataset is registered on
+    GBIF and the archive endpoint is attached to it (first-time publish).
 
     Args:
         config: GbifPublishConfig instance with API credentials and settings
         module_group: Optional TaxonGroup to filter records by
+        existing_dataset_key: GBIF dataset UUID from a previous successful
+            publish for this schedule.  Empty string means "first publish".
 
     Returns:
-        dict with dataset_key and records_published count
+        dict with dataset_key, records_published, and archive_url
     """
     if module_group:
         records = list(_gather_data_for_module_group(module_group))
@@ -442,16 +480,29 @@ def publish_gbif_data_with_config(config, module_group=None) -> dict:
     if not records:
         raise ValueError("No records to publish (need public+validated).")
 
+    # Use a stable directory so the archive URL is identical on every run
+    # when we are updating an existing dataset.  On first publish use a
+    # timestamped directory (legacy behaviour) so concurrent first-runs for
+    # different modules don't collide.
+    if existing_dataset_key:
+        stable_key = f"module_{module_group.pk}" if module_group else "all"
+    else:
+        stable_key = None
+
     zip_path, archive_url, written_ids = _build_dwca_with_config(
-        config, records, module_group
+        config, records, module_group, stable_key=stable_key
     )
 
-    module_name = module_group.name if module_group else _site_name()
-    title = f"{module_name} occurrence dataset"
-    description = f"Occurrence dataset from {_site_name()} registered via GBIF API."
-
-    dataset_key = _register_dataset_with_config(config, title, description)
-    _add_endpoint_with_config(config, dataset_key, archive_url)
+    if existing_dataset_key:
+        # Reuse the previously-created GBIF dataset and ask GBIF to re-crawl
+        dataset_key = existing_dataset_key
+        _trigger_crawl_with_config(config, dataset_key)
+    else:
+        module_name = module_group.name if module_group else _site_name()
+        title = f"{module_name} occurrence dataset"
+        description = f"Occurrence dataset from {_site_name()} registered via GBIF API."
+        dataset_key = _register_dataset_with_config(config, title, description)
+        _add_endpoint_with_config(config, dataset_key, archive_url)
 
     BiologicalCollectionRecord.objects.filter(
         id__in=written_ids
