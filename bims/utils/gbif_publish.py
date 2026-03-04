@@ -359,28 +359,39 @@ def _add_endpoint_with_config(config, dataset_key: str, archive_url: str):
     r.raise_for_status()
 
 
+def _dir_from_archive_url(archive_url: str) -> str:
+    """Return the filesystem directory that corresponds to a stored archive_url.
+
+    The URL was originally built as ``{base_url}{MEDIA_URL}/{rel_to_MEDIA_ROOT}``.
+    We strip the MEDIA_URL prefix from the URL path and join the remainder with
+    MEDIA_ROOT to get the absolute path to the zip file, then return its directory.
+    """
+    from urllib.parse import urlparse
+    url_path = urlparse(archive_url).path          # e.g. /media/exports/gbif/…/dwca.zip
+    media_prefix = _media_url()                    # e.g. /media
+    if url_path.startswith(media_prefix):
+        rel = url_path[len(media_prefix):].lstrip("/")
+    else:
+        rel = url_path.lstrip("/")
+    return os.path.dirname(os.path.join(settings.MEDIA_ROOT, rel))
+
+
 def _build_dwca_with_config(
     config,
     records: Iterable[BiologicalCollectionRecord],
     module_group=None,
-    stable_key: str = None,
+    out_dir: str = None,
 ) -> Tuple[str, str, List[int]]:
     """Build DwC-A using config for base URL.
 
-    If *stable_key* is provided the archive is written to a fixed directory
-    (``exports/gbif/<stable_key>/``) so the public URL never changes between
-    runs.  When reusing an existing GBIF dataset this is the preferred mode
-    because GBIF only needs to re-crawl the same URL rather than having a new
-    endpoint registered each time.
+    If *out_dir* is provided the archive is written there (overwriting any
+    existing files), so the public URL stays identical to the previous run.
+    When reusing an existing GBIF dataset pass the directory derived from the
+    previous session's archive_url via ``_dir_from_archive_url()``.
     """
     from bims.utils.mail import get_domain_name
 
-    if stable_key:
-        rel_dir = os.path.join("exports", "gbif", stable_key)
-        abs_dir = os.path.join(settings.MEDIA_ROOT, rel_dir)
-        os.makedirs(abs_dir, exist_ok=True)
-        out_dir = abs_dir
-    else:
+    if out_dir is None:
         out_dir = _dwca_dir()
     occ_path = os.path.join(out_dir, "occurrence.txt")
     meta_path = os.path.join(out_dir, "meta.xml")
@@ -452,22 +463,27 @@ def publish_gbif_data_with_config(
     config,
     module_group=None,
     existing_dataset_key: str = "",
+    existing_archive_url: str = "",
 ) -> dict:
     """
     Build a DwC-A for public, validated records and publish it to GBIF.
 
-    When *existing_dataset_key* is supplied the function reuses that dataset.
-    The archive is written to a stable path so the public URL never changes,
-    and a crawl is triggered so GBIF re-indexes the updated file.
+    When *existing_dataset_key* and *existing_archive_url* are supplied (from
+    a previous successful publish session) the archive is overwritten in-place
+    at the same filesystem path so the GBIF endpoint URL is unchanged, then a
+    re-crawl is triggered.  This ensures one dataset per module per platform.
 
-    When no *existing_dataset_key* is supplied a new dataset is registered on
-    GBIF and the archive endpoint is attached to it (first-time publish).
+    When called without those arguments (first-time publish) a new dataset is
+    registered on GBIF and the DWC_ARCHIVE endpoint is attached to it.
 
     Args:
         config: GbifPublishConfig instance with API credentials and settings
         module_group: Optional TaxonGroup to filter records by
         existing_dataset_key: GBIF dataset UUID from a previous successful
             publish for this schedule.  Empty string means "first publish".
+        existing_archive_url: Public URL of the archive from the previous
+            successful publish.  Used to derive the directory to overwrite so
+            the endpoint URL on GBIF stays the same.
 
     Returns:
         dict with dataset_key, records_published, and archive_url
@@ -480,24 +496,23 @@ def publish_gbif_data_with_config(
     if not records:
         raise ValueError("No records to publish (need public+validated).")
 
-    # Use a stable directory so the archive URL is identical on every run
-    # when we are updating an existing dataset.  On first publish use a
-    # timestamped directory (legacy behaviour) so concurrent first-runs for
-    # different modules don't collide.
-    if existing_dataset_key:
-        stable_key = f"module_{module_group.pk}" if module_group else "all"
-    else:
-        stable_key = None
+    # Overwrite the archive in the exact same directory as the previous run so
+    # the GBIF endpoint URL is unchanged and re-crawl picks up the new content.
+    # On first publish out_dir is None and _build_dwca_with_config creates a
+    # fresh timestamped directory.
+    out_dir = _dir_from_archive_url(existing_archive_url) if existing_archive_url else None
 
     zip_path, archive_url, written_ids = _build_dwca_with_config(
-        config, records, module_group, stable_key=stable_key
+        config, records, module_group, out_dir=out_dir
     )
 
     if existing_dataset_key:
-        # Reuse the previously-created GBIF dataset and ask GBIF to re-crawl
+        # Reuse the previously-created GBIF dataset and trigger a re-crawl so
+        # GBIF picks up the updated archive at the unchanged URL.
         dataset_key = existing_dataset_key
         _trigger_crawl_with_config(config, dataset_key)
     else:
+        # First publish: register a new dataset and attach the archive endpoint.
         module_name = module_group.name if module_group else _site_name()
         title = f"{module_name} occurrence dataset"
         description = f"Occurrence dataset from {_site_name()} registered via GBIF API."
