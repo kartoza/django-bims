@@ -300,15 +300,12 @@ class TestHarvestGbif(FastTenantTestCase):
         mock_update_location_context.assert_called()
 
     # ------------------------------------------------------------------
-    # Error handling: HTTPError bubbling up from the GBIF helper
+    # Error handling: HTTPError from the GBIF helper (returns no key)
     # ------------------------------------------------------------------
     def _submit_download_http_error(*_, **__):  # pylint: disable=unused-argument
-        err = requests.HTTPError("error message")
-        err.response = mock.MagicMock()
-        err.response.status_code = 404
-        raise err
+        return None, 404
 
-    @mock.patch("bims.utils.gbif_download.submit_download", _submit_download_http_error)
+    @mock.patch("bims.scripts.import_gbif_occurrences.submit_download", _submit_download_http_error)
     @mock.patch("bims.models.HarvestSession.objects.get", _mock_harvest_session_get)
     @mock.patch("bims.scripts.import_gbif_occurrences.preferences")
     def test_harvest_gbif_http_error(self, mock_preferences, mock_update_location_context):
@@ -319,12 +316,12 @@ class TestHarvestGbif(FastTenantTestCase):
         self.assertEqual(status, "Download request failed")
 
     # ------------------------------------------------------------------
-    # Error handling: low‑level connection failures
+    # Error handling: low‑level connection failures (returns no key)
     # ------------------------------------------------------------------
     def _submit_download_protocol_error(*_, **__):  # pylint: disable=unused-argument
-        raise ProtocolError("Connection broken")
+        return None, None
 
-    @mock.patch("bims.utils.gbif_download.submit_download", _submit_download_protocol_error)
+    @mock.patch("bims.scripts.import_gbif_occurrences.submit_download", _submit_download_protocol_error)
     @mock.patch("bims.models.HarvestSession.objects.get", _mock_harvest_session_get)
     @mock.patch("bims.scripts.import_gbif_occurrences.preferences")
     def test_harvest_gbif_protocol_error(self, mock_preferences, mock_update_location_context):
