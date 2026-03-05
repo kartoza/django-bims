@@ -11,6 +11,8 @@ from bims.tests.model_factories import (
     LocationContextF
 )
 from bims.models import BiologicalCollectionRecord
+from bims.models.location_context_filter import LocationContextFilter
+from bims.models.location_context_filter_group_order import LocationContextFilterGroupOrder
 from bims.serializers.bio_collection_serializer import BioCollectionOneRowSerializer
 
 
@@ -131,6 +133,16 @@ class TestBioCollectionOneRowSerializerGeoContext(FastTenantTestCase):
         )
         LocationContextF.create(
             site=self.collection.site, group=self.grp2, value="FW1"
+        )
+
+        ctx_filter = LocationContextFilter.objects.create(
+            title="Test Filter", display_order=1
+        )
+        LocationContextFilterGroupOrder.objects.create(
+            group=self.grp1, filter=ctx_filter, group_display_order=1
+        )
+        LocationContextFilterGroupOrder.objects.create(
+            group=self.grp2, filter=ctx_filter, group_display_order=2
         )
 
     def tearDown(self):
