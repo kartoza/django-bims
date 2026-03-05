@@ -323,6 +323,7 @@ define([
                                         obj.text = obj.value;
                                         return obj;
                                     });
+                                    newData.unshift({id: '__all__', text: 'All'});
                                     return {
                                         results: newData,
                                     };
@@ -334,11 +335,50 @@ define([
                             theme: 'classic',
                         }).on('select2:select', function (e) {
                             let data = e.params.data;
+                            if (data.id === '__all__') {
+                                // Clear individual selections from tracking
+                                self.selectedSpatialFilters = self.selectedSpatialFilters.filter(function (v) {
+                                    return !v.startsWith(`value,${groupData.key},`);
+                                });
+                                if (self.selectedSpatialFilterLayers.hasOwnProperty(groupData.key)) {
+                                    self.selectedSpatialFilterLayers[groupData.key] = [];
+                                }
+                                // Keep only 'All' selected in the widget
+                                $selectAutocomplete.val(['__all__']).trigger('change');
+                                // Store group-level filter
+                                self.selectedSpatialFilterLayers[groupData.key] = [self.groupKeyLabel];
+                                if (!self.selectedSpatialFilters.includes(`group,${groupData.key}`)) {
+                                    self.selectedSpatialFilters.push(`group,${groupData.key}`);
+                                }
+                                self.updateChecked();
+                                return;
+                            }
+                            // If 'All' was active, deselect it before adding this specific item
+                            let currentVals = $selectAutocomplete.val() || [];
+                            if (currentVals.includes('__all__')) {
+                                $selectAutocomplete.val(currentVals.filter(function (v) { return v !== '__all__'; })).trigger('change');
+                                let idx = self.selectedSpatialFilters.indexOf(`group,${groupData.key}`);
+                                if (idx !== -1) self.selectedSpatialFilters.splice(idx, 1);
+                                if (self.selectedSpatialFilterLayers.hasOwnProperty(groupData.key)) {
+                                    let gidx = self.selectedSpatialFilterLayers[groupData.key].indexOf(self.groupKeyLabel);
+                                    if (gidx > -1) self.selectedSpatialFilterLayers[groupData.key].splice(gidx, 1);
+                                }
+                            }
                             self.addSelectedSpatialFilterLayer(groupData.key, data.text);
                             self.addSelectedValue(data.id, `value,${groupData.key},${data.text}`);
                             self.updateChecked();
                         }).on('select2:unselect', function (e) {
                             var data = e.params.data;
+                            if (data.id === '__all__') {
+                                let idx = self.selectedSpatialFilters.indexOf(`group,${groupData.key}`);
+                                if (idx !== -1) self.selectedSpatialFilters.splice(idx, 1);
+                                if (self.selectedSpatialFilterLayers.hasOwnProperty(groupData.key)) {
+                                    let gidx = self.selectedSpatialFilterLayers[groupData.key].indexOf(self.groupKeyLabel);
+                                    if (gidx > -1) self.selectedSpatialFilterLayers[groupData.key].splice(gidx, 1);
+                                }
+                                self.updateChecked();
+                                return;
+                            }
                             self.removeSelectedSpatialFilterLayer(groupData.key, data.text);
                             self.removeSelectedValue(data.id, `value,${groupData.key},${data.text}`);
                             self.updateChecked();
@@ -354,7 +394,9 @@ define([
 
                                 self.updateChecked();
                             } else if(selectedArray[i].includes(`group,${groupData.key}`)) {
-                                $select.prop('disabled', true);
+                                let allOption = new Option('All', '__all__', true, true);
+                                $selectAutocomplete.append(allOption).trigger('change');
+                                self.updateChecked();
                             }
                         }
                     }, 300);
