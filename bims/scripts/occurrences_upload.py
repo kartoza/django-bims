@@ -36,6 +36,7 @@ from bims.models import (
     SamplingEffortMeasure,
     ORIGIN_CATEGORIES,
 )
+from sass.models.river import River
 from bims.models.taxon_origin import TaxonOrigin
 from bims.signals.utils import disconnect_bims_signals, connect_bims_signals
 from bims.utils.feature_info import get_feature_centroid
@@ -50,6 +51,9 @@ from bims.tasks.source_reference import (
     generate_source_reference_filter
 )
 from bims.models.location_site import generate_site_code
+from bims.location_site.river import fetch_river_name
+from bims.utils.site_code import get_feature_data
+from bims.models.location_context import LocationContext
 
 logger = logging.getLogger("bims")
 
@@ -399,8 +403,8 @@ class OccurrenceProcessor(object):
             location_site_name = section_name
 
         # Find existing location site by data source site code
-        data_source = preferences.SiteSetting.default_data_source.upper()
-        existing_site_code = DataCSVUpload.row_value(record, f"{data_source} Site Code")
+        data_source = (preferences.SiteSetting.default_data_source or '').upper()
+        existing_site_code = DataCSVUpload.row_value(record, f"{data_source} Site Code") if data_source else ''
         if not existing_site_code:
             existing_site_code = DataCSVUpload.row_value(record, "Site Code")
         if existing_site_code:
@@ -455,11 +459,59 @@ class OccurrenceProcessor(object):
             location_site.user_wetland_name = user_wetland_name
         if user_hydrogeomorphic_type or location_site.user_hydrogeomorphic_type:
             location_site.user_hydrogeomorphic_type = user_hydrogeomorphic_type
+        river_name = ''
+        if preferences.SiteSetting.default_data_source == 'fbis':
+            if not location_site.river:
+                fetched_river = fetch_river_name(
+                    location_site.latitude,
+                    location_site.longitude
+                )
+                if fetched_river:
+                    river_name = fetched_river
+                    rivers = River.objects.filter(
+                        name=river_name
+                    )
+                    if rivers.exists():
+                        river = rivers.first()
+                    else:
+                        river = River.objects.create(
+                            name=river_name
+                        )
+                    location_site.river = river
+                    self._log(
+                        logging.DEBUG,
+                        f"Fetched river_name={fetched_river} from vector layer"
+                    )
+
+            if not location_site.original_geomorphological:
+                location_context = LocationContext.objects.filter(
+                    site=location_site
+                )
+                geo_zone = location_context.value_from_key('geo_class_recoded')
+                if not geo_zone or geo_zone == '-':
+                    geo_zone = get_feature_data(
+                        lon=location_site.longitude,
+                        lat=location_site.latitude,
+                        context_key='name',
+                        layer_name='geomorphological',
+                        tolerance=preferences.GeocontextSetting.tolerance,
+                        location_site=location_site,
+                    )
+                if geo_zone and geo_zone != '-':
+                    location_site.original_geomorphological = geo_zone
+                    if not location_site.refined_geomorphological:
+                        location_site.refined_geomorphological = geo_zone
+                    self._log(
+                        logging.DEBUG,
+                        f"Fetched geo_zone={geo_zone} from vector layer"
+                    )
+
         if not location_site.site_code:
             site_code, catchments_data = generate_site_code(
                 location_site,
                 lat=location_site.latitude,
                 lon=location_site.longitude,
+                river_name=river_name,
                 ecosystem_type=location_site.ecosystem_type,
                 wetland_name=user_wetland_name,
                 **{
