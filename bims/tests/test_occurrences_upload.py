@@ -168,7 +168,9 @@ class TestCollectionUpload(FastTenantTestCase):
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.occurrences_upload.OccurrenceProcessor.update_location_site_context')
     @mock.patch('bims.scripts.occurrences_upload.get_feature_centroid')
+    @mock.patch('bims.scripts.occurrences_upload.fetch_river_name')
     def test_csv_upload(self,
+                        mock_fetch_river_name,
                         mock_get_feature_centroid,
                         mock_update_location_context,
                         mock_finish):
@@ -200,6 +202,7 @@ class TestCollectionUpload(FastTenantTestCase):
         mock_finish.return_value = None
 
         mock_get_feature_centroid.return_value = (1, 1)
+        mock_fetch_river_name.return_value = 'River Name'
 
         taxonomy_1 = TaxonomyF.create(
             canonical_name='Achnanthes eutrophila',
