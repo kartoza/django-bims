@@ -354,7 +354,7 @@ class BioCollectionOneRowSerializer(
     def get_conservation_status_global(self, obj):
         taxon = obj.taxonomy
         if taxon.is_synonym_or_doubtful and taxon.accepted_taxonomy:
-            taxon = taxon.accepted_taxon
+            taxon = taxon.accepted_taxonomy
         if taxon.iucn_status:
             category = dict(IUCNStatus.CATEGORY_CHOICES)
             try:
@@ -1061,19 +1061,6 @@ class BioCollectionOneRowSerializer(
                     if 'site_description' in self.context['header']:
                         self.context['header'].remove('site_description')
 
-        geo_keys_raw = preferences.GeocontextSetting.geocontext_keys or ""
-        key_pairs = [
-            tuple(k.split(':', 1)) if ':' in k else (k.strip(), None)
-            for k in map(str.strip, geo_keys_raw.split(',')) if k.strip()
-        ]
-
-        filters = Q()
-        for group_key, layer_id in key_pairs:
-            q = Q(geocontext_group_key=group_key)
-            if layer_id:
-                q &= Q(layer_identifier=layer_id)
-            filters |= q
-
         geocontext_groups = self.context.setdefault('geocontext_groups', [])
         if not geocontext_groups:
             park_keys = {
@@ -1081,29 +1068,22 @@ class BioCollectionOneRowSerializer(
                 'parks_and_mpas', 'sanparks_and_mpas',
                 'sanparks_mpas', 'parks_mpas'
             }
-            matching_groups = list(LocationContextGroup.objects.filter(filters))
-            if matching_groups:
-                matching_group_ids = [g.id for g in matching_groups]
-                ordered_group_ids = list(
-                    LocationContextFilterGroupOrder.objects
-                    .filter(group_id__in=matching_group_ids)
-                    .order_by('filter__display_order', 'group_display_order')
-                    .values_list('group_id', flat=True)
-                    .distinct()
-                )
-                group_lookup = {g.id: g for g in matching_groups}
-                seen = set()
-                ordered_groups = []
-                for gid in ordered_group_ids:
-                    if gid not in seen and gid in group_lookup:
-                        ordered_groups.append(group_lookup[gid])
-                        seen.add(gid)
-                # Append groups not referenced in LocationContextFilterGroupOrder
-                for grp in matching_groups:
-                    if grp.id not in seen:
-                        ordered_groups.append(grp)
-            else:
-                ordered_groups = []
+            ordered_group_ids = list(
+                LocationContextFilterGroupOrder.objects
+                .order_by('filter__display_order', 'group_display_order')
+                .values_list('group_id', flat=True)
+                .distinct()
+            )
+            matching_groups = LocationContextGroup.objects.filter(
+                id__in=ordered_group_ids
+            )
+            group_lookup = {g.id: g for g in matching_groups}
+            seen = set()
+            ordered_groups = []
+            for gid in ordered_group_ids:
+                if gid not in seen and gid in group_lookup:
+                    ordered_groups.append(group_lookup[gid])
+                    seen.add(gid)
 
             for grp in ordered_groups:
                 if (grp.key and grp.key.lower() in park_keys) or (
