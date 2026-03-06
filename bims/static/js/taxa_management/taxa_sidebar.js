@@ -140,15 +140,26 @@ export const taxaSidebar = (() => {
             currentTry++;
             $elm = $elm.parent();
         }
-        $('.ui-state-default').removeClass('selected');
-        $elm.addClass('selected');
-        if (updateTaxonGroup) {
-            updateTaxonGroup($elm.data('id'));
-        }
-        selectedTaxonGroup = $elm.data('id');
-        $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
-        currentSelectedTaxonGroup = selectedTaxonGroup;
 
+        if ($elm.hasClass('selected')) {
+            // Deselect current group
+            $elm.removeClass('selected');
+            selectedTaxonGroup = '';
+            currentSelectedTaxonGroup = '';
+            $('.dashboard-title').html('<h2>Taxon Management</h2>');
+            if (updateTaxonGroup) {
+                updateTaxonGroup('');
+            }
+        } else {
+            $('.ui-state-default').removeClass('selected');
+            $elm.addClass('selected');
+            selectedTaxonGroup = $elm.data('id');
+            currentSelectedTaxonGroup = selectedTaxonGroup;
+            $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
+            if (updateTaxonGroup) {
+                updateTaxonGroup($elm.data('id'));
+            }
+        }
     }
 
     function allTaxaGroups(groups) {
