@@ -30,6 +30,10 @@ class UploadForm(forms.Form):
             allowed_extensions=ALLOWED_EXTENSIONS)
         ]
     )
+    data_licence = forms.ChoiceField(
+        choices=UploadRequest.LICENCE_CHOICES,
+        initial=UploadRequest.LICENCE_CC_BY,
+    )
     notes = forms.CharField(widget=forms.Textarea, required=False)
     decoy = forms.CharField(required=False)
     recaptcha_token = forms.CharField(required=False)

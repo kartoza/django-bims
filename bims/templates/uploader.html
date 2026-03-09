@@ -188,6 +188,36 @@
                         <p class="help-block">{% trans "Optional, but helpful to admins." %}</p>
                     </div>
 
+                    <div class="form-group {% if form and form.data_licence.errors %}has-error{% endif %}">
+                        <label for="id_data_licence" class="control-label">
+                            {% trans "Data Licence" %} *
+                        </label>
+                        <select id="id_data_licence" name="data_licence" class="form-control" required>
+                            <option value="CC0"
+                                data-desc="{% trans 'The data is made available for any use without restriction or specific requirements. The creator waives all copyright claims.' %}"
+                                {% if form and form.data.data_licence == 'CC0' %}selected{% endif %}>
+                                {% trans "CC0 1.0 – Public Domain Dedication" %}
+                            </option>
+                            <option value="CC-BY"
+                                data-desc="{% trans 'The data can be used, shared, and adapted for any purpose, including commercial use, provided that appropriate attribution is given to the data publisher.' %}"
+                                {% if form and form.data.data_licence == 'CC-BY' or not form.data.data_licence %}selected{% endif %}>
+                                {% trans "CC BY 4.0 – Attribution" %}
+                            </option>
+                            <option value="CC-BY-NC"
+                                data-desc="{% trans 'The data can be used and adapted with appropriate attribution, but it cannot be used for commercial purposes.' %}"
+                                {% if form and form.data.data_licence == 'CC-BY-NC' %}selected{% endif %}>
+                                {% trans "CC BY-NC 4.0 – Attribution-NonCommercial" %}
+                            </option>
+                        </select>
+                        {% if form and form.data_licence.errors %}
+                            <p class="help-block text-danger">{{ form.data_licence.errors|join:", " }}</p>
+                        {% endif %}
+                        <p id="licence-desc" class="help-block mt-1"></p>
+                        <p class="help-block">
+                            <a href="https://creativecommons.org/licenses/" target="_blank" rel="noopener">{% trans "Learn about Creative Commons licences" %}</a>.
+                        </p>
+                    </div>
+
                     <div class="form-group visually-hidden">
                         <label for="id_decoy">{% trans "Leave this field blank" %}</label>
                         <input type="text" id="id_decoy" name="decoy" value="" autocomplete="off">

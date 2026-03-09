@@ -72,6 +72,7 @@ class TestUploadView(FastTenantTestCase):
             "name": "Jane Doe",
             "email": "jane@example.org",
             "upload_type": "occurrence",
+            "data_licence": "CC-BY",
             "notes": "hello",
             "source": "upload_portal",
             "upload_file": self._make_file(),
