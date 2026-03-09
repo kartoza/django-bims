@@ -49,11 +49,6 @@ jobs:
           EOF
           docker build -f Dockerfile.test -t bims_test:latest .
 
-      - name: Create test database
-        run: |
-          docker exec db su - postgres -c "psql -c 'CREATE DATABASE gis_test;'" || true
-          docker exec db su - postgres -c "psql -d gis_test -c 'CREATE EXTENSION IF NOT EXISTS postgis;'" || true
-
       - name: Run Django tests
         run: |
           docker run --rm \
@@ -69,4 +64,4 @@ jobs:
             -e SITE_DOMAIN_NAME=http://django-bims.test \
             -e SITEURL=http://django-bims.test/ \
             bims_test:latest \
-            python manage.py test --keepdb --noinput
+            python manage.py test --noinput
