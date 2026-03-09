@@ -171,11 +171,13 @@ class UploadView(UserPassesTestMixin, FormView):
         assignees = preferences.SiteSetting.github_upload_assignees.split(',')
 
         file_url = self.request.build_absolute_uri(instance.upload_file.url)
+        licence_display = dict(UploadRequest.LICENCE_CHOICES).get(instance.data_licence, instance.data_licence)
         body = (
             f"**New Upload**\n\n"
             f"- **Name:** {instance.name}\n"
             f"- **Email:** {instance.email}\n"
             f"- **Type:** {instance.upload_type.name}\n"
+            f"- **Data Licence:** {licence_display}\n"
             f"- **Notes:** {instance.notes or '-'}\n"
             f"- **File:** [{instance.file_name}]({file_url})\n"
             f"- **Upload ID:** {instance.pk}\n"
@@ -212,6 +214,7 @@ class UploadView(UserPassesTestMixin, FormView):
             name=form.cleaned_data['name'],
             email=form.cleaned_data['email'],
             upload_type=form.cleaned_data['upload_type'],
+            data_licence=form.cleaned_data.get('data_licence') or UploadRequest.LICENCE_CC_BY,
             notes=form.cleaned_data.get('notes') or '',
             source=form.cleaned_data.get('source') or 'upload_portal',
             client_ip=get_client_ip(self.request),

@@ -55,6 +55,15 @@ class UploadRequest(models.Model):
         (STATUS_ERROR, 'Error'),
     )
 
+    LICENCE_CC0 = 'CC0'
+    LICENCE_CC_BY = 'CC-BY'
+    LICENCE_CC_BY_NC = 'CC-BY-NC'
+    LICENCE_CHOICES = (
+        (LICENCE_CC0, 'CC0 1.0 – Public Domain Dedication'),
+        (LICENCE_CC_BY, 'CC BY 4.0 – Attribution'),
+        (LICENCE_CC_BY_NC, 'CC BY-NC 4.0 – Attribution-NonCommercial'),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(
@@ -73,6 +82,12 @@ class UploadRequest(models.Model):
     )
     upload_file = models.FileField(upload_to=upload_path)
     notes = models.TextField(blank=True)
+    data_licence = models.CharField(
+        max_length=20,
+        choices=LICENCE_CHOICES,
+        default=LICENCE_CC_BY,
+        help_text='Creative Commons licence that applies to this dataset'
+    )
     source = models.CharField(max_length=255, blank=True)
     client_ip = models.GenericIPAddressField(null=True, blank=True)
 
