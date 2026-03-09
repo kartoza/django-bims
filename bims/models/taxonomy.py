@@ -941,6 +941,34 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
                 if not _has_meaningful_iucn_data(synonym) or not synonym.iucn_redlist_id:
                     Taxonomy.objects.filter(pk=synonym.pk).update(**update_payload)
 
+    # --- Origin propagation ---------------------------------------------------
+    instance_origin_id = getattr(instance, "origin_id", None)
+
+    if is_synonym and accepted and getattr(accepted, "id", None):
+        if instance_origin_id and not getattr(accepted, "origin_id", None):
+            Taxonomy.objects.filter(pk=accepted.pk).update(origin_id=instance_origin_id)
+        elif not instance_origin_id and getattr(accepted, "origin_id", None):
+            instance.origin_id = accepted.origin_id
+
+    if not is_synonym and getattr(instance, "pk", None) and instance_origin_id:
+        Taxonomy.objects.filter(
+            accepted_taxonomy=instance, origin__isnull=True
+        ).update(origin_id=instance_origin_id)
+
+    # --- Endemism propagation -------------------------------------------------
+    instance_endemism_id = getattr(instance, "endemism_id", None)
+
+    if is_synonym and accepted and getattr(accepted, "id", None):
+        if instance_endemism_id and not getattr(accepted, "endemism_id", None):
+            Taxonomy.objects.filter(pk=accepted.pk).update(endemism_id=instance_endemism_id)
+        elif not instance_endemism_id and getattr(accepted, "endemism_id", None):
+            instance.endemism_id = accepted.endemism_id
+
+    if not is_synonym and getattr(instance, "pk", None) and instance_endemism_id:
+        Taxonomy.objects.filter(
+            accepted_taxonomy=instance, endemism__isnull=True
+        ).update(endemism_id=instance_endemism_id)
+
 
 class TaxonImage(models.Model):
 
