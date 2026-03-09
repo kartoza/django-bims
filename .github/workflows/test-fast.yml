@@ -52,6 +52,7 @@ jobs:
       - name: Run Django tests
         run: |
           docker run --rm \
+            --entrypoint "" \
             --network bims-test \
             -e DJANGO_SETTINGS_MODULE=core.settings.test_docker \
             -e PYTHONPATH=/usr/src/app:/home/web/django_project \
