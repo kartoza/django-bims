@@ -1,0 +1,72 @@
+name: Fast Test (No Docker Build)
+
+# Faster alternative to test.yml — pulls the pre-built multi-tenant image as base
+# so no full Docker build is needed. Only the thin app layer is rebuilt.
+# Saves ~20-30 minutes compared to a full build.
+
+on:
+  push:
+    branches:
+      - test_fast
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Docker network
+        run: docker network create bims-test
+
+      - name: Start PostGIS database
+        run: |
+          docker run -d \
+            --name db \
+            --network bims-test \
+            -e POSTGRES_USER=docker \
+            -e POSTGRES_PASS=docker \
+            -e POSTGRES_DBNAME=gis \
+            -e ALLOW_IP_RANGE=0.0.0.0/0 \
+            kartoza/postgis:17-3.5
+          echo "Waiting for PostgreSQL to be ready..."
+          for i in $(seq 1 30); do
+            docker exec db su - postgres -c "pg_isready" && break || sleep 5
+          done
+
+      - name: Pull pre-built base image
+        run: docker pull dimasciput/kbims_uwsgi:latest
+
+      - name: Build thin test image
+        run: |
+          cat > Dockerfile.test << 'EOF'
+          FROM dimasciput/kbims_uwsgi:latest
+          USER root
+          COPY deployment/docker/REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
+          RUN pip install --no-cache-dir -r /REQUIREMENTS-dev.txt
+          COPY . /home/web/django_project
+          WORKDIR /home/web/django_project
+          EOF
+          docker build -f Dockerfile.test -t bims_test:latest .
+
+      - name: Create test database
+        run: |
+          docker exec db su - postgres -c "psql -c 'CREATE DATABASE gis_test;'" || true
+          docker exec db su - postgres -c "psql -d gis_test -c 'CREATE EXTENSION IF NOT EXISTS postgis;'" || true
+
+      - name: Run Django tests
+        run: |
+          docker run --rm \
+            --network bims-test \
+            -e DJANGO_SETTINGS_MODULE=core.settings.test_docker \
+            -e PYTHONPATH=/usr/src/app:/home/web/django_project \
+            -e ROOT_URLCONF=core.urls \
+            -e STATIC_ROOT=/home/web/static/static \
+            -e MEDIA_ROOT=/home/web/media \
+            -e GEOIP_PATH=/home/web/media/geoip.db \
+            -e IS_CELERY=False \
+            -e ASYNC_SIGNALS=False \
+            -e SITE_DOMAIN_NAME=http://django-bims.test \
+            -e SITEURL=http://django-bims.test/ \
+            bims_test:latest \
+            python manage.py test --keepdb --noinput
