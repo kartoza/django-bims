@@ -65,4 +65,4 @@ jobs:
             -e SITE_DOMAIN_NAME=http://django-bims.test \
             -e SITEURL=http://django-bims.test/ \
             bims_test:latest \
-            bash -c "python manage.py migrate sites --noinput && python manage.py test --noinput"
+            bash -c "python manage.py migrate --noinput && python manage.py test --noinput"
