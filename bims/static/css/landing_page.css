@@ -614,3 +614,68 @@ html, body {
     z-index: 999;
     position: absolute;
 }
+
+/* ── Organism Groups Section ───────────────────────────────────────────── */
+.organism-groups-section {
+    margin-top: 40px;
+}
+
+#organism-groups-list,
+#fada-organism-groups-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px 0;
+}
+
+.organism-group-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 calc(20% - 16px); /* max 5 per row */
+    box-sizing: border-box;
+    padding: 16px 8px;
+}
+
+.organism-group-logo-wrapper {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.organism-group-logo-wrapper img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+}
+
+.organism-group-name {
+    font-weight: bold;
+    text-align: center;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.3;
+    margin-bottom: 4px;
+}
+
+.organism-group-count {
+    text-align: center;
+}
+
+.organism-group-number {
+    font-weight: bold;
+}
+
+@media (max-width: 992px) {
+    .organism-group-card { flex: 0 0 calc(33.33% - 16px); }
+}
+
+@media (max-width: 576px) {
+    .organism-group-card { flex: 0 0 calc(50% - 16px); }
+}
