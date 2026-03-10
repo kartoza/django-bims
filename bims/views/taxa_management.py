@@ -4,10 +4,11 @@
 import json
 from urllib.parse import urlencode
 
+from django.contrib.auth.views import redirect_to_login
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from preferences import preferences
 
 from bims.cache import get_cache, set_cache
 from bims.models.taxon_group import TaxonGroup, TAXON_GROUP_CACHE
@@ -19,7 +20,7 @@ from bims.models.taxon_origin import TaxonOrigin
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
-class TaxaManagementView(LoginRequiredMixin, TemplateView):
+class TaxaManagementView(TemplateView):
     template_name = 'taxa_management.html'
 
     def remove_selected_param_from_url(self, request):
@@ -30,6 +31,9 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         return HttpResponseRedirect(new_url)
 
     def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            if not preferences.SiteSetting.allow_public_taxa_view:
+                return redirect_to_login(request.get_full_path())
         selected = request.GET.get('selected')
         if selected:
             try:
@@ -86,8 +90,15 @@ class TaxaManagementView(LoginRequiredMixin, TemplateView):
         for taxonomic_status in all_taxonomic_status:
             if taxonomic_status and taxonomic_status.upper() not in context['all_taxonomic_status']:
                 context['all_taxonomic_status'].append(taxonomic_status.upper())
-        context['is_expert'] = self.request.user.is_superuser or self.is_user_expert_for_taxon(
-            self.request.GET.get('selected'))
+        user = self.request.user
+        is_authenticated = user.is_authenticated
+        context['is_public_view'] = not is_authenticated
+        context['is_expert'] = (
+            is_authenticated and (
+                user.is_superuser or
+                self.is_user_expert_for_taxon(self.request.GET.get('selected'))
+            )
+        )
         return context
 
     def is_user_expert_for_taxon(self, selected_taxon_id):

@@ -504,7 +504,7 @@ def split_authors(author_string):
     return decoded_matches
 
 
-class TaxaList(LoginRequiredMixin, APIView):
+class TaxaList(APIView):
     """Returns list of taxa filtered by taxon group"""
     pagination_class = TaxaPagination
 
@@ -794,6 +794,19 @@ class TaxaList(LoginRequiredMixin, APIView):
         return self.paginator.get_paginated_response(data)
 
     def get(self, request, *args):
+        from preferences import preferences
+        if not request.user.is_authenticated:
+            if not preferences.SiteSetting.allow_public_taxa_view:
+                return Response(
+                    {'detail': 'Authentication required.'},
+                    status=HTTP_403_FORBIDDEN
+                )
+            # Public users may only see validated taxa — override any
+            # 'validated' param they may have passed in the URL.
+            mutable = request.GET.copy()
+            mutable['validated'] = 'True'
+            request._request.GET = mutable
+
         taxon_list = self.get_taxa_by_parameters(request)
         summary_only = request.GET.get('summary', 'False') == 'True'
 

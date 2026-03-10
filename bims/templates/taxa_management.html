@@ -23,7 +23,8 @@
         const sourceCollection = '';
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
-        const isExpert = {% if is_expert %}true{% else %}false{% endif %}
+        const isExpert = {% if is_expert %}true{% else %}false{% endif %};
+        const isPublicView = {% if is_public_view %}true{% else %}false{% endif %};
         const isFadaSite = {% if fada_site %}true{% else %}false{% endif %};
         const rejectUrl = '/api/review-taxon/';
         const approveUrl = '/api/review-taxon/';
@@ -83,11 +84,13 @@
                                 class="btn btn-danger btn-md my-0 ml-sm-2"
                                 style="height: 31px; padding-top: 3px; display: none">Clear
                         </button>
+                        {% if not is_public_view %}
                         <button id="approve-all-proposals-btn"
                                 class="btn btn-outline-primary my-0 ml-sm-2"
                                 style="height:31px; padding-top:3px">
                           <i class="fa fa-check-circle" aria-hidden="true"></i> Approve all unvalidated
                         </button>
+                        {% endif %}
                     </div>
 
                     <div class="row" style="font-size: 0.9em;">
@@ -195,6 +198,7 @@
                                                 </div>
                                             </div>
                                             {% endif %}
+                                            {% if not is_public_view %}
                                             <div class="form-group row">
                                                 <label for="validated" class="col-sm-3 col-form-label">Validated</label>
                                                 <div class="col-sm-9 d-flex">
@@ -212,6 +216,7 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            {% endif %}
                                             <div class="form-group row">
                                                 <label for="validated" class="col-sm-3 col-form-label">Taxonomic Status</label>
                                                 <div class="col-sm-9">
@@ -375,6 +380,7 @@
                             </div>
                         </div>
                     </div>
+                    {% if not is_public_view %}
                     <div class="btn-unvalidated-container">
                         <div class="dropdown dropdown-action">
                             <button class="btn btn-primary" type="button" id="unvalidatedDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -393,9 +399,33 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 {% endwith %}
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Login required modal (shown when public user tries to download) -->
+    <div id="loginRequiredModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa fa-lock"></i> Login Required</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>You need to be logged in to download taxa data.</p>
+                    <p>Please log in or create an account to continue.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <a href="/accounts/login/?next={{ request.get_full_path }}"
+                       class="btn btn-primary">Log in</a>
+                </div>
             </div>
         </div>
     </div>
@@ -936,4 +966,5 @@
     {% render_bundle 'taxa_management' %}
     {% endif %}
     <script src="{% static "js/non_requirejs/tag_select.js" %}"></script>
+
 {% endblock %}
