@@ -95,7 +95,9 @@
                                      style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Taxa</div>
                             </div>
                             <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/users-icon.png" %}'); mask-image: url('{% static "img/users-icon.png" %}');"></span>
+                                <div class="gs-icon-container" >
+                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/users-icon.png" %}'); mask-image: url('{% static "img/users-icon.png" %}');width: 80px; height: 80px;"></span>
+                                </div>
                                 <h3 class="gs-total" id="total_users"
                                     style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
                                 <div class="gs-text"
@@ -103,7 +105,7 @@
                             </div>
                             <div class="col-lg-2 col-md-3 col-sm-12 module-container">
                                 <div class="gs-icon-container" >
-                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/upload-icon.png" %}'); mask-image: url('{% static "img/upload-icon.png" %}');width: 70px; height: 70px;"></span>
+                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/upload-icon.png" %}'); mask-image: url('{% static "img/upload-icon.png" %}');width: 60px; height: 60px;"></span>
                                 </div>
                                 <h3 class="gs-total" id="total_uploads"
                                     style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
@@ -112,7 +114,7 @@
                             </div>
                             <div class="col-lg-2 col-md-3 col-sm-12 module-container">
                                 <div class="gs-icon-container" >
-                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/download-icon.png" %}'); mask-image: url('{% static "img/download-icon.png" %}');width: 70px; height: 70px;"></span>
+                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/download-icon.png" %}'); mask-image: url('{% static "img/download-icon.png" %}');width: 60px; height: 60px;"></span>
                                 </div>
                                 <h3 class="gs-total" id="total_downloads"
                                     style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
