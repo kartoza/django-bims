@@ -318,6 +318,11 @@ export const taxaManagement = (() => {
     }
 
     function handleDownloadPdf(e) {
+        if (typeof isPublicView !== 'undefined' && isPublicView) {
+            e.preventDefault();
+            $('#loginRequiredModal').modal('show');
+            return;
+        }
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
@@ -341,6 +346,11 @@ export const taxaManagement = (() => {
     }
 
     function handleDownloadCsv(e) {
+        if (typeof isPublicView !== 'undefined' && isPublicView) {
+            e.preventDefault();
+            $('#loginRequiredModal').modal('show');
+            return;
+        }
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();

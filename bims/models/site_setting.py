@@ -291,6 +291,15 @@ class SiteSetting(Preferences):
         )
     )
 
+    allow_public_taxa_view = models.BooleanField(
+        default=False,
+        help_text=(
+            'Allow non-logged-in users to view the taxa management page. '
+            'Public users will only see validated taxa. '
+            'Downloading still requires login.'
+        )
+    )
+
     github_repo_path = models.CharField(
         default='',
         blank=True,

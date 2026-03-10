@@ -158,6 +158,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "show_general_summary_on_landing",
                 "enable_remove_all_occurrences_tool",
                 "allow_taxa_edit_in_admin",
+                "allow_public_taxa_view",
             ),
             "classes": ("collapse",),
         }),
