@@ -2,6 +2,7 @@
     <div class="row module-summary"></div>
 </div>
 
+
 <script>
 
     function getNumberWithCommas(number) {
@@ -171,28 +172,26 @@
 
                     // Data is ready, process it
                     $('.module-loading').hide();
-                    const $container = $('.summary-data');
                     const $generalSummary = $('.general-summary');
                     const $moduleSummary = $('.module-summary');
 
-                     $.each(data, function(key, summaryData) {
-                         if (!summaryData['icon']) {
-                           if ($generalSummary && key === 'general_summary') {
-                             $.each(summaryData, function(gsKey, gsData) {
-                               $(`#${gsKey}`).html(getNumberWithCommas(gsData));
-                             });
-                           }
-                           return true;
-                         } else {
-                             let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
-                             $moduleSummary.append(_container);
-                             createModuleCharts(
-                                 summaryData,
-                                 key,
-                                 _container
-                             )
-                         }
-                     });
+                    $.each(data, function(key, summaryData) {
+                        if (!summaryData['icon']) {
+                            if ($generalSummary && key === 'general_summary') {
+                                $.each(summaryData, function(gsKey, gsData) {
+                                    $(`#${gsKey}`).html(getNumberWithCommas(gsData));
+                                });
+                            }
+                            return true;
+                        }
+                        let _container = $(`<div class="col-lg-2 col-md-3 col-sm-12 module-container"></div>`);
+                        $moduleSummary.append(_container);
+                        createModuleCharts(summaryData, key, _container);
+                    });
+
+                    if (typeof renderOrganismGroups === 'function') {
+                        renderOrganismGroups(data, '#organism-groups-list', window.organismGroupsConfig);
+                    }
                 }
             ).fail(function(error) {
                 console.error('Error fetching module summary:', error);

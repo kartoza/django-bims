@@ -15,6 +15,14 @@
         const summaries = '{{ summaries|jsonify|safe }}';
         const showModuleSummaries = {% if preferences.SiteSetting.show_module_summary_on_dashboard %}true{% else %}false{% endif %};
         window.showModuleSummaries = showModuleSummaries;
+        window.organismGroupsConfig = {
+            nameFontSize:   '{{ custom_theme.summary_font_size_px|add:"2" }}px',
+            countFontSize:  '{{ custom_theme.summary_font_size_px }}px',
+            nameColor:      '{% firstof custom_theme.summary_text_color custom_theme.main_accent_color "#000000" %}',
+            countColor:     '{% firstof custom_theme.summary_text_color custom_theme.main_accent_color "#666666" %}',
+            fontFamily:     '{% firstof custom_theme.summary_font.font_stack "inherit" %}',
+            textTransform:  '{{ custom_theme.summary_text_case|default:"none" }}'
+        };
     </script>
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
@@ -35,86 +43,107 @@
             </header>
             {% endif %}
             {% if not fada_site %}
-            <section class="biodiversity-data-container" style="position: relative; background-color: {{ custom_theme.summary_background_color }}">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading"
-                                style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
-                                        font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
-                                        color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
-                                        font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
-                                {{ custom_theme.landing_page_occurrence_records_title }}
-                            </h2>
+                <section class="biodiversity-data-container" style="position: relative; background-color: {{ custom_theme.summary_background_color }}">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-8 mx-auto text-center">
+                                <h2 class="section-heading"
+                                    style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
+                                            font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
+                                            color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
+                                            font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
+                                    {{ custom_theme.landing_page_occurrence_records_title }}
+                                </h2>
+                            </div>
                         </div>
-                    </div>
-                    {% include 'landing_page_dashboard.html' %}
+                        {% include 'landing_page_dashboard.html' %}
 
-                    {% if custom_header.show_explore_map %}
-                    <div class="row" style="display: flex; align-items: center; justify-content: center; margin-top: 20px;">
-                        <a href="/map" class="btn btn-primary btn-explore-map"><i class="fa fa-map-o"></i> &nbsp;Explore Map</a>
+                        {% if custom_header.show_explore_map %}
+                        <div class="row" style="display: flex; align-items: center; justify-content: center; margin-top: 20px;">
+                            <a href="/map" class="btn btn-primary btn-explore-map"><i class="fa fa-map-o"></i> &nbsp;Explore Map</a>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
-                </div>
-            </section>
-            {% if preferences.SiteSetting.show_general_summary_on_landing %}
-            <section id="fish-data">
-                <div class="container general-summary">
-                    <div class="row" style="margin-bottom: 50px;">
-                        <div class="col-lg-8 mx-auto text-center">
-                            <h2 class="section-heading"
-                                style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
-                                        font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
-                                        color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
-                                        font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
-                                Platform overview stats
-                            </h2>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/occurrences-icon.png" %}'); mask-image: url('{% static "img/occurrences-icon.png" %}');"></span>
-                            <h3 class="gs-total" id="total_occurrences"
-                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
-                            <div class="gs-text"
-                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Occurrence Records</div>
-                        </div>
-                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/taxa-icon.png" %}'); mask-image: url('{% static "img/taxa-icon.png" %}');"></span>
-                            <h3 class="gs-total" id="total_taxa"
-                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
-                            <div class="gs-text"
-                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Taxa</div>
-                        </div>
-                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/users-icon.png" %}'); mask-image: url('{% static "img/users-icon.png" %}');"></span>
-                            <h3 class="gs-total" id="total_users"
-                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
-                            <div class="gs-text"
-                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Users</div>
-                        </div>
-                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <div class="gs-icon-container" >
-                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/upload-icon.png" %}'); mask-image: url('{% static "img/upload-icon.png" %}');width: 70px; height: 70px;"></span>
+                </section>
+                {% if preferences.SiteSetting.show_general_summary_on_landing %}
+                <section id="fish-data">
+                    <div class="container general-summary">
+                        <div class="row" style="margin-bottom: 50px;">
+                            <div class="col-lg-8 mx-auto text-center">
+                                <h2 class="section-heading"
+                                    style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
+                                            font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
+                                            color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
+                                            font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
+                                    Platform overview stats
+                                </h2>
                             </div>
-                            <h3 class="gs-total" id="total_uploads"
-                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
-                            <div class="gs-text"
-                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">User uploads</div>
                         </div>
-                        <div class="col-lg-2 col-md-3 col-sm-12 module-container">
-                            <div class="gs-icon-container" >
-                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/download-icon.png" %}'); mask-image: url('{% static "img/download-icon.png" %}');width: 70px; height: 70px;"></span>
+                        <div class="row">
+                            <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/occurrences-icon.png" %}'); mask-image: url('{% static "img/occurrences-icon.png" %}');"></span>
+                                <h3 class="gs-total" id="total_occurrences"
+                                    style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                                <div class="gs-text"
+                                     style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Occurrence Records</div>
                             </div>
-                            <h3 class="gs-total" id="total_downloads"
-                                style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
-                            <div class="gs-text"
-                                 style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">User downloads</div>
+                            <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/taxa-icon.png" %}'); mask-image: url('{% static "img/taxa-icon.png" %}');"></span>
+                                <h3 class="gs-total" id="total_taxa"
+                                    style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                                <div class="gs-text"
+                                     style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Taxa</div>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                                <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/users-icon.png" %}'); mask-image: url('{% static "img/users-icon.png" %}');"></span>
+                                <h3 class="gs-total" id="total_users"
+                                    style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                                <div class="gs-text"
+                                     style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">Users</div>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                                <div class="gs-icon-container" >
+                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/upload-icon.png" %}'); mask-image: url('{% static "img/upload-icon.png" %}');width: 70px; height: 70px;"></span>
+                                </div>
+                                <h3 class="gs-total" id="total_uploads"
+                                    style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                                <div class="gs-text"
+                                     style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">User uploads</div>
+                            </div>
+                            <div class="col-lg-2 col-md-3 col-sm-12 module-container">
+                                <div class="gs-icon-container" >
+                                    <span class="gs-icon" style="-webkit-mask-image: url('{% static "img/download-icon.png" %}'); mask-image: url('{% static "img/download-icon.png" %}');width: 70px; height: 70px;"></span>
+                                </div>
+                                <h3 class="gs-total" id="total_downloads"
+                                    style="font-size: {{ custom_theme.summary_font_size_px|add:'4' }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};">...</h3>
+                                <div class="gs-text"
+                                     style="font-size: {{ custom_theme.summary_font_size_px }}px; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'var(--main-accent-color)' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}; text-transform: {{ custom_theme.summary_text_case|default:'none' }};">User downloads</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </section>
-            {% endif %}
+                </section>
+                {% endif %}
+            {% else %}
+                {% if preferences.SiteSetting.show_module_summary_on_dashboard %}
+                <section class="biodiversity-data-container organism-groups-section" style="position: relative; background-color: {{ custom_theme.summary_background_color }}">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-8 mx-auto text-center">
+                                <h2 class="section-heading"
+                                    style="font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};
+                                           color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'inherit' %};">
+                                    Available organism groups
+                                </h2>
+                            </div>
+                        </div>
+                        <div id="fada-organism-groups-list">
+                            <div class="col-12 text-center organism-groups-loading" style="padding: 20px;">
+                                <span style="color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color '#666' %};">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
             {% endif %}
             {% if custom_theme.landing_page_sections %}
               {% for landing_page_section in custom_theme.landing_page_sections.all %}
@@ -258,13 +287,19 @@
 {% endblock %}
 
 {% block foot %}
+
+    {% is_fada_site as fada_site %}
     <!-- Plugin JavaScript -->
     <script src="{% static "js/landing-page.js" %}"></script>
+    <script src="{% static "js/organism-groups.js" %}"></script>
     <script>
         $(document).ready(function () {
             showSiteNotice();
             $('[data-toggle="tooltip"]').tooltip();
             $('[data-toggle="popover"]').popover();
+            {% if fada_site and preferences.SiteSetting.show_module_summary_on_dashboard %}
+                fetchAndRenderOrganismGroups('#fada-organism-groups-list', window.organismGroupsConfig);
+            {% endif %}
         });
     </script>
 {% endblock %}

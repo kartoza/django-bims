@@ -1,4 +1,3 @@
-from django.contrib.sites.models import Site
 from django.db import connection
 from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
@@ -6,6 +5,8 @@ from rest_framework.response import Response
 from allauth.utils import get_user_model
 from django.db.models import Count, F, Case, When, Value, Q, Subquery
 from sorl.thumbnail import get_thumbnail
+
+from bims.enums import TaxonomicStatus
 from bims.models import (
     TaxonGroup,
     BiologicalCollectionRecord,
@@ -14,8 +15,11 @@ from bims.models import (
     Survey
 )
 from bims.models.taxonomy import Taxonomy
+from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
-from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache, delete_cache
+from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache
+from bims.templatetags.site import is_fada_site
+
 from sass.models.site_visit_taxon import SiteVisitTaxon
 from sass.models.site_visit import SiteVisit
 
@@ -82,7 +86,35 @@ class ModuleSummary(APIView):
         summary['total_site'] = collections.distinct('site').count()
         summary['total_site_visit'] = collections.distinct('survey').count()
 
+        tg = taxon_group.taxonomies.filter(
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name
+        )
+        if is_fada_site():
+            tg = tg.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+        summary['total_validated'] = tg.count()
+
         return summary
+
+    def _validated_count_for_group(self, taxon_group):
+        """
+        Return accepted-species count for taxon_group plus all its descendants,
+        deduplicating taxonomy IDs across the whole subtree.
+        """
+        # Collect all taxon group IDs in the subtree (BFS)
+        group_ids = []
+        queue = [taxon_group]
+        while queue:
+            current = queue.pop()
+            group_ids.append(current.pk)
+            queue.extend(list(current.taxongroup_set.all()))
+
+        qs = Taxonomy.objects.filter(
+            taxongrouptaxonomy__taxongroup__in=group_ids,
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name,
+        ).distinct()
+        if is_fada_site():
+            qs = qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+        return qs.count()
 
     def get_division_summary(self, collections):
         """
@@ -231,17 +263,18 @@ class ModuleSummary(APIView):
 
     def summary_data(self):
         module_summary = dict()
+        # Only top-level groups (no parent); children are rolled into their parent.
         taxon_groups = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            parent__isnull=True,
         ).order_by('display_order')
         module_summary['general_summary'] = self.general_summary_data()
         for taxon_group in taxon_groups:
             taxon_group_name = taxon_group.name
-            module_summary[taxon_group_name] = (
-                self.module_summary_data(
-                    taxon_group
-                )
-            )
+            data = self.module_summary_data(taxon_group)
+            # Replace per-group validated count with the subtree total
+            data['total_validated'] = self._validated_count_for_group(taxon_group)
+            module_summary[taxon_group_name] = data
         set_cache(
             self._cache_key(),
             module_summary,
