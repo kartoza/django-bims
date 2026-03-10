@@ -4,19 +4,32 @@
 
 import ast
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 from django.core.files.base import ContentFile
 from django.core.files.temp import NamedTemporaryFile
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status as http_status
+from rest_framework.permissions import IsAuthenticated
 from django.views.generic import TemplateView
 from django.http import HttpResponseRedirect, Http404
 from django.db.models import Q
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from bims.models.upload_session import UploadSession
 from bims.models.taxon_group import TaxonGroup
+
+# A session is considered stale/stuck when no progress has been recorded
+# for this many minutes
+STALE_THRESHOLD_MINUTES = 15
+
+RESUMABLE_TASK_MAP = {
+    'taxa': 'bims.tasks.taxa_upload',
+    'collections': 'bims.tasks.collections_upload',
+    'physico_chemical': 'bims.tasks.physico_chemical_upload',
+}
 
 
 class DataUploadView(
@@ -147,19 +160,80 @@ class DataUploadView(
 
 class DataUploadStatusView(APIView):
     """
-    Return status of the data upload
+    Return status of the data upload.
+    Includes `is_stale` flag when the task appears to have stopped,
+    and `can_resume` to indicate whether auto-resume is supported.
     """
 
     def get(self, request, session_id, *args):
         try:
-            session = UploadSession.objects.get(
-                id=session_id
-            )
+            session = UploadSession.objects.get(id=session_id)
         except UploadSession.DoesNotExist:
             raise Http404('No session found')
+
+        is_stale = False
+        if not session.processed and not session.canceled:
+            now = timezone.now()
+            if session.last_progress_update:
+                delta = now - session.last_progress_update
+                is_stale = delta > timedelta(minutes=STALE_THRESHOLD_MINUTES)
+            elif session.progress:
+                # Task started (set progress text) but never reached the row
+                # processing loop — check against upload time.
+                uploaded_at = session.uploaded_at
+                if timezone.is_naive(uploaded_at):
+                    uploaded_at = timezone.make_aware(uploaded_at)
+                delta = now - uploaded_at
+                is_stale = delta > timedelta(minutes=STALE_THRESHOLD_MINUTES * 2)
+
         return Response({
-            'token': session.token,
+            'token': str(session.token),
             'progress': session.progress,
             'processed': session.processed,
-            'canceled': session.canceled
+            'canceled': session.canceled,
+            'is_stale': is_stale,
+            'can_resume': session.category in RESUMABLE_TASK_MAP,
         })
+
+
+class ResumeUploadView(APIView):
+    """
+    Re-queue a stale/stuck upload session so processing continues
+    from the last saved checkpoint (upload_session.start_row).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, session_id, *args):
+        try:
+            session = UploadSession.objects.get(id=session_id)
+        except UploadSession.DoesNotExist:
+            raise Http404('No session found')
+
+        # Only the uploader or staff may resume.
+        if not request.user.is_staff and session.uploader != request.user:
+            return Response(
+                {'error': 'Permission denied'},
+                status=http_status.HTTP_403_FORBIDDEN
+            )
+
+        if session.processed or session.canceled:
+            return Response(
+                {'error': 'Session is already completed or cancelled'},
+                status=http_status.HTTP_400_BAD_REQUEST
+            )
+
+        task_name = RESUMABLE_TASK_MAP.get(session.category)
+        if not task_name:
+            return Response(
+                {'error': f'Auto-resume is not supported for category: {session.category}'},
+                status=http_status.HTTP_400_BAD_REQUEST
+            )
+
+        # Reset the stale timestamp so we don't immediately re-trigger resume.
+        session.last_progress_update = timezone.now()
+        session.save(update_fields=['last_progress_update'])
+
+        from celery import current_app
+        current_app.send_task(task_name, args=[session.id])
+
+        return Response({'status': 'resumed', 'session_id': session.id, 'start_row': session.start_row})

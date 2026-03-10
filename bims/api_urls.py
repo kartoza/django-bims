@@ -108,7 +108,7 @@ from bims.api_views.chemical_record import ChemicalRecordDownloader
 from bims.api_views.taxa_search_result import TaxaSearchResult
 from bims.api_views.river_name import GetRiverName
 from bims.download.csv_download import CsvDownload
-from bims.views.data_upload import DataUploadStatusView
+from bims.views.data_upload import DataUploadStatusView, ResumeUploadView
 from bims.views.harvest_collection_data import HarvestSessionStatusView
 from bims.api_views.taxon_group import (
     UpdateTaxonGroupOrder,
@@ -313,6 +313,9 @@ urlpatterns = [
     re_path(r'^upload-status/(?P<session_id>[0-9]+)/$',
         DataUploadStatusView.as_view(),
         name='upload-status'),
+    re_path(r'^upload-resume/(?P<session_id>[0-9]+)/$',
+        ResumeUploadView.as_view(),
+        name='upload-resume'),
     re_path(r'^harvest-status/(?P<session_id>[0-9]+)/$',
         HarvestSessionStatusView.as_view(),
         name='harvest-status'),

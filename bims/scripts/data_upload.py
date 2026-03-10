@@ -231,21 +231,38 @@ class DataCSVUpload(object):
 
     def process_csv_dict_reader(self):
         """
-        Read and process data from csv file
+        Read and process data from csv file, supporting resume from a
+        previously saved checkpoint (upload_session.start_row).
         """
+        from django.utils import timezone
+        start_row = self.upload_session.start_row or 0
         index = 1
         for row in self.csv_dict_reader:
             if UploadSession.objects.get(id=self.upload_session.id).canceled:
                 print('Canceled')
                 return
+
+            # Skip already-processed rows when resuming from a checkpoint
+            if index <= start_row:
+                index += 1
+                continue
+
             logger.debug(row)
             self.upload_session.progress = '{index}/{total}'.format(
                 index=index,
                 total=self.total_rows
             )
+            # Record checkpoint: all rows before this one are complete
+            self.upload_session.start_row = index - 1
+            self.upload_session.last_progress_update = timezone.now()
             self.upload_session.save()
             index += 1
-            self.process_row(row=row)
+
+            try:
+                self.process_row(row=row)
+            except Exception as e:
+                logger.exception('Error processing row %s: %s', index - 1, e)
+                self.error_file(row, str(e))
 
         self.finish(self.csv_dict_reader.fieldnames)
 

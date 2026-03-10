@@ -236,8 +236,11 @@
     <script type="text/javascript">
 
         const updateUrl = "/api/upload-status/";
+        const resumeUrl = "/api/upload-resume/";
         let currentSessionId = 0;
-        
+        // Track sessions currently being resumed to avoid duplicate requests.
+        const resumingSession = {};
+
         function download_template() {
             const taxonGroupId = $('#taxon-group').val();
             window.open('/download-occurrence-template?taxon_group=' + taxonGroupId);
@@ -245,16 +248,33 @@
 
         const updateProgress = (id, $elm) => {
             setTimeout(function () {
-                console.log(updateUrl);
                 $.get(updateUrl + id).then(
                     (response) => {
-                        if (!response['processed']) {
+                        if (!response['processed'] && !response['canceled']) {
                             let currentProgress = response['progress'];
-                            $elm.parent().parent().find('.progress-text').html(currentProgress);
+                            if (!resumingSession[id]) {
+                                $elm.parent().parent().find('.progress-text').html(currentProgress);
+                            }
                             if (currentProgress && currentProgress.indexOf('/') > -1) {
                                 let [indexProgress, totalProgress] = currentProgress.split('/');
                                 let percentProgress = (parseInt(indexProgress) / parseInt(totalProgress)) * 100;
                                 $elm.css({'width': `${percentProgress}%`});
+                            }
+                            // Auto-resume if the task appears stuck and this category supports it.
+                            if (response['is_stale'] && response['can_resume'] && !resumingSession[id]) {
+                                resumingSession[id] = true;
+                                $elm.parent().parent().find('.progress-text').html('Upload paused — resuming automatically...');
+                                $.ajax({
+                                    url: resumeUrl + id + '/',
+                                    type: 'POST',
+                                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                                    success: function () {
+                                        setTimeout(function () { delete resumingSession[id]; }, 60000);
+                                    },
+                                    error: function () {
+                                        delete resumingSession[id];
+                                    }
+                                });
                             }
                             updateProgress(id, $elm);
                         } else {

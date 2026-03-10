@@ -125,6 +125,17 @@ class UploadSession(models.Model):
         help_text='When checked, synonyms for each accepted taxon will be harvested'
     )
 
+    last_progress_update = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Timestamp of the last progress update, used to detect stale/stuck tasks'
+    )
+
+    start_row = models.IntegerField(
+        default=0,
+        help_text='Row index to resume processing from (0 = start from beginning)'
+    )
+
     # noinspection PyClassicStyleClass
     class Meta:
         """Meta class for project."""
