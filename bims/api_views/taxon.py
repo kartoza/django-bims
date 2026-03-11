@@ -464,6 +464,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'owner',
                     'parent',
                     'last_modified_by',
+                    'origin',
+                    'endemism',
                 ]
             )
             proposal_author = author_name or taxonomy.author
@@ -480,6 +482,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     author=proposal_author,
                     iucn_status=taxonomy.iucn_status,
                     last_modified_by=self.request.user,
+                    origin=taxonomy.origin,
+                    endemism=taxonomy.endemism,
                     **taxonomy_data
                 )
             )

@@ -82,12 +82,17 @@ class TaxonHierarchySerializer(serializers.ModelSerializer):
         return obj.sub_tribe_name
 
     def get_variety(self, obj: Taxonomy):
+        if obj.rank == 'SUBSPECIES':
+            return ''
         return obj.variety_name
 
     def get_species_group(self, obj: Taxonomy):
         return obj.species_group.name if obj.species_group else ''
 
     def get_subspecies(self, obj: Taxonomy):
+        if obj.rank == 'VARIETY':
+            return ''
+        
         if (
             obj.accepted_taxonomy and
             obj.is_synonym_or_doubtful and
