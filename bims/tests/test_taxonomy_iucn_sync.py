@@ -120,6 +120,9 @@ class TestTaxonomyIUCNSync(FastTenantTestCase):
         self.assertEqual(
             synonym.iucn_data, "{'url': 'https://apiv3.iucnredlist.org/taxon/123'}"
         )
+        self.assertEqual(
+            synonym.iucn_status, iucn
+        )
 
     def test_accepted_skips_synonyms_missing_redlist_id(self, mock_iucn):
         """Saving an accepted taxonomy updates synonyms that have iucn_status but no redlist_id."""

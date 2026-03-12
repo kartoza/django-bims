@@ -587,9 +587,11 @@ def fetch_all_species_from_gbif(
                 )
 
             if accepted_taxonomy:
-                if not accepted_preexists and taxonomy.iucn_status:
-                    accepted_taxonomy.iucn_status = taxonomy.iucn_status
-                    accepted_taxonomy.save()
+                # if not accepted_preexists and taxonomy.iucn_status:
+                #     accepted_taxonomy.iucn_status = taxonomy.iucn_status
+                #     accepted_taxonomy.iucn_redlist_id = taxonomy.iucn_redlist_id
+                #     accepted_taxonomy.iucn_data = taxonomy.iucn_data
+                #     accepted_taxonomy.save()
                 taxonomy.accepted_taxonomy = accepted_taxonomy
                 taxonomy.save()
 

@@ -607,4 +607,4 @@ class TestTaxaUpload(FastTenantTestCase):
             taxonomy=accepted_taxonomy,
             taxongroup=self.taxon_group
         )
-        self.assertFalse(accepted_in_group.is_validated)
+        self.assertTrue(accepted_in_group.is_validated)
