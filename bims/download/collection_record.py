@@ -6,6 +6,8 @@ import gc
 import tempfile
 import shutil
 
+from django.utils import timezone
+
 from bims.models.download_request import DownloadRequest
 from bims.scripts.collection_csv_keys import PARK_OR_MPA_NAME, END_EMBARGO_DATE
 
@@ -118,6 +120,22 @@ def write_to_csv(headers: list,
     return current_csv_row
 
 
+def count_csv_data_rows(path_file):
+    """Return the number of data rows (excluding header) in an existing CSV."""
+    if not os.path.exists(path_file) or os.path.getsize(path_file) == 0:
+        return 0
+    count = 0
+    try:
+        with open(path_file, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            next(reader, None)  # skip header
+            for _ in reader:
+                count += 1
+    except Exception:
+        return 0
+    return count
+
+
 def download_collection_records(
         path_file,
         request,
@@ -185,11 +203,43 @@ def download_collection_records(
             site__id__in=site_ids
         ).distinct()
 
-    current_csv_row = 0
+    # Support resuming a partially completed download
+    rows_already_written = count_csv_data_rows(path_file)
+    current_csv_row = rows_already_written
     record_number = min(total_records, 100)
     collection_data = []
 
     if download_request and download_request.rejected:
+        return
+
+    # When resuming, skip records already written to the file
+    if rows_already_written > 0 and rows_already_written < total_records:
+        logger.debug('Resuming download from row %d / %d', rows_already_written, total_records)
+        try:
+            resume_pk = collection_results.order_by('pk').values_list(
+                'pk', flat=True
+            )[rows_already_written - 1]
+            collection_results = collection_results.filter(pk__gt=resume_pk)
+        except (IndexError, Exception) as e:
+            logger.warning('Could not determine resume position, restarting: %s', e)
+            rows_already_written = 0
+            current_csv_row = 0
+    elif rows_already_written >= total_records:
+        logger.debug('Download already complete (%d rows), sending email', rows_already_written)
+        if send_email and user_id:
+            from django.contrib.auth import get_user_model
+            from bims.tasks.email_csv import send_csv_via_email
+            UserModel = get_user_model()
+            try:
+                user = UserModel.objects.get(id=user_id)
+                send_csv_via_email(
+                    user_id=user.id,
+                    file_name='Occurrence Data',
+                    csv_file=path_file,
+                    download_request_id=download_request_id
+                )
+            except UserModel.DoesNotExist:
+                pass
         return
 
     taxon_group = collection_results.first().module_group
@@ -288,7 +338,8 @@ def download_collection_records(
                     pass
                 return
             else:
-                download_request.progress = f'{start_index}/{total_records}'
+                download_request.progress = f'{current_csv_row}/{total_records}'
+                download_request.progress_updated_at = timezone.now()
                 download_request.save()
 
     if collection_data:
@@ -312,6 +363,7 @@ def download_collection_records(
     if download_request:
         download_request = get_download_request(download_request_id)
         download_request.progress = f'{current_csv_row}/{total_records}'
+        download_request.progress_updated_at = timezone.now()
         download_request.save()
 
     logger.debug(

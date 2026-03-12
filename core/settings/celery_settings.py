@@ -68,5 +68,13 @@ CELERY_BEAT_SCHEDULE = {
             'retry': False,
             'queue': 'update'
         }
-    }
+    },
+    'resume_stalled_downloads': {
+        'task': 'bims.tasks.resume_stalled_downloads',
+        'schedule': 600,  # every 10 minutes
+        'options': {
+            'retry': False,
+            'queue': 'update'
+        }
+    },
 }

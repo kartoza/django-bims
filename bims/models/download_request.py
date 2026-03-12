@@ -151,6 +151,22 @@ class DownloadRequest(models.Model):
         null=True,
         blank=True
     )
+    progress_updated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Timestamp of the last progress update'
+    )
+    download_path = models.CharField(
+        max_length=512,
+        null=True,
+        blank=True,
+        help_text='Filesystem path of the in-progress download file'
+    )
+    download_params = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='Serialised request parameters used to start the download'
+    )
     source_site = models.ForeignKey(
         Site,
         on_delete=models.SET_NULL,

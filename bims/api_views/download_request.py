@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 
 from django.contrib.sites.models import Site
+from django.utils import timezone
 from django.utils.timezone import make_aware
 from preferences import preferences
 import ast
 
 from rest_framework import status
 
-from bims.download.csv_download import send_new_csv_notification
+from bims.download.csv_download import send_new_csv_notification, STALE_THRESHOLD_MINUTES
 from bims.models.taxonomy import Taxonomy
 
 from bims.models.location_site import LocationSite
@@ -140,4 +141,69 @@ class DownloadRequestApi(APIView):
         return Response({
             'success': success,
             'download_request_id': download_request.id
+        })
+
+
+class DownloadRequestProgressApi(APIView):
+    """
+    GET /api/download-request/<id>/progress/
+
+    Returns the current progress of a download request.
+    Response fields:
+      - progress      : raw progress string e.g. "250/1000"
+      - completed     : number of rows processed so far
+      - total         : total number of rows
+      - percentage    : 0-100 integer
+      - is_stale      : true when the worker appears to have stopped
+      - is_finished   : true when completed == total (or request_file exists)
+    """
+
+    def get(self, request, download_request_id):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return Response(
+                {'error': 'Download request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Only the requester (or staff) may check progress
+        if dr.requester and dr.requester != request.user and not request.user.is_staff:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        completed = 0
+        total = 0
+        percentage = 0
+        is_finished = bool(dr.request_file)
+
+        if dr.progress:
+            try:
+                completed, total = (int(x) for x in dr.progress.split('/'))
+                if total > 0:
+                    percentage = min(100, int(completed * 100 / total))
+                if completed >= total > 0:
+                    is_finished = True
+            except (ValueError, ZeroDivisionError):
+                pass
+
+        is_stale = False
+        if not is_finished and dr.progress and dr.progress_updated_at:
+            stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
+            is_stale = dr.progress_updated_at < stale_cutoff
+
+        return Response({
+            'progress': dr.progress or '',
+            'completed': completed,
+            'total': total,
+            'percentage': percentage,
+            'is_stale': is_stale,
+            'is_finished': is_finished,
         })

@@ -129,7 +129,8 @@ from bims.views.source_reference import SourceReferenceAPIView
 from bims.api_views.decision_support_tool import DecisionSupportToolView, \
     DecisionSupportToolList, check_dst_status
 from bims.api_views.download_request import (
-    DownloadRequestApi
+    DownloadRequestApi,
+    DownloadRequestProgressApi,
 )
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
@@ -396,6 +397,10 @@ urlpatterns = [
     re_path(r'^download-request/$',
         DownloadRequestApi.as_view(),
         name='download-request'
+        ),
+    re_path(r'^download-request/(?P<download_request_id>\d+)/progress/$',
+        DownloadRequestProgressApi.as_view(),
+        name='download-request-progress'
         ),
     re_path(r'^gbif-ids/download/$',
         GbifIdsDownloader.as_view()),

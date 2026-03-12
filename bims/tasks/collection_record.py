@@ -67,6 +67,59 @@ def download_collection_record_task(
         path_file)
 
 
+@shared_task(name='bims.tasks.resume_stalled_downloads', queue='update')
+def resume_stalled_downloads():
+    """
+    Periodic task: find occurrence download requests whose progress has not
+    advanced for STALE_THRESHOLD_MINUTES and restart them from scratch.
+    """
+    from datetime import timedelta
+    from django.utils import timezone
+    from bims.models.download_request import DownloadRequest
+    from bims.download.csv_download import STALE_THRESHOLD_MINUTES
+
+    stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
+
+    stalled = DownloadRequest.objects.filter(
+        resource_name='Occurrence Data',
+        resource_type__in=['CSV', 'XLS'],
+        approved=True,
+        rejected=False,
+        request_file='',
+        progress__isnull=False,
+        progress_updated_at__lt=stale_cutoff,
+        download_path__isnull=False,
+        download_params__isnull=False,
+    )
+
+    for dr in stalled:
+        logger.info(
+            'Resuming stalled download request %d (last update: %s)',
+            dr.id, dr.progress_updated_at
+        )
+        path_file = dr.download_path
+        request_params = dr.download_params or {}
+
+        # Remove the partial file so the task starts clean
+        try:
+            import os
+            if path_file and os.path.exists(path_file):
+                os.remove(path_file)
+        except OSError as exc:
+            logger.warning('Could not remove partial file %s: %s', path_file, exc)
+
+        dr.progress = None
+        dr.progress_updated_at = None
+        dr.save(update_fields=['progress', 'progress_updated_at'])
+
+        download_collection_record_task.delay(
+            path_file,
+            request_params,
+            send_email=True,
+            user_id=dr.requester_id,
+        )
+
+
 @shared_task(name='bims.tasks.download_gbif_ids', queue='update')
 def download_gbif_ids(path_file, request, send_email=False, user_id=None):
     from bims.utils.celery import memcache_lock
