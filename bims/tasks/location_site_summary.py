@@ -245,11 +245,15 @@ def generate_location_site_summary(
         start_time = time.time()
         sampling_data = collection_records.annotate(
             name=Coalesce(
-                F('sampling_method__sampling_method'), Value('Unknown'))
+                F('sampling_method__sampling_method'), Value('Unspecified'))
         ).values('name').annotate(count=Count('name')).order_by('name')
+        sampling_method_counts = {}
+        for item in sampling_data:
+            label = 'Unspecified' if item['name'].strip().lower() in ('unknown', 'unspecified', '') else item['name']
+            sampling_method_counts[label] = sampling_method_counts.get(label, 0) + item['count']
         biodiversity_data['species']['sampling_method_chart'] = {
-            'keys': [item['name'] for item in sampling_data],
-            'data': [item['count'] for item in sampling_data]
+            'keys': list(sampling_method_counts.keys()),
+            'data': list(sampling_method_counts.values())
         }
         biodiversity_data['times']['sampling_method_chart'] = time.time() - start_time
 
@@ -258,15 +262,16 @@ def generate_location_site_summary(
         biotope_data = Biotope.objects.filter(
             biologicalcollectionrecord__id__in=collection_records.values_list('id', flat=True)
         ).values('name').annotate(count=Count('name')).order_by('name')
-        biotope_keys = [item['name'] for item in biotope_data]
-        biotope_counts = [item['count'] for item in biotope_data]
+        biotope_counts_map = {}
+        for item in biotope_data:
+            label = 'Unspecified' if item['name'].strip().lower() in ('unknown', 'unspecified', '') else item['name']
+            biotope_counts_map[label] = biotope_counts_map.get(label, 0) + item['count']
         unspecified_biotope_count = collection_records.filter(biotope__isnull=True).count()
         if unspecified_biotope_count > 0:
-            biotope_keys.append('Unknown')
-            biotope_counts.append(unspecified_biotope_count)
+            biotope_counts_map['Unspecified'] = biotope_counts_map.get('Unspecified', 0) + unspecified_biotope_count
         biodiversity_data['species']['biotope_chart'] = {
-            'keys': biotope_keys,
-            'data': biotope_counts
+            'keys': list(biotope_counts_map.keys()),
+            'data': list(biotope_counts_map.values())
         }
         biodiversity_data['times']['biotope_chart'] = time.time() - start_time
 
