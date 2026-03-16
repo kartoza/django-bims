@@ -1,6 +1,5 @@
 # coding=utf-8
 import os
-from distutils import util as distutil
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from django.contrib.flatpages.models import FlatPage
