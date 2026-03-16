@@ -16,8 +16,8 @@ from bims.download.csv_download import (
 
 def validate_file_extension(value):
     import os
-    ext = os.path.splitext(value.name)[1]
-    valid_extensions = ['.csv', '.xlsx', '.xls']
+    ext = os.path.splitext(value.name)[1].lower()
+    valid_extensions = ['.csv', '.xlsx', '.xls', '.png', '.svg', '.pdf', '.jpg', '.jpeg']
     if ext not in valid_extensions:
         raise ValidationError('File not supported!')
 

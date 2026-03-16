@@ -1,6 +1,6 @@
 function svgChartDownload(chartConfig, title) {
-    showDownloadPopup('CHART', title, function () {
-        // Create c2s chart, download it
+    showDownloadPopup('CHART', title, function (downloadRequestId) {
+        // Create c2s chart, upload to server
         let browserZoomLevel = Math.round(window.devicePixelRatio * 100);
         let canvasScale = 100 / browserZoomLevel;
         let c2s = C2S(1000, 600);
@@ -35,12 +35,8 @@ function svgChartDownload(chartConfig, title) {
                 chart.update();
             }
         }
-        // Download the chart
         let svg = c2s.getSerializedSvg(true);
-        // Convert svg source to URI data scheme.
-        let link = document.createElement('a');
-        link.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-        link.download = `${title}.svg`;
-        link.dispatchEvent(new MouseEvent('click'));
+        let blob = new Blob([svg], {type: 'image/svg+xml'});
+        uploadToDownloadRequest(downloadRequestId, blob, title + '.svg');
     })
 }

@@ -619,21 +619,17 @@ define([
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
             this.mapLocationSite.once('postrender', function (event) {
-                showDownloadPopup('IMAGE', 'Distribution Map', function () {
-                    let canvas = $('#locationsite-map');
-                    html2canvas(canvas, {
+                showDownloadPopup('IMAGE', 'Distribution Map', function (downloadRequestId) {
+                    let canvas = $('#locationsite-map')[0];
+                    HtmlToCanvas(canvas, {
                         useCORS: false,
                         background: '#FFFFFF',
                         allowTaint: true,
                         onrendered: function (canvas) {
                             $('.ol-control').show();
-                            let link = document.createElement('a');
-                            link.setAttribute("type", "hidden");
-                            link.href = canvas.toDataURL("image/png");
-                            link.download = 'map.png';
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
+                            canvas.toBlob(function (blob) {
+                                uploadToDownloadRequest(downloadRequestId, blob, 'Distribution Map.png');
+                            }, 'image/png');
                         }
                     });
                 })
@@ -656,25 +652,25 @@ define([
             this.downloadChart(title, canvas);
         },
         downloadChart: function (title, graph_canvas) {
-            var img = new Image();
-            var ctx = graph_canvas.getContext('2d');
-            img.src = '/static/img/bims-stamp.png';
-            img.onload = function () {
-                ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
-                    graph_canvas.scrollHeight - img.height - 5);
-                canvas = graph_canvas;
-                html2canvas(canvas, {
-                    width: 10000,
-                    height: 10000,
-                    onrendered: function (canvas) {
-                        var link = document.createElement('a');
-                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                        link.download = title + '.png';
-                        link.click();
-                        link.remove();
-                    }
-                })
-            }
+            showDownloadPopup('CHART', title, function (downloadRequestId) {
+                var img = new Image();
+                var ctx = graph_canvas.getContext('2d');
+                img.src = '/static/img/bims-stamp.png';
+                img.onload = function () {
+                    ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
+                        graph_canvas.scrollHeight - img.height - 5);
+                    var canvas = graph_canvas;
+                    HtmlToCanvas(canvas, {
+                        width: 10000,
+                        height: 10000,
+                        onrendered: function (canvas) {
+                            canvas.toBlob(function (blob) {
+                                uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                            }, 'image/png');
+                        }
+                    })
+                }
+            });
         },
         downloadElementEvent: function (button_el) {
             let that = this;
@@ -727,24 +723,44 @@ define([
             let image = element.children('img').attr('src');
 
             if (image) {
-                let link = document.createElement('a');
-                link.href = image;
-                link.download = title + '.png';
-                link.click();
+                showDownloadPopup('IMAGE', title, function (downloadRequestId) {
+                    fetch(image)
+                        .then(function (res) { return res.blob(); })
+                        .then(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                        });
+                });
             }
         },
         downloadElement: function (title, element) {
-            element[0].scrollIntoView();
-            showDownloadPopup('TABLE', title, function () {
-                html2canvas(element, {
+            var domElement = element[0];
+            if (!domElement || !document.body.contains(domElement)) {
+                return;
+            }
+            domElement.scrollIntoView();
+            showDownloadPopup('TABLE', title, function (downloadRequestId) {
+                // Re-check attachment after modal interaction
+                if (!domElement || !document.body.contains(domElement)) {
+                    alert('The element is no longer available. Please try again.');
+                    return;
+                }
+                var render = HtmlToCanvas(domElement, {
                     height: 1000,
                     onrendered: function (canvas) {
-                        var link = document.createElement('a');
-                        link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                        link.download = title + '.png';
-                        link.click();
+                        canvas.toBlob(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                        }, 'image/png');
                     }
-                })
+                });
+                if (render && typeof render.then === 'function') {
+                    render.then(function (canvas) {
+                        canvas.toBlob(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                        }, 'image/png');
+                    }).catch(function (err) {
+                        console.error('HtmlToCanvas error:', err);
+                    });
+                }
             });
         },
         downloadingCSV: function (url, downloadButton, csv_name) {
@@ -1828,19 +1844,19 @@ define([
             let self = this;
             let element = this.$el.find('#detailed-site-dashboard-wrapper')[0];
             element.scrollIntoView();
-            this.$el.find('.btn').hide();
-            html2canvas(element, {
-                width: 10000,
-                height: 10000,
-                onrendered: function (canvas) {
-                    var link = document.createElement('a');
-                    link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                    link.download = 'Site dashboard.png';
-                    link.click();
-                    link.remove();
-                    self.$el.find('.btn').show();
-                }
-            })
+            showDownloadPopup('IMAGE', 'Site dashboard', function (downloadRequestId) {
+                self.$el.find('.btn').hide();
+                HtmlToCanvas(element, {
+                    width: 10000,
+                    height: 10000,
+                    onrendered: function (canvas) {
+                        self.$el.find('.btn').show();
+                        canvas.toBlob(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, 'Site dashboard.png');
+                        }, 'image/png');
+                    }
+                })
+            });
         },
     })
 });

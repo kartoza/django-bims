@@ -20,13 +20,12 @@ function tablePngDownload(e) {
     let table = container.find('.table');
     table[0].scrollIntoView();
 
-    showDownloadPopup('TABLE', title, function () {
+    showDownloadPopup('TABLE', title, function (downloadRequestId) {
         html2canvas(table, {
             onrendered: function (canvas) {
-                let link = document.createElement('a');
-                link.href = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                link.download = title + '.png';
-                link.click();
+                canvas.toBlob(function (blob) {
+                    uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                }, 'image/png');
             }
         })
     })

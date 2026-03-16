@@ -213,6 +213,53 @@ class DownloadRequestProgressApi(APIView):
         })
 
 
+class DownloadRequestUploadApi(APIView):
+    """
+    POST /api/download-request/<id>/upload/
+
+    Accepts a file upload (chart, image, table) generated client-side and
+    saves it as the request_file for the download request. After uploading,
+    the file can be downloaded via the file endpoint.
+    """
+
+    def post(self, request, download_request_id):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return Response(
+                {'error': 'Download request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if dr.requester and dr.requester != request.user and not request.user.is_staff:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response(
+                {'error': 'No file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        dr.request_file = uploaded_file
+        dr.processing = False
+        dr.save()
+
+        return Response({
+            'success': True,
+            'download_url': f'/api/download-request/{dr.id}/file/'
+        })
+
+
 class DownloadRequestFileApi(APIView):
     """
     GET /api/download-request/<id>/file/
