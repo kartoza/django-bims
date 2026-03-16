@@ -2,7 +2,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from bims.models.upload_request import UploadRequest, UploadType
+from bims.models.upload_request import UploadType
+from bims.models.licence import Licence
 
 ALLOWED_EXTENSIONS = [
     'csv', 'xlsx', 'xls', 'zip',
@@ -30,9 +31,9 @@ class UploadForm(forms.Form):
             allowed_extensions=ALLOWED_EXTENSIONS)
         ]
     )
-    data_licence = forms.ChoiceField(
-        choices=UploadRequest.LICENCE_CHOICES,
-        initial=UploadRequest.LICENCE_CC_BY,
+    licence = forms.ModelChoiceField(
+        queryset=Licence.objects.all(),
+        empty_label=None,
     )
     notes = forms.CharField(widget=forms.Textarea, required=False)
     decoy = forms.CharField(required=False)

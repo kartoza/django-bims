@@ -20,6 +20,7 @@ from github import GithubIntegration
 
 from bims.forms.upload import UploadForm
 from bims.models.upload_request import UploadRequest
+from bims.models.licence import Licence
 
 
 def get_client_ip(request) -> Optional[str]:
@@ -136,6 +137,11 @@ class UploadView(UserPassesTestMixin, FormView):
     def test_func(self):
         return True
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['licences'] = Licence.objects.all()
+        return ctx
+
     def get_initial(self):
         initial = super().get_initial()
         u = getattr(self.request, "user", None)
@@ -171,7 +177,7 @@ class UploadView(UserPassesTestMixin, FormView):
         assignees = preferences.SiteSetting.github_upload_assignees.split(',')
 
         file_url = self.request.build_absolute_uri(instance.upload_file.url)
-        licence_display = dict(UploadRequest.LICENCE_CHOICES).get(instance.data_licence, instance.data_licence)
+        licence_display = instance.licence.name if instance.licence else '-'
         body = (
             f"**New Upload**\n\n"
             f"- **Name:** {instance.name}\n"
@@ -214,7 +220,7 @@ class UploadView(UserPassesTestMixin, FormView):
             name=form.cleaned_data['name'],
             email=form.cleaned_data['email'],
             upload_type=form.cleaned_data['upload_type'],
-            data_licence=form.cleaned_data.get('data_licence') or UploadRequest.LICENCE_CC_BY,
+            licence=form.cleaned_data.get('licence'),
             notes=form.cleaned_data.get('notes') or '',
             source=form.cleaned_data.get('source') or 'upload_portal',
             client_ip=get_client_ip(self.request),
