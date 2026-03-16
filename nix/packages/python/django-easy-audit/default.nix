@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchFromGitHub,
+  fetchPypi,
   django,
 }:
 
@@ -10,11 +10,10 @@ buildPythonPackage rec {
   version = "1.3.8";
   format = "setuptools";
 
-  src = fetchFromGitHub {
-    owner = "soynatan";
-    repo = "django-easy-audit";
-    rev = "v${version}";
-    hash = "sha256-RoeiEMTMWIgxTx+VUpWxgYF5gFj2aiPlldjdJv5wtXw=";
+  src = fetchPypi {
+    pname = "django_easy_audit";
+    inherit version;
+    hash = "sha256-XR8qANW6qG19LcliwdEdOkGq88iUPbsDrMG0cVNx1qc=";
   };
 
   dependencies = [ django ];
