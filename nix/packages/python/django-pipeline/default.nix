@@ -2,6 +2,7 @@
   lib,
   buildPythonPackage,
   fetchPypi,
+  setuptools-scm,
   django,
 }:
 
@@ -14,6 +15,8 @@ buildPythonPackage rec {
     inherit pname version;
     hash = "sha256-NqbOVv3x0IEeTVGJf1NKzKNeuzW+aZ2dD9mXDmNHkqQ=";
   };
+
+  nativeBuildInputs = [ setuptools-scm ];
 
   dependencies = [ django ];
 
