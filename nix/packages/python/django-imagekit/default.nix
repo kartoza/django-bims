@@ -27,7 +27,8 @@ buildPythonPackage rec {
 
   doCheck = false;
 
-  pythonImportsCheck = [ "imagekit" ];
+  # Import requires Django settings to be configured
+  dontUsePythonImportsCheck = true;
 
   meta = with lib; {
     description = "Automated image processing for Django";
