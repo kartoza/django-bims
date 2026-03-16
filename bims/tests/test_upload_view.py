@@ -16,6 +16,7 @@ from preferences import preferences
 from github.GithubException import UnknownObjectException
 
 from bims.models.upload_request import UploadRequest, UploadType
+from bims.models.licence import Licence
 
 
 UPLOAD_URL_NAME = "upload"
@@ -32,6 +33,10 @@ class TestUploadView(FastTenantTestCase):
         self.upload_type, _ = UploadType.objects.get_or_create(
             code="occurrence",
             defaults={"name": "Occurrence", "order": 0},
+        )
+        self.licence, _ = Licence.objects.get_or_create(
+            identifier="CC-BY",
+            defaults={"name": "CC BY 4.0 – Attribution"},
         )
 
     def _make_file(self, name="data.csv", content=b"col1,col2\nx,y\n"):
@@ -72,7 +77,7 @@ class TestUploadView(FastTenantTestCase):
             "name": "Jane Doe",
             "email": "jane@example.org",
             "upload_type": "occurrence",
-            "data_licence": "CC-BY",
+            "licence": self.licence.pk,
             "notes": "hello",
             "source": "upload_portal",
             "upload_file": self._make_file(),
