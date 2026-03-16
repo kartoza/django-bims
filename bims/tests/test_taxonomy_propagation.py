@@ -3,10 +3,10 @@ from unittest import mock
 
 from django_tenants.test.cases import FastTenantTestCase
 
-from bims.models import Taxonomy
+from bims.models import Taxonomy, IUCNStatus
 from bims.models.endemism import Endemism
 from bims.models.taxon_origin import TaxonOrigin
-from bims.tests.model_factories import TaxonomyF
+from bims.tests.model_factories import TaxonomyF, IUCNStatusF
 
 
 def _make_origin(category='Native'):
@@ -20,21 +20,18 @@ def _make_endemism(name='Endemic'):
 @mock.patch('bims.models.taxonomy.get_iucn_status', return_value=(None, None, None))
 class TestTaxonomyOriginPropagation(FastTenantTestCase):
     """
-    Tests for origin propagation in taxonomy_pre_save_handler:
-      1. Synonym with origin → push up to accepted name if it lacks one
+    Tests for origin propagation in taxonomy_pre_save_handler.
+    Propagation always overwrites — the latest save wins.
+
+      1. Synonym with origin → push up to accepted (overwrites any existing value)
       2. Synonym without origin → pull down from accepted name
-      3. Synonym does not overwrite accepted name's existing origin
-      4. Accepted name with origin → push down to synonyms that lack one
-      5. Accepted name does not overwrite synonyms that already have an origin
-      6. No push when accepted name has no origin
+      3. Synonym with origin keeps its own value when saved (push path, not pull path)
+      4. Accepted name with origin → push down to all synonyms (overwrites any existing value)
+      5. No push when accepted name has no origin
     """
 
-    # ------------------------------------------------------------------ #
-    # 1. Synonym → accepted name (push up)
-    # ------------------------------------------------------------------ #
-
     def test_synonym_pushes_origin_to_accepted(self, mock_iucn):
-        """Saving a synonym with an origin updates the accepted name if it lacks one."""
+        """Saving a synonym with an origin sets it on the accepted name."""
         accepted = TaxonomyF.create(origin=None)
         origin = _make_origin('Native')
 
@@ -47,8 +44,8 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
         accepted.refresh_from_db()
         self.assertEqual(accepted.origin_id, origin.pk)
 
-    def test_synonym_does_not_overwrite_accepted_origin(self, mock_iucn):
-        """Saving a synonym does NOT overwrite the accepted name's existing origin."""
+    def test_synonym_overwrites_accepted_origin(self, mock_iucn):
+        """Saving a synonym with an origin overwrites the accepted name's existing origin."""
         original_origin = _make_origin('Native')
         accepted = TaxonomyF.create(origin=original_origin)
 
@@ -60,11 +57,7 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
         )
 
         accepted.refresh_from_db()
-        self.assertEqual(accepted.origin_id, original_origin.pk)
-
-    # ------------------------------------------------------------------ #
-    # 2. Synonym pulls from accepted on save
-    # ------------------------------------------------------------------ #
+        self.assertEqual(accepted.origin_id, synonym_origin.pk)
 
     def test_synonym_pulls_origin_from_accepted(self, mock_iucn):
         """A synonym saved without an origin inherits it from the accepted name."""
@@ -83,8 +76,8 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertEqual(synonym.origin_id, origin.pk)
 
-    def test_synonym_does_not_pull_origin_if_already_set(self, mock_iucn):
-        """A synonym that already has an origin is not overwritten by the accepted name."""
+    def test_synonym_with_origin_keeps_own_value_on_save(self, mock_iucn):
+        """A synonym that has its own origin keeps it when saved (push path taken, not pull)."""
         accepted_origin = _make_origin('Native')
         accepted = TaxonomyF.create(origin=accepted_origin)
 
@@ -102,12 +95,8 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertEqual(synonym.origin_id, synonym_origin.pk)
 
-    # ------------------------------------------------------------------ #
-    # 3. Accepted name → synonyms (push down)
-    # ------------------------------------------------------------------ #
-
     def test_accepted_pushes_origin_to_synonyms(self, mock_iucn):
-        """Saving an accepted name with an origin updates synonyms that lack one."""
+        """Saving an accepted name with an origin sets it on synonyms that lack one."""
         accepted = TaxonomyF.create(origin=None)
         synonym = TaxonomyF.create(
             origin=None,
@@ -122,8 +111,8 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertEqual(synonym.origin_id, origin.pk)
 
-    def test_accepted_does_not_overwrite_synonym_origin(self, mock_iucn):
-        """Saving an accepted name does NOT overwrite synonyms that already have an origin."""
+    def test_accepted_overwrites_synonym_origin(self, mock_iucn):
+        """Saving an accepted name with an origin overwrites synonyms' existing origin."""
         accepted_origin = _make_origin('Native')
         accepted = TaxonomyF.create(origin=accepted_origin)
 
@@ -137,7 +126,7 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
         accepted.save()
 
         synonym.refresh_from_db()
-        self.assertEqual(synonym.origin_id, synonym_origin.pk)
+        self.assertEqual(synonym.origin_id, accepted_origin.pk)
 
     def test_no_push_when_accepted_has_no_origin(self, mock_iucn):
         """Saving an accepted name without an origin does not modify synonyms."""
@@ -157,21 +146,18 @@ class TestTaxonomyOriginPropagation(FastTenantTestCase):
 @mock.patch('bims.models.taxonomy.get_iucn_status', return_value=(None, None, None))
 class TestTaxonomyEndemismPropagation(FastTenantTestCase):
     """
-    Tests for endemism propagation in taxonomy_pre_save_handler:
-      1. Synonym with endemism → push up to accepted name if it lacks one
+    Tests for endemism propagation in taxonomy_pre_save_handler.
+    Propagation always overwrites — the latest save wins.
+
+      1. Synonym with endemism → push up to accepted (overwrites any existing value)
       2. Synonym without endemism → pull down from accepted name
-      3. Synonym does not overwrite accepted name's existing endemism
-      4. Accepted name with endemism → push down to synonyms that lack one
-      5. Accepted name does not overwrite synonyms that already have an endemism
-      6. No push when accepted name has no endemism
+      3. Synonym with endemism keeps its own value when saved (push path, not pull path)
+      4. Accepted name with endemism → push down to all synonyms (overwrites any existing value)
+      5. No push when accepted name has no endemism
     """
 
-    # ------------------------------------------------------------------ #
-    # 1. Synonym → accepted name (push up)
-    # ------------------------------------------------------------------ #
-
     def test_synonym_pushes_endemism_to_accepted(self, mock_iucn):
-        """Saving a synonym with an endemism updates the accepted name if it lacks one."""
+        """Saving a synonym with an endemism sets it on the accepted name."""
         accepted = TaxonomyF.create(endemism=None)
         endemism = _make_endemism('Endemic')
 
@@ -184,8 +170,8 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
         accepted.refresh_from_db()
         self.assertEqual(accepted.endemism_id, endemism.pk)
 
-    def test_synonym_does_not_overwrite_accepted_endemism(self, mock_iucn):
-        """Saving a synonym does NOT overwrite the accepted name's existing endemism."""
+    def test_synonym_overwrites_accepted_endemism(self, mock_iucn):
+        """Saving a synonym with an endemism overwrites the accepted name's existing endemism."""
         original_endemism = _make_endemism('Endemic')
         accepted = TaxonomyF.create(endemism=original_endemism)
 
@@ -197,11 +183,7 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
         )
 
         accepted.refresh_from_db()
-        self.assertEqual(accepted.endemism_id, original_endemism.pk)
-
-    # ------------------------------------------------------------------ #
-    # 2. Synonym pulls from accepted on save
-    # ------------------------------------------------------------------ #
+        self.assertEqual(accepted.endemism_id, synonym_endemism.pk)
 
     def test_synonym_pulls_endemism_from_accepted(self, mock_iucn):
         """A synonym saved without an endemism inherits it from the accepted name."""
@@ -220,8 +202,8 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertEqual(synonym.endemism_id, endemism.pk)
 
-    def test_synonym_does_not_pull_endemism_if_already_set(self, mock_iucn):
-        """A synonym that already has an endemism is not overwritten by the accepted name."""
+    def test_synonym_with_endemism_keeps_own_value_on_save(self, mock_iucn):
+        """A synonym that has its own endemism keeps it when saved (push path taken, not pull)."""
         accepted_endemism = _make_endemism('Endemic')
         accepted = TaxonomyF.create(endemism=accepted_endemism)
 
@@ -239,12 +221,8 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertEqual(synonym.endemism_id, synonym_endemism.pk)
 
-    # ------------------------------------------------------------------ #
-    # 3. Accepted name → synonyms (push down)
-    # ------------------------------------------------------------------ #
-
     def test_accepted_pushes_endemism_to_synonyms(self, mock_iucn):
-        """Saving an accepted name with an endemism updates synonyms that lack one."""
+        """Saving an accepted name with an endemism sets it on synonyms that lack one."""
         accepted = TaxonomyF.create(endemism=None)
         synonym = TaxonomyF.create(
             endemism=None,
@@ -259,8 +237,8 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertEqual(synonym.endemism_id, endemism.pk)
 
-    def test_accepted_does_not_overwrite_synonym_endemism(self, mock_iucn):
-        """Saving an accepted name does NOT overwrite synonyms that already have an endemism."""
+    def test_accepted_overwrites_synonym_endemism(self, mock_iucn):
+        """Saving an accepted name with an endemism overwrites synonyms' existing endemism."""
         accepted_endemism = _make_endemism('Endemic')
         accepted = TaxonomyF.create(endemism=accepted_endemism)
 
@@ -274,7 +252,7 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
         accepted.save()
 
         synonym.refresh_from_db()
-        self.assertEqual(synonym.endemism_id, synonym_endemism.pk)
+        self.assertEqual(synonym.endemism_id, accepted_endemism.pk)
 
     def test_no_push_when_accepted_has_no_endemism(self, mock_iucn):
         """Saving an accepted name without an endemism does not modify synonyms."""
@@ -289,3 +267,133 @@ class TestTaxonomyEndemismPropagation(FastTenantTestCase):
 
         synonym.refresh_from_db()
         self.assertIsNone(synonym.endemism)
+
+
+def _make_ncs(category='LC'):
+    return IUCNStatusF.create(category=category)
+
+
+@mock.patch('bims.models.taxonomy.get_iucn_status', return_value=(None, None, None))
+class TestTaxonomyNationalConservationStatusPropagation(FastTenantTestCase):
+    """
+    Tests for national_conservation_status propagation in taxonomy_pre_save_handler.
+    Propagation always overwrites — the latest save wins.
+
+      1. Synonym with NCS → push up to accepted (overwrites any existing value)
+      2. Synonym without NCS → pull down from accepted name
+      3. Synonym with NCS keeps its own value when saved (push path, not pull path)
+      4. Accepted name with NCS → push down to all synonyms (overwrites any existing value)
+      5. No push when accepted name has no NCS
+    """
+
+    def test_synonym_pushes_ncs_to_accepted(self, mock_iucn):
+        """Saving a synonym with a NCS sets it on the accepted name."""
+        accepted = TaxonomyF.create(national_conservation_status=None)
+        ncs = _make_ncs('LC')
+
+        TaxonomyF.create(
+            national_conservation_status=ncs,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+
+        accepted.refresh_from_db()
+        self.assertEqual(accepted.national_conservation_status_id, ncs.pk)
+
+    def test_synonym_overwrites_accepted_ncs(self, mock_iucn):
+        """Saving a synonym with a NCS overwrites the accepted name's existing NCS."""
+        original_ncs = _make_ncs('LC')
+        accepted = TaxonomyF.create(national_conservation_status=original_ncs)
+
+        synonym_ncs = _make_ncs('EN')
+        TaxonomyF.create(
+            national_conservation_status=synonym_ncs,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+
+        accepted.refresh_from_db()
+        self.assertEqual(accepted.national_conservation_status_id, synonym_ncs.pk)
+
+    def test_synonym_pulls_ncs_from_accepted(self, mock_iucn):
+        """A synonym saved without a NCS inherits it from the accepted name."""
+        ncs = _make_ncs('VU')
+        accepted = TaxonomyF.create(national_conservation_status=ncs)
+
+        synonym = Taxonomy(
+            scientific_name='Syn sci',
+            canonical_name='Syn canonical',
+            rank='SPECIES',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+        synonym.save()
+
+        synonym.refresh_from_db()
+        self.assertEqual(synonym.national_conservation_status_id, ncs.pk)
+
+    def test_synonym_with_ncs_keeps_own_value_on_save(self, mock_iucn):
+        """A synonym that has its own NCS keeps it when saved (push path taken, not pull)."""
+        accepted_ncs = _make_ncs('LC')
+        accepted = TaxonomyF.create(national_conservation_status=accepted_ncs)
+
+        synonym_ncs = _make_ncs('CR')
+        synonym = Taxonomy(
+            scientific_name='Syn sci 2',
+            canonical_name='Syn canonical 2',
+            rank='SPECIES',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+            national_conservation_status=synonym_ncs,
+        )
+        synonym.save()
+
+        synonym.refresh_from_db()
+        self.assertEqual(synonym.national_conservation_status_id, synonym_ncs.pk)
+
+    def test_accepted_pushes_ncs_to_synonyms(self, mock_iucn):
+        """Saving an accepted name with a NCS sets it on synonyms that lack one."""
+        accepted = TaxonomyF.create(national_conservation_status=None)
+        synonym = TaxonomyF.create(
+            national_conservation_status=None,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+
+        ncs = _make_ncs('NT')
+        accepted.national_conservation_status = ncs
+        accepted.save()
+
+        synonym.refresh_from_db()
+        self.assertEqual(synonym.national_conservation_status_id, ncs.pk)
+
+    def test_accepted_overwrites_synonym_ncs(self, mock_iucn):
+        """Saving an accepted name with a NCS overwrites synonyms' existing NCS."""
+        accepted_ncs = _make_ncs('LC')
+        accepted = TaxonomyF.create(national_conservation_status=accepted_ncs)
+
+        synonym_ncs = _make_ncs('EN')
+        synonym = TaxonomyF.create(
+            national_conservation_status=synonym_ncs,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+
+        accepted.save()
+
+        synonym.refresh_from_db()
+        self.assertEqual(synonym.national_conservation_status_id, accepted_ncs.pk)
+
+    def test_no_push_when_accepted_has_no_ncs(self, mock_iucn):
+        """Saving an accepted name without a NCS does not modify synonyms."""
+        accepted = TaxonomyF.create(national_conservation_status=None)
+        synonym = TaxonomyF.create(
+            national_conservation_status=None,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+
+        accepted.save()
+
+        synonym.refresh_from_db()
+        self.assertIsNone(synonym.national_conservation_status)

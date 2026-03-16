@@ -106,13 +106,6 @@ class RestrictionCodeTypeAdmin(admin.ModelAdmin):
 
 
 
-admin.site.register(TopicCategory, TopicCategoryAdmin)
-admin.site.register(Region, RegionAdmin)
-admin.site.register(SpatialRepresentationType, SpatialRepresentationTypeAdmin)
-admin.site.register(RestrictionCodeType, RestrictionCodeTypeAdmin)
-admin.site.register(License, LicenseAdmin)
-
-
 class TaggitSelect2Custom(TaggitSelect2):
     """Overriding Select2 tag widget for taggit's TagField.
        Fixes error in tests where 'value' is None.
