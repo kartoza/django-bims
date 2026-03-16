@@ -407,6 +407,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         verbose_name='Identifier',
     )
 
+    licence = models.ForeignKey(
+        'bims.Licence',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL)
+
+
     @property
     def data_name(self):
         return self.original_species_name
