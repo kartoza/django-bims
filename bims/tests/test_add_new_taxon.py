@@ -167,12 +167,12 @@ class AddNewTaxonTestCase(FastTenantTestCase):
             "Accepted taxonomy should be automatically added when synonym is added"
         )
 
-        # Verify it's marked as not validated (initial state)
+        # Verify it's marked as validated (auto_validate = True)
         accepted_in_group = TaxonGroupTaxonomy.objects.get(
             taxonomy=accepted_taxonomy,
             taxongroup=self.taxon_group
         )
-        self.assertFalse(accepted_in_group.is_validated)
+        self.assertTrue(accepted_in_group.is_validated)
 
     def test_add_synonym_when_accepted_already_in_group(self):
         """

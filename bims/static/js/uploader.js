@@ -42,7 +42,7 @@
     }
 
     function updateSubmitState() {
-        var enable = hasFileSelected() && isNonEmpty($('#id_name').val()) && isNonEmpty($('#id_title').val()) && emailIsValid() && recaptchaChecked() && isNonEmpty($('#id_data_licence').val());
+        var enable = hasFileSelected() && isNonEmpty($('#id_name').val()) && isNonEmpty($('#id_title').val()) && emailIsValid() && recaptchaChecked() && isNonEmpty($('#id_licence').val());
         $('#submit-button').prop('disabled', !enable);
     }
 
@@ -87,7 +87,7 @@
     }
 
     function updateLicenceDesc() {
-        var $sel = $('#id_data_licence');
+        var $sel = $('#id_licence');
         var desc = $sel.find('option:selected').data('desc') || '';
         $('#licence-desc').text(desc);
     }
@@ -97,11 +97,13 @@
         updateSubmitState();
     });
     $('#id_upload_file').on('change', updateSubmitState);
-    $('#id_data_licence').on('change', function() {
+    $('#id_licence').on('change', function() {
         updateLicenceDesc();
         updateSubmitState();
     });
     $('#id_name, #id_email, #id_title').on('input blur', updateSubmitState);
+
+    updateLicenceDesc();
 
     $('#upload_form').on('submit', function(e) {
         e.preventDefault();

@@ -1,0 +1,29 @@
+[
+  {
+    "model": "bims.Licence",
+    "pk": 1,
+    "fields": {
+      "name": "CC0 1.0 – Public Domain Dedication",
+      "identifier": "CC0",
+      "description": "The data is made available for any use without restriction or specific requirements. The creator waives all copyright claims."
+    }
+  },
+  {
+    "model": "bims.Licence",
+    "pk": 2,
+    "fields": {
+      "name": "CC BY 4.0 – Attribution",
+      "identifier": "CC-BY",
+      "description": "The data can be used, shared, and adapted for any purpose, including commercial use, provided that appropriate attribution is given to the data publisher."
+    }
+  },
+  {
+    "model": "bims.Licence",
+    "pk": 3,
+    "fields": {
+      "name": "CC BY-NC 4.0 – Attribution-NonCommercial",
+      "identifier": "CC-BY-NC",
+      "description": "The data can be used and adapted with appropriate attribution, but it cannot be used for commercial purposes."
+    }
+  }
+]

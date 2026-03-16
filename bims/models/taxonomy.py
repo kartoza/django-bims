@@ -865,8 +865,8 @@ def _extract_iucn_payload(taxon: Taxonomy) -> dict[str, object]:
         payload["iucn_redlist_id"] = sis_id
 
     data = getattr(taxon, "iucn_data", None)
-    if isinstance(data, dict) and data.get("url"):
-        payload["iucn_data"] = {"url": data["url"]}
+    if data:
+        payload["iucn_data"] = data
 
     return payload
 
@@ -885,6 +885,7 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         instance.scientific_name = instance.scientific_name.replace(
             f'{instance.scientific_name} ', instance.author, 1
         )
+    is_synonym = "SYNONYM" in (instance.taxonomic_status or "").upper()
 
     # Set IUCN status and redlist ID before saving taxonomy
     if instance.is_species and not instance.iucn_status:
@@ -901,7 +902,6 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
             }
 
     accepted = getattr(instance, "accepted_taxonomy", None)
-    is_synonym = "SYNONYM" in (instance.taxonomic_status or "").upper()
 
     if (
         is_synonym
@@ -940,6 +940,30 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
             for synonym in Taxonomy.objects.filter(accepted_taxonomy=instance):
                 if not _has_meaningful_iucn_data(synonym) or not synonym.iucn_redlist_id:
                     Taxonomy.objects.filter(pk=synonym.pk).update(**update_payload)
+
+    # If this accepted taxon has no IUCN data, pull it from one of its synonyms.
+    # Use direct field assignment (no .save()) to avoid re-triggering this signal.
+    if (
+        not is_synonym
+        and getattr(instance, "pk", None)
+        and not _has_meaningful_iucn_data(instance)
+    ):
+        synonym_with_iucn = (
+            Taxonomy.objects.filter(accepted_taxonomy=instance)
+            .exclude(iucn_status__isnull=True)
+            .exclude(iucn_status__category="NE")
+            .select_related("iucn_status")
+            .first()
+        )
+        if synonym_with_iucn:
+            if not instance.iucn_status_id and synonym_with_iucn.iucn_status_id:
+                instance.iucn_status_id = synonym_with_iucn.iucn_status_id
+            if not instance.iucn_redlist_id and synonym_with_iucn.iucn_redlist_id:
+                instance.iucn_redlist_id = synonym_with_iucn.iucn_redlist_id
+            if not instance.iucn_data:
+                syn_data = getattr(synonym_with_iucn, "iucn_data", None)
+                if isinstance(syn_data, dict) and syn_data.get("url"):
+                    instance.iucn_data = {"url": syn_data["url"]}
 
     # --- Origin propagation ---------------------------------------------------
     instance_origin_id = getattr(instance, "origin_id", None)

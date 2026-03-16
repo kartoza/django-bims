@@ -96,7 +96,7 @@ def _merge_additional(existing: dict | None, data: dict) -> dict:
     return existing
 
 
-def ensure_accepted_taxonomy_in_group(taxonomy, taxon_group):
+def ensure_accepted_taxonomy_in_group(taxonomy, taxon_group, use_proposal=False):
     """
     Ensure that if a taxonomy is a synonym, its accepted taxonomy is added to the taxon group.
     This prevents having to reupload entire lists or reharvest species to get accepted names.
@@ -104,6 +104,7 @@ def ensure_accepted_taxonomy_in_group(taxonomy, taxon_group):
     Args:
         taxonomy: The Taxonomy instance (potentially a synonym)
         taxon_group: The TaxonGroup to which the accepted taxonomy should be added
+        use_proposal: If True, create a proposal for the accepted taxonomy
 
     Returns:
         The accepted_taxonomy if added, None otherwise
@@ -123,13 +124,16 @@ def ensure_accepted_taxonomy_in_group(taxonomy, taxon_group):
     ).exists():
         return accepted_taxonomy
 
-    # Add the accepted taxonomy to the taxon group
-    taxon_group.taxonomies.add(
-        accepted_taxonomy,
-        through_defaults={
-            'is_validated': False
-        }
-    )
+    if use_proposal:
+        create_taxon_proposal(accepted_taxonomy, taxon_group)
+    else:
+        # Add the accepted taxonomy to the taxon group
+        taxon_group.taxonomies.add(
+            accepted_taxonomy,
+            through_defaults={
+                'is_validated': True
+            }
+        )
 
     return accepted_taxonomy
 

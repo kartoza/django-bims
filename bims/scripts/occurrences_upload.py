@@ -34,6 +34,7 @@ from bims.models import (
     RecordType,
     AbundanceType,
     SamplingEffortMeasure,
+    Licence,
     ORIGIN_CATEGORIES,
 )
 from sass.models.river import River
@@ -726,6 +727,25 @@ class OccurrenceProcessor(object):
                         message=f"Incorrect end embargo date format: {end_embargo_date_str}"
                     )
                     return
+
+            # -- Licence
+            licence = None
+            licence_str = DataCSVUpload.row_value(row, LICENCE)
+            if licence_str:
+                licence_str = licence_str.strip().upper()
+                licences = Licence.objects.filter(
+                    identifier=licence_str
+                )
+                if not licences.exists():
+                    licence = Licence.objects.create(
+                        identifier=licence_str,
+                        name=licence_str
+                    )
+                else:
+                    licence = licences.first()
+
+            if licence:
+                optional_data["licence"] = licence
 
             # -- Processing Taxonomy
             taxonomy = self.taxonomy(row)

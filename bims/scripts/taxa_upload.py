@@ -207,7 +207,7 @@ class TaxaProcessor(object):
 
         return csv_taxon or composed_taxon
 
-    def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated: bool = True):
+    def add_taxon_to_taxon_group(self, taxonomy: Taxonomy, taxon_group: TaxonGroup, validated: bool = True, use_proposal: bool = False):
         """
         Add or update the relationship between a taxonomy and a taxon group,
         ensuring the 'is_validated' field is properly set in the through table.
@@ -226,7 +226,7 @@ class TaxaProcessor(object):
         # Ensure accepted taxonomy is added if this is a synonym
         if taxonomy.accepted_taxonomy:
             from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
-            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
+            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group, use_proposal=use_proposal)
 
     def add_taxon_to_taxon_group_unvalidated(self, taxonomy, taxon_group):
         """
@@ -1164,7 +1164,8 @@ class TaxaProcessor(object):
 
             # Conservation (global + national)
             iucn_status = self.conservation_status(row, True)
-            self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'iucn_status', iucn_status)
+            if iucn_status:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'iucn_status', iucn_status)
 
             national_cons_status = self.conservation_status(row, False)
             if national_cons_status:
@@ -1319,6 +1320,8 @@ class TaxaProcessor(object):
                     )
 
             if is_synonym and taxonomy.accepted_taxonomy and not is_fada_site():
+                if use_proposal:
+                    create_taxon_proposal(taxonomy.accepted_taxonomy, taxon_group)
                 self.add_taxon_to_taxon_group_unvalidated(
                     taxonomy.accepted_taxonomy, taxon_group
                 )
@@ -1338,7 +1341,8 @@ class TaxaCSVUpload(DataCSVUpload, TaxaProcessor):
         Respect site preference: auto_validate_taxa_on_upload
         """
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
-        self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
+        use_proposal = not auto_validate
+        self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate, use_proposal=use_proposal)
 
     def finish_processing_row(self, row, taxonomy):
         # Add to taxon group if missing
