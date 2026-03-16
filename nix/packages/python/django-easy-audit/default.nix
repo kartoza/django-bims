@@ -2,7 +2,7 @@
   lib,
   buildPythonPackage,
   fetchPypi,
-  setuptools,
+  poetry-core,
   django,
 }:
 
@@ -17,7 +17,7 @@ buildPythonPackage rec {
     hash = "sha256-XR8qANW6qG19LcliwdEdOkGq88iUPbsDrMG0cVNx1qc=";
   };
 
-  build-system = [ setuptools ];
+  build-system = [ poetry-core ];
 
   dependencies = [ django ];
 
