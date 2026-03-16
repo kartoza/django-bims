@@ -72,7 +72,10 @@ def download_sass_data_site(request, **kwargs):
     Download all sass data by site id
     """
     filters = request.GET
-    search = CollectionSearch(filters)
+    search = CollectionSearch(
+        filters,
+        requester_id=request.user.id if request.user.is_authenticated else None
+    )
     collection_records = search.process_search()
     csv_name = request.GET.get('csvName', 'SASS-Data')
 
@@ -116,7 +119,10 @@ def download_sass_summary_data(request):
     Download sass data summary
     """
     filters = request.GET
-    search = CollectionSearch(filters)
+    search = CollectionSearch(
+        filters,
+        requester_id=request.user.id if request.user.is_authenticated else None
+    )
     collection_records = search.process_search()
     csv_name = request.GET.get('csvName', 'SASS-Summary')
 
