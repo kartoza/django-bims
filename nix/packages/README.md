@@ -32,7 +32,7 @@ nix/packages/
 | django-modelsdoc | 0.1.11 | Documentation generator for Django models |
 | django-ordered-model | 3.7.4 | Orderable Django models |
 | django-preferences | 1.0.0 | Database-backed preferences |
-| django-role-permissions | 2.2.1 | Role-based permissions |
+| django-role-permissions | 3.2.0 | Role-based permissions |
 | django-uuid-upload-path | 1.0.0 | UUID-based file upload paths |
 | djangorestframework-gis | 1.0 | GIS extensions for DRF |
 | dj-pagination | 2.5.0 | Pagination tools for Django |

@@ -84,7 +84,6 @@
           Django==6.0.2
           django-braces==1.14.0
           django-model-utils==4.0.0
-          django-role-permissions==2.2.1
           django-easy-audit==v1.3.9.a1
           django-grappelli==4.0.3
           django-colorfield==0.9.0

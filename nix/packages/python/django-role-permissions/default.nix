@@ -7,12 +7,12 @@
 
 buildPythonPackage rec {
   pname = "django-role-permissions";
-  version = "2.2.1";
+  version = "3.2.0";
   format = "setuptools";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-wA/BX2fmPL9VFLlcrrNp1glP6U11sUw6/Bu0ljur0fw=";
+    hash = "sha256-WonqoJjz2pUbRjPmVdXzGI89bsXwuEaosWkNCU3cbqY=";
   };
 
   dependencies = [ django ];
