@@ -3,12 +3,14 @@
 final: prev: {
   pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
     (python-final: python-prev: {
+      # Custom packages not in nixpkgs
+      cloudnativegis = python-final.callPackage ./packages/python/cloudnativegis { };
       django-admin-inline-paginator = python-final.callPackage ./packages/python/django-admin-inline-paginator { };
       django-admin-rangefilter = python-final.callPackage ./packages/python/django-admin-rangefilter { };
       django-braces = python-final.callPackage ./packages/python/django-braces { };
+      django-ckeditor = python-final.callPackage ./packages/python/django-ckeditor { };
       django-colorfield = python-final.callPackage ./packages/python/django-colorfield { };
       django-contact-us = python-final.callPackage ./packages/python/django-contact-us { };
-      django-cryptography = python-final.callPackage ./packages/python/django-cryptography { };
       django-easy-audit = python-final.callPackage ./packages/python/django-easy-audit { };
       django-forms-bootstrap = python-final.callPackage ./packages/python/django-forms-bootstrap { };
       django-grappelli = python-final.callPackage ./packages/python/django-grappelli { };
@@ -16,9 +18,12 @@ final: prev: {
       django-invitations = python-final.callPackage ./packages/python/django-invitations { };
       django-modelsdoc = python-final.callPackage ./packages/python/django-modelsdoc { };
       django-ordered-model = python-final.callPackage ./packages/python/django-ordered-model { };
+      django-pipeline = python-final.callPackage ./packages/python/django-pipeline { };
       django-preferences = python-final.callPackage ./packages/python/django-preferences { };
       django-role-permissions = python-final.callPackage ./packages/python/django-role-permissions { };
+      django-sentry = python-final.callPackage ./packages/python/django-sentry { };
       django-uuid-upload-path = python-final.callPackage ./packages/python/django-uuid-upload-path { };
+      django_6 = python-final.callPackage ./packages/python/django_6 { };
       djangorestframework-gis = python-final.callPackage ./packages/python/djangorestframework-gis { };
       dj-pagination = python-final.callPackage ./packages/python/dj-pagination { };
       eutils = python-final.callPackage ./packages/python/eutils { };

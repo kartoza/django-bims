@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0
 #
 # Nix Flake for Django BIMS Development Environment
-# Dependencies are sourced from nixpkgs first, with pip/npm as fallback
+# All Python dependencies are sourced from nixpkgs + custom derivations
+# No pip/venv required - pure Nix environment
 #
 # Made with love by Kartoza | https://kartoza.com
 {
@@ -34,42 +35,172 @@
         ]);
 
         # =======================================================================
-        # Python packages from nixpkgs (preferred)
+        # Python packages - ALL from nixpkgs + custom derivations (no pip)
         # =======================================================================
         pythonPkgs = pkgs.python312.withPackages (ps: with ps; [
-          pip setuptools wheel virtualenv
-          # Django
-          django djangorestframework django-allauth django-extensions
-          django-filter django-guardian django-cors-headers django-crispy-forms
+          # Core - Use Django 6 from our custom derivation
+          django_6
+          djangorestframework
+          django-allauth
+          django-extensions
+          django-filter
+          django-guardian
+          django-cors-headers
+          django-crispy-forms
           django-taggit
+
+          # Django packages from nixpkgs
+          django-model-utils
+          django-prometheus
+          django-json-widget
+          django-webpack-loader
+          django-autocomplete-light
+          dj-database-url
+          djangorestframework-guardian
+          django-tenants
+          django-celery-results
+          django-celery-beat
+          django-polymorphic
+          django-modeltranslation
+          django-mptt
+          django-treebeard
+          django-debug-toolbar
+          tenant-schemas-celery
+          django-cryptography
+          django-js-asset
+
+          # Django packages from custom derivations
+          cloudnativegis
+          django-admin-inline-paginator
+          django-admin-rangefilter
+          django-braces
+          django-ckeditor
+          django-colorfield
+          django-contact-us
+          django-easy-audit
+          django-forms-bootstrap
+          django-grappelli
+          django-imagekit
+          django-invitations
+          django-modelsdoc
+          django-ordered-model
+          django-pipeline
+          django-preferences
+          django-role-permissions
+          django-sentry
+          django-uuid-upload-path
+          djangorestframework-gis
+          dj-pagination
+          geonode-oauth-toolkit
+          raven
+
           # Database
           psycopg2
+
           # Caching & Queue
-          pymemcache redis celery pika
+          python-memcached
+          pymemcache
+          redis
+          celery
+          pika
+
           # Scientific
-          pandas numpy openpyxl geopandas scipy
+          pandas
+          numpy
+          openpyxl
+          geopandas
+          scipy
+          bibtexparser
+          habanero
+          eutils
+          pygbif
+          python-dwca-reader
+
           # GIS
-          gdal pyproj shapely fiona geoalchemy2 geopy
+          gdal
+          pyproj
+          shapely
+          fiona
+          geoalchemy2
+          geopy
+          pyshp
+
           # Image
-          pillow reportlab
+          pillow
+          pilkit
+          django-appconf
+          reportlab
+          sorl-thumbnail
+          svglib
+
           # HTTP
-          requests httpx urllib3
+          requests
+          requests-cache
+          httpx
+          urllib3
+          service-identity
+
           # Serialization
-          simplejson pyyaml toml
+          simplejson
+          pyyaml
+          toml
+
           # Auth
-          pyjwt oauthlib
+          pyjwt
+          oauthlib
+
           # Parsing
-          lxml beautifulsoup4 markdown markupsafe
+          lxml
+          beautifulsoup4
+          markdown
+          markupsafe
+
           # Utils
-          pytz python-dateutil click mock importlib-metadata packaging
-          typing-extensions pycurl
+          pytz
+          python-dateutil
+          click
+          mock
+          importlib-metadata
+          packaging
+          typing-extensions
+          pycurl
+          appdirs
+          geojson
+          matplotlib
+
+          # API
+          drf-nested-routers
+          drf-yasg
+
           # Monitoring
-          sentry-sdk prometheus-client
-          # Dev
-          pytest pytest-django pytest-cov pytest-xdist factory-boy faker
-          black isort flake8 pylint mypy bandit debugpy watchdog ipython ipdb
+          sentry-sdk
+          prometheus-client
+
+          # Dev tools
+          pip
+          setuptools
+          wheel
+          pytest
+          pytest-django
+          pytest-cov
+          pytest-xdist
+          factory-boy
+          faker
+          black
+          isort
+          flake8
+          pylint
+          pylint-django
+          mypy
+          bandit
+          debugpy
+          watchdog
+          ipython
+          ipdb
+
           # Testing
           selenium
+
           # GitHub
           pygithub
         ]);
@@ -77,111 +208,9 @@
         # Node.js CLI tools from nixpkgs
         nodePkgs = with pkgs.nodePackages; [ eslint prettier typescript ];
 
-        # Pip fallback requirements
-        pipFallbackRequirements = pkgs.writeText "requirements-fallback.txt" ''
-          # setuptools provides distutils compatibility for Python 3.12+
-          setuptools>=70.0.0
-          Django==6.0.2
-          django-braces==1.14.0
-          django-model-utils==4.0.0
-          django-easy-audit==v1.3.9.a1
-          django-grappelli==4.0.3
-          django-colorfield==0.9.0
-          django-modelsdoc==0.1.11
-          django-contact-us==0.4.3
-          django-ordered-model==3.7.4
-          django-prometheus==2.0.0
-          django-ckeditor==6.6.1
-          django-admin-rangefilter==0.13.3
-          django-preferences==1.0.0
-          django-json-widget==1.1.1
-          django-webpack-loader==1.3.0
-          django-autocomplete-light==3.12.1
-          dj-pagination==2.5.0
-          dj-database-url==0.5.0
-          djangorestframework-gis==1.0
-          djangorestframework-guardian==0.3.0
-          django-invitations==2.0.0
-          django-uuid-upload-path==1.0.0
-          django-imagekit==4.0.2
-          django-forms-bootstrap==3.1.0
-          django-admin-inline-paginator==0.4.0
-          django-tenants==3.10.0
-          django-celery-results==2.5.1
-          django-polymorphic==3.1.0
-          django-modeltranslation==0.16.2
-          django-mptt==0.18.0
-          django-treebeard==4.7
-          django-pipeline==2.1.0
-          django-debug-toolbar==4.4.2
-          tenant-schemas-celery==2.2.0
-          django-cryptography-5==2.0.3
-          python-memcached==1.59
-          bibtexparser==1.1.0
-          eutils==0.6.0
-          habanero==0.7.2
-          pygbif==0.6.0
-          python-dwca-reader==0.16.0
-          sorl-thumbnail==13.0.0
-          svglib==1.0.0
-          drf-nested-routers==0.93.5
-          drf-yasg==1.21.7
-          geonode-oauth-toolkit==2.1.0
-          raven==6.10.0
-          django-sentry==1.13.5
-          pyshp==2.1.0
-          service-identity==18.1.0
-          requests-cache==0.6.0
-          pylint-django==2.5.5
-        '';
-
-        gitRequirements = pkgs.writeText "requirements-git.txt" ''
-          git+https://github.com/celery/django-celery-beat@bd429063cbb227c00905e7693c38895e44ff8e47
-          git+https://github.com/kartoza/CloudNativeGIS.git@0.0.5bims
-        '';
-
         # =======================================================================
-        # Scripts - All use $PWD for runtime paths
+        # Scripts - All use $PWD for runtime paths, no venv needed
         # =======================================================================
-
-        pipInstallScript = pkgs.writeShellScriptBin "bims-pip-install" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          echo "📦 Installing pip packages..."
-
-          # Recreate venv WITHOUT system-site-packages to avoid conflicts
-          if [ -d ".venv" ] && [ ! -f ".venv/.fresh-venv" ]; then
-            echo "Removing old venv..."
-            rm -rf .venv
-          fi
-
-          if [ ! -d ".venv" ]; then
-            echo "Creating fresh virtualenv..."
-            python -m venv .venv
-            touch .venv/.fresh-venv
-          fi
-
-          source .venv/bin/activate
-          pip install --upgrade pip setuptools wheel > /dev/null
-
-          # Install from project requirements
-          if [ -f "deployment/docker/REQUIREMENTS.txt" ]; then
-            echo "Installing from REQUIREMENTS.txt..."
-            pip install -r deployment/docker/REQUIREMENTS.txt 2>&1 | grep -v "already satisfied" || true
-          fi
-
-          if [ -f "deployment/docker/REQUIREMENTS-dev.txt" ]; then
-            echo "Installing dev requirements..."
-            pip install -r deployment/docker/REQUIREMENTS-dev.txt 2>&1 | grep -v "already satisfied" || true
-          fi
-
-          # Install git packages
-          echo "Installing git packages..."
-          pip install -r ${gitRequirements} 2>&1 | grep -v "already satisfied" || true
-
-          touch .venv/.pip-installed
-          echo "✅ Done"
-        '';
 
         npmInstallScript = pkgs.writeShellScriptBin "bims-npm-install" ''
           #!/usr/bin/env bash
@@ -288,7 +317,6 @@
         djangoRunserverScript = pkgs.writeShellScriptBin "bims-runserver" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           python manage.py runserver "''${1:-0.0.0.0:8000}"
         '';
@@ -296,7 +324,6 @@
         djangoMigrateScript = pkgs.writeShellScriptBin "bims-migrate" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           python manage.py migrate "$@"
         '';
@@ -304,7 +331,6 @@
         djangoMakemigrationsScript = pkgs.writeShellScriptBin "bims-makemigrations" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           python manage.py makemigrations "$@"
         '';
@@ -312,7 +338,6 @@
         djangoShellScript = pkgs.writeShellScriptBin "bims-shell" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           python manage.py shell_plus "$@" 2>/dev/null || python manage.py shell "$@"
         '';
@@ -320,7 +345,6 @@
         djangoCollectstaticScript = pkgs.writeShellScriptBin "bims-collectstatic" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           python manage.py collectstatic --noinput "$@"
         '';
@@ -328,7 +352,6 @@
         djangoCreateSuperuserScript = pkgs.writeShellScriptBin "bims-createsuperuser" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           python manage.py createsuperuser "$@"
         '';
@@ -336,7 +359,6 @@
         djangoTestScript = pkgs.writeShellScriptBin "bims-test" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.test}"
           python manage.py test "''${@:-bims}"
         '';
@@ -344,7 +366,6 @@
         celeryWorkerScript = pkgs.writeShellScriptBin "bims-celery-worker" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           celery -A bims worker -l INFO -Q "''${1:-celery,update,search,geocontext}"
         '';
@@ -352,7 +373,6 @@
         celeryBeatScript = pkgs.writeShellScriptBin "bims-celery-beat" ''
           #!/usr/bin/env bash
           set -euo pipefail
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           celery -A bims beat -l INFO
         '';
@@ -419,10 +439,6 @@
 
           bims-pg-start
 
-          if [ ! -f ".venv/.pip-installed" ]; then
-            bims-pip-install
-          fi
-
           if [ ! -f "bims/node_modules/.npm-installed" ]; then
             bims-npm-install
           fi
@@ -453,7 +469,6 @@
 
         lintScript = pkgs.writeShellScriptBin "bims-lint" ''
           #!/usr/bin/env bash
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           echo "🔍 flake8..."
           flake8 --config .flake8 bims core || true
           echo "🔍 pylint..."
@@ -462,7 +477,6 @@
 
         formatScript = pkgs.writeShellScriptBin "bims-format" ''
           #!/usr/bin/env bash
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           echo "🎨 black..."
           black bims core
           echo "🎨 isort..."
@@ -471,7 +485,6 @@
 
         securityCheckScript = pkgs.writeShellScriptBin "bims-security-check" ''
           #!/usr/bin/env bash
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           echo "🔒 bandit..."
           bandit -r bims core -ll -x ".venv,venv,migrations" || true
           echo "🔒 bearer..."
@@ -480,7 +493,6 @@
 
         debugScript = pkgs.writeShellScriptBin "bims-debug" ''
           #!/usr/bin/env bash
-          [ -f ".venv/bin/activate" ] && source .venv/bin/activate
           export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
           echo "🐛 debugpy on port 5678..."
           python -m debugpy --listen 0.0.0.0:5678 --wait-for-client manage.py runserver 0.0.0.0:8000
@@ -504,14 +516,21 @@
 
         packageStatusScript = pkgs.writeShellScriptBin "bims-package-status" ''
           #!/usr/bin/env bash
-          echo "📦 Package Status"
-          echo "================="
-          python -c "import django; print(f'Django: {django.__version__}')" 2>/dev/null || echo "Django: not installed"
-          python -c "import pandas; print(f'Pandas: {pandas.__version__}')" 2>/dev/null || echo "Pandas: not installed"
-          python -c "import gdal; print(f'GDAL: {gdal.__version__}')" 2>/dev/null || echo "GDAL: not installed"
+          echo "📦 Package Status (Pure Nix - No venv)"
+          echo "======================================="
+          python -c "import django; print(f'Django: {django.__version__}')" 2>/dev/null || echo "Django: not available"
+          python -c "import pandas; print(f'Pandas: {pandas.__version__}')" 2>/dev/null || echo "Pandas: not available"
+          python -c "import osgeo.gdal as gdal; print(f'GDAL: {gdal.__version__}')" 2>/dev/null || echo "GDAL: not available"
+          python -c "import rolepermissions; print('rolepermissions: ✅')" 2>/dev/null || echo "rolepermissions: ❌"
           echo ""
-          [ -f ".venv/.pip-installed" ] && echo "Pip packages: ✅" || echo "Pip packages: ❌ (run bims-pip-install)"
           [ -f "bims/node_modules/.npm-installed" ] && echo "npm packages: ✅" || echo "npm packages: ❌ (run bims-npm-install)"
+        '';
+
+        cleanVenvScript = pkgs.writeShellScriptBin "bims-clean-venv" ''
+          #!/usr/bin/env bash
+          echo "🧹 Removing old venv (no longer needed with pure Nix)..."
+          rm -rf .venv
+          echo "✅ Done"
         '';
 
       in
@@ -561,7 +580,6 @@
             pkgs.ripgrep
             pkgs.fd
             # Scripts
-            pipInstallScript
             npmInstallScript
             webpackBuildScript
             webpackWatchScript
@@ -590,6 +608,7 @@
             precommitRunScript
             reuseCheckScript
             packageStatusScript
+            cleanVenvScript
           ];
 
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -616,15 +635,9 @@
             export GDAL_LIBRARY_PATH="${pkgs.gdal}/lib/libgdal.so"
             export GEOS_LIBRARY_PATH="${pkgs.geos}/lib/libgeos_c.so"
 
-            if [ ! -d ".venv" ]; then
-              echo "📦 Creating virtualenv..."
-              python -m venv .venv --system-site-packages
-            fi
-            source .venv/bin/activate
-
             echo ""
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "🌿 Django BIMS Development Environment"
+            echo "🌿 Django BIMS Development Environment (Pure Nix)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             echo "  bims-dev-start      Full setup"
@@ -632,6 +645,7 @@
             echo "  bims-pg-start/stop  PostgreSQL"
             echo "  bims-test           Run tests"
             echo "  bims-lint           Linting"
+            echo "  bims-clean-venv     Remove old venv"
             echo ""
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "Made with 💗 by Kartoza"
@@ -657,11 +671,11 @@
           format = { type = "app"; program = "${formatScript}/bin/bims-format"; };
           security = { type = "app"; program = "${securityCheckScript}/bin/bims-security-check"; };
           precommit = { type = "app"; program = "${precommitRunScript}/bin/bims-precommit-run"; };
-          pip-install = { type = "app"; program = "${pipInstallScript}/bin/bims-pip-install"; };
           npm-install = { type = "app"; program = "${npmInstallScript}/bin/bims-npm-install"; };
           webpack-build = { type = "app"; program = "${webpackBuildScript}/bin/bims-webpack-build"; };
           webpack-watch = { type = "app"; program = "${webpackWatchScript}/bin/bims-webpack-watch"; };
           package-status = { type = "app"; program = "${packageStatusScript}/bin/bims-package-status"; };
+          clean-venv = { type = "app"; program = "${cleanVenvScript}/bin/bims-clean-venv"; };
         };
 
         packages = {
