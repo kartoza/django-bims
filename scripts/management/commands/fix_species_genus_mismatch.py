@@ -8,6 +8,8 @@ Rules:
                 (parent is a genus taxon, e.g. "Ammannia")
   - SUBSPECIES: first word of canonical_name must match first word of
                 parent.canonical_name (parent is a species, e.g. "Ammannia baccifera")
+  - NO PARENT:  accepted taxa (any rank except kingdom) with no parent taxon
+                are also flagged as candidates to fix.
 
 Usage:
     python manage.py fix_species_genus_mismatch
@@ -38,7 +40,8 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = (
         "Find species/subspecies whose genus name (first word of canonical_name) does not match "
-        "their parent taxon's genus, then fix them by re-fetching from GBIF."
+        "their parent taxon's genus, and accepted taxa (non-kingdom) that have no parent, "
+        "then fix them by re-fetching from GBIF."
     )
 
     def add_arguments(self, parser) -> None:
@@ -87,9 +90,19 @@ class Command(BaseCommand):
             taxonomic_status=TaxonomicStatus.ACCEPTED.name
         ).select_related("parent")
 
-        total = qs.count()
-        self.stdout.write(f"[{label}] Checking {total} species/subspecies taxa...")
+        no_parent_qs = Taxonomy.objects.filter(
+            taxonomic_status=TaxonomicStatus.ACCEPTED.name,
+            parent__isnull=True,
+        ).exclude(rank=TaxonomicRank.KINGDOM.name)
 
+        total = qs.count()
+        total_no_parent = no_parent_qs.count()
+        self.stdout.write(
+            f"[{label}] Checking {total} species/subspecies taxa for genus mismatch "
+            f"and {total_no_parent} accepted taxa for missing parent..."
+        )
+
+        # Each candidate: (taxon, genus_from_name, expected_genus, parent_canonical, reason)
         candidates = []
         for taxon in qs.iterator():
             genus_from_name = self._extract_genus(taxon.canonical_name)
@@ -107,22 +120,31 @@ class Command(BaseCommand):
                 expected_genus = parent_canonical
 
             if genus_from_name.lower() != expected_genus.lower():
-                candidates.append((taxon, genus_from_name, expected_genus, parent_canonical))
+                candidates.append((taxon, genus_from_name, expected_genus, parent_canonical, "genus mismatch"))
                 continue
 
             if taxon == taxon.parent:
-                candidates.append((taxon, genus_from_name, expected_genus, parent_canonical))
+                candidates.append((taxon, genus_from_name, expected_genus, parent_canonical, "self-referencing parent"))
+
+        for taxon in no_parent_qs.iterator():
+            candidates.append((
+                taxon,
+                self._extract_genus(taxon.canonical_name),
+                "",
+                "",
+                "no parent",
+            ))
 
         self.stdout.write(
-            self.style.WARNING(f"[{label}] Found {len(candidates)} mismatch(es).")
+            self.style.WARNING(f"[{label}] Found {len(candidates)} candidate(s) to fix.")
         )
 
         fixed = 0
         skipped_no_gbif = 0
 
-        for taxon, genus_from_name, expected_genus, parent_canonical in candidates:
+        for taxon, genus_from_name, expected_genus, parent_canonical, reason in candidates:
             self.stdout.write(
-                f"  MISMATCH [{taxon.rank}] id={taxon.pk} | "
+                f"  {reason.upper()} [{taxon.rank}] id={taxon.pk} | "
                 f"canonical_name='{taxon.canonical_name}' | "
                 f"genus_from_name='{genus_from_name}' | "
                 f"expected_genus='{expected_genus}' | "
