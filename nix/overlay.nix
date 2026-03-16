@@ -25,6 +25,7 @@ final: prev: {
       django-uuid-upload-path = python-final.callPackage ./packages/python/django-uuid-upload-path { };
       django_6 = python-final.callPackage ./packages/python/django_6 { };
       djangorestframework-gis = python-final.callPackage ./packages/python/djangorestframework-gis { };
+      djangorestframework-guardian = python-final.callPackage ./packages/python/djangorestframework-guardian { };
       dj-pagination = python-final.callPackage ./packages/python/dj-pagination { };
       eutils = python-final.callPackage ./packages/python/eutils { };
       geonode-oauth-toolkit = python-final.callPackage ./packages/python/geonode-oauth-toolkit { };

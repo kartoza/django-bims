@@ -56,7 +56,6 @@
           django-webpack-loader
           django-autocomplete-light
           dj-database-url
-          djangorestframework-guardian
           django-tenants
           django-celery-results
           django-celery-beat
@@ -90,6 +89,7 @@
           django-sentry
           django-uuid-upload-path
           djangorestframework-gis
+          djangorestframework-guardian
           dj-pagination
           geonode-oauth-toolkit
           raven
