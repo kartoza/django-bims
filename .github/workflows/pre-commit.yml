@@ -1,0 +1,234 @@
+# SPDX-FileCopyrightText: Kartoza
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Pre-commit CI workflow for Django BIMS
+# Runs linting, security checks, and code quality tools
+#
+# Made with love by Kartoza | https://kartoza.com
+
+name: Pre-commit Checks
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files --show-diff-on-failure
+        env:
+          SKIP: actionlint,reuse,detect-secrets
+
+  linting:
+    name: Python Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install flake8 flake8-bugbear flake8-comprehensions flake8-simplify pylint pylint-django
+
+      - name: Run flake8
+        run: |
+          flake8 --config .flake8 bims core
+        continue-on-error: true
+
+      - name: Run pylint
+        run: |
+          pylint --rcfile=.pylintrc bims core --exit-zero
+        continue-on-error: true
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install bandit
+        run: |
+          pip install bandit
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r bims core -ll -x ".venv,venv,migrations,tests" -f json -o bandit-report.json || true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+        if: always()
+
+  bearer:
+    name: Bearer Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Bearer
+        uses: bearer/bearer-action@v2
+        with:
+          format: sarif
+          output: bearer-results.sarif
+        continue-on-error: true
+
+      - name: Upload Bearer SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bearer-results.sarif
+        if: always()
+        continue-on-error: true
+
+  formatting:
+    name: Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install formatters
+        run: |
+          pip install black isort
+
+      - name: Check Black formatting
+        run: |
+          black --check --diff --line-length 120 bims core
+        continue-on-error: true
+
+      - name: Check isort ordering
+        run: |
+          isort --check-only --diff --profile black --line-length 120 bims core
+        continue-on-error: true
+
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install yamllint
+        run: |
+          pip install yamllint
+
+      - name: Run yamllint
+        run: |
+          yamllint -c .yamllint.yaml .
+        continue-on-error: true
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install markdownlint
+        run: |
+          npm install -g markdownlint-cli
+
+      - name: Run markdownlint
+        run: |
+          markdownlint --config .markdownlint.yaml "**/*.md" --ignore node_modules --ignore .venv
+        continue-on-error: true
+
+  shell-lint:
+    name: Shell Script Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          scandir: "."
+          ignore_paths: ".venv node_modules"
+        continue-on-error: true
+
+  nix-lint:
+    name: Nix Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Check Nix flake
+        run: |
+          nix flake check --no-build
+        continue-on-error: true
+
+      - name: Format check with nixfmt
+        run: |
+          nix run nixpkgs#nixfmt-rfc-style -- --check flake.nix
+        continue-on-error: true

@@ -145,3 +145,44 @@ node_modules/
 bundles/
 webpack-stats.json
 .celery_results/
+
+# Nix development environment
+.pgdata/
+.direnv/
+.envrc
+result
+result-*
+.nix-*
+
+# Project logs and data
+logs/
+PROMPT.log
+
+# Pre-commit
+.pre-commit-cache/
+
+# IDE and editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Test artifacts
+.pytest_cache/
+pytest-report.html
+bandit-report.json
+bearer-results.sarif
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Build artifacts
+*.egg-info/
+.eggs/
+
+# Local development
+.venv/
+.requirements-installed

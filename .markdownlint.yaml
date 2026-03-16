@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Kartoza
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Markdown lint configuration for Django BIMS
+
+default: true
+
+# Allow long lines (documentation often has long URLs)
+MD013:
+  line_length: 200
+  code_blocks: false
+  tables: false
+
+# Allow duplicate headings in different sections
+MD024:
+  siblings_only: true
+
+# Allow inline HTML (needed for badges, etc.)
+MD033: false
+
+# Allow bare URLs (common in documentation)
+MD034: false
+
+# Allow emphasis as headers
+MD036: false
+
+# Allow multiple blank lines
+MD012:
+  maximum: 2
+
+# First line doesn't have to be H1
+MD041: false
+
+# Allow trailing punctuation in headers
+MD026:
+  punctuation: ".,;:!"
+
+# Code block style
+MD046:
+  style: fenced
+
+# Code fence style
+MD048:
+  style: backtick
