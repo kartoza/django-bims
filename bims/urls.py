@@ -86,7 +86,10 @@ from bims.views.source_reference import (
 from bims.views.profile import ProfileView, moderator_contacted
 from bims.views.backups_management import BackupsManagementView
 from bims.views.summary_report import SummaryReportView
-from bims.views.download_request import DownloadRequestListView
+from bims.views.download_request import (
+    DownloadRequestListView,
+    DownloadRequestDetailView,
+)
 from bims.views.custom_contact_us import CustomContactUsView
 from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
@@ -237,6 +240,9 @@ urlpatterns = [
             name='profile'),
     re_path(r'^download-request/$', DownloadRequestListView.as_view(),
             name='download-request'),
+    re_path(r'^download-request/(?P<pk>\d+)/$',
+            DownloadRequestDetailView.as_view(),
+            name='download-request-detail'),
     re_path(r'^profile/$',
             login_required(lambda request: RedirectView.as_view(
                 url=reverse_lazy('profile', kwargs={

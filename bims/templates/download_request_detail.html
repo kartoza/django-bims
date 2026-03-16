@@ -1,0 +1,500 @@
+{% extends 'main_base.html' %}
+{% load static %}
+{% load jsonify %}
+{% load site %}
+
+{% block subtitle %}Download Request Detail{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static 'js/libs/openlayers-4.6.4/ol.js' %}"></script>
+    <script src="{% static 'js/utils/filter_list.js' %}"></script>
+    <style>
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .status-badge {
+            font-size: 1rem;
+            padding: 0.4em 0.8em;
+        }
+        .progress {
+            height: 24px;
+        }
+        .progress-bar-download-request {
+            background-color: #18a999;
+        }
+        .info-card {
+            margin-bottom: 1.5rem;
+        }
+        #filter-params-table .filter-row {
+            display: flex;
+            padding: 0.45rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+        #filter-params-table .filter-row:last-child {
+            border-bottom: none;
+        }
+        #filter-params-table .filter-key {
+            width: 220px;
+            min-width: 220px;
+            font-weight: 600;
+            color: #555;
+            padding-right: 1rem;
+        }
+        #filter-params-table .filter-val {
+            color: #222;
+            flex: 1;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+<div style="min-height: 100%; height: auto;">
+    <div class="container-fluid header-wrapper">
+        <div class="dashboard-title">
+            <h2>Download Request Detail</h2>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <div class="mb-3">
+            <a href="/download-request/" class="btn btn-outline-secondary btn-sm">&larr; Back to list</a>
+        </div>
+
+        <div class="card info-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Request #{{ download_request.id }}</strong>
+                <span>
+                    {% if download_request.approved %}
+                        <span class="badge badge-success status-badge">Approved</span>
+                    {% elif download_request.rejected %}
+                        <span class="badge badge-danger status-badge">Rejected</span>
+                    {% else %}
+                        <span class="badge badge-warning status-badge">Pending</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5 detail-label">Request Date</dt>
+                            <dd class="col-sm-7">
+                                <span id="request-date" data-timestamp="{{ download_request.request_date|date:'U' }}">
+                                    {{ download_request.request_date|date:'Y-m-d H:i' }}
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-5 detail-label">Requester</dt>
+                            <dd class="col-sm-7">{{ download_request.get_formatted_name }}</dd>
+
+                            <dt class="col-sm-5 detail-label">Type</dt>
+                            <dd class="col-sm-7">
+                                {% if download_request.resource_name %}
+                                    {{ download_request.resource_name }}
+                                {% elif download_request.request_category %}
+                                    {{ download_request.request_category }}
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </dd>
+
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            {% if download_request.taxon %}
+                            <dt class="col-sm-5 detail-label">Taxon</dt>
+                            <dd class="col-sm-7">{{ download_request.taxon }}</dd>
+                            {% endif %}
+
+                            {% if download_request.dashboard_url %}
+                            <dt class="col-sm-5 detail-label">Request Page</dt>
+                            <dd class="col-sm-7">
+                                <a href="{{ download_request.dashboard_url }}" target="_blank" rel="noopener">View request page</a>
+                            </dd>
+                            {% endif %}
+
+                            <dt class="col-sm-5 detail-label">Purpose</dt>
+                            <dd class="col-sm-7">{{ download_request.purpose|default:"&mdash;" }}</dd>
+
+                            <dt class="col-sm-5 detail-label">Notes</dt>
+                            <dd class="col-sm-7">{{ download_request.notes|default:"&mdash;" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                {% if download_request.rejected and download_request.rejection_message %}
+                <div class="alert alert-danger mt-2">
+                    <strong>Rejection Reason:</strong> {{ download_request.rejection_message }}
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <h5>Progress</h5>
+                {% if download_request.progress %}
+                    {% with download_request.progress|split:"/" as progress %}
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-download-request"
+                             role="progressbar"
+                             style="width: {{ progress.0|percent:progress.1 }}%"
+                             aria-valuenow="{{ progress.0|percent:progress.1 }}"
+                             aria-valuemin="0" aria-valuemax="100">
+                            {% if progress.0|percent:progress.1 == 100 %}
+                                Finished
+                            {% else %}
+                                {{ progress.0 }}/{{ progress.1 }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% if download_request.progress_updated_at %}
+                    <small class="text-muted progress-last-updated">Last updated: {{ download_request.progress_updated_at|date:'Y-m-d H:i:s' }}</small>
+                    {% endif %}
+                {% elif download_request.request_file %}
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-download-request"
+                             role="progressbar" style="width: 100%"
+                             aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                            Finished
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-download-request"
+                             role="progressbar" style="width: 0; color: #000"
+                             aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span style="padding-left: 10px">Pending</span>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <hr>
+
+                <h5>Actions</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if download_request.request_file %}
+                        {% if has_permission_to_approve or download_request.approved %}
+                            <a href="/api/download-request/{{ download_request.id }}/file/"
+                               class="btn btn-primary">
+                                Download File
+                            </a>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if not download_request.approved and not download_request.rejected and has_permission_to_approve %}
+                        <a href="#" class="btn btn-success approve-btn" data-toggle="modal" data-target="#confirmApproveModal">
+                            Approve
+                        </a>
+                        <a href="#" class="btn btn-danger reject-btn" data-toggle="modal" data-target="#confirmRejectModal">
+                            Reject
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if download_request.download_params %}
+                <hr>
+                <h5>Applied Filters</h5>
+                <div id="filter-params-table" class="mb-3"></div>
+                <div id="polygon-map-container" style="display:none; margin-top: 1rem;">
+                    <h6>Area of Interest</h6>
+                    <div id="polygon-map" style="height: 300px; border-radius: 6px; border: 1px solid #dee2e6;"></div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="confirmApproveModal" tabindex="-1" role="dialog">
+    <form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" value="True" name="approved">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Approve Request</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to approve this request?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Approve</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="confirmRejectModal" tabindex="-1" role="dialog">
+    <form action="{{ request.path }}" method="post" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" value="False" name="approved">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Request</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>What is the reason for rejecting this data? (optional)</p>
+                    <div class="form-group">
+                        <textarea id="rejection-textarea" name="rejection_message"
+                                  rows="4" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Reject</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const ts = document.getElementById('request-date');
+        if (ts) {
+            const d = new Date(parseInt(ts.dataset.timestamp) * 1000);
+            const pad = n => String(n).padStart(2, '0');
+            ts.textContent = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ` +
+                             `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        $('#confirmRejectModal').on('shown.bs.modal', function () {
+            const ta = document.getElementById('rejection-textarea');
+            ta.value = 'Sorry, your request cannot be accepted.\n';
+            ta.focus();
+        });
+
+        // ── Applied Filters ──────────────────────────────────────────────────
+        const IGNORE_KEYS = new Set(['downloadRequestId', 'orderBy', 'module', 'modules', 'rank', 'dst']);
+        const downloadParams = {{ download_request.download_params|safe }};
+
+        /**
+         * Values may be stored as arrays [val_a, val_b] (duplicate/history pairs).
+         * Extract the best usable string: last non-empty element, or the value itself.
+         * Skip values that look like malformed URL fragments (start with '?').
+         */
+        function extractValue(raw) {
+            if (Array.isArray(raw)) {
+                // Pick last non-empty entry
+                for (let i = raw.length - 1; i >= 0; i--) {
+                    const v = raw[i];
+                    if (v && v !== '' && v !== '[]' && v !== '{}' && !String(v).startsWith('?')) {
+                        return String(v);
+                    }
+                }
+                return '';
+            }
+            if (!raw || raw === '' || raw === '[]' || raw === '{}') return '';
+            return String(raw);
+        }
+
+        if (downloadParams) {
+            const $table = $('#filter-params-table');
+            const polygonStrings = [];
+
+            getSpatialFilterData().always(function () {
+
+                $.each(filterParametersJSON, function (key, meta) {
+                    if (IGNORE_KEYS.has(key)) return;
+                    const raw = downloadParams[key];
+                    const value = extractValue(raw);
+                    if (!value) return;
+
+                    let displayVal = '';
+
+                    if (meta.type === 'comma' || meta.type === 'string') {
+                        displayVal = value.split(',').map(function (s) { return s.trim(); }).join(', ');
+
+                    } else if (meta.type === 'unicode') {
+                        displayVal = decodeURIComponent(value);
+
+                    } else if (meta.type === 'spatial_filter') {
+                        try {
+                            const filters = JSON.parse(value);
+                            const parts = [];
+                            $.each(filters, function (i, entry) {
+                                const segs = entry.split(',');
+                                let name = segs[1] || segs[0];
+                                // Try to resolve name from spatialFilterData
+                                if (spatialFilterData) {
+                                    for (const group of spatialFilterData) {
+                                        if (!group.children) continue;
+                                        const found = group.children.find(c => c.key === name);
+                                        if (found) { name = found.name; break; }
+                                    }
+                                }
+                                const val = segs[0] === 'value' ? segs[2] : 'All';
+                                parts.push(name + ': ' + val);
+                            });
+                            displayVal = parts.join('<br>');
+                        } catch (e) { return; }
+
+                    } else if (meta.type === 'advanced_spatial_filter') {
+                        try {
+                            const groups = JSON.parse(value);
+                            const lines = [];
+                            let keyToName = {};
+                            if (spatialFilterData) {
+                                for (const g of spatialFilterData) {
+                                    if (!g.children) continue;
+                                    for (const c of g.children) keyToName[c.key] = c.name;
+                                }
+                            }
+                            $.each(groups, function (gi, group) {
+                                if (!group.clauses || !group.clauses.length) return;
+                                const clauseParts = [];
+                                $.each(group.clauses, function (ci, clause) {
+                                    if (!clause.values || !clause.values.length) return;
+                                    const fieldName = clause.field || keyToName[clause.key] || clause.key || 'Unknown';
+                                    const vals = clause.values.length === 1 && clause.values[0] === '__ALL__'
+                                        ? 'All' : clause.values.join(', ');
+                                    clauseParts.push(fieldName + ': ' + vals);
+                                });
+                                if (gi > 0) lines.push('<strong>AND</strong>');
+                                lines.push(clauseParts.join(' <em>OR</em> '));
+                            });
+                            displayVal = lines.join('<br>');
+                        } catch (e) { return; }
+
+                    } else if (meta.type === 'json') {
+                        try {
+                            const parsed = JSON.parse(value);
+                            if (!parsed || (Array.isArray(parsed) && parsed.length === 0)) return;
+                            const labels = (Array.isArray(parsed) ? parsed : [parsed]).map(function (v) {
+                                if (meta.rename && meta.rename[v]) v = meta.rename[v];
+                                if (meta.font === 'uppercase') v = String(v).toUpperCase();
+                                return String(v).charAt(0).toUpperCase() + String(v).slice(1);
+                            });
+                            displayVal = labels.join(', ');
+                        } catch (e) { return; }
+                    }
+
+                    if (!displayVal) return;
+                    $table.append(
+                        '<div class="filter-row">' +
+                        '<span class="filter-key">' + meta.label + '</span>' +
+                        '<span class="filter-val">' + displayVal + '</span>' +
+                        '</div>'
+                    );
+                });
+
+                // ── Polygon — extract single best value same as other params ──
+                const polygonValue = extractValue(downloadParams.polygon);
+                if (polygonValue) {
+                    try {
+                        const coords = JSON.parse(polygonValue);
+                        if (Array.isArray(coords) && coords.length > 0) polygonStrings.push(coords);
+                    } catch (e) {}
+                }
+
+                if (polygonStrings.length > 0) {
+                    $table.append(
+                        '<div class="filter-row">' +
+                        '<span class="filter-key">Area (Polygon)</span>' +
+                        '<span class="filter-val">Custom drawn area — see map below</span>' +
+                        '</div>'
+                    );
+                    $('#polygon-map-container').show();
+
+                    const features = [];
+                    polygonStrings.forEach(function (coords) {
+                        const olCoords = coords.map(function (c) {
+                            return ol.proj.fromLonLat([c[0], c[1]]);
+                        });
+                        const geom = new ol.geom.Polygon([olCoords]);
+                        features.push(new ol.Feature({ geometry: geom }));
+                    });
+
+                    const vectorSource = new ol.source.Vector({ features: features });
+                    const vectorLayer = new ol.layer.Vector({
+                        source: vectorSource,
+                        style: new ol.style.Style({
+                            stroke: new ol.style.Stroke({ color: '#0d6efd', width: 2 }),
+                            fill: new ol.style.Fill({ color: 'rgba(13,110,253,0.1)' })
+                        })
+                    });
+
+                    const map = new ol.Map({
+                        target: 'polygon-map',
+                        layers: [
+                            new ol.layer.Tile({ source: new ol.source.OSM() }),
+                            vectorLayer
+                        ],
+                        view: new ol.View({ center: [0, 0], zoom: 2 })
+                    });
+
+                    map.getView().fit(vectorSource.getExtent(), { padding: [40, 40, 40, 40] });
+                }
+
+                if ($table.children().length === 0) {
+                    $table.prev('h5').hide();
+                    $table.prev('hr').hide();
+                }
+            });
+        }
+
+        // Auto-refresh progress while download is still running
+        const progressBar = document.querySelector('.progress-bar-download-request');
+        const isFinished = {{ download_request.request_file|yesno:"true,false" }} ||
+            {% if download_request.progress %}
+                (function() {
+                    const parts = '{{ download_request.progress }}'.split('/');
+                    return parts.length === 2 && parseInt(parts[0]) >= parseInt(parts[1]) && parseInt(parts[1]) > 0;
+                })()
+            {% else %}
+                false
+            {% endif %};
+
+        if (progressBar && !isFinished && !{{ download_request.rejected|yesno:"true,false" }}) {
+            const downloadRequestId = {{ download_request.id }};
+            const progressApi = `/api/download-request/${downloadRequestId}/progress/`;
+            const lastUpdatedEl = document.querySelector('.progress-last-updated');
+
+            const poll = setInterval(function () {
+                fetch(progressApi, {credentials: 'same-origin'})
+                    .then(r => r.json())
+                    .then(data => {
+                        const pct = data.percentage || 0;
+                        progressBar.style.width = pct + '%';
+                        progressBar.setAttribute('aria-valuenow', pct);
+
+                        if (data.total > 0) {
+                            progressBar.textContent = pct >= 100 ? 'Finished' : `${data.completed}/${data.total}`;
+                        }
+
+                        if (lastUpdatedEl && data.is_stale) {
+                            lastUpdatedEl.textContent = 'Warning: download appears stalled';
+                            lastUpdatedEl.classList.add('text-warning');
+                        }
+
+                        if (data.is_finished) {
+                            clearInterval(poll);
+                            // Reload to show the download button once the file is ready
+                            location.reload();
+                        }
+                    })
+                    .catch(() => {});
+            }, 3000);
+        }
+    })();
+</script>
+{% endblock %}

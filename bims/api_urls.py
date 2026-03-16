@@ -131,6 +131,7 @@ from bims.api_views.decision_support_tool import DecisionSupportToolView, \
 from bims.api_views.download_request import (
     DownloadRequestApi,
     DownloadRequestProgressApi,
+    DownloadRequestFileApi,
 )
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
@@ -401,6 +402,10 @@ urlpatterns = [
     re_path(r'^download-request/(?P<download_request_id>\d+)/progress/$',
         DownloadRequestProgressApi.as_view(),
         name='download-request-progress'
+        ),
+    re_path(r'^download-request/(?P<download_request_id>\d+)/file/$',
+        DownloadRequestFileApi.as_view(),
+        name='download-request-file'
         ),
     re_path(r'^gbif-ids/download/$',
         GbifIdsDownloader.as_view()),

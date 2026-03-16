@@ -1,6 +1,10 @@
+import io
+import os
+import zipfile
 from datetime import datetime, timedelta
 
 from django.contrib.sites.models import Site
+from django.http import FileResponse
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from preferences import preferences
@@ -207,3 +211,89 @@ class DownloadRequestProgressApi(APIView):
             'is_stale': is_stale,
             'is_finished': is_finished,
         })
+
+
+class DownloadRequestFileApi(APIView):
+    """
+    GET /api/download-request/<id>/file/
+
+    Returns the request file as a zipped download, including the license/readme
+    file if configured, matching the format sent via email.
+    """
+
+    def get(self, request, download_request_id):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return Response(
+                {'error': 'Download request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        is_admin = request.user.is_staff or request.user.is_superuser
+        is_requester = dr.requester == request.user
+
+        if not is_admin and not is_requester:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not (dr.approved or is_admin):
+            return Response(
+                {'error': 'This download has not been approved yet'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not dr.request_file:
+            return Response(
+                {'error': 'No file available for this request'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        file_path = dr.request_file.path
+        if not os.path.exists(file_path):
+            return Response(
+                {'error': 'File not found on server'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        file_name = dr.request_category or os.path.splitext(
+            os.path.basename(file_path))[0]
+
+        ext = os.path.splitext(file_path)[1].lstrip('.')
+        if not ext:
+            if dr.resource_type == DownloadRequest.PDF:
+                ext = 'pdf'
+            elif dr.resource_type == DownloadRequest.XLS:
+                ext = 'xlsx'
+            else:
+                ext = 'csv'
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.write(file_path, f'{file_name}.{ext}')
+            readme = preferences.SiteSetting.readme_download
+            if readme:
+                try:
+                    zf.write(
+                        readme.path,
+                        os.path.basename(readme.path)
+                    )
+                except (FileNotFoundError, ValueError):
+                    pass
+        buf.seek(0)
+
+        response = FileResponse(
+            buf,
+            content_type='application/zip',
+            as_attachment=True,
+            filename=f'{file_name}.zip',
+        )
+        return response
