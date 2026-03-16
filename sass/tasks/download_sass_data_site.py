@@ -35,7 +35,7 @@ def download_sass_data_site_task(
 
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            search = CollectionSearch(filters)
+            search = CollectionSearch(filters, requester_id=user_id)
             context = {
                 'filters': filters
             }
@@ -121,7 +121,7 @@ def download_sass_summary_data_task(
     oid = random.randint(1, 101)
     with memcache_lock(lock_id, oid) as acquired:
         if acquired:
-            search = CollectionSearch(filters)
+            search = CollectionSearch(filters, requester_id=user_id)
             context = {
                 'filters': filters
             }

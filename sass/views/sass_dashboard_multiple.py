@@ -438,7 +438,10 @@ class SassDashboardMultipleSitesApiView(APIView):
     def get(self, request):
         filters = request.GET.dict()
         filters['validated'] = ''
-        search = CollectionSearch(filters)
+        search = CollectionSearch(
+            filters,
+            requester_id=request.user.id if request.user.is_authenticated else None
+        )
         search.sass_only = True
         page = int(filters.get('page', 1))
         self.site_visit_taxa = search.process_search()
