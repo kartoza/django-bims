@@ -908,7 +908,6 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         and accepted
         and getattr(accepted, "id", None)
         and _has_meaningful_iucn_data(instance)
-        and not _has_meaningful_iucn_data(accepted)
     ):
         update_payload = _extract_iucn_payload(instance)
         if update_payload:
@@ -938,8 +937,7 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         update_payload = _extract_iucn_payload(instance)
         if update_payload:
             for synonym in Taxonomy.objects.filter(accepted_taxonomy=instance):
-                if not _has_meaningful_iucn_data(synonym) or not synonym.iucn_redlist_id:
-                    Taxonomy.objects.filter(pk=synonym.pk).update(**update_payload)
+                Taxonomy.objects.filter(pk=synonym.pk).update(**update_payload)
 
     # If this accepted taxon has no IUCN data, pull it from one of its synonyms.
     # Use direct field assignment (no .save()) to avoid re-triggering this signal.
@@ -969,29 +967,45 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
     instance_origin_id = getattr(instance, "origin_id", None)
 
     if is_synonym and accepted and getattr(accepted, "id", None):
-        if instance_origin_id and not getattr(accepted, "origin_id", None):
+        if instance_origin_id:
             Taxonomy.objects.filter(pk=accepted.pk).update(origin_id=instance_origin_id)
         elif not instance_origin_id and getattr(accepted, "origin_id", None):
             instance.origin_id = accepted.origin_id
 
     if not is_synonym and getattr(instance, "pk", None) and instance_origin_id:
         Taxonomy.objects.filter(
-            accepted_taxonomy=instance, origin__isnull=True
+            accepted_taxonomy=instance
         ).update(origin_id=instance_origin_id)
 
     # --- Endemism propagation -------------------------------------------------
     instance_endemism_id = getattr(instance, "endemism_id", None)
 
     if is_synonym and accepted and getattr(accepted, "id", None):
-        if instance_endemism_id and not getattr(accepted, "endemism_id", None):
+        if instance_endemism_id:
             Taxonomy.objects.filter(pk=accepted.pk).update(endemism_id=instance_endemism_id)
         elif not instance_endemism_id and getattr(accepted, "endemism_id", None):
             instance.endemism_id = accepted.endemism_id
 
     if not is_synonym and getattr(instance, "pk", None) and instance_endemism_id:
         Taxonomy.objects.filter(
-            accepted_taxonomy=instance, endemism__isnull=True
+            accepted_taxonomy=instance
         ).update(endemism_id=instance_endemism_id)
+
+    # --- National conservation status propagation -----------------------------
+    instance_ncs_id = getattr(instance, "national_conservation_status_id", None)
+
+    if is_synonym and accepted and getattr(accepted, "id", None):
+        if instance_ncs_id:
+            Taxonomy.objects.filter(pk=accepted.pk).update(
+                national_conservation_status_id=instance_ncs_id
+            )
+        elif not instance_ncs_id and getattr(accepted, "national_conservation_status_id", None):
+            instance.national_conservation_status_id = accepted.national_conservation_status_id
+
+    if not is_synonym and getattr(instance, "pk", None) and instance_ncs_id:
+        Taxonomy.objects.filter(
+            accepted_taxonomy=instance
+        ).update(national_conservation_status_id=instance_ncs_id)
 
 
 class TaxonImage(models.Model):

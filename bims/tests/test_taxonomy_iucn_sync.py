@@ -8,6 +8,9 @@ from bims.tests.model_factories import IUCNStatusF, TaxonomyF
 
 
 def _make_iucn(category='LC'):
+    iucn_status = IUCNStatus.objects.filter(category=category)
+    if iucn_status.exists():
+        return iucn_status.first()
     return IUCNStatus.objects.create(category=category)
 
 
@@ -55,8 +58,8 @@ class TestTaxonomyIUCNSync(FastTenantTestCase):
         )
 
         accepted.refresh_from_db()
-        self.assertEqual(accepted.iucn_status_id, original_iucn.pk)
-        self.assertEqual(accepted.iucn_redlist_id, 999)
+        self.assertEqual(accepted.iucn_status_id, synonym_iucn.pk)
+        self.assertEqual(accepted.iucn_redlist_id, 111)
 
     # ------------------------------------------------------------------ #
     # 2. Accepted taxonomy → synonyms
@@ -97,8 +100,8 @@ class TestTaxonomyIUCNSync(FastTenantTestCase):
         accepted.save()
 
         synonym.refresh_from_db()
-        self.assertEqual(synonym.iucn_status_id, synonym_iucn.pk)
-        self.assertEqual(synonym.iucn_redlist_id, 777)
+        self.assertEqual(synonym.iucn_status_id, accepted_iucn.pk)
+        self.assertEqual(synonym.iucn_redlist_id, 111)
 
     def test_accepted_pushes_iucn_data_url_to_synonyms(self, mock_iucn):
         """Saving an accepted taxonomy propagates iucn_data URL to synonyms."""
