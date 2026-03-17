@@ -67,6 +67,112 @@ def download_collection_record_task(
         path_file)
 
 
+@shared_task(name='bims.tasks.resume_stalled_downloads', queue='update', ignore_result=True)
+def resume_stalled_downloads():
+    """
+    Periodic task: find occurrence download requests whose progress has not
+    advanced for STALE_THRESHOLD_MINUTES and restart them from scratch.
+    Runs across all tenants.
+    """
+    import os
+    from datetime import timedelta
+    from django.utils import timezone
+    from django_tenants.utils import get_tenant_model, tenant_context
+    from bims.models.download_request import DownloadRequest
+    from bims.download.csv_download import STALE_THRESHOLD_MINUTES
+
+    stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
+
+    for tenant in get_tenant_model().objects.all():
+        with tenant_context(tenant):
+            stalled = DownloadRequest.objects.filter(
+                resource_name='Occurrence Data',
+                resource_type__in=['CSV', 'XLS'],
+                approved=True,
+                rejected=False,
+                request_file='',
+                progress__isnull=False,
+                progress_updated_at__lt=stale_cutoff,
+                download_path__isnull=False,
+                download_params__isnull=False,
+            )
+
+            for dr in stalled:
+                logger.info(
+                    '[%s] Resuming stalled download request %d (last update: %s)',
+                    tenant.schema_name, dr.id, dr.progress_updated_at
+                )
+                path_file = dr.download_path
+                request_params = dr.download_params or {}
+
+                try:
+                    if path_file and os.path.exists(path_file):
+                        os.remove(path_file)
+                except OSError as exc:
+                    logger.warning(
+                        '[%s] Could not remove partial file %s: %s',
+                        tenant.schema_name, path_file, exc
+                    )
+
+                dr.progress = None
+                dr.progress_updated_at = None
+                dr.save(update_fields=['progress', 'progress_updated_at'])
+
+                download_collection_record_task.delay(
+                    path_file,
+                    request_params,
+                    send_email=True,
+                    user_id=dr.requester_id,
+                )
+
+
+@shared_task(name='bims.tasks.cleanup_expired_download_files', queue='update', ignore_result=True)
+def cleanup_expired_download_files():
+    """
+    Periodic task: delete download files for requests older than one month.
+    Only the file is removed; the DownloadRequest record is kept.
+    Runs across all tenants.
+    """
+    import os
+    from dateutil.relativedelta import relativedelta
+    from django.utils import timezone
+    from django_tenants.utils import get_tenant_model, tenant_context
+    from bims.models.download_request import DownloadRequest
+
+    expiry_cutoff = timezone.now() - relativedelta(months=1)
+
+    for tenant in get_tenant_model().objects.all():
+        with tenant_context(tenant):
+            expired = DownloadRequest.objects.filter(
+                request_date__lt=expiry_cutoff,
+                request_file__isnull=False,
+            ).exclude(request_file='')
+
+            for dr in expired:
+                file_path = None
+                try:
+                    file_path = dr.request_file.path
+                except (ValueError, OSError):
+                    pass
+
+                if file_path and os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                        logger.info(
+                            '[%s] Deleted expired download file for request %d: %s',
+                            tenant.schema_name, dr.id, file_path
+                        )
+                    except OSError as exc:
+                        logger.warning(
+                            '[%s] Could not delete expired file for request %d (%s): %s',
+                            tenant.schema_name, dr.id, file_path, exc
+                        )
+                        continue
+
+                dr.request_file = None
+                dr.save(update_fields=['request_file'])
+
+
 @shared_task(name='bims.tasks.download_gbif_ids', queue='update')
 def download_gbif_ids(path_file, request, send_email=False, user_id=None):
     from bims.utils.celery import memcache_lock

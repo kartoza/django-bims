@@ -2,17 +2,34 @@
 # coding=utf-8
 import ast
 
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
 from django.http import Http404, HttpResponseRedirect
 
 from bims.tasks import send_csv_via_email
+from bims.tasks.collection_record import download_collection_record_task
 from geonode.people.models import Profile
 from bims.models.download_request import DownloadRequest
 from bims.permissions.api_permission import (
     user_has_permission_to_validate,
 )
+from preferences import preferences
+
+
+def dispatch_download_if_needed(download_request):
+    if (
+        not download_request.request_file and
+        not download_request.progress and
+        download_request.download_path and
+        download_request.download_params
+    ):
+        download_collection_record_task.delay(
+            download_request.download_path,
+            download_request.download_params,
+            send_email=True,
+            user_id=download_request.requester_id,
+        )
 
 
 class DownloadRequestListView(
@@ -62,6 +79,7 @@ class DownloadRequestListView(
                 download_request.approved = True
                 download_request.rejected = False
                 download_request.save()
+                dispatch_download_if_needed(download_request)
             except DownloadRequest.DoesNotExist:
                 raise Http404('The request does not exist!')
         else:
@@ -111,6 +129,13 @@ class DownloadRequestListView(
         ctx['approved_or_rejected'] = self.approved_or_rejected
         ctx['current_requester'] = self.current_requester
         ctx['has_permission_to_approve'] = user_has_permission_to_validate(self.request.user)
+        ctx['enable_download_request_approval'] = (
+            preferences.SiteSetting.enable_download_request_approval
+        )
+        ctx['approval_required'] = (
+            preferences.SiteSetting.enable_download_request_approval or
+            preferences.SiteSetting.max_download_records > 0
+        )
 
         if user_has_permission_to_validate(self.request.user):
             author_ids = DownloadRequest.objects.filter(
@@ -131,7 +156,7 @@ class DownloadRequestListView(
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
         qs = qs.filter(requester__isnull=False)
-        if not self.request.user.is_superuser:
+        if not user_has_permission_to_validate(self.request.user):
             qs = qs.filter(requester=self.request.user)
         if (
                 self.approved_or_rejected is not None and
@@ -152,3 +177,67 @@ class DownloadRequestListView(
 
         # Return filtered queryset
         return qs
+
+
+class DownloadRequestDetailView(
+        LoginRequiredMixin,
+        UserPassesTestMixin,
+        DetailView):
+
+    model = DownloadRequest
+    context_object_name = 'download_request'
+    template_name = 'download_request_detail.html'
+
+    def test_func(self):
+        user = self.request.user
+        if user.is_anonymous:
+            return False
+        obj = self.get_object()
+        return user.is_staff or user.is_superuser or obj.requester == user
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You don\'t have permission '
+                                     'to view this download request')
+        return super().handle_no_permission()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['has_permission_to_approve'] = user_has_permission_to_validate(
+            self.request.user)
+        ctx['enable_download_request_approval'] = (
+            preferences.SiteSetting.enable_download_request_approval
+        )
+        ctx['approval_required'] = (
+            preferences.SiteSetting.enable_download_request_approval or
+            preferences.SiteSetting.max_download_records > 0
+        )
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        if not user_has_permission_to_validate(request.user):
+            raise Http404('User has no permission to approve download requests')
+        approved = ast.literal_eval(request.POST.get('approved', 'False'))
+        download_request = self.get_object()
+        if approved:
+            if download_request.request_file:
+                send_csv_via_email.delay(
+                    user_id=download_request.requester.id,
+                    csv_file=download_request.request_file.path,
+                    file_name=download_request.request_category,
+                    approved=True,
+                    download_request_id=download_request.id
+                )
+            else:
+                download_request.processing = True
+            download_request.approved = True
+            download_request.rejected = False
+            download_request.save()
+            dispatch_download_if_needed(download_request)
+        else:
+            rejection_message = request.POST.get('rejection_message', '')
+            download_request.processing = False
+            download_request.approved = False
+            download_request.rejected = True
+            download_request.rejection_message = rejection_message
+            download_request.save()
+        return HttpResponseRedirect(request.path)

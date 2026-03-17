@@ -3,13 +3,14 @@ from hashlib import sha256
 import json
 import os
 import errno
-from datetime import datetime
+from preferences import preferences
+
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
-from django.contrib.sites.models import Site
-from django.db import connection
+from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from bims.tasks.collection_record import download_collection_record_task
@@ -19,6 +20,8 @@ from bims.models.notification import (
 )
 from bims.utils.domain import get_current_domain
 from bims.tasks.send_notification import send_mail_notification
+
+STALE_THRESHOLD_MINUTES = 10
 
 
 class CsvDownload(APIView):
@@ -60,8 +63,6 @@ class CsvDownload(APIView):
             pass
 
         path_file = os.path.join(path_folder, filename)
-        if os.path.exists(path_file):
-            os.remove(path_file)
 
         try:
             download_request = DownloadRequest.objects.get(
@@ -72,18 +73,91 @@ class CsvDownload(APIView):
                 'status': 'failed',
                 'message': 'Download request does not exist'
             })
-        if os.path.exists(path_file) and download_request.approved:
+
+        # Persist the path and params so the resume task can restart the download
+        params_dict = dict(self.request.GET)
+        # Flatten single-value lists (QueryDict stores all values as lists)
+        params_dict = {k: v[0] if isinstance(v, list) and len(v) == 1 else v
+                       for k, v in params_dict.items()}
+        needs_save = False
+        if download_request.download_path != path_file:
+            download_request.download_path = path_file
+            needs_save = True
+        if download_request.download_params != params_dict:
+            download_request.download_params = params_dict
+            needs_save = True
+        if needs_save:
+            download_request.save(update_fields=['download_path', 'download_params'])
+
+        max_limit = preferences.SiteSetting.max_download_records
+        approval_needed = preferences.SiteSetting.enable_download_request_approval
+        if max_limit and max_limit > 0 and not download_request.approved:
+            from bims.api_views.search import CollectionSearch
+            _search = CollectionSearch(request.GET, request.user.id)
+            _total = _search.process_search().count()
+            if _total > max_limit:
+                send_new_csv_notification(
+                    request.user,
+                    download_request.request_date,
+                    approval_needed=True,
+                    download_request_id=download_request_id,
+                    over_limit=True,
+                    total_records=_total,
+                    max_records=max_limit,
+                )
+                return Response({
+                    'status': 'pending_approval',
+                    'total_records': _total,
+                    'max_records': max_limit,
+                })
+
+        if not approval_needed and not download_request.approved:
+            download_request.approved = True
+            download_request.save(update_fields=['approved'])
+            send_new_csv_notification(
+                request.user,
+                download_request.request_date,
+                approval_needed=False,
+                download_request_id=download_request_id,
+            )
+
+        if download_request.request_file and os.path.exists(
+                str(download_request.request_file)):
+            # Already completed - send via email again
             send_csv_via_email.delay(
                 user_id=request.user.id,
-                csv_file=path_file,
+                csv_file=str(download_request.request_file),
                 download_request_id=download_request_id
             )
-        else:
-            if os.path.exists(path_file):
-                return Response({
-                    'status': 'failed',
-                    'message': 'Download request has been requested'
-                })
+            return Response({
+                'status': 'processing',
+                'filename': filename
+            })
+
+        file_exists = os.path.exists(path_file)
+        is_stale = False
+        if file_exists and download_request.progress_updated_at:
+            stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
+            is_stale = download_request.progress_updated_at < stale_cutoff
+
+        if file_exists and not is_stale:
+            # Already in progress – do not start a duplicate task
+            return Response({
+                'status': 'processing',
+                'filename': filename
+            })
+
+        if is_stale:
+            # Delete any partial file so the task starts clean
+            try:
+                os.remove(path_file)
+            except OSError:
+                pass
+            download_request.progress = None
+            download_request.progress_updated_at = None
+            download_request.save(update_fields=['progress', 'progress_updated_at'])
+
+        if not file_exists or is_stale:
             download_collection_record_task.delay(
                 path_file,
                 self.request.GET,
@@ -97,12 +171,19 @@ class CsvDownload(APIView):
         })
 
 
-def send_new_csv_notification(user, date_request, approval_needed=True):
+def send_new_csv_notification(
+        user, date_request, approval_needed=True,
+        download_request_id=None, over_limit=False,
+        total_records=0, max_records=0):
     """
     Send an email notify admin/staff that new request has been created
     :param user: User object
     :param date_request: Date of request
-    :return:
+    :param approval_needed: Whether manual approval is required
+    :param download_request_id: PK of the DownloadRequest (for detail URL)
+    :param over_limit: True when request was held because record count exceeds max_download_records
+    :param total_records: Actual record count (used in over_limit message)
+    :param max_records: Configured limit (used in over_limit message)
     """
     email_template = 'csv_download/csv_new'
     recipients = get_recipients_for_notification(
@@ -111,13 +192,17 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
     ctx = {
         'username': user.username,
         'current_site': get_current_domain(),
-        'date_request': date_request
+        'date_request': date_request,
+        'download_request_id': download_request_id,
+        'over_limit': over_limit,
+        'total_records': total_records,
+        'max_records': max_records,
     }
     subject = render_to_string(
         '{0}_subject.txt'.format(email_template),
         ctx
     ).strip()
-    if not approval_needed:
+    if not approval_needed and not over_limit:
         message = render_to_string(
             '{}_message_without_approval.txt'.format(email_template),
             ctx

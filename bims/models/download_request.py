@@ -4,6 +4,7 @@
 """
 from datetime import datetime
 
+from dateutil.relativedelta import relativedelta
 from django.contrib.sites.models import Site
 from django.db import models
 from django.conf import settings
@@ -16,8 +17,8 @@ from bims.download.csv_download import (
 
 def validate_file_extension(value):
     import os
-    ext = os.path.splitext(value.name)[1]
-    valid_extensions = ['.csv', '.xlsx', '.xls']
+    ext = os.path.splitext(value.name)[1].lower()
+    valid_extensions = ['.csv', '.xlsx', '.xls', '.png', '.svg', '.pdf', '.jpg', '.jpeg']
     if ext not in valid_extensions:
         raise ValidationError('File not supported!')
 
@@ -151,12 +152,44 @@ class DownloadRequest(models.Model):
         null=True,
         blank=True
     )
+    progress_updated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Timestamp of the last progress update'
+    )
+    download_path = models.CharField(
+        max_length=512,
+        null=True,
+        blank=True,
+        help_text='Filesystem path of the in-progress download file'
+    )
+    download_params = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='Serialised request parameters used to start the download'
+    )
     source_site = models.ForeignKey(
         Site,
         on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
+
+    @property
+    def file_expiry_date(self):
+        """Return the date when the download file will be (or was) deleted."""
+        return self.request_date + relativedelta(months=1)
+
+    @property
+    def file_has_expired(self):
+        """Return True if the file retention period has passed."""
+        from django.utils import timezone
+        now = timezone.now()
+        expiry = self.file_expiry_date
+        if expiry.tzinfo is None:
+            from django.utils.timezone import make_aware
+            expiry = make_aware(expiry)
+        return now > expiry
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""

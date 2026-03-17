@@ -68,5 +68,21 @@ CELERY_BEAT_SCHEDULE = {
             'retry': False,
             'queue': 'update'
         }
-    }
+    },
+    'resume_stalled_downloads': {
+        'task': 'bims.tasks.resume_stalled_downloads',
+        'schedule': 600,
+        'options': {
+            'retry': False,
+            'queue': 'update'
+        }
+    },
+    'cleanup_expired_download_files': {
+        'task': 'bims.tasks.cleanup_expired_download_files',
+        'schedule': crontab(hour='2', minute='0'),
+        'options': {
+            'retry': False,
+            'queue': 'update'
+        }
+    },
 }

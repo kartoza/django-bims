@@ -61,7 +61,7 @@
                         {% for obj in download_requests %}
                             <tr>
                                 <td>
-                                    <a href="{{ obj.dashboard_url }}"><span class="request-date" data-timestamp="{{ obj.request_date|date:"U" }}">{{ obj.request_date|date:'Y-m-d  h:i a' }}</span></a>
+                                    <a href="{% url 'download-request-detail' pk=obj.pk %}"><span class="request-date" data-timestamp="{{ obj.request_date|date:"U" }}">{{ obj.request_date|date:'Y-m-d  h:i a' }}</span></a>
                                 </td>
                                 <td>
                                     {{ obj.get_formatted_name }}
@@ -114,7 +114,7 @@
                                 {% endif %}
                                 </td>
                                 <td>
-                                    {% if not obj.approved and not obj.rejected and has_permission_to_approve %}
+                                    {% if not obj.approved and not obj.rejected and has_permission_to_approve and approval_required %}
                                         <a href="#"
                                            class="btn btn-sm btn-outline-success approve"
                                            style="font-size: 10pt;"
@@ -126,10 +126,9 @@
                                     {% endif %}
                                     {% if obj.request_file %}
                                         {% if not obj.approved and not obj.rejected and has_permission_to_approve or obj.approved %}
-                                            <a download="{% if '.xlsx' in obj.request_file.name or '.pdf' in obj.request_file.name %}{{ obj.request_file.name|filename }}{% elif 'PDF' in obj.resource_type  %}{{ obj.request_file.name }}.pdf{% else %}{{ obj.request_file.name|filename }}.csv{% endif %}"
-                                               href="{{ obj.request_file.url|remove_media_path }}"
+                                            <a href="/api/download-request/{{ obj.id }}/file/"
                                                class="btn btn-sm btn-primary"
-                                               style="font-size: 10pt;">Download {{ obj.resource_type }} File</a>
+                                               style="font-size: 10pt;">Download File</a>
                                         {% endif %}
                                     {% endif %}
                                     {% if not approved_or_rejected and not has_permission_to_approve %}

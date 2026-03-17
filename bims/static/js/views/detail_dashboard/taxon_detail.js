@@ -588,15 +588,27 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             }
             let self = this;
             domElement.scrollIntoView();
-            showDownloadPopup('TABLE', title, function () {
+            showDownloadPopup('TABLE', title, function (downloadRequestId) {
+                // Re-check attachment after modal interaction
+                if (!domElement || !document.body.contains(domElement)) {
+                    alert('The element is no longer available. Please try again.');
+                    return;
+                }
+                function uploadCanvas(canvas) {
+                    canvas.toBlob(function (blob) {
+                        uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                    }, 'image/png');
+                }
                 var options = {};
                 options.onrendered = function (canvas) {
-                    self.triggerCanvasDownload(title, canvas);
+                    uploadCanvas(canvas);
                 }
                 var render = Html2Canvas(domElement, options);
                 if (render && typeof render.then === 'function') {
                     render.then(function (canvas) {
-                        self.triggerCanvasDownload(title, canvas);
+                        uploadCanvas(canvas);
+                    }).catch(function (err) {
+                        console.error('Html2Canvas error:', err);
                     });
                 }
             })
@@ -695,26 +707,26 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
         exportTaxasiteMap: function () {
             let self = this;
             this.mapTaxaSite.once('postcompose', function (event) {
-                showDownloadPopup('IMAGE', 'Taxa Map', function () {
+                showDownloadPopup('IMAGE', 'Taxa Map', function (downloadRequestId) {
                     let canvas = $('#taxasite-map')[0];
                     if (!canvas || !document.body.contains(canvas)) {
                         return;
+                    }
+                    function uploadMap(renderedCanvas) {
+                        $('.ol-control').show();
+                        renderedCanvas.toBlob(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, 'Taxa Map.png');
+                        }, 'image/png');
                     }
                     var options = {
                         useCORS: false,
                         background: '#FFFFFF',
                         allowTaint: true,
                     };
-                    options.onrendered = function (renderedCanvas) {
-                        $('.ol-control').show();
-                        self.triggerCanvasDownload('map', renderedCanvas);
-                    };
+                    options.onrendered = uploadMap;
                     var render = Html2Canvas(canvas, options);
                     if (render && typeof render.then === 'function') {
-                        render.then(function (renderedCanvas) {
-                            $('.ol-control').show();
-                            self.triggerCanvasDownload('map', renderedCanvas);
-                        });
+                        render.then(uploadMap);
                     }
                 })
             });
@@ -726,27 +738,30 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             this.downloadChart(title, canvas);
         },
         downloadChart: function (title, graph_canvas) {
-            var img = new Image();
-            var ctx = graph_canvas.getContext('2d');
-            img.src = '/static/img/bims-stamp.png';
-            img.onload = function () {
-                ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
-                    graph_canvas.scrollHeight - img.height - 5);
-                canvas = graph_canvas;
-                if (!canvas || !document.body.contains(canvas)) {
-                    return;
+            showDownloadPopup('CHART', title, function (downloadRequestId) {
+                var img = new Image();
+                var ctx = graph_canvas.getContext('2d');
+                img.src = '/static/img/bims-stamp.png';
+                img.onload = function () {
+                    ctx.drawImage(img, graph_canvas.scrollWidth - img.width - 5,
+                        graph_canvas.scrollHeight - img.height - 5);
+                    var canvas = graph_canvas;
+                    if (!canvas || !document.body.contains(canvas)) {
+                        return;
+                    }
+                    function uploadCanvas(renderedCanvas) {
+                        renderedCanvas.toBlob(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                        }, 'image/png');
+                    }
+                    var options = {};
+                    options.onrendered = uploadCanvas;
+                    var render = Html2Canvas(canvas, options);
+                    if (render && typeof render.then === 'function') {
+                        render.then(uploadCanvas);
+                    }
                 }
-                var options = {};
-                options.onrendered = function (renderedCanvas) {
-                    this.triggerCanvasDownload(title, renderedCanvas);
-                }.bind(this);
-                var render = Html2Canvas(canvas, options);
-                if (render && typeof render.then === 'function') {
-                    render.then(function (renderedCanvas) {
-                        this.triggerCanvasDownload(title, renderedCanvas);
-                    }.bind(this));
-                }
-            }
+            });
         },
         renderFBISRPanelBlocks: function (data, stretch_selection = false) {
             var $detailWrapper = $('<div style="padding-left: 0;"></div>');

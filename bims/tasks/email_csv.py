@@ -94,6 +94,7 @@ def send_csv_via_email(
     ctx = {
         'username': user.username,
         'current_site': get_current_domain(),
+        'download_request_id': download_request_id,
     }
     subject = render_to_string(
         '{0}_subject.txt'.format(email_template),

@@ -61,10 +61,10 @@ function renderWaterTemperatureChart(){
                     downloadPNG: {
                         onclick: function () {
                             let that = this;
-                            showDownloadPopup('CHART', chartTitle, function () {
-                                that.exportChart({
-                                    type: 'image/png'
-                                });
+                            showDownloadPopup('CHART', chartTitle, function (downloadRequestId) {
+                                let svg = that.getSVG();
+                                let blob = new Blob([svg], {type: 'image/svg+xml'});
+                                uploadToDownloadRequest(downloadRequestId, blob, chartTitle + '.svg');
                             })
                         },
                         text: 'Download PNG image'
@@ -72,10 +72,10 @@ function renderWaterTemperatureChart(){
                     downloadPDF: {
                         onclick: function () {
                             let that = this;
-                            showDownloadPopup('CHART', chartTitle, function () {
-                                that.exportChart({
-                                    type: 'application/pdf'
-                                });
+                            showDownloadPopup('CHART', chartTitle, function (downloadRequestId) {
+                                let svg = that.getSVG();
+                                let blob = new Blob([svg], {type: 'image/svg+xml'});
+                                uploadToDownloadRequest(downloadRequestId, blob, chartTitle + '.svg');
                             })
                         },
                         text: 'Download PDF image'
@@ -83,10 +83,10 @@ function renderWaterTemperatureChart(){
                     downloadSVG: {
                         onclick: function () {
                             let that = this;
-                            showDownloadPopup('CHART', chartTitle, function () {
-                                that.exportChart({
-                                    type: 'image/svg+xml'
-                                });
+                            showDownloadPopup('CHART', chartTitle, function (downloadRequestId) {
+                                let svg = that.getSVG();
+                                let blob = new Blob([svg], {type: 'image/svg+xml'});
+                                uploadToDownloadRequest(downloadRequestId, blob, chartTitle + '.svg');
                             })
                         },
                         text: 'Download SVG vector image'
@@ -94,8 +94,10 @@ function renderWaterTemperatureChart(){
                     downloadCSV2: {
                         onclick: function () {
                             let that = this;
-                            showDownloadPopup('TABLE', chartTitle, function () {
-                                that.downloadCSV()
+                            showDownloadPopup('TABLE', chartTitle, function (downloadRequestId) {
+                                let csv = that.getCSV();
+                                let blob = new Blob([csv], {type: 'text/csv'});
+                                uploadToDownloadRequest(downloadRequestId, blob, chartTitle + '.csv');
                             })
                         },
                         text: 'Download CSV'

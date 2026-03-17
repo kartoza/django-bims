@@ -1,3 +1,35 @@
+/**
+ * Upload a client-side generated file (chart, image, table) to the server,
+ * associate it with the given download request, then trigger the API download.
+ *
+ * @param {number} downloadRequestId
+ * @param {Blob}   blob       - file content
+ * @param {string} filename   - filename including extension (e.g. "chart.png")
+ */
+function uploadToDownloadRequest(downloadRequestId, blob, filename) {
+    var formData = new FormData();
+    formData.append('file', blob, filename);
+
+    $.ajax({
+        url: '/api/download-request/' + downloadRequestId + '/upload/',
+        type: 'POST',
+        headers: {"X-CSRFToken": csrfmiddlewaretoken},
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function () {
+            window.location.href = '/api/download-request/' + downloadRequestId + '/file/';
+        },
+        error: function (jqXHR) {
+            var msg = 'Error uploading file.';
+            if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                msg += ' ' + jqXHR.responseJSON.error;
+            }
+            alert(msg);
+        }
+    });
+}
+
 function isInt(value) {
   return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value))
 }

@@ -2,7 +2,7 @@
 You have received the following notice from {{ current_site }}:
 
 <p>
-{% trans "A new download request has been created and approved automatically" %} :
+{% if over_limit %}{% trans "A new download request has been created but requires approval because it contains" %} {{ total_records }} {% trans "records, which exceeds the limit of" %} {{ max_records }}{% else %}{% trans "A new download request has been created and approved automatically" %}{% endif %} :
 </p>
 <p>
 Requester : {{ username }}
@@ -12,5 +12,5 @@ Request date : {{ date_request }}
 </p>
 <p></p>
 <p>
-{% trans "See the request here" %}: http://{{ current_site }}/download-request/?approved_or_rejected=approved&requester=
+{% trans "See the request here" %}: http://{{ current_site }}/download-request/{{ download_request_id }}/
 </p>

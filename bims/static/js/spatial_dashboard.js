@@ -43,16 +43,13 @@
                 .catch(onError);
         }
 
-        function downloadCanvasAsPng(canvasEl, title) {
+        function downloadCanvasAsPng(canvasEl, title, downloadRequestId) {
             if (!canvasEl) {
                 return;
             }
-            const link = document.createElement('a');
-            link.href = canvasEl.toDataURL('image/png');
-            link.download = title + '.png';
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            canvasEl.toBlob(function (blob) {
+                uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+            }, 'image/png');
         }
 
         function renderStackedBarChart(responseData, chartCanvas, labelsDisplayMap = {}) {
@@ -804,20 +801,16 @@
                         return;
                     }
                     map.once('postrender', function () {
-                        showDownloadPopup('IMAGE', 'Distribution Map', function () {
-                            const canvas = $('#spatial-dashboard-map');
+                        showDownloadPopup('IMAGE', 'Distribution Map', function (downloadRequestId) {
+                            const canvas = $('#spatial-dashboard-map')[0];
                             html2canvas(canvas, {
                                 useCORS: true,
                                 background: '#FFFFFF',
                                 allowTaint: false,
                                 onrendered: function (canvasEl) {
-                                    let link = document.createElement('a');
-                                    link.setAttribute("type", "hidden");
-                                    link.href = canvasEl.toDataURL("image/png");
-                                    link.download = 'distribution-map.png';
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    link.remove();
+                                    canvasEl.toBlob(function (blob) {
+                                        uploadToDownloadRequest(downloadRequestId, blob, 'Distribution Map.png');
+                                    }, 'image/png');
                                 }
                             });
                         });
@@ -825,33 +818,33 @@
                     map.renderSync();
                 }
                 if (type === 'cons-status') {
-                    showDownloadPopup('CHART', 'Conservation Status', function () {
-                        downloadCanvasAsPng(consChartEl, 'conservation-status');
+                    showDownloadPopup('CHART', 'Conservation Status', function (downloadRequestId) {
+                        downloadCanvasAsPng(consChartEl, 'conservation-status', downloadRequestId);
                     });
                 }
                 if (type === 'occurrences') {
-                    showDownloadPopup('CHART', 'Occurrences', function () {
-                        downloadCanvasAsPng(occurrencesChartEl, 'occurrences');
+                    showDownloadPopup('CHART', 'Occurrences', function (downloadRequestId) {
+                        downloadCanvasAsPng(occurrencesChartEl, 'occurrences', downloadRequestId);
                     });
                 }
                 if (type === 'origin') {
-                    showDownloadPopup('CHART', 'Origin', function () {
-                        downloadCanvasAsPng(originChartEl, 'origin');
+                    showDownloadPopup('CHART', 'Origin', function (downloadRequestId) {
+                        downloadCanvasAsPng(originChartEl, 'origin', downloadRequestId);
                     });
                 }
                 if (type === 'endemism') {
-                    showDownloadPopup('CHART', 'Endemism', function () {
-                        downloadCanvasAsPng(endemismChartEl, 'endemism');
+                    showDownloadPopup('CHART', 'Endemism', function (downloadRequestId) {
+                        downloadCanvasAsPng(endemismChartEl, 'endemism', downloadRequestId);
                     });
                 }
                 if (type === 'rli') {
-                    showDownloadPopup('CHART', 'Red List Index', function () {
-                        downloadCanvasAsPng(rliChartEl, 'red-list-index');
+                    showDownloadPopup('CHART', 'Red List Index', function (downloadRequestId) {
+                        downloadCanvasAsPng(rliChartEl, 'red-list-index', downloadRequestId);
                     });
                 }
                 if (type === 'cons-status-per-module') {
-                    showDownloadPopup('CHART', 'IUCN Conservation Status', function () {
-                        downloadCanvasAsPng(consChartPerModuleEl, 'conservation-status-per-module');
+                    showDownloadPopup('CHART', 'IUCN Conservation Status', function (downloadRequestId) {
+                        downloadCanvasAsPng(consChartPerModuleEl, 'conservation-status-per-module', downloadRequestId);
                     });
                 }
                 if (type === 'cons-status-per-module-csv') {

@@ -1,13 +1,18 @@
+import io
+import os
+import zipfile
 from datetime import datetime, timedelta
 
 from django.contrib.sites.models import Site
+from django.http import FileResponse
+from django.utils import timezone
 from django.utils.timezone import make_aware
 from preferences import preferences
 import ast
 
 from rest_framework import status
 
-from bims.download.csv_download import send_new_csv_notification
+from bims.download.csv_download import send_new_csv_notification, STALE_THRESHOLD_MINUTES
 from bims.models.taxonomy import Taxonomy
 
 from bims.models.location_site import LocationSite
@@ -126,18 +131,228 @@ class DownloadRequestApi(APIView):
             request_date=datetime.now()
         )
 
-        if not approval_needed or auto_approved:
+        # For occurrence CSV/XLS downloads, defer approval to CsvDownload where
+        # the record count can be checked against max_download_records.
+        is_occurrence_csv = (
+            resource_type in ['CSV', 'XLS'] and
+            resource_name == 'Occurrence Data'
+        )
+        if (not approval_needed or auto_approved) and not is_occurrence_csv:
             download_request.approved = True
             download_request.save()
 
         if download_request:
-            send_new_csv_notification(
-                download_request.requester,
-                download_request.request_date,
-                approval_needed
-            )
+            # For occurrence CSV/XLS without forced approval, defer the
+            # notification to CsvDownload.get where the record count is known
+            # so the correct message (over-limit vs auto-approved) can be sent.
+            defer_notification = is_occurrence_csv and not approval_needed
+            if not defer_notification:
+                send_new_csv_notification(
+                    download_request.requester,
+                    download_request.request_date,
+                    approval_needed,
+                    download_request_id=download_request.id,
+                )
 
         return Response({
             'success': success,
             'download_request_id': download_request.id
         })
+
+
+class DownloadRequestProgressApi(APIView):
+    """
+    GET /api/download-request/<id>/progress/
+
+    Returns the current progress of a download request.
+    Response fields:
+      - progress      : raw progress string e.g. "250/1000"
+      - completed     : number of rows processed so far
+      - total         : total number of rows
+      - percentage    : 0-100 integer
+      - is_stale      : true when the worker appears to have stopped
+      - is_finished   : true when completed == total (or request_file exists)
+    """
+
+    def get(self, request, download_request_id):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return Response(
+                {'error': 'Download request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Only the requester (or staff) may check progress
+        if dr.requester and dr.requester != request.user and not request.user.is_staff:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        completed = 0
+        total = 0
+        percentage = 0
+        is_finished = bool(dr.request_file)
+
+        if dr.progress:
+            try:
+                completed, total = (int(x) for x in dr.progress.split('/'))
+                if total > 0:
+                    percentage = min(100, int(completed * 100 / total))
+                if completed >= total > 0:
+                    is_finished = True
+            except (ValueError, ZeroDivisionError):
+                pass
+
+        is_stale = False
+        if not is_finished and dr.progress and dr.progress_updated_at:
+            stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
+            is_stale = dr.progress_updated_at < stale_cutoff
+
+        return Response({
+            'progress': dr.progress or '',
+            'completed': completed,
+            'total': total,
+            'percentage': percentage,
+            'is_stale': is_stale,
+            'is_finished': is_finished,
+        })
+
+
+class DownloadRequestUploadApi(APIView):
+    """
+    POST /api/download-request/<id>/upload/
+
+    Accepts a file upload (chart, image, table) generated client-side and
+    saves it as the request_file for the download request. After uploading,
+    the file can be downloaded via the file endpoint.
+    """
+
+    def post(self, request, download_request_id):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return Response(
+                {'error': 'Download request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if dr.requester and dr.requester != request.user and not request.user.is_staff:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response(
+                {'error': 'No file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        dr.request_file = uploaded_file
+        dr.processing = False
+        dr.save()
+
+        return Response({
+            'success': True,
+            'download_url': f'/api/download-request/{dr.id}/file/'
+        })
+
+
+class DownloadRequestFileApi(APIView):
+    """
+    GET /api/download-request/<id>/file/
+
+    Returns the request file as a zipped download, including the license/readme
+    file if configured, matching the format sent via email.
+    """
+
+    def get(self, request, download_request_id):
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+        except DownloadRequest.DoesNotExist:
+            return Response(
+                {'error': 'Download request not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        is_admin = request.user.is_staff or request.user.is_superuser
+        is_requester = dr.requester == request.user
+
+        if not is_admin and not is_requester:
+            return Response(
+                {'error': 'Permission denied'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not (dr.approved or is_admin):
+            return Response(
+                {'error': 'This download has not been approved yet'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not dr.request_file:
+            return Response(
+                {'error': 'No file available for this request'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        file_path = dr.request_file.path
+        if not os.path.exists(file_path):
+            return Response(
+                {'error': 'File not found on server'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        file_name = dr.request_category or os.path.splitext(
+            os.path.basename(file_path))[0]
+
+        ext = os.path.splitext(file_path)[1].lstrip('.')
+        if not ext:
+            if dr.resource_type == DownloadRequest.PDF:
+                ext = 'pdf'
+            elif dr.resource_type == DownloadRequest.XLS:
+                ext = 'xlsx'
+            else:
+                ext = 'csv'
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+            zf.write(file_path, f'{file_name}.{ext}')
+            readme = preferences.SiteSetting.readme_download
+            if readme:
+                try:
+                    zf.write(
+                        readme.path,
+                        os.path.basename(readme.path)
+                    )
+                except (FileNotFoundError, ValueError):
+                    pass
+        buf.seek(0)
+
+        response = FileResponse(
+            buf,
+            content_type='application/zip',
+            as_attachment=True,
+            filename=f'{file_name}.zip',
+        )
+        return response
