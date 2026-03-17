@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchPypi,
+  fetchurl,
   django,
 }:
 
@@ -10,9 +10,8 @@ buildPythonPackage rec {
   version = "0.4.0";
   format = "setuptools";
 
-  src = fetchPypi {
-    pname = "django_admin_inline_paginator";
-    inherit version;
+  src = fetchurl {
+    url = "https://files.pythonhosted.org/packages/7e/ea/f599112f5a40d5876155aa0df8ec5013e7a1864a061323b9b7d2d675d988/django-admin-inline-paginator-0.4.0.tar.gz";
     hash = "sha256-4VWLRo00fpZcTSW+f1RtpmguoD2VCYrje5DJJu3UkbE=";
   };
 

@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchPypi,
+  fetchurl,
   django,
 }:
 
@@ -10,9 +10,8 @@ buildPythonPackage rec {
   version = "0.4.3";
   format = "setuptools";
 
-  src = fetchPypi {
-    pname = "django_contact_us";
-    inherit version;
+  src = fetchurl {
+    url = "https://files.pythonhosted.org/packages/96/1a/f1897201d8d3b83f7ed8b12d6e6a3c3bcf96c713fe50fc8355f7d03b2290/django-contact-us-0.4.3.tar.gz";
     hash = "sha256-IxC1yyFyagY0xOJRc9K0oeX6I18KxzSc4p/2R2R/EKI=";
   };
 

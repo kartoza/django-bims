@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchPypi,
+  fetchurl,
   django,
 }:
 
@@ -10,9 +10,8 @@ buildPythonPackage rec {
   version = "2.5.0";
   format = "setuptools";
 
-  src = fetchPypi {
-    pname = "dj_pagination";
-    inherit version;
+  src = fetchurl {
+    url = "https://files.pythonhosted.org/packages/85/a3/74312334efdc0665ea40acaf1f0fa8d8a6a5acbc67ebf07e38a55be93ad7/dj-pagination-2.5.0.tar.gz";
     hash = "sha256-hgMBzcee3AcSAIkhA3sjQScdOlVYa8NPrQcudMjoAMQ=";
   };
 

@@ -17,9 +17,10 @@ TEMPLATE_DEBUG = DEBUG
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Local PostgreSQL via Nix (socket connection)
+# Uses bims.database_backend which wraps django-tenants with PostGIS support
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'bims.database_backend',
         'NAME': os.environ.get('DATABASE_NAME', 'bims'),
         'USER': os.environ.get('DATABASE_USERNAME', os.environ.get('USER', 'postgres')),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
@@ -30,6 +31,12 @@ DATABASES = {
         },
     }
 }
+
+# Original backend for django-tenants PostGIS support
+ORIGINAL_BACKEND = 'django.contrib.gis.db.backends.postgis'
+
+# No replicas in local development
+REPLICA_ENV_VAR = ''
 
 # Allowed hosts for local development
 ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', '0.0.0.0']
@@ -57,6 +64,18 @@ CACHES = {
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'amqp://guest:guest@localhost:5672/')
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_TASK_ALWAYS_EAGER = os.environ.get('CELERY_TASK_ALWAYS_EAGER', 'False').lower() == 'true'
+
+# Celery error tracking and logging
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_SEND_SENT_EVENT = True
+CELERY_SEND_EVENTS = True
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_STORE_ERRORS_EVEN_IF_IGNORED = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+# Store task results including tracebacks
+CELERY_RESULT_EXTENDED = True
 
 # Local GeoServer (if running)
 GEOSERVER_LOCATION = os.environ.get('GEOSERVER_LOCATION', 'http://localhost:8080/geoserver/')

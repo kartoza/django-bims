@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchPypi,
+  fetchurl,
   django,
   pillow,
 }:
@@ -11,9 +11,8 @@ buildPythonPackage rec {
   version = "0.9.0";
   format = "setuptools";
 
-  src = fetchPypi {
-    pname = "django_colorfield";
-    inherit version;
+  src = fetchurl {
+    url = "https://files.pythonhosted.org/packages/0c/6b/05218ad57d82852d13ab8243cf45047680c4cab632893a6acc3ac1ae24ea/django-colorfield-0.9.0.tar.gz";
     hash = "sha256-II4E2uZp7ZXxjErvAoZenHhYc1If++W0b7bqehUAyXk=";
   };
 

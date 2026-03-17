@@ -5,6 +5,8 @@
   django,
   oauthlib,
   requests,
+  six,
+  jwcrypto,
 }:
 
 buildPythonPackage rec {
@@ -23,6 +25,8 @@ buildPythonPackage rec {
     django
     oauthlib
     requests
+    six
+    jwcrypto
   ];
 
   doCheck = false;

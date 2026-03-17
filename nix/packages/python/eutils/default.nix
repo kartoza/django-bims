@@ -2,6 +2,7 @@
   lib,
   buildPythonPackage,
   fetchPypi,
+  setuptools,
   lxml,
   requests,
 }:
@@ -9,14 +10,17 @@
 buildPythonPackage rec {
   pname = "eutils";
   version = "0.6.0";
-  format = "setuptools";
+  format = "wheel";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-NRUXjAqtuDYgaj7uK8nzQPMhPBO1NjLgWOtYqSGdA88=";
+    format = "wheel";
+    python = "py2.py3";
+    hash = "sha256-STjEuv9spSFBIE/z7/OpHsHoPlKmxdkucWNYURe5ZWY=";
   };
 
   dependencies = [
+    setuptools  # Required for pkg_resources at runtime
     lxml
     requests
   ];

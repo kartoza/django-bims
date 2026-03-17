@@ -21,6 +21,9 @@ buildPythonPackage rec {
 
   dependencies = [ django ];
 
+  # Relax Django version - package says <6.0 but Django 6 works
+  pythonRelaxDeps = [ "django" ];
+
   doCheck = false;
 
   pythonImportsCheck = [ "easyaudit" ];

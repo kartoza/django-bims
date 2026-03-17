@@ -186,3 +186,6 @@ coverage.xml
 # Local development
 .venv/
 .requirements-installed
+.rabbitmq/mnesia
+.claude
+media/cloud_native_gis_files

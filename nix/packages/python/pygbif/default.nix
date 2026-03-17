@@ -3,26 +3,32 @@
   buildPythonPackage,
   fetchPypi,
   requests,
+  requests-cache,
   appdirs,
   matplotlib,
   geojson,
+  geojson-rewind,
+  geomet,
 }:
 
 buildPythonPackage rec {
   pname = "pygbif";
-  version = "0.6.0";
+  version = "0.6.6";
   format = "setuptools";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-b2exVJ95wW9PSTrqwKZa+PIywuCsu6OUEQu47ICR2U8=";
+    hash = "sha256-m0aiSTFMe8V1pRFChwAQhATgRZvQi5eJ1Ot5PtkL0nY=";
   };
 
   dependencies = [
     requests
+    requests-cache
     appdirs
     matplotlib
     geojson
+    geojson-rewind
+    geomet
   ];
 
   doCheck = false;

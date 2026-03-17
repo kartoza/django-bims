@@ -1,7 +1,7 @@
 {
   lib,
   buildPythonPackage,
-  fetchPypi,
+  fetchurl,
   django,
 }:
 
@@ -10,10 +10,9 @@ buildPythonPackage rec {
   version = "1.14.0";
   format = "setuptools";
 
-  src = fetchPypi {
-    pname = "django_braces";
-    inherit version;
-    hash = "sha256-m7Y5Rh5FnNcC90r7HfPwpmxHMT1Svz6tgGdJoE8lsLc=";
+  src = fetchurl {
+    url = "https://files.pythonhosted.org/packages/e5/c3/4e3c4296ce085ad570278aa8cc4b7958553bff9ef8f1f2abb93ebd303cbe/django-braces-1.14.0.tar.gz";
+    hash = "sha256-g3BbeJSN4AgEv6z0DDFdABuzljDzW73YWIIRwtW01D8=";
   };
 
   dependencies = [ django ];
