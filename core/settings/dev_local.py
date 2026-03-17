@@ -17,9 +17,10 @@ TEMPLATE_DEBUG = DEBUG
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Local PostgreSQL via Nix (socket connection)
+# Uses bims.database_backend which wraps django_tenants for multi-tenant support
 DATABASES = {
     'default': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'ENGINE': 'bims.database_backend',
         'NAME': os.environ.get('DATABASE_NAME', 'bims'),
         'USER': os.environ.get('DATABASE_USERNAME', os.environ.get('USER', 'postgres')),
         'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
@@ -30,6 +31,9 @@ DATABASES = {
         },
     }
 }
+
+# Original backend for django-tenants PostGIS support
+ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
 
 # Allowed hosts for local development
 ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', '0.0.0.0']

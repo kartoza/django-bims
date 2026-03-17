@@ -95,6 +95,11 @@ WEBPACK_LOADER = {
     'DEFAULT': {
         'BUNDLE_DIR_NAME': 'bims/bundles/',
         'STATS_FILE': absolute_path('bims', 'webpack-stats.json'),
+    },
+    # V2: New React + TypeScript + Chakra UI frontend
+    'V2': {
+        'BUNDLE_DIR_NAME': 'bims/bundles/v2/',
+        'STATS_FILE': absolute_path('bims', 'webpack-stats-v2.json'),
     }
 }
 

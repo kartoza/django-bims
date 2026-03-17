@@ -1,0 +1,132 @@
+/**
+ * SPDX-FileCopyrightText: Kartoza
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * Layout component for map-based views.
+ * Provides responsive layout with sidebar and main content area.
+ */
+import React from 'react';
+import {
+  Box,
+  Flex,
+  IconButton,
+  useBreakpointValue,
+  Drawer,
+  DrawerContent,
+  DrawerOverlay,
+  useDisclosure,
+} from '@chakra-ui/react';
+import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
+import { useUIStore } from '../stores/uiStore';
+
+interface MapLayoutProps {
+  children: React.ReactNode;
+}
+
+const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const isMobile = useBreakpointValue({ base: true, lg: false });
+
+  const {
+    activePanel,
+    panelWidth,
+    isPanelCollapsed,
+    sidebarPosition,
+  } = useUIStore();
+
+  const showPanel = activePanel !== null && !isPanelCollapsed;
+  const effectivePanelWidth = showPanel ? panelWidth : 0;
+
+  // Panel content - will be replaced with actual panel components
+  const PanelContent = () => (
+    <Box
+      h="100%"
+      bg="white"
+      overflowY="auto"
+      p={4}
+    >
+      <Box textAlign="center" color="gray.500" py={10}>
+        Panel content will be rendered here based on activePanel
+      </Box>
+    </Box>
+  );
+
+  // Mobile drawer for sidebar
+  if (isMobile) {
+    return (
+      <Box position="relative" h="calc(100vh - 40px)">
+        {/* Mobile menu button */}
+        <IconButton
+          aria-label="Open menu"
+          icon={<HamburgerIcon />}
+          position="absolute"
+          top={4}
+          left={4}
+          zIndex={20}
+          bg="white"
+          shadow="md"
+          onClick={onOpen}
+        />
+
+        {/* Main content (map) */}
+        <Box h="100%" w="100%">
+          {children}
+        </Box>
+
+        {/* Mobile drawer */}
+        <Drawer
+          isOpen={isOpen}
+          placement={sidebarPosition}
+          onClose={onClose}
+          size="sm"
+        >
+          <DrawerOverlay />
+          <DrawerContent>
+            <IconButton
+              aria-label="Close menu"
+              icon={<CloseIcon />}
+              position="absolute"
+              top={4}
+              right={4}
+              zIndex={1}
+              size="sm"
+              onClick={onClose}
+            />
+            <PanelContent />
+          </DrawerContent>
+        </Drawer>
+      </Box>
+    );
+  }
+
+  // Desktop layout
+  return (
+    <Flex
+      direction={sidebarPosition === 'left' ? 'row' : 'row-reverse'}
+      h="calc(100vh - 40px)"
+      position="relative"
+    >
+      {/* Sidebar panel */}
+      <Box
+        w={showPanel ? `${effectivePanelWidth}px` : '0'}
+        minW={showPanel ? `${effectivePanelWidth}px` : '0'}
+        h="100%"
+        bg="white"
+        borderRightWidth={sidebarPosition === 'left' && showPanel ? 1 : 0}
+        borderLeftWidth={sidebarPosition === 'right' && showPanel ? 1 : 0}
+        borderColor="gray.200"
+        transition="width 0.2s ease-in-out"
+        overflow="hidden"
+      >
+        {showPanel && <PanelContent />}
+      </Box>
+
+      {/* Main content (map) */}
+      <Box flex="1" h="100%" position="relative">
+        {children}
+      </Box>
+    </Flex>
+  );
+};
+
+export default MapLayout;

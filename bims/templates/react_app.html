@@ -1,0 +1,111 @@
+{% load static render_bundle from webpack_loader %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="BIMS - Biodiversity Information Management System">
+    <meta name="author" content="Kartoza">
+
+    <title>{% block title %}BIMS - Biodiversity Information Management System{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'geonode/img/favicon.ico' %}" />
+
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Fonts - Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body, #react-app {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Loading state */
+        #react-app-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f7fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #0073e6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        /* Hide loading when React mounts */
+        #react-app:not(:empty) + #react-app-loading {
+            display: none;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- CSRF Token for API calls -->
+    {% csrf_token %}
+
+    <!-- React Application Mount Point -->
+    <div id="react-app"></div>
+
+    <!-- Loading indicator (hidden when React mounts) -->
+    <div id="react-app-loading">
+        <div class="spinner"></div>
+        <p class="loading-text">Loading BIMS...</p>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+    <!-- React Application Bundle -->
+    {% render_bundle 'react-app' 'js' 'V2' %}
+    {% render_bundle 'react-app' 'css' 'V2' %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

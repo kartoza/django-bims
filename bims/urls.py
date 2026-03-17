@@ -107,6 +107,10 @@ def login_redirect(request):
 urlpatterns = [
     re_path(r'^$', landing_page_view, name='landing-page'),
     re_path(r'^map/$', MapPageView.as_view(), name='map-page'),
+    # New React frontend at /new/ - parallel development
+    re_path(r'^new/(?P<path>.*)$',
+            TemplateView.as_view(template_name='react_app.html'),
+            name='react-app'),
     re_path(r'^upload/$', UploadView.as_view(),
             name='csv-upload'),
     re_path(r'^upload-taxa/$', TaxaUploadView.as_view(),
@@ -318,6 +322,9 @@ urlpatterns = [
 urlpatterns += [  # '',
     re_path(r'^api/',
             include('bims.api_urls')),
+    # API v1 - new versioned API with ViewSets
+    path('api/v1/',
+         include('bims.api.v1.urls', namespace='api-v1')),
 ]
 
 # Thermals

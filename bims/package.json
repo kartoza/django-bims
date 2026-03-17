@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "python manage.py test app.tests.test_generate_ui_mocks && jest",
-    "qtest": "jest"
+    "qtest": "jest",
+    "build:v2": "webpack --config webpack.v2.config.js --mode production",
+    "watch:v2": "webpack --config webpack.v2.config.js --mode development --watch",
+    "dev:v2": "webpack serve --config webpack.v2.config.js --mode development"
   },
   "repository": {
     "type": "git",
@@ -80,6 +83,23 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.24.7",
+    "@babel/preset-typescript": "^7.24.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.3.0",
     "webpack-dev-server": "^4.7.3"
+  },
+  "dependencies_v2": {
+    "@chakra-ui/icons": "^2.1.0",
+    "@chakra-ui/react": "^2.8.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query-devtools": "^5.0.0",
+    "framer-motion": "^10.16.0",
+    "maplibre-gl": "^3.6.0",
+    "zustand": "^4.4.0",
+    "react-hook-form": "^7.48.0"
   }
 }
