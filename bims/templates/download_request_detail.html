@@ -50,12 +50,16 @@
             color: #222;
             flex: 1;
         }
+        hr {
+            max-width: 100%;
+            border-width: 2px;
+        }
     </style>
 {% endblock %}
 
 {% block body_content %}
 <div style="min-height: 100%; height: auto;">
-    <div class="container-fluid header-wrapper">
+    <div class="container header-wrapper">
         <div class="dashboard-title">
             <h2>Download Request Detail</h2>
         </div>
@@ -95,10 +99,19 @@
 
                             <dt class="col-sm-5 detail-label">Type</dt>
                             <dd class="col-sm-7">
-                                {% if download_request.resource_name %}
-                                    {{ download_request.resource_name }}
+                                {% if download_request.resource_type %}
+                                    {{ download_request.resource_type }}
                                 {% elif download_request.request_category %}
                                     {{ download_request.request_category }}
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-5 detail-label">Category</dt>
+                            <dd class="col-sm-7">
+                                {% if download_request.resource_name %}
+                                    {{ download_request.resource_name }}
                                 {% else %}
                                     &mdash;
                                 {% endif %}
@@ -178,6 +191,17 @@
                 <hr>
 
                 <h5>Actions</h5>
+                {% if download_request.approved and not download_request.rejected %}
+                    {% if download_request.file_has_expired %}
+                        <div class="alert alert-warning mb-2">
+                            The download file has been deleted (expired on {{ download_request.file_expiry_date|date:'Y-m-d' }}).
+                        </div>
+                    {% elif download_request.request_file %}
+                        <div class="alert alert-info mb-2">
+                            This file is available until <strong>{{ download_request.file_expiry_date|date:'Y-m-d' }}</strong>. After that date it will be automatically deleted.
+                        </div>
+                    {% endif %}
+                {% endif %}
                 <div class="d-flex flex-wrap gap-2">
                     {% if download_request.request_file %}
                         {% if has_permission_to_approve or download_request.approved %}
@@ -188,7 +212,7 @@
                         {% endif %}
                     {% endif %}
 
-                    {% if not download_request.approved and not download_request.rejected and has_permission_to_approve %}
+                    {% if not download_request.approved and not download_request.rejected and has_permission_to_approve and enable_download_request_approval %}
                         <a href="#" class="btn btn-success approve-btn" data-toggle="modal" data-target="#confirmApproveModal">
                             Approve
                         </a>
@@ -410,7 +434,7 @@
                     $table.append(
                         '<div class="filter-row">' +
                         '<span class="filter-key">Area (Polygon)</span>' +
-                        '<span class="filter-val">Custom drawn area — see map below</span>' +
+                        '<span class="filter-val">Custom drawn area</span>' +
                         '</div>'
                     );
                     $('#polygon-map-container').show();

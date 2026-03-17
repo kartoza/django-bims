@@ -13,6 +13,7 @@ from bims.models.download_request import DownloadRequest
 from bims.permissions.api_permission import (
     user_has_permission_to_validate,
 )
+from preferences import preferences
 
 
 class DownloadRequestListView(
@@ -111,6 +112,9 @@ class DownloadRequestListView(
         ctx['approved_or_rejected'] = self.approved_or_rejected
         ctx['current_requester'] = self.current_requester
         ctx['has_permission_to_approve'] = user_has_permission_to_validate(self.request.user)
+        ctx['enable_download_request_approval'] = (
+            preferences.SiteSetting.enable_download_request_approval
+        )
 
         if user_has_permission_to_validate(self.request.user):
             author_ids = DownloadRequest.objects.filter(
@@ -131,7 +135,7 @@ class DownloadRequestListView(
         # Base queryset
         qs = super(DownloadRequestListView, self).get_queryset()
         qs = qs.filter(requester__isnull=False)
-        if not self.request.user.is_superuser:
+        if not user_has_permission_to_validate(self.request.user):
             qs = qs.filter(requester=self.request.user)
         if (
                 self.approved_or_rejected is not None and
@@ -179,6 +183,9 @@ class DownloadRequestDetailView(
         ctx = super().get_context_data(**kwargs)
         ctx['has_permission_to_approve'] = user_has_permission_to_validate(
             self.request.user)
+        ctx['enable_download_request_approval'] = (
+            preferences.SiteSetting.enable_download_request_approval
+        )
         return ctx
 
     def post(self, request, *args, **kwargs):

@@ -4,6 +4,7 @@
 """
 from datetime import datetime
 
+from dateutil.relativedelta import relativedelta
 from django.contrib.sites.models import Site
 from django.db import models
 from django.conf import settings
@@ -173,6 +174,22 @@ class DownloadRequest(models.Model):
         null=True,
         blank=True
     )
+
+    @property
+    def file_expiry_date(self):
+        """Return the date when the download file will be (or was) deleted."""
+        return self.request_date + relativedelta(months=1)
+
+    @property
+    def file_has_expired(self):
+        """Return True if the file retention period has passed."""
+        from django.utils import timezone
+        now = timezone.now()
+        expiry = self.file_expiry_date
+        if expiry.tzinfo is None:
+            from django.utils.timezone import make_aware
+            expiry = make_aware(expiry)
+        return now > expiry
 
     def get_formatted_name(self):
         """Return author formated full name, e.g. Maupetit J"""
