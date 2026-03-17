@@ -264,6 +264,15 @@ class SiteSetting(Preferences):
             'are sent to users'
         )
     )
+    max_download_records = models.IntegerField(
+        default=50000,
+        help_text=(
+            'Maximum number of occurrence records that can be downloaded '
+            'without staff approval. Set to 0 for no limit. Requests '
+            'exceeding this number always require explicit staff approval '
+            'even if automatic approval is enabled.'
+        )
+    )
 
     show_module_summary_on_dashboard = models.BooleanField(
         default=False,

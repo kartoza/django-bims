@@ -114,7 +114,7 @@
                                 {% endif %}
                                 </td>
                                 <td>
-                                    {% if not obj.approved and not obj.rejected and has_permission_to_approve and enable_download_request_approval %}
+                                    {% if not obj.approved and not obj.rejected and has_permission_to_approve and approval_required %}
                                         <a href="#"
                                            class="btn btn-sm btn-outline-success approve"
                                            style="font-size: 10pt;"

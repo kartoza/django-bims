@@ -8,12 +8,28 @@ from django.contrib import messages
 from django.http import Http404, HttpResponseRedirect
 
 from bims.tasks import send_csv_via_email
+from bims.tasks.collection_record import download_collection_record_task
 from geonode.people.models import Profile
 from bims.models.download_request import DownloadRequest
 from bims.permissions.api_permission import (
     user_has_permission_to_validate,
 )
 from preferences import preferences
+
+
+def dispatch_download_if_needed(download_request):
+    if (
+        not download_request.request_file and
+        not download_request.progress and
+        download_request.download_path and
+        download_request.download_params
+    ):
+        download_collection_record_task.delay(
+            download_request.download_path,
+            download_request.download_params,
+            send_email=True,
+            user_id=download_request.requester_id,
+        )
 
 
 class DownloadRequestListView(
@@ -63,6 +79,7 @@ class DownloadRequestListView(
                 download_request.approved = True
                 download_request.rejected = False
                 download_request.save()
+                dispatch_download_if_needed(download_request)
             except DownloadRequest.DoesNotExist:
                 raise Http404('The request does not exist!')
         else:
@@ -114,6 +131,10 @@ class DownloadRequestListView(
         ctx['has_permission_to_approve'] = user_has_permission_to_validate(self.request.user)
         ctx['enable_download_request_approval'] = (
             preferences.SiteSetting.enable_download_request_approval
+        )
+        ctx['approval_required'] = (
+            preferences.SiteSetting.enable_download_request_approval or
+            preferences.SiteSetting.max_download_records > 0
         )
 
         if user_has_permission_to_validate(self.request.user):
@@ -186,6 +207,10 @@ class DownloadRequestDetailView(
         ctx['enable_download_request_approval'] = (
             preferences.SiteSetting.enable_download_request_approval
         )
+        ctx['approval_required'] = (
+            preferences.SiteSetting.enable_download_request_approval or
+            preferences.SiteSetting.max_download_records > 0
+        )
         return ctx
 
     def post(self, request, *args, **kwargs):
@@ -207,6 +232,7 @@ class DownloadRequestDetailView(
             download_request.approved = True
             download_request.rejected = False
             download_request.save()
+            dispatch_download_if_needed(download_request)
         else:
             rejection_message = request.POST.get('rejection_message', '')
             download_request.processing = False

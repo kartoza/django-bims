@@ -183,7 +183,7 @@
                         <div class="progress-bar progress-bar-download-request"
                              role="progressbar" style="width: 0; color: #000"
                              aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                            <span style="padding-left: 10px">Pending</span>
+                            <span style="padding-left: 10px; width: 50px;">Pending</span>
                         </div>
                     </div>
                 {% endif %}
@@ -212,7 +212,7 @@
                         {% endif %}
                     {% endif %}
 
-                    {% if not download_request.approved and not download_request.rejected and has_permission_to_approve and enable_download_request_approval %}
+                    {% if not download_request.approved and not download_request.rejected and has_permission_to_approve %}
                         <a href="#" class="btn btn-success approve-btn" data-toggle="modal" data-target="#confirmApproveModal">
                             Approve
                         </a>

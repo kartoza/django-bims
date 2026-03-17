@@ -3,13 +3,13 @@ from hashlib import sha256
 import json
 import os
 import errno
+from preferences import preferences
+
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.http import HttpResponseForbidden
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
-from django.contrib.sites.models import Site
-from django.db import connection
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -89,6 +89,38 @@ class CsvDownload(APIView):
         if needs_save:
             download_request.save(update_fields=['download_path', 'download_params'])
 
+        max_limit = preferences.SiteSetting.max_download_records
+        approval_needed = preferences.SiteSetting.enable_download_request_approval
+        if max_limit and max_limit > 0 and not download_request.approved:
+            from bims.api_views.search import CollectionSearch
+            _search = CollectionSearch(request.GET, request.user.id)
+            _total = _search.process_search().count()
+            if _total > max_limit:
+                send_new_csv_notification(
+                    request.user,
+                    download_request.request_date,
+                    approval_needed=True,
+                    download_request_id=download_request_id,
+                    over_limit=True,
+                    total_records=_total,
+                    max_records=max_limit,
+                )
+                return Response({
+                    'status': 'pending_approval',
+                    'total_records': _total,
+                    'max_records': max_limit,
+                })
+
+        if not approval_needed and not download_request.approved:
+            download_request.approved = True
+            download_request.save(update_fields=['approved'])
+            send_new_csv_notification(
+                request.user,
+                download_request.request_date,
+                approval_needed=False,
+                download_request_id=download_request_id,
+            )
+
         if download_request.request_file and os.path.exists(
                 str(download_request.request_file)):
             # Already completed - send via email again
@@ -139,12 +171,19 @@ class CsvDownload(APIView):
         })
 
 
-def send_new_csv_notification(user, date_request, approval_needed=True):
+def send_new_csv_notification(
+        user, date_request, approval_needed=True,
+        download_request_id=None, over_limit=False,
+        total_records=0, max_records=0):
     """
     Send an email notify admin/staff that new request has been created
     :param user: User object
     :param date_request: Date of request
-    :return:
+    :param approval_needed: Whether manual approval is required
+    :param download_request_id: PK of the DownloadRequest (for detail URL)
+    :param over_limit: True when request was held because record count exceeds max_download_records
+    :param total_records: Actual record count (used in over_limit message)
+    :param max_records: Configured limit (used in over_limit message)
     """
     email_template = 'csv_download/csv_new'
     recipients = get_recipients_for_notification(
@@ -153,13 +192,17 @@ def send_new_csv_notification(user, date_request, approval_needed=True):
     ctx = {
         'username': user.username,
         'current_site': get_current_domain(),
-        'date_request': date_request
+        'date_request': date_request,
+        'download_request_id': download_request_id,
+        'over_limit': over_limit,
+        'total_records': total_records,
+        'max_records': max_records,
     }
     subject = render_to_string(
         '{0}_subject.txt'.format(email_template),
         ctx
     ).strip()
-    if not approval_needed:
+    if not approval_needed and not over_limit:
         message = render_to_string(
             '{}_message_without_approval.txt'.format(email_template),
             ctx

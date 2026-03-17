@@ -131,16 +131,28 @@ class DownloadRequestApi(APIView):
             request_date=datetime.now()
         )
 
-        if not approval_needed or auto_approved:
+        # For occurrence CSV/XLS downloads, defer approval to CsvDownload where
+        # the record count can be checked against max_download_records.
+        is_occurrence_csv = (
+            resource_type in ['CSV', 'XLS'] and
+            resource_name == 'Occurrence Data'
+        )
+        if (not approval_needed or auto_approved) and not is_occurrence_csv:
             download_request.approved = True
             download_request.save()
 
         if download_request:
-            send_new_csv_notification(
-                download_request.requester,
-                download_request.request_date,
-                approval_needed
-            )
+            # For occurrence CSV/XLS without forced approval, defer the
+            # notification to CsvDownload.get where the record count is known
+            # so the correct message (over-limit vs auto-approved) can be sent.
+            defer_notification = is_occurrence_csv and not approval_needed
+            if not defer_notification:
+                send_new_csv_notification(
+                    download_request.requester,
+                    download_request.request_date,
+                    approval_needed,
+                    download_request_id=download_request.id,
+                )
 
         return Response({
             'success': success,

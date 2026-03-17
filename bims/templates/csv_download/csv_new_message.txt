@@ -7,5 +7,6 @@ Requester : {{ username }}
 Request date : {{ date_request }}
 
 
-{% trans "Approve or decline the request by following this link" %}: http://{{ current_site }}/download-request/
+{% trans "Approve or decline the request by following this link" %}: http://{{ current_site }}/download-request/{{ download_request_id }}/
+
 
