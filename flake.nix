@@ -272,6 +272,7 @@
         loadDummyDataScript = wrapSimpleScript "bims-load-dummy-data";
         loadDummyOccurrencesScript = wrapSimpleScript "bims-load-dummy-occurrences";
         statusScript = wrapSimpleScript "bims-status";
+        validateScript = wrapSimpleScript "bims-validate";
 
       in
       {
@@ -352,6 +353,7 @@
             loadDummyDataScript
             loadDummyOccurrencesScript
             statusScript
+            validateScript
           ];
 
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -391,6 +393,7 @@
             echo "  bims-test             Run tests"
             echo "  bims-lint             Linting"
             echo "  bims-load-dummy-data  Load test data"
+            echo "  bims-validate         Bulk validate pending data"
             echo "  bims-clean-venv       Remove old venv"
             echo ""
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -425,6 +428,7 @@
           load-dummy-data = { type = "app"; program = "${loadDummyDataScript}/bin/bims-load-dummy-data"; };
           load-dummy-occurrences = { type = "app"; program = "${loadDummyOccurrencesScript}/bin/bims-load-dummy-occurrences"; };
           status = { type = "app"; program = "${statusScript}/bin/bims-status"; };
+          validate = { type = "app"; program = "${validateScript}/bin/bims-validate"; };
         };
 
         packages = {
