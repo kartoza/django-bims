@@ -204,4 +204,6 @@ export const tasksApi = {
   cancel: (taskId: string) => api.delete<any>(`tasks/${taskId}/`),
 };
 
+// Export apiClient as both named and default export
+export { apiClient };
 export default apiClient;

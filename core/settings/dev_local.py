@@ -123,6 +123,11 @@ WEBPACK_LOADER = {
         'STATS_FILE': os.path.join(PROJECT_ROOT, 'bims', 'webpack-stats.json'),
         'POLL_INTERVAL': 0.1,
         'IGNORE': [r'.+\.hot-update.js', r'.+\.map'],
+    },
+    # V2: New React + TypeScript + Chakra UI frontend
+    'V2': {
+        'BUNDLE_DIR_NAME': 'bims/bundles/v2/',
+        'STATS_FILE': os.path.join(PROJECT_ROOT, 'bims', 'webpack-stats-v2.json'),
     }
 }
 

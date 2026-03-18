@@ -1,0 +1,65 @@
+{
+  "status": "done",
+  "assets": {
+    "react-app.js": {
+      "name": "react-app.js",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/react-app.js",
+      "publicPath": "/static/bims/bundles/v2/react-app.js"
+    },
+    "chakra.js": {
+      "name": "chakra.js",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/chakra.js",
+      "publicPath": "/static/bims/bundles/v2/chakra.js"
+    },
+    "css/maplibre.css": {
+      "name": "css/maplibre.css",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/css/maplibre.css",
+      "publicPath": "/static/bims/bundles/v2/css/maplibre.css"
+    },
+    "maplibre.js": {
+      "name": "maplibre.js",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/maplibre.js",
+      "publicPath": "/static/bims/bundles/v2/maplibre.js"
+    },
+    "vendors.js": {
+      "name": "vendors.js",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/vendors.js",
+      "publicPath": "/static/bims/bundles/v2/vendors.js"
+    },
+    "react-app.js.map": {
+      "name": "react-app.js.map",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/react-app.js.map",
+      "publicPath": "/static/bims/bundles/v2/react-app.js.map"
+    },
+    "chakra.js.map": {
+      "name": "chakra.js.map",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/chakra.js.map",
+      "publicPath": "/static/bims/bundles/v2/chakra.js.map"
+    },
+    "css/maplibre.css.map": {
+      "name": "css/maplibre.css.map",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/css/maplibre.css.map",
+      "publicPath": "/static/bims/bundles/v2/css/maplibre.css.map"
+    },
+    "maplibre.js.map": {
+      "name": "maplibre.js.map",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/maplibre.js.map",
+      "publicPath": "/static/bims/bundles/v2/maplibre.js.map"
+    },
+    "vendors.js.map": {
+      "name": "vendors.js.map",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/vendors.js.map",
+      "publicPath": "/static/bims/bundles/v2/vendors.js.map"
+    }
+  },
+  "chunks": {
+    "react-app": [
+      "chakra.js",
+      "css/maplibre.css",
+      "maplibre.js",
+      "vendors.js",
+      "react-app.js"
+    ]
+  },
+  "publicPath": "/static/bims/bundles/v2/"
+}
