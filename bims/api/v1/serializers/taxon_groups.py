@@ -30,7 +30,6 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             "parent_name",
             "taxa_count",
             "logo_url",
-            "extra_attributes",
         ]
         read_only_fields = fields
 
@@ -54,15 +53,32 @@ class TaxonGroupDetailSerializer(TaxonGroupSerializer):
     Includes additional configuration fields.
     """
 
+    gbif_parent_species_name = serializers.CharField(
+        source="gbif_parent_species.canonical_name", read_only=True
+    )
+    taxa_upload_template_url = serializers.SerializerMethodField()
+    occurrence_upload_template_url = serializers.SerializerMethodField()
+
     class Meta:
         model = TaxonGroup
         fields = TaxonGroupSerializer.Meta.fields + [
-            "source",
-            "gbif_parent_species",
+            "source_collection",
+            "gbif_parent_species_name",
             "chart_data",
-            "upload_template",
-            "occurrence_table_fields",
-            "search_filters",
-            "site_detail_fields",
+            "level",
+            "taxa_upload_template_url",
+            "occurrence_upload_template_url",
         ]
         read_only_fields = fields
+
+    def get_taxa_upload_template_url(self, obj):
+        """Return taxa upload template URL if available."""
+        if obj.taxa_upload_template:
+            return obj.taxa_upload_template.url
+        return None
+
+    def get_occurrence_upload_template_url(self, obj):
+        """Return occurrence upload template URL if available."""
+        if obj.occurrence_upload_template:
+            return obj.occurrence_upload_template.url
+        return None

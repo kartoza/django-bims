@@ -141,6 +141,7 @@ const DownloadsPage: React.FC = () => {
   };
 
   return (
+    <Box h="100%" overflowY="auto">
     <Container maxW="container.xl" py={8}>
       <VStack spacing={6} align="stretch">
         {/* Header */}
@@ -318,6 +319,7 @@ const DownloadsPage: React.FC = () => {
         )}
       </VStack>
     </Container>
+    </Box>
   );
 };
 

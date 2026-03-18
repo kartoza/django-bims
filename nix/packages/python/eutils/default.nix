@@ -4,17 +4,24 @@
   fetchPypi,
   lxml,
   requests,
+  setuptools,
+  setuptools-scm,
 }:
 
 buildPythonPackage rec {
   pname = "eutils";
   version = "0.6.0";
-  format = "setuptools";
+  pyproject = true;
 
   src = fetchPypi {
     inherit pname version;
     hash = "sha256-NRUXjAqtuDYgaj7uK8nzQPMhPBO1NjLgWOtYqSGdA88=";
   };
+
+  build-system = [
+    setuptools
+    setuptools-scm
+  ];
 
   dependencies = [
     lxml
@@ -22,6 +29,9 @@ buildPythonPackage rec {
   ];
 
   doCheck = false;
+
+  # Set version for setuptools_scm since we're using a release tarball
+  SETUPTOOLS_SCM_PRETEND_VERSION = version;
 
   pythonImportsCheck = [ "eutils" ];
 

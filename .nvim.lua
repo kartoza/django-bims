@@ -350,6 +350,68 @@ if wk_ok then
       desc = "Watch frontend",
     },
 
+    -- Documentation
+    { "<leader>po", group = "Documentation" },
+    {
+      "<leader>pob",
+      function()
+        vim.cmd("terminal bims-docs-build")
+      end,
+      desc = "Build docs",
+    },
+    {
+      "<leader>pos",
+      function()
+        vim.cmd("terminal bims-docs-serve")
+      end,
+      desc = "Serve docs (live)",
+    },
+    {
+      "<leader>poo",
+      function()
+        vim.cmd("!xdg-open http://127.0.0.1:8001 &")
+      end,
+      desc = "Open docs in browser",
+    },
+
+    -- Data Management
+    { "<leader>pA", group = "Data/Admin" },
+    {
+      "<leader>pAd",
+      function()
+        vim.cmd("terminal bims-load-dummy-data")
+      end,
+      desc = "Load dummy data",
+    },
+    {
+      "<leader>pAi",
+      function()
+        vim.cmd("terminal python manage.py loaddata fixtures/*.json")
+      end,
+      desc = "Load fixtures",
+    },
+    {
+      "<leader>pAe",
+      function()
+        vim.cmd("terminal python manage.py dumpdata bims --indent 2 > fixtures/bims_export.json")
+      end,
+      desc = "Export BIMS data",
+    },
+    {
+      "<leader>pAc",
+      function()
+        vim.cmd("terminal python manage.py clearsessions")
+      end,
+      desc = "Clear sessions",
+    },
+    {
+      "<leader>pAf",
+      function()
+        vim.cmd("terminal python manage.py flush --no-input")
+      end,
+      desc = "Flush database (DANGER)",
+    },
+
     -- Git
     { "<leader>pg", group = "Git" },
     {

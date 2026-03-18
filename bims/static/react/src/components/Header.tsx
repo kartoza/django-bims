@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Flex,
@@ -56,17 +56,7 @@ import {
   LockIcon,
 } from '@chakra-ui/icons';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-
-// User type - will be fetched from API
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  isSuperuser: boolean;
-  isStaff: boolean;
-}
+import { useAuth } from '../providers/AuthProvider';
 
 interface NavLinkProps {
   to: string;
@@ -78,9 +68,10 @@ const NavLink: React.FC<NavLinkProps> = ({ to, children, isActive }) => (
   <Link
     as={RouterLink}
     to={to}
-    px={3}
+    px={2}
     py={2}
     rounded="md"
+    fontSize="sm"
     fontWeight={isActive ? '600' : '400'}
     color={isActive ? 'brand.600' : 'gray.700'}
     bg={isActive ? 'brand.50' : 'transparent'}
@@ -99,34 +90,8 @@ const Header: React.FC = () => {
   const location = useLocation();
   const isMobile = useBreakpointValue({ base: true, lg: false });
 
-  // Mock user state - in production, fetch from API
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  // Check authentication on mount
-  useEffect(() => {
-    // Try to get user info from a cookie or make API call
-    // For now, check if we have a session cookie
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/v1/auth/user/', {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData.success && userData.data) {
-            setUser(userData.data);
-            setIsAuthenticated(true);
-          }
-        }
-      } catch {
-        // Not authenticated
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    };
-    checkAuth();
-  }, []);
+  // Use AuthProvider for authentication state
+  const { user, isAuthenticated, logout } = useAuth();
 
   const isActivePath = (path: string) => {
     if (path === '/') {
@@ -183,7 +148,7 @@ const Header: React.FC = () => {
         </HStack>
 
         {/* Desktop Navigation */}
-        <HStack spacing={1} display={{ base: 'none', lg: 'flex' }}>
+        <HStack spacing={0} display={{ base: 'none', xl: 'flex' }} flexShrink={0}>
           <NavLink to="/" isActive={isActivePath('/')}>
             Home
           </NavLink>
@@ -196,6 +161,7 @@ const Header: React.FC = () => {
             <MenuButton
               as={Button}
               variant="ghost"
+              size="sm"
               rightIcon={<ChevronDownIcon />}
               fontWeight="400"
               color="gray.700"
@@ -228,6 +194,7 @@ const Header: React.FC = () => {
             <MenuButton
               as={Button}
               variant="ghost"
+              size="sm"
               rightIcon={<ChevronDownIcon />}
               fontWeight="400"
               color="gray.700"
@@ -263,6 +230,7 @@ const Header: React.FC = () => {
             <MenuButton
               as={Button}
               variant="ghost"
+              size="sm"
               rightIcon={<ChevronDownIcon />}
               fontWeight="400"
               color="gray.700"
@@ -306,6 +274,7 @@ const Header: React.FC = () => {
               <MenuButton
                 as={Button}
                 variant="ghost"
+                size="sm"
                 rightIcon={<ChevronDownIcon />}
                 fontWeight="400"
                 color="gray.700"
@@ -333,6 +302,7 @@ const Header: React.FC = () => {
               <MenuButton
                 as={Button}
                 variant="ghost"
+                size="sm"
                 rightIcon={<ChevronDownIcon />}
                 fontWeight="400"
                 color="gray.700"
@@ -384,6 +354,7 @@ const Header: React.FC = () => {
             <MenuButton
               as={Button}
               variant="ghost"
+              size="sm"
               rightIcon={<ChevronDownIcon />}
               fontWeight="400"
               color="gray.700"
@@ -421,7 +392,7 @@ const Header: React.FC = () => {
             colorScheme="brand"
             size="sm"
             leftIcon={<AddIcon />}
-            display={{ base: 'none', lg: 'flex' }}
+            display={{ base: 'none', xl: 'flex' }}
           >
             Upload
           </Button>
@@ -456,17 +427,17 @@ const Header: React.FC = () => {
                   </MenuItem>
                 </MenuGroup>
                 <MenuDivider />
-                <MenuItem as="a" href="/accounts/logout/" icon={<LockIcon />} color="red.500">
+                <MenuItem icon={<LockIcon />} color="red.500" onClick={logout}>
                   Log Out
                 </MenuItem>
               </MenuList>
             </Menu>
           ) : (
             <HStack spacing={2} display={{ base: 'none', md: 'flex' }}>
-              <Button as="a" href="/accounts/login/" variant="ghost" size="sm">
+              <Button as={RouterLink} to="/login" variant="ghost" size="sm">
                 Sign In
               </Button>
-              <Button as="a" href="/accounts/signup/" colorScheme="brand" variant="outline" size="sm">
+              <Button as={RouterLink} to="/register" colorScheme="brand" variant="outline" size="sm">
                 Register
               </Button>
             </HStack>
@@ -477,7 +448,7 @@ const Header: React.FC = () => {
             aria-label="Open menu"
             icon={<HamburgerIcon />}
             variant="ghost"
-            display={{ base: 'flex', lg: 'none' }}
+            display={{ base: 'flex', xl: 'none' }}
             onClick={onOpen}
           />
         </HStack>
@@ -667,16 +638,16 @@ const Header: React.FC = () => {
                     <Link as={RouterLink} to="/my-site-visits" onClick={onClose}>
                       My Site Visits
                     </Link>
-                    <Link as="a" href="/accounts/logout/" color="red.500">
+                    <Link as="button" color="red.500" onClick={() => { logout(); onClose(); }}>
                       Log Out
                     </Link>
                   </VStack>
                 ) : (
                   <VStack align="stretch" spacing={2}>
-                    <Button as="a" href="/accounts/login/" colorScheme="brand" w="100%">
+                    <Button as={RouterLink} to="/login" colorScheme="brand" w="100%" onClick={onClose}>
                       Sign In
                     </Button>
-                    <Button as="a" href="/accounts/signup/" variant="outline" w="100%">
+                    <Button as={RouterLink} to="/register" variant="outline" w="100%" onClick={onClose}>
                       Register
                     </Button>
                   </VStack>

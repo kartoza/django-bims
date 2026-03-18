@@ -21,6 +21,8 @@ from bims.api.v1.viewsets.boundaries import BoundaryViewSet, UserBoundaryViewSet
 from bims.api.v1.viewsets.downloads import DownloadViewSet
 from bims.api.v1.viewsets.tasks import TaskStatusViewSet
 from bims.api.v1.viewsets.auth import AuthViewSet
+from bims.api.v1.viewsets.taxon_proposals import TaxonProposalViewSet
+from bims.api.v1.viewsets.taxa_management import TaxaManagementViewSet
 
 app_name = "api-v1"
 
@@ -45,6 +47,10 @@ router.register(r"tasks", TaskStatusViewSet, basename="task")
 
 # Authentication
 router.register(r"auth", AuthViewSet, basename="auth")
+
+# Taxa management (proposals, GBIF, batch operations)
+router.register(r"taxon-proposals", TaxonProposalViewSet, basename="taxon-proposal")
+router.register(r"taxa-management", TaxaManagementViewSet, basename="taxa-management")
 
 urlpatterns = [
     # API endpoints

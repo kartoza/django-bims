@@ -270,7 +270,7 @@ export const useSearchStore = create<SearchState>()(
           const response = await apiClient.get<{
             data: BiologicalRecord[];
             meta: { count: number; total_pages: number };
-          }>('/api/v1/records/', { params });
+          }>('records/', { params });
 
           const data = response.data?.data || [];
           const meta = response.data?.meta || { count: 0, total_pages: 0 };

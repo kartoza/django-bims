@@ -42,7 +42,7 @@ export const TaxonGroupFilter: React.FC = () => {
     const fetchGroups = async () => {
       try {
         const response = await apiClient.get<{ data: TaxonGroup[] }>(
-          '/api/v1/taxon-groups/'
+          'taxon-groups/'
         );
         const groupList = response.data?.data || [];
         setGroups(groupList);

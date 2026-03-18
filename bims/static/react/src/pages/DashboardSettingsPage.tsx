@@ -1,0 +1,607 @@
+/**
+ * SPDX-FileCopyrightText: Kartoza
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * Dashboard Settings admin page.
+ *
+ * Made with love by Kartoza | https://kartoza.com
+ */
+import React, { useState } from 'react';
+import {
+  Box,
+  Container,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Card,
+  CardBody,
+  CardHeader,
+  FormControl,
+  FormLabel,
+  FormHelperText,
+  Input,
+  Textarea,
+  Switch,
+  Button,
+  useToast,
+  useColorModeValue,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  SimpleGrid,
+  Select,
+  Divider,
+  Badge,
+  IconButton,
+  InputGroup,
+  InputLeftElement,
+  Image,
+  Alert,
+  AlertIcon,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Tooltip,
+} from '@chakra-ui/react';
+import {
+  SettingsIcon,
+  EditIcon,
+  AddIcon,
+  DeleteIcon,
+  ViewIcon,
+} from '@chakra-ui/icons';
+
+interface DashboardWidget {
+  id: string;
+  name: string;
+  type: string;
+  enabled: boolean;
+  position: number;
+}
+
+// All available widget types that can be added
+const AVAILABLE_WIDGET_TYPES = [
+  { id: 'species-stats', name: 'Species Statistics', type: 'stats', description: 'Show total species counts and breakdown' },
+  { id: 'recent-records', name: 'Recent Records', type: 'table', description: 'Display recently added biological records' },
+  { id: 'conservation-chart', name: 'Conservation Status Chart', type: 'chart', description: 'Pie chart of IUCN conservation statuses' },
+  { id: 'endemism-chart', name: 'Endemism Chart', type: 'chart', description: 'Distribution of endemic vs alien species' },
+  { id: 'map-overview', name: 'Map Overview', type: 'map', description: 'Mini map showing site distributions' },
+  { id: 'recent-activity', name: 'Recent Activity', type: 'activity', description: 'Timeline of recent user actions' },
+  { id: 'taxon-groups', name: 'Taxon Groups Summary', type: 'stats', description: 'Records per taxon group' },
+  { id: 'validation-queue', name: 'Validation Queue', type: 'table', description: 'Pending items requiring validation' },
+  { id: 'ecosystem-breakdown', name: 'Ecosystem Breakdown', type: 'chart', description: 'Sites by ecosystem type' },
+  { id: 'data-quality', name: 'Data Quality Metrics', type: 'stats', description: 'Data completeness and quality scores' },
+];
+
+const DashboardSettingsPage: React.FC = () => {
+  const toast = useToast();
+  const headerBg = useColorModeValue('brand.500', 'brand.600');
+  const cardBg = useColorModeValue('white', 'gray.700');
+
+  // Site branding settings
+  const [branding, setBranding] = useState({
+    siteName: 'BIMS',
+    siteDescription: 'Biodiversity Information Management System',
+    logoUrl: '/static/img/logo.png',
+    faviconUrl: '/static/img/favicon.ico',
+    primaryColor: '#3182CE',
+    bannerImage: '/static/img/landing_page_banner.jpeg',
+  });
+
+  // Landing page settings
+  const [landingPage, setLandingPage] = useState({
+    showStats: true,
+    showPartners: true,
+    showEcosystems: true,
+    heroTitle: 'Biodiversity Information Management System',
+    heroSubtitle: 'Explore, analyze, and manage biodiversity data across South Africa.',
+    ctaButtonText: 'Explore Map',
+    ctaButtonUrl: '/new/map',
+  });
+
+  // Dashboard widgets
+  const [widgets, setWidgets] = useState<DashboardWidget[]>([
+    { id: 'species-stats', name: 'Species Statistics', type: 'stats', enabled: true, position: 1 },
+    { id: 'recent-records', name: 'Recent Records', type: 'table', enabled: true, position: 2 },
+    { id: 'conservation-chart', name: 'Conservation Status Chart', type: 'chart', enabled: true, position: 3 },
+    { id: 'endemism-chart', name: 'Endemism Chart', type: 'chart', enabled: true, position: 4 },
+    { id: 'map-overview', name: 'Map Overview', type: 'map', enabled: true, position: 5 },
+  ]);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Get widgets that haven't been added yet
+  const availableToAdd = AVAILABLE_WIDGET_TYPES.filter(
+    (wt) => !widgets.some((w) => w.id === wt.id)
+  );
+
+  const allWidgetsAdded = availableToAdd.length === 0;
+
+  // Add a new widget
+  const addWidget = (widgetTypeId: string) => {
+    const widgetType = AVAILABLE_WIDGET_TYPES.find((wt) => wt.id === widgetTypeId);
+    if (!widgetType) return;
+
+    const newWidget: DashboardWidget = {
+      id: widgetType.id,
+      name: widgetType.name,
+      type: widgetType.type,
+      enabled: true,
+      position: widgets.length + 1,
+    };
+
+    setWidgets((prev) => [...prev, newWidget]);
+
+    toast({
+      title: 'Widget added',
+      description: `${widgetType.name} has been added to the dashboard.`,
+      status: 'success',
+      duration: 2000,
+    });
+  };
+
+  // Remove a widget
+  const removeWidget = (id: string) => {
+    setWidgets((prev) => prev.filter((w) => w.id !== id));
+    toast({
+      title: 'Widget removed',
+      status: 'info',
+      duration: 2000,
+    });
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // In a real implementation, this would save to the API
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      toast({
+        title: 'Settings saved',
+        description: 'Dashboard settings have been updated successfully.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error saving settings',
+        description: 'There was an error saving the settings. Please try again.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleWidget = (id: string) => {
+    setWidgets((prev) =>
+      prev.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w))
+    );
+  };
+
+  return (
+    <Box h="100%" overflowY="auto">
+      {/* Header */}
+      <Box bg={headerBg} color="white" py={8}>
+        <Container maxW="container.xl">
+          <HStack justify="space-between">
+            <VStack align="start" spacing={1}>
+              <HStack>
+                <SettingsIcon />
+                <Heading size="lg">Dashboard Settings</Heading>
+              </HStack>
+              <Text opacity={0.9}>Configure site appearance and dashboard widgets</Text>
+            </VStack>
+            <Button
+              colorScheme="whiteAlpha"
+              onClick={handleSave}
+              isLoading={isSaving}
+              loadingText="Saving..."
+            >
+              Save Changes
+            </Button>
+          </HStack>
+        </Container>
+      </Box>
+
+      <Container maxW="container.xl" py={8}>
+        <Tabs variant="enclosed" colorScheme="brand">
+          <TabList>
+            <Tab>Site Branding</Tab>
+            <Tab>Landing Page</Tab>
+            <Tab>Dashboard Widgets</Tab>
+            <Tab>Map Settings</Tab>
+          </TabList>
+
+          <TabPanels>
+            {/* Site Branding Tab */}
+            <TabPanel>
+              <Card bg={cardBg}>
+                <CardHeader>
+                  <Heading size="md">Site Branding</Heading>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={6} align="stretch">
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <FormControl>
+                        <FormLabel>Site Name</FormLabel>
+                        <Input
+                          value={branding.siteName}
+                          onChange={(e) =>
+                            setBranding((prev) => ({ ...prev, siteName: e.target.value }))
+                          }
+                        />
+                        <FormHelperText>Displayed in header and browser tab</FormHelperText>
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Primary Color</FormLabel>
+                        <Input
+                          type="color"
+                          value={branding.primaryColor}
+                          onChange={(e) =>
+                            setBranding((prev) => ({ ...prev, primaryColor: e.target.value }))
+                          }
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Site Description</FormLabel>
+                        <Textarea
+                          value={branding.siteDescription}
+                          onChange={(e) =>
+                            setBranding((prev) => ({
+                              ...prev,
+                              siteDescription: e.target.value,
+                            }))
+                          }
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Logo URL</FormLabel>
+                        <Input
+                          value={branding.logoUrl}
+                          onChange={(e) =>
+                            setBranding((prev) => ({ ...prev, logoUrl: e.target.value }))
+                          }
+                          placeholder="/static/img/logo.png"
+                        />
+                        {branding.logoUrl && (
+                          <Image
+                            src={branding.logoUrl}
+                            alt="Site Logo"
+                            maxH="60px"
+                            mt={2}
+                            fallbackSrc="https://via.placeholder.com/150x60?text=Logo"
+                          />
+                        )}
+                      </FormControl>
+                    </SimpleGrid>
+
+                    <FormControl>
+                      <FormLabel>Banner Image URL</FormLabel>
+                      <Input
+                        value={branding.bannerImage}
+                        onChange={(e) =>
+                          setBranding((prev) => ({ ...prev, bannerImage: e.target.value }))
+                        }
+                        placeholder="/static/img/landing_page_banner.jpeg"
+                      />
+                      {branding.bannerImage && (
+                        <Image
+                          src={branding.bannerImage}
+                          alt="Banner"
+                          maxH="150px"
+                          mt={2}
+                          objectFit="cover"
+                          width="100%"
+                          fallbackSrc="https://via.placeholder.com/1200x300?text=Banner"
+                        />
+                      )}
+                    </FormControl>
+                  </VStack>
+                </CardBody>
+              </Card>
+            </TabPanel>
+
+            {/* Landing Page Tab */}
+            <TabPanel>
+              <Card bg={cardBg}>
+                <CardHeader>
+                  <Heading size="md">Landing Page Configuration</Heading>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={6} align="stretch">
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <FormControl>
+                        <FormLabel>Hero Title</FormLabel>
+                        <Input
+                          value={landingPage.heroTitle}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({ ...prev, heroTitle: e.target.value }))
+                          }
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Hero Subtitle</FormLabel>
+                        <Input
+                          value={landingPage.heroSubtitle}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({
+                              ...prev,
+                              heroSubtitle: e.target.value,
+                            }))
+                          }
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>CTA Button Text</FormLabel>
+                        <Input
+                          value={landingPage.ctaButtonText}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({
+                              ...prev,
+                              ctaButtonText: e.target.value,
+                            }))
+                          }
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>CTA Button URL</FormLabel>
+                        <Input
+                          value={landingPage.ctaButtonUrl}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({
+                              ...prev,
+                              ctaButtonUrl: e.target.value,
+                            }))
+                          }
+                        />
+                      </FormControl>
+                    </SimpleGrid>
+
+                    <Divider />
+
+                    <Heading size="sm">Section Visibility</Heading>
+                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Show Statistics</FormLabel>
+                        <Switch
+                          isChecked={landingPage.showStats}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({
+                              ...prev,
+                              showStats: e.target.checked,
+                            }))
+                          }
+                          colorScheme="brand"
+                        />
+                      </FormControl>
+
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Show Partners</FormLabel>
+                        <Switch
+                          isChecked={landingPage.showPartners}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({
+                              ...prev,
+                              showPartners: e.target.checked,
+                            }))
+                          }
+                          colorScheme="brand"
+                        />
+                      </FormControl>
+
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Show Ecosystems</FormLabel>
+                        <Switch
+                          isChecked={landingPage.showEcosystems}
+                          onChange={(e) =>
+                            setLandingPage((prev) => ({
+                              ...prev,
+                              showEcosystems: e.target.checked,
+                            }))
+                          }
+                          colorScheme="brand"
+                        />
+                      </FormControl>
+                    </SimpleGrid>
+                  </VStack>
+                </CardBody>
+              </Card>
+            </TabPanel>
+
+            {/* Dashboard Widgets Tab */}
+            <TabPanel>
+              <Card bg={cardBg}>
+                <CardHeader>
+                  <HStack justify="space-between">
+                    <Heading size="md">Dashboard Widgets</Heading>
+                    <Tooltip
+                      label={allWidgetsAdded ? 'All available widgets have been added' : 'Add a new widget to the dashboard'}
+                      hasArrow
+                    >
+                      <Box>
+                        <Menu>
+                          <MenuButton
+                            as={Button}
+                            leftIcon={<AddIcon />}
+                            size="sm"
+                            colorScheme="brand"
+                            isDisabled={allWidgetsAdded}
+                          >
+                            Add Widget
+                            {!allWidgetsAdded && (
+                              <Badge ml={2} colorScheme="green" borderRadius="full">
+                                {availableToAdd.length}
+                              </Badge>
+                            )}
+                          </MenuButton>
+                          <MenuList maxH="300px" overflowY="auto">
+                            {availableToAdd.map((wt) => (
+                              <MenuItem
+                                key={wt.id}
+                                onClick={() => addWidget(wt.id)}
+                              >
+                                <VStack align="start" spacing={0}>
+                                  <HStack>
+                                    <Text fontWeight="medium">{wt.name}</Text>
+                                    <Badge size="sm" colorScheme="purple">{wt.type}</Badge>
+                                  </HStack>
+                                  <Text fontSize="xs" color="gray.500">
+                                    {wt.description}
+                                  </Text>
+                                </VStack>
+                              </MenuItem>
+                            ))}
+                          </MenuList>
+                        </Menu>
+                      </Box>
+                    </Tooltip>
+                  </HStack>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={4} align="stretch">
+                    <Alert status="info" borderRadius="md">
+                      <AlertIcon />
+                      Enable or disable widgets that appear on user dashboards.
+                      {widgets.length > 0 && ` ${widgets.length} widget${widgets.length !== 1 ? 's' : ''} configured.`}
+                    </Alert>
+
+                    {widgets.length === 0 ? (
+                      <Box textAlign="center" py={8} color="gray.500">
+                        <Text>No widgets configured.</Text>
+                        <Text fontSize="sm">Click "Add Widget" to get started.</Text>
+                      </Box>
+                    ) : (
+                      widgets.map((widget) => (
+                        <HStack
+                          key={widget.id}
+                          p={4}
+                          bg={useColorModeValue('gray.50', 'gray.600')}
+                          borderRadius="md"
+                          justify="space-between"
+                          opacity={widget.enabled ? 1 : 0.6}
+                        >
+                          <HStack spacing={4}>
+                            <Text fontWeight="medium">{widget.name}</Text>
+                            <Badge colorScheme="purple">{widget.type}</Badge>
+                            {!widget.enabled && (
+                              <Badge colorScheme="gray">Disabled</Badge>
+                            )}
+                          </HStack>
+                          <HStack>
+                            <Tooltip label={widget.enabled ? 'Disable widget' : 'Enable widget'}>
+                              <Switch
+                                isChecked={widget.enabled}
+                                onChange={() => toggleWidget(widget.id)}
+                                colorScheme="brand"
+                              />
+                            </Tooltip>
+                            <Tooltip label="Remove widget">
+                              <IconButton
+                                aria-label="Delete widget"
+                                icon={<DeleteIcon />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="red"
+                                onClick={() => removeWidget(widget.id)}
+                              />
+                            </Tooltip>
+                          </HStack>
+                        </HStack>
+                      ))
+                    )}
+                  </VStack>
+                </CardBody>
+              </Card>
+            </TabPanel>
+
+            {/* Map Settings Tab */}
+            <TabPanel>
+              <Card bg={cardBg}>
+                <CardHeader>
+                  <Heading size="md">Map Configuration</Heading>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={6} align="stretch">
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <FormControl>
+                        <FormLabel>Default Center Latitude</FormLabel>
+                        <Input type="number" step="0.0001" defaultValue="-30.5595" />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Default Center Longitude</FormLabel>
+                        <Input type="number" step="0.0001" defaultValue="22.9375" />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Default Zoom Level</FormLabel>
+                        <Select defaultValue="5">
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((z) => (
+                            <option key={z} value={z}>
+                              {z}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel>Default Base Map</FormLabel>
+                        <Select defaultValue="osm">
+                          <option value="osm">OpenStreetMap</option>
+                          <option value="satellite">Satellite</option>
+                          <option value="terrain">Terrain</option>
+                          <option value="dark">Dark Mode</option>
+                        </Select>
+                      </FormControl>
+                    </SimpleGrid>
+
+                    <Divider />
+
+                    <Heading size="sm">Map Features</Heading>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Enable Clustering</FormLabel>
+                        <Switch defaultChecked colorScheme="brand" />
+                      </FormControl>
+
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Show Scale Bar</FormLabel>
+                        <Switch defaultChecked colorScheme="brand" />
+                      </FormControl>
+
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Enable Drawing Tools</FormLabel>
+                        <Switch defaultChecked colorScheme="brand" />
+                      </FormControl>
+
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb={0}>Show Mini Map</FormLabel>
+                        <Switch colorScheme="brand" />
+                      </FormControl>
+                    </SimpleGrid>
+                  </VStack>
+                </CardBody>
+              </Card>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Container>
+    </Box>
+  );
+};
+
+export default DashboardSettingsPage;

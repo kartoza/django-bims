@@ -6,9 +6,26 @@
   {% custom_fonts_links %}
 {% endblock %}
 
+{% block extrastyle %}
+  {{ block.super }}
+  <!-- BIMS Admin Theme - Nature-inspired styling harmonized with React frontend -->
+  <link rel="stylesheet" href="{% static 'admin/bims-admin-theme.css' %}">
+{% endblock %}
+
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
+</h1>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+<!-- Load theme CSS again at the end to ensure it overrides Grappelli -->
+<style>
+  @import url("{% static 'admin/bims-admin-theme.css' %}");
+</style>
+{% endblock %}

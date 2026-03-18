@@ -86,13 +86,11 @@
           django-pipeline
           django-preferences
           django-role-permissions
-          django-sentry
           django-uuid-upload-path
           djangorestframework-gis
           djangorestframework-guardian
           dj-pagination
           geonode-oauth-toolkit
-          raven
 
           # Database
           psycopg2
@@ -272,6 +270,8 @@
         packageStatusScript = wrapSimpleScript "bims-package-status";
         cleanVenvScript = wrapSimpleScript "bims-clean-venv";
         loadDummyDataScript = wrapSimpleScript "bims-load-dummy-data";
+        loadDummyOccurrencesScript = wrapSimpleScript "bims-load-dummy-occurrences";
+        statusScript = wrapSimpleScript "bims-status";
 
       in
       {
@@ -350,6 +350,8 @@
             packageStatusScript
             cleanVenvScript
             loadDummyDataScript
+            loadDummyOccurrencesScript
+            statusScript
           ];
 
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -381,13 +383,15 @@
             echo "🌿 Django BIMS Development Environment (Pure Nix)"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
-            echo "  bims-dev-start      Full setup"
-            echo "  bims-runserver      Django (8000)"
-            echo "  bims-pg-start/stop  PostgreSQL"
-            echo "  bims-test           Run tests"
-            echo "  bims-lint           Linting"
-            echo "  bims-load-dummy-data Load test data"
-            echo "  bims-clean-venv     Remove old venv"
+            echo "  bims-status           📊 System status overview"
+            echo "  bims-run              🚀 Start everything"
+            echo "  bims-dev-start        Start services (no Django)"
+            echo "  bims-stop-all         Stop all services"
+            echo "  bims-runserver        Django only (8000)"
+            echo "  bims-test             Run tests"
+            echo "  bims-lint             Linting"
+            echo "  bims-load-dummy-data  Load test data"
+            echo "  bims-clean-venv       Remove old venv"
             echo ""
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "Made with 💗 by Kartoza"
@@ -419,6 +423,8 @@
           package-status = { type = "app"; program = "${packageStatusScript}/bin/bims-package-status"; };
           clean-venv = { type = "app"; program = "${cleanVenvScript}/bin/bims-clean-venv"; };
           load-dummy-data = { type = "app"; program = "${loadDummyDataScript}/bin/bims-load-dummy-data"; };
+          load-dummy-occurrences = { type = "app"; program = "${loadDummyOccurrencesScript}/bin/bims-load-dummy-occurrences"; };
+          status = { type = "app"; program = "${statusScript}/bin/bims-status"; };
         };
 
         packages = {

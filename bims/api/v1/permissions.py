@@ -125,3 +125,38 @@ class CanValidate(permissions.BasePermission):
 
         # Check for validator group
         return request.user.groups.filter(name__icontains="validator").exists()
+
+
+class IsExpertOrSuperuser(permissions.BasePermission):
+    """
+    Permission for expert-level operations on taxon groups.
+
+    Allows access to:
+    - Superusers (always)
+    - Staff members
+    - Taxon group experts (checked per-taxon-group)
+    """
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+
+        # Check if user is an expert for any taxon group
+        from bims.models.taxon_group import TaxonGroup
+        return TaxonGroup.objects.filter(experts=request.user).exists()
+
+    def has_object_permission(self, request, view, obj):
+        if not request.user.is_authenticated:
+            return False
+
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+
+        # Check if user is expert for the object's taxon group
+        if hasattr(obj, 'taxon_group') and obj.taxon_group:
+            return request.user in obj.taxon_group.experts.all()
+
+        return False

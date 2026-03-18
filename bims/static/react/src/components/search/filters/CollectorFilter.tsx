@@ -58,7 +58,7 @@ export const CollectorFilter: React.FC = () => {
       setIsLoading(true);
       try {
         const response = await apiClient.get<{ data: CollectorSuggestion[] }>(
-          '/api/v1/autocomplete/collectors/',
+          'autocomplete/collectors/',
           { params: { q: query, limit: 10 } }
         );
         setSuggestions(response.data?.data || []);

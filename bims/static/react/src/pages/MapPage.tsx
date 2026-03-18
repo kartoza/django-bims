@@ -13,7 +13,9 @@ import { useParams } from 'react-router-dom';
 import { SearchIcon } from '@chakra-ui/icons';
 import MapContainer, { MapContainerRef } from '../components/map/MapContainer';
 import MapControls from '../components/map/MapControls';
+import MapLegend from '../components/map/MapLegend';
 import { SearchPanel } from '../components/search';
+import { useUIStore } from '../stores/uiStore';
 import { SiteDetailPanel } from '../components/panels/SiteDetailPanel';
 import { TaxonDetailPanel } from '../components/panels/TaxonDetailPanel';
 import { apiClient } from '../api/client';
@@ -39,13 +41,14 @@ const MapPage: React.FC = () => {
   const mapRef = useRef<MapContainerRef>(null);
   const { siteId, taxonId } = useParams<{ siteId?: string; taxonId?: string }>();
   const toast = useToast();
+  const { activePanel, setActivePanel } = useUIStore();
 
   // Local state
   const [isLoading, setIsLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedTaxonId, setSelectedTaxonId] = useState<number | null>(null);
-  const [isSearchOpen, setIsSearchOpen] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [currentBounds, setCurrentBounds] = useState<
     [number, number, number, number] | null
   >(null);
@@ -108,7 +111,7 @@ const MapPage: React.FC = () => {
             ecosystem_type?: string;
             geometry?: string;
           }>;
-        }>('/api/v1/sites/', {
+        }>('sites/', {
           params: { page_size: 1000 },
         });
 
@@ -222,6 +225,12 @@ const MapPage: React.FC = () => {
 
       {/* Map controls */}
       <MapControls />
+
+      {/* Map Legend */}
+      <MapLegend
+        isOpen={activePanel === 'legend'}
+        onClose={() => setActivePanel(null)}
+      />
 
       {/* Search toggle button (when search is closed) */}
       {!isSearchOpen && !selectedSiteId && !selectedTaxonId && (

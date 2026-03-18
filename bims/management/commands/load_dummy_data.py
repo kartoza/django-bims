@@ -125,6 +125,12 @@ class Command(BaseCommand):
             help="Number of location sites to create (default: 50)",
         )
         parser.add_argument(
+            "--site-visits",
+            type=int,
+            default=0,
+            help="Number of site visits (surveys) to create (default: auto based on sites)",
+        )
+        parser.add_argument(
             "--records-per-site",
             type=int,
             default=10,
@@ -140,13 +146,53 @@ class Command(BaseCommand):
             action="store_true",
             help="Clear existing dummy data before loading",
         )
+        parser.add_argument(
+            "--tenant",
+            type=str,
+            default=None,
+            help="Tenant schema name to load data into (default: first tenant found)",
+        )
 
     def handle(self, *args, **options):
         """Main command handler."""
         num_sites = options["sites"]
+        num_site_visits = options["site_visits"]
         records_per_site = options["records_per_site"]
         skip_gbif = options["skip_gbif"]
         clear = options["clear"]
+        tenant_name = options["tenant"]
+
+        # Get tenant to use
+        from django_tenants.utils import tenant_context, get_tenant_model
+        Tenant = get_tenant_model()
+
+        if tenant_name:
+            try:
+                tenant = Tenant.objects.get(schema_name=tenant_name)
+            except Tenant.DoesNotExist:
+                self.stderr.write(
+                    self.style.ERROR(f"Tenant '{tenant_name}' not found. Available tenants:")
+                )
+                for t in Tenant.objects.all():
+                    self.stderr.write(f"  - {t.schema_name} ({t.name})")
+                return
+        else:
+            # Use first non-public tenant
+            tenant = Tenant.objects.exclude(schema_name='public').first()
+            if not tenant:
+                self.stderr.write(
+                    self.style.ERROR("No tenant found. Create a tenant first.")
+                )
+                return
+
+        self.stdout.write(f"Using tenant: {tenant.name} ({tenant.schema_name})")
+
+        # Execute within tenant context
+        with tenant_context(tenant):
+            self._do_load(num_sites, num_site_visits, records_per_site, skip_gbif, clear)
+
+    def _do_load(self, num_sites, num_site_visits, records_per_site, skip_gbif, clear):
+        """Perform the actual data loading within a tenant context."""
 
         self.stdout.write(
             self.style.NOTICE(
@@ -154,6 +200,7 @@ class Command(BaseCommand):
                 f"BIMS Dummy Data Loader\n"
                 f"{'='*60}\n"
                 f"Sites to create: {num_sites}\n"
+                f"Site visits to create: {num_site_visits if num_site_visits > 0 else 'auto'}\n"
                 f"Records per site: ~{records_per_site}\n"
                 f"GBIF lookups: {'disabled' if skip_gbif else 'enabled'}\n"
                 f"{'='*60}\n"
@@ -176,8 +223,23 @@ class Command(BaseCommand):
                 # Create sites
                 sites = self._create_sites(num_sites, location_type, user)
 
+                # Create source references
+                source_refs = self._create_source_references(user)
+
+                # Create boundaries
+                self._create_boundaries(user)
+
+                # Create site visits (surveys)
+                surveys = []
+                if num_site_visits > 0:
+                    surveys = self._create_site_visits(sites, user, num_site_visits)
+
                 # Create biological records
-                self._create_records(sites, taxa, taxon_groups, user, records_per_site)
+                self._create_records(sites, taxa, taxon_groups, user, records_per_site, source_refs, surveys)
+
+                # Count totals
+                from bims.models.survey import Survey
+                total_surveys = Survey.objects.filter(collector_string__contains="[DUMMY]").count()
 
                 self.stdout.write(
                     self.style.SUCCESS(
@@ -186,6 +248,7 @@ class Command(BaseCommand):
                         f"{'='*60}\n"
                         f"Created {len(sites)} location sites\n"
                         f"Created {len(taxa)} taxa\n"
+                        f"Created {total_surveys} site visits (surveys)\n"
                         f"{'='*60}\n"
                     )
                 )
@@ -478,7 +541,140 @@ class Command(BaseCommand):
         self.stdout.write(f"  Created {len(sites)} location sites")
         return sites
 
-    def _create_records(self, sites, taxa, taxon_groups, user, records_per_site):
+    def _create_source_references(self, user):
+        """Create source references for dummy data."""
+        from bims.models.source_reference import SourceReference
+
+        self.stdout.write("\nCreating source references...")
+
+        source_ref_configs = [
+            {
+                "source_name": "South African Freshwater Fish Assessment (2024)",
+                "note": "[DUMMY_DATA] Test database reference",
+            },
+            {
+                "source_name": "Invertebrate Biodiversity Survey Methods",
+                "note": "[DUMMY_DATA] Test report reference",
+            },
+            {
+                "source_name": "Field Guide to Aquatic Ecosystems of Southern Africa",
+                "note": "[DUMMY_DATA] Test book reference",
+            },
+            {
+                "source_name": "Journal of Freshwater Ecology",
+                "note": "[DUMMY_DATA] Test peer-reviewed reference",
+            },
+            {
+                "source_name": "River Health Programme Data Collection",
+                "note": "[DUMMY_DATA] Test unpublished data reference",
+            },
+            {
+                "source_name": "SANBI Biodiversity Database",
+                "note": "[DUMMY_DATA] Test SANBI reference",
+            },
+        ]
+
+        source_refs = []
+        for config in source_ref_configs:
+            source_ref, created = SourceReference.objects.get_or_create(
+                source_name=config["source_name"],
+                defaults={
+                    "note": config["note"],
+                },
+            )
+            source_refs.append(source_ref)
+            if created:
+                self.stdout.write(f"  Created: {source_ref.source_name}")
+
+        self.stdout.write(f"  Created {len(source_refs)} source references")
+        return source_refs
+
+    def _create_boundaries(self, user):
+        """Create boundaries for dummy data."""
+        from bims.models.boundary import Boundary
+        from bims.models.boundary_type import BoundaryType
+        from django.contrib.gis.geos import Polygon, MultiPolygon
+
+        self.stdout.write("\nCreating boundaries...")
+
+        # Create boundary type
+        boundary_type, created = BoundaryType.objects.get_or_create(
+            name="Province",
+            defaults={"level": 1},
+        )
+        if created:
+            self.stdout.write(f"  Created boundary type: {boundary_type.name}")
+
+        # Create some simplified boundary polygons for major SA provinces
+        province_bounds = [
+            {
+                "name": "Western Cape",
+                "code": "WC",
+                "coords": [(18.0, -34.5), (22.0, -34.5), (22.0, -31.0), (18.0, -31.0), (18.0, -34.5)],
+            },
+            {
+                "name": "Gauteng",
+                "code": "GP",
+                "coords": [(27.5, -26.5), (29.0, -26.5), (29.0, -25.0), (27.5, -25.0), (27.5, -26.5)],
+            },
+            {
+                "name": "KwaZulu-Natal",
+                "code": "KZN",
+                "coords": [(29.0, -31.0), (32.5, -31.0), (32.5, -27.0), (29.0, -27.0), (29.0, -31.0)],
+            },
+        ]
+
+        boundaries = []
+        for prov in province_bounds:
+            polygon = Polygon(prov["coords"], srid=4326)
+            multipoly = MultiPolygon(polygon, srid=4326)
+            boundary, created = Boundary.objects.get_or_create(
+                name=f"{prov['name']} [DUMMY]",
+                code_name=prov["code"],
+                type=boundary_type,
+                defaults={
+                    "geometry": multipoly,
+                    "owner": user,
+                },
+            )
+            boundaries.append(boundary)
+            if created:
+                self.stdout.write(f"  Created boundary: {boundary.name}")
+
+        self.stdout.write(f"  Created {len(boundaries)} boundaries")
+        return boundaries
+
+    def _create_site_visits(self, sites, user, num_site_visits):
+        """Create site visits (surveys) distributed across sites."""
+        from bims.models.survey import Survey
+
+        self.stdout.write(f"\nCreating {num_site_visits} site visits (surveys)...")
+
+        surveys = []
+        today = date.today()
+
+        for i in range(num_site_visits):
+            site = random.choice(sites)
+            survey_date = today - timedelta(days=random.randint(0, 365 * 5))
+            collector = random.choice(COLLECTORS)
+
+            survey = Survey.objects.create(
+                site=site,
+                date=survey_date,
+                collector_string=f"{collector} [DUMMY]",
+                owner=user,
+                collector_user=user,
+                validated=site.validated,
+            )
+            surveys.append(survey)
+
+            if (i + 1) % 1000 == 0:
+                self.stdout.write(f"  Created {i + 1}/{num_site_visits} site visits...")
+
+        self.stdout.write(f"  Created {len(surveys)} site visits")
+        return surveys
+
+    def _create_records(self, sites, taxa, taxon_groups, user, records_per_site, source_refs=None, existing_surveys=None):
         """Create biological collection records."""
         from bims.models.biological_collection_record import BiologicalCollectionRecord
         from bims.models.survey import Survey
@@ -492,33 +688,45 @@ class Command(BaseCommand):
         total_records = 0
         today = date.today()
 
+        # Group existing surveys by site for efficient lookup
+        surveys_by_site = {}
+        if existing_surveys:
+            for survey in existing_surveys:
+                site_id = survey.site_id
+                if site_id not in surveys_by_site:
+                    surveys_by_site[site_id] = []
+                surveys_by_site[site_id].append(survey)
+
         for site in sites:
             # Vary the number of records per site
             num_records = max(1, int(random.gauss(records_per_site, records_per_site / 2)))
             num_records = min(num_records, records_per_site * 2)  # Cap at 2x average
 
-            # Create 1-3 surveys per site
-            num_surveys = random.randint(1, 3)
-            surveys = []
+            # Use existing surveys for this site, or create new ones
+            site_surveys = surveys_by_site.get(site.id, [])
 
-            for s in range(num_surveys):
-                survey_date = today - timedelta(days=random.randint(0, 365 * 3))
-                collector = random.choice(COLLECTORS)
+            if not site_surveys:
+                # Create 1-3 surveys per site if none exist
+                num_surveys = random.randint(1, 3)
 
-                survey = Survey.objects.create(
-                    site=site,
-                    date=survey_date,
-                    collector_string=f"{collector} [DUMMY]",
-                    owner=user,
-                    collector_user=user,
-                    validated=site.validated,
-                )
-                surveys.append(survey)
+                for s in range(num_surveys):
+                    survey_date = today - timedelta(days=random.randint(0, 365 * 3))
+                    collector = random.choice(COLLECTORS)
+
+                    survey = Survey.objects.create(
+                        site=site,
+                        date=survey_date,
+                        collector_string=f"{collector} [DUMMY]",
+                        owner=user,
+                        collector_user=user,
+                        validated=site.validated,
+                    )
+                    site_surveys.append(survey)
 
             # Distribute records across surveys
             for _ in range(num_records):
                 taxon = random.choice(taxa)
-                survey = random.choice(surveys)
+                survey = random.choice(site_surveys)
 
                 # Determine module group based on taxon
                 module_group = None
@@ -527,7 +735,7 @@ class Command(BaseCommand):
                         module_group = group
                         break
 
-                BiologicalCollectionRecord.objects.create(
+                record = BiologicalCollectionRecord.objects.create(
                     site=site,
                     taxonomy=taxon,
                     original_species_name=taxon.canonical_name,
@@ -541,6 +749,7 @@ class Command(BaseCommand):
                     present=True,
                     validated=site.validated,
                     notes=f"[DUMMY_DATA] Test record for {taxon.canonical_name}",
+                    source_reference=random.choice(source_refs) if source_refs and random.random() < 0.8 else None,
                 )
 
                 total_records += 1

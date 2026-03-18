@@ -21,7 +21,6 @@ final: prev: {
       django-pipeline = python-final.callPackage ./packages/python/django-pipeline { };
       django-preferences = python-final.callPackage ./packages/python/django-preferences { };
       django-role-permissions = python-final.callPackage ./packages/python/django-role-permissions { };
-      django-sentry = python-final.callPackage ./packages/python/django-sentry { };
       django-uuid-upload-path = python-final.callPackage ./packages/python/django-uuid-upload-path { };
       django_6 = python-final.callPackage ./packages/python/django_6 { };
       djangorestframework-gis = python-final.callPackage ./packages/python/djangorestframework-gis { };
@@ -33,7 +32,6 @@ final: prev: {
       geonode-oauth-toolkit = python-final.callPackage ./packages/python/geonode-oauth-toolkit { };
       pygbif = python-final.callPackage ./packages/python/pygbif { };
       python-dwca-reader = python-final.callPackage ./packages/python/python-dwca-reader { };
-      raven = python-final.callPackage ./packages/python/raven { };
     })
   ];
 }

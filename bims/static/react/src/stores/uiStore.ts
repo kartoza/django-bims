@@ -72,7 +72,7 @@ interface UIState {
 }
 
 const initialState = {
-  activePanel: 'search' as PanelType,
+  activePanel: null as PanelType,
   panelWidth: 400,
   isPanelCollapsed: false,
   activeModal: null as ModalType,

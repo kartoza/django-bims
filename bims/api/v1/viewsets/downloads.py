@@ -19,12 +19,51 @@ class DownloadViewSet(viewsets.ViewSet):
     ViewSet for async download operations.
 
     Endpoints:
+    - GET /api/v1/downloads/ - List user's download requests
     - POST /api/v1/downloads/csv/ - Request CSV download
     - POST /api/v1/downloads/checklist/ - Request checklist download
     - GET /api/v1/downloads/{task_id}/status/ - Check download status
     """
 
     permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        """
+        List user's download requests.
+
+        Returns recent download tasks for the authenticated user.
+        """
+        from bims.models.download_request import DownloadRequest
+
+        try:
+            # Get download requests for current user
+            downloads = DownloadRequest.objects.filter(
+                requester=request.user
+            ).order_by('-request_date')[:50]
+
+            data = [
+                {
+                    "id": d.id,
+                    "task_id": d.celery_task_id,
+                    "request_date": d.request_date.isoformat() if d.request_date else None,
+                    "request_type": d.request_type,
+                    "status": d.processing_status,
+                    "download_url": d.download_file.url if d.download_file else None,
+                    "progress": d.progress or 0,
+                }
+                for d in downloads
+            ]
+
+            return success_response(
+                data=data,
+                meta={"count": len(data)},
+            )
+        except Exception as e:
+            # If DownloadRequest model doesn't exist, return empty list
+            return success_response(
+                data=[],
+                meta={"count": 0, "note": "Download tracking not yet configured"},
+            )
 
     @action(detail=False, methods=["post"])
     def csv(self, request):

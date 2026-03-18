@@ -27,8 +27,19 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const TaxaManagementPage = lazy(() => import('./pages/TaxaManagementPage'));
+const ValidationPage = lazy(() => import('./pages/ValidationPage'));
+const AddRecordPage = lazy(() => import('./pages/AddRecordPage'));
+const ResourcesPage = lazy(() => import('./pages/ResourcesPage'));
+const BugReportPage = lazy(() => import('./pages/BugReportPage'));
+const DashboardSettingsPage = lazy(() => import('./pages/DashboardSettingsPage'));
+const HarvestPage = lazy(() => import('./pages/HarvestPage'));
+const SummaryReportPage = lazy(() => import('./pages/SummaryReportPage'));
+const VisualizationLayersPage = lazy(() => import('./pages/VisualizationLayersPage'));
+const ContextLayersPage = lazy(() => import('./pages/ContextLayersPage'));
 
-// Placeholder components for pages not yet implemented
+// Placeholder for pages not yet implemented
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
   <Center h="calc(100vh - 140px)" bg="gray.50">
     <Box textAlign="center">
@@ -39,18 +50,6 @@ const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
     </Box>
   </Center>
 );
-
-const ResourcesPage = () => <PlaceholderPage title="Resources & Links" />;
-const BugReportPage = () => <PlaceholderPage title="Report a Bug" />;
-const ProfilePage = () => <PlaceholderPage title="User Profile" />;
-const TaxaManagementPage = () => <PlaceholderPage title="Taxa Management" />;
-const DashboardSettingsPage = () => <PlaceholderPage title="Dashboard Settings" />;
-const ValidationPage = () => <PlaceholderPage title="Pending Validation" />;
-const HarvestPage = () => <PlaceholderPage title="Harvest Data" />;
-const SummaryReportPage = () => <PlaceholderPage title="Summary Report" />;
-const AddRecordPage = () => <PlaceholderPage title="Add Record" />;
-const VisualizationLayersPage = () => <PlaceholderPage title="Visualization Layers" />;
-const ContextLayersPage = () => <PlaceholderPage title="Context Layers" />;
 
 // Loading fallback
 const LoadingFallback: React.FC = () => (
@@ -110,8 +109,8 @@ const App: React.FC = () => {
             {/* Header - always visible */}
             <Header />
 
-            {/* Main content */}
-            <Box flex="1">
+            {/* Main content - overflow hidden so children can scroll */}
+            <Box flex="1" overflow="hidden">
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   {/* Landing page */}

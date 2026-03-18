@@ -115,21 +115,49 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, helpText, color }) =>
 };
 
 const LandingPage: React.FC = () => {
-  const heroBg = useColorModeValue('brand.500', 'brand.600');
-
   return (
-    <Box>
-      {/* Hero Section */}
-      <Box bg={heroBg} color="white" py={{ base: 16, md: 24 }}>
-        <Container maxW="container.xl">
+    <Box h="100%" overflowY="auto">
+      {/* Hero Section with background image */}
+      <Box
+        position="relative"
+        color="white"
+        py={{ base: 16, md: 24 }}
+        minH={{ base: '50vh', md: '60vh' }}
+        display="flex"
+        alignItems="center"
+        _before={{
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: 'url(/static/img/landing_page_banner.jpeg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          zIndex: 0,
+        }}
+        _after={{
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bgGradient: 'linear(to-b, blackAlpha.800, blackAlpha.600)',
+          zIndex: 1,
+        }}
+      >
+        <Container maxW="container.xl" position="relative" zIndex={2}>
           <VStack spacing={6} textAlign="center" maxW="3xl" mx="auto">
             <Badge colorScheme="whiteAlpha" fontSize="sm" px={3} py={1} rounded="full">
               Open Source Biodiversity Platform
             </Badge>
-            <Heading size={{ base: 'xl', md: '2xl' }} fontWeight="bold">
+            <Heading size={{ base: 'xl', md: '2xl' }} fontWeight="bold" textShadow="2px 2px 4px rgba(0,0,0,0.5)">
               Biodiversity Information Management System
             </Heading>
-            <Text fontSize={{ base: 'md', md: 'lg' }} opacity={0.9} maxW="2xl">
+            <Text fontSize={{ base: 'md', md: 'lg' }} opacity={0.95} maxW="2xl" textShadow="1px 1px 2px rgba(0,0,0,0.5)">
               Explore, analyze, and manage biodiversity data across South Africa.
               Access comprehensive records of species, habitats, and conservation status.
             </Text>
@@ -146,8 +174,8 @@ const LandingPage: React.FC = () => {
                 Explore Map
               </Button>
               <Button
-                as="a"
-                href="/accounts/signup/"
+                as={RouterLink}
+                to="/register"
                 size="lg"
                 variant="outline"
                 borderColor="white"

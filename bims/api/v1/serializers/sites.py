@@ -47,8 +47,7 @@ class LocationSiteListSerializer(serializers.ModelSerializer):
             "wetland_name",
             "owner_name",
             "validated",
-            "created",
-            "modified",
+            "date_created",
         ]
         read_only_fields = fields
 

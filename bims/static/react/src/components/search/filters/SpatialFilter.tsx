@@ -40,7 +40,7 @@ export const SpatialFilter: React.FC = () => {
       setIsLoadingBoundaries(true);
       try {
         const response = await apiClient.get<{ data: Boundary[] }>(
-          '/api/v1/boundaries/'
+          'boundaries/'
         );
         setBoundaries(response.data?.data || []);
       } catch (error) {

@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
 
       // Try to get current user from session
-      const response = await apiClient.get('/api/v1/auth/user/');
+      const response = await apiClient.get('auth/user/');
       if (response.data?.data) {
         const userData = response.data.data;
         setUser({
@@ -99,10 +99,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
 
       // Get CSRF token first
-      await apiClient.get('/api/v1/auth/csrf/');
+      await apiClient.get('auth/csrf/');
 
       // Login request
-      const response = await apiClient.post('/api/v1/auth/login/', {
+      const response = await apiClient.post('auth/login/', {
         username,
         password,
       });
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
-      await apiClient.post('/api/v1/auth/logout/');
+      await apiClient.post('auth/logout/');
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
@@ -143,9 +143,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
 
       // Get CSRF token first
-      await apiClient.get('/api/v1/auth/csrf/');
+      await apiClient.get('auth/csrf/');
 
-      const response = await apiClient.post('/api/v1/auth/register/', {
+      const response = await apiClient.post('auth/register/', {
         username: data.username,
         email: data.email,
         password1: data.password1,
