@@ -23,7 +23,19 @@ import os
 import re
 import ast
 import sys
-from distutils.util import strtobool  # noqa
+# Python 3.12+ removed distutils, provide compatibility
+try:
+    from distutils.util import strtobool  # noqa
+except ImportError:
+    def strtobool(val):
+        """Convert a string representation of truth to True or False."""
+        val = val.lower()
+        if val in ('y', 'yes', 't', 'true', 'on', '1'):
+            return True
+        elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+            return False
+        else:
+            raise ValueError(f"invalid truth value {val!r}")
 from urllib.parse import urlparse, urljoin
 
 import django

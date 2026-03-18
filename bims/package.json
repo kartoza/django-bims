@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "python manage.py test app.tests.test_generate_ui_mocks && jest",
-    "qtest": "jest"
+    "qtest": "jest",
+    "build:v2": "webpack --config webpack.v2.config.js --mode production",
+    "watch:v2": "webpack --config webpack.v2.config.js --mode development --watch",
+    "dev:v2": "webpack serve --config webpack.v2.config.js --mode development"
   },
   "repository": {
     "type": "git",
@@ -27,6 +30,10 @@
     "@babel/preset-env": "^7.0.0-beta.54",
     "@babel/preset-react": "^7.0.0-beta.54",
     "@babel/runtime": "^7.27.0",
+    "@deck.gl/core": "^9.2.11",
+    "@deck.gl/layers": "^9.2.11",
+    "@deck.gl/mapbox": "^9.2.11",
+    "@deck.gl/react": "^9.2.11",
     "array-move": "^4.0.0",
     "async": "^2.6.4",
     "axios": "^1.13.5",
@@ -35,6 +42,7 @@
     "babel-loader": "^8.3.0",
     "bootstrap-icons": "^1.11.3",
     "braces": "^3.0.3",
+    "chart.js": "^4.5.1",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
     "clipboard": "^1.7.1",
     "core-js": "^3.12.1",
@@ -55,9 +63,11 @@
     "react": "^18.3.1",
     "react-autosuggest": "^10.1.0",
     "react-bootstrap": "^1.6.1",
+    "react-chartjs-2": "^5.3.1",
     "react-confirm-alert": "^2.7.0",
     "react-dom": "^18.3.1",
     "react-easy-sort": "^1.6.0",
+    "react-icons": "^5.6.0",
     "react-rnd": "^10.3.4",
     "react-router": "^7.12.0",
     "react-router-dom": "^7.12.0",
@@ -80,6 +90,22 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.24.7",
-    "webpack-dev-server": "^4.7.3"
+    "@babel/preset-typescript": "^7.24.0",
+    "@chakra-ui/icons": "^2.1.0",
+    "@chakra-ui/react": "^2.8.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query-devtools": "^5.0.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "framer-motion": "^10.16.0",
+    "maplibre-gl": "^3.6.0",
+    "react-hook-form": "^7.48.0",
+    "typescript": "^5.3.0",
+    "webpack-cli": "^7.0.2",
+    "webpack-dev-server": "^4.7.3",
+    "zustand": "^4.4.0"
   }
 }

@@ -1,9 +1,74 @@
-[flake8]
-exclude = */docs/*,*/.tox/*,*/.venv/*,.pycharm_helpers/*,*/migrations/*,docs/*,fabfile.py,*/__init__.py,secret.py,scripts/*,deployment/*,restore_geonode.py,geonode_queue_settings.py,pavement.py
-max-line-length = 79
+# SPDX-FileCopyrightText: Kartoza
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Flake8 configuration for Django BIMS
 
-# E12x continuation line indentation
-# E251 no spaces around keyword / parameter equals
-# E303 too many blank lines (3)
-# F405 name may be undefined, or defined from star imports: module
-ignore = E125,E126,E251,E303,F405,W504,W605,F901
+[flake8]
+max-line-length = 120
+max-complexity = 18
+select = B,C,E,F,W,T4,B9
+ignore =
+    # line too long - handled by black
+    E501,
+    # line break before binary operator - conflicts with black
+    W503,
+    # whitespace before ':' - conflicts with black
+    E203,
+    # missing trailing comma - handled by black
+    C812,
+    # do not use bare 'except'
+    E722,
+    # continuation line indentation
+    E125,
+    E126,
+    # no spaces around keyword / parameter equals
+    E251,
+    # too many blank lines
+    E303,
+    # name may be undefined, or defined from star imports
+    F405,
+    # legacy ignores
+    W504,
+    W605,
+    F901
+
+exclude =
+    .git,
+    .venv,
+    venv,
+    __pycache__,
+    migrations,
+    static,
+    media,
+    node_modules,
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    docs,
+    .tox,
+    .mypy_cache,
+    .pytest_cache,
+    .nox,
+    deployment,
+    *.min.js,
+    *.min.css,
+    webpack-stats.json,
+    .pycharm_helpers,
+    fabfile.py,
+    secret.py,
+    scripts,
+    restore_geonode.py,
+    geonode_queue_settings.py,
+    pavement.py
+
+per-file-ignores =
+    # imported but unused - __init__.py files often have these
+    __init__.py: F401
+    # settings files can have wildcard imports
+    */settings/*.py: F401,F403,F405
+    # test files can have assertions and longer lines
+    test_*.py: S101,E501
+    tests/*.py: S101,E501
+    # admin files often have unused imports
+    */admin.py: F401

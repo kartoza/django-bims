@@ -1,0 +1,487 @@
+/**
+ * SPDX-FileCopyrightText: Kartoza
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * MapLibre GL map container component.
+ * Supports both WMS layers (via GeoServer) and GeoJSON data.
+ *
+ * Made with love by Kartoza | https://kartoza.com
+ */
+import React, {
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
+import { Box } from '@chakra-ui/react';
+import maplibregl, {
+  Map as MapLibreMap,
+  NavigationControl,
+  ScaleControl,
+  GeolocateControl,
+  LngLatBoundsLike,
+} from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+import {
+  bimsMapStyle,
+  addWmsLayer,
+  removeWmsLayer,
+  setWmsLayerOpacity,
+  switchBasemap,
+  buildWmsUrl,
+  GEOSERVER_CONFIG,
+} from '../../styles/mapStyle';
+
+// GeoJSON Feature type for sites
+interface SiteFeature {
+  type: 'Feature';
+  geometry: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  properties: {
+    id: number;
+    name: string;
+    site_code?: string;
+    ecosystem_type?: string;
+    record_count?: number;
+  };
+}
+
+interface SiteFeatureCollection {
+  type: 'FeatureCollection';
+  features: SiteFeature[];
+}
+
+// Props for the MapContainer
+export interface MapContainerProps {
+  initialCenter?: [number, number];
+  initialZoom?: number;
+  useWms?: boolean; // Whether to use WMS layers (default: true if GeoServer available)
+  onSiteSelect?: (siteId: number | null) => void;
+  onSiteHover?: (siteId: number | null) => void;
+  onBoundsChange?: (bounds: [number, number, number, number]) => void;
+  onMapReady?: (map: MapLibreMap) => void;
+}
+
+// Ref methods exposed by MapContainer
+export interface MapContainerRef {
+  flyTo: (center: [number, number], zoom?: number) => void;
+  fitBounds: (bounds: LngLatBoundsLike, padding?: number) => void;
+  setData: (data: SiteFeatureCollection) => void;
+  getMap: () => MapLibreMap | null;
+  highlightSite: (siteId: number | null) => void;
+  getBounds: () => [number, number, number, number] | null;
+  addWmsLayer: (layerId: string, wmsLayer: string, options?: { opacity?: number }) => void;
+  removeWmsLayer: (layerId: string) => void;
+  setWmsLayerOpacity: (layerId: string, opacity: number) => void;
+  switchBasemap: (sourceId: string) => void;
+}
+
+const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
+  (
+    {
+      initialCenter = [24.5, -29.0], // Default: South Africa
+      initialZoom = 5,
+      useWms = false, // Default to GeoJSON mode for now
+      onSiteSelect,
+      onSiteHover,
+      onBoundsChange,
+      onMapReady,
+    },
+    ref
+  ) => {
+    const mapContainer = useRef<HTMLDivElement>(null);
+    const mapRef = useRef<MapLibreMap | null>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
+    const [initAttempt, setInitAttempt] = useState(0);
+
+    // Expose methods via ref
+    useImperativeHandle(ref, () => ({
+      flyTo: (center: [number, number], zoom?: number) => {
+        if (mapRef.current) {
+          mapRef.current.flyTo({
+            center,
+            zoom: zoom ?? mapRef.current.getZoom(),
+            duration: 1500,
+          });
+        }
+      },
+
+      fitBounds: (bounds: LngLatBoundsLike, padding = 50) => {
+        if (mapRef.current) {
+          mapRef.current.fitBounds(bounds, { padding });
+        }
+      },
+
+      setData: (data: SiteFeatureCollection) => {
+        if (mapRef.current && isLoaded) {
+          const source = mapRef.current.getSource('sites');
+          if (source && 'setData' in source) {
+            (source as maplibregl.GeoJSONSource).setData(data);
+          }
+        }
+      },
+
+      getMap: () => mapRef.current,
+
+      highlightSite: (siteId: number | null) => {
+        if (mapRef.current && isLoaded) {
+          setSelectedSiteId(siteId);
+          if (mapRef.current.getLayer('highlighted-point')) {
+            mapRef.current.setFilter('highlighted-point', [
+              '==',
+              ['get', 'id'],
+              siteId ?? '',
+            ]);
+          }
+        }
+      },
+
+      getBounds: () => {
+        if (mapRef.current) {
+          const bounds = mapRef.current.getBounds();
+          return [
+            bounds.getWest(),
+            bounds.getSouth(),
+            bounds.getEast(),
+            bounds.getNorth(),
+          ];
+        }
+        return null;
+      },
+
+      addWmsLayer: (layerId: string, wmsLayer: string, options?: { opacity?: number }) => {
+        if (mapRef.current && isLoaded) {
+          addWmsLayer(mapRef.current, layerId, wmsLayer, options);
+        }
+      },
+
+      removeWmsLayer: (layerId: string) => {
+        if (mapRef.current && isLoaded) {
+          removeWmsLayer(mapRef.current, layerId);
+        }
+      },
+
+      setWmsLayerOpacity: (layerId: string, opacity: number) => {
+        if (mapRef.current && isLoaded) {
+          setWmsLayerOpacity(mapRef.current, layerId, opacity);
+        }
+      },
+
+      switchBasemap: (sourceId: string) => {
+        if (mapRef.current && isLoaded) {
+          switchBasemap(mapRef.current, sourceId);
+        }
+      },
+    }));
+
+    // Initialize map
+    useEffect(() => {
+      if (mapRef.current || !mapContainer.current) return;
+
+      // Wait for container to have dimensions
+      const container = mapContainer.current;
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        // Container not ready, retry after a short delay
+        if (initAttempt < 20) {
+          const timer = setTimeout(() => {
+            setInitAttempt((prev) => prev + 1);
+          }, 100);
+          return () => clearTimeout(timer);
+        }
+        console.error('MapContainer: Container has no dimensions after retries');
+        return;
+      }
+
+      // Check WebGL support
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) {
+        console.error('MapContainer: WebGL is not supported in this browser');
+        return;
+      }
+
+      const map = new MapLibreMap({
+        container,
+        style: bimsMapStyle,
+        center: initialCenter,
+        zoom: initialZoom,
+        minZoom: 2,
+        maxZoom: 18,
+        attributionControl: true,
+      });
+
+      // Add navigation control
+      map.addControl(
+        new NavigationControl({
+          visualizePitch: true,
+        }),
+        'top-right'
+      );
+
+      // Add scale control
+      map.addControl(new ScaleControl({ maxWidth: 200 }), 'bottom-left');
+
+      // Add geolocation control
+      map.addControl(
+        new GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true,
+          },
+          trackUserLocation: true,
+        }),
+        'top-right'
+      );
+
+      // Map load event
+      map.on('load', () => {
+        mapRef.current = map;
+        setIsLoaded(true);
+
+        if (useWms) {
+          // Add WMS layer for sites from GeoServer
+          addWmsLayer(map, 'wms-sites', GEOSERVER_CONFIG.layers.sites);
+        } else {
+          // Add GeoJSON source and layers for sites (fallback mode)
+          map.addSource('sites', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: [],
+            },
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50,
+          });
+
+          // Add clustered points layer
+          map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'sites',
+            filter: ['has', 'point_count'],
+            paint: {
+              'circle-color': [
+                'step',
+                ['get', 'point_count'],
+                '#51bbd6',
+                10,
+                '#f1f075',
+                50,
+                '#f28cb1',
+              ],
+              'circle-radius': [
+                'step',
+                ['get', 'point_count'],
+                15,
+                10,
+                20,
+                50,
+                25,
+              ],
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // Add cluster count labels
+          map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'sites',
+            filter: ['has', 'point_count'],
+            layout: {
+              'text-field': '{point_count_abbreviated}',
+              'text-font': ['Open Sans Semibold'],
+              'text-size': 12,
+            },
+            paint: {
+              'text-color': '#333333',
+            },
+          });
+
+          // Add unclustered point layer
+          map.addLayer({
+            id: 'unclustered-point',
+            type: 'circle',
+            source: 'sites',
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+              'circle-color': '#0073e6',
+              'circle-radius': 8,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // Add highlighted point layer
+          map.addLayer({
+            id: 'highlighted-point',
+            type: 'circle',
+            source: 'sites',
+            filter: ['==', ['get', 'id'], ''],
+            paint: {
+              'circle-color': '#ff9900',
+              'circle-radius': 12,
+              'circle-stroke-width': 3,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // Handle cluster click - zoom in
+          map.on('click', 'clusters', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+              layers: ['clusters'],
+            });
+            const clusterId = features[0]?.properties?.cluster_id;
+
+            if (clusterId === undefined) return;
+
+            const source = map.getSource('sites');
+            if (source && 'getClusterExpansionZoom' in source) {
+              (source as maplibregl.GeoJSONSource).getClusterExpansionZoom(
+                clusterId,
+                (err: Error | null, zoom: number | null | undefined) => {
+                  if (err || zoom === null || zoom === undefined) return;
+
+                  const coordinates = (features[0].geometry as GeoJSON.Point)
+                    .coordinates;
+                  map.easeTo({
+                    center: coordinates as [number, number],
+                    zoom: zoom,
+                  });
+                }
+              );
+            }
+          });
+
+          // Handle point click - select site
+          map.on('click', 'unclustered-point', (e) => {
+            const features = e.features;
+            if (!features || features.length === 0) return;
+
+            const feature = features[0];
+            const siteId = feature.properties?.id;
+
+            if (siteId) {
+              const parsedId = parseInt(siteId, 10);
+              setSelectedSiteId(parsedId);
+
+              // Update highlight filter
+              map.setFilter('highlighted-point', ['==', ['get', 'id'], siteId]);
+
+              // Notify parent
+              if (onSiteSelect) {
+                onSiteSelect(parsedId);
+              }
+            }
+          });
+
+          // Handle click on empty area - deselect
+          map.on('click', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+              layers: ['unclustered-point', 'clusters'],
+            });
+            if (features.length === 0) {
+              setSelectedSiteId(null);
+              map.setFilter('highlighted-point', ['==', ['get', 'id'], '']);
+              if (onSiteSelect) {
+                onSiteSelect(null);
+              }
+            }
+          });
+
+          // Handle hover effects
+          map.on('mouseenter', 'unclustered-point', (e) => {
+            map.getCanvas().style.cursor = 'pointer';
+            const features = e.features;
+            if (features && features.length > 0 && onSiteHover) {
+              const siteId = features[0].properties?.id;
+              if (siteId) {
+                onSiteHover(parseInt(siteId, 10));
+              }
+            }
+          });
+
+          map.on('mouseleave', 'unclustered-point', () => {
+            map.getCanvas().style.cursor = '';
+            if (onSiteHover) {
+              onSiteHover(null);
+            }
+          });
+
+          map.on('mouseenter', 'clusters', () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.on('mouseleave', 'clusters', () => {
+            map.getCanvas().style.cursor = '';
+          });
+        }
+
+        // Track map movement
+        map.on('moveend', () => {
+          if (onBoundsChange) {
+            const bounds = map.getBounds();
+            onBoundsChange([
+              bounds.getWest(),
+              bounds.getSouth(),
+              bounds.getEast(),
+              bounds.getNorth(),
+            ]);
+          }
+        });
+
+        // Notify parent that map is ready
+        if (onMapReady) {
+          onMapReady(map);
+        }
+      });
+
+      // Handle map error
+      map.on('error', (e) => {
+        console.error('Map error:', e);
+      });
+
+      // Cleanup on unmount
+      return () => {
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+          setIsLoaded(false);
+        }
+      };
+    }, [initAttempt]); // Re-run on init attempts until container has dimensions
+
+    return (
+      <Box
+        ref={mapContainer}
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        bg="gray.200"
+        sx={{
+          '.maplibregl-map': {
+            width: '100%',
+            height: '100%',
+          },
+          '.maplibregl-canvas': {
+            outline: 'none',
+          },
+        }}
+      />
+    );
+  }
+);
+
+MapContainer.displayName = 'MapContainer';
+
+export default MapContainer;

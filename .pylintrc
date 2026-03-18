@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: Kartoza
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Pylint configuration for Django BIMS
+
+[MAIN]
+load-plugins=pylint_django
+django-settings-module=core.settings.dev
+ignore=migrations,static,media,node_modules,.venv,venv
+ignore-patterns=test_.*\.py
+jobs=0
+persistent=yes
+suggestion-mode=yes
+
+[MESSAGES CONTROL]
+disable=
+    missing-docstring,
+    too-few-public-methods,
+    no-member,
+    duplicate-code,
+    too-many-arguments,
+    too-many-locals,
+    too-many-branches,
+    too-many-statements,
+    too-many-instance-attributes,
+    too-many-public-methods,
+    line-too-long,
+    invalid-name,
+    broad-except,
+    protected-access,
+    import-outside-toplevel,
+    consider-using-f-string,
+    fixme,
+    import-error,
+    no-name-in-module
+
+[FORMAT]
+max-line-length=120
+max-module-lines=2000
+
+[BASIC]
+good-names=i,j,k,ex,_,pk,id,qs,db
+bad-names=foo,bar,baz
+
+[DESIGN]
+max-args=10
+max-locals=20
+max-returns=6
+max-branches=15
+max-statements=60
+max-parents=7
+max-attributes=15
+
+[SIMILARITIES]
+min-similarity-lines=10
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+
+[TYPECHECK]
+generated-members=
+    REQUEST,
+    acl_users,
+    aq_parent,
+    objects,
+    DoesNotExist,
+    pk,
+    id,
+    _meta,
+    base_fields,
+    context
+
+[IMPORTS]
+known-third-party=django,rest_framework,celery

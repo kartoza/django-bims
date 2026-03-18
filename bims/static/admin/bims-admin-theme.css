@@ -1,0 +1,756 @@
+/**
+ * SPDX-FileCopyrightText: Kartoza
+ * SPDX-License-Identifier: AGPL-3.0
+ *
+ * BIMS Admin Theme - Nature-inspired admin styling
+ * Harmonizes Django Admin (Grappelli) with React + Chakra UI frontend
+ *
+ * Made with love by Kartoza | https://kartoza.com
+ */
+
+/* ==========================================================================
+   CSS Variables
+   ========================================================================== */
+
+:root {
+  --brand-50: #e8f4f8;
+  --brand-100: #c5e4ed;
+  --brand-200: #9fd2e1;
+  --brand-300: #79c0d5;
+  --brand-400: #5cb2cc;
+  --brand-500: #2d8eb8;
+  --brand-600: #247396;
+  --brand-700: #1a5774;
+  --brand-800: #113c52;
+  --brand-900: #082130;
+  --fynbos-500: #5a9a5a;
+  --fynbos-600: #487a48;
+  --sunset-500: #e87c38;
+  --bg-light: #f8fafb;
+  --bg-paper: #ffffff;
+  --bg-subtle: #f0f4f5;
+  --bg-muted: #e8ecee;
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* ==========================================================================
+   Global Overrides
+   ========================================================================== */
+
+body {
+  font-family: "Source Sans Pro", "Roboto", -apple-system, BlinkMacSystemFont, sans-serif !important;
+  background: var(--bg-light) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ==========================================================================
+   Header - The Top Bar
+   ========================================================================== */
+
+#grp-header,
+header#grp-header {
+  background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 100%) !important;
+  border-bottom: none !important;
+  box-shadow: 0 4px 12px rgba(45, 142, 184, 0.3) !important;
+  padding: 12px 20px !important;
+}
+
+#grp-header *,
+#grp-header h1,
+#grp-header h1 a,
+#grp-header h1 span,
+#grp-header #site-name,
+#grp-header #site-name a,
+#grp-header .grp-branding,
+#grp-branding h1 a {
+  color: #ffffff !important;
+  font-family: "Source Sans Pro", "Roboto", sans-serif !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+  font-weight: 700 !important;
+  font-size: 1.4rem !important;
+}
+
+#grp-user-tools,
+#grp-header #grp-user-tools {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 8px !important;
+  padding: 6px 14px !important;
+}
+
+#grp-user-tools a,
+#grp-header #grp-user-tools a {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+}
+
+#grp-user-tools a:hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+/* ==========================================================================
+   Navigation Bar
+   ========================================================================== */
+
+#grp-navigation,
+nav#grp-navigation {
+  background: var(--bg-paper) !important;
+  border-bottom: 2px solid var(--brand-100) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+#grp-navigation a,
+#grp-navigation ul li a {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+#grp-navigation a:hover,
+#grp-navigation ul li a:hover,
+#grp-navigation ul li.grp-selected a {
+  color: var(--brand-600) !important;
+  background: var(--brand-50) !important;
+}
+
+/* ==========================================================================
+   Dashboard / Index Page - Module Headers
+   ========================================================================== */
+
+/* Module container styling */
+.grp-module,
+div.grp-module {
+  background: var(--bg-paper) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: 1px solid var(--bg-muted) !important;
+  overflow: hidden !important;
+  margin-bottom: 16px !important;
+}
+
+/* Module headers - THE KEY SELECTORS */
+.grp-module > h2,
+.grp-module > .grp-module-head,
+.grp-module h2,
+.grp-module.grp-module-heading h2,
+div.grp-module h2,
+#grp-dashboard .grp-module h2,
+#grp-dashboard .grp-module > h2,
+.grp-dashboard-module h2,
+caption,
+table caption {
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 14px 18px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
+}
+
+/* Alternative headers (h3, captions) */
+.grp-module h3,
+.grp-module > h3 {
+  background: var(--bg-subtle) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+  border-bottom: 1px solid var(--bg-muted) !important;
+}
+
+/* ==========================================================================
+   Dashboard Module Rows / Links
+   ========================================================================== */
+
+.grp-module .grp-row,
+.grp-module ul li,
+.grp-module tbody tr {
+  border-bottom: 1px solid var(--bg-muted) !important;
+  transition: background 0.15s ease !important;
+}
+
+.grp-module .grp-row:hover,
+.grp-module ul li:hover,
+.grp-module tbody tr:hover {
+  background: var(--brand-50) !important;
+}
+
+.grp-module .grp-row:last-child,
+.grp-module ul li:last-child {
+  border-bottom: none !important;
+}
+
+.grp-module .grp-row a,
+.grp-module ul li a,
+#grp-dashboard a {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  padding: 10px 18px !important;
+  display: block !important;
+  text-decoration: none !important;
+}
+
+.grp-module .grp-row a:hover,
+.grp-module ul li a:hover {
+  color: var(--brand-600) !important;
+  padding-left: 22px !important;
+}
+
+/* Add links */
+.grp-module .addlink,
+.addlink,
+a.addlink {
+  color: var(--fynbos-500) !important;
+  font-weight: 600 !important;
+}
+
+.grp-module .addlink:hover,
+.addlink:hover {
+  color: var(--fynbos-600) !important;
+}
+
+/* Recent actions special styling */
+#grp-recent-actions-module h2,
+.grp-module[id*="recent"] h2 {
+  background: linear-gradient(135deg, var(--sunset-500) 0%, #c96428 100%) !important;
+}
+
+/* ==========================================================================
+   Content Area
+   ========================================================================== */
+
+#grp-content,
+div#grp-content {
+  background: var(--bg-light) !important;
+  padding: 24px !important;
+}
+
+#grp-content-container,
+div#grp-content-container {
+  background: var(--bg-paper) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: 1px solid var(--bg-muted) !important;
+}
+
+/* Page title */
+#grp-content-title,
+#grp-content-title h1 {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  font-size: 1.5rem !important;
+  padding: 20px 24px !important;
+  border-bottom: 3px solid var(--brand-500) !important;
+  background: transparent !important;
+}
+
+/* ==========================================================================
+   Buttons - All Types
+   ========================================================================== */
+
+.grp-button,
+input[type="submit"],
+button[type="submit"],
+.grp-default,
+a.grp-button {
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-600) 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 20px !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(45, 142, 184, 0.3) !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.grp-button:hover,
+input[type="submit"]:hover,
+button[type="submit"]:hover,
+.grp-default:hover {
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-700) 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(45, 142, 184, 0.4) !important;
+}
+
+/* Delete/danger buttons */
+.grp-delete-link,
+.deletelink,
+a.grp-delete-link {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%) !important;
+  color: #ffffff !important;
+}
+
+.grp-delete-link:hover,
+.deletelink:hover {
+  background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%) !important;
+}
+
+/* Cancel/secondary buttons */
+.grp-cancel-link,
+a.grp-cancel-link {
+  background: var(--bg-paper) !important;
+  color: var(--text-secondary) !important;
+  border: 2px solid var(--bg-muted) !important;
+}
+
+.grp-cancel-link:hover {
+  background: var(--bg-subtle) !important;
+  border-color: var(--brand-300) !important;
+  color: var(--brand-600) !important;
+}
+
+/* ==========================================================================
+   Tables - Change Lists
+   ========================================================================== */
+
+#grp-changelist-table,
+table.grp-table,
+.grp-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+#grp-changelist-table th,
+.grp-table th,
+table th {
+  background: var(--bg-subtle) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 14px 16px !important;
+  border-bottom: 2px solid var(--brand-200) !important;
+}
+
+#grp-changelist-table th a,
+.grp-table th a {
+  color: var(--text-secondary) !important;
+}
+
+#grp-changelist-table th a:hover,
+.grp-table th a:hover {
+  color: var(--brand-600) !important;
+}
+
+#grp-changelist-table td,
+.grp-table td,
+table td {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--bg-muted) !important;
+}
+
+#grp-changelist-table tbody tr:nth-child(odd),
+.grp-table tbody tr:nth-child(odd) {
+  background: var(--bg-paper) !important;
+}
+
+#grp-changelist-table tbody tr:nth-child(even),
+.grp-table tbody tr:nth-child(even) {
+  background: var(--bg-light) !important;
+}
+
+#grp-changelist-table tbody tr:hover,
+.grp-table tbody tr:hover {
+  background: var(--brand-50) !important;
+}
+
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+textarea,
+select {
+  font-family: "Source Sans Pro", "Roboto", sans-serif !important;
+  border: 2px solid var(--bg-muted) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 0.95rem !important;
+  background: var(--bg-paper) !important;
+  color: var(--text-primary) !important;
+  transition: all 0.2s ease !important;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--brand-500) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(45, 142, 184, 0.2) !important;
+}
+
+/* Labels */
+label,
+.grp-row label {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+}
+
+/* Help text */
+.grp-help,
+.help,
+p.help {
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+  font-style: italic !important;
+}
+
+/* ==========================================================================
+   Filters Sidebar
+   ========================================================================== */
+
+#grp-changelist-filter,
+div#grp-changelist-filter {
+  background: var(--bg-paper) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: 1px solid var(--bg-muted) !important;
+  overflow: hidden !important;
+}
+
+#grp-changelist-filter h2 {
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  padding: 14px 18px !important;
+}
+
+#grp-changelist-filter h3 {
+  background: var(--bg-subtle) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  padding: 10px 18px !important;
+  border-bottom: 1px solid var(--bg-muted) !important;
+}
+
+#grp-changelist-filter ul li a {
+  padding: 8px 18px !important;
+  color: var(--text-secondary) !important;
+  display: block !important;
+}
+
+#grp-changelist-filter ul li a:hover {
+  background: var(--brand-50) !important;
+  color: var(--brand-600) !important;
+}
+
+#grp-changelist-filter ul li.grp-selected a,
+#grp-changelist-filter ul li.selected a {
+  background: var(--brand-500) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* ==========================================================================
+   Messages / Alerts
+   ========================================================================== */
+
+.grp-messagelist,
+ul.grp-messagelist {
+  padding: 0 !important;
+  margin: 0 0 20px 0 !important;
+}
+
+.grp-messagelist li,
+ul.grp-messagelist li {
+  border-radius: 10px !important;
+  padding: 14px 20px !important;
+  margin-bottom: 10px !important;
+  font-weight: 500 !important;
+  border-left: 5px solid !important;
+}
+
+.grp-messagelist li.grp-success,
+.grp-messagelist li.success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  color: #065f46 !important;
+  border-left-color: #059669 !important;
+}
+
+.grp-messagelist li.grp-warning,
+.grp-messagelist li.warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  color: #92400e !important;
+  border-left-color: #d97706 !important;
+}
+
+.grp-messagelist li.grp-error,
+.grp-messagelist li.error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+  color: #991b1b !important;
+  border-left-color: #dc2626 !important;
+}
+
+.grp-messagelist li.grp-info,
+.grp-messagelist li.info {
+  background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-100) 100%) !important;
+  color: var(--brand-800) !important;
+  border-left-color: var(--brand-500) !important;
+}
+
+/* ==========================================================================
+   Breadcrumbs
+   ========================================================================== */
+
+.grp-breadcrumb-box,
+div.grp-breadcrumb-box {
+  background: var(--bg-subtle) !important;
+  border-radius: 8px !important;
+  padding: 10px 16px !important;
+  margin-bottom: 16px !important;
+}
+
+.grp-breadcrumb-box a {
+  color: var(--brand-600) !important;
+  font-weight: 500 !important;
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.grp-pagination {
+  background: var(--bg-subtle) !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  margin-top: 16px !important;
+  text-align: center !important;
+}
+
+.grp-pagination a {
+  background: var(--bg-paper) !important;
+  border: 1px solid var(--bg-muted) !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  color: var(--text-secondary) !important;
+  margin: 0 2px !important;
+}
+
+.grp-pagination a:hover {
+  background: var(--brand-50) !important;
+  border-color: var(--brand-300) !important;
+  color: var(--brand-600) !important;
+}
+
+/* ==========================================================================
+   Object Tools (View site, History, etc.)
+   ========================================================================== */
+
+.grp-object-tools,
+ul.grp-object-tools {
+  background: var(--bg-subtle) !important;
+  border-radius: 10px !important;
+  padding: 10px !important;
+  margin-bottom: 16px !important;
+}
+
+.grp-object-tools li a {
+  background: var(--bg-paper) !important;
+  border: 1px solid var(--bg-muted) !important;
+  border-radius: 6px !important;
+  padding: 6px 14px !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+}
+
+.grp-object-tools li a:hover {
+  background: var(--brand-50) !important;
+  border-color: var(--brand-300) !important;
+  color: var(--brand-600) !important;
+}
+
+/* ==========================================================================
+   Inline Formsets
+   ========================================================================== */
+
+.grp-group,
+div.grp-group {
+  background: var(--bg-paper) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: 1px solid var(--bg-muted) !important;
+  overflow: hidden !important;
+  margin-bottom: 20px !important;
+}
+
+.grp-group h2 {
+  background: linear-gradient(135deg, var(--fynbos-500) 0%, var(--fynbos-600) 100%) !important;
+  color: #ffffff !important;
+  padding: 14px 18px !important;
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+#grp-footer {
+  background: var(--bg-subtle) !important;
+  border-top: 1px solid var(--bg-muted) !important;
+  padding: 16px !important;
+  text-align: center !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ==========================================================================
+   Errors
+   ========================================================================== */
+
+.grp-errors,
+.errorlist,
+ul.errorlist {
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 8px !important;
+  color: #991b1b !important;
+  padding: 12px 16px !important;
+  margin-bottom: 12px !important;
+}
+
+.grp-errors li,
+.errorlist li {
+  color: #991b1b !important;
+  font-weight: 500 !important;
+}
+
+/* ==========================================================================
+   Search Box
+   ========================================================================== */
+
+#grp-changelist-search {
+  background: var(--bg-subtle) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: 16px !important;
+  margin-bottom: 16px !important;
+  border: 1px solid var(--bg-muted) !important;
+}
+
+/* ==========================================================================
+   Calendar/Date Widgets
+   ========================================================================== */
+
+.grp-calendar,
+.grp-timelist {
+  background: var(--bg-paper) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+  border: 1px solid var(--bg-muted) !important;
+}
+
+.grp-calendar caption {
+  background: var(--brand-500) !important;
+  color: #ffffff !important;
+  padding: 12px !important;
+}
+
+.grp-calendar td a:hover {
+  background: var(--brand-50) !important;
+}
+
+.grp-calendar td.grp-selected a {
+  background: var(--brand-500) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Admin Dashboard Custom Actions (BIMS specific)
+   ========================================================================== */
+
+.g-d-c {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  padding: 16px !important;
+  background: var(--bg-subtle) !important;
+  border-radius: var(--radius-lg) !important;
+  margin-top: 16px !important;
+}
+
+/* ==========================================================================
+   Scrollbar
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a0aec0;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  #grp-content {
+    padding: 12px !important;
+  }
+
+  .grp-module h2 {
+    padding: 12px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  input[type="text"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  #grp-header,
+  #grp-navigation,
+  .grp-object-tools,
+  #grp-footer {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+  }
+}

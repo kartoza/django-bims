@@ -1,0 +1,248 @@
+# SPDX-FileCopyrightText: Kartoza
+# SPDX-License-Identifier: AGPL-3.0
+#
+# MkDocs configuration for Django BIMS documentation
+#
+# Made with love by Kartoza | https://kartoza.com
+
+site_name: Django BIMS Documentation
+site_url: https://kartoza.github.io/django-bims/
+site_author: Kartoza
+site_description: >-
+  Comprehensive documentation for Django BIMS - Biodiversity Information
+  Management System. Developer guides, API reference, deployment instructions,
+  and more.
+
+repo_name: kartoza/django-bims
+repo_url: https://github.com/kartoza/django-bims
+edit_uri: edit/main/mkdocs/
+
+copyright: |
+  Made with &hearts; by <a href="https://kartoza.com">Kartoza</a> |
+  <a href="https://github.com/sponsors/kartoza">Donate!</a> |
+  <a href="https://github.com/kartoza/django-bims">GitHub</a>
+
+theme:
+  name: material
+  custom_dir: mkdocs/overrides
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  features:
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)|&[lg]t;'
+  - minify:
+      minify_html: true
+  - git-revision-date-localized:
+      enable_creation_date: true
+  - mermaid2
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kartoza/django-bims
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/kartaborishov
+  generator: false
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: kartoza
+      repo: django-bims
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - User Guide:
+    - user-guide/index.md
+    - Map Interface: user-guide/map-interface.md
+    - Site Management: user-guide/site-management.md
+    - Data Entry: user-guide/data-entry.md
+    - Taxa Management: user-guide/taxa-management.md
+    - Search & Filtering: user-guide/search-filtering.md
+    - Downloads & Reports: user-guide/downloads-reports.md
+  - Administrator Guide:
+    - admin-guide/index.md
+    - Daily Tasks: admin-guide/daily-tasks.md
+    - User Management: admin-guide/user-management.md
+    - Taxon Groups: admin-guide/taxon-groups.md
+    - Data Validation: admin-guide/data-validation.md
+    - Backups & Recovery: admin-guide/backups-recovery.md
+    - Performance Monitoring: admin-guide/performance-monitoring.md
+  - Developer Guide:
+    - developer-guide/index.md
+    - Development Setup:
+      - developer-guide/setup/index.md
+      - Nix Environment: developer-guide/setup/nix-environment.md
+      - Docker Setup: developer-guide/setup/docker-setup.md
+      - Pre-commit Hooks: developer-guide/setup/pre-commit.md
+      - IDE Configuration: developer-guide/setup/ide-configuration.md
+    - Architecture:
+      - developer-guide/architecture/index.md
+      - System Overview: developer-guide/architecture/system-overview.md
+      - Software Architecture: developer-guide/architecture/software-architecture.md
+      - Multi-tenancy: developer-guide/architecture/multi-tenancy.md
+      - Database Design: developer-guide/architecture/database-design.md
+    - API Reference:
+      - developer-guide/api/index.md
+      - Authentication: developer-guide/api/authentication.md
+      - Sites API: developer-guide/api/sites.md
+      - Records API: developer-guide/api/records.md
+      - Taxa API: developer-guide/api/taxa.md
+      - Surveys API: developer-guide/api/surveys.md
+      - Downloads API: developer-guide/api/downloads.md
+    - Frontend:
+      - developer-guide/frontend/index.md
+      - React Components: developer-guide/frontend/react-components.md
+      - Chakra UI Theme: developer-guide/frontend/chakra-theme.md
+      - MapLibre Integration: developer-guide/frontend/maplibre.md
+      - State Management: developer-guide/frontend/state-management.md
+    - Backend:
+      - developer-guide/backend/index.md
+      - Django Models: developer-guide/backend/models.md
+      - ViewSets & Serializers: developer-guide/backend/viewsets.md
+      - Celery Tasks: developer-guide/backend/celery-tasks.md
+      - Management Commands: developer-guide/backend/management-commands.md
+    - Testing:
+      - developer-guide/testing/index.md
+      - Unit Tests: developer-guide/testing/unit-tests.md
+      - Integration Tests: developer-guide/testing/integration-tests.md
+      - E2E Tests: developer-guide/testing/e2e-tests.md
+    - Workflows:
+      - developer-guide/workflows/index.md
+      - Git Workflow: developer-guide/workflows/git-workflow.md
+      - Code Review: developer-guide/workflows/code-review.md
+      - Release Process: developer-guide/workflows/release-process.md
+  - Database Schema:
+    - schema/index.md
+    - Core Models:
+      - schema/core/index.md
+      - LocationSite: schema/core/location-site.md
+      - Taxonomy: schema/core/taxonomy.md
+      - BiologicalCollectionRecord: schema/core/biological-record.md
+      - Survey: schema/core/survey.md
+      - TaxonGroup: schema/core/taxon-group.md
+    - Reference Models:
+      - schema/reference/index.md
+      - IUCNStatus: schema/reference/iucn-status.md
+      - Endemism: schema/reference/endemism.md
+      - SourceReference: schema/reference/source-reference.md
+      - Boundary: schema/reference/boundary.md
+    - User Models:
+      - schema/user/index.md
+      - Profile: schema/user/profile.md
+      - UserBoundary: schema/user/user-boundary.md
+    - Full ER Diagram: schema/full-er-diagram.md
+  - Deployment:
+    - deployment/index.md
+    - Production Deployment:
+      - deployment/production/index.md
+      - NixOS Server: deployment/production/nixos-server.md
+      - Docker Compose: deployment/production/docker-compose.md
+      - Kubernetes: deployment/production/kubernetes.md
+    - Development Deployment:
+      - deployment/development/index.md
+      - Local Setup: deployment/development/local-setup.md
+      - CI/CD: deployment/development/cicd.md
+    - Environment Variables: deployment/environment-variables.md
+    - SSL & Security: deployment/ssl-security.md
+  - Management Commands:
+    - commands/index.md
+    - Data Commands:
+      - commands/data/load-dummy-data.md
+      - commands/data/import-taxa.md
+      - commands/data/export-data.md
+    - Maintenance Commands:
+      - commands/maintenance/clear-cache.md
+      - commands/maintenance/reindex.md
+      - commands/maintenance/cleanup.md
+    - Admin Commands:
+      - commands/admin/create-tenant.md
+      - commands/admin/migrate-tenant.md
+  - Contributing:
+    - contributing/index.md
+    - Code of Conduct: contributing/code-of-conduct.md
+    - Development Guidelines: contributing/development-guidelines.md
+    - Documentation: contributing/documentation.md
+  - Changelog: changelog.md
+  - Support:
+    - support/index.md
+    - FAQ: support/faq.md
+    - Troubleshooting: support/troubleshooting.md
+    - Contact: support/contact.md

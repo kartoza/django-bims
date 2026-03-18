@@ -174,6 +174,13 @@ if not TESTING and not on_travis:
 
 INSTALLED_APPS = list(SHARED_APPS) + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
+# Add drf-spectacular apps if available
+try:
+    import drf_spectacular  # noqa
+    INSTALLED_APPS += ['drf_spectacular', 'drf_spectacular_sidecar']
+except ImportError:
+    pass
+
 TENANT_MODEL = "tenants.Client"
 TENANT_DOMAIN_MODEL = "tenants.Domain"
 
@@ -412,8 +419,17 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
-    ]
+    ],
 }
+
+# Configure drf-spectacular if available
+try:
+    import drf_spectacular  # noqa
+    REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
+    from bims.api.v1.schema import SPECTACULAR_SETTINGS  # noqa
+except ImportError:
+    # drf-spectacular not installed, use default schema class
+    pass
 
 SELENIUM_DRIVER = os.environ.get(
     'SELENIUM_DRIVER',
