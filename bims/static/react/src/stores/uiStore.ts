@@ -39,6 +39,7 @@ interface UIState {
   sidebarPosition: 'left' | 'right';
   theme: 'light' | 'dark' | 'system';
   compactMode: boolean;
+  is3DMap: boolean;
 
   // Selection context
   selectedEntityId: number | null;
@@ -64,6 +65,8 @@ interface UIState {
   setSidebarPosition: (position: 'left' | 'right') => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   toggleCompactMode: () => void;
+  toggle3DMap: () => void;
+  set3DMap: (is3D: boolean) => void;
 
   selectEntity: (id: number | null, type: 'site' | 'record' | 'taxon' | null) => void;
   clearSelection: () => void;
@@ -83,6 +86,7 @@ const initialState = {
   sidebarPosition: 'left' as const,
   theme: 'light' as const,
   compactMode: false,
+  is3DMap: false,
   selectedEntityId: null,
   selectedEntityType: null,
 };
@@ -176,6 +180,10 @@ export const useUIStore = create<UIState>()(
 
         toggleCompactMode: () => set({ compactMode: !get().compactMode }),
 
+        toggle3DMap: () => set({ is3DMap: !get().is3DMap }),
+
+        set3DMap: (is3D) => set({ is3DMap: is3D }),
+
         selectEntity: (id, type) =>
           set({
             selectedEntityId: id,
@@ -198,6 +206,7 @@ export const useUIStore = create<UIState>()(
           theme: state.theme,
           compactMode: state.compactMode,
           panelWidth: state.panelWidth,
+          is3DMap: state.is3DMap,
         }),
       }
     ),

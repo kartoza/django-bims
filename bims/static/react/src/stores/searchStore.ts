@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * Zustand store for search state management.
+ * Filters are applied reactively with debouncing.
  *
  * Made with love by Kartoza | https://kartoza.com
  */
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import type {
   SearchFilters,
   BiologicalCollectionRecord,
@@ -57,6 +58,9 @@ interface SearchState {
   // Computed
   activeFilterCount: number;
 
+  // Version for reactive updates (increments on filter change)
+  filterVersion: number;
+
   // Actions
   setQuery: (query: string) => void;
   setFilter: (key: string, value: unknown) => void;
@@ -80,6 +84,9 @@ interface SearchState {
   setSortOrder: (order: 'asc' | 'desc') => void;
 
   reset: () => void;
+
+  // Get current filter params for API calls
+  getFilterParams: () => Record<string, unknown>;
 }
 
 const initialFilters: SearchFilters = {};
@@ -110,6 +117,7 @@ const initialState = {
   sortBy: 'collection_date',
   sortOrder: 'desc' as const,
   activeFilterCount: 0,
+  filterVersion: 0,
 };
 
 // Helper to count active filters
@@ -140,7 +148,7 @@ const buildApiParams = (
   }
 
   if (filters.taxonGroups && filters.taxonGroups.length > 0) {
-    params.taxon_group = filters.taxonGroups.join(',');
+    params.taxon_group = filters.taxonGroups[0]; // Use first group for now
   }
 
   if (filters.yearFrom) {
@@ -179,143 +187,180 @@ const buildApiParams = (
 };
 
 export const useSearchStore = create<SearchState>()(
-  devtools(
-    (set, get) => ({
-      ...initialState,
+  subscribeWithSelector(
+    devtools(
+      (set, get) => ({
+        ...initialState,
 
-      setQuery: (query) => set({ query }),
+        setQuery: (query) => {
+          set({ query, page: 1, filterVersion: get().filterVersion + 1 });
+        },
 
-      setFilter: (key, value) => {
-        const filters = { ...get().filters };
-        if (value === undefined || value === '' || value === null) {
-          delete filters[key];
-        } else if (Array.isArray(value) && value.length === 0) {
-          delete filters[key];
-        } else {
-          filters[key] = value as SearchFilters[keyof SearchFilters];
-        }
+        setFilter: (key, value) => {
+          const filters = { ...get().filters };
+          if (value === undefined || value === '' || value === null) {
+            delete filters[key];
+          } else if (Array.isArray(value) && value.length === 0) {
+            delete filters[key];
+          } else {
+            filters[key] = value as SearchFilters[keyof SearchFilters];
+          }
 
-        const activeFilters = Object.keys(filters).filter((k) => {
-          const v = filters[k];
-          if (v === undefined || v === null || v === '') return false;
-          if (Array.isArray(v) && v.length === 0) return false;
-          return true;
-        });
-
-        set({
-          filters,
-          activeFilters,
-          activeFilterCount: countActiveFilters(filters),
-          page: 1,
-        });
-      },
-
-      setFilters: (newFilters) => {
-        const filters = { ...get().filters, ...newFilters };
-        const activeFilters = Object.keys(filters).filter((k) => {
-          const v = filters[k];
-          if (v === undefined || v === null || v === '') return false;
-          if (Array.isArray(v) && v.length === 0) return false;
-          return true;
-        });
-        set({
-          filters,
-          activeFilters,
-          activeFilterCount: countActiveFilters(filters),
-          page: 1,
-        });
-      },
-
-      clearFilter: (key) => {
-        const filters = { ...get().filters };
-        delete filters[key];
-        const activeFilters = Object.keys(filters).filter((k) => {
-          const v = filters[k];
-          if (v === undefined || v === null || v === '') return false;
-          if (Array.isArray(v) && v.length === 0) return false;
-          return true;
-        });
-        set({
-          filters,
-          activeFilters,
-          activeFilterCount: countActiveFilters(filters),
-          page: 1,
-        });
-      },
-
-      clearFilters: () =>
-        set({
-          query: '',
-          filters: initialFilters,
-          activeFilters: [],
-          activeFilterCount: 0,
-          page: 1,
-        }),
-
-      clearAllFilters: () =>
-        set({
-          query: '',
-          filters: initialFilters,
-          activeFilters: [],
-          activeFilterCount: 0,
-          page: 1,
-        }),
-
-      search: async () => {
-        const { query, filters, page, pageSize } = get();
-        set({ isLoading: true, error: null });
-
-        try {
-          const params = buildApiParams(query, filters, page, pageSize);
-          const response = await apiClient.get<{
-            data: BiologicalRecord[];
-            meta: { count: number; total_pages: number };
-          }>('records/', { params });
-
-          const data = response.data?.data || [];
-          const meta = response.data?.meta || { count: 0, total_pages: 0 };
+          const activeFilters = Object.keys(filters).filter((k) => {
+            const v = filters[k];
+            if (v === undefined || v === null || v === '') return false;
+            if (Array.isArray(v) && v.length === 0) return false;
+            return true;
+          });
 
           set({
-            results: data,
-            totalCount: meta.count,
-            totalPages: meta.total_pages,
-            isLoading: false,
+            filters,
+            activeFilters,
+            activeFilterCount: countActiveFilters(filters),
+            page: 1,
+            filterVersion: get().filterVersion + 1,
           });
-        } catch (error) {
-          console.error('Search failed:', error);
+        },
+
+        setFilters: (newFilters) => {
+          const filters = { ...get().filters, ...newFilters };
+          const activeFilters = Object.keys(filters).filter((k) => {
+            const v = filters[k];
+            if (v === undefined || v === null || v === '') return false;
+            if (Array.isArray(v) && v.length === 0) return false;
+            return true;
+          });
           set({
-            error: error instanceof Error ? error.message : 'Search failed',
-            isLoading: false,
+            filters,
+            activeFilters,
+            activeFilterCount: countActiveFilters(filters),
+            page: 1,
+            filterVersion: get().filterVersion + 1,
           });
-        }
-      },
+        },
 
-      setResults: (results) =>
-        set({ fullResults: { ...get().fullResults, ...results } }),
+        clearFilter: (key) => {
+          const filters = { ...get().filters };
+          delete filters[key];
+          const activeFilters = Object.keys(filters).filter((k) => {
+            const v = filters[k];
+            if (v === undefined || v === null || v === '') return false;
+            if (Array.isArray(v) && v.length === 0) return false;
+            return true;
+          });
+          set({
+            filters,
+            activeFilters,
+            activeFilterCount: countActiveFilters(filters),
+            page: 1,
+            filterVersion: get().filterVersion + 1,
+          });
+        },
 
-      setLoading: (loading) => set({ isLoading: loading }),
+        clearFilters: () =>
+          set({
+            query: '',
+            filters: initialFilters,
+            activeFilters: [],
+            activeFilterCount: 0,
+            page: 1,
+            filterVersion: get().filterVersion + 1,
+          }),
 
-      setError: (error) => set({ error }),
+        clearAllFilters: () =>
+          set({
+            query: '',
+            filters: initialFilters,
+            activeFilters: [],
+            activeFilterCount: 0,
+            page: 1,
+            filterVersion: get().filterVersion + 1,
+          }),
 
-      setPage: (page) => set({ page }),
+        search: async () => {
+          const { query, filters, page, pageSize } = get();
+          set({ isLoading: true, error: null });
 
-      setPageSize: (pageSize) => set({ pageSize, page: 1 }),
+          try {
+            const params = buildApiParams(query, filters, page, pageSize);
+            const response = await apiClient.get<{
+              data: BiologicalRecord[];
+              meta: { count: number; total_pages: number };
+            }>('records/', { params });
 
-      setTotalPages: (totalPages) => set({ totalPages }),
+            const data = response.data?.data || [];
+            const meta = response.data?.meta || { count: 0, total_pages: 0 };
 
-      toggleSearchPanel: () =>
-        set({ isSearchPanelOpen: !get().isSearchPanelOpen }),
+            set({
+              results: data,
+              totalCount: meta.count,
+              totalPages: meta.total_pages,
+              isLoading: false,
+            });
+          } catch (error) {
+            console.error('Search failed:', error);
+            set({
+              error: error instanceof Error ? error.message : 'Search failed',
+              isLoading: false,
+            });
+          }
+        },
 
-      setActiveTab: (tab) => set({ activeTab: tab }),
+        setResults: (results) =>
+          set({ fullResults: { ...get().fullResults, ...results } }),
 
-      setSortBy: (field) => set({ sortBy: field }),
+        setLoading: (loading) => set({ isLoading: loading }),
 
-      setSortOrder: (order) => set({ sortOrder: order }),
+        setError: (error) => set({ error }),
 
-      reset: () => set(initialState),
-    }),
-    { name: 'SearchStore' }
+        setPage: (page) => {
+          set({ page, filterVersion: get().filterVersion + 1 });
+        },
+
+        setPageSize: (pageSize) => {
+          set({ pageSize, page: 1, filterVersion: get().filterVersion + 1 });
+        },
+
+        setTotalPages: (totalPages) => set({ totalPages }),
+
+        toggleSearchPanel: () =>
+          set({ isSearchPanelOpen: !get().isSearchPanelOpen }),
+
+        setActiveTab: (tab) => set({ activeTab: tab }),
+
+        setSortBy: (field) => set({ sortBy: field }),
+
+        setSortOrder: (order) => set({ sortOrder: order }),
+
+        reset: () => set(initialState),
+
+        getFilterParams: () => {
+          const { query, filters, page, pageSize } = get();
+          return buildApiParams(query, filters, page, pageSize);
+        },
+      }),
+      { name: 'SearchStore' }
+    )
   )
+);
+
+// Debounce timer
+let searchDebounceTimer: NodeJS.Timeout | null = null;
+
+// Subscribe to filterVersion changes and trigger search with debounce
+useSearchStore.subscribe(
+  (state) => state.filterVersion,
+  (filterVersion) => {
+    // Clear existing timer
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+    }
+
+    // Set new debounced search
+    searchDebounceTimer = setTimeout(() => {
+      useSearchStore.getState().search();
+    }, 300); // 300ms debounce
+  }
 );
 
 export default useSearchStore;

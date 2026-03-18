@@ -16,21 +16,23 @@ import MapControls from '../components/map/MapControls';
 import MapLegend from '../components/map/MapLegend';
 import { SearchPanel } from '../components/search';
 import { useUIStore } from '../stores/uiStore';
+import { useSearchStore } from '../stores/searchStore';
 import { SiteDetailPanel } from '../components/panels/SiteDetailPanel';
 import { TaxonDetailPanel } from '../components/panels/TaxonDetailPanel';
 import { apiClient } from '../api/client';
 import type { BiologicalRecord } from '../types';
 import { Map as MapLibreMap } from 'maplibre-gl';
 
-// Site point format from API: [uuid, longitude, latitude]
-type SitePoint = [string, number, number];
+// Site point format from API: [uuid, longitude, latitude, record_count]
+type SitePoint = [string, number, number, number];
 
 const MapPage: React.FC = () => {
   const mapRef = useRef<DeckGLMapRef>(null);
   const { siteId, taxonId } = useParams<{ siteId?: string; taxonId?: string }>();
   const [searchParams] = useSearchParams();
   const toast = useToast();
-  const { activePanel, setActivePanel } = useUIStore();
+  const { activePanel, setActivePanel, is3DMap } = useUIStore();
+  const { filters, filterVersion } = useSearchStore();
 
   // Local state
   const [isLoading, setIsLoading] = useState(false);
@@ -43,8 +45,8 @@ const MapPage: React.FC = () => {
     [number, number, number, number] | null
   >(null);
 
-  // Get current taxon group filter from search params
-  const taxonGroupFilter = searchParams.get('taxon_group');
+  // Get taxon group from search store filters
+  const taxonGroupFilter = filters.taxonGroups?.[0] || searchParams.get('taxon_group');
 
   // Handle map ready
   const handleMapReady = useCallback((map: MapLibreMap) => {
@@ -102,7 +104,7 @@ const MapPage: React.FC = () => {
     []
   );
 
-  // Load minimal site points when map is ready
+  // Load minimal site points when map is ready or filters change
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
 
@@ -111,7 +113,7 @@ const MapPage: React.FC = () => {
       try {
         const params: Record<string, string> = {};
         if (taxonGroupFilter) {
-          params.taxon_group = taxonGroupFilter;
+          params.taxon_group = String(taxonGroupFilter);
         }
 
         const response = await apiClient.get<{
@@ -121,9 +123,6 @@ const MapPage: React.FC = () => {
 
         const points = response.data?.data || [];
         mapRef.current?.setPoints(points);
-
-        // Show count in console for debugging
-        console.log(`Loaded ${points.length} site points`);
       } catch (error) {
         console.error('Failed to load site points:', error);
         toast({
@@ -138,7 +137,14 @@ const MapPage: React.FC = () => {
     };
 
     loadSitePoints();
-  }, [isMapReady, taxonGroupFilter, toast]);
+  }, [isMapReady, taxonGroupFilter, filterVersion, toast]);
+
+  // Handle 3D toggle
+  useEffect(() => {
+    if (isMapReady && mapRef.current) {
+      mapRef.current.setIs3D(is3DMap);
+    }
+  }, [is3DMap, isMapReady]);
 
   // Handle URL parameters for deep linking
   useEffect(() => {
@@ -180,6 +186,7 @@ const MapPage: React.FC = () => {
       {/* deck.gl Map */}
       <DeckGLMap
         ref={mapRef}
+        is3D={is3DMap}
         onSiteSelect={handleSiteSelect}
         onBoundsChange={handleBoundsChange}
         onMapReady={handleMapReady}

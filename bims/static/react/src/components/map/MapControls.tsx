@@ -26,6 +26,7 @@ import {
   Search2Icon,
   SettingsIcon,
 } from '@chakra-ui/icons';
+import { FiBox, FiGrid } from 'react-icons/fi';
 import { useMap } from '../../providers/MapProvider';
 import { useMapStore, DrawMode } from '../../stores/mapStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -72,7 +73,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({
 const MapControls: React.FC = () => {
   const { zoomIn, zoomOut, resetView, isMapReady } = useMap();
   const { drawMode, setDrawMode } = useMapStore();
-  const { toggleSearchPanel, openModal, activePanel, setActivePanel } = useUIStore();
+  const { openModal, activePanel, setActivePanel, is3DMap, toggle3DMap } = useUIStore();
 
   const bgColor = useColorModeValue('white', 'gray.700');
 
@@ -111,6 +112,17 @@ const MapControls: React.FC = () => {
           icon={<RepeatIcon boxSize={3} />}
           label="Reset view"
           onClick={resetView}
+          isDisabled={!isMapReady}
+        />
+
+        <Divider borderColor="gray.200" />
+
+        {/* 3D Toggle */}
+        <ControlButton
+          icon={is3DMap ? <FiGrid size={14} /> : <FiBox size={14} />}
+          label={is3DMap ? 'Switch to 2D view' : 'Switch to 3D view'}
+          onClick={toggle3DMap}
+          isActive={is3DMap}
           isDisabled={!isMapReady}
         />
 

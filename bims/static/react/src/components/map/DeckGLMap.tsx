@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * deck.gl map component for rendering site points.
- * Uses minimal data (UUID + coordinates only) to prevent data exfiltration.
+ * Supports 2D scatter plot and 3D column extrusion based on record count.
+ * Uses minimal data (UUID + coordinates + count) to prevent data exfiltration.
  *
  * Made with love by Kartoza | https://kartoza.com
  */
@@ -18,17 +19,18 @@ import React, {
 import { Box } from '@chakra-ui/react';
 import maplibregl, { Map as MapLibreMap, NavigationControl, ScaleControl } from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { ScatterplotLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { bimsMapStyle, switchBasemap } from '../../styles/mapStyle';
 
-// Site point data format: [uuid, longitude, latitude]
-type SitePoint = [string, number, number];
+// Site point data format: [uuid, longitude, latitude, record_count]
+type SitePoint = [string, number, number, number];
 
 export interface DeckGLMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
+  is3D?: boolean;
   onSiteSelect?: (uuid: string | null) => void;
   onSiteHover?: (uuid: string | null) => void;
   onBoundsChange?: (bounds: [number, number, number, number]) => void;
@@ -42,6 +44,7 @@ export interface DeckGLMapRef {
   highlightSite: (uuid: string | null) => void;
   getBounds: () => [number, number, number, number] | null;
   switchBasemap: (sourceId: string) => void;
+  setIs3D: (is3D: boolean) => void;
 }
 
 const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
@@ -49,6 +52,7 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
     {
       initialCenter = [24.5, -29.0], // Default: South Africa
       initialZoom = 5,
+      is3D: initialIs3D = false,
       onSiteSelect,
       onSiteHover,
       onBoundsChange,
@@ -63,70 +67,127 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
     const [points, setPoints] = useState<SitePoint[]>([]);
     const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
     const [hoveredUuid, setHoveredUuid] = useState<string | null>(null);
+    const [is3D, setIs3D] = useState(initialIs3D);
+
+    // Calculate max record count for scaling extrusion
+    const maxRecordCount = points.reduce((max, p) => Math.max(max, p[3] || 1), 1);
 
     // Update deck.gl layers when points or selection changes
     const updateLayers = useCallback(() => {
       if (!deckOverlayRef.current) return;
 
-      const layers = [
-        new ScatterplotLayer<SitePoint>({
-          id: 'sites-layer',
-          data: points,
-          pickable: true,
-          opacity: 0.8,
-          stroked: true,
-          filled: true,
-          radiusScale: 1,
-          radiusMinPixels: 5,
-          radiusMaxPixels: 20,
-          lineWidthMinPixels: 1,
-          getPosition: (d: SitePoint) => [d[1], d[2]],
-          getRadius: (d: SitePoint) => {
-            if (d[0] === selectedUuid) return 12;
-            if (d[0] === hoveredUuid) return 10;
-            return 6;
-          },
-          getFillColor: (d: SitePoint) => {
-            if (d[0] === selectedUuid) return [255, 153, 0, 255]; // Orange for selected
-            if (d[0] === hoveredUuid) return [0, 150, 255, 255]; // Light blue for hovered
-            return [0, 115, 230, 200]; // Blue for normal
-          },
-          getLineColor: [255, 255, 255, 255],
-          getLineWidth: 2,
-          onClick: (info) => {
-            if (info.object) {
-              const uuid = info.object[0];
-              setSelectedUuid(uuid);
-              if (onSiteSelect) {
-                onSiteSelect(uuid);
-              }
-            } else {
-              setSelectedUuid(null);
-              if (onSiteSelect) {
-                onSiteSelect(null);
-              }
+      const commonProps = {
+        data: points,
+        pickable: true,
+        onClick: (info: { object?: SitePoint }) => {
+          if (info.object) {
+            const uuid = info.object[0];
+            setSelectedUuid(uuid);
+            if (onSiteSelect) {
+              onSiteSelect(uuid);
             }
-          },
-          onHover: (info) => {
-            const uuid = info.object ? info.object[0] : null;
-            setHoveredUuid(uuid);
-            if (onSiteHover) {
-              onSiteHover(uuid);
+          } else {
+            setSelectedUuid(null);
+            if (onSiteSelect) {
+              onSiteSelect(null);
             }
-            // Update cursor
-            if (mapRef.current) {
-              mapRef.current.getCanvas().style.cursor = info.object ? 'pointer' : '';
-            }
-          },
-          updateTriggers: {
-            getRadius: [selectedUuid, hoveredUuid],
-            getFillColor: [selectedUuid, hoveredUuid],
-          },
-        }),
-      ];
+          }
+        },
+        onHover: (info: { object?: SitePoint }) => {
+          const uuid = info.object ? info.object[0] : null;
+          setHoveredUuid(uuid);
+          if (onSiteHover) {
+            onSiteHover(uuid);
+          }
+          if (mapRef.current) {
+            mapRef.current.getCanvas().style.cursor = info.object ? 'pointer' : '';
+          }
+        },
+        updateTriggers: {
+          getElevation: [selectedUuid, hoveredUuid],
+          getFillColor: [selectedUuid, hoveredUuid],
+          getRadius: [selectedUuid, hoveredUuid],
+        },
+      };
+
+      let layers;
+
+      if (is3D) {
+        // 3D Column Layer - extrude based on record count
+        layers = [
+          new ColumnLayer<SitePoint>({
+            id: 'sites-3d-layer',
+            ...commonProps,
+            diskResolution: 12,
+            radius: 500, // meters
+            extruded: true,
+            elevationScale: 100,
+            getPosition: (d: SitePoint) => [d[1], d[2]],
+            getElevation: (d: SitePoint) => {
+              const count = d[3] || 1;
+              // Scale elevation logarithmically for better visualization
+              return Math.log10(count + 1) * 1000;
+            },
+            getFillColor: (d: SitePoint) => {
+              if (d[0] === selectedUuid) return [255, 153, 0, 255]; // Orange
+              if (d[0] === hoveredUuid) return [0, 150, 255, 255]; // Light blue
+              // Color based on record count (blue to red gradient)
+              const ratio = Math.min((d[3] || 1) / maxRecordCount, 1);
+              return [
+                Math.floor(50 + ratio * 200), // R: 50 -> 250
+                Math.floor(150 - ratio * 100), // G: 150 -> 50
+                Math.floor(230 - ratio * 180), // B: 230 -> 50
+                220,
+              ];
+            },
+            material: {
+              ambient: 0.4,
+              diffuse: 0.6,
+              shininess: 32,
+              specularColor: [60, 64, 70],
+            },
+          }),
+        ];
+      } else {
+        // 2D Scatter Plot Layer
+        layers = [
+          new ScatterplotLayer<SitePoint>({
+            id: 'sites-layer',
+            ...commonProps,
+            opacity: 0.8,
+            stroked: true,
+            filled: true,
+            radiusScale: 1,
+            radiusMinPixels: 4,
+            radiusMaxPixels: 30,
+            lineWidthMinPixels: 1,
+            getPosition: (d: SitePoint) => [d[1], d[2]],
+            getRadius: (d: SitePoint) => {
+              const baseRadius = Math.sqrt(d[3] || 1) * 2;
+              if (d[0] === selectedUuid) return baseRadius + 6;
+              if (d[0] === hoveredUuid) return baseRadius + 4;
+              return baseRadius;
+            },
+            getFillColor: (d: SitePoint) => {
+              if (d[0] === selectedUuid) return [255, 153, 0, 255]; // Orange
+              if (d[0] === hoveredUuid) return [0, 150, 255, 255]; // Light blue
+              // Color based on record count
+              const ratio = Math.min((d[3] || 1) / maxRecordCount, 1);
+              return [
+                Math.floor(50 + ratio * 200),
+                Math.floor(150 - ratio * 100),
+                Math.floor(230 - ratio * 180),
+                200,
+              ];
+            },
+            getLineColor: [255, 255, 255, 255],
+            getLineWidth: 2,
+          }),
+        ];
+      }
 
       deckOverlayRef.current.setProps({ layers });
-    }, [points, selectedUuid, hoveredUuid, onSiteSelect, onSiteHover]);
+    }, [points, selectedUuid, hoveredUuid, is3D, maxRecordCount, onSiteSelect, onSiteHover]);
 
     // Update layers when dependencies change
     useEffect(() => {
@@ -173,6 +234,18 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
           switchBasemap(mapRef.current, sourceId);
         }
       },
+
+      setIs3D: (newIs3D: boolean) => {
+        setIs3D(newIs3D);
+        // Enable/disable map pitch for 3D view
+        if (mapRef.current) {
+          if (newIs3D) {
+            mapRef.current.easeTo({ pitch: 60, bearing: -20, duration: 1000 });
+          } else {
+            mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+          }
+        }
+      },
     }));
 
     // Initialize map
@@ -182,7 +255,6 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
       const container = mapContainer.current;
       const rect = container.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) {
-        // Container not ready, will retry
         return;
       }
 
@@ -201,6 +273,8 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
         zoom: initialZoom,
         minZoom: 2,
         maxZoom: 18,
+        pitch: is3D ? 60 : 0,
+        bearing: is3D ? -20 : 0,
         attributionControl: true,
       });
 
@@ -228,7 +302,6 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
 
         setIsLoaded(true);
 
-        // Notify parent
         if (onMapReady) {
           onMapReady(map);
         }
@@ -247,11 +320,6 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
         }
       });
 
-      // Handle click on empty area
-      map.on('click', (e) => {
-        // This is handled by deck.gl layer onClick
-      });
-
       map.on('error', (e) => {
         console.error('Map error:', e);
       });
@@ -268,7 +336,7 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
           setIsLoaded(false);
         }
       };
-    }, [initialCenter, initialZoom, onBoundsChange, onMapReady]);
+    }, [initialCenter, initialZoom, is3D, onBoundsChange, onMapReady]);
 
     return (
       <Box
