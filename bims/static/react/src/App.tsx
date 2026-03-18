@@ -38,6 +38,7 @@ const HarvestPage = lazy(() => import('./pages/HarvestPage'));
 const SummaryReportPage = lazy(() => import('./pages/SummaryReportPage'));
 const VisualizationLayersPage = lazy(() => import('./pages/VisualizationLayersPage'));
 const ContextLayersPage = lazy(() => import('./pages/ContextLayersPage'));
+const AnalyticsDashboardPage = lazy(() => import('./pages/AnalyticsDashboardPage'));
 
 // Placeholder for pages not yet implemented
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
@@ -168,6 +169,9 @@ const App: React.FC = () => {
                   <Route path="/validate/sites" element={<ValidationPage />} />
                   <Route path="/validate/records" element={<ValidationPage />} />
                   <Route path="/validate/taxa" element={<ValidationPage />} />
+
+                  {/* Analytics */}
+                  <Route path="/analytics" element={<AnalyticsDashboardPage />} />
 
                   {/* Admin pages */}
                   <Route path="/admin/taxa" element={<TaxaManagementPage />} />

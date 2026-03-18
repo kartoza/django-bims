@@ -61,6 +61,7 @@
     "react-confirm-alert": "^2.7.0",
     "react-dom": "^18.3.1",
     "react-easy-sort": "^1.6.0",
+    "react-icons": "^5.6.0",
     "react-rnd": "^10.3.4",
     "react-router": "^7.12.0",
     "react-router-dom": "^7.12.0",
