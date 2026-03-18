@@ -23,6 +23,8 @@ from bims.api.v1.viewsets.tasks import TaskStatusViewSet
 from bims.api.v1.viewsets.auth import AuthViewSet
 from bims.api.v1.viewsets.taxon_proposals import TaxonProposalViewSet
 from bims.api.v1.viewsets.taxa_management import TaxaManagementViewSet
+from bims.api.v1.viewsets.platform import PlatformViewSet
+from bims.api.v1.viewsets.autocomplete import AutocompleteViewSet
 
 app_name = "api-v1"
 
@@ -51,6 +53,12 @@ router.register(r"auth", AuthViewSet, basename="auth")
 # Taxa management (proposals, GBIF, batch operations)
 router.register(r"taxon-proposals", TaxonProposalViewSet, basename="taxon-proposal")
 router.register(r"taxa-management", TaxaManagementViewSet, basename="taxa-management")
+
+# Platform-wide statistics
+router.register(r"platform", PlatformViewSet, basename="platform")
+
+# Autocomplete endpoints
+router.register(r"autocomplete", AutocompleteViewSet, basename="autocomplete")
 
 urlpatterns = [
     # API endpoints

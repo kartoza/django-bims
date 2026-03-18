@@ -43,8 +43,6 @@ class BiologicalCollectionRecordListSerializer(serializers.ModelSerializer):
             "validated",
             "coordinates",
             "notes",
-            "created",
-            "modified",
         ]
         read_only_fields = fields
 

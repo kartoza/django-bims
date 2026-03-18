@@ -15,10 +15,13 @@ import {
   InputGroup,
   InputLeftElement,
   Box,
+  HStack,
+  Icon,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
 import { useSearchStore } from '../../../stores/searchStore';
 import { apiClient } from '../../../api/client';
+import { getTaxonGroupIcon } from '../../icons';
 
 interface TaxonGroup {
   id: number;
@@ -106,18 +109,24 @@ export const TaxonGroupFilter: React.FC = () => {
       <Box maxH="200px" overflow="auto">
         <CheckboxGroup value={selectedGroups.map(String)} onChange={handleChange}>
           <VStack spacing={2} align="stretch">
-            {filteredGroups.map((group) => (
-              <Checkbox key={group.id} value={String(group.id)} size="sm">
-                <Text fontSize="sm" noOfLines={1}>
-                  {group.name}
-                  {group.record_count !== undefined && (
-                    <Text as="span" color="gray.500" ml={1}>
-                      ({group.record_count.toLocaleString()})
+            {filteredGroups.map((group) => {
+              const GroupIcon = getTaxonGroupIcon(group.name);
+              return (
+                <Checkbox key={group.id} value={String(group.id)} size="sm">
+                  <HStack spacing={2}>
+                    <Icon as={GroupIcon} boxSize={4} color="brand.600" />
+                    <Text fontSize="sm" noOfLines={1}>
+                      {group.name}
+                      {group.record_count !== undefined && (
+                        <Text as="span" color="gray.500" ml={1}>
+                          ({group.record_count.toLocaleString()})
+                        </Text>
+                      )}
                     </Text>
-                  )}
-                </Text>
-              </Checkbox>
-            ))}
+                  </HStack>
+                </Checkbox>
+              );
+            })}
           </VStack>
         </CheckboxGroup>
       </Box>

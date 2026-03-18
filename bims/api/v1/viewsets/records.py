@@ -68,7 +68,7 @@ class BiologicalCollectionRecordViewSet(StandardModelViewSet):
         queryset = super().get_queryset()
 
         # Order by collection date descending by default
-        return queryset.order_by("-collection_date", "-created")
+        return queryset.order_by("-collection_date", "-id")
 
     @action(detail=False, methods=["get"])
     def summary(self, request):
@@ -332,4 +332,137 @@ class BiologicalCollectionRecordViewSet(StandardModelViewSet):
         return success_response(
             data=list(taxa_with_records),
             meta={"total_taxa": len(taxa_with_records)},
+        )
+
+    @action(detail=False, methods=["get"], url_path="filter-summary")
+    def filter_summary(self, request):
+        """
+        Get summary statistics for the current filter including biodiversity breakdown.
+
+        Returns:
+        - Total sites, occurrences, taxa
+        - Biodiversity data grouped by taxon module (Fish, Invertebrates, Algae etc.)
+        - Origin, endemism, and conservation status breakdowns per module
+        """
+        from django.db.models import F, Value, Case, When, CharField
+        from bims.models import TaxonGroup
+        from bims.enums import TaxonomicGroupCategory
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Get overall summary
+        total_occurrences = queryset.count()
+        total_sites = queryset.values("site").distinct().count()
+        total_taxa = queryset.values("taxonomy").distinct().count()
+
+        # Date range
+        date_range = queryset.aggregate(
+            earliest=Min("collection_date"),
+            latest=Max("collection_date"),
+        )
+
+        # Get biodiversity breakdown by module
+        modules = TaxonGroup.objects.filter(
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name
+        ).order_by('display_order')
+
+        biodiversity_data = {}
+
+        for module in modules:
+            module_records = queryset.filter(module_group=module)
+            module_count = module_records.count()
+
+            if module_count == 0:
+                continue
+
+            # Get origin breakdown
+            origin_counts = list(
+                module_records.annotate(
+                    origin_name=Case(
+                        When(taxonomy__origin__isnull=True, then=Value('Unknown')),
+                        default=F('taxonomy__origin__category'),
+                        output_field=CharField()
+                    )
+                ).values('origin_name').annotate(count=Count('id')).order_by('-count')
+            )
+
+            # Get endemism breakdown
+            endemism_counts = list(
+                module_records.annotate(
+                    endemism_name=Case(
+                        When(taxonomy__endemism__isnull=False, then=F('taxonomy__endemism__name')),
+                        default=Value('Unknown'),
+                        output_field=CharField()
+                    )
+                ).values('endemism_name').annotate(count=Count('id')).order_by('-count')
+            )
+
+            # Get conservation status breakdown
+            cons_status_counts = list(
+                module_records.annotate(
+                    iucn_category=Case(
+                        When(
+                            taxonomy__iucn_status__isnull=False,
+                            then=F('taxonomy__iucn_status__category')
+                        ),
+                        default=Value('NE'),
+                        output_field=CharField()
+                    )
+                ).values('iucn_category').annotate(count=Count('id')).order_by('-count')
+            )
+
+            # Get module icon URL
+            icon_url = None
+            if module.logo:
+                icon_url = module.logo.name
+
+            biodiversity_data[module.name] = {
+                "module_id": module.id,
+                "icon": icon_url,
+                "occurrences": module_count,
+                "number_of_sites": module_records.values("site").distinct().count(),
+                "number_of_taxa": module_records.values("taxonomy").distinct().count(),
+                "origin": [{"name": o["origin_name"], "count": o["count"]} for o in origin_counts],
+                "endemism": [{"name": e["endemism_name"], "count": e["count"]} for e in endemism_counts],
+                "cons_status": [{"name": c["iucn_category"], "count": c["count"]} for c in cons_status_counts],
+            }
+
+        # Get species list (top 20 by occurrence count)
+        species_list = list(
+            queryset.values(
+                "taxonomy__id",
+                "taxonomy__canonical_name",
+                "taxonomy__rank",
+            )
+            .annotate(
+                occurrence_count=Count("id"),
+                site_count=Count("site", distinct=True),
+            )
+            .order_by("-occurrence_count")[:20]
+        )
+
+        return success_response(
+            data={
+                "total_sites": total_sites,
+                "total_occurrences": total_occurrences,
+                "total_taxa": total_taxa,
+                "date_range": {
+                    "earliest": date_range["earliest"].isoformat() if date_range["earliest"] else None,
+                    "latest": date_range["latest"].isoformat() if date_range["latest"] else None,
+                },
+                "biodiversity_data": biodiversity_data,
+                "species_list": [
+                    {
+                        "id": s["taxonomy__id"],
+                        "name": s["taxonomy__canonical_name"],
+                        "rank": s["taxonomy__rank"],
+                        "occurrences": s["occurrence_count"],
+                        "sites": s["site_count"],
+                    }
+                    for s in species_list
+                ],
+            },
+            meta={
+                "module_count": len(biodiversity_data),
+            },
         )

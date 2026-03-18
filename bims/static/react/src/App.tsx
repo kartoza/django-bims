@@ -39,6 +39,11 @@ const SummaryReportPage = lazy(() => import('./pages/SummaryReportPage'));
 const VisualizationLayersPage = lazy(() => import('./pages/VisualizationLayersPage'));
 const ContextLayersPage = lazy(() => import('./pages/ContextLayersPage'));
 const AnalyticsDashboardPage = lazy(() => import('./pages/AnalyticsDashboardPage'));
+const SiteDashboardPage = lazy(() => import('./pages/SiteDashboardPage'));
+const SASSDashboardPage = lazy(() => import('./pages/SASSDashboardPage'));
+const WaterTemperatureDashboardPage = lazy(() => import('./pages/WaterTemperatureDashboardPage'));
+const PhysicoChemicalDashboardPage = lazy(() => import('./pages/PhysicoChemicalDashboardPage'));
+const BackupsManagementPage = lazy(() => import('./pages/BackupsManagementPage'));
 
 // Placeholder for pages not yet implemented
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
@@ -173,13 +178,19 @@ const App: React.FC = () => {
                   {/* Analytics */}
                   <Route path="/analytics" element={<AnalyticsDashboardPage />} />
 
+                  {/* Dashboard pages */}
+                  <Route path="/dashboard/site/:siteId" element={<SiteDashboardPage />} />
+                  <Route path="/dashboard/sass/:siteId" element={<SASSDashboardPage />} />
+                  <Route path="/dashboard/water-temperature/:siteId" element={<WaterTemperatureDashboardPage />} />
+                  <Route path="/dashboard/physico-chemical/:siteId" element={<PhysicoChemicalDashboardPage />} />
+
                   {/* Admin pages */}
                   <Route path="/admin/taxa" element={<TaxaManagementPage />} />
                   <Route path="/admin/dashboard" element={<DashboardSettingsPage />} />
                   <Route path="/admin/layers" element={<VisualizationLayersPage />} />
                   <Route path="/admin/context-layers" element={<ContextLayersPage />} />
                   <Route path="/admin/summary" element={<SummaryReportPage />} />
-                  <Route path="/admin/backups" element={<PlaceholderPage title="Backups Management" />} />
+                  <Route path="/admin/backups" element={<BackupsManagementPage />} />
 
                   {/* Harvest pages */}
                   <Route path="/harvest/gbif" element={<HarvestPage />} />

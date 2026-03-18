@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -53,7 +53,9 @@ import {
   AddIcon,
   DeleteIcon,
   ViewIcon,
+  RepeatIcon,
 } from '@chakra-ui/icons';
+import { useMapCache } from '../hooks/useMapCache';
 
 interface DashboardWidget {
   id: string;
@@ -81,6 +83,20 @@ const DashboardSettingsPage: React.FC = () => {
   const toast = useToast();
   const headerBg = useColorModeValue('brand.500', 'brand.600');
   const cardBg = useColorModeValue('white', 'gray.700');
+
+  // Map cache management
+  const {
+    stats: cacheStats,
+    isLoading: isCacheLoading,
+    refreshStats: refreshCacheStats,
+    clearLocalCache,
+    invalidateServerCache,
+  } = useMapCache();
+
+  // Refresh cache stats on mount
+  useEffect(() => {
+    refreshCacheStats();
+  }, [refreshCacheStats]);
 
   // Site branding settings
   const [branding, setBranding] = useState({
@@ -593,6 +609,92 @@ const DashboardSettingsPage: React.FC = () => {
                         <Switch colorScheme="brand" />
                       </FormControl>
                     </SimpleGrid>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              {/* Map Points Cache Management */}
+              <Card bg={cardBg} mt={6}>
+                <CardHeader>
+                  <HStack justify="space-between">
+                    <Heading size="md">Map Points Cache</Heading>
+                    <IconButton
+                      aria-label="Refresh stats"
+                      icon={<RepeatIcon />}
+                      size="sm"
+                      variant="ghost"
+                      onClick={refreshCacheStats}
+                      isLoading={isCacheLoading}
+                    />
+                  </HStack>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={4} align="stretch">
+                    <Text fontSize="sm" color="gray.600">
+                      Map points are cached on both the server and client to improve performance.
+                      Use these controls to manage the cache when data has been updated.
+                    </Text>
+
+                    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                      <Box p={3} bg="gray.50" borderRadius="md" textAlign="center">
+                        <Text fontSize="2xl" fontWeight="bold" color="brand.500">
+                          {cacheStats?.entryCount ?? '-'}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">Cached Queries</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md" textAlign="center">
+                        <Text fontSize="2xl" fontWeight="bold" color="green.500">
+                          {cacheStats?.totalPoints?.toLocaleString() ?? '-'}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">Cached Points</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md" textAlign="center">
+                        <Text fontSize="2xl" fontWeight="bold" color="blue.500">
+                          {cacheStats?.serverVersion ?? '-'}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">Server Version</Text>
+                      </Box>
+                      <Box p={3} bg="gray.50" borderRadius="md" textAlign="center">
+                        <Text fontSize="2xl" fontWeight="bold" color="orange.500">
+                          {cacheStats?.oldestEntry
+                            ? `${Math.round((Date.now() - cacheStats.oldestEntry) / 60000)}m`
+                            : '-'}
+                        </Text>
+                        <Text fontSize="xs" color="gray.500">Oldest Entry</Text>
+                      </Box>
+                    </SimpleGrid>
+
+                    <Divider />
+
+                    <HStack spacing={4}>
+                      <Button
+                        colorScheme="blue"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearLocalCache}
+                        isLoading={isCacheLoading}
+                      >
+                        Clear Local Cache
+                      </Button>
+                      <Tooltip label="Invalidates cache for all users. Requires staff permissions.">
+                        <Button
+                          colorScheme="red"
+                          size="sm"
+                          onClick={invalidateServerCache}
+                          isLoading={isCacheLoading}
+                        >
+                          Invalidate Server Cache
+                        </Button>
+                      </Tooltip>
+                    </HStack>
+
+                    <Alert status="info" variant="subtle" fontSize="sm">
+                      <AlertIcon />
+                      <Box>
+                        <Text fontWeight="medium">Cache Behavior</Text>
+                        <Text>Client cache has a 5-minute TTL. Server cache version changes trigger refetch.</Text>
+                      </Box>
+                    </Alert>
                   </VStack>
                 </CardBody>
               </Card>

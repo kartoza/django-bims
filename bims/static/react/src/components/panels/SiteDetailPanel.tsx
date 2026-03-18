@@ -3,44 +3,75 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * Site Detail Panel - Display detailed information about a location site
+ * Matches the original BIMS side panel structure with collapsible sections.
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Box,
   VStack,
   HStack,
   Heading,
   Text,
-  Badge,
-  Divider,
   IconButton,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatGroup,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
   Table,
-  Thead,
   Tbody,
   Tr,
-  Th,
   Td,
   Skeleton,
   SkeletonText,
   useColorModeValue,
   Button,
-  Link,
   Spinner,
+  Grid,
+  GridItem,
+  Image,
+  Tooltip,
 } from '@chakra-ui/react';
-import { CloseIcon, ExternalLinkIcon, ChevronLeftIcon } from '@chakra-ui/icons';
+import { CloseIcon, ChevronLeftIcon } from '@chakra-ui/icons';
+import { useNavigate } from 'react-router-dom';
+import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
 import { apiClient } from '../../api/client';
-import type { LocationSiteDetail, BiologicalRecord } from '../../types';
+
+// Register Chart.js components
+ChartJS.register(ArcElement, ChartTooltip, Legend);
+
+interface SiteDetailData {
+  id: number;
+  site_detail_info: {
+    site_code: string;
+    site_description: string;
+    site_coordinates: string;
+    ecosystem_type: string;
+  };
+  location_context: Record<string, string>;
+  biodiversity_data: Record<string, {
+    module: number;
+    icon: string;
+    occurrences: number;
+    number_of_taxa: number;
+    origin: Array<{ name: string; count: number; colour?: string }>;
+    endemism: Array<{ name: string; count: number; colour?: string }>;
+    cons_status: Array<{ name: string; count: number; colour?: string }>;
+  }>;
+  climate_data?: Record<string, {
+    title: string;
+    keys: string[];
+    values: number[];
+  }>;
+  sass_exist?: boolean;
+  water_temperature_exist?: boolean;
+  physico_chemical_exist?: boolean;
+  climate_exist?: boolean;
+  geometry?: string;
+}
 
 interface SiteDetailPanelProps {
   siteId: number;
@@ -48,73 +79,125 @@ interface SiteDetailPanelProps {
   onFlyTo?: (coords: [number, number], zoom?: number) => void;
 }
 
+// Chart colors matching the original BIMS
+const CHART_COLORS = [
+  '#8D2641', '#D7CD47', '#18A090', '#A2CE89', '#4E6440', '#525351',
+  '#641f30', '#E6E188', '#9D9739', '#618295', '#2C495A', '#39B2A3',
+];
+
+const MiniPieChart: React.FC<{
+  data: Array<{ name: string; count: number; colour?: string }>;
+  size?: number;
+}> = ({ data, size = 50 }) => {
+  if (!data || data.length === 0) {
+    return <Box w={`${size}px`} h={`${size}px`} bg="gray.100" borderRadius="full" />;
+  }
+
+  const chartData = {
+    labels: data.map(d => d.name),
+    datasets: [{
+      data: data.map(d => d.count),
+      backgroundColor: data.map((d, i) => d.colour || CHART_COLORS[i % CHART_COLORS.length]),
+      borderWidth: 0,
+    }],
+  };
+
+  const options = {
+    responsive: false,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true },
+    },
+  };
+
+  return (
+    <Box w={`${size}px`} h={`${size}px`}>
+      <Pie data={chartData} options={options} width={size} height={size} />
+    </Box>
+  );
+};
+
+const ChartLegend: React.FC<{
+  data: Array<{ name: string; count: number; colour?: string }>;
+}> = ({ data }) => {
+  if (!data || data.length === 0) return null;
+
+  return (
+    <VStack align="start" spacing={0} fontSize="xs">
+      {data.map((item, idx) => (
+        <HStack key={item.name} spacing={1}>
+          <Box
+            w="8px"
+            h="8px"
+            bg={item.colour || CHART_COLORS[idx % CHART_COLORS.length]}
+          />
+          <Text noOfLines={1} maxW="80px" title={item.name}>
+            {item.name}
+          </Text>
+        </HStack>
+      ))}
+    </VStack>
+  );
+};
+
 export const SiteDetailPanel: React.FC<SiteDetailPanelProps> = ({
   siteId,
   onClose,
   onFlyTo,
 }) => {
-  const [site, setSite] = useState<LocationSiteDetail | null>(null);
-  const [records, setRecords] = useState<BiologicalRecord[]>([]);
+  const navigate = useNavigate();
+  const [siteData, setSiteData] = useState<SiteDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingRecords, setIsLoadingRecords] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recordsPage, setRecordsPage] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const hasFetchedRef = useRef(false);
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const headerBg = useColorModeValue('gray.50', 'gray.700');
 
-  // Fetch site details
+  // Fetch site details from the original API endpoint
   useEffect(() => {
-    const fetchSite = async () => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
+    const fetchSiteDetail = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get<{ data: LocationSiteDetail }>(
-          `/api/v1/sites/${siteId}/`
+        // Use the original location-site-detail API endpoint
+        const response = await apiClient.get<SiteDetailData>(
+          `/location-site-detail/?siteId=${siteId}`,
+          { baseURL: '/api' } // Use the legacy API
         );
-        setSite(response.data?.data || null);
+        setSiteData(response.data);
 
         // Fly to site location
-        if (response.data?.data?.coordinates && onFlyTo) {
-          const { latitude, longitude } = response.data.data.coordinates;
-          onFlyTo([longitude, latitude], 14);
+        if (response.data?.site_detail_info?.site_coordinates && onFlyTo) {
+          const coords = response.data.site_detail_info.site_coordinates.split(',');
+          if (coords.length === 2) {
+            const lon = parseFloat(coords[0].trim());
+            const lat = parseFloat(coords[1].trim());
+            if (!isNaN(lon) && !isNaN(lat)) {
+              onFlyTo([lon, lat], 14);
+            }
+          }
         }
       } catch (err) {
+        console.error('Failed to load site details:', err);
         setError('Failed to load site details');
-        console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSite();
+    fetchSiteDetail();
   }, [siteId, onFlyTo]);
 
-  // Fetch site records
-  const fetchRecords = useCallback(async () => {
-    setIsLoadingRecords(true);
-    try {
-      const response = await apiClient.get<{
-        data: BiologicalRecord[];
-        meta: { count: number };
-      }>(`/api/v1/sites/${siteId}/records/`, {
-        params: { page: recordsPage, page_size: 10 },
-      });
-      setRecords(response.data?.data || []);
-      setTotalRecords(response.data?.meta?.count || 0);
-    } catch (err) {
-      console.error('Failed to load records:', err);
-    } finally {
-      setIsLoadingRecords(false);
-    }
-  }, [siteId, recordsPage]);
-
+  // Reset fetch ref when siteId changes
   useEffect(() => {
-    fetchRecords();
-  }, [fetchRecords]);
-
-  // Removed - handled by parent component
+    hasFetchedRef.current = false;
+  }, [siteId]);
 
   if (isLoading) {
     return (
@@ -123,7 +206,7 @@ export const SiteDetailPanel: React.FC<SiteDetailPanelProps> = ({
         right={0}
         top={0}
         bottom={0}
-        width="450px"
+        width="400px"
         bg={bgColor}
         borderLeft="1px"
         borderColor={borderColor}
@@ -141,14 +224,14 @@ export const SiteDetailPanel: React.FC<SiteDetailPanelProps> = ({
     );
   }
 
-  if (error || !site) {
+  if (error || !siteData) {
     return (
       <Box
         position="absolute"
         right={0}
         top={0}
         bottom={0}
-        width="450px"
+        width="400px"
         bg={bgColor}
         borderLeft="1px"
         borderColor={borderColor}
@@ -175,13 +258,15 @@ export const SiteDetailPanel: React.FC<SiteDetailPanelProps> = ({
     );
   }
 
+  const { site_detail_info, location_context, biodiversity_data, climate_data } = siteData;
+
   return (
     <Box
       position="absolute"
       right={0}
       top={0}
       bottom={0}
-      width="450px"
+      width="400px"
       bg={bgColor}
       borderLeft="1px"
       borderColor={borderColor}
@@ -192,7 +277,13 @@ export const SiteDetailPanel: React.FC<SiteDetailPanelProps> = ({
       overflow="hidden"
     >
       {/* Header */}
-      <HStack p={4} borderBottom="1px" borderColor={borderColor} justify="space-between">
+      <HStack
+        p={3}
+        bg={headerBg}
+        borderBottom="1px"
+        borderColor={borderColor}
+        justify="space-between"
+      >
         <HStack>
           <IconButton
             aria-label="Back"
@@ -201,264 +292,321 @@ export const SiteDetailPanel: React.FC<SiteDetailPanelProps> = ({
             size="sm"
             onClick={onClose}
           />
-          <VStack align="start" spacing={0}>
-            <Heading size="md" noOfLines={1}>
-              {site.name}
-            </Heading>
-            <Text fontSize="sm" color="gray.500">
-              {site.site_code}
-            </Text>
-          </VStack>
+          <Heading size="sm" noOfLines={1}>
+            {site_detail_info?.site_code || 'Site Details'}
+          </Heading>
         </HStack>
-        <HStack>
-          {site.validated && (
-            <Badge colorScheme="green">Validated</Badge>
-          )}
-          <IconButton
-            aria-label="Close"
-            icon={<CloseIcon />}
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-          />
-        </HStack>
+        <IconButton
+          aria-label="Close"
+          icon={<CloseIcon boxSize={3} />}
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+        />
       </HStack>
 
-      {/* Content */}
+      {/* Content - Collapsible Sections */}
       <Box flex={1} overflow="auto">
-        <Tabs size="sm" colorScheme="blue" isLazy>
-          <TabList px={4}>
-            <Tab>Overview</Tab>
-            <Tab>Records ({totalRecords})</Tab>
-            <Tab>Context</Tab>
-          </TabList>
+        <Accordion defaultIndex={[0, 1]} allowMultiple>
+          {/* Site Details Section */}
+          <AccordionItem border="none">
+            <AccordionButton bg={headerBg} _hover={{ bg: 'gray.100' }}>
+              <Box flex="1" textAlign="left" fontWeight="bold">
+                Site Details
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <Table size="sm" variant="simple">
+                <Tbody>
+                  {site_detail_info?.ecosystem_type && (
+                    <Tr>
+                      <Td fontWeight="medium" w="40%">Ecosystem Type</Td>
+                      <Td>{site_detail_info.ecosystem_type}</Td>
+                    </Tr>
+                  )}
+                  <Tr>
+                    <Td fontWeight="medium">Site Code</Td>
+                    <Td>{site_detail_info?.site_code}</Td>
+                  </Tr>
+                  {site_detail_info?.site_description && (
+                    <Tr>
+                      <Td fontWeight="medium">Site Description</Td>
+                      <Td>{site_detail_info.site_description}</Td>
+                    </Tr>
+                  )}
+                  <Tr>
+                    <Td fontWeight="medium">Site Coordinates</Td>
+                    <Td>{site_detail_info?.site_coordinates}</Td>
+                  </Tr>
+                  {/* Location Context */}
+                  {location_context && Object.entries(location_context).map(([key, value]) => (
+                    <Tr key={key}>
+                      <Td fontWeight="medium">{key}</Td>
+                      <Td>{value}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </AccordionPanel>
+          </AccordionItem>
 
-          <TabPanels>
-            {/* Overview Tab */}
-            <TabPanel>
-              <VStack spacing={4} align="stretch">
-                {/* Stats */}
-                <StatGroup>
-                  <Stat>
-                    <StatLabel>Records</StatLabel>
-                    <StatNumber>{totalRecords}</StatNumber>
-                  </Stat>
-                  <Stat>
-                    <StatLabel>Ecosystem</StatLabel>
-                    <StatNumber fontSize="md">
-                      {site.ecosystem_type || 'Unknown'}
-                    </StatNumber>
-                  </Stat>
-                </StatGroup>
+          {/* Biodiversity Data Section */}
+          <AccordionItem border="none">
+            <AccordionButton bg={headerBg} _hover={{ bg: 'gray.100' }}>
+              <Box flex="1" textAlign="left" fontWeight="bold">
+                Biodiversity Data
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              {biodiversity_data && Object.keys(biodiversity_data).length > 0 ? (
+                <VStack spacing={3} align="stretch">
+                  {/* Header Row */}
+                  <Grid
+                    templateColumns="60px 50px 55px 55px 55px 40px"
+                    gap={1}
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textAlign="center"
+                  >
+                    <GridItem></GridItem>
+                    <GridItem>Occur.</GridItem>
+                    <GridItem>Origin</GridItem>
+                    <GridItem>Endemic</GridItem>
+                    <GridItem>Cons.</GridItem>
+                    <GridItem>Taxa</GridItem>
+                  </Grid>
 
-                <Divider />
-
-                {/* Location Info */}
-                <Box>
-                  <Heading size="sm" mb={2}>
-                    Location
-                  </Heading>
-                  <Table size="sm" variant="simple">
-                    <Tbody>
-                      {site.coordinates && (
-                        <Tr>
-                          <Td fontWeight="medium">Coordinates</Td>
-                          <Td>
-                            {site.coordinates.latitude.toFixed(6)},{' '}
-                            {site.coordinates.longitude.toFixed(6)}
-                          </Td>
-                        </Tr>
-                      )}
-                      {site.river_name && (
-                        <Tr>
-                          <Td fontWeight="medium">River</Td>
-                          <Td>{site.river_name}</Td>
-                        </Tr>
-                      )}
-                      {site.location_type && (
-                        <Tr>
-                          <Td fontWeight="medium">Type</Td>
-                          <Td>{site.location_type.name}</Td>
-                        </Tr>
-                      )}
-                      {site.wetland_name && (
-                        <Tr>
-                          <Td fontWeight="medium">Wetland</Td>
-                          <Td>{site.wetland_name}</Td>
-                        </Tr>
-                      )}
-                    </Tbody>
-                  </Table>
-                </Box>
-
-                {site.site_description && (
-                  <>
-                    <Divider />
-                    <Box>
-                      <Heading size="sm" mb={2}>
-                        Description
-                      </Heading>
-                      <Text fontSize="sm">{site.site_description}</Text>
-                    </Box>
-                  </>
-                )}
-
-                {/* Ownership */}
-                {site.owner_name && (
-                  <>
-                    <Divider />
-                    <Box>
-                      <Heading size="sm" mb={2}>
-                        Ownership
-                      </Heading>
-                      <Text fontSize="sm">{site.owner_name}</Text>
-                      {site.land_owner_detail && (
-                        <Text fontSize="xs" color="gray.500">
-                          {site.land_owner_detail}
-                        </Text>
-                      )}
-                    </Box>
-                  </>
-                )}
-              </VStack>
-            </TabPanel>
-
-            {/* Records Tab */}
-            <TabPanel>
-              <VStack spacing={3} align="stretch">
-                {isLoadingRecords ? (
-                  <HStack justify="center" py={4}>
-                    <Spinner size="sm" />
-                    <Text>Loading records...</Text>
-                  </HStack>
-                ) : records.length === 0 ? (
-                  <Text color="gray.500" textAlign="center" py={4}>
-                    No records found for this site
-                  </Text>
-                ) : (
-                  <>
-                    {records.map((record) => (
-                      <Box
-                        key={record.id}
-                        p={3}
-                        borderRadius="md"
-                        border="1px"
-                        borderColor={borderColor}
-                        _hover={{ bg: 'gray.50' }}
+                  {/* Data Rows */}
+                  {Object.entries(biodiversity_data).map(([moduleName, moduleData]) => (
+                    <Box
+                      key={moduleName}
+                      borderBottom="1px"
+                      borderColor={borderColor}
+                      pb={2}
+                    >
+                      <Grid
+                        templateColumns="60px 50px 55px 55px 55px 40px"
+                        gap={1}
+                        alignItems="center"
                       >
-                        <HStack justify="space-between">
-                          <VStack align="start" spacing={0}>
-                            <Text fontWeight="bold" fontSize="sm">
-                              {record.taxon_name}
-                            </Text>
-                            <Text fontSize="xs" color="gray.500">
-                              {record.collection_date}
-                            </Text>
-                          </VStack>
-                          {record.abundance_number && (
-                            <Badge>{record.abundance_number}</Badge>
-                          )}
-                        </HStack>
-                        {record.collector_name && (
-                          <Text fontSize="xs" color="gray.500" mt={1}>
-                            Collector: {record.collector_name}
-                          </Text>
-                        )}
-                      </Box>
-                    ))}
+                        {/* Module Icon */}
+                        <GridItem>
+                          <Tooltip label={moduleName}>
+                            <Box>
+                              {moduleData.icon ? (
+                                <Image
+                                  src={`/uploaded/${moduleData.icon}`}
+                                  alt={moduleName}
+                                  boxSize="40px"
+                                  objectFit="contain"
+                                  fallback={
+                                    <Text fontSize="xs" noOfLines={1}>
+                                      {moduleName}
+                                    </Text>
+                                  }
+                                />
+                              ) : (
+                                <Text fontSize="xs" noOfLines={1}>
+                                  {moduleName}
+                                </Text>
+                              )}
+                            </Box>
+                          </Tooltip>
+                        </GridItem>
 
-                    {totalRecords > 10 && (
-                      <HStack justify="center" pt={2}>
+                        {/* Occurrences */}
+                        <GridItem textAlign="center">
+                          <Text fontSize="sm" fontWeight="medium">
+                            {moduleData.occurrences || 0}
+                          </Text>
+                        </GridItem>
+
+                        {/* Origin Chart */}
+                        <GridItem>
+                          <MiniPieChart data={moduleData.origin} size={45} />
+                        </GridItem>
+
+                        {/* Endemism Chart */}
+                        <GridItem>
+                          <MiniPieChart data={moduleData.endemism} size={45} />
+                        </GridItem>
+
+                        {/* Conservation Status Chart */}
+                        <GridItem>
+                          <MiniPieChart data={moduleData.cons_status} size={45} />
+                        </GridItem>
+
+                        {/* Number of Taxa */}
+                        <GridItem textAlign="center">
+                          <Text fontSize="sm" fontWeight="medium">
+                            {moduleData.number_of_taxa || 0}
+                          </Text>
+                        </GridItem>
+                      </Grid>
+
+                      {/* Action Buttons */}
+                      <HStack mt={2} spacing={2} justify="flex-end">
                         <Button
-                          size="sm"
-                          variant="outline"
-                          isDisabled={recordsPage === 1}
-                          onClick={() => setRecordsPage((p) => p - 1)}
+                          size="xs"
+                          colorScheme="red"
+                          variant="solid"
+                          onClick={() => {
+                            // Navigate to add record form (uses legacy routes for now)
+                            const name = moduleName.toLowerCase();
+                            let url = `/module-form/?siteId=${siteId}&module=${moduleData.module}`;
+                            if (name === 'fish') url = `/fish-form/?siteId=${siteId}`;
+                            else if (name === 'invertebrates') url = `/invert-form/?siteId=${siteId}`;
+                            else if (name === 'algae') url = `/algae-form/?siteId=${siteId}`;
+                            window.location.href = url;
+                          }}
                         >
-                          Previous
+                          + Add
                         </Button>
-                        <Text fontSize="sm" color="gray.500">
-                          Page {recordsPage}
-                        </Text>
                         <Button
-                          size="sm"
+                          size="xs"
+                          colorScheme="blue"
                           variant="outline"
-                          isDisabled={records.length < 10}
-                          onClick={() => setRecordsPage((p) => p + 1)}
+                          isDisabled={!moduleData.number_of_taxa}
+                          onClick={() => {
+                            // Navigate to React site dashboard with module filter
+                            navigate(`/dashboard/site/${siteId}?module=${moduleData.module}`);
+                          }}
                         >
-                          Next
+                          Dashboard &gt;&gt;
                         </Button>
                       </HStack>
-                    )}
-                  </>
-                )}
-              </VStack>
-            </TabPanel>
+                    </Box>
+                  ))}
 
-            {/* Context Tab */}
-            <TabPanel>
-              <VStack spacing={4} align="stretch">
-                {site.location_context &&
-                Object.keys(site.location_context).length > 0 ? (
-                  <Table size="sm" variant="simple">
-                    <Thead>
-                      <Tr>
-                        <Th>Property</Th>
-                        <Th>Value</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {Object.entries(site.location_context).map(
-                        ([key, value]) => (
-                          <Tr key={key}>
-                            <Td fontWeight="medium">{key}</Td>
-                            <Td>{String(value)}</Td>
-                          </Tr>
-                        )
-                      )}
-                    </Tbody>
-                  </Table>
-                ) : (
-                  <Text color="gray.500" textAlign="center">
-                    No context data available
-                  </Text>
-                )}
+                  {/* Summary Dashboard Button */}
+                  <Button
+                    size="sm"
+                    colorScheme="blue"
+                    width="100%"
+                    onClick={() => {
+                      // Navigate to React site dashboard
+                      navigate(`/dashboard/site/${siteId}`);
+                    }}
+                  >
+                    Summary Dashboard &gt;&gt;
+                  </Button>
 
-                {site.climate_data &&
-                  Object.keys(site.climate_data).length > 0 && (
-                    <>
-                      <Divider />
-                      <Heading size="sm">Climate Data</Heading>
-                      <Table size="sm" variant="simple">
-                        <Tbody>
-                          {Object.entries(site.climate_data).map(
-                            ([key, value]) => (
-                              <Tr key={key}>
-                                <Td fontWeight="medium">{key}</Td>
-                                <Td>{String(value)}</Td>
-                              </Tr>
-                            )
-                          )}
-                        </Tbody>
-                      </Table>
-                    </>
-                  )}
-              </VStack>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
+                  {/* Additional Buttons */}
+                  <HStack spacing={2}>
+                    <Button
+                      size="sm"
+                      flex={1}
+                      isDisabled={!siteData.sass_exist}
+                      onClick={() => {
+                        // Navigate to React SASS dashboard
+                        navigate(`/dashboard/sass/${siteId}`);
+                      }}
+                    >
+                      SASS Dashboard
+                    </Button>
+                  </HStack>
+
+                  <HStack spacing={2}>
+                    <Button
+                      size="sm"
+                      flex={1}
+                      isDisabled={!siteData.water_temperature_exist}
+                      onClick={() => {
+                        // Navigate to React water temperature dashboard
+                        navigate(`/dashboard/water-temperature/${siteId}`);
+                      }}
+                    >
+                      Water Temperature
+                    </Button>
+                    <Button
+                      size="sm"
+                      flex={1}
+                      colorScheme="red"
+                      onClick={() => {
+                        // Legacy form route (until React form is implemented)
+                        window.location.href = `/water-temperature-form/?siteId=${siteId}`;
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </HStack>
+
+                  <HStack spacing={2}>
+                    <Button
+                      size="sm"
+                      flex={1}
+                      isDisabled={!siteData.physico_chemical_exist}
+                      onClick={() => {
+                        // Navigate to React physico-chemical dashboard
+                        navigate(`/dashboard/physico-chemical/${siteId}`);
+                      }}
+                    >
+                      Physico-chemical
+                    </Button>
+                    <Button
+                      size="sm"
+                      flex={1}
+                      colorScheme="red"
+                      onClick={() => {
+                        // Legacy form route (until React form is implemented)
+                        window.location.href = `/physico-chemical-form/?siteId=${siteId}`;
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </HStack>
+                </VStack>
+              ) : (
+                <Text color="gray.500" textAlign="center" py={4}>
+                  No biodiversity data available
+                </Text>
+              )}
+            </AccordionPanel>
+          </AccordionItem>
+
+          {/* Climate Data Section */}
+          {climate_data && Object.keys(climate_data).length > 0 && (
+            <AccordionItem border="none">
+              <AccordionButton bg={headerBg} _hover={{ bg: 'gray.100' }}>
+                <Box flex="1" textAlign="left" fontWeight="bold">
+                  Climate Data
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel pb={4}>
+                <VStack spacing={4} align="stretch">
+                  {Object.entries(climate_data).map(([key, data]) => (
+                    <Box key={key}>
+                      <Text fontWeight="medium" mb={2}>
+                        {data.title}
+                      </Text>
+                      {/* Simple representation - could add line charts here */}
+                      <Box bg="gray.100" p={2} borderRadius="md">
+                        <Text fontSize="sm" color="gray.600">
+                          {data.values?.length || 0} data points
+                        </Text>
+                      </Box>
+                    </Box>
+                  ))}
+                </VStack>
+              </AccordionPanel>
+            </AccordionItem>
+          )}
+        </Accordion>
       </Box>
 
       {/* Footer */}
       <Box
-        p={3}
+        p={2}
         borderTop="1px"
         borderColor={borderColor}
         fontSize="xs"
         color="gray.500"
         textAlign="center"
       >
-        Last modified: {new Date(site.modified).toLocaleDateString()}
+        Site ID: {siteId}
       </Box>
     </Box>
   );

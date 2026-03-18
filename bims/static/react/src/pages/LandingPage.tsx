@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -26,6 +26,7 @@ import {
   useColorModeValue,
   Flex,
   Badge,
+  Skeleton,
 } from '@chakra-ui/react';
 import {
   SearchIcon,
@@ -35,6 +36,15 @@ import {
   InfoIcon,
 } from '@chakra-ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
+import { apiClient } from '../api/client';
+import { FishIcon, InvertebratesIcon, AlgaeIcon } from '../components/icons';
+
+interface PlatformStats {
+  total_sites: number;
+  total_records: number;
+  total_taxa: number;
+  total_contributors: number;
+}
 
 interface FeatureCardProps {
   icon: React.ElementType;
@@ -91,22 +101,30 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
 
 interface StatCardProps {
   label: string;
-  value: string;
+  value: string | number;
   helpText: string;
   color: string;
+  isLoading?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, helpText, color }) => {
+const StatCard: React.FC<StatCardProps> = ({ label, value, helpText, color, isLoading = false }) => {
   const cardBg = useColorModeValue('white', 'gray.700');
+
+  // Format number with locale string for thousands separator
+  const formattedValue = typeof value === 'number' ? value.toLocaleString() : value;
 
   return (
     <Card bg={cardBg} shadow="sm">
       <CardBody>
         <Stat>
           <StatLabel color="gray.500">{label}</StatLabel>
-          <StatNumber color={color} fontSize="3xl">
-            {value}
-          </StatNumber>
+          {isLoading ? (
+            <Skeleton height="36px" width="80px" my={1} />
+          ) : (
+            <StatNumber color={color} fontSize="3xl">
+              {formattedValue}
+            </StatNumber>
+          )}
           <StatHelpText>{helpText}</StatHelpText>
         </Stat>
       </CardBody>
@@ -115,6 +133,31 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, helpText, color }) =>
 };
 
 const LandingPage: React.FC = () => {
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await apiClient.get<{ data: PlatformStats }>('platform/stats/');
+        setStats(response.data?.data || null);
+      } catch (error) {
+        console.error('Failed to fetch platform stats:', error);
+        // Fall back to defaults if API fails
+        setStats({
+          total_sites: 0,
+          total_records: 0,
+          total_taxa: 0,
+          total_contributors: 0,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <Box h="100%" overflowY="auto">
       {/* Hero Section with background image */}
@@ -194,27 +237,31 @@ const LandingPage: React.FC = () => {
         <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
           <StatCard
             label="Location Sites"
-            value="15,000+"
+            value={stats?.total_sites ?? 0}
             helpText="Monitoring sites"
             color="brand.500"
+            isLoading={isLoading}
           />
           <StatCard
             label="Species Records"
-            value="500,000+"
+            value={stats?.total_records ?? 0}
             helpText="Occurrence records"
             color="green.500"
+            isLoading={isLoading}
           />
           <StatCard
             label="Taxa"
-            value="10,000+"
+            value={stats?.total_taxa ?? 0}
             helpText="Species catalogued"
             color="purple.500"
+            isLoading={isLoading}
           />
           <StatCard
             label="Contributors"
-            value="500+"
+            value={stats?.total_contributors ?? 0}
             helpText="Active researchers"
             color="orange.500"
+            isLoading={isLoading}
           />
         </SimpleGrid>
       </Container>
@@ -249,14 +296,14 @@ const LandingPage: React.FC = () => {
               icon={AddIcon}
               title="Contribute Data"
               description="Upload your field observations and contribute to South Africa's biodiversity knowledge base."
-              linkHref="/upload/"
+              linkTo="/upload"
               linkText="Upload Data"
             />
             <FeatureCard
               icon={DownloadIcon}
               title="Download & Export"
               description="Export filtered datasets in various formats for your research and conservation projects."
-              linkHref="/download-request/"
+              linkTo="/downloads"
               linkText="Request Download"
             />
           </SimpleGrid>
@@ -298,6 +345,116 @@ const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
+      {/* Taxon Groups Section */}
+      <Container maxW="container.xl" py={16}>
+        <VStack spacing={8}>
+          <VStack spacing={4} textAlign="center">
+            <Heading size="lg">Taxonomic Groups</Heading>
+            <Text color="gray.600">
+              Explore biodiversity across major taxonomic groups
+            </Text>
+          </VStack>
+
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
+            <Card
+              as={RouterLink}
+              to="/map?taxon_group=fish"
+              bg="white"
+              shadow="md"
+              _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+              transition="all 0.2s"
+              cursor="pointer"
+            >
+              <CardBody>
+                <VStack spacing={4}>
+                  <Flex
+                    w={20}
+                    h={20}
+                    align="center"
+                    justify="center"
+                    rounded="full"
+                    bg="blue.50"
+                  >
+                    <FishIcon boxSize={12} color="blue.600" />
+                  </Flex>
+                  <Heading size="md" color="blue.600">Fish</Heading>
+                  <Text color="gray.600" textAlign="center" fontSize="sm">
+                    Freshwater fish species including yellowfish, tilapia, catfish, and barbs
+                  </Text>
+                  <Button variant="link" colorScheme="blue" size="sm">
+                    Explore Fish &rarr;
+                  </Button>
+                </VStack>
+              </CardBody>
+            </Card>
+
+            <Card
+              as={RouterLink}
+              to="/map?taxon_group=invertebrates"
+              bg="white"
+              shadow="md"
+              _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+              transition="all 0.2s"
+              cursor="pointer"
+            >
+              <CardBody>
+                <VStack spacing={4}>
+                  <Flex
+                    w={20}
+                    h={20}
+                    align="center"
+                    justify="center"
+                    rounded="full"
+                    bg="orange.50"
+                  >
+                    <InvertebratesIcon boxSize={12} color="orange.600" />
+                  </Flex>
+                  <Heading size="md" color="orange.600">Invertebrates</Heading>
+                  <Text color="gray.600" textAlign="center" fontSize="sm">
+                    Aquatic invertebrates including mayflies, dragonflies, crabs, and midges
+                  </Text>
+                  <Button variant="link" colorScheme="orange" size="sm">
+                    Explore Invertebrates &rarr;
+                  </Button>
+                </VStack>
+              </CardBody>
+            </Card>
+
+            <Card
+              as={RouterLink}
+              to="/map?taxon_group=algae"
+              bg="white"
+              shadow="md"
+              _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+              transition="all 0.2s"
+              cursor="pointer"
+            >
+              <CardBody>
+                <VStack spacing={4}>
+                  <Flex
+                    w={20}
+                    h={20}
+                    align="center"
+                    justify="center"
+                    rounded="full"
+                    bg="green.50"
+                  >
+                    <AlgaeIcon boxSize={12} color="green.600" />
+                  </Flex>
+                  <Heading size="md" color="green.600">Algae</Heading>
+                  <Text color="gray.600" textAlign="center" fontSize="sm">
+                    Freshwater algae including diatoms, green algae, and cyanobacteria
+                  </Text>
+                  <Button variant="link" colorScheme="green" size="sm">
+                    Explore Algae &rarr;
+                  </Button>
+                </VStack>
+              </CardBody>
+            </Card>
+          </SimpleGrid>
+        </VStack>
+      </Container>
+
       {/* CTA Section */}
       <Container maxW="container.xl" py={16}>
         <Card bg="brand.500" color="white">
@@ -320,8 +477,8 @@ const LandingPage: React.FC = () => {
                   Open Interactive Map
                 </Button>
                 <Button
-                  as="a"
-                  href="/links/"
+                  as={RouterLink}
+                  to="/about"
                   size="lg"
                   variant="outline"
                   borderColor="white"

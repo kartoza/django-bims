@@ -577,16 +577,20 @@ Provide a list of site IDs and an optional rejection reason.
 Get all location sites as minimal point data for map rendering.
 
 Returns only the essential data needed for map display:
-- UUID (unique identifier)
+- ID (unique identifier)
 - Longitude
 - Latitude
+- Record count (matching current filters)
 
 This endpoint is optimized for performance and data security - it does not
 expose any other site metadata. Use the detail endpoint to get full site info
 when a point is selected.
 
-Supports filtering by taxon_group to show only sites with records from
-specific taxon groups.
+Supports all search filters - points are hidden if they have no records matching
+the current filter criteria.
+
+**Caching**: Results are cached in Redis for 5 minutes to reduce database load.
+The cache key is based on the filter parameters.
         """,
         tags=["Sites"],
         parameters=[
@@ -595,50 +599,343 @@ specific taxon groups.
                 type=int,
                 description="Filter by taxon group ID (only sites with records from this group)",
             ),
+            OpenApiParameter(
+                name="year_from",
+                type=int,
+                description="Filter by collection date year (from)",
+            ),
+            OpenApiParameter(
+                name="year_to",
+                type=int,
+                description="Filter by collection date year (to)",
+            ),
+            OpenApiParameter(
+                name="iucn_category",
+                type=str,
+                description="Filter by IUCN category (comma-separated: CR,EN,VU)",
+            ),
+            OpenApiParameter(
+                name="endemism",
+                type=str,
+                description="Filter by endemism (comma-separated)",
+            ),
+            OpenApiParameter(
+                name="collector",
+                type=str,
+                description="Filter by collector name (comma-separated)",
+            ),
+            OpenApiParameter(
+                name="validated",
+                type=bool,
+                description="Filter by validation status",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=str,
+                description="Search in taxon name or site code",
+            ),
+            OpenApiParameter(
+                name="boundary",
+                type=int,
+                description="Filter by boundary ID (sites within boundary)",
+            ),
+            OpenApiParameter(
+                name="bbox",
+                type=str,
+                description="Bounding box filter: west,south,east,north",
+            ),
+            OpenApiParameter(
+                name="nocache",
+                type=bool,
+                description="Bypass cache and fetch fresh data",
+            ),
         ],
         responses={200: OpenApiTypes.OBJECT},
     )
     @action(detail=False, methods=["get"], url_path="map-points")
     def map_points(self, request):
-        """Get minimal site data for map rendering (location + UUID + record count)."""
+        """Get minimal site data for map rendering (location + ID + record count)."""
+        import hashlib
+        from django.core.cache import cache
         from django.db.models import Count
+        from django.contrib.gis.geos import Polygon
+
+        # Cache settings
+        CACHE_TIMEOUT = 300  # 5 minutes
+        CACHE_PREFIX = "map_points"
+        CACHE_VERSION_KEY = "map_points_version"
+
+        # Get current cache version (incremented on invalidation)
+        cache_version = cache.get(CACHE_VERSION_KEY, 1)
+
+        # Build cache key from query parameters
+        cache_params = {
+            "taxon_group": request.query_params.get("taxon_group", ""),
+            "year_from": request.query_params.get("year_from", ""),
+            "year_to": request.query_params.get("year_to", ""),
+            "iucn_category": request.query_params.get("iucn_category", ""),
+            "endemism": request.query_params.get("endemism", ""),
+            "collector": request.query_params.get("collector", ""),
+            "validated": request.query_params.get("validated", ""),
+            "search": request.query_params.get("search", ""),
+            "boundary": request.query_params.get("boundary", ""),
+            "bbox": request.query_params.get("bbox", ""),
+        }
+
+        # Create a stable hash of the parameters including version
+        param_string = "&".join(f"{k}={v}" for k, v in sorted(cache_params.items()) if v)
+        cache_key = f"{CACHE_PREFIX}:v{cache_version}:{hashlib.md5(param_string.encode()).hexdigest()}"
+
+        # Check if we should bypass cache
+        nocache = request.query_params.get("nocache", "").lower() in ("true", "1")
+
+        # Try to get from cache
+        if not nocache:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return success_response(
+                    data=cached_data["data"],
+                    meta={
+                        **cached_data["meta"],
+                        "cached": True,
+                        "cache_key": cache_key,
+                    },
+                )
 
         queryset = LocationSite.objects.filter(
             geometry_point__isnull=False
         )
+
+        # Build record filter conditions for counting
+        record_filter = Q()
+        has_filters = False
 
         # Filter by taxon group if provided
         taxon_group = request.query_params.get("taxon_group")
         if taxon_group:
             try:
                 taxon_group_id = int(taxon_group)
-                queryset = queryset.filter(
-                    biological_collection_record__module_group_id=taxon_group_id
-                )
+                record_filter &= Q(biological_collection_record__module_group_id=taxon_group_id)
+                has_filters = True
             except ValueError:
                 pass
 
-        # Annotate with record count and get minimal data
-        queryset = queryset.annotate(
-            record_count=Count("biological_collection_record")
-        ).filter(
-            record_count__gt=0  # Only sites with records
-        ).values_list("uuid", "longitude", "latitude", "record_count")
+        # Filter by date range
+        year_from = request.query_params.get("year_from")
+        if year_from:
+            try:
+                year_from_int = int(year_from)
+                record_filter &= Q(biological_collection_record__collection_date__year__gte=year_from_int)
+                has_filters = True
+            except ValueError:
+                pass
 
-        # Format as array of [uuid, lon, lat, count] for minimal payload
+        year_to = request.query_params.get("year_to")
+        if year_to:
+            try:
+                year_to_int = int(year_to)
+                record_filter &= Q(biological_collection_record__collection_date__year__lte=year_to_int)
+                has_filters = True
+            except ValueError:
+                pass
+
+        # Filter by IUCN category
+        iucn_category = request.query_params.get("iucn_category")
+        if iucn_category:
+            categories = [c.strip() for c in iucn_category.split(",") if c.strip()]
+            if categories:
+                record_filter &= Q(biological_collection_record__taxonomy__iucn_status__category__in=categories)
+                has_filters = True
+
+        # Filter by endemism
+        endemism = request.query_params.get("endemism")
+        if endemism:
+            endemism_names = [e.strip() for e in endemism.split(",") if e.strip()]
+            if endemism_names:
+                record_filter &= Q(biological_collection_record__taxonomy__endemism__name__in=endemism_names)
+                has_filters = True
+
+        # Filter by collector
+        collector = request.query_params.get("collector")
+        if collector:
+            collectors = [c.strip() for c in collector.split(",") if c.strip()]
+            if collectors:
+                collector_q = Q()
+                for c in collectors:
+                    collector_q |= Q(biological_collection_record__collector__icontains=c)
+                record_filter &= collector_q
+                has_filters = True
+
+        # Filter by validation status
+        validated = request.query_params.get("validated")
+        if validated is not None:
+            if validated.lower() in ("true", "1"):
+                record_filter &= Q(biological_collection_record__validated=True)
+                has_filters = True
+            elif validated.lower() in ("false", "0"):
+                record_filter &= Q(biological_collection_record__validated=False)
+                has_filters = True
+
+        # Filter by search (taxon name or site code)
+        search = request.query_params.get("search")
+        if search:
+            search_q = Q(
+                biological_collection_record__taxonomy__canonical_name__icontains=search
+            ) | Q(
+                biological_collection_record__taxonomy__scientific_name__icontains=search
+            ) | Q(
+                site_code__icontains=search
+            ) | Q(
+                name__icontains=search
+            )
+            record_filter &= search_q
+            has_filters = True
+
+        # Filter by boundary
+        boundary_id = request.query_params.get("boundary")
+        if boundary_id:
+            try:
+                boundary_id_int = int(boundary_id)
+                from bims.models.boundary import Boundary
+                try:
+                    boundary = Boundary.objects.get(id=boundary_id_int)
+                    if boundary.geometry:
+                        queryset = queryset.filter(geometry_point__within=boundary.geometry)
+                except Boundary.DoesNotExist:
+                    pass
+            except ValueError:
+                pass
+
+        # Filter by bounding box
+        bbox = request.query_params.get("bbox")
+        if bbox:
+            try:
+                west, south, east, north = [float(x.strip()) for x in bbox.split(",")]
+                bbox_polygon = Polygon.from_bbox((west, south, east, north))
+                bbox_polygon.srid = 4326
+                queryset = queryset.filter(geometry_point__within=bbox_polygon)
+            except (ValueError, TypeError):
+                pass
+
+        # Annotate with filtered record count
+        if has_filters:
+            # Count only records matching the filters
+            queryset = queryset.annotate(
+                rec_count=Count("biological_collection_record", filter=record_filter)
+            )
+            # Only show sites with matching records when filters are active
+            queryset = queryset.filter(rec_count__gt=0)
+        else:
+            # No filters - show all sites with their total record count
+            queryset = queryset.annotate(
+                rec_count=Count("biological_collection_record")
+            )
+
+        queryset = queryset.values_list("id", "longitude", "latitude", "rec_count")
+
+        # Format as array of [id, lon, lat, count] for minimal payload
         data = [
-            [str(uuid), float(lon), float(lat), count]
-            for uuid, lon, lat, count in queryset
+            [site_id, float(lon), float(lat), count]
+            for site_id, lon, lat, count in queryset
             if lon and lat
         ]
+
+        meta = {
+            "count": len(data),
+            "format": ["id", "longitude", "latitude", "record_count"],
+            "filtered": has_filters,
+        }
+
+        # Cache the results
+        cache.set(
+            cache_key,
+            {"data": data, "meta": meta},
+            CACHE_TIMEOUT
+        )
 
         return success_response(
             data=data,
             meta={
-                "count": len(data),
-                "format": ["uuid", "longitude", "latitude", "record_count"],
+                **meta,
+                "cached": False,
+                "cache_key": cache_key,
             },
         )
+
+    @extend_schema(
+        summary="Get map points cache version",
+        description="""
+Get the current cache version for map points.
+
+Clients can use this to check if their local cache is still valid.
+If the server version is higher than the client's cached version,
+the client should refetch the data.
+        """,
+        tags=["Sites"],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=["get"], url_path="map-cache-version")
+    def map_cache_version(self, request):
+        """Get the current map points cache version."""
+        from django.core.cache import cache
+
+        CACHE_VERSION_KEY = "map_points_version"
+        current_version = cache.get(CACHE_VERSION_KEY, 1)
+
+        return success_response(
+            data={"version": current_version},
+            meta={"cache_key": CACHE_VERSION_KEY},
+        )
+
+    @extend_schema(
+        summary="Clear map points cache",
+        description="""
+Clear the cached map points data.
+
+**Requires staff permissions.**
+
+Use this endpoint after bulk data imports or updates to ensure fresh data
+is displayed on the map.
+
+This uses version-based cache invalidation which works with any cache backend
+(Redis, Memcached, etc.).
+        """,
+        tags=["Sites"],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=["post"], url_path="clear-map-cache")
+    def clear_map_cache(self, request):
+        """Clear all cached map points data by incrementing the cache version."""
+        from django.core.cache import cache
+
+        if not request.user.is_staff:
+            return error_response(
+                errors={"detail": "Staff permission required"},
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        CACHE_VERSION_KEY = "map_points_version"
+
+        try:
+            # Increment the cache version - this effectively invalidates all cached entries
+            # because they'll have the old version in their key
+            current_version = cache.get(CACHE_VERSION_KEY, 1)
+            new_version = current_version + 1
+            cache.set(CACHE_VERSION_KEY, new_version, None)  # No timeout - persist indefinitely
+
+            return success_response(
+                data={"cleared": True},
+                meta={
+                    "method": "version_increment",
+                    "previous_version": current_version,
+                    "new_version": new_version,
+                },
+            )
+        except Exception as e:
+            return error_response(
+                errors={"detail": f"Failed to clear cache: {str(e)}"},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @extend_schema(
         summary="Get site surveys",

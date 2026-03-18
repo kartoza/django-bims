@@ -24,15 +24,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { bimsMapStyle, switchBasemap } from '../../styles/mapStyle';
 
-// Site point data format: [uuid, longitude, latitude, record_count]
-type SitePoint = [string, number, number, number];
+// Site point data format: [id, longitude, latitude, record_count]
+type SitePoint = [number, number, number, number];
 
 export interface DeckGLMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   is3D?: boolean;
-  onSiteSelect?: (uuid: string | null) => void;
-  onSiteHover?: (uuid: string | null) => void;
+  onSiteSelect?: (siteId: number | null) => void;
+  onSiteHover?: (siteId: number | null) => void;
   onBoundsChange?: (bounds: [number, number, number, number]) => void;
   onMapReady?: (map: MapLibreMap) => void;
 }
@@ -41,7 +41,7 @@ export interface DeckGLMapRef {
   flyTo: (center: [number, number], zoom?: number) => void;
   setPoints: (points: SitePoint[]) => void;
   getMap: () => MapLibreMap | null;
-  highlightSite: (uuid: string | null) => void;
+  highlightSite: (siteId: number | null) => void;
   getBounds: () => [number, number, number, number] | null;
   switchBasemap: (sourceId: string) => void;
   setIs3D: (is3D: boolean) => void;
@@ -65,12 +65,23 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
     const deckOverlayRef = useRef<MapboxOverlay | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [points, setPoints] = useState<SitePoint[]>([]);
-    const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
-    const [hoveredUuid, setHoveredUuid] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [hoveredId, setHoveredId] = useState<number | null>(null);
     const [is3D, setIs3D] = useState(initialIs3D);
+    const [zoomLevel, setZoomLevel] = useState(initialZoom);
 
     // Calculate max record count for scaling extrusion
     const maxRecordCount = points.reduce((max, p) => Math.max(max, p[3] || 1), 1);
+
+    // Calculate dynamic radius based on zoom level
+    // At zoom 5 (country level): small dots, at zoom 15 (street level): larger dots
+    const getZoomBasedRadius = useCallback(() => {
+      const minRadius = 4;
+      const maxRadius = 20;
+      // Scale from minRadius at zoom 2 to maxRadius at zoom 18
+      const scale = Math.min(1, Math.max(0, (zoomLevel - 2) / 16));
+      return minRadius + (maxRadius - minRadius) * scale;
+    }, [zoomLevel]);
 
     // Update deck.gl layers when points or selection changes
     const updateLayers = useCallback(() => {
@@ -81,33 +92,35 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
         pickable: true,
         onClick: (info: { object?: SitePoint }) => {
           if (info.object) {
-            const uuid = info.object[0];
-            setSelectedUuid(uuid);
+            const siteId = info.object[0];
+            setSelectedId(siteId);
             if (onSiteSelect) {
-              onSiteSelect(uuid);
+              onSiteSelect(siteId);
             }
           } else {
-            setSelectedUuid(null);
+            setSelectedId(null);
             if (onSiteSelect) {
               onSiteSelect(null);
             }
           }
         },
         onHover: (info: { object?: SitePoint }) => {
-          const uuid = info.object ? info.object[0] : null;
-          setHoveredUuid(uuid);
+          const siteId = info.object ? info.object[0] : null;
+          setHoveredId(siteId);
           if (onSiteHover) {
-            onSiteHover(uuid);
+            onSiteHover(siteId);
           }
           if (mapRef.current) {
             mapRef.current.getCanvas().style.cursor = info.object ? 'pointer' : '';
           }
         },
         updateTriggers: {
-          getElevation: [selectedUuid, hoveredUuid],
-          getFillColor: [selectedUuid, hoveredUuid],
-          getRadius: [selectedUuid, hoveredUuid],
+          getElevation: [selectedId, hoveredId],
+          getFillColor: [selectedId, hoveredId],
+          getRadius: [selectedId, hoveredId, zoomLevel],
         },
+        // Larger picking radius for easier clicking on small dots
+        pickingRadius: 10,
       };
 
       let layers;
@@ -119,7 +132,7 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
             id: 'sites-3d-layer',
             ...commonProps,
             diskResolution: 12,
-            radius: 500, // meters
+            radius: 3000, // meters - thick columns for visibility
             extruded: true,
             elevationScale: 100,
             getPosition: (d: SitePoint) => [d[1], d[2]],
@@ -129,8 +142,8 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
               return Math.log10(count + 1) * 1000;
             },
             getFillColor: (d: SitePoint) => {
-              if (d[0] === selectedUuid) return [255, 153, 0, 255]; // Orange
-              if (d[0] === hoveredUuid) return [0, 150, 255, 255]; // Light blue
+              if (d[0] === selectedId) return [255, 153, 0, 255]; // Orange
+              if (d[0] === hoveredId) return [0, 150, 255, 255]; // Light blue
               // Color based on record count (blue to red gradient)
               const ratio = Math.min((d[3] || 1) / maxRecordCount, 1);
               return [
@@ -150,6 +163,7 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
         ];
       } else {
         // 2D Scatter Plot Layer
+        const dynamicMinRadius = getZoomBasedRadius();
         layers = [
           new ScatterplotLayer<SitePoint>({
             id: 'sites-layer',
@@ -158,19 +172,20 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
             stroked: true,
             filled: true,
             radiusScale: 1,
-            radiusMinPixels: 4,
-            radiusMaxPixels: 30,
+            radiusMinPixels: dynamicMinRadius,
+            radiusMaxPixels: 50,
             lineWidthMinPixels: 1,
             getPosition: (d: SitePoint) => [d[1], d[2]],
             getRadius: (d: SitePoint) => {
-              const baseRadius = Math.sqrt(d[3] || 1) * 2;
-              if (d[0] === selectedUuid) return baseRadius + 6;
-              if (d[0] === hoveredUuid) return baseRadius + 4;
+              // Base radius scales with record count
+              const baseRadius = Math.sqrt(d[3] || 1) * 3 + dynamicMinRadius;
+              if (d[0] === selectedId) return baseRadius + 8;
+              if (d[0] === hoveredId) return baseRadius + 5;
               return baseRadius;
             },
             getFillColor: (d: SitePoint) => {
-              if (d[0] === selectedUuid) return [255, 153, 0, 255]; // Orange
-              if (d[0] === hoveredUuid) return [0, 150, 255, 255]; // Light blue
+              if (d[0] === selectedId) return [255, 153, 0, 255]; // Orange
+              if (d[0] === hoveredId) return [0, 150, 255, 255]; // Light blue
               // Color based on record count
               const ratio = Math.min((d[3] || 1) / maxRecordCount, 1);
               return [
@@ -187,12 +202,15 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
       }
 
       deckOverlayRef.current.setProps({ layers });
-    }, [points, selectedUuid, hoveredUuid, is3D, maxRecordCount, onSiteSelect, onSiteHover]);
+    }, [points, selectedId, hoveredId, is3D, maxRecordCount, onSiteSelect, onSiteHover, getZoomBasedRadius, zoomLevel]);
 
     // Update layers when dependencies change
+    // Include isLoaded to ensure layers update when deck overlay becomes ready
     useEffect(() => {
-      updateLayers();
-    }, [updateLayers]);
+      if (isLoaded) {
+        updateLayers();
+      }
+    }, [updateLayers, isLoaded]);
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
@@ -212,8 +230,8 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
 
       getMap: () => mapRef.current,
 
-      highlightSite: (uuid: string | null) => {
-        setSelectedUuid(uuid);
+      highlightSite: (siteId: number | null) => {
+        setSelectedId(siteId);
       },
 
       getBounds: () => {
@@ -318,6 +336,11 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
             bounds.getNorth(),
           ]);
         }
+      });
+
+      // Track zoom changes for dynamic radius scaling
+      map.on('zoom', () => {
+        setZoomLevel(map.getZoom());
       });
 
       map.on('error', (e) => {
