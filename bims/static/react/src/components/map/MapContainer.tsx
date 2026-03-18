@@ -25,33 +25,7 @@ import maplibregl, {
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-// Default map style - using a free tile provider
-const DEFAULT_STYLE: maplibregl.StyleSpecification = {
-  version: 8,
-  name: 'BIMS Base Map',
-  sources: {
-    'osm-tiles': {
-      type: 'raster',
-      tiles: [
-        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      ],
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    },
-  },
-  layers: [
-    {
-      id: 'osm-tiles-layer',
-      type: 'raster',
-      source: 'osm-tiles',
-      minzoom: 0,
-      maxzoom: 19,
-    },
-  ],
-};
+import { bimsMapStyle } from '../../styles/mapStyle';
 
 // GeoJSON Feature type for sites
 interface SiteFeature {
@@ -171,7 +145,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
 
       const map = new MapLibreMap({
         container: mapContainer.current,
-        style: DEFAULT_STYLE,
+        style: bimsMapStyle,
         center: initialCenter,
         zoom: initialZoom,
         minZoom: 2,

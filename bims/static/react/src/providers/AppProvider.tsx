@@ -9,6 +9,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import theme from '../theme';
+import { AuthProvider } from './AuthProvider';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -30,7 +31,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </ChakraProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

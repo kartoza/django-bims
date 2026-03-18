@@ -5,6 +5,8 @@ URL configuration for API v1.
 
 This module defines the URL patterns for the versioned API using DRF routers.
 All endpoints are prefixed with /api/v1/ in the main URL configuration.
+
+Made with love by Kartoza | https://kartoza.com
 """
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
@@ -18,6 +20,7 @@ from bims.api.v1.viewsets.source_references import SourceReferenceViewSet
 from bims.api.v1.viewsets.boundaries import BoundaryViewSet, UserBoundaryViewSet
 from bims.api.v1.viewsets.downloads import DownloadViewSet
 from bims.api.v1.viewsets.tasks import TaskStatusViewSet
+from bims.api.v1.viewsets.auth import AuthViewSet
 
 app_name = "api-v1"
 
@@ -40,6 +43,40 @@ router.register(r"user-boundaries", UserBoundaryViewSet, basename="user-boundary
 router.register(r"downloads", DownloadViewSet, basename="download")
 router.register(r"tasks", TaskStatusViewSet, basename="task")
 
+# Authentication
+router.register(r"auth", AuthViewSet, basename="auth")
+
 urlpatterns = [
+    # API endpoints
     path("", include(router.urls)),
 ]
+
+# Add OpenAPI documentation endpoints if drf-spectacular is available
+try:
+    from drf_spectacular.views import (
+        SpectacularAPIView,
+        SpectacularSwaggerView,
+        SpectacularRedocView,
+    )
+
+    urlpatterns += [
+        # OpenAPI schema (JSON/YAML)
+        path("schema/", SpectacularAPIView.as_view(), name="schema"),
+
+        # Swagger UI - Interactive API documentation
+        path(
+            "docs/",
+            SpectacularSwaggerView.as_view(url_name="api-v1:schema"),
+            name="swagger-ui",
+        ),
+
+        # ReDoc - Alternative documentation view
+        path(
+            "redoc/",
+            SpectacularRedocView.as_view(url_name="api-v1:schema"),
+            name="redoc",
+        ),
+    ]
+except ImportError:
+    # drf-spectacular not installed, skip API documentation endpoints
+    pass

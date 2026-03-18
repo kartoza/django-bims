@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0
 """
 ViewSet for LocationSite in API v1.
+
+Made with love by Kartoza | https://kartoza.com
 """
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance
@@ -9,6 +11,13 @@ from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from bims.api.v1.compat import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiExample,
+    OpenApiTypes,
+)
 
 from bims.api.v1.filters.sites import LocationSiteFilterSet
 from bims.api.v1.pagination import LargeResultsSetPagination
@@ -28,20 +37,114 @@ from bims.api.v1.viewsets.base import StandardModelViewSet
 from bims.models.location_site import LocationSite
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List location sites",
+        description="""
+Retrieve a paginated list of location sites (monitoring points).
+
+Sites are the primary geographic entities where biodiversity surveys are conducted.
+Each site has a unique code, geographic coordinates, and can be associated with
+rivers, wetlands, or other ecosystem types.
+
+### Filtering
+
+You can filter sites using the following query parameters:
+- `search`: Search in site code and name
+- `ecosystem_type`: Filter by ecosystem type (river, wetland, estuary, dam, lake)
+- `validated`: Filter by validation status (true/false)
+- `river`: Filter by river name
+- `taxon_group`: Filter by taxon group ID (sites with records from this group)
+
+### Example
+
+```
+GET /api/v1/sites/?ecosystem_type=river&validated=true
+```
+        """,
+        tags=["Sites"],
+        responses={200: LocationSiteListSerializer(many=True)},
+    ),
+    retrieve=extend_schema(
+        summary="Get site details",
+        description="""
+Retrieve detailed information about a specific location site.
+
+Includes full site metadata, coordinates, associated river/wetland information,
+and recent survey data.
+        """,
+        tags=["Sites"],
+        responses={200: LocationSiteDetailSerializer},
+    ),
+    create=extend_schema(
+        summary="Create a location site",
+        description="""
+Create a new location site (monitoring point).
+
+### Required Fields
+- `site_code`: Unique identifier for the site
+- `name`: Human-readable name
+- `latitude` and `longitude`: Geographic coordinates (WGS84)
+
+### Optional Fields
+- `description`: Site description
+- `ecosystem_type`: Type of ecosystem
+- `river_name`: Associated river (if applicable)
+
+The site will be created with `validated=False` and require validation
+by a staff member before being fully active.
+        """,
+        tags=["Sites"],
+        request=LocationSiteCreateSerializer,
+        responses={201: LocationSiteDetailSerializer},
+        examples=[
+            OpenApiExample(
+                "Example Site",
+                value={
+                    "site_code": "SITE001",
+                    "name": "Orange River Site 1",
+                    "latitude": -28.4792,
+                    "longitude": 16.9946,
+                    "ecosystem_type": "river",
+                    "river_name": "Orange River",
+                    "description": "Monitoring site near the Orange River mouth",
+                },
+            ),
+        ],
+    ),
+    update=extend_schema(
+        summary="Update a location site",
+        description="Update all fields of an existing location site.",
+        tags=["Sites"],
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a location site",
+        description="Update specific fields of an existing location site.",
+        tags=["Sites"],
+    ),
+    destroy=extend_schema(
+        summary="Delete a location site",
+        description="""
+Delete a location site.
+
+**Warning**: This will also delete all associated surveys and biological records.
+This action requires appropriate permissions.
+        """,
+        tags=["Sites"],
+    ),
+)
 class LocationSiteViewSet(StandardModelViewSet):
     """
-    ViewSet for LocationSite CRUD operations.
+    ViewSet for managing location sites (monitoring points).
 
-    Endpoints:
-    - GET /api/v1/sites/ - List sites
-    - POST /api/v1/sites/ - Create site
-    - GET /api/v1/sites/{id}/ - Get site detail
-    - PUT /api/v1/sites/{id}/ - Update site
-    - DELETE /api/v1/sites/{id}/ - Delete site
-    - GET /api/v1/sites/summary/ - Get summary statistics
-    - GET /api/v1/sites/nearby/ - Get nearby sites
-    - GET /api/v1/sites/coordinates/ - Get site by coordinates
-    - POST /api/v1/sites/{id}/validate/ - Validate site
+    Location sites are the fundamental geographic entities in BIMS where
+    biodiversity surveys are conducted. Each site has:
+
+    - A unique site code and name
+    - Geographic coordinates (point location)
+    - Ecosystem classification (river, wetland, estuary, etc.)
+    - Associated environmental context
+    - Linked biological records from surveys
     """
 
     queryset = LocationSite.objects.select_related("location_type", "owner", "river").all()
@@ -67,13 +170,57 @@ class LocationSiteViewSet(StandardModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        summary="Get site summary statistics",
+        description="""
+Get aggregated statistics about location sites.
+
+Returns counts of:
+- Total sites
+- Validated vs pending sites
+- Sites with biological records
+- Breakdown by ecosystem type
+        """,
+        tags=["Sites"],
+        parameters=[
+            OpenApiParameter(
+                name="ecosystem_type",
+                type=str,
+                description="Filter summary by ecosystem type",
+            ),
+            OpenApiParameter(
+                name="validated",
+                type=bool,
+                description="Filter summary by validation status",
+            ),
+        ],
+        responses={
+            200: OpenApiTypes.OBJECT,
+        },
+        examples=[
+            OpenApiExample(
+                "Summary Response",
+                value={
+                    "success": True,
+                    "data": {
+                        "total_sites": 1500,
+                        "validated_sites": 1200,
+                        "pending_sites": 300,
+                        "sites_with_records": 1100,
+                        "ecosystem_type_counts": {
+                            "river": 800,
+                            "wetland": 400,
+                            "estuary": 200,
+                            "dam": 100,
+                        },
+                    },
+                },
+            ),
+        ],
+    )
     @action(detail=False, methods=["get"])
     def summary(self, request):
-        """
-        Get summary statistics for location sites.
-
-        Returns counts of total, validated, pending sites and ecosystem breakdown.
-        """
+        """Get summary statistics for location sites."""
         queryset = self.filter_queryset(self.get_queryset())
 
         total = queryset.count()
@@ -100,17 +247,54 @@ class LocationSiteViewSet(StandardModelViewSet):
         serializer = LocationSiteSummarySerializer(data)
         return success_response(data=serializer.data)
 
+    @extend_schema(
+        summary="Find nearby sites",
+        description="""
+Find location sites near a given coordinate.
+
+Useful for finding existing sites when adding new data or exploring
+nearby monitoring locations.
+        """,
+        tags=["Sites"],
+        parameters=[
+            OpenApiParameter(
+                name="lat",
+                type=float,
+                required=True,
+                description="Latitude of the center point (decimal degrees, WGS84)",
+                examples=[
+                    OpenApiExample("Cape Town", value=-33.9249),
+                    OpenApiExample("Johannesburg", value=-26.2041),
+                ],
+            ),
+            OpenApiParameter(
+                name="lon",
+                type=float,
+                required=True,
+                description="Longitude of the center point (decimal degrees, WGS84)",
+                examples=[
+                    OpenApiExample("Cape Town", value=18.4241),
+                    OpenApiExample("Johannesburg", value=28.0473),
+                ],
+            ),
+            OpenApiParameter(
+                name="radius",
+                type=float,
+                default=10000,
+                description="Search radius in meters (default: 10000)",
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=int,
+                default=10,
+                description="Maximum number of results (default: 10)",
+            ),
+        ],
+        responses={200: LocationSiteListSerializer(many=True)},
+    )
     @action(detail=False, methods=["get"])
     def nearby(self, request):
-        """
-        Get sites near a given coordinate.
-
-        Query params:
-        - lat: Latitude (required)
-        - lon: Longitude (required)
-        - radius: Search radius in meters (default: 10000)
-        - limit: Maximum results (default: 10)
-        """
+        """Get sites near a given coordinate."""
         lat = request.query_params.get("lat")
         lon = request.query_params.get("lon")
         radius = request.query_params.get("radius", 10000)
@@ -146,16 +330,40 @@ class LocationSiteViewSet(StandardModelViewSet):
             },
         )
 
+    @extend_schema(
+        summary="Find site by coordinates",
+        description="""
+Find a location site at specific coordinates.
+
+Searches for sites within a small tolerance of the given coordinates.
+Useful for checking if a site already exists at a location.
+        """,
+        tags=["Sites"],
+        parameters=[
+            OpenApiParameter(
+                name="lat",
+                type=float,
+                required=True,
+                description="Latitude (decimal degrees)",
+            ),
+            OpenApiParameter(
+                name="lon",
+                type=float,
+                required=True,
+                description="Longitude (decimal degrees)",
+            ),
+            OpenApiParameter(
+                name="tolerance",
+                type=float,
+                default=0.0001,
+                description="Coordinate tolerance in degrees (default: 0.0001 ≈ 11 meters)",
+            ),
+        ],
+        responses={200: LocationSiteDetailSerializer},
+    )
     @action(detail=False, methods=["get"])
     def coordinates(self, request):
-        """
-        Get site by exact coordinates.
-
-        Query params:
-        - lat: Latitude (required)
-        - lon: Longitude (required)
-        - tolerance: Coordinate tolerance in degrees (default: 0.0001)
-        """
+        """Get site by exact coordinates."""
         lat = request.query_params.get("lat")
         lon = request.query_params.get("lon")
         tolerance = request.query_params.get("tolerance", 0.0001)
@@ -184,13 +392,28 @@ class LocationSiteViewSet(StandardModelViewSet):
         serializer = LocationSiteDetailSerializer(queryset.first())
         return success_response(data=serializer.data, meta={"found": True})
 
+    @extend_schema(
+        summary="Validate a site",
+        description="""
+Mark a location site as validated.
+
+**Requires validation permissions.**
+
+Validation confirms that the site information has been reviewed and
+is correct. Only validated sites appear in public searches by default.
+        """,
+        tags=["Sites"],
+        request=None,
+        responses={
+            200: LocationSiteDetailSerializer,
+            400: OpenApiTypes.OBJECT,
+            403: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
+    )
     @action(detail=True, methods=["post"], permission_classes=[CanValidate])
     def validate(self, request, pk=None):
-        """
-        Validate a location site.
-
-        Requires validator permissions.
-        """
+        """Validate a location site."""
         try:
             site = self.get_object()
         except LocationSite.DoesNotExist:
@@ -211,15 +434,32 @@ class LocationSiteViewSet(StandardModelViewSet):
         serializer = LocationSiteDetailSerializer(site)
         return success_response(data=serializer.data, meta={"validated": True})
 
+    @extend_schema(
+        summary="Reject a site",
+        description="""
+Reject a location site validation.
+
+**Requires validation permissions.**
+
+Rejected sites are flagged and require correction before resubmission.
+        """,
+        tags=["Sites"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "description": "Reason for rejection",
+                    },
+                },
+            },
+        },
+        responses={200: LocationSiteDetailSerializer},
+    )
     @action(detail=True, methods=["post"], permission_classes=[CanValidate])
     def reject(self, request, pk=None):
-        """
-        Reject a location site validation.
-
-        Requires validator permissions.
-        Body:
-        - reason: Rejection reason (optional)
-        """
+        """Reject a location site validation."""
         try:
             site = self.get_object()
         except LocationSite.DoesNotExist:
@@ -240,11 +480,19 @@ class LocationSiteViewSet(StandardModelViewSet):
         serializer = LocationSiteDetailSerializer(site)
         return success_response(data=serializer.data, meta={"rejected": True, "reason": reason})
 
+    @extend_schema(
+        summary="Get site surveys",
+        description="""
+Get all surveys (site visits) conducted at this location site.
+
+Surveys are ordered by date, most recent first.
+        """,
+        tags=["Sites"],
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=["get"])
     def surveys(self, request, pk=None):
-        """
-        Get all surveys for a location site.
-        """
+        """Get all surveys for a location site."""
         try:
             site = self.get_object()
         except LocationSite.DoesNotExist:
@@ -259,11 +507,23 @@ class LocationSiteViewSet(StandardModelViewSet):
         serializer = SurveyListSerializer(surveys, many=True)
         return success_response(data=serializer.data, meta={"count": surveys.count()})
 
+    @extend_schema(
+        summary="Get site records",
+        description="""
+Get all biological collection records from this location site.
+
+Records are paginated and include taxonomy information.
+        """,
+        tags=["Sites"],
+        parameters=[
+            OpenApiParameter(name="page", type=int, description="Page number"),
+            OpenApiParameter(name="page_size", type=int, description="Results per page"),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
     @action(detail=True, methods=["get"])
     def records(self, request, pk=None):
-        """
-        Get all biological records for a location site.
-        """
+        """Get all biological records for a location site."""
         try:
             site = self.get_object()
         except LocationSite.DoesNotExist:

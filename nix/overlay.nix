@@ -26,6 +26,8 @@ final: prev: {
       django_6 = python-final.callPackage ./packages/python/django_6 { };
       djangorestframework-gis = python-final.callPackage ./packages/python/djangorestframework-gis { };
       djangorestframework-guardian = python-final.callPackage ./packages/python/djangorestframework-guardian { };
+      drf-spectacular = python-final.callPackage ./packages/python/drf-spectacular { };
+      drf-spectacular-sidecar = python-final.callPackage ./packages/python/drf-spectacular-sidecar { };
       dj-pagination = python-final.callPackage ./packages/python/dj-pagination { };
       eutils = python-final.callPackage ./packages/python/eutils { };
       geonode-oauth-toolkit = python-final.callPackage ./packages/python/geonode-oauth-toolkit { };

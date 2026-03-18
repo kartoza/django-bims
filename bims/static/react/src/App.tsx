@@ -25,6 +25,8 @@ const UploadPage = lazy(() => import('./pages/UploadPage'));
 const AddSitePage = lazy(() => import('./pages/AddSitePage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 
 // Placeholder components for pages not yet implemented
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
@@ -185,6 +187,10 @@ const App: React.FC = () => {
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/resources" element={<ResourcesPage />} />
                   <Route path="/bug-report" element={<BugReportPage />} />
+
+                  {/* Authentication pages */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
 
                   {/* User pages */}
                   <Route path="/profile" element={<ProfilePage />} />
