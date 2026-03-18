@@ -54,7 +54,7 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
   // Mobile drawer for sidebar
   if (isMobile) {
     return (
-      <Box position="relative" h="calc(100vh - 40px)">
+      <Box position="relative" h="calc(100vh - 100px)">
         {/* Mobile menu button */}
         <IconButton
           aria-label="Open menu"
@@ -99,11 +99,11 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
     );
   }
 
-  // Desktop layout
+  // Desktop layout - account for header (60px) and footer (~40px)
   return (
     <Flex
       direction={sidebarPosition === 'left' ? 'row' : 'row-reverse'}
-      h="calc(100vh - 40px)"
+      h="calc(100vh - 100px)"
       position="relative"
     >
       {/* Sidebar panel */}

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * Main application component for BIMS React frontend.
+ *
+ * Made with love by Kartoza | https://kartoza.com
  */
 import React from 'react';
 import { Box, Flex, Spinner, Center, Text, Link, HStack } from '@chakra-ui/react';
@@ -10,12 +12,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { AppProvider } from './providers/AppProvider';
 import { MapProvider } from './providers/MapProvider';
+import Header from './components/Header';
 import MapLayout from './layouts/MapLayout';
 import MapPage from './pages/MapPage';
+import LandingPage from './pages/LandingPage';
 
 // Placeholder components - will be implemented in later tasks
 const DashboardPage: React.FC = () => (
-  <Center h="100vh">
+  <Center h="calc(100vh - 100px)">
     <Text>Dashboard Coming Soon</Text>
   </Center>
 );
@@ -38,11 +42,6 @@ const Footer: React.FC = () => (
     borderColor="gray.200"
     fontSize="sm"
     color="gray.600"
-    position="fixed"
-    bottom={0}
-    left={0}
-    right={0}
-    zIndex={10}
   >
     <Text>
       Made with{' '}
@@ -79,11 +78,17 @@ const App: React.FC = () => {
       <BrowserRouter basename="/new">
         <MapProvider>
           <Flex direction="column" minH="100vh">
-            <Box flex="1" pb="40px">
+            {/* Header - always visible */}
+            <Header />
+
+            {/* Main content */}
+            <Box flex="1">
               <React.Suspense fallback={<LoadingFallback />}>
                 <Routes>
+                  {/* Landing page */}
+                  <Route path="/" element={<LandingPage />} />
+
                   {/* Map view - main interface */}
-                  <Route path="/" element={<Navigate to="/map" replace />} />
                   <Route
                     path="/map"
                     element={
@@ -113,10 +118,12 @@ const App: React.FC = () => {
                   <Route path="/dashboard" element={<DashboardPage />} />
 
                   {/* Catch-all redirect */}
-                  <Route path="*" element={<Navigate to="/map" replace />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </React.Suspense>
             </Box>
+
+            {/* Footer - always visible */}
             <Footer />
           </Flex>
         </MapProvider>
