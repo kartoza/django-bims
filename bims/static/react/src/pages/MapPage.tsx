@@ -32,7 +32,7 @@ const MapPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const toast = useToast();
   const { activePanel, setActivePanel, is3DMap } = useUIStore();
-  const { filters, filterVersion } = useSearchStore();
+  const filters = useSearchStore((state) => state.filters);
 
   // Local state
   const [isLoading, setIsLoading] = useState(false);
@@ -137,7 +137,7 @@ const MapPage: React.FC = () => {
     };
 
     loadSitePoints();
-  }, [isMapReady, taxonGroupFilter, filterVersion, toast]);
+  }, [isMapReady, taxonGroupFilter, toast]);
 
   // Handle 3D toggle
   useEffect(() => {

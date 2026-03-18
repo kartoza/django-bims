@@ -336,7 +336,8 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
           setIsLoaded(false);
         }
       };
-    }, [initialCenter, initialZoom, is3D, onBoundsChange, onMapReady]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only initialize once on mount
 
     return (
       <Box

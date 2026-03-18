@@ -344,23 +344,4 @@ export const useSearchStore = create<SearchState>()(
   )
 );
 
-// Debounce timer
-let searchDebounceTimer: NodeJS.Timeout | null = null;
-
-// Subscribe to filterVersion changes and trigger search with debounce
-useSearchStore.subscribe(
-  (state) => state.filterVersion,
-  (filterVersion) => {
-    // Clear existing timer
-    if (searchDebounceTimer) {
-      clearTimeout(searchDebounceTimer);
-    }
-
-    // Set new debounced search
-    searchDebounceTimer = setTimeout(() => {
-      useSearchStore.getState().search();
-    }, 300); // 300ms debounce
-  }
-);
-
 export default useSearchStore;
