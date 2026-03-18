@@ -481,6 +481,97 @@ Rejected sites are flagged and require correction before resubmission.
         return success_response(data=serializer.data, meta={"rejected": True, "reason": reason})
 
     @extend_schema(
+        summary="Bulk validate sites",
+        description="""
+Validate multiple location sites at once.
+
+**Requires validation permissions.**
+
+Provide a list of site IDs in the request body.
+        """,
+        tags=["Sites"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "List of site IDs to validate",
+                    },
+                },
+                "required": ["ids"],
+            },
+        },
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=["post"], permission_classes=[CanValidate], url_path="bulk-validate")
+    def bulk_validate(self, request):
+        """Bulk validate multiple location sites."""
+        ids = request.data.get("ids", [])
+
+        if not ids:
+            return validation_error_response({"detail": "ids is required"})
+
+        sites = LocationSite.objects.filter(id__in=ids, validated=False)
+        count = sites.count()
+
+        sites.update(validated=True, rejected=False)
+
+        return success_response(
+            data={"validated_count": count},
+            meta={"site_ids": ids},
+        )
+
+    @extend_schema(
+        summary="Bulk reject sites",
+        description="""
+Reject multiple location sites at once.
+
+**Requires validation permissions.**
+
+Provide a list of site IDs and an optional rejection reason.
+        """,
+        tags=["Sites"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "ids": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "description": "List of site IDs to reject",
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Reason for rejection",
+                    },
+                },
+                "required": ["ids"],
+            },
+        },
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=["post"], permission_classes=[CanValidate], url_path="bulk-reject")
+    def bulk_reject(self, request):
+        """Bulk reject multiple location sites."""
+        ids = request.data.get("ids", [])
+        reason = request.data.get("reason", "")
+
+        if not ids:
+            return validation_error_response({"detail": "ids is required"})
+
+        sites = LocationSite.objects.filter(id__in=ids)
+        count = sites.count()
+
+        sites.update(validated=False, rejected=True)
+
+        return success_response(
+            data={"rejected_count": count},
+            meta={"site_ids": ids, "reason": reason},
+        )
+
+    @extend_schema(
         summary="Get site surveys",
         description="""
 Get all surveys (site visits) conducted at this location site.

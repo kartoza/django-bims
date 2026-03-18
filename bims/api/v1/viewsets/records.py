@@ -215,6 +215,56 @@ class BiologicalCollectionRecordViewSet(StandardModelViewSet):
         serializer = BiologicalCollectionRecordDetailSerializer(record)
         return success_response(data=serializer.data, meta={"rejected": True, "reason": reason})
 
+    @action(detail=False, methods=["post"], permission_classes=[CanValidate], url_path="bulk-validate")
+    def bulk_validate(self, request):
+        """
+        Bulk validate multiple biological collection records.
+
+        Body:
+        - ids: List of record IDs to validate
+        """
+        ids = request.data.get("ids", [])
+
+        if not ids:
+            from bims.api.v1.responses import validation_error_response
+            return validation_error_response({"detail": "ids is required"})
+
+        records = BiologicalCollectionRecord.objects.filter(id__in=ids, validated=False)
+        count = records.count()
+
+        records.update(validated=True, rejected=False)
+
+        return success_response(
+            data={"validated_count": count},
+            meta={"record_ids": ids},
+        )
+
+    @action(detail=False, methods=["post"], permission_classes=[CanValidate], url_path="bulk-reject")
+    def bulk_reject(self, request):
+        """
+        Bulk reject multiple biological collection records.
+
+        Body:
+        - ids: List of record IDs to reject
+        - reason: Rejection reason (optional)
+        """
+        ids = request.data.get("ids", [])
+        reason = request.data.get("reason", "")
+
+        if not ids:
+            from bims.api.v1.responses import validation_error_response
+            return validation_error_response({"detail": "ids is required"})
+
+        records = BiologicalCollectionRecord.objects.filter(id__in=ids)
+        count = records.count()
+
+        records.update(validated=False, rejected=True)
+
+        return success_response(
+            data={"rejected_count": count},
+            meta={"record_ids": ids, "reason": reason},
+        )
+
     @action(detail=False, methods=["get"])
     def by_site(self, request):
         """

@@ -88,6 +88,17 @@ interface PendingRecord {
   abundance?: number;
 }
 
+interface PendingSurvey {
+  id: number;
+  siteName: string;
+  siteCode: string;
+  date: string;
+  collector: string;
+  recordCount: number;
+  submittedBy: string;
+  submittedAt: string;
+}
+
 interface PendingTaxon {
   id: number;
   canonicalName: string;
@@ -106,20 +117,22 @@ const ValidationPage: React.FC = () => {
 
   // Determine initial tab from URL
   const getInitialTab = () => {
-    if (location.pathname.includes('records')) return 1;
-    if (location.pathname.includes('taxa')) return 2;
+    if (location.pathname.includes('site-visits') || location.pathname.includes('surveys')) return 1;
+    if (location.pathname.includes('records')) return 2;
+    if (location.pathname.includes('taxa')) return 3;
     return 0;
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
   const [isLoading, setIsLoading] = useState(true);
   const [pendingSites, setPendingSites] = useState<PendingSite[]>([]);
+  const [pendingSurveys, setPendingSurveys] = useState<PendingSurvey[]>([]);
   const [pendingRecords, setPendingRecords] = useState<PendingRecord[]>([]);
   const [pendingTaxa, setPendingTaxa] = useState<PendingTaxon[]>([]);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectingItemId, setRejectingItemId] = useState<number | null>(null);
-  const [rejectingType, setRejectingType] = useState<'site' | 'record' | 'taxon'>('site');
+  const [rejectingType, setRejectingType] = useState<'site' | 'survey' | 'record' | 'taxon'>('site');
 
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -149,6 +162,21 @@ const ValidationPage: React.FC = () => {
           }));
           setPendingSites(sites);
         } else if (activeTab === 1) {
+          const response = await apiClient.get('surveys/', {
+            params: { validated: false, page_size: 50 },
+          });
+          const surveys = (response.data?.data || []).map((survey: any) => ({
+            id: survey.id,
+            siteName: survey.site?.name || 'Unknown',
+            siteCode: survey.site?.site_code || '',
+            date: survey.date,
+            collector: survey.collector_string || survey.collector_user?.username || 'Unknown',
+            recordCount: survey.record_count || 0,
+            submittedBy: survey.owner?.username || 'Unknown',
+            submittedAt: survey.created_at,
+          }));
+          setPendingSurveys(surveys);
+        } else if (activeTab === 2) {
           const response = await apiClient.get('records/', {
             params: { validated: false, page_size: 50 },
           });
@@ -163,7 +191,7 @@ const ValidationPage: React.FC = () => {
             abundance: record.abundance_number,
           }));
           setPendingRecords(records);
-        } else if (activeTab === 2) {
+        } else if (activeTab === 3) {
           const response = await apiClient.get('taxon-proposals/', {
             params: { status: 'pending' },
           });
@@ -215,6 +243,27 @@ const ValidationPage: React.FC = () => {
     }
   }, [pendingSites, toast]);
 
+  // Approve survey (site visit)
+  const handleApproveSurvey = useCallback(async (surveyId: number) => {
+    try {
+      await apiClient.post(`surveys/${surveyId}/validate/`);
+      setPendingSurveys(pendingSurveys.filter((s) => s.id !== surveyId));
+      toast({
+        title: 'Approved',
+        description: 'Site visit has been validated',
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to validate site visit',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [pendingSurveys, toast]);
+
   // Approve record
   const handleApproveRecord = useCallback(async (recordId: number) => {
     try {
@@ -258,7 +307,7 @@ const ValidationPage: React.FC = () => {
   }, [pendingTaxa, toast]);
 
   // Open rejection modal
-  const openRejectModal = (itemId: number, type: 'site' | 'record' | 'taxon') => {
+  const openRejectModal = (itemId: number, type: 'site' | 'survey' | 'record' | 'taxon') => {
     setRejectingItemId(itemId);
     setRejectingType(type);
     setRejectionReason('');
@@ -270,17 +319,20 @@ const ValidationPage: React.FC = () => {
     if (!rejectingItemId) return;
 
     try {
-      const endpoint =
-        rejectingType === 'site'
-          ? `sites/${rejectingItemId}/reject/`
-          : rejectingType === 'record'
-          ? `records/${rejectingItemId}/reject/`
-          : `taxon-proposals/${rejectingItemId}/reject/`;
+      const endpointMap: Record<string, string> = {
+        site: `sites/${rejectingItemId}/reject/`,
+        survey: `surveys/${rejectingItemId}/reject/`,
+        record: `records/${rejectingItemId}/reject/`,
+        taxon: `taxon-proposals/${rejectingItemId}/reject/`,
+      };
+      const endpoint = endpointMap[rejectingType];
 
       await apiClient.post(endpoint, { reason: rejectionReason });
 
       if (rejectingType === 'site') {
         setPendingSites(pendingSites.filter((s) => s.id !== rejectingItemId));
+      } else if (rejectingType === 'survey') {
+        setPendingSurveys(pendingSurveys.filter((s) => s.id !== rejectingItemId));
       } else if (rejectingType === 'record') {
         setPendingRecords(pendingRecords.filter((r) => r.id !== rejectingItemId));
       } else {
@@ -302,25 +354,33 @@ const ValidationPage: React.FC = () => {
         duration: 5000,
       });
     }
-  }, [rejectingItemId, rejectingType, rejectionReason, pendingSites, pendingRecords, pendingTaxa, onClose, toast]);
+  }, [rejectingItemId, rejectingType, rejectionReason, pendingSites, pendingSurveys, pendingRecords, pendingTaxa, onClose, toast]);
 
   // Bulk approve
   const handleBulkApprove = useCallback(async () => {
     if (selectedItems.length === 0) return;
 
     try {
-      const endpoint =
-        activeTab === 0
-          ? 'sites/bulk_validate/'
-          : activeTab === 1
-          ? 'records/bulk_validate/'
-          : 'taxon-proposals/bulk_approve/';
+      const endpointMap: Record<number, string> = {
+        0: 'sites/bulk-validate/',
+        1: 'surveys/bulk-validate/',
+        2: 'records/bulk-validate/',
+        3: 'taxon-proposals/bulk-approve/',
+      };
+      const endpoint = endpointMap[activeTab];
 
-      await apiClient.post(endpoint, { ids: selectedItems });
+      // Surveys use survey_ids, others use ids
+      const payload = activeTab === 1
+        ? { survey_ids: selectedItems }
+        : { ids: selectedItems };
+
+      await apiClient.post(endpoint, payload);
 
       if (activeTab === 0) {
         setPendingSites(pendingSites.filter((s) => !selectedItems.includes(s.id)));
       } else if (activeTab === 1) {
+        setPendingSurveys(pendingSurveys.filter((s) => !selectedItems.includes(s.id)));
+      } else if (activeTab === 2) {
         setPendingRecords(pendingRecords.filter((r) => !selectedItems.includes(r.id)));
       } else {
         setPendingTaxa(pendingTaxa.filter((t) => !selectedItems.includes(t.id)));
@@ -341,7 +401,7 @@ const ValidationPage: React.FC = () => {
         duration: 5000,
       });
     }
-  }, [activeTab, selectedItems, pendingSites, pendingRecords, pendingTaxa, toast]);
+  }, [activeTab, selectedItems, pendingSites, pendingSurveys, pendingRecords, pendingTaxa, toast]);
 
   if (!isAuthenticated || !canValidate) {
     return (
@@ -354,7 +414,7 @@ const ValidationPage: React.FC = () => {
     );
   }
 
-  const totalPending = pendingSites.length + pendingRecords.length + pendingTaxa.length;
+  const totalPending = pendingSites.length + pendingSurveys.length + pendingRecords.length + pendingTaxa.length;
 
   return (
     <Box bg={bgColor} minH="calc(100vh - 100px)" py={8}>
@@ -386,7 +446,7 @@ const ValidationPage: React.FC = () => {
 
           {/* Summary Cards */}
           <HStack spacing={4} flexWrap="wrap">
-            <Card bg={cardBg} minW="150px">
+            <Card bg={cardBg} minW="140px">
               <CardBody py={3} px={4}>
                 <HStack>
                   <Text color="gray.500" fontSize="sm">
@@ -399,7 +459,20 @@ const ValidationPage: React.FC = () => {
                 </HStack>
               </CardBody>
             </Card>
-            <Card bg={cardBg} minW="150px">
+            <Card bg={cardBg} minW="140px">
+              <CardBody py={3} px={4}>
+                <HStack>
+                  <Text color="gray.500" fontSize="sm">
+                    Site Visits
+                  </Text>
+                  <Spacer />
+                  <Badge colorScheme="orange" fontSize="md">
+                    {pendingSurveys.length}
+                  </Badge>
+                </HStack>
+              </CardBody>
+            </Card>
+            <Card bg={cardBg} minW="140px">
               <CardBody py={3} px={4}>
                 <HStack>
                   <Text color="gray.500" fontSize="sm">
@@ -412,7 +485,7 @@ const ValidationPage: React.FC = () => {
                 </HStack>
               </CardBody>
             </Card>
-            <Card bg={cardBg} minW="150px">
+            <Card bg={cardBg} minW="140px">
               <CardBody py={3} px={4}>
                 <HStack>
                   <Text color="gray.500" fontSize="sm">
@@ -435,12 +508,20 @@ const ValidationPage: React.FC = () => {
               setSelectedItems([]);
             }}
           >
-            <TabList>
+            <TabList flexWrap="wrap">
               <Tab>
                 Sites
                 {pendingSites.length > 0 && (
                   <Badge ml={2} colorScheme="blue">
                     {pendingSites.length}
+                  </Badge>
+                )}
+              </Tab>
+              <Tab>
+                Site Visits
+                {pendingSurveys.length > 0 && (
+                  <Badge ml={2} colorScheme="orange">
+                    {pendingSurveys.length}
                   </Badge>
                 )}
               </Tab>
@@ -556,6 +637,124 @@ const ValidationPage: React.FC = () => {
                                         size="sm"
                                         colorScheme="red"
                                         onClick={() => openRejectModal(site.id, 'site')}
+                                      />
+                                    </Tooltip>
+                                  </HStack>
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </Box>
+                    )}
+                  </CardBody>
+                </Card>
+              </TabPanel>
+
+              {/* Site Visits Tab */}
+              <TabPanel px={0}>
+                <Card bg={cardBg}>
+                  <CardBody>
+                    {isLoading ? (
+                      <Center py={10}>
+                        <Spinner size="xl" color="brand.500" />
+                      </Center>
+                    ) : pendingSurveys.length === 0 ? (
+                      <Center py={10}>
+                        <VStack>
+                          <CheckIcon boxSize={8} color="green.500" />
+                          <Text color="gray.500">No pending site visits</Text>
+                        </VStack>
+                      </Center>
+                    ) : (
+                      <Box overflowX="auto">
+                        <Table variant="simple" size="sm">
+                          <Thead>
+                            <Tr>
+                              <Th w="40px">
+                                <Checkbox
+                                  isChecked={
+                                    selectedItems.length === pendingSurveys.length &&
+                                    pendingSurveys.length > 0
+                                  }
+                                  onChange={(e) =>
+                                    setSelectedItems(
+                                      e.target.checked
+                                        ? pendingSurveys.map((s) => s.id)
+                                        : []
+                                    )
+                                  }
+                                />
+                              </Th>
+                              <Th>Site</Th>
+                              <Th>Date</Th>
+                              <Th>Collector</Th>
+                              <Th>Records</Th>
+                              <Th>Submitted By</Th>
+                              <Th>Actions</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {pendingSurveys.map((survey) => (
+                              <Tr key={survey.id}>
+                                <Td>
+                                  <Checkbox
+                                    isChecked={selectedItems.includes(survey.id)}
+                                    onChange={(e) =>
+                                      setSelectedItems(
+                                        e.target.checked
+                                          ? [...selectedItems, survey.id]
+                                          : selectedItems.filter((id) => id !== survey.id)
+                                      )
+                                    }
+                                  />
+                                </Td>
+                                <Td>
+                                  <VStack align="start" spacing={0}>
+                                    <Text fontWeight="medium">{survey.siteName}</Text>
+                                    <Text fontSize="xs" color="gray.500">
+                                      {survey.siteCode}
+                                    </Text>
+                                  </VStack>
+                                </Td>
+                                <Td>
+                                  {survey.date
+                                    ? new Date(survey.date).toLocaleDateString()
+                                    : '-'}
+                                </Td>
+                                <Td>{survey.collector}</Td>
+                                <Td>
+                                  <Badge colorScheme="blue">{survey.recordCount}</Badge>
+                                </Td>
+                                <Td>{survey.submittedBy}</Td>
+                                <Td>
+                                  <HStack spacing={1}>
+                                    <Tooltip label="View site on map">
+                                      <IconButton
+                                        aria-label="View"
+                                        icon={<ViewIcon />}
+                                        size="sm"
+                                        variant="ghost"
+                                        as={RouterLink}
+                                        to={`/map`}
+                                      />
+                                    </Tooltip>
+                                    <Tooltip label="Approve">
+                                      <IconButton
+                                        aria-label="Approve"
+                                        icon={<CheckIcon />}
+                                        size="sm"
+                                        colorScheme="green"
+                                        onClick={() => handleApproveSurvey(survey.id)}
+                                      />
+                                    </Tooltip>
+                                    <Tooltip label="Reject">
+                                      <IconButton
+                                        aria-label="Reject"
+                                        icon={<CloseIcon />}
+                                        size="sm"
+                                        colorScheme="red"
+                                        onClick={() => openRejectModal(survey.id, 'survey')}
                                       />
                                     </Tooltip>
                                   </HStack>
