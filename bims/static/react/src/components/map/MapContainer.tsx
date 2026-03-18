@@ -94,7 +94,6 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
     },
     ref
   ) => {
-    console.log('MapContainer: Component rendering');
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -200,8 +199,6 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         return;
       }
 
-      console.log('MapContainer: Initializing map with dimensions', rect.width, rect.height);
-
       // Check WebGL support
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -209,7 +206,6 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         console.error('MapContainer: WebGL is not supported in this browser');
         return;
       }
-      console.log('MapContainer: WebGL is supported');
 
       const map = new MapLibreMap({
         container,
@@ -245,7 +241,6 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
 
       // Map load event
       map.on('load', () => {
-        console.log('MapContainer: Map loaded successfully');
         mapRef.current = map;
         setIsLoaded(true);
 
@@ -472,7 +467,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         left={0}
         right={0}
         bottom={0}
-        bg="blue.100"  // Visible debug background
+        bg="gray.200"
         sx={{
           '.maplibregl-map': {
             width: '100%',
