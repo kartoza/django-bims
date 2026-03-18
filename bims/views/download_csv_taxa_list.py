@@ -225,6 +225,8 @@ def download_taxa_list(request):
     if not request.user.is_authenticated:
         return HttpResponseForbidden('Not logged in')
 
+    from bims.models.download_request import DownloadRequest
+
     output = request.GET.get('output', 'csv')
 
     taxon_group_id = request.GET.get('taxonGroup')
@@ -248,6 +250,12 @@ def download_taxa_list(request):
         folder
     )
     path_file = os.path.join(path_folder, filename)
+
+    dr = DownloadRequest.objects.get(
+        id=download_request_id
+    )
+    dr.request_category = f'Taxa List - {taxon_group.name}'
+    dr.save()
 
     if not os.path.exists(path_folder):
         os.mkdir(path_folder)
