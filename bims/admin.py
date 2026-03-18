@@ -2247,6 +2247,7 @@ class DownloadRequestAdmin(admin.ModelAdmin):
     list_filter = (
         DownloadRequestStatusFilter,
     )
+    actions = ['restart_download']
 
     def status(self, obj: DownloadRequest):
         if obj.approved:
@@ -2256,6 +2257,62 @@ class DownloadRequestAdmin(admin.ModelAdmin):
         if obj.processing:
             return 'Processing'
         return 'Pending'
+
+    def restart_download(self, request, queryset):
+        import os
+        from bims.tasks.collection_record import download_collection_record_task
+
+        restarted = 0
+        skipped = 0
+        for dr in queryset:
+            if (
+                dr.resource_name != 'Occurrence Data' or
+                dr.resource_type not in ('CSV', 'XLS')
+            ):
+                skipped += 1
+                continue
+
+            if not dr.download_path or not dr.download_params:
+                skipped += 1
+                continue
+
+            try:
+                if os.path.exists(dr.download_path):
+                    os.remove(dr.download_path)
+            except OSError:
+                pass
+
+            dr.progress = None
+            dr.progress_updated_at = None
+            dr.processing = True
+            dr.approved = True
+            dr.rejected = False
+            dr.rejection_message = ''
+            dr.save(update_fields=[
+                'progress', 'progress_updated_at', 'processing',
+                'approved', 'rejected', 'rejection_message'
+            ])
+
+            download_collection_record_task.delay(
+                dr.download_path,
+                dr.download_params,
+                send_email=True,
+                user_id=dr.requester_id,
+            )
+            restarted += 1
+
+        if restarted:
+            self.message_user(request, f'{restarted} download(s) restarted.')
+        if skipped:
+            self.message_user(
+                request,
+                f'{skipped} download(s) skipped '
+                f'(must be Occurrence Data with CSV or XLS type, '
+                f'and have a download path and params).',
+                level='warning'
+            )
+
+    restart_download.short_description = 'Restart download'
 
 
 class DownloadRequestPurposeAdmin(admin.ModelAdmin):

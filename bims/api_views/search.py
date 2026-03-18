@@ -188,9 +188,12 @@ class CollectionSearch(object):
             try:
                 return json.loads(json_query)
             except json.decoder.JSONDecodeError:
-                return json.loads(
-                    urllib.parse.unquote(json_query)
-                )
+                try:
+                    return json.loads(
+                        urllib.parse.unquote(json_query)
+                    )
+                except json.decoder.JSONDecodeError:
+                    return None
         else:
             return None
 

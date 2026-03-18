@@ -1,7 +1,14 @@
 
 # coding=utf-8
 import ast
+import errno
+import json
+import os
+from datetime import datetime
+from hashlib import sha256
+from urllib.parse import urlparse, parse_qs
 
+from django.conf import settings
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.contrib import messages
@@ -15,6 +22,49 @@ from bims.permissions.api_permission import (
     user_has_permission_to_validate,
 )
 from preferences import preferences
+
+
+def _params_from_dashboard_url(download_request):
+    """
+    Derive download_params and download_path from dashboard_url when they are
+    missing on the DownloadRequest.
+    """
+    if not download_request.dashboard_url:
+        return None, None
+
+    parsed = urlparse(download_request.dashboard_url)
+
+    # Params live in the URL fragment as  #<prefix>/<key=val&key=val...>
+    # e.g. #site-detail/taxon=&siteId=123&...
+    # Fall back to the regular query string if the fragment is absent.
+    fragment = parsed.fragment  # e.g. "site-detail/taxon=&siteId=123&..."
+    if fragment:
+        # Drop any leading path segment (everything up to and including the first '/')
+        sep = fragment.find('/')
+        param_string = fragment[sep + 1:] if sep != -1 else fragment
+    else:
+        param_string = parsed.query
+
+    qs = parse_qs(param_string, keep_blank_values=False)
+    params_dict = {
+        k: v[0] if len(v) == 1 else v for k, v in qs.items()
+    }
+    params_dict['downloadRequestId'] = str(download_request.pk)
+    username = (
+        download_request.requester.username
+        if download_request.requester else 'unknown'
+    )
+    query_string = json.dumps(params_dict) + datetime.today().strftime('%Y%m%d')
+    filename = sha256(query_string.encode('utf-8')).hexdigest()
+    folder = settings.PROCESSED_CSV_PATH
+    path_folder = os.path.join(settings.MEDIA_ROOT, folder, username)
+    try:
+        os.makedirs(path_folder, exist_ok=True)
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
+    path_file = os.path.join(path_folder, filename)
+    return path_file, params_dict
 
 
 def dispatch_download_if_needed(download_request):
@@ -211,13 +261,73 @@ class DownloadRequestDetailView(
             preferences.SiteSetting.enable_download_request_approval or
             preferences.SiteSetting.max_download_records > 0
         )
+        referer = self.request.META.get('HTTP_REFERER', '')
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        if parsed.path == '/download-request/':
+            back_url = parsed.path
+            if parsed.query:
+                back_url += '?' + parsed.query
+        else:
+            back_url = '/download-request/'
+        ctx['back_url'] = back_url
         return ctx
 
     def post(self, request, *args, **kwargs):
+        action = request.POST.get('action', '')
+        download_request = self.get_object()
+
+        if action == 'restart':
+            if not (request.user.is_staff or request.user.is_superuser):
+                raise Http404('User has no permission to restart downloads')
+            if (
+                download_request.resource_name != 'Occurrence Data' or
+                download_request.resource_type not in ('CSV', 'XLS')
+            ):
+                raise Http404('Restart is only supported for Occurrence Data CSV/XLS downloads')
+
+            try:
+                if download_request.download_path and os.path.exists(
+                        download_request.download_path):
+                    os.remove(download_request.download_path)
+            except OSError:
+                pass
+
+            download_request.progress = None
+            download_request.progress_updated_at = None
+            download_request.processing = True
+            download_request.approved = True
+            download_request.rejected = False
+            download_request.rejection_message = ''
+            download_request.save(
+                update_fields=[
+                    'progress', 'progress_updated_at', 'processing',
+                    'approved', 'rejected', 'rejection_message'
+                ])
+
+            path_file = download_request.download_path
+            params = download_request.download_params
+
+            if not path_file or not params:
+                path_file, params = _params_from_dashboard_url(download_request)
+                if path_file and params:
+                    download_request.download_path = path_file
+                    download_request.download_params = params
+                    download_request.save(
+                        update_fields=['download_path', 'download_params'])
+
+            if path_file and params:
+                download_collection_record_task.delay(
+                    path_file,
+                    params,
+                    send_email=True,
+                    user_id=download_request.requester_id,
+                )
+            return HttpResponseRedirect(request.path)
+
         if not user_has_permission_to_validate(request.user):
             raise Http404('User has no permission to approve download requests')
         approved = ast.literal_eval(request.POST.get('approved', 'False'))
-        download_request = self.get_object()
         if approved:
             if download_request.request_file:
                 send_csv_via_email.delay(

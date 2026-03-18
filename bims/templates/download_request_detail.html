@@ -67,7 +67,7 @@
 
     <div class="container mt-4">
         <div class="mb-3">
-            <a href="/download-request/" class="btn btn-outline-secondary btn-sm">&larr; Back to list</a>
+            <a href="{{ back_url }}" class="btn btn-outline-secondary btn-sm">&larr; Back to list</a>
         </div>
 
         <div class="card info-card">
@@ -220,6 +220,16 @@
                             Reject
                         </a>
                     {% endif %}
+
+                    {% if request.user.is_staff or request.user.is_superuser %}
+                        {% if download_request.resource_name == 'Occurrence Data' %}
+                            {% if download_request.resource_type == 'CSV' or download_request.resource_type == 'XLS' %}
+                            <a href="#" class="btn btn-warning" data-toggle="modal" data-target="#confirmRestartModal">
+                                Restart Download
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
                 </div>
 
                 {% if download_request.download_params %}
@@ -235,6 +245,31 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Restart Modal -->
+<div class="modal fade" id="confirmRestartModal" tabindex="-1" role="dialog">
+    <form action="{{ request.path }}" method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="restart">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Restart Download</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to restart this download? Any existing progress will be cleared and the download will begin again from scratch.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-warning">Restart</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- Approve Modal -->
