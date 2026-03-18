@@ -15,6 +15,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 
+from bims.models.taxonomy import Taxonomy
 from bims.scripts.species_keys import (
     ACCEPTED_TAXON, TAXON_RANK,
     COMMON_NAME, CLASS, SUBSPECIES,
@@ -108,7 +109,7 @@ def process_download_csv_taxa_list(
     if tg_id:
         try:
             tg = TaxonGroup.objects.get(id=tg_id)
-            taxon_group_name = f"{tg.name} checkList"
+            taxon_group_name = f"{tg.name} Checklist"
         except TaxonGroup.DoesNotExist:
             pass
 
@@ -342,6 +343,11 @@ def process_download_pdf_taxa_list(
         using CormorantGaramond Serif fonts.
         """
         font_dir = os.path.join(settings.STATIC_ROOT, 'fonts', 'garamond')
+        if not os.path.isdir(font_dir):
+            font_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                'static', 'fonts', 'garamond'
+            )
         pdfmetrics.registerFont(TTFont('Garamond', os.path.join(font_dir, 'EBGaramond-Regular.ttf')))
         pdfmetrics.registerFont(TTFont('Garamond-Bold', os.path.join(font_dir, 'EBGaramond-Bold.ttf')))
         pdfmetrics.registerFont(TTFont('Garamond-Italic', os.path.join(font_dir, 'EBGaramond-Italic.ttf')))
@@ -392,6 +398,12 @@ def process_download_pdf_taxa_list(
             leading=14,
         )
 
+        syn_style = ParagraphStyle(
+            'SynonymStyle',
+            parent=species_style,
+            leftIndent=15,
+        )
+
         heading_style = ParagraphStyle(
             name="HeadingStyle", parent=styles['Normal'],
             fontName='Garamond-Bold', fontSize=12, leading=14, alignment=TA_LEFT,
@@ -403,7 +415,7 @@ def process_download_pdf_taxa_list(
 
         paragraphs = []
 
-        title_text = f"{taxon_group.name} checkList"
+        title_text = f"{taxon_group.name} Checklist"
         paragraphs.append(Paragraph(title_text, title_style))
         paragraphs.append(Spacer(1, 6))
 
@@ -432,6 +444,8 @@ def process_download_pdf_taxa_list(
         genus_dict = {}
         species_qs = taxonomies.filter(
             rank__in=['SPECIES', 'SUBSPECIES']
+        ).exclude(
+            taxonomic_status__icontains='synonym'
         ).order_by('canonical_name')
 
         for s in species_qs:
@@ -464,6 +478,16 @@ def process_download_pdf_taxa_list(
 
                 paragraphs.append(Paragraph(sp_line, species_style))
 
+                synonyms = Taxonomy.objects.filter(
+                    accepted_taxonomy=s_obj
+                )
+                for syn in synonyms:
+                    syn_lin = f'<i>{syn.canonical_name}</i>'
+                    if syn.author:
+                        syn_lin += f" {syn.author}"
+                    
+                    paragraphs.append(Paragraph(syn_lin, syn_style))
+
             paragraphs.append(Spacer(1, 10))
 
         return paragraphs
@@ -495,6 +519,23 @@ def process_download_pdf_taxa_list(
     checklist_paragraphs = get_checklist_paragraphs(taxon_group, taxonomies)
     story.extend(checklist_paragraphs)
     doc.build(story)
+
+    # Mark the download request as finished
+    if download_request_id:
+        from django.utils import timezone
+        from bims.models.download_request import DownloadRequest
+        total = taxonomies.filter(rank__in=['SPECIES', 'SUBSPECIES']).count()
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+            dr.progress = f'{total}/{total}'
+            dr.processing = False
+            dr.request_file = pdf_file_path
+            dr.progress_updated_at = timezone.now()
+            dr.save(update_fields=[
+                'progress', 'processing', 'request_file', 'progress_updated_at'
+            ])
+        except DownloadRequest.DoesNotExist:
+            pass
 
     UserModel = get_user_model()
     try:

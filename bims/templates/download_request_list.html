@@ -76,30 +76,26 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                {% if obj.progress %}
+                                {% if obj.request_file %}
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-download-request" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                                            Finished
+                                        </div>
+                                    </div>
+                                {% elif obj.progress %}
                                     <div class="progress">
                                         {% with obj.progress|split:"/" as progress %}
-                                      <div class="progress-bar progress-bar-download-request" role="progressbar" style="width: {{progress.0|percent:progress.1}}%" aria-valuenow="{{ progress.0|percent:progress.1 }}" aria-valuemin="0" aria-valuemax="100">
-                                        {% if progress.0|percent:progress.1 == 100 %}Finished{% else %}{{ progress.0 }}/{{ progress.1 }}{% endif %}
-                                      </div>
-                                     {% endwith %}
+                                        <div class="progress-bar progress-bar-download-request" role="progressbar" style="width: {{progress.0|percent:progress.1}}%" aria-valuenow="{{ progress.0|percent:progress.1 }}" aria-valuemin="0" aria-valuemax="100">
+                                            {% if progress.0|percent:progress.1 == 100 %}Finished{% else %}{{ progress.0 }}/{{ progress.1 }}{% endif %}
+                                        </div>
+                                        {% endwith %}
                                     </div>
-                                {% endif %}
-                                {% if not obj.approved and not obj.rejected %}
-                                    {% if not obj.request_file and not obj.progress %}
-                                        <div class="progress">
-                                            <div class="progress-bar progress-bar-download-request" role="progressbar" style="width: 0; color: #000000" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                                                <span style="padding-left: 10px"> Pending</span>
-                                            </div>
+                                {% elif not obj.approved and not obj.rejected %}
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-download-request" role="progressbar" style="width: 0; color: #000000" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            <span style="padding-left: 10px">Pending</span>
                                         </div>
-                                    {% endif %}
-                                    {% if obj.request_file and not obj.progress %}
-                                        <div class="progress">
-                                            <div class="progress-bar progress-bar-download-request" role="progressbar" style="width: 100%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                                                Finished
-                                            </div>
-                                        </div>
-                                    {% endif %}
+                                    </div>
                                 {% endif %}
                                 {% if obj.approved %}
                                     <button disabled

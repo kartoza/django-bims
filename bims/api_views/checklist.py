@@ -6,7 +6,8 @@ from django.http import Http404
 from preferences import preferences
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
+from django.utils import timezone
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, TableStyle, Table, Spacer
 from reportlab.platypus.para import Paragraph
@@ -343,6 +344,7 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     download_request.processing = False
     download_request.request_file = pdf_file_path
     download_request.request_category = f'{module_name} Checklist'
+    download_request.progress_updated_at = timezone.now()
     download_request.save()
 
     return True
