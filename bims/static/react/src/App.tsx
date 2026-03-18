@@ -110,8 +110,8 @@ const App: React.FC = () => {
             {/* Header - always visible */}
             <Header />
 
-            {/* Main content - flex-grow with explicit height for map */}
-            <Box flex="1" position="relative" overflow="hidden">
+            {/* Main content - uses flex=1 to fill space, position relative for absolute children */}
+            <Box flex="1" position="relative" overflow="hidden" minH={0}>
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   {/* Landing page */}

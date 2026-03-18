@@ -21,8 +21,7 @@
     <!-- Google Fonts - Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
 
-    <!-- MapLibre GL CSS -->
-    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <!-- MapLibre GL CSS is bundled with webpack -->
 
     <style>
         /* Reset and base styles */
@@ -100,10 +99,7 @@
         <p class="loading-text">Loading BIMS...</p>
     </div>
 
-    <!-- MapLibre GL JS -->
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-
-    <!-- React Application Bundle -->
+    <!-- React Application Bundle (includes MapLibre GL) -->
     {% render_bundle 'react-app' 'js' 'V2' %}
     {% render_bundle 'react-app' 'css' 'V2' %}
 

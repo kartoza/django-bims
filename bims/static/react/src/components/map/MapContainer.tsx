@@ -94,10 +94,12 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
     },
     ref
   ) => {
+    console.log('MapContainer: Component rendering');
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapRef = useRef<MapLibreMap | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
+    const [initAttempt, setInitAttempt] = useState(0);
 
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
@@ -183,8 +185,25 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
     useEffect(() => {
       if (mapRef.current || !mapContainer.current) return;
 
+      // Wait for container to have dimensions
+      const container = mapContainer.current;
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        // Container not ready, retry after a short delay
+        if (initAttempt < 20) {
+          const timer = setTimeout(() => {
+            setInitAttempt((prev) => prev + 1);
+          }, 100);
+          return () => clearTimeout(timer);
+        }
+        console.error('MapContainer: Container has no dimensions after retries');
+        return;
+      }
+
+      console.log('MapContainer: Initializing map with dimensions', rect.width, rect.height);
+
       const map = new MapLibreMap({
-        container: mapContainer.current,
+        container,
         style: bimsMapStyle,
         center: initialCenter,
         zoom: initialZoom,
@@ -433,7 +452,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
           setIsLoaded(false);
         }
       };
-    }, []); // Only run once on mount
+    }, [initAttempt]); // Re-run on init attempts until container has dimensions
 
     return (
       <Box
@@ -443,7 +462,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         left={0}
         right={0}
         bottom={0}
-        bg="gray.200"
+        bg="blue.100"  // Visible debug background
         sx={{
           '.maplibregl-map': {
             width: '100%',

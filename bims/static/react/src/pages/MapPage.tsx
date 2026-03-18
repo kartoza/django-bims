@@ -214,7 +214,7 @@ const MapPage: React.FC = () => {
   }, []);
 
   return (
-    <Box position="relative" h="100%" w="100%">
+    <Box position="absolute" top={0} left={0} right={0} bottom={0}>
       {/* Map container */}
       <MapContainer
         ref={mapRef}
