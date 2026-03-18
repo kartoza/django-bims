@@ -343,6 +343,8 @@ def fetch_all_species_from_gbif(
         log_info(f"Depth>{MAX_DEPTH} for key={gbif_key} – aborting to avoid recursion loop")
         return None
 
+    source_taxonomic_status = 'accepted' if not is_synonym else 'synonym'
+
     if gbif_key:
         if gbif_key in _visited:
             log_info(f"Cycle detected at key={gbif_key}; skipping further recursion")
@@ -377,8 +379,6 @@ def fetch_all_species_from_gbif(
 
         gbif_data = get_species(gbif_key)
         if gbif_data:
-            if taxonomic_rank and gbif_data['rank'] != taxonomic_rank.upper():
-                return None
             if taxon:
                 taxon.gbif_data = gbif_data
                 taxon.save()
@@ -413,6 +413,18 @@ def fetch_all_species_from_gbif(
                 return None
 
     raw_rank = species_data.get('rank', '').upper() if species_data else ''
+
+    if species_data:
+        if taxonomic_rank and species_data['rank'] != taxonomic_rank.upper():
+            return None
+        if 'taxonomicStatus' in species_data:
+            species_status = species_data['taxonomicStatus']
+        elif 'status' in species_data:
+            species_status = species_data['status']
+        else:
+            species_status = ''
+        if preserve_taxonomic_status and species_status.lower() not in source_taxonomic_status:
+            return None
 
     if taxonomic_rank:
         if raw_rank != taxonomic_rank.upper():

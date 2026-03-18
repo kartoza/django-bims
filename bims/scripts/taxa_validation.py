@@ -18,7 +18,7 @@ from collections import defaultdict
 
 from bims.scripts.species_keys import (
     GBIF_LINK, GBIF_URL, FADA_ID, TAXON, TAXON_RANK, GENUS, SPECIES,
-    TAXONOMIC_STATUS, ACCEPTED_TAXON, SYNONYM, KINGDOM
+    TAXONOMIC_STATUS, ACCEPTED_TAXON, SYNONYM, KINGDOM, AUTHORS
 )
 from bims.scripts.data_upload import FALLBACK_ENCODINGS
 from bims.models import Taxonomy, UploadSession
@@ -39,12 +39,13 @@ class TaxaValidator:
     def __init__(self, upload_session):
         from bims.templatetags.site import is_fada_site
         self.upload_session = upload_session
-        self.file_gbif_keys = defaultdict(list)  # {gbif_key: [row_numbers]}
-        self.file_fada_ids = defaultdict(list)   # {fada_id: [row_numbers]}
-        self.file_taxon_name_rank = defaultdict(list)  # {(name_lower, rank_upper): [row_numbers]}
-        self.file_taxon_names_lower = set()  # lowercase taxon names present in the CSV
-        self.db_accepted_taxon_names_lower = set()  # lowercase names confirmed in the DB
-        self.validation_results = []  # List of (row_dict, status_messages)
+        self.file_gbif_keys = defaultdict(list)
+        self.file_fada_ids = defaultdict(list)
+        self.file_taxon_name_rank = defaultdict(list)
+        self.file_taxon_name_rank_author = defaultdict(list)
+        self.file_taxon_names_lower = set()
+        self.db_accepted_taxon_names_lower = set()
+        self.validation_results = []
         self.all_rows = []
         self.headers = []
         self.total_rows = 0
@@ -261,9 +262,17 @@ class TaxaValidator:
             if fada_id:
                 self.file_fada_ids[fada_id].append(row_number)
             if taxon_name:
-                # Store as (name_lower, rank_upper) tuple for comparison
+                author = self.row_value(row, AUTHORS)
+                # (name, rank) for homonymy detection
                 name_rank_key = (taxon_name.lower(), (taxon_rank or '').upper())
                 self.file_taxon_name_rank[name_rank_key].append(row_number)
+                # (name, rank, author) for true-duplicate detection
+                name_rank_author_key = (
+                    taxon_name.lower(),
+                    (taxon_rank or '').upper(),
+                    (author or '').lower().strip(),
+                )
+                self.file_taxon_name_rank_author[name_rank_author_key].append(row_number)
                 self.file_taxon_names_lower.add(taxon_name.lower())
 
             # Collect accepted taxon names referenced by synonym rows
@@ -316,16 +325,34 @@ class TaxaValidator:
         if self.is_fada and not fada_id:
             messages.append("ERROR: FADA ID is missing")
 
-        # Check for within-file duplicates (same taxon name + same rank = ERROR)
+        # Check for within-file duplicates and homonyms (same name + rank)
         taxon_name = self._get_input_taxon_name(row)
         taxon_rank = self.row_value(row, TAXON_RANK)
+        author = self.row_value(row, AUTHORS)
         if taxon_name:
             name_rank_key = (taxon_name.lower(), (taxon_rank or '').upper())
-            if len(self.file_taxon_name_rank.get(name_rank_key, [])) > 1:
-                other_rows = [r - 1 for r in self.file_taxon_name_rank[name_rank_key] if r != row_number]
+            name_rank_author_key = (
+                taxon_name.lower(),
+                (taxon_rank or '').upper(),
+                (author or '').lower().strip(),
+            )
+            rows_same_name_rank = self.file_taxon_name_rank.get(name_rank_key, [])
+            rows_same_name_rank_author = self.file_taxon_name_rank_author.get(name_rank_author_key, [])
+
+            if len(rows_same_name_rank_author) > 1:
+                # Same name + rank + author: true duplicate
+                other_rows = [r - 1 for r in rows_same_name_rank_author if r != row_number]
                 messages.append(
-                    f"ERROR: Duplicate taxon name '{taxon_name}' with same rank '{taxon_rank}' "
+                    f"ERROR: Duplicate taxon name '{taxon_name}' with same rank '{taxon_rank}' and author(s) '{author}' "
                     f"(also in row(s) {', '.join(map(str, other_rows))})"
+                )
+            elif len(rows_same_name_rank) > 1:
+                # Same name + rank but different authors: homonymy
+                other_rows = [r - 1 for r in rows_same_name_rank if r != row_number]
+                messages.append(
+                    f"WARNING: Homonymy detected — '{taxon_name}' ({taxon_rank}) appears with different author(s) "
+                    f"(also in row(s) {', '.join(map(str, other_rows))}). "
+                    f"Verify that one is the accepted name and the other is a synonym."
                 )
 
         # Check database duplicates
