@@ -106,12 +106,12 @@ const App: React.FC = () => {
     <AppProvider>
       <BrowserRouter basename="/new">
         <MapProvider>
-          <Flex direction="column" minH="100vh">
+          <Flex direction="column" h="100vh">
             {/* Header - always visible */}
             <Header />
 
             {/* Main content - uses flex=1 to fill space, position relative for absolute children */}
-            <Box flex="1" position="relative" overflow="hidden" minH={0}>
+            <Box flex="1" position="relative" overflow="hidden" minH={0} minW={0}>
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   {/* Landing page */}

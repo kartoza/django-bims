@@ -57,11 +57,9 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
   if (isMobile) {
     return (
       <Box
-        position="absolute"
-        top={0}
-        left={0}
-        right={0}
-        bottom={0}
+        w="100%"
+        h="100%"
+        position="relative"
       >
         {/* Mobile menu button */}
         <IconButton
@@ -76,13 +74,11 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
           onClick={onOpen}
         />
 
-        {/* Main content (map) - absolute fill */}
+        {/* Main content (map) - fill parent with 100% */}
         <Box
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
+          w="100%"
+          h="100%"
+          position="relative"
         >
           {children}
         </Box>
@@ -113,14 +109,12 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
     );
   }
 
-  // Desktop layout - absolute positioning for reliable sizing
+  // Desktop layout - use width/height 100% to fill parent
   return (
     <Box
-      position="absolute"
-      top={0}
-      left={0}
-      right={0}
-      bottom={0}
+      w="100%"
+      h="100%"
+      position="relative"
     >
       <Flex
         direction={sidebarPosition === 'left' ? 'row' : 'row-reverse'}
@@ -143,7 +137,7 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
           {showPanel && <PanelContent />}
         </Box>
 
-        {/* Main content (map) */}
+        {/* Main content (map) - use 100% height with relative position */}
         <Box flex="1" h="100%" position="relative" minW={0}>
           {children}
         </Box>
