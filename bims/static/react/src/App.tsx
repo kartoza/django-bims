@@ -109,8 +109,8 @@ const App: React.FC = () => {
             {/* Header - always visible */}
             <Header />
 
-            {/* Main content - overflow hidden so children can scroll */}
-            <Box flex="1" overflow="hidden">
+            {/* Main content - flex-grow with explicit height for map */}
+            <Box flex="1" position="relative" overflow="hidden">
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   {/* Landing page */}

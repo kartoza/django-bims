@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * Layout component for map-based views.
- * Provides responsive layout with sidebar and main content area.
+ * Uses absolute positioning to ensure map fills available space.
+ *
+ * Made with love by Kartoza | https://kartoza.com
  */
 import React from 'react';
 import {
@@ -51,10 +53,16 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
     </Box>
   );
 
-  // Mobile drawer for sidebar
+  // Mobile layout - full screen map with drawer
   if (isMobile) {
     return (
-      <Box position="relative" h="100%">
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+      >
         {/* Mobile menu button */}
         <IconButton
           aria-label="Open menu"
@@ -68,8 +76,14 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
           onClick={onOpen}
         />
 
-        {/* Main content (map) */}
-        <Box h="100%" w="100%">
+        {/* Main content (map) - absolute fill */}
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+        >
           {children}
         </Box>
 
@@ -99,33 +113,42 @@ const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
     );
   }
 
-  // Desktop layout
+  // Desktop layout - absolute positioning for reliable sizing
   return (
-    <Flex
-      direction={sidebarPosition === 'left' ? 'row' : 'row-reverse'}
-      h="100%"
-      position="relative"
+    <Box
+      position="absolute"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
     >
-      {/* Sidebar panel */}
-      <Box
-        w={showPanel ? `${effectivePanelWidth}px` : '0'}
-        minW={showPanel ? `${effectivePanelWidth}px` : '0'}
+      <Flex
+        direction={sidebarPosition === 'left' ? 'row' : 'row-reverse'}
         h="100%"
-        bg="white"
-        borderRightWidth={sidebarPosition === 'left' && showPanel ? 1 : 0}
-        borderLeftWidth={sidebarPosition === 'right' && showPanel ? 1 : 0}
-        borderColor="gray.200"
-        transition="width 0.2s ease-in-out"
-        overflow="hidden"
+        w="100%"
       >
-        {showPanel && <PanelContent />}
-      </Box>
+        {/* Sidebar panel */}
+        <Box
+          w={showPanel ? `${effectivePanelWidth}px` : '0'}
+          minW={showPanel ? `${effectivePanelWidth}px` : '0'}
+          h="100%"
+          bg="white"
+          borderRightWidth={sidebarPosition === 'left' && showPanel ? 1 : 0}
+          borderLeftWidth={sidebarPosition === 'right' && showPanel ? 1 : 0}
+          borderColor="gray.200"
+          transition="width 0.2s ease-in-out"
+          overflow="hidden"
+          flexShrink={0}
+        >
+          {showPanel && <PanelContent />}
+        </Box>
 
-      {/* Main content (map) */}
-      <Box flex="1" h="100%" position="relative">
-        {children}
-      </Box>
-    </Flex>
+        {/* Main content (map) */}
+        <Box flex="1" h="100%" position="relative" minW={0}>
+          {children}
+        </Box>
+      </Flex>
+    </Box>
   );
 };
 

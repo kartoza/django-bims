@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * MapLibre GL map container component.
- * Implements map functionality directly with React state.
+ * Supports both WMS layers (via GeoServer) and GeoJSON data.
  *
  * Made with love by Kartoza | https://kartoza.com
  */
@@ -25,7 +25,15 @@ import maplibregl, {
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { bimsMapStyle } from '../../styles/mapStyle';
+import {
+  bimsMapStyle,
+  addWmsLayer,
+  removeWmsLayer,
+  setWmsLayerOpacity,
+  switchBasemap,
+  buildWmsUrl,
+  GEOSERVER_CONFIG,
+} from '../../styles/mapStyle';
 
 // GeoJSON Feature type for sites
 interface SiteFeature {
@@ -52,6 +60,7 @@ interface SiteFeatureCollection {
 export interface MapContainerProps {
   initialCenter?: [number, number];
   initialZoom?: number;
+  useWms?: boolean; // Whether to use WMS layers (default: true if GeoServer available)
   onSiteSelect?: (siteId: number | null) => void;
   onSiteHover?: (siteId: number | null) => void;
   onBoundsChange?: (bounds: [number, number, number, number]) => void;
@@ -66,6 +75,10 @@ export interface MapContainerRef {
   getMap: () => MapLibreMap | null;
   highlightSite: (siteId: number | null) => void;
   getBounds: () => [number, number, number, number] | null;
+  addWmsLayer: (layerId: string, wmsLayer: string, options?: { opacity?: number }) => void;
+  removeWmsLayer: (layerId: string) => void;
+  setWmsLayerOpacity: (layerId: string, opacity: number) => void;
+  switchBasemap: (sourceId: string) => void;
 }
 
 const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
@@ -73,6 +86,7 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
     {
       initialCenter = [24.5, -29.0], // Default: South Africa
       initialZoom = 5,
+      useWms = false, // Default to GeoJSON mode for now
       onSiteSelect,
       onSiteHover,
       onBoundsChange,
@@ -117,11 +131,13 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
       highlightSite: (siteId: number | null) => {
         if (mapRef.current && isLoaded) {
           setSelectedSiteId(siteId);
-          mapRef.current.setFilter('highlighted-point', [
-            '==',
-            ['get', 'id'],
-            siteId ?? '',
-          ]);
+          if (mapRef.current.getLayer('highlighted-point')) {
+            mapRef.current.setFilter('highlighted-point', [
+              '==',
+              ['get', 'id'],
+              siteId ?? '',
+            ]);
+          }
         }
       },
 
@@ -136,6 +152,30 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
           ];
         }
         return null;
+      },
+
+      addWmsLayer: (layerId: string, wmsLayer: string, options?: { opacity?: number }) => {
+        if (mapRef.current && isLoaded) {
+          addWmsLayer(mapRef.current, layerId, wmsLayer, options);
+        }
+      },
+
+      removeWmsLayer: (layerId: string) => {
+        if (mapRef.current && isLoaded) {
+          removeWmsLayer(mapRef.current, layerId);
+        }
+      },
+
+      setWmsLayerOpacity: (layerId: string, opacity: number) => {
+        if (mapRef.current && isLoaded) {
+          setWmsLayerOpacity(mapRef.current, layerId, opacity);
+        }
+      },
+
+      switchBasemap: (sourceId: string) => {
+        if (mapRef.current && isLoaded) {
+          switchBasemap(mapRef.current, sourceId);
+        }
       },
     }));
 
@@ -180,90 +220,198 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         mapRef.current = map;
         setIsLoaded(true);
 
-        // Add placeholder source for sites
-        map.addSource('sites', {
-          type: 'geojson',
-          data: {
-            type: 'FeatureCollection',
-            features: [],
-          },
-          cluster: true,
-          clusterMaxZoom: 14,
-          clusterRadius: 50,
-        });
+        if (useWms) {
+          // Add WMS layer for sites from GeoServer
+          addWmsLayer(map, 'wms-sites', GEOSERVER_CONFIG.layers.sites);
+        } else {
+          // Add GeoJSON source and layers for sites (fallback mode)
+          map.addSource('sites', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: [],
+            },
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50,
+          });
 
-        // Add clustered points layer
-        map.addLayer({
-          id: 'clusters',
-          type: 'circle',
-          source: 'sites',
-          filter: ['has', 'point_count'],
-          paint: {
-            'circle-color': [
-              'step',
-              ['get', 'point_count'],
-              '#51bbd6',
-              10,
-              '#f1f075',
-              50,
-              '#f28cb1',
-            ],
-            'circle-radius': [
-              'step',
-              ['get', 'point_count'],
-              15,
-              10,
-              20,
-              50,
-              25,
-            ],
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff',
-          },
-        });
+          // Add clustered points layer
+          map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'sites',
+            filter: ['has', 'point_count'],
+            paint: {
+              'circle-color': [
+                'step',
+                ['get', 'point_count'],
+                '#51bbd6',
+                10,
+                '#f1f075',
+                50,
+                '#f28cb1',
+              ],
+              'circle-radius': [
+                'step',
+                ['get', 'point_count'],
+                15,
+                10,
+                20,
+                50,
+                25,
+              ],
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
 
-        // Add cluster count labels
-        map.addLayer({
-          id: 'cluster-count',
-          type: 'symbol',
-          source: 'sites',
-          filter: ['has', 'point_count'],
-          layout: {
-            'text-field': '{point_count_abbreviated}',
-            'text-font': ['Open Sans Semibold'],
-            'text-size': 12,
-          },
-          paint: {
-            'text-color': '#333333',
-          },
-        });
+          // Add cluster count labels
+          map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'sites',
+            filter: ['has', 'point_count'],
+            layout: {
+              'text-field': '{point_count_abbreviated}',
+              'text-font': ['Open Sans Semibold'],
+              'text-size': 12,
+            },
+            paint: {
+              'text-color': '#333333',
+            },
+          });
 
-        // Add unclustered point layer
-        map.addLayer({
-          id: 'unclustered-point',
-          type: 'circle',
-          source: 'sites',
-          filter: ['!', ['has', 'point_count']],
-          paint: {
-            'circle-color': '#0073e6',
-            'circle-radius': 8,
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff',
-          },
-        });
+          // Add unclustered point layer
+          map.addLayer({
+            id: 'unclustered-point',
+            type: 'circle',
+            source: 'sites',
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+              'circle-color': '#0073e6',
+              'circle-radius': 8,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
 
-        // Add highlighted point layer
-        map.addLayer({
-          id: 'highlighted-point',
-          type: 'circle',
-          source: 'sites',
-          filter: ['==', ['get', 'id'], ''],
-          paint: {
-            'circle-color': '#ff9900',
-            'circle-radius': 12,
-            'circle-stroke-width': 3,
-            'circle-stroke-color': '#ffffff',
-          },
+          // Add highlighted point layer
+          map.addLayer({
+            id: 'highlighted-point',
+            type: 'circle',
+            source: 'sites',
+            filter: ['==', ['get', 'id'], ''],
+            paint: {
+              'circle-color': '#ff9900',
+              'circle-radius': 12,
+              'circle-stroke-width': 3,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // Handle cluster click - zoom in
+          map.on('click', 'clusters', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+              layers: ['clusters'],
+            });
+            const clusterId = features[0]?.properties?.cluster_id;
+
+            if (clusterId === undefined) return;
+
+            const source = map.getSource('sites');
+            if (source && 'getClusterExpansionZoom' in source) {
+              (source as maplibregl.GeoJSONSource).getClusterExpansionZoom(
+                clusterId,
+                (err: Error | null, zoom: number | null | undefined) => {
+                  if (err || zoom === null || zoom === undefined) return;
+
+                  const coordinates = (features[0].geometry as GeoJSON.Point)
+                    .coordinates;
+                  map.easeTo({
+                    center: coordinates as [number, number],
+                    zoom: zoom,
+                  });
+                }
+              );
+            }
+          });
+
+          // Handle point click - select site
+          map.on('click', 'unclustered-point', (e) => {
+            const features = e.features;
+            if (!features || features.length === 0) return;
+
+            const feature = features[0];
+            const siteId = feature.properties?.id;
+
+            if (siteId) {
+              const parsedId = parseInt(siteId, 10);
+              setSelectedSiteId(parsedId);
+
+              // Update highlight filter
+              map.setFilter('highlighted-point', ['==', ['get', 'id'], siteId]);
+
+              // Notify parent
+              if (onSiteSelect) {
+                onSiteSelect(parsedId);
+              }
+            }
+          });
+
+          // Handle click on empty area - deselect
+          map.on('click', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+              layers: ['unclustered-point', 'clusters'],
+            });
+            if (features.length === 0) {
+              setSelectedSiteId(null);
+              map.setFilter('highlighted-point', ['==', ['get', 'id'], '']);
+              if (onSiteSelect) {
+                onSiteSelect(null);
+              }
+            }
+          });
+
+          // Handle hover effects
+          map.on('mouseenter', 'unclustered-point', (e) => {
+            map.getCanvas().style.cursor = 'pointer';
+            const features = e.features;
+            if (features && features.length > 0 && onSiteHover) {
+              const siteId = features[0].properties?.id;
+              if (siteId) {
+                onSiteHover(parseInt(siteId, 10));
+              }
+            }
+          });
+
+          map.on('mouseleave', 'unclustered-point', () => {
+            map.getCanvas().style.cursor = '';
+            if (onSiteHover) {
+              onSiteHover(null);
+            }
+          });
+
+          map.on('mouseenter', 'clusters', () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.on('mouseleave', 'clusters', () => {
+            map.getCanvas().style.cursor = '';
+          });
+        }
+
+        // Track map movement
+        map.on('moveend', () => {
+          if (onBoundsChange) {
+            const bounds = map.getBounds();
+            onBoundsChange([
+              bounds.getWest(),
+              bounds.getSouth(),
+              bounds.getEast(),
+              bounds.getNorth(),
+            ]);
+          }
         });
 
         // Notify parent that map is ready
@@ -272,107 +420,9 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         }
       });
 
-      // Handle cluster click - zoom in
-      map.on('click', 'clusters', (e) => {
-        const features = map.queryRenderedFeatures(e.point, {
-          layers: ['clusters'],
-        });
-        const clusterId = features[0]?.properties?.cluster_id;
-
-        if (clusterId === undefined) return;
-
-        const source = map.getSource('sites');
-        if (source && 'getClusterExpansionZoom' in source) {
-          (source as maplibregl.GeoJSONSource).getClusterExpansionZoom(
-            clusterId,
-            (err: Error | null, zoom: number | null | undefined) => {
-              if (err || zoom === null || zoom === undefined) return;
-
-              const coordinates = (features[0].geometry as GeoJSON.Point)
-                .coordinates;
-              map.easeTo({
-                center: coordinates as [number, number],
-                zoom: zoom,
-              });
-            }
-          );
-        }
-      });
-
-      // Handle point click - select site
-      map.on('click', 'unclustered-point', (e) => {
-        const features = e.features;
-        if (!features || features.length === 0) return;
-
-        const feature = features[0];
-        const siteId = feature.properties?.id;
-
-        if (siteId) {
-          const parsedId = parseInt(siteId, 10);
-          setSelectedSiteId(parsedId);
-
-          // Update highlight filter
-          map.setFilter('highlighted-point', ['==', ['get', 'id'], siteId]);
-
-          // Notify parent
-          if (onSiteSelect) {
-            onSiteSelect(parsedId);
-          }
-        }
-      });
-
-      // Handle click on empty area - deselect
-      map.on('click', (e) => {
-        const features = map.queryRenderedFeatures(e.point, {
-          layers: ['unclustered-point', 'clusters'],
-        });
-        if (features.length === 0) {
-          setSelectedSiteId(null);
-          map.setFilter('highlighted-point', ['==', ['get', 'id'], '']);
-          if (onSiteSelect) {
-            onSiteSelect(null);
-          }
-        }
-      });
-
-      // Handle hover effects
-      map.on('mouseenter', 'unclustered-point', (e) => {
-        map.getCanvas().style.cursor = 'pointer';
-        const features = e.features;
-        if (features && features.length > 0 && onSiteHover) {
-          const siteId = features[0].properties?.id;
-          if (siteId) {
-            onSiteHover(parseInt(siteId, 10));
-          }
-        }
-      });
-
-      map.on('mouseleave', 'unclustered-point', () => {
-        map.getCanvas().style.cursor = '';
-        if (onSiteHover) {
-          onSiteHover(null);
-        }
-      });
-
-      map.on('mouseenter', 'clusters', () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-
-      map.on('mouseleave', 'clusters', () => {
-        map.getCanvas().style.cursor = '';
-      });
-
-      // Track map movement
-      map.on('moveend', () => {
-        if (onBoundsChange) {
-          const bounds = map.getBounds();
-          onBoundsChange([
-            bounds.getWest(),
-            bounds.getSouth(),
-            bounds.getEast(),
-            bounds.getNorth(),
-          ]);
-        }
+      // Handle map error
+      map.on('error', (e) => {
+        console.error('Map error:', e);
       });
 
       // Cleanup on unmount
@@ -393,7 +443,16 @@ const MapContainer = forwardRef<MapContainerRef, MapContainerProps>(
         left={0}
         right={0}
         bottom={0}
-        bg="gray.100"
+        bg="gray.200"
+        sx={{
+          '.maplibregl-map': {
+            width: '100%',
+            height: '100%',
+          },
+          '.maplibregl-canvas': {
+            outline: 'none',
+          },
+        }}
       />
     );
   }
