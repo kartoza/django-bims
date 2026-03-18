@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: AGPL-3.0
  *
  * Main map page component.
- * Uses MapContainer directly without external stores.
+ * Uses deck.gl for efficient rendering of site points with minimal data exposure.
  *
  * Made with love by Kartoza | https://kartoza.com
  */
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Box, Spinner, Center, useToast, IconButton } from '@chakra-ui/react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { SearchIcon } from '@chakra-ui/icons';
-import MapContainer, { MapContainerRef } from '../components/map/MapContainer';
+import DeckGLMap, { DeckGLMapRef } from '../components/map/DeckGLMap';
 import MapControls from '../components/map/MapControls';
 import MapLegend from '../components/map/MapLegend';
 import { SearchPanel } from '../components/search';
@@ -22,30 +22,20 @@ import { apiClient } from '../api/client';
 import type { BiologicalRecord } from '../types';
 import { Map as MapLibreMap } from 'maplibre-gl';
 
-interface SiteFeature {
-  type: 'Feature';
-  geometry: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
-  properties: {
-    id: number;
-    name: string;
-    site_code?: string;
-    ecosystem_type?: string;
-    record_count?: number;
-  };
-}
+// Site point format from API: [uuid, longitude, latitude]
+type SitePoint = [string, number, number];
 
 const MapPage: React.FC = () => {
-  const mapRef = useRef<MapContainerRef>(null);
+  const mapRef = useRef<DeckGLMapRef>(null);
   const { siteId, taxonId } = useParams<{ siteId?: string; taxonId?: string }>();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
   const { activePanel, setActivePanel } = useUIStore();
 
   // Local state
   const [isLoading, setIsLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [selectedSiteUuid, setSelectedSiteUuid] = useState<string | null>(null);
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [selectedTaxonId, setSelectedTaxonId] = useState<number | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -53,17 +43,37 @@ const MapPage: React.FC = () => {
     [number, number, number, number] | null
   >(null);
 
+  // Get current taxon group filter from search params
+  const taxonGroupFilter = searchParams.get('taxon_group');
+
   // Handle map ready
   const handleMapReady = useCallback((map: MapLibreMap) => {
     setIsMapReady(true);
   }, []);
 
-  // Handle site selection from map
-  const handleSiteSelect = useCallback((siteId: number | null) => {
-    setSelectedSiteId(siteId);
+  // Handle site selection from map (receives UUID)
+  const handleSiteSelect = useCallback(async (uuid: string | null) => {
+    setSelectedSiteUuid(uuid);
     setSelectedTaxonId(null); // Clear taxon when site is selected
-    if (siteId) {
+
+    if (uuid) {
       setIsSearchOpen(false); // Close search when viewing site detail
+      // Look up the site ID from UUID
+      try {
+        const response = await apiClient.get<{
+          data: { id: number };
+        }>(`sites/`, {
+          params: { uuid: uuid, page_size: 1 },
+        });
+        const sites = response.data?.data;
+        if (Array.isArray(sites) && sites.length > 0) {
+          setSelectedSiteId(sites[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to look up site:', error);
+      }
+    } else {
+      setSelectedSiteId(null);
     }
   }, []);
 
@@ -87,87 +97,38 @@ const MapPage: React.FC = () => {
           14
         );
       }
-
-      // If record has a site, select it
-      // Note: We'd need to get the site ID from the record
-      // For now, just close the search panel
       setIsSearchOpen(false);
     },
     []
   );
 
-  // Load sites data when map is ready
+  // Load minimal site points when map is ready
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
 
-    const loadSites = async () => {
+    const loadSitePoints = async () => {
       setIsLoading(true);
       try {
+        const params: Record<string, string> = {};
+        if (taxonGroupFilter) {
+          params.taxon_group = taxonGroupFilter;
+        }
+
         const response = await apiClient.get<{
-          data: Array<{
-            id: number;
-            name: string;
-            site_code: string;
-            ecosystem_type?: string;
-            geometry?: string;
-          }>;
-        }>('sites/', {
-          params: { page_size: 1000 },
-        });
+          data: SitePoint[];
+          meta: { count: number };
+        }>('sites/map-points/', { params });
 
-        const sites = response.data?.data || [];
+        const points = response.data?.data || [];
+        mapRef.current?.setPoints(points);
 
-        // Convert to GeoJSON
-        const features: SiteFeature[] = sites
-          .filter((site) => site.geometry)
-          .map((site) => {
-            // Parse geometry from WKT or GeoJSON
-            let coordinates: [number, number] = [0, 0];
-            if (site.geometry) {
-              try {
-                // Assume geometry is GeoJSON or extract from WKT
-                if (site.geometry.startsWith('{')) {
-                  const geom = JSON.parse(site.geometry);
-                  coordinates = geom.coordinates;
-                } else if (site.geometry.includes('POINT')) {
-                  // Parse WKT POINT(lon lat)
-                  const match = site.geometry.match(
-                    /POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/
-                  );
-                  if (match) {
-                    coordinates = [parseFloat(match[1]), parseFloat(match[2])];
-                  }
-                }
-              } catch (e) {
-                console.error('Failed to parse geometry:', e);
-              }
-            }
-
-            return {
-              type: 'Feature' as const,
-              geometry: {
-                type: 'Point' as const,
-                coordinates,
-              },
-              properties: {
-                id: site.id,
-                name: site.name,
-                site_code: site.site_code,
-                ecosystem_type: site.ecosystem_type,
-              },
-            };
-          })
-          .filter((f) => f.geometry.coordinates[0] !== 0);
-
-        mapRef.current?.setData({
-          type: 'FeatureCollection',
-          features,
-        });
+        // Show count in console for debugging
+        console.log(`Loaded ${points.length} site points`);
       } catch (error) {
-        console.error('Failed to load sites:', error);
+        console.error('Failed to load site points:', error);
         toast({
           title: 'Error loading sites',
-          description: 'Failed to load location sites from the server.',
+          description: 'Failed to load site points from the server.',
           status: 'error',
           duration: 5000,
         });
@@ -176,8 +137,8 @@ const MapPage: React.FC = () => {
       }
     };
 
-    loadSites();
-  }, [isMapReady, toast]);
+    loadSitePoints();
+  }, [isMapReady, taxonGroupFilter, toast]);
 
   // Handle URL parameters for deep linking
   useEffect(() => {
@@ -199,6 +160,7 @@ const MapPage: React.FC = () => {
   // Close detail panel
   const handleCloseDetail = useCallback(() => {
     setSelectedSiteId(null);
+    setSelectedSiteUuid(null);
     setSelectedTaxonId(null);
     mapRef.current?.highlightSite(null);
   }, []);
@@ -215,8 +177,8 @@ const MapPage: React.FC = () => {
 
   return (
     <Box w="100%" h="100%" position="relative">
-      {/* Map container */}
-      <MapContainer
+      {/* deck.gl Map */}
+      <DeckGLMap
         ref={mapRef}
         onSiteSelect={handleSiteSelect}
         onBoundsChange={handleBoundsChange}

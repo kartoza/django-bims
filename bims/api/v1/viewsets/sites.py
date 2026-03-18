@@ -572,6 +572,67 @@ Provide a list of site IDs and an optional rejection reason.
         )
 
     @extend_schema(
+        summary="Get minimal site points for map rendering",
+        description="""
+Get all location sites as minimal point data for map rendering.
+
+Returns only the essential data needed for map display:
+- UUID (unique identifier)
+- Longitude
+- Latitude
+
+This endpoint is optimized for performance and data security - it does not
+expose any other site metadata. Use the detail endpoint to get full site info
+when a point is selected.
+
+Supports filtering by taxon_group to show only sites with records from
+specific taxon groups.
+        """,
+        tags=["Sites"],
+        parameters=[
+            OpenApiParameter(
+                name="taxon_group",
+                type=int,
+                description="Filter by taxon group ID (only sites with records from this group)",
+            ),
+        ],
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=False, methods=["get"], url_path="map-points")
+    def map_points(self, request):
+        """Get minimal site data for map rendering (location + UUID only)."""
+        queryset = LocationSite.objects.filter(
+            geometry_point__isnull=False
+        ).only("id", "uuid", "longitude", "latitude")
+
+        # Filter by taxon group if provided
+        taxon_group = request.query_params.get("taxon_group")
+        if taxon_group:
+            try:
+                taxon_group_id = int(taxon_group)
+                queryset = queryset.filter(
+                    biological_collection_record__module_group_id=taxon_group_id
+                ).distinct()
+            except ValueError:
+                pass
+
+        # Return minimal data - just UUID and coordinates
+        points = list(
+            queryset.values_list("uuid", "longitude", "latitude")
+        )
+
+        # Format as array of [uuid, lon, lat] for minimal payload
+        data = [[str(uuid), float(lon), float(lat)] for uuid, lon, lat in points if lon and lat]
+
+        return success_response(
+            data=data,
+            meta={
+                "count": len(data),
+                "format": ["uuid", "longitude", "latitude"],
+            },
+        )
+
+    @extend_schema(
         summary="Get site surveys",
         description="""
 Get all surveys (site visits) conducted at this location site.

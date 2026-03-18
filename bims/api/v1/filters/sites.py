@@ -51,6 +51,7 @@ class LocationSiteFilterSet(filters.FilterSet):
     name = filters.CharFilter(lookup_expr="icontains")
     site_code = filters.CharFilter(lookup_expr="icontains")
     site_description = filters.CharFilter(lookup_expr="icontains")
+    uuid = filters.UUIDFilter()
 
     # Foreign key filters
     location_type = filters.ModelChoiceFilter(queryset=LocationType.objects.all())
@@ -87,6 +88,7 @@ class LocationSiteFilterSet(filters.FilterSet):
             "name",
             "site_code",
             "site_description",
+            "uuid",
             "location_type",
             "location_type_name",
             "ecosystem_type",
