@@ -35,6 +35,9 @@ DATABASES = {
 # Original backend for django-tenants PostGIS support
 ORIGINAL_BACKEND = "django.contrib.gis.db.backends.postgis"
 
+# No replicas in local development
+REPLICA_ENV_VAR = ""
+
 # Allowed hosts for local development
 ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1', '0.0.0.0']
 
