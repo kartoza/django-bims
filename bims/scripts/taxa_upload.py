@@ -1011,12 +1011,6 @@ class TaxaProcessor(object):
                 if taxa_same_rank.exists():
                     candidate = taxa_same_rank.first()
 
-                    # Homonymy guard at assignment: if the CSV supplies an
-                    # author and the candidate has a different non-empty stored
-                    # author, this is a different taxon sharing the same name.
-                    # Also detect via status conflict when no author is stored
-                    # on the candidate yet (e.g. first import of accepted name
-                    # followed by a synonym with a different author).
                     candidate_author = (candidate.author or '').strip('()').strip().lower()
                     csv_author = authors.strip('()').strip().lower() if authors else ''
                     author_conflict = (
@@ -1029,9 +1023,6 @@ class TaxaProcessor(object):
                         csv_status and candidate_status and
                         candidate_status != csv_status
                     )
-                    # Treat as homonym if authors explicitly conflict, or if
-                    # the CSV has an author but the candidate has none AND the
-                    # statuses differ (different taxon sharing the name).
                     if author_conflict or (csv_author and status_conflict and not candidate_author):
                         logger.info(
                             'Homonymy at assignment: %r candidate has '
@@ -1040,7 +1031,6 @@ class TaxaProcessor(object):
                             taxon_name, candidate.author, candidate_status,
                             authors, csv_status,
                         )
-                        # Leave taxonomy = None so a new record is created.
                     else:
                         taxonomy = candidate
                         logger.debug('%s already in the system', taxon_name)
