@@ -81,6 +81,7 @@ def resume_stalled_downloads():
     from bims.models.download_request import DownloadRequest
     from bims.download.csv_download import STALE_THRESHOLD_MINUTES
 
+    from django.db.models import Q
     stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
 
     for tenant in get_tenant_model().objects.all():
@@ -91,8 +92,8 @@ def resume_stalled_downloads():
                 approved=True,
                 rejected=False,
                 request_file='',
-                progress__isnull=False,
                 progress_updated_at__lt=stale_cutoff,
+                progress_updated_at__isnull=False,
                 download_path__isnull=False,
                 download_params__isnull=False,
             )
