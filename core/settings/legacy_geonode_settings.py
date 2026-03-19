@@ -23,19 +23,6 @@ import os
 import re
 import ast
 import sys
-# Python 3.12+ removed distutils, provide compatibility
-try:
-    from distutils.util import strtobool  # noqa
-except ImportError:
-    def strtobool(val):
-        """Convert a string representation of truth to True or False."""
-        val = val.lower()
-        if val in ('y', 'yes', 't', 'true', 'on', '1'):
-            return True
-        elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-            return False
-        else:
-            raise ValueError(f"invalid truth value {val!r}")
 from urllib.parse import urlparse, urljoin
 
 import django
@@ -377,12 +364,6 @@ GEONODE_INTERNAL_APPS = (
 
 # Uncomment the following line to enable contrib apps
 # GEONODE_APPS = GEONODE_CORE_APPS + GEONODE_INTERNAL_APPS
-
-OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
-OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL = "oauth2_provider.AccessToken"
-OAUTH2_PROVIDER_ID_TOKEN_MODEL = "oauth2_provider.IDToken"
-OAUTH2_PROVIDER_GRANT_MODEL = "oauth2_provider.Grant"
-OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL = "oauth2_provider.RefreshToken"
 
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
@@ -1158,6 +1139,5 @@ USER_ANALYTICS_ENABLED = ast.literal_eval(os.getenv('USER_ANALYTICS_ENABLED', 'F
 USER_ANALYTICS_GZIP = ast.literal_eval(os.getenv('USER_ANALYTICS_GZIP', 'False'))
 
 GEOIP_PATH = os.getenv('GEOIP_PATH', os.path.join(PROJECT_ROOT, 'GeoIPCities.dat'))
-SEARCH_RESOURCES_EXTENDED = strtobool(os.getenv('SEARCH_RESOURCES_EXTENDED', 'True'))
 # -- END Settings for MONITORING plugin
 

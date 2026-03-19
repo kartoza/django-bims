@@ -65,7 +65,7 @@
           django-treebeard
           django-debug-toolbar
           tenant-schemas-celery
-          django-cryptography-5  # Django 5/6 compatible fork
+          django-cryptography-5 # Django 5/6 compatible fork
           django-js-asset
 
           # Django packages from custom derivations
@@ -90,7 +90,6 @@
           djangorestframework-gis
           djangorestframework-guardian
           dj-pagination
-          geonode-oauth-toolkit
 
           # Database
           psycopg2
@@ -359,183 +358,183 @@
         '';
 
         djangoCreateSuperuserScript = pkgs.writeShellScriptBin "bims-createsuperuser" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
 
-          SCHEMA="''${1:-}"
-          USERNAME="''${2:-}"
-          EMAIL="''${3:-}"
-          PASSWORD="''${4:-}"
+                    SCHEMA="''${1:-}"
+                    USERNAME="''${2:-}"
+                    EMAIL="''${3:-}"
+                    PASSWORD="''${4:-}"
 
-          # Non-interactive mode if all args provided
-          if [ -n "$SCHEMA" ] && [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
-            EMAIL="''${EMAIL:-$USERNAME@localhost}"
-            python << EOF
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
+                    # Non-interactive mode if all args provided
+                    if [ -n "$SCHEMA" ] && [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
+                      EMAIL="''${EMAIL:-$USERNAME@localhost}"
+                      python << EOF
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
 
-from django.db import connection
-from tenants.models import Client
-from django.contrib.auth import get_user_model
+          from django.db import connection
+          from tenants.models import Client
+          from django.contrib.auth import get_user_model
 
-tenant = Client.objects.get(schema_name='$SCHEMA')
-connection.set_tenant(tenant)
+          tenant = Client.objects.get(schema_name='$SCHEMA')
+          connection.set_tenant(tenant)
 
-User = get_user_model()
-if User.objects.filter(username='$USERNAME').exists():
-    print(f"ℹ️  User '$USERNAME' already exists in tenant '$SCHEMA'")
-else:
-    User.objects.create_superuser('$USERNAME', '$EMAIL', '$PASSWORD')
-    print(f"✅ Created superuser '$USERNAME' in tenant '$SCHEMA'")
-EOF
-            exit 0
-          fi
+          User = get_user_model()
+          if User.objects.filter(username='$USERNAME').exists():
+              print(f"ℹ️  User '$USERNAME' already exists in tenant '$SCHEMA'")
+          else:
+              User.objects.create_superuser('$USERNAME', '$EMAIL', '$PASSWORD')
+              print(f"✅ Created superuser '$USERNAME' in tenant '$SCHEMA'")
+          EOF
+                      exit 0
+                    fi
 
-          # Interactive mode
-          echo ""
-          echo "Usage: bims-createsuperuser [schema] [username] [email] [password]"
-          echo ""
-          echo "Interactive mode - select a tenant:"
-          echo "─────────────────────────────────────────────────────"
+                    # Interactive mode
+                    echo ""
+                    echo "Usage: bims-createsuperuser [schema] [username] [email] [password]"
+                    echo ""
+                    echo "Interactive mode - select a tenant:"
+                    echo "─────────────────────────────────────────────────────"
 
-          TENANTS=$(python << 'EOF'
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
-from tenants.models import Client
-for i, t in enumerate(Client.objects.all(), 1):
-    print(f"{i}) {t.name} (schema: {t.schema_name})")
-EOF
-)
-          echo "$TENANTS"
-          echo ""
+                    TENANTS=$(python << 'EOF'
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
+          from tenants.models import Client
+          for i, t in enumerate(Client.objects.all(), 1):
+              print(f"{i}) {t.name} (schema: {t.schema_name})")
+          EOF
+          )
+                    echo "$TENANTS"
+                    echo ""
 
-          read -p "Select tenant number: " TENANT_NUM
+                    read -p "Select tenant number: " TENANT_NUM
 
-          SCHEMA=$(python << EOF
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
-from tenants.models import Client
-tenants = list(Client.objects.all())
-idx = int('$TENANT_NUM') - 1
-if 0 <= idx < len(tenants):
-    print(tenants[idx].schema_name)
-else:
-    print("")
-EOF
-)
+                    SCHEMA=$(python << EOF
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
+          from tenants.models import Client
+          tenants = list(Client.objects.all())
+          idx = int('$TENANT_NUM') - 1
+          if 0 <= idx < len(tenants):
+              print(tenants[idx].schema_name)
+          else:
+              print("")
+          EOF
+          )
 
-          if [ -z "$SCHEMA" ]; then
-            echo "❌ Invalid tenant selection"
-            exit 1
-          fi
+                    if [ -z "$SCHEMA" ]; then
+                      echo "❌ Invalid tenant selection"
+                      exit 1
+                    fi
 
-          echo ""
-          echo "Creating superuser in tenant: $SCHEMA"
-          echo "─────────────────────────────────────────────────────"
-          python manage.py tenant_command createsuperuser --schema="$SCHEMA"
+                    echo ""
+                    echo "Creating superuser in tenant: $SCHEMA"
+                    echo "─────────────────────────────────────────────────────"
+                    python manage.py tenant_command createsuperuser --schema="$SCHEMA"
         '';
 
         djangoResetPasswordScript = pkgs.writeShellScriptBin "bims-resetpwd" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
 
-          USERNAME="''${1:-}"
+                    USERNAME="''${1:-}"
 
-          if [ -z "$USERNAME" ]; then
-            echo "Usage: bims-resetpwd <username> [new_password]"
-            echo ""
-            echo "If no password provided, you'll be prompted to enter one."
-            echo ""
-            echo "Examples:"
-            echo "  bims-resetpwd admin"
-            echo "  bims-resetpwd admin newpassword123"
-            exit 1
-          fi
+                    if [ -z "$USERNAME" ]; then
+                      echo "Usage: bims-resetpwd <username> [new_password]"
+                      echo ""
+                      echo "If no password provided, you'll be prompted to enter one."
+                      echo ""
+                      echo "Examples:"
+                      echo "  bims-resetpwd admin"
+                      echo "  bims-resetpwd admin newpassword123"
+                      exit 1
+                    fi
 
-          # Get tenant selection
-          echo ""
-          echo "Available tenants:"
-          echo "─────────────────────────────────────────────────────"
+                    # Get tenant selection
+                    echo ""
+                    echo "Available tenants:"
+                    echo "─────────────────────────────────────────────────────"
 
-          TENANTS=$(python << 'EOF'
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
-from tenants.models import Client
-for i, t in enumerate(Client.objects.all(), 1):
-    print(f"{i}) {t.name} (schema: {t.schema_name})")
-EOF
-)
-          echo "$TENANTS"
-          echo ""
+                    TENANTS=$(python << 'EOF'
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
+          from tenants.models import Client
+          for i, t in enumerate(Client.objects.all(), 1):
+              print(f"{i}) {t.name} (schema: {t.schema_name})")
+          EOF
+          )
+                    echo "$TENANTS"
+                    echo ""
 
-          read -p "Select tenant number: " TENANT_NUM
+                    read -p "Select tenant number: " TENANT_NUM
 
-          SCHEMA=$(python << EOF
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
-from tenants.models import Client
-tenants = list(Client.objects.all())
-idx = int('$TENANT_NUM') - 1
-if 0 <= idx < len(tenants):
-    print(tenants[idx].schema_name)
-else:
-    print("")
-EOF
-)
+                    SCHEMA=$(python << EOF
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
+          from tenants.models import Client
+          tenants = list(Client.objects.all())
+          idx = int('$TENANT_NUM') - 1
+          if 0 <= idx < len(tenants):
+              print(tenants[idx].schema_name)
+          else:
+              print("")
+          EOF
+          )
 
-          if [ -z "$SCHEMA" ]; then
-            echo "❌ Invalid tenant selection"
-            exit 1
-          fi
+                    if [ -z "$SCHEMA" ]; then
+                      echo "❌ Invalid tenant selection"
+                      exit 1
+                    fi
 
-          PASSWORD="''${2:-}"
+                    PASSWORD="''${2:-}"
 
-          if [ -z "$PASSWORD" ]; then
-            # Interactive mode - use Django's changepassword with tenant
-            echo ""
-            echo "Resetting password in tenant: $SCHEMA"
-            echo "─────────────────────────────────────────────────────"
-            python manage.py tenant_command changepassword --schema="$SCHEMA" "$USERNAME"
-          else
-            # Non-interactive mode
-            python << EOF
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
+                    if [ -z "$PASSWORD" ]; then
+                      # Interactive mode - use Django's changepassword with tenant
+                      echo ""
+                      echo "Resetting password in tenant: $SCHEMA"
+                      echo "─────────────────────────────────────────────────────"
+                      python manage.py tenant_command changepassword --schema="$SCHEMA" "$USERNAME"
+                    else
+                      # Non-interactive mode
+                      python << EOF
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
 
-from django.db import connection
-from tenants.models import Client
-from django.contrib.auth import get_user_model
+          from django.db import connection
+          from tenants.models import Client
+          from django.contrib.auth import get_user_model
 
-# Switch to tenant schema
-tenant = Client.objects.get(schema_name='$SCHEMA')
-connection.set_tenant(tenant)
+          # Switch to tenant schema
+          tenant = Client.objects.get(schema_name='$SCHEMA')
+          connection.set_tenant(tenant)
 
-User = get_user_model()
+          User = get_user_model()
 
-try:
-    user = User.objects.get(username='$USERNAME')
-    user.set_password('$PASSWORD')
-    user.save()
-    print(f"✅ Password reset for user '$USERNAME' in tenant '$SCHEMA'")
-except User.DoesNotExist:
-    print(f"❌ User '$USERNAME' not found in tenant '$SCHEMA'")
-    exit(1)
-EOF
-          fi
+          try:
+              user = User.objects.get(username='$USERNAME')
+              user.set_password('$PASSWORD')
+              user.save()
+              print(f"✅ Password reset for user '$USERNAME' in tenant '$SCHEMA'")
+          except User.DoesNotExist:
+              print(f"❌ User '$USERNAME' not found in tenant '$SCHEMA'")
+              exit(1)
+          EOF
+                    fi
         '';
 
         djangoTestScript = pkgs.writeShellScriptBin "bims-test" ''
@@ -833,326 +832,326 @@ EOF
 
         # Tenant management scripts
         tenantCreateScript = pkgs.writeShellScriptBin "bims-tenant-create" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
 
-          SCHEMA_NAME="''${1:-}"
-          TENANT_NAME="''${2:-}"
-          DOMAINS="''${3:-localhost,127.0.0.1}"
+                    SCHEMA_NAME="''${1:-}"
+                    TENANT_NAME="''${2:-}"
+                    DOMAINS="''${3:-localhost,127.0.0.1}"
 
-          if [ -z "$SCHEMA_NAME" ]; then
-            echo "Usage: bims-tenant-create <schema_name> [tenant_name] [domains]"
-            echo ""
-            echo "Arguments:"
-            echo "  schema_name  PostgreSQL schema name (required, e.g., 'dev' or 'staging')"
-            echo "  tenant_name  Display name (optional, defaults to schema_name)"
-            echo "  domains      Comma-separated domains (optional, defaults to 'localhost,127.0.0.1')"
-            echo ""
-            echo "Examples:"
-            echo "  bims-tenant-create dev"
-            echo "  bims-tenant-create dev 'Development Tenant'"
-            echo "  bims-tenant-create prod 'Production' 'bims.example.com,www.bims.example.com'"
-            exit 1
-          fi
+                    if [ -z "$SCHEMA_NAME" ]; then
+                      echo "Usage: bims-tenant-create <schema_name> [tenant_name] [domains]"
+                      echo ""
+                      echo "Arguments:"
+                      echo "  schema_name  PostgreSQL schema name (required, e.g., 'dev' or 'staging')"
+                      echo "  tenant_name  Display name (optional, defaults to schema_name)"
+                      echo "  domains      Comma-separated domains (optional, defaults to 'localhost,127.0.0.1')"
+                      echo ""
+                      echo "Examples:"
+                      echo "  bims-tenant-create dev"
+                      echo "  bims-tenant-create dev 'Development Tenant'"
+                      echo "  bims-tenant-create prod 'Production' 'bims.example.com,www.bims.example.com'"
+                      exit 1
+                    fi
 
-          if [ -z "$TENANT_NAME" ]; then
-            TENANT_NAME="$SCHEMA_NAME"
-          fi
+                    if [ -z "$TENANT_NAME" ]; then
+                      TENANT_NAME="$SCHEMA_NAME"
+                    fi
 
-          echo "🏢 Creating tenant '$TENANT_NAME' with schema '$SCHEMA_NAME'..."
-          echo "   Domains: $DOMAINS"
+                    echo "🏢 Creating tenant '$TENANT_NAME' with schema '$SCHEMA_NAME'..."
+                    echo "   Domains: $DOMAINS"
 
-          python manage.py shell << EOF
-from tenants.models import Client, Domain
+                    python manage.py shell << EOF
+          from tenants.models import Client, Domain
 
-# Create or get the tenant
-tenant, created = Client.objects.get_or_create(
-    schema_name='$SCHEMA_NAME',
-    defaults={'name': '$TENANT_NAME'}
-)
+          # Create or get the tenant
+          tenant, created = Client.objects.get_or_create(
+              schema_name='$SCHEMA_NAME',
+              defaults={'name': '$TENANT_NAME'}
+          )
 
-if created:
-    print(f"✅ Created tenant: {tenant.name} (schema: {tenant.schema_name})")
-else:
-    print(f"ℹ️  Tenant already exists: {tenant.name} (schema: {tenant.schema_name})")
+          if created:
+              print(f"✅ Created tenant: {tenant.name} (schema: {tenant.schema_name})")
+          else:
+              print(f"ℹ️  Tenant already exists: {tenant.name} (schema: {tenant.schema_name})")
 
-# Create domains
-domains = '$DOMAINS'.split(',')
-for domain_name in domains:
-    domain_name = domain_name.strip()
-    if domain_name:
-        domain, domain_created = Domain.objects.get_or_create(
-            domain=domain_name,
-            tenant=tenant,
-            defaults={'is_primary': domains.index(domain_name.strip()) == 0}
-        )
-        if domain_created:
-            print(f"✅ Created domain: {domain_name}")
-        else:
-            print(f"ℹ️  Domain already exists: {domain_name}")
+          # Create domains
+          domains = '$DOMAINS'.split(',')
+          for domain_name in domains:
+              domain_name = domain_name.strip()
+              if domain_name:
+                  domain, domain_created = Domain.objects.get_or_create(
+                      domain=domain_name,
+                      tenant=tenant,
+                      defaults={'is_primary': domains.index(domain_name.strip()) == 0}
+                  )
+                  if domain_created:
+                      print(f"✅ Created domain: {domain_name}")
+                  else:
+                      print(f"ℹ️  Domain already exists: {domain_name}")
 
-print("")
-print("🎉 Tenant setup complete!")
-print(f"   Access at: http://{domains[0].strip()}:8000/")
-EOF
+          print("")
+          print("🎉 Tenant setup complete!")
+          print(f"   Access at: http://{domains[0].strip()}:8000/")
+          EOF
         '';
 
         tenantListScript = pkgs.writeShellScriptBin "bims-tenant-list" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
 
-          python manage.py shell << 'EOF'
-from tenants.models import Client, Domain
+                    python manage.py shell << 'EOF'
+          from tenants.models import Client, Domain
 
-print("=" * 60)
-print("TENANTS")
-print("=" * 60)
+          print("=" * 60)
+          print("TENANTS")
+          print("=" * 60)
 
-for tenant in Client.objects.all():
-    domains = Domain.objects.filter(tenant=tenant)
-    domain_list = ', '.join([d.domain for d in domains])
-    print(f"\n📁 {tenant.name}")
-    print(f"   Schema: {tenant.schema_name}")
-    print(f"   Domains: {domain_list or '(none)'}")
-    print(f"   Created: {tenant.created_on}")
-    print(f"   On trial: {tenant.on_trial}")
+          for tenant in Client.objects.all():
+              domains = Domain.objects.filter(tenant=tenant)
+              domain_list = ', '.join([d.domain for d in domains])
+              print(f"\n📁 {tenant.name}")
+              print(f"   Schema: {tenant.schema_name}")
+              print(f"   Domains: {domain_list or '(none)'}")
+              print(f"   Created: {tenant.created_on}")
+              print(f"   On trial: {tenant.on_trial}")
 
-print("\n" + "=" * 60)
-EOF
+          print("\n" + "=" * 60)
+          EOF
         '';
 
         tenantDeleteScript = pkgs.writeShellScriptBin "bims-tenant-delete" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
 
-          SCHEMA_NAME="''${1:-}"
+                    SCHEMA_NAME="''${1:-}"
 
-          if [ -z "$SCHEMA_NAME" ]; then
-            echo "Usage: bims-tenant-delete <schema_name>"
-            echo "Example: bims-tenant-delete dev"
-            exit 1
-          fi
+                    if [ -z "$SCHEMA_NAME" ]; then
+                      echo "Usage: bims-tenant-delete <schema_name>"
+                      echo "Example: bims-tenant-delete dev"
+                      exit 1
+                    fi
 
-          if [ "$SCHEMA_NAME" = "public" ]; then
-            echo "❌ Cannot delete the public schema!"
-            exit 1
-          fi
+                    if [ "$SCHEMA_NAME" = "public" ]; then
+                      echo "❌ Cannot delete the public schema!"
+                      exit 1
+                    fi
 
-          echo "⚠️  Warning: This will permanently delete tenant '$SCHEMA_NAME' and ALL its data!"
-          read -p "Continue? [y/N] " -n 1 -r
-          echo
-          if [[ $REPLY =~ ^[Yy]$ ]]; then
-            python manage.py shell << EOF
-from tenants.models import Client, Domain
+                    echo "⚠️  Warning: This will permanently delete tenant '$SCHEMA_NAME' and ALL its data!"
+                    read -p "Continue? [y/N] " -n 1 -r
+                    echo
+                    if [[ $REPLY =~ ^[Yy]$ ]]; then
+                      python manage.py shell << EOF
+          from tenants.models import Client, Domain
 
-try:
-    tenant = Client.objects.get(schema_name='$SCHEMA_NAME')
-    tenant_name = tenant.name
+          try:
+              tenant = Client.objects.get(schema_name='$SCHEMA_NAME')
+              tenant_name = tenant.name
 
-    # Delete domains first
-    Domain.objects.filter(tenant=tenant).delete()
+              # Delete domains first
+              Domain.objects.filter(tenant=tenant).delete()
 
-    # Delete tenant (this also drops the schema)
-    tenant.delete()
+              # Delete tenant (this also drops the schema)
+              tenant.delete()
 
-    print(f"🗑️  Deleted tenant: {tenant_name} (schema: $SCHEMA_NAME)")
-except Client.DoesNotExist:
-    print(f"❌ Tenant with schema '$SCHEMA_NAME' not found")
-EOF
-          else
-            echo "Cancelled"
-          fi
+              print(f"🗑️  Deleted tenant: {tenant_name} (schema: $SCHEMA_NAME)")
+          except Client.DoesNotExist:
+              print(f"❌ Tenant with schema '$SCHEMA_NAME' not found")
+          EOF
+                    else
+                      echo "Cancelled"
+                    fi
         '';
 
         # System status script
         statusScript = pkgs.writeShellScriptBin "bims-status" ''
-          #!/usr/bin/env bash
-          set -euo pipefail
-          export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
-          PGDATA="$PWD/.pgdata"
-          PGPORT=''${PGPORT:-5432}
+                    #!/usr/bin/env bash
+                    set -euo pipefail
+                    export DJANGO_SETTINGS_MODULE="''${DJANGO_SETTINGS_MODULE:-core.settings.dev_local}"
+                    PGDATA="$PWD/.pgdata"
+                    PGPORT=''${PGPORT:-5432}
 
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📊 BIMS System Status"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
+                    echo ""
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo "📊 BIMS System Status"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo ""
 
-          # Django Server Status
-          echo "🌐 Django Server"
-          echo "   ─────────────────────────────────────────────────────"
-          if ss -tlnp 2>/dev/null | grep -q ":8000 "; then
-            echo "   Status:    ✅ Running on port 8000"
-          else
-            echo "   Status:    🔴 NOT RUNNING"
-            echo "   Start:     bims-runserver"
-          fi
-          echo ""
+                    # Django Server Status
+                    echo "🌐 Django Server"
+                    echo "   ─────────────────────────────────────────────────────"
+                    if ss -tlnp 2>/dev/null | grep -q ":8000 "; then
+                      echo "   Status:    ✅ Running on port 8000"
+                    else
+                      echo "   Status:    🔴 NOT RUNNING"
+                      echo "   Start:     bims-runserver"
+                    fi
+                    echo ""
 
-          # GIS Libraries
-          echo "🗺️  GIS Libraries"
-          echo "   ─────────────────────────────────────────────────────"
-          GDAL_VER=$(gdalinfo --version 2>/dev/null | head -1 || echo "Not found")
-          echo "   GDAL:      $GDAL_VER"
-          GEOS_VER=$(python -c "from django.contrib.gis.geos import geos_version; print(geos_version().decode())" 2>/dev/null || echo "Not found")
-          echo "   GEOS:      $GEOS_VER"
-          PROJ_VER=$(proj 2>&1 | head -1 | grep -oP 'Rel\. \K[0-9.]+' || echo "Not found")
-          echo "   PROJ:      $PROJ_VER"
-          TIPP_VER=$(tippecanoe --version 2>&1 | head -1 || echo "Not found")
-          echo "   Tippecanoe: $TIPP_VER"
-          echo ""
+                    # GIS Libraries
+                    echo "🗺️  GIS Libraries"
+                    echo "   ─────────────────────────────────────────────────────"
+                    GDAL_VER=$(gdalinfo --version 2>/dev/null | head -1 || echo "Not found")
+                    echo "   GDAL:      $GDAL_VER"
+                    GEOS_VER=$(python -c "from django.contrib.gis.geos import geos_version; print(geos_version().decode())" 2>/dev/null || echo "Not found")
+                    echo "   GEOS:      $GEOS_VER"
+                    PROJ_VER=$(proj 2>&1 | head -1 | grep -oP 'Rel\. \K[0-9.]+' || echo "Not found")
+                    echo "   PROJ:      $PROJ_VER"
+                    TIPP_VER=$(tippecanoe --version 2>&1 | head -1 || echo "Not found")
+                    echo "   Tippecanoe: $TIPP_VER"
+                    echo ""
 
-          # PostgreSQL Status
-          echo "🗄️  PostgreSQL"
-          echo "   ─────────────────────────────────────────────────────"
-          if [ -f "$PGDATA/postmaster.pid" ]; then
-            if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
-              echo "   Status:    ✅ Running"
-              echo "   Socket:    $PGDATA/.s.PGSQL.$PGPORT"
-              # Check if TCP is disabled
-              if ss -tlnp 2>/dev/null | grep -q ":$PGPORT "; then
-                echo "   Network:   ⚠️  TCP enabled (less secure)"
-              else
-                echo "   Network:   🔒 Unix socket only (secure)"
-              fi
-            else
-              echo "   Status:    ⚠️  PID file exists but not responding"
-            fi
-          else
-            echo "   Status:    ❌ Not running"
-            echo "   Start with: bims-pg-start"
-          fi
-          echo ""
+                    # PostgreSQL Status
+                    echo "🗄️  PostgreSQL"
+                    echo "   ─────────────────────────────────────────────────────"
+                    if [ -f "$PGDATA/postmaster.pid" ]; then
+                      if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
+                        echo "   Status:    ✅ Running"
+                        echo "   Socket:    $PGDATA/.s.PGSQL.$PGPORT"
+                        # Check if TCP is disabled
+                        if ss -tlnp 2>/dev/null | grep -q ":$PGPORT "; then
+                          echo "   Network:   ⚠️  TCP enabled (less secure)"
+                        else
+                          echo "   Network:   🔒 Unix socket only (secure)"
+                        fi
+                      else
+                        echo "   Status:    ⚠️  PID file exists but not responding"
+                      fi
+                    else
+                      echo "   Status:    ❌ Not running"
+                      echo "   Start with: bims-pg-start"
+                    fi
+                    echo ""
 
-          # Database Status
-          echo "💾 Database"
-          echo "   ─────────────────────────────────────────────────────"
-          if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
-            DB_EXISTS=$(${postgresWithPostGIS}/bin/psql -h "$PGDATA" -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='bims'" postgres 2>/dev/null || echo "")
-            if [ "$DB_EXISTS" = "1" ]; then
-              echo "   Database:  ✅ 'bims' exists"
-              POSTGIS=$(${postgresWithPostGIS}/bin/psql -h "$PGDATA" -p "$PGPORT" -tAc "SELECT extversion FROM pg_extension WHERE extname='postgis'" bims 2>/dev/null || echo "")
-              if [ -n "$POSTGIS" ]; then
-                echo "   PostGIS:   ✅ v$POSTGIS"
-              else
-                echo "   PostGIS:   ❌ Not installed"
-              fi
-            else
-              echo "   Database:  ❌ 'bims' does not exist"
-              echo "   Create with: bims-db-create"
-            fi
-          else
-            echo "   Database:  ⏸️  Cannot check (PostgreSQL not running)"
-          fi
-          echo ""
+                    # Database Status
+                    echo "💾 Database"
+                    echo "   ─────────────────────────────────────────────────────"
+                    if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
+                      DB_EXISTS=$(${postgresWithPostGIS}/bin/psql -h "$PGDATA" -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='bims'" postgres 2>/dev/null || echo "")
+                      if [ "$DB_EXISTS" = "1" ]; then
+                        echo "   Database:  ✅ 'bims' exists"
+                        POSTGIS=$(${postgresWithPostGIS}/bin/psql -h "$PGDATA" -p "$PGPORT" -tAc "SELECT extversion FROM pg_extension WHERE extname='postgis'" bims 2>/dev/null || echo "")
+                        if [ -n "$POSTGIS" ]; then
+                          echo "   PostGIS:   ✅ v$POSTGIS"
+                        else
+                          echo "   PostGIS:   ❌ Not installed"
+                        fi
+                      else
+                        echo "   Database:  ❌ 'bims' does not exist"
+                        echo "   Create with: bims-db-create"
+                      fi
+                    else
+                      echo "   Database:  ⏸️  Cannot check (PostgreSQL not running)"
+                    fi
+                    echo ""
 
-          # Migrations Status
-          echo "🔄 Migrations"
-          echo "   ─────────────────────────────────────────────────────"
-          if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
-            MIGRATION_CHECK=$(python manage.py migrate --check 2>&1) || true
-            if echo "$MIGRATION_CHECK" | grep -q "Starting migration"; then
-              echo "   Status:    ✅ All migrations applied"
-            else
-              UNAPPLIED=$(python manage.py showmigrations --plan 2>/dev/null | grep -c "\[ \]" || echo "0")
-              if [ "$UNAPPLIED" -gt 0 ]; then
-                echo "   Status:    ⚠️  $UNAPPLIED unapplied migration(s)"
-                echo "   Run:       bims-migrate"
-              else
-                echo "   Status:    ✅ All migrations applied"
-              fi
-            fi
-          else
-            echo "   Status:    ⏸️  Cannot check (PostgreSQL not running)"
-          fi
-          echo ""
+                    # Migrations Status
+                    echo "🔄 Migrations"
+                    echo "   ─────────────────────────────────────────────────────"
+                    if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
+                      MIGRATION_CHECK=$(python manage.py migrate --check 2>&1) || true
+                      if echo "$MIGRATION_CHECK" | grep -q "Starting migration"; then
+                        echo "   Status:    ✅ All migrations applied"
+                      else
+                        UNAPPLIED=$(python manage.py showmigrations --plan 2>/dev/null | grep -c "\[ \]" || echo "0")
+                        if [ "$UNAPPLIED" -gt 0 ]; then
+                          echo "   Status:    ⚠️  $UNAPPLIED unapplied migration(s)"
+                          echo "   Run:       bims-migrate"
+                        else
+                          echo "   Status:    ✅ All migrations applied"
+                        fi
+                      fi
+                    else
+                      echo "   Status:    ⏸️  Cannot check (PostgreSQL not running)"
+                    fi
+                    echo ""
 
-          # Tenants Status
-          echo "🏢 Tenants"
-          echo "   ─────────────────────────────────────────────────────"
-          if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
-            python << 'PYEOF'
-import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
-import django
-django.setup()
+                    # Tenants Status
+                    echo "🏢 Tenants"
+                    echo "   ─────────────────────────────────────────────────────"
+                    if ${postgresWithPostGIS}/bin/pg_isready -h "$PGDATA" -p "$PGPORT" > /dev/null 2>&1; then
+                      python << 'PYEOF'
+          import os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings.dev_local')
+          import django
+          django.setup()
 
-from tenants.models import Client, Domain
+          from tenants.models import Client, Domain
 
-tenants = Client.objects.all()
-if tenants.exists():
-    print(f"   Count:     {tenants.count()} tenant(s)")
-    print("")
-    for tenant in tenants:
-        domains = Domain.objects.filter(tenant=tenant)
-        domain_list = ', '.join([d.domain for d in domains]) or '(no domains)'
-        print(f"   📁 {tenant.name}")
-        print(f"      Schema:  {tenant.schema_name}")
-        print(f"      Domains: {domain_list}")
-        print("")
-else:
-    print("   Status:    ⚠️  No tenants configured")
-    print("   Create:    bims-tenant-create dev 'Development'")
-PYEOF
-          else
-            echo "   Status:    ⏸️  Cannot check (PostgreSQL not running)"
-          fi
-          echo ""
+          tenants = Client.objects.all()
+          if tenants.exists():
+              print(f"   Count:     {tenants.count()} tenant(s)")
+              print("")
+              for tenant in tenants:
+                  domains = Domain.objects.filter(tenant=tenant)
+                  domain_list = ', '.join([d.domain for d in domains]) or '(no domains)'
+                  print(f"   📁 {tenant.name}")
+                  print(f"      Schema:  {tenant.schema_name}")
+                  print(f"      Domains: {domain_list}")
+                  print("")
+          else:
+              print("   Status:    ⚠️  No tenants configured")
+              print("   Create:    bims-tenant-create dev 'Development'")
+          PYEOF
+                    else
+                      echo "   Status:    ⏸️  Cannot check (PostgreSQL not running)"
+                    fi
+                    echo ""
 
-          # RabbitMQ Status
-          echo "🐰 RabbitMQ"
-          echo "   ─────────────────────────────────────────────────────"
-          export RABBITMQ_NODENAME="rabbit@localhost"
-          if ${pkgs.rabbitmq-server}/bin/rabbitmqctl -n "$RABBITMQ_NODENAME" status > /dev/null 2>&1; then
-            echo "   Status:    ✅ Running"
-            echo "   URL:       amqp://localhost:5672"
-            QUEUES=$(${pkgs.rabbitmq-server}/bin/rabbitmqctl -n "$RABBITMQ_NODENAME" list_queues name messages consumers 2>/dev/null | tail -n +2 || echo "")
-            if [ -n "$QUEUES" ]; then
-              QUEUE_COUNT=$(echo "$QUEUES" | wc -l)
-              echo "   Queues:    $QUEUE_COUNT"
-            fi
-          else
-            echo "   Status:    ❌ Not running"
-            echo "   Start:     bims-rabbitmq-start"
-          fi
-          echo ""
+                    # RabbitMQ Status
+                    echo "🐰 RabbitMQ"
+                    echo "   ─────────────────────────────────────────────────────"
+                    export RABBITMQ_NODENAME="rabbit@localhost"
+                    if ${pkgs.rabbitmq-server}/bin/rabbitmqctl -n "$RABBITMQ_NODENAME" status > /dev/null 2>&1; then
+                      echo "   Status:    ✅ Running"
+                      echo "   URL:       amqp://localhost:5672"
+                      QUEUES=$(${pkgs.rabbitmq-server}/bin/rabbitmqctl -n "$RABBITMQ_NODENAME" list_queues name messages consumers 2>/dev/null | tail -n +2 || echo "")
+                      if [ -n "$QUEUES" ]; then
+                        QUEUE_COUNT=$(echo "$QUEUES" | wc -l)
+                        echo "   Queues:    $QUEUE_COUNT"
+                      fi
+                    else
+                      echo "   Status:    ❌ Not running"
+                      echo "   Start:     bims-rabbitmq-start"
+                    fi
+                    echo ""
 
-          # Celery Status
-          echo "🔄 Celery Workers"
-          echo "   ─────────────────────────────────────────────────────"
-          CELERY_STATUS=$(celery -A bims inspect ping 2>/dev/null || echo "")
-          if echo "$CELERY_STATUS" | grep -q "pong"; then
-            WORKER_COUNT=$(echo "$CELERY_STATUS" | grep -c "pong" || echo "0")
-            echo "   Status:    ✅ $WORKER_COUNT worker(s) online"
+                    # Celery Status
+                    echo "🔄 Celery Workers"
+                    echo "   ─────────────────────────────────────────────────────"
+                    CELERY_STATUS=$(celery -A bims inspect ping 2>/dev/null || echo "")
+                    if echo "$CELERY_STATUS" | grep -q "pong"; then
+                      WORKER_COUNT=$(echo "$CELERY_STATUS" | grep -c "pong" || echo "0")
+                      echo "   Status:    ✅ $WORKER_COUNT worker(s) online"
 
-            # Get active tasks
-            ACTIVE=$(celery -A bims inspect active 2>/dev/null || echo "")
-            if echo "$ACTIVE" | grep -q "empty"; then
-              echo "   Active:    0 tasks"
-            else
-              TASK_COUNT=$(echo "$ACTIVE" | grep -E "^\s+\*" | wc -l || echo "0")
-              echo "   Active:    $TASK_COUNT task(s)"
-            fi
+                      # Get active tasks
+                      ACTIVE=$(celery -A bims inspect active 2>/dev/null || echo "")
+                      if echo "$ACTIVE" | grep -q "empty"; then
+                        echo "   Active:    0 tasks"
+                      else
+                        TASK_COUNT=$(echo "$ACTIVE" | grep -E "^\s+\*" | wc -l || echo "0")
+                        echo "   Active:    $TASK_COUNT task(s)"
+                      fi
 
-            # Get reserved tasks
-            RESERVED=$(celery -A bims inspect reserved 2>/dev/null || echo "")
-            if ! echo "$RESERVED" | grep -q "empty"; then
-              RESERVED_COUNT=$(echo "$RESERVED" | grep -E "^\s+\*" | wc -l || echo "0")
-              if [ "$RESERVED_COUNT" -gt 0 ]; then
-                echo "   Reserved:  $RESERVED_COUNT task(s)"
-              fi
-            fi
-          else
-            echo "   Status:    ❌ No workers running"
-            echo "   Start:     bims-celery-worker"
-          fi
+                      # Get reserved tasks
+                      RESERVED=$(celery -A bims inspect reserved 2>/dev/null || echo "")
+                      if ! echo "$RESERVED" | grep -q "empty"; then
+                        RESERVED_COUNT=$(echo "$RESERVED" | grep -E "^\s+\*" | wc -l || echo "0")
+                        if [ "$RESERVED_COUNT" -gt 0 ]; then
+                          echo "   Reserved:  $RESERVED_COUNT task(s)"
+                        fi
+                      fi
+                    else
+                      echo "   Status:    ❌ No workers running"
+                      echo "   Start:     bims-celery-worker"
+                    fi
 
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
+                    echo ""
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo ""
         '';
 
         # PMTiles generation script
