@@ -206,7 +206,7 @@ def download_collection_records(
     # Support resuming a partially completed download
     rows_already_written = count_csv_data_rows(path_file)
     current_csv_row = rows_already_written
-    record_number = min(total_records, 100)
+    record_number = min(total_records, 500)
     collection_data = []
 
     if download_request and download_request.rejected:
