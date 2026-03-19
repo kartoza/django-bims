@@ -80,24 +80,24 @@ class TaxonGroupTotalValidated(APIView):
         self.accepted_validated += qs.filter(
             accepted_q,
             taxongrouptaxonomy__is_validated=True
-        ).count()
+        ).distinct().count()
 
         self.synonym_validated += qs.filter(
             synonym_q,
             taxongrouptaxonomy__is_validated=True
-        ).count()
+        ).distinct().count()
 
         # Unvalidated (masked if no permission)
         if can_view_unvalidated:
             self.accepted_unvalidated += qs.filter(
                 accepted_q,
                 taxongrouptaxonomy__is_validated=False
-            ).count()
+            ).distinct().count()
 
             self.synonym_unvalidated += qs.filter(
                 synonym_q,
                 taxongrouptaxonomy__is_validated=False
-            ).count()
+            ).distinct().count()
 
         # Recurse into children
         for child in TaxonGroup.objects.filter(parent=taxon_group):

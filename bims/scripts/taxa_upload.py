@@ -957,13 +957,37 @@ class TaxaProcessor(object):
             taxa = Taxonomy.objects.filter(fada_id=fada_id)
         if not taxa:
             taxa = Taxonomy.objects.filter(canonical_name__iexact=taxon_name)
+            # Homonymy guard: taxa can share a canonical name but belong to
+            # different authors (e.g. Epeorus soldani (Braasch, 1979) vs.
+            # Epeorus soldani Nguyen & Bae, 2004). 
+            if taxa.exists() and authors:
+                stripped_authors = authors.strip('()').strip()
+                taxa_by_author = taxa.filter(author__iexact=authors)
+                if not taxa_by_author.exists():
+                    taxa_by_author = taxa.filter(author__iexact=stripped_authors)
+                if taxa_by_author.exists():
+                    # Exact author match, use this record.
+                    taxa = taxa_by_author
+                    logger.debug(
+                        'Homonymy resolved for %r: matched by author %r',
+                        taxon_name, authors,
+                    )
+                else:
+                    logger.info(
+                        'Homonymy: %r (author %r) does not match any existing '
+                        'record — will create a new taxon.',
+                        taxon_name, authors,
+                    )
+                    taxa = Taxonomy.objects.none()
 
         update_canonical_name = False
         if not taxa.exists() and ' ' in taxon_name:
             orphan = taxon_name.split(' ', 1)[1].strip()
             taxa = Taxonomy.objects.filter(
                 canonical_name__iexact=orphan,
-                rank=_safe_upper(rank)
+                rank=_safe_upper(rank),
+                author=authors.strip(),
+                taxonomic_status__iexact=taxonomic_status
             )
             update_canonical_name = taxa.exists()
 
@@ -985,13 +1009,34 @@ class TaxaProcessor(object):
             if taxa.exists():
                 taxa_same_rank = taxa.filter(rank=_safe_upper(rank))
                 if taxa_same_rank.exists():
-                    taxonomy = taxa_same_rank.first()
-                    logger.debug(
-                        '%s already in the system',
-                        taxon_name)
+                    candidate = taxa_same_rank.first()
 
-                    if (is_synonym or is_doubtful) and taxonomy.parent:
-                        taxonomy.parent = None
+                    candidate_author = (candidate.author or '').strip('()').strip().lower()
+                    csv_author = authors.strip('()').strip().lower() if authors else ''
+                    author_conflict = (
+                        csv_author and candidate_author and
+                        candidate_author != csv_author
+                    )
+                    candidate_status = (candidate.taxonomic_status or '').strip().upper()
+                    csv_status = (taxonomic_status or '').strip().upper()
+                    status_conflict = (
+                        csv_status and candidate_status and
+                        candidate_status != csv_status
+                    )
+                    if author_conflict or (csv_author and status_conflict and not candidate_author):
+                        logger.info(
+                            'Homonymy at assignment: %r candidate has '
+                            'author=%r status=%r but CSV has author=%r '
+                            'status=%r — will create a new taxon.',
+                            taxon_name, candidate.author, candidate_status,
+                            authors, csv_status,
+                        )
+                    else:
+                        taxonomy = candidate
+                        logger.debug('%s already in the system', taxon_name)
+
+                        if (is_synonym or is_doubtful) and taxonomy.parent:
+                            taxonomy.parent = None
                 else:
                     taxonomy = taxa.first()
 
@@ -1039,7 +1084,7 @@ class TaxaProcessor(object):
                     taxonomic_rank=rank,
                     fetch_children=False,
                     fetch_vernacular_names=should_fetch_vernacular_names,
-                    use_name_lookup=True,  # Changed to True to enable classifier filtering
+                    use_name_lookup=True,
                     is_synonym=is_synonym,
                     preserve_taxonomic_status=is_fada_site(),
                     **classifiers
@@ -1073,10 +1118,9 @@ class TaxaProcessor(object):
                     scientific_name=scientific_name,
                     canonical_name=taxon_name,
                     rank=TaxonomicRank[_safe_upper(rank)].name,
-                    parent=parent
+                    parent=parent,
+                    taxonomic_status=taxonomic_status.upper()
                 )
-                if taxonomic_status:
-                    taxonomy.taxonomic_status = taxonomic_status.upper()
 
             # Backfill parent and author if missing (skip for synonyms and doubtful species)
             if taxonomy and not taxonomy.parent and not is_synonym and not is_doubtful:
