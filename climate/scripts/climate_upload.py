@@ -4,7 +4,7 @@ import logging
 from datetime import date
 from django.contrib.gis.geos import Point
 from bims.scripts.data_upload import DataCSVUpload
-from bims.models.location_site import LocationSite
+from bims.models.location_site import LocationSite, generate_site_code
 from bims.models.location_type import LocationType
 from climate.models import Climate
 
@@ -103,14 +103,14 @@ class ClimateCSVUpload(DataCSVUpload):
             return
 
         # Extract climate measurements
-        avg_temp = self.get_float_value(row, 'Average Daily Temperature')
+        avg_temp = self.get_float_value(row, 'Average daily temperature')
         avg_humidity = self.get_float_value(row, 'Average daily relative humidity')
         avg_windspeed = self.get_float_value(row, 'Average daily windspeed')
         daily_rainfall = self.get_float_value(row, 'Daily rainfall')
-        max_temp = self.get_float_value(row, 'Maximum Daily temperature')
-        min_temp = self.get_float_value(row, 'Minimum daily teperature')
-        max_humidity = self.get_float_value(row, 'Maximum Relative Humidity')
-        min_humidity = self.get_float_value(row, 'Minimum Relative humodity')
+        max_temp = self.get_float_value(row, 'Maximum daily temperature')
+        min_temp = self.get_float_value(row, 'Minimum daily temperature')
+        max_humidity = self.get_float_value(row, 'Maximum relative humidity')
+        min_humidity = self.get_float_value(row, 'Minimum relative humidity')
 
         # Create or update climate record
         try:
@@ -177,7 +177,16 @@ class ClimateCSVUpload(DataCSVUpload):
                 location_type=location_type,
                 site_description=f'Climate monitoring station - {station_name}'
             )
-            logger.info(f"Created new location site: {station_name}")
+
+            site_code, _ = generate_site_code(
+                location_site,
+                lat=latitude,
+                lon=longitude,
+            )
+            location_site.site_code = site_code
+            location_site.save()
+
+            logger.info(f"Created new location site: {station_name} with site code: {site_code}")
             return location_site
 
         except Exception as e:
