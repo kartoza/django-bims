@@ -158,6 +158,9 @@ class CsvDownload(APIView):
             download_request.save(update_fields=['progress', 'progress_updated_at'])
 
         if not file_exists or is_stale:
+            download_request.progress_updated_at = timezone.now()
+            download_request.save(update_fields=['progress_updated_at'])
+
             download_collection_record_task.delay(
                 path_file,
                 self.request.GET,

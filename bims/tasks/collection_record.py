@@ -78,9 +78,8 @@ def resume_stalled_downloads():
     from datetime import timedelta
     from django.utils import timezone
     from django_tenants.utils import get_tenant_model, tenant_context
-    from bims.models.download_request import DownloadRequest
+    from bims.models.download_request import DownloadRequest, params_from_dashboard_url
     from bims.download.csv_download import STALE_THRESHOLD_MINUTES
-
     stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
 
     for tenant in get_tenant_model().objects.all():
@@ -91,19 +90,31 @@ def resume_stalled_downloads():
                 approved=True,
                 rejected=False,
                 request_file='',
-                progress__isnull=False,
                 progress_updated_at__lt=stale_cutoff,
-                download_path__isnull=False,
-                download_params__isnull=False,
+                progress_updated_at__isnull=False,
             )
 
             for dr in stalled:
+                path_file = dr.download_path
+                request_params = dr.download_params
+
+                if not path_file or not request_params:
+                    path_file, request_params = params_from_dashboard_url(dr)
+                    if not path_file or not request_params:
+                        logger.warning(
+                            '[%s] Skipping download request %d: '
+                            'cannot resolve path/params',
+                            tenant.schema_name, dr.id
+                        )
+                        continue
+                    dr.download_path = path_file
+                    dr.download_params = request_params
+                    dr.save(update_fields=['download_path', 'download_params'])
+
                 logger.info(
                     '[%s] Resuming stalled download request %d (last update: %s)',
                     tenant.schema_name, dr.id, dr.progress_updated_at
                 )
-                path_file = dr.download_path
-                request_params = dr.download_params or {}
 
                 try:
                     if path_file and os.path.exists(path_file):
