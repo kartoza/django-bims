@@ -34,8 +34,6 @@ repos:
       - id: end-of-file-fixer
         exclude: '\.min\.(js|css)$|webpack-stats\.json$'
       - id: fix-byte-order-marker
-      - id: mixed-line-endings
-        args: ['--fix=lf']
       - id: trailing-whitespace
         exclude: '\.min\.(js|css)$'
 

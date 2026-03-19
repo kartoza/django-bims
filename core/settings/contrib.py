@@ -24,7 +24,6 @@ STATICFILES_FINDERS += (
 
 # Django-allauth related settings
 AUTHENTICATION_BACKENDS = (
-    'oauth2_provider.backends.OAuth2Backend',
     # Needed to login by username in Django admin, regardless of `allauth`
     'django.contrib.auth.backends.ModelBackend',
     'guardian.backends.ObjectPermissionBackend',
@@ -96,7 +95,6 @@ SHARED_APPS = (
 
     'invitations',
     'guardian',
-    'oauth2_provider',
     'rest_framework.authtoken',
     'bims',
     'bims.signals',
@@ -129,7 +127,6 @@ TENANT_APPS = (
 
     'invitations',
     'guardian',
-    'oauth2_provider',
     'rest_framework.authtoken',
     'bims',
     'bims.signals',
