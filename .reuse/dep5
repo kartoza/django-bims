@@ -1,0 +1,69 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: django-bims
+Upstream-Contact: Kartoza <info@kartoza.com>
+Source: https://github.com/kartoza/django-bims
+
+# Binary and generated files
+Files: *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.otf
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Package lock files
+Files: package-lock.json bims/package-lock.json
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Webpack generated files
+Files: webpack-stats.json bims/webpack-stats.json
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Migration files (auto-generated)
+Files: */migrations/*.py
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Documentation
+Files: *.md *.rst *.txt
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Configuration files without comment syntax
+Files: *.json .secrets.baseline
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Static vendor files
+Files: static/* bims/static/js/libs/*
+Copyright: Various
+License: AGPL-3.0-or-later
+
+# Docker and deployment files
+Files: deployment/**
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Test fixtures
+Files: */fixtures/*.json */fixtures/*.yaml
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# CSV and data files
+Files: *.csv *.xlsx *.xls
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Makefile
+Files: Makefile
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Requirements files
+Files: deployment/docker/REQUIREMENTS*.txt
+Copyright: Kartoza
+License: AGPL-3.0-or-later
+
+# Git files
+Files: .gitignore .gitattributes
+Copyright: Kartoza
+License: AGPL-3.0-or-later
