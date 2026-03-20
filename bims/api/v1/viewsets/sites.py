@@ -817,6 +817,19 @@ The cache key is based on the filter parameters.
             except (ValueError, TypeError):
                 pass
 
+        # Check for limit parameter (default: unlimited - deck.gl handles large datasets well)
+        # limit=0 means unlimited (useful for viewport-based queries with bbox)
+        limit_param = request.query_params.get("limit")
+        bbox_provided = bool(request.query_params.get("bbox"))
+        # No default limit - show all sites for complete coverage at country scale
+        default_limit = None
+        try:
+            limit = int(limit_param) if limit_param else default_limit
+            if limit == 0:
+                limit = None  # 0 means unlimited
+        except ValueError:
+            limit = default_limit
+
         # Annotate with filtered record count
         if has_filters:
             # Count only records matching the filters
@@ -825,25 +838,50 @@ The cache key is based on the filter parameters.
             )
             # Only show sites with matching records when filters are active
             queryset = queryset.filter(rec_count__gt=0)
+            # Order by record count for filtered results
+            queryset = queryset.order_by("-rec_count")
         else:
-            # No filters - show all sites with their total record count
-            queryset = queryset.annotate(
-                rec_count=Count("biological_collection_record")
+            # No filters - fast path: skip expensive COUNT, just get locations
+            # Use EXISTS subquery to filter sites that have records (faster than COUNT)
+            from django.db.models import Exists, OuterRef
+            from bims.models import BiologicalCollectionRecord
+
+            has_records = BiologicalCollectionRecord.objects.filter(
+                site_id=OuterRef('pk')
             )
+            queryset = queryset.annotate(
+                has_records=Exists(has_records)
+            ).filter(has_records=True)
+            # For unfiltered view, we don't need actual count, use 0 as placeholder
+            # The frontend shows all points the same size anyway
 
-        queryset = queryset.values_list("id", "longitude", "latitude", "rec_count")
+        # Apply limit if set
+        if limit:
+            queryset = queryset[:limit]
 
-        # Format as array of [id, lon, lat, count] for minimal payload
-        data = [
-            [site_id, float(lon), float(lat), count]
-            for site_id, lon, lat, count in queryset
-            if lon and lat
-        ]
+        if has_filters:
+            queryset = queryset.values_list("id", "longitude", "latitude", "rec_count")
+            # Format as array of [id, lon, lat, count] for minimal payload
+            data = [
+                [site_id, float(lon), float(lat), count]
+                for site_id, lon, lat, count in queryset
+                if lon and lat
+            ]
+        else:
+            queryset = queryset.values_list("id", "longitude", "latitude")
+            # Format as array of [id, lon, lat, 0] - count is 0 for fast path
+            data = [
+                [site_id, float(lon), float(lat), 0]
+                for site_id, lon, lat in queryset
+                if lon and lat
+            ]
 
         meta = {
             "count": len(data),
             "format": ["id", "longitude", "latitude", "record_count"],
             "filtered": has_filters,
+            "limited": limit is not None,
+            "limit": limit,
         }
 
         # Cache the results

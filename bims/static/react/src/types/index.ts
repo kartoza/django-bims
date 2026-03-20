@@ -214,9 +214,13 @@ export interface SearchFilters {
   validated?: boolean;
   iucnCategories?: string[];
   endemism?: string[];
-  ecosystem_type?: string;
+  ecosystemType?: string;
   collectors?: string[];
   boundaryId?: number | null;
+  // New filter types
+  referenceCategories?: string[];
+  sourceCollections?: string[];  // Source names like 'fbis', 'gbif', 'virtual_museum'
+  gbifDatasets?: string[];
   [key: string]: string | number | boolean | string[] | number[] | null | undefined;
 }
 

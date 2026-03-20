@@ -17,7 +17,20 @@ export interface MapLayer {
   type: 'base' | 'overlay' | 'data';
 }
 
-export type DrawMode = 'none' | 'point' | 'polygon' | 'line' | 'circle' | 'bbox';
+export type DrawMode = 'none' | 'point' | 'polygon' | 'line' | 'circle' | 'bbox' | 'rectangle' | 'freehand';
+
+export type BasemapStyle = 'streets' | 'satellite' | 'terrain' | 'light' | 'dark';
+
+export interface LayerVisibility {
+  sites: boolean;
+  clusters: boolean;
+  heatmap: boolean;
+  boundaries: boolean;
+  rivers: boolean;
+  catchments: boolean;
+  protected: boolean;
+  [key: string]: boolean;
+}
 
 export interface SelectedFeature {
   type: 'site' | 'record' | 'taxon';
@@ -38,8 +51,13 @@ interface MapState {
   hoveredSiteId: number | null;
   selectedFeature: SelectedFeature | null;
 
+  // Basemap state
+  basemapStyle: BasemapStyle;
+
   // Layer state
-  layers: MapLayer[];
+  layers: LayerVisibility;
+  layerOpacities: Record<string, number>;
+  layerList: MapLayer[];
   visibleLayerIds: string[];
 
   // Interaction state
@@ -67,8 +85,10 @@ interface MapState {
   setHoveredSite: (siteId: number | null) => void;
   setSelectedFeature: (feature: SelectedFeature | null) => void;
 
+  setBasemapStyle: (style: BasemapStyle) => void;
   setLayerVisibility: (layerId: string, visible: boolean) => void;
   setLayerOpacity: (layerId: string, opacity: number) => void;
+  toggleLayer: (layerId: string) => void;
   addLayer: (layer: MapLayer) => void;
   removeLayer: (layerId: string) => void;
 
@@ -99,8 +119,19 @@ const initialState = {
   hoveredSiteId: null as number | null,
   selectedFeature: null as SelectedFeature | null,
 
-  layers: [] as MapLayer[],
-  visibleLayerIds: [] as string[],
+  basemapStyle: 'streets' as BasemapStyle,
+  layers: {
+    sites: true,
+    clusters: true,
+    heatmap: false,
+    boundaries: false,
+    rivers: false,
+    catchments: false,
+    protected: false,
+  } as LayerVisibility,
+  layerOpacities: {} as Record<string, number>,
+  layerList: [] as MapLayer[],
+  visibleLayerIds: ['sites', 'clusters'] as string[],
 
   drawMode: 'none' as DrawMode,
   isLoading: false,
@@ -145,37 +176,52 @@ export const useMapStore = create<MapState>()(
 
         setSelectedFeature: (feature) => set({ selectedFeature: feature }),
 
+        setBasemapStyle: (style) => set({ basemapStyle: style }),
+
         setLayerVisibility: (layerId, visible) => {
-          const layers = get().layers.map((layer) =>
-            layer.id === layerId ? { ...layer, visible } : layer
-          );
-          const visibleLayerIds = layers
-            .filter((l) => l.visible)
-            .map((l) => l.id);
+          const layers = { ...get().layers, [layerId]: visible };
+          const visibleLayerIds = Object.entries(layers)
+            .filter(([, v]) => v)
+            .map(([k]) => k);
           set({ layers, visibleLayerIds });
         },
 
         setLayerOpacity: (layerId, opacity) => {
-          const layers = get().layers.map((layer) =>
-            layer.id === layerId ? { ...layer, opacity } : layer
-          );
-          set({ layers });
+          const layerOpacities = { ...get().layerOpacities, [layerId]: opacity };
+          set({ layerOpacities });
+        },
+
+        toggleLayer: (layerId) => {
+          const layers = { ...get().layers };
+          layers[layerId] = !layers[layerId];
+          const visibleLayerIds = Object.entries(layers)
+            .filter(([, v]) => v)
+            .map(([k]) => k);
+          set({ layers, visibleLayerIds });
         },
 
         addLayer: (layer) => {
-          const layers = [...get().layers, layer];
-          const visibleLayerIds = layers
-            .filter((l) => l.visible)
-            .map((l) => l.id);
-          set({ layers, visibleLayerIds });
+          // Prevent duplicates
+          const existingIds = new Set(get().layerList.map(l => l.id));
+          if (existingIds.has(layer.id)) {
+            return; // Layer already exists, skip
+          }
+          const layerList = [...get().layerList, layer];
+          const layers = { ...get().layers, [layer.id]: layer.visible };
+          const visibleLayerIds = Object.entries(layers)
+            .filter(([, v]) => v)
+            .map(([k]) => k);
+          set({ layerList, layers, visibleLayerIds });
         },
 
         removeLayer: (layerId) => {
-          const layers = get().layers.filter((l) => l.id !== layerId);
-          const visibleLayerIds = layers
-            .filter((l) => l.visible)
-            .map((l) => l.id);
-          set({ layers, visibleLayerIds });
+          const layerList = get().layerList.filter((l) => l.id !== layerId);
+          const layers = { ...get().layers };
+          delete layers[layerId];
+          const visibleLayerIds = Object.entries(layers)
+            .filter(([, v]) => v)
+            .map(([k]) => k);
+          set({ layerList, layers, visibleLayerIds });
         },
 
         setDrawMode: (mode) => set({ drawMode: mode }),

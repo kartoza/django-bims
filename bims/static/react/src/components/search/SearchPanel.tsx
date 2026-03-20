@@ -35,6 +35,11 @@ import { ConservationStatusFilter } from './filters/ConservationStatusFilter';
 import { EndemismFilter } from './filters/EndemismFilter';
 import { CollectorFilter } from './filters/CollectorFilter';
 import { SpatialFilter } from './filters/SpatialFilter';
+import { EcosystemTypeFilter } from './filters/EcosystemTypeFilter';
+import { ReferenceCategoryFilter } from './filters/ReferenceCategoryFilter';
+import { SourceCollectionFilter } from './filters/SourceCollectionFilter';
+import { GBIFDatasetFilter } from './filters/GBIFDatasetFilter';
+import { ValidationStatusFilter } from './filters/ValidationStatusFilter';
 import { SearchResults } from './SearchResults';
 import type { BiologicalRecord } from '../../types';
 
@@ -232,6 +237,66 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
             </AccordionButton>
             <AccordionPanel pb={4}>
               <SpatialFilter />
+            </AccordionPanel>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionButton>
+              <Box flex={1} textAlign="left" fontWeight="medium">
+                Ecosystem Type
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <EcosystemTypeFilter />
+            </AccordionPanel>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionButton>
+              <Box flex={1} textAlign="left" fontWeight="medium">
+                Validation Status
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <ValidationStatusFilter />
+            </AccordionPanel>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionButton>
+              <Box flex={1} textAlign="left" fontWeight="medium">
+                Reference Category
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <ReferenceCategoryFilter />
+            </AccordionPanel>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionButton>
+              <Box flex={1} textAlign="left" fontWeight="medium">
+                Source Collection
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <SourceCollectionFilter />
+            </AccordionPanel>
+          </AccordionItem>
+
+          <AccordionItem>
+            <AccordionButton>
+              <Box flex={1} textAlign="left" fontWeight="medium">
+                GBIF Dataset
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <GBIFDatasetFilter />
             </AccordionPanel>
           </AccordionItem>
         </Accordion>

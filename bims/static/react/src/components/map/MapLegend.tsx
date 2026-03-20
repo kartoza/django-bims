@@ -49,20 +49,6 @@ interface LayerCategory {
 
 const LAYER_CATEGORIES: LayerCategory[] = [
   {
-    id: 'base',
-    name: 'Base Maps',
-    description: 'Background map layers',
-    icon: '🗺️',
-    color: 'gray.500',
-  },
-  {
-    id: 'context',
-    name: 'Context Layers',
-    description: 'Geographic and administrative boundaries',
-    icon: '📍',
-    color: 'blue.500',
-  },
-  {
     id: 'biodiversity',
     name: 'Biodiversity Data',
     description: 'Species and occurrence data',
@@ -70,90 +56,23 @@ const LAYER_CATEGORIES: LayerCategory[] = [
     color: 'green.500',
   },
   {
-    id: 'conservation',
-    name: 'Conservation Areas',
-    description: 'Protected areas and reserves',
-    icon: '🌿',
-    color: 'teal.500',
+    id: 'context',
+    name: 'Context Layers',
+    description: 'Administrative and geographic boundaries',
+    icon: '🗺️',
+    color: 'blue.500',
   },
   {
-    id: 'hydrology',
-    name: 'Hydrology',
-    description: 'Rivers, wetlands, and water bodies',
-    icon: '💧',
-    color: 'cyan.500',
-  },
-  {
-    id: 'analysis',
-    name: 'Analysis Layers',
-    description: 'Heatmaps and derived data',
+    id: 'visualization',
+    name: 'Visualization',
+    description: 'Data analysis and visualization layers',
     icon: '📊',
     color: 'purple.500',
   },
 ];
 
-// Predefined layers available in BIMS
+// Default layers for each category
 const DEFAULT_LAYERS: MapLayer[] = [
-  // Base maps
-  {
-    id: 'osm-raster',
-    name: 'OpenStreetMap',
-    visible: true,
-    opacity: 1,
-    type: 'base',
-  },
-  {
-    id: 'satellite',
-    name: 'Satellite Imagery',
-    visible: false,
-    opacity: 1,
-    type: 'base',
-  },
-  {
-    id: 'terrain',
-    name: 'Terrain',
-    visible: false,
-    opacity: 1,
-    type: 'base',
-  },
-
-  // Context layers
-  {
-    id: 'provinces',
-    name: 'Provincial Boundaries',
-    visible: false,
-    opacity: 0.7,
-    type: 'overlay',
-  },
-  {
-    id: 'municipalities',
-    name: 'Municipal Boundaries',
-    visible: false,
-    opacity: 0.7,
-    type: 'overlay',
-  },
-  {
-    id: 'catchments',
-    name: 'Water Management Areas',
-    visible: false,
-    opacity: 0.6,
-    type: 'overlay',
-  },
-  {
-    id: 'sub-catchments',
-    name: 'Sub-catchments',
-    visible: false,
-    opacity: 0.6,
-    type: 'overlay',
-  },
-  {
-    id: 'ecoregions',
-    name: 'Freshwater Ecoregions',
-    visible: false,
-    opacity: 0.5,
-    type: 'overlay',
-  },
-
   // Biodiversity data layers
   {
     id: 'sites',
@@ -162,29 +81,21 @@ const DEFAULT_LAYERS: MapLayer[] = [
     opacity: 1,
     type: 'data',
   },
+  // Context layers
   {
-    id: 'clusters',
-    name: 'Site Clusters',
-    visible: true,
-    opacity: 1,
-    type: 'data',
-  },
-  {
-    id: 'occurrences',
-    name: 'Occurrence Records',
+    id: 'rivers',
+    name: 'Rivers',
     visible: false,
     opacity: 0.8,
-    type: 'data',
+    type: 'overlay',
   },
   {
-    id: 'taxa-distribution',
-    name: 'Species Distribution',
+    id: 'catchments',
+    name: 'Catchments',
     visible: false,
-    opacity: 0.7,
-    type: 'data',
+    opacity: 0.6,
+    type: 'overlay',
   },
-
-  // Conservation layers
   {
     id: 'protected-areas',
     name: 'Protected Areas',
@@ -193,51 +104,13 @@ const DEFAULT_LAYERS: MapLayer[] = [
     type: 'overlay',
   },
   {
-    id: 'critical-biodiversity',
-    name: 'Critical Biodiversity Areas',
-    visible: false,
-    opacity: 0.5,
-    type: 'overlay',
-  },
-  {
-    id: 'ramsar-sites',
-    name: 'Ramsar Wetlands',
-    visible: false,
-    opacity: 0.6,
-    type: 'overlay',
-  },
-
-  // Hydrology layers
-  {
-    id: 'rivers',
-    name: 'Rivers & Streams',
-    visible: false,
-    opacity: 0.8,
-    type: 'overlay',
-  },
-  {
-    id: 'wetlands',
-    name: 'Wetlands',
-    visible: false,
-    opacity: 0.6,
-    type: 'overlay',
-  },
-  {
-    id: 'dams',
-    name: 'Dams & Reservoirs',
-    visible: false,
-    opacity: 0.8,
-    type: 'overlay',
-  },
-  {
-    id: 'estuaries',
-    name: 'Estuaries',
+    id: 'provinces',
+    name: 'Provinces',
     visible: false,
     opacity: 0.7,
     type: 'overlay',
   },
-
-  // Analysis layers
+  // Visualization layers
   {
     id: 'heatmap',
     name: 'Occurrence Heatmap',
@@ -246,17 +119,10 @@ const DEFAULT_LAYERS: MapLayer[] = [
     type: 'data',
   },
   {
-    id: 'species-richness',
-    name: 'Species Richness',
+    id: 'clusters',
+    name: 'Site Clusters',
     visible: false,
-    opacity: 0.6,
-    type: 'data',
-  },
-  {
-    id: 'endemism-hotspots',
-    name: 'Endemism Hotspots',
-    visible: false,
-    opacity: 0.6,
+    opacity: 1,
     type: 'data',
   },
 ];
@@ -268,22 +134,26 @@ const getLayerCategory = (layer: MapLayer): string => {
   // Categorize overlay/data layers
   const id = layer.id.toLowerCase();
 
-  if (['provinces', 'municipalities', 'catchments', 'sub-catchments', 'ecoregions'].includes(id)) {
-    return 'context';
-  }
-  if (['sites', 'clusters', 'occurrences', 'taxa-distribution'].includes(id)) {
+  // Biodiversity data layers
+  if (['sites', 'occurrences', 'taxa-distribution'].includes(id)) {
     return 'biodiversity';
   }
-  if (['protected-areas', 'critical-biodiversity', 'ramsar-sites'].includes(id)) {
-    return 'conservation';
-  }
-  if (['rivers', 'wetlands', 'dams', 'estuaries'].includes(id)) {
-    return 'hydrology';
-  }
-  if (['heatmap', 'species-richness', 'endemism-hotspots'].includes(id)) {
-    return 'analysis';
+
+  // Context layers (boundaries, rivers, protected areas)
+  if ([
+    'provinces', 'municipalities', 'catchments', 'sub-catchments', 'ecoregions',
+    'rivers', 'wetlands', 'dams', 'estuaries',
+    'protected-areas', 'critical-biodiversity', 'ramsar-sites'
+  ].includes(id)) {
+    return 'context';
   }
 
+  // Visualization/analysis layers
+  if (['heatmap', 'clusters', 'species-richness', 'endemism-hotspots'].includes(id)) {
+    return 'visualization';
+  }
+
+  // Default based on type
   return layer.type === 'data' ? 'biodiversity' : 'context';
 };
 
@@ -519,18 +389,33 @@ interface MapLegendProps {
 }
 
 const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
-  const { layers, addLayer, setLayerVisibility, setLayerOpacity } = useMapStore();
+  const { layerList, layers, addLayer, setLayerVisibility, setLayerOpacity } = useMapStore();
+
+  // All useColorModeValue calls must be at the top, before any conditional returns
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const headerFooterBg = useColorModeValue('gray.50', 'gray.700');
+  const hoverBg = useColorModeValue('gray.100', 'gray.700');
+  const expandedBg = useColorModeValue('brand.50', 'brand.900');
 
-  // Initialize default layers if empty
+  // Initialize default layers (adds any missing default layers)
   useEffect(() => {
-    if (layers.length === 0) {
-      DEFAULT_LAYERS.forEach((layer) => {
+    const existingIds = new Set(layerList.map(l => l.id));
+    DEFAULT_LAYERS.forEach((layer) => {
+      if (!existingIds.has(layer.id)) {
         addLayer(layer);
-      });
-    }
-  }, [layers.length, addLayer]);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Merge layerList with visibility from layers store
+  const mergedLayers = React.useMemo(() => {
+    return layerList.map((layer) => ({
+      ...layer,
+      visible: layers[layer.id] ?? layer.visible,
+    }));
+  }, [layerList, layers]);
 
   // Group layers by category
   const layersByCategory = React.useMemo(() => {
@@ -540,17 +425,18 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
       grouped[cat.id] = [];
     });
 
-    layers.forEach((layer) => {
+    mergedLayers.forEach((layer) => {
       const category = getLayerCategory(layer);
       if (grouped[category]) {
         grouped[category].push(layer);
       } else {
-        grouped['context'].push(layer);
+        // Fall back to biodiversity for unknown categories
+        grouped['biodiversity'].push(layer);
       }
     });
 
     return grouped;
-  }, [layers]);
+  }, [mergedLayers]);
 
   // Count visible layers per category
   const visibleCounts = React.useMemo(() => {
@@ -587,12 +473,12 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
         borderBottom="1px solid"
         borderColor={borderColor}
         align="center"
-        bg={useColorModeValue('gray.50', 'gray.700')}
+        bg={headerFooterBg}
       >
         <Heading size="sm">Map Layers</Heading>
         <Spacer />
         <Badge colorScheme="brand" mr={2}>
-          {layers.filter((l) => l.visible).length} active
+          {mergedLayers.filter((l) => l.visible).length} active
         </Badge>
         <CloseButton size="sm" onClick={onClose} />
       </Flex>
@@ -610,8 +496,8 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
                   px={3}
                   py={2}
                   borderRadius="lg"
-                  _hover={{ bg: useColorModeValue('gray.100', 'gray.700') }}
-                  _expanded={{ bg: useColorModeValue('brand.50', 'brand.900') }}
+                  _hover={{ bg: hoverBg }}
+                  _expanded={{ bg: expandedBg }}
                 >
                   <HStack flex="1" spacing={2}>
                     <Text fontSize="lg">{category.icon}</Text>
@@ -659,7 +545,7 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
         py={2}
         borderTop="1px solid"
         borderColor={borderColor}
-        bg={useColorModeValue('gray.50', 'gray.700')}
+        bg={headerFooterBg}
       >
         <HStack spacing={2} justify="center">
           <Tooltip label="Show all layers">
@@ -669,7 +555,7 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
               size="sm"
               variant="ghost"
               onClick={() => {
-                layers.forEach((l) => setLayerVisibility(l.id, true));
+                layerList.forEach((l) => setLayerVisibility(l.id, true));
               }}
             />
           </Tooltip>
@@ -681,7 +567,7 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
               variant="ghost"
               onClick={() => {
                 // Keep base map visible
-                layers.forEach((l) => {
+                layerList.forEach((l) => {
                   if (l.type !== 'base') {
                     setLayerVisibility(l.id, false);
                   }

@@ -183,6 +183,22 @@ const buildApiParams = (
     params.validated = filters.validated;
   }
 
+  if (filters.ecosystemType) {
+    params.ecosystem_type = filters.ecosystemType;
+  }
+
+  if (filters.referenceCategories && filters.referenceCategories.length > 0) {
+    params.reference_category = filters.referenceCategories.join(',');
+  }
+
+  if (filters.sourceCollections && filters.sourceCollections.length > 0) {
+    params.source_collection = filters.sourceCollections.join(',');
+  }
+
+  if (filters.gbifDatasets && filters.gbifDatasets.length > 0) {
+    params.gbif_dataset = filters.gbifDatasets.join(',');
+  }
+
   return params;
 };
 
