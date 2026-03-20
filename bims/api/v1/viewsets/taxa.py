@@ -4,8 +4,10 @@
 ViewSet for Taxonomy in API v1.
 """
 from django.db.models import Count
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from bims.api.v1.filters.taxa import TaxonomyFilterSet
@@ -48,8 +50,13 @@ class TaxonomyViewSet(StandardModelViewSet):
         "iucn_status",
         "national_conservation_status",
         "endemism",
+    ).prefetch_related(
+        "vernacular_names",
     ).all()
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = TaxonomyFilterSet
+    search_fields = ["scientific_name", "canonical_name", "vernacular_names__name"]
+    ordering_fields = ["scientific_name", "canonical_name", "rank"]
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = LargeResultsSetPagination
 
@@ -67,8 +74,8 @@ class TaxonomyViewSet(StandardModelViewSet):
         """Optimize queryset based on action."""
         queryset = super().get_queryset()
 
-        if self.action == "list":
-            # Add record count annotation
+        # Only add expensive record_count if explicitly requested
+        if self.action == "list" and self.request.query_params.get("include_counts"):
             queryset = queryset.annotate(record_count=Count("biologicalcollectionrecord"))
 
         return queryset.order_by("canonical_name", "scientific_name")

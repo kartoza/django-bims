@@ -117,8 +117,8 @@ const App: React.FC = () => {
             {/* Header - always visible */}
             <Header />
 
-            {/* Main content - uses flex=1 to fill space, position relative for absolute children */}
-            <Box flex="1" position="relative" overflow="hidden" minH={0} minW={0}>
+            {/* Main content - uses flex=1 to fill space, overflow auto for scrollable pages */}
+            <Box flex="1" position="relative" overflow="auto" minH={0} minW={0}>
               <ErrorBoundary>
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>

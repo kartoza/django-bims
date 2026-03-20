@@ -273,6 +273,8 @@
         loadDummyOccurrencesScript = wrapSimpleScript "bims-load-dummy-occurrences";
         statusScript = wrapSimpleScript "bims-status";
         validateScript = wrapSimpleScript "bims-validate";
+        cleanLocksScript = wrapSimpleScript "bims-clean-locks";
+        runScript = wrapSimpleScript "bims-run";
 
       in
       {
@@ -354,6 +356,8 @@
             loadDummyOccurrencesScript
             statusScript
             validateScript
+            cleanLocksScript
+            runScript
           ];
 
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -429,6 +433,8 @@
           load-dummy-occurrences = { type = "app"; program = "${loadDummyOccurrencesScript}/bin/bims-load-dummy-occurrences"; };
           status = { type = "app"; program = "${statusScript}/bin/bims-status"; };
           validate = { type = "app"; program = "${validateScript}/bin/bims-validate"; };
+          clean-locks = { type = "app"; program = "${cleanLocksScript}/bin/bims-clean-locks"; };
+          run = { type = "app"; program = "${runScript}/bin/bims-run"; };
         };
 
         packages = {

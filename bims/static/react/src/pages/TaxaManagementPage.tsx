@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Box,
   Container,
@@ -26,10 +26,6 @@ import {
   Td,
   Badge,
   IconButton,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   Tabs,
   TabList,
   TabPanels,
@@ -37,7 +33,6 @@ import {
   TabPanel,
   Card,
   CardBody,
-  CardHeader,
   Select,
   Spinner,
   Center,
@@ -45,19 +40,10 @@ import {
   AlertIcon,
   useToast,
   useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
+  useColorModeValue,
   FormControl,
   FormLabel,
-  Textarea,
-  useColorModeValue,
   Checkbox,
-  Flex,
   Spacer,
 } from '@chakra-ui/react';
 import {
@@ -65,11 +51,11 @@ import {
   AddIcon,
   EditIcon,
   DeleteIcon,
-  ChevronDownIcon,
   CheckIcon,
   CloseIcon,
   DownloadIcon,
   ExternalLinkIcon,
+  ArrowBackIcon,
 } from '@chakra-ui/icons';
 import { useAuth } from '../providers/AuthProvider';
 import { apiClient } from '../api/client';
@@ -85,35 +71,35 @@ interface TaxonGroup {
 
 interface Taxon {
   id: number;
-  canonicalName: string;
-  scientificName: string;
+  canonical_name: string;
+  scientific_name: string;
   rank: string;
-  taxonomicStatus: string;
-  iucnStatus?: string;
-  endemism?: string;
-  validated: boolean;
-  gbifKey?: number;
+  taxonomic_status: string;
+  iucn_status?: { category: string } | null;
+  endemism?: { name: string } | null;
+  verified: boolean;
+  gbif_key?: number;
 }
 
 interface TaxonProposal {
   id: number;
   taxon: Taxon;
-  proposedBy: string;
-  proposedAt: string;
+  proposed_by: string;
+  proposed_at: string;
   status: 'pending' | 'approved' | 'rejected';
   notes?: string;
-  changeType: 'add' | 'update' | 'merge' | 'delete';
+  change_type: 'add' | 'update' | 'merge' | 'delete';
 }
 
 const TaxaManagementPage: React.FC = () => {
   const toast = useToast();
   const { user, isAuthenticated } = useAuth();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const { isOpen: isTaxaDownloadOpen, onOpen: onTaxaDownloadOpen, onClose: onTaxaDownloadClose } = useDisclosure();
 
   const [activeTab, setActiveTab] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [taxonGroups, setTaxonGroups] = useState<TaxonGroup[]>([]);
   const [taxa, setTaxa] = useState<Taxon[]>([]);
@@ -121,9 +107,32 @@ const TaxaManagementPage: React.FC = () => {
   const [selectedTaxa, setSelectedTaxa] = useState<number[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Modal state
-  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'gbif'>('add');
+  // Debounce search query (300ms delay)
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log('[TaxaManagement] Debounced search:', searchQuery);
+      setDebouncedSearch(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // View state: 'list' | 'edit' | 'gbif-import'
+  const [viewMode, setViewMode] = useState<'list' | 'edit' | 'gbif-import'>('list');
   const [editingTaxon, setEditingTaxon] = useState<Taxon | null>(null);
   const [gbifSearchQuery, setGbifSearchQuery] = useState('');
   const [gbifResults, setGbifResults] = useState<any[]>([]);
@@ -148,19 +157,21 @@ const TaxaManagementPage: React.FC = () => {
     fetchGroups();
   }, []);
 
-  // Fetch taxa based on filters
+  // Fetch taxa based on filters (uses debounced search)
   useEffect(() => {
     const fetchTaxa = async () => {
       setIsLoading(true);
       try {
         const params: Record<string, any> = {
           page,
-          page_size: 20,
+          page_size: 50,
         };
-        if (searchQuery) params.search = searchQuery;
+        if (debouncedSearch) params.search = debouncedSearch;
         if (selectedGroup) params.taxon_group = selectedGroup;
 
+        console.log('[TaxaManagement] Fetching taxa with params:', params);
         const response = await apiClient.get('taxa/', { params });
+        console.log('[TaxaManagement] API response:', response.data);
         setTaxa(response.data?.data || []);
         setTotalPages(response.data?.meta?.total_pages || 1);
       } catch (error) {
@@ -177,7 +188,7 @@ const TaxaManagementPage: React.FC = () => {
     };
 
     fetchTaxa();
-  }, [searchQuery, selectedGroup, page, toast]);
+  }, [debouncedSearch, selectedGroup, page, toast]);
 
   // Fetch proposals
   useEffect(() => {
@@ -199,12 +210,12 @@ const TaxaManagementPage: React.FC = () => {
 
   // GBIF Search
   const handleGbifSearch = useCallback(async () => {
-    if (!gbifSearchQuery.trim()) return;
+    if (!gbifSearchQuery.trim() || gbifSearchQuery.length < 2) return;
 
     setIsSearchingGbif(true);
     try {
-      const response = await apiClient.get('taxa-management/gbif_search/', {
-        params: { q: gbifSearchQuery },
+      const response = await apiClient.get('taxa-management/find_gbif/', {
+        params: { q: gbifSearchQuery, limit: 20 },
       });
       setGbifResults(response.data?.data || []);
     } catch (error) {
@@ -222,9 +233,10 @@ const TaxaManagementPage: React.FC = () => {
   // Import from GBIF
   const handleGbifImport = useCallback(async (gbifKey: number) => {
     try {
-      const response = await apiClient.post('taxa-management/gbif_import/', {
+      const response = await apiClient.post('taxa-management/add_from_gbif/', {
         gbif_key: gbifKey,
         taxon_group: selectedGroup,
+        create_proposal: false,
       });
 
       if (response.data?.data) {
@@ -234,7 +246,7 @@ const TaxaManagementPage: React.FC = () => {
           status: 'success',
           duration: 3000,
         });
-        onClose();
+        setViewMode('list');
         // Refresh taxa list
         setPage(1);
       }
@@ -246,7 +258,7 @@ const TaxaManagementPage: React.FC = () => {
         duration: 5000,
       });
     }
-  }, [selectedGroup, toast, onClose]);
+  }, [selectedGroup, toast]);
 
   // Approve proposal
   const handleApproveProposal = useCallback(async (proposalId: number) => {
@@ -339,13 +351,76 @@ const TaxaManagementPage: React.FC = () => {
     }
   }, [selectedTaxa, taxa, toast]);
 
-  const openAddModal = () => {
-    setModalMode('gbif');
+  const openGbifImport = () => {
+    setViewMode('gbif-import');
     setEditingTaxon(null);
     setGbifResults([]);
     setGbifSearchQuery('');
-    onOpen();
   };
+
+  const openEditView = (taxon: Taxon) => {
+    setViewMode('edit');
+    setEditingTaxon({ ...taxon });
+  };
+
+  const goBackToList = () => {
+    setViewMode('list');
+    setEditingTaxon(null);
+  };
+
+  const handleDeleteTaxon = useCallback(async (taxonId: number) => {
+    if (!window.confirm('Are you sure you want to delete this taxon? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`taxa/${taxonId}/`);
+      setTaxa(taxa.filter((t) => t.id !== taxonId));
+      toast({
+        title: 'Deleted',
+        description: 'Taxon has been deleted',
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to delete taxon',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [taxa, toast]);
+
+  const handleSaveTaxon = useCallback(async () => {
+    if (!editingTaxon) return;
+
+    try {
+      const response = await apiClient.patch(`taxa/${editingTaxon.id}/`, {
+        scientific_name: editingTaxon.scientific_name,
+        canonical_name: editingTaxon.canonical_name,
+        rank: editingTaxon.rank,
+        taxonomic_status: editingTaxon.taxonomic_status,
+      });
+
+      setTaxa(taxa.map((t) => (t.id === editingTaxon.id ? { ...t, ...response.data?.data } : t)));
+      setViewMode('list');
+      setEditingTaxon(null);
+      toast({
+        title: 'Saved',
+        description: 'Taxon has been updated',
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to save taxon',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [editingTaxon, taxa, toast]);
 
   if (!isAuthenticated || !canManageTaxa) {
     return (
@@ -358,6 +433,214 @@ const TaxaManagementPage: React.FC = () => {
     );
   }
 
+  // Edit Taxon View
+  if (viewMode === 'edit' && editingTaxon) {
+    return (
+      <Box bg={bgColor} minH="calc(100vh - 100px)" py={8}>
+        <Container maxW="container.lg">
+          <VStack spacing={6} align="stretch">
+            <HStack>
+              <IconButton
+                aria-label="Back to list"
+                icon={<ArrowBackIcon />}
+                variant="ghost"
+                onClick={goBackToList}
+              />
+              <Heading size="lg">Edit Taxon</Heading>
+            </HStack>
+
+            <Card bg={cardBg}>
+              <CardBody>
+                <VStack spacing={4} align="stretch">
+                  <FormControl>
+                    <FormLabel>Scientific Name</FormLabel>
+                    <Input
+                      value={editingTaxon.scientific_name || ''}
+                      onChange={(e) => setEditingTaxon({ ...editingTaxon, scientific_name: e.target.value })}
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Canonical Name</FormLabel>
+                    <Input
+                      value={editingTaxon.canonical_name || ''}
+                      onChange={(e) => setEditingTaxon({ ...editingTaxon, canonical_name: e.target.value })}
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Rank</FormLabel>
+                    <Select
+                      value={editingTaxon.rank || ''}
+                      onChange={(e) => setEditingTaxon({ ...editingTaxon, rank: e.target.value })}
+                    >
+                      <option value="KINGDOM">Kingdom</option>
+                      <option value="PHYLUM">Phylum</option>
+                      <option value="CLASS">Class</option>
+                      <option value="ORDER">Order</option>
+                      <option value="FAMILY">Family</option>
+                      <option value="GENUS">Genus</option>
+                      <option value="SPECIES">Species</option>
+                      <option value="SUBSPECIES">Subspecies</option>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Taxonomic Status</FormLabel>
+                    <Select
+                      value={editingTaxon.taxonomic_status || ''}
+                      onChange={(e) => setEditingTaxon({ ...editingTaxon, taxonomic_status: e.target.value })}
+                    >
+                      <option value="ACCEPTED">Accepted</option>
+                      <option value="SYNONYM">Synonym</option>
+                      <option value="DOUBTFUL">Doubtful</option>
+                    </Select>
+                  </FormControl>
+
+                  <HStack justify="flex-end" pt={4}>
+                    <Button variant="ghost" onClick={goBackToList}>
+                      Cancel
+                    </Button>
+                    <Button colorScheme="brand" onClick={handleSaveTaxon}>
+                      Save Changes
+                    </Button>
+                  </HStack>
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Container>
+      </Box>
+    );
+  }
+
+  // GBIF Import View
+  if (viewMode === 'gbif-import') {
+    return (
+      <Box bg={bgColor} minH="calc(100vh - 100px)" py={8}>
+        <Container maxW="container.lg">
+          <VStack spacing={6} align="stretch">
+            <HStack>
+              <IconButton
+                aria-label="Back to list"
+                icon={<ArrowBackIcon />}
+                variant="ghost"
+                onClick={goBackToList}
+              />
+              <Heading size="lg">Import from GBIF</Heading>
+            </HStack>
+
+            <Card bg={cardBg}>
+              <CardBody>
+                <VStack spacing={4} align="stretch">
+                  <HStack>
+                    <InputGroup flex={1}>
+                      <InputLeftElement>
+                        <SearchIcon color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        placeholder="Search GBIF for species..."
+                        value={gbifSearchQuery}
+                        onChange={(e) => setGbifSearchQuery(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleGbifSearch()}
+                      />
+                    </InputGroup>
+                    <Button
+                      colorScheme="brand"
+                      onClick={handleGbifSearch}
+                      isLoading={isSearchingGbif}
+                    >
+                      Search
+                    </Button>
+                  </HStack>
+
+                  <FormControl>
+                    <FormLabel>Target Group</FormLabel>
+                    <Select
+                      placeholder="Select target group"
+                      value={selectedGroup || ''}
+                      onChange={(e) =>
+                        setSelectedGroup(e.target.value ? Number(e.target.value) : null)
+                      }
+                    >
+                      {taxonGroups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  {isSearchingGbif ? (
+                    <Center py={10}>
+                      <Spinner size="xl" color="brand.500" />
+                    </Center>
+                  ) : gbifResults.length > 0 ? (
+                    <Box overflowX="auto">
+                      <Table size="sm">
+                        <Thead>
+                          <Tr>
+                            <Th>Name</Th>
+                            <Th>Rank</Th>
+                            <Th>Status</Th>
+                            <Th w="100px"></Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {gbifResults.map((result) => (
+                            <Tr key={result.gbif_key || result.id}>
+                              <Td fontStyle="italic">
+                                {result.canonical_name || result.scientific_name}
+                                {result.source === 'local' && (
+                                  <Badge ml={2} colorScheme="blue" size="sm">Local</Badge>
+                                )}
+                              </Td>
+                              <Td>{result.rank}</Td>
+                              <Td>
+                                <Badge
+                                  colorScheme={result.status === 'ACCEPTED' || result.source === 'local' ? 'green' : 'yellow'}
+                                >
+                                  {result.status || (result.validated ? 'Validated' : 'Pending')}
+                                </Badge>
+                              </Td>
+                              <Td>
+                                {result.source === 'local' ? (
+                                  <Badge colorScheme="gray">Already exists</Badge>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    colorScheme="brand"
+                                    onClick={() => handleGbifImport(result.gbif_key)}
+                                    isDisabled={!selectedGroup}
+                                  >
+                                    Import
+                                  </Button>
+                                )}
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </Box>
+                  ) : gbifSearchQuery && !isSearchingGbif ? (
+                    <Center py={10}>
+                      <Text color="gray.500">No results found. Try a different search term.</Text>
+                    </Center>
+                  ) : (
+                    <Center py={10}>
+                      <Text color="gray.500">Search GBIF to find and import taxa.</Text>
+                    </Center>
+                  )}
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Container>
+      </Box>
+    );
+  }
+
+  // List View (default)
   return (
     <Box bg={bgColor} minH="calc(100vh - 100px)" py={8}>
       <Container maxW="container.xl">
@@ -376,7 +659,7 @@ const TaxaManagementPage: React.FC = () => {
               <Button
                 leftIcon={<AddIcon />}
                 colorScheme="brand"
-                onClick={openAddModal}
+                onClick={openGbifImport}
               >
                 Add Taxon
               </Button>
@@ -492,9 +775,9 @@ const TaxaManagementPage: React.FC = () => {
                                   </Td>
                                   <Td>
                                     <Text fontStyle="italic">
-                                      {taxon.canonicalName}
+                                      {taxon.canonical_name}
                                     </Text>
-                                    {taxon.gbifKey && (
+                                    {taxon.gbif_key && (
                                       <IconButton
                                         aria-label="View on GBIF"
                                         icon={<ExternalLinkIcon />}
@@ -503,7 +786,7 @@ const TaxaManagementPage: React.FC = () => {
                                         ml={1}
                                         onClick={() =>
                                           window.open(
-                                            `https://www.gbif.org/species/${taxon.gbifKey}`,
+                                            `https://www.gbif.org/species/${taxon.gbif_key}`,
                                             '_blank'
                                           )
                                         }
@@ -514,33 +797,33 @@ const TaxaManagementPage: React.FC = () => {
                                   <Td>
                                     <Badge
                                       colorScheme={
-                                        taxon.taxonomicStatus === 'ACCEPTED'
+                                        taxon.taxonomic_status === 'ACCEPTED'
                                           ? 'green'
                                           : 'yellow'
                                       }
                                     >
-                                      {taxon.taxonomicStatus}
+                                      {taxon.taxonomic_status}
                                     </Badge>
                                   </Td>
                                   <Td>
-                                    {taxon.iucnStatus && (
+                                    {taxon.iucn_status?.category && (
                                       <Badge
                                         colorScheme={
-                                          taxon.iucnStatus === 'CR'
+                                          taxon.iucn_status.category === 'CR'
                                             ? 'red'
-                                            : taxon.iucnStatus === 'EN'
+                                            : taxon.iucn_status.category === 'EN'
                                             ? 'orange'
-                                            : taxon.iucnStatus === 'VU'
+                                            : taxon.iucn_status.category === 'VU'
                                             ? 'yellow'
                                             : 'green'
                                         }
                                       >
-                                        {taxon.iucnStatus}
+                                        {taxon.iucn_status.category}
                                       </Badge>
                                     )}
                                   </Td>
                                   <Td>
-                                    {taxon.validated ? (
+                                    {taxon.verified ? (
                                       <Badge colorScheme="green">Yes</Badge>
                                     ) : (
                                       <Button
@@ -553,26 +836,24 @@ const TaxaManagementPage: React.FC = () => {
                                     )}
                                   </Td>
                                   <Td>
-                                    <Menu>
-                                      <MenuButton
-                                        as={IconButton}
-                                        aria-label="Actions"
-                                        icon={<ChevronDownIcon />}
+                                    <HStack spacing={1}>
+                                      <IconButton
+                                        aria-label="Edit taxon"
+                                        icon={<EditIcon />}
                                         size="sm"
                                         variant="ghost"
+                                        colorScheme="blue"
+                                        onClick={() => openEditView(taxon)}
                                       />
-                                      <MenuList>
-                                        <MenuItem icon={<EditIcon />}>
-                                          Edit
-                                        </MenuItem>
-                                        <MenuItem
-                                          icon={<DeleteIcon />}
-                                          color="red.500"
-                                        >
-                                          Delete
-                                        </MenuItem>
-                                      </MenuList>
-                                    </Menu>
+                                      <IconButton
+                                        aria-label="Delete taxon"
+                                        icon={<DeleteIcon />}
+                                        size="sm"
+                                        variant="ghost"
+                                        colorScheme="red"
+                                        onClick={() => handleDeleteTaxon(taxon.id)}
+                                      />
+                                    </HStack>
                                   </Td>
                                 </Tr>
                               ))}
@@ -629,24 +910,24 @@ const TaxaManagementPage: React.FC = () => {
                           {proposals.map((proposal) => (
                             <Tr key={proposal.id}>
                               <Td fontStyle="italic">
-                                {proposal.taxon.canonicalName}
+                                {proposal.taxon.canonical_name}
                               </Td>
                               <Td>
                                 <Badge
                                   colorScheme={
-                                    proposal.changeType === 'add'
+                                    proposal.change_type === 'add'
                                       ? 'green'
-                                      : proposal.changeType === 'delete'
+                                      : proposal.change_type === 'delete'
                                       ? 'red'
                                       : 'blue'
                                   }
                                 >
-                                  {proposal.changeType}
+                                  {proposal.change_type}
                                 </Badge>
                               </Td>
-                              <Td>{proposal.proposedBy}</Td>
+                              <Td>{proposal.proposed_by}</Td>
                               <Td>
-                                {new Date(proposal.proposedAt).toLocaleDateString()}
+                                {new Date(proposal.proposed_at).toLocaleDateString()}
                               </Td>
                               <Td>
                                 <HStack>
@@ -712,112 +993,6 @@ const TaxaManagementPage: React.FC = () => {
             </TabPanels>
           </Tabs>
         </VStack>
-
-        {/* Add/Import Modal */}
-        <Modal isOpen={isOpen} onClose={onClose} size="xl">
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              {modalMode === 'gbif' ? 'Import from GBIF' : 'Add Taxon'}
-            </ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              {modalMode === 'gbif' && (
-                <VStack spacing={4} align="stretch">
-                  <HStack>
-                    <InputGroup>
-                      <InputLeftElement>
-                        <SearchIcon color="gray.400" />
-                      </InputLeftElement>
-                      <Input
-                        placeholder="Search GBIF for species..."
-                        value={gbifSearchQuery}
-                        onChange={(e) => setGbifSearchQuery(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleGbifSearch()}
-                      />
-                    </InputGroup>
-                    <Button
-                      colorScheme="brand"
-                      onClick={handleGbifSearch}
-                      isLoading={isSearchingGbif}
-                    >
-                      Search
-                    </Button>
-                  </HStack>
-
-                  <Select
-                    placeholder="Select target group"
-                    value={selectedGroup || ''}
-                    onChange={(e) =>
-                      setSelectedGroup(e.target.value ? Number(e.target.value) : null)
-                    }
-                  >
-                    {taxonGroups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </Select>
-
-                  {isSearchingGbif ? (
-                    <Center py={6}>
-                      <Spinner />
-                    </Center>
-                  ) : gbifResults.length > 0 ? (
-                    <Box maxH="300px" overflowY="auto">
-                      <Table size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Name</Th>
-                            <Th>Rank</Th>
-                            <Th>Status</Th>
-                            <Th></Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {gbifResults.map((result) => (
-                            <Tr key={result.key}>
-                              <Td fontStyle="italic">{result.canonicalName}</Td>
-                              <Td>{result.rank}</Td>
-                              <Td>
-                                <Badge
-                                  colorScheme={
-                                    result.status === 'ACCEPTED' ? 'green' : 'yellow'
-                                  }
-                                >
-                                  {result.status}
-                                </Badge>
-                              </Td>
-                              <Td>
-                                <Button
-                                  size="sm"
-                                  colorScheme="brand"
-                                  onClick={() => handleGbifImport(result.key)}
-                                  isDisabled={!selectedGroup}
-                                >
-                                  Import
-                                </Button>
-                              </Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  ) : gbifSearchQuery && !isSearchingGbif ? (
-                    <Text color="gray.500" textAlign="center" py={4}>
-                      No results found. Try a different search term.
-                    </Text>
-                  ) : null}
-                </VStack>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="ghost" onClick={onClose}>
-                Cancel
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
 
         {/* Taxa List Download Modal */}
         <TaxaListDownloadModal
