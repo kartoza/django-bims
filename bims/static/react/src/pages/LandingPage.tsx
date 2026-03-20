@@ -27,6 +27,7 @@ import {
   Flex,
   Badge,
   Skeleton,
+  Image,
 } from '@chakra-ui/react';
 import {
   SearchIcon,
@@ -36,7 +37,7 @@ import {
   InfoIcon,
 } from '@chakra-ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
-import { apiClient } from '../api/client';
+import { apiClient, moduleSummaryApi, ModuleSummaryResponse, ModuleSummary } from '../api/client';
 import { FishIcon, InvertebratesIcon, AlgaeIcon } from '../components/icons';
 
 interface PlatformStats {
@@ -44,6 +45,17 @@ interface PlatformStats {
   total_records: number;
   total_taxa: number;
   total_contributors: number;
+}
+
+interface ModuleCardData {
+  name: string;
+  slug: string;
+  icon?: string;
+  total: number;
+  total_site: number;
+  total_validated: number;
+  color: string;
+  bgColor: string;
 }
 
 interface FeatureCardProps {
@@ -132,10 +144,21 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, helpText, color, isLo
   );
 };
 
+// Default colors for taxon groups
+const MODULE_COLORS: Record<string, { color: string; bgColor: string }> = {
+  fish: { color: 'blue.600', bgColor: 'blue.50' },
+  invertebrates: { color: 'orange.600', bgColor: 'orange.50' },
+  algae: { color: 'green.600', bgColor: 'green.50' },
+  default: { color: 'purple.600', bgColor: 'purple.50' },
+};
+
 const LandingPage: React.FC = () => {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [modules, setModules] = useState<ModuleCardData[]>([]);
+  const [isLoadingModules, setIsLoadingModules] = useState(true);
 
+  // Fetch platform stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -143,7 +166,6 @@ const LandingPage: React.FC = () => {
         setStats(response.data?.data || null);
       } catch (error) {
         console.error('Failed to fetch platform stats:', error);
-        // Fall back to defaults if API fails
         setStats({
           total_sites: 0,
           total_records: 0,
@@ -156,6 +178,51 @@ const LandingPage: React.FC = () => {
     };
 
     fetchStats();
+  }, []);
+
+  // Fetch module summary data
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const data = await moduleSummaryApi.getSummary();
+
+        // Skip if still processing
+        if (data.status === 'processing') {
+          setIsLoadingModules(false);
+          return;
+        }
+
+        // Extract module data (skip general_summary and status fields)
+        const moduleCards: ModuleCardData[] = [];
+        for (const [key, value] of Object.entries(data)) {
+          if (key === 'general_summary' || key === 'status' || key === 'message') continue;
+          if (typeof value === 'object' && value !== null && 'total' in value) {
+            const moduleData = value as ModuleSummary;
+            const slug = key.toLowerCase().replace(/\s+/g, '-');
+            const colors = MODULE_COLORS[slug] || MODULE_COLORS.default;
+
+            moduleCards.push({
+              name: key,
+              slug,
+              icon: moduleData.icon,
+              total: moduleData.total || 0,
+              total_site: moduleData.total_site || 0,
+              total_validated: moduleData.total_validated || 0,
+              color: colors.color,
+              bgColor: colors.bgColor,
+            });
+          }
+        }
+
+        setModules(moduleCards);
+      } catch (error) {
+        console.error('Failed to fetch module summary:', error);
+      } finally {
+        setIsLoadingModules(false);
+      }
+    };
+
+    fetchModules();
   }, []);
 
   return (
@@ -355,103 +422,180 @@ const LandingPage: React.FC = () => {
             </Text>
           </VStack>
 
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
-            <Card
-              as={RouterLink}
-              to="/map?taxon_group=fish"
-              bg="white"
-              shadow="md"
-              _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-              transition="all 0.2s"
-              cursor="pointer"
-            >
-              <CardBody>
-                <VStack spacing={4}>
-                  <Flex
-                    w={20}
-                    h={20}
-                    align="center"
-                    justify="center"
-                    rounded="full"
-                    bg="blue.50"
-                  >
-                    <FishIcon boxSize={12} color="blue.600" />
-                  </Flex>
-                  <Heading size="md" color="blue.600">Fish</Heading>
-                  <Text color="gray.600" textAlign="center" fontSize="sm">
-                    Freshwater fish species including yellowfish, tilapia, catfish, and barbs
-                  </Text>
-                  <Button variant="link" colorScheme="blue" size="sm">
-                    Explore Fish &rarr;
-                  </Button>
-                </VStack>
-              </CardBody>
-            </Card>
+          {isLoadingModules ? (
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} bg="white" shadow="md">
+                  <CardBody>
+                    <VStack spacing={4}>
+                      <Skeleton borderRadius="full" w={20} h={20} />
+                      <Skeleton height="24px" width="100px" />
+                      <Skeleton height="40px" width="100%" />
+                      <Skeleton height="16px" width="80px" />
+                    </VStack>
+                  </CardBody>
+                </Card>
+              ))}
+            </SimpleGrid>
+          ) : modules.length > 0 ? (
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
+              {modules.map((module) => {
+                // Get the appropriate icon component
+                const IconComponent =
+                  module.slug === 'fish' ? FishIcon :
+                  module.slug === 'invertebrates' ? InvertebratesIcon :
+                  module.slug === 'algae' ? AlgaeIcon : null;
 
-            <Card
-              as={RouterLink}
-              to="/map?taxon_group=invertebrates"
-              bg="white"
-              shadow="md"
-              _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-              transition="all 0.2s"
-              cursor="pointer"
-            >
-              <CardBody>
-                <VStack spacing={4}>
-                  <Flex
-                    w={20}
-                    h={20}
-                    align="center"
-                    justify="center"
-                    rounded="full"
-                    bg="orange.50"
+                return (
+                  <Card
+                    key={module.slug}
+                    as={RouterLink}
+                    to={`/map?taxon_group=${module.slug}`}
+                    bg="white"
+                    shadow="md"
+                    _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+                    transition="all 0.2s"
+                    cursor="pointer"
                   >
-                    <InvertebratesIcon boxSize={12} color="orange.600" />
-                  </Flex>
-                  <Heading size="md" color="orange.600">Invertebrates</Heading>
-                  <Text color="gray.600" textAlign="center" fontSize="sm">
-                    Aquatic invertebrates including mayflies, dragonflies, crabs, and midges
-                  </Text>
-                  <Button variant="link" colorScheme="orange" size="sm">
-                    Explore Invertebrates &rarr;
-                  </Button>
-                </VStack>
-              </CardBody>
-            </Card>
+                    <CardBody>
+                      <VStack spacing={4}>
+                        <Flex
+                          w={20}
+                          h={20}
+                          align="center"
+                          justify="center"
+                          rounded="full"
+                          bg={module.bgColor}
+                        >
+                          {module.icon ? (
+                            <Image
+                              src={module.icon}
+                              alt={module.name}
+                              boxSize={12}
+                              objectFit="contain"
+                            />
+                          ) : IconComponent ? (
+                            <IconComponent boxSize={12} color={module.color} />
+                          ) : (
+                            <Text fontSize="2xl">{module.name.charAt(0)}</Text>
+                          )}
+                        </Flex>
+                        <Heading size="md" color={module.color}>{module.name}</Heading>
 
-            <Card
-              as={RouterLink}
-              to="/map?taxon_group=algae"
-              bg="white"
-              shadow="md"
-              _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-              transition="all 0.2s"
-              cursor="pointer"
-            >
-              <CardBody>
-                <VStack spacing={4}>
-                  <Flex
-                    w={20}
-                    h={20}
-                    align="center"
-                    justify="center"
-                    rounded="full"
-                    bg="green.50"
-                  >
-                    <AlgaeIcon boxSize={12} color="green.600" />
-                  </Flex>
-                  <Heading size="md" color="green.600">Algae</Heading>
-                  <Text color="gray.600" textAlign="center" fontSize="sm">
-                    Freshwater algae including diatoms, green algae, and cyanobacteria
-                  </Text>
-                  <Button variant="link" colorScheme="green" size="sm">
-                    Explore Algae &rarr;
-                  </Button>
-                </VStack>
-              </CardBody>
-            </Card>
-          </SimpleGrid>
+                        {/* Statistics */}
+                        <HStack spacing={4} fontSize="sm" color="gray.600">
+                          <VStack spacing={0}>
+                            <Text fontWeight="bold" color={module.color}>
+                              {module.total.toLocaleString()}
+                            </Text>
+                            <Text fontSize="xs">Records</Text>
+                          </VStack>
+                          <VStack spacing={0}>
+                            <Text fontWeight="bold" color={module.color}>
+                              {module.total_site.toLocaleString()}
+                            </Text>
+                            <Text fontSize="xs">Sites</Text>
+                          </VStack>
+                          <VStack spacing={0}>
+                            <Text fontWeight="bold" color={module.color}>
+                              {module.total_validated.toLocaleString()}
+                            </Text>
+                            <Text fontSize="xs">Species</Text>
+                          </VStack>
+                        </HStack>
+
+                        <Button
+                          variant="link"
+                          colorScheme={module.color.split('.')[0]}
+                          size="sm"
+                        >
+                          Explore {module.name} &rarr;
+                        </Button>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                );
+              })}
+            </SimpleGrid>
+          ) : (
+            /* Fallback to static cards if no module data */
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
+              <Card
+                as={RouterLink}
+                to="/map?taxon_group=fish"
+                bg="white"
+                shadow="md"
+                _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+                transition="all 0.2s"
+                cursor="pointer"
+              >
+                <CardBody>
+                  <VStack spacing={4}>
+                    <Flex w={20} h={20} align="center" justify="center" rounded="full" bg="blue.50">
+                      <FishIcon boxSize={12} color="blue.600" />
+                    </Flex>
+                    <Heading size="md" color="blue.600">Fish</Heading>
+                    <Text color="gray.600" textAlign="center" fontSize="sm">
+                      Freshwater fish species including yellowfish, tilapia, catfish, and barbs
+                    </Text>
+                    <Button variant="link" colorScheme="blue" size="sm">
+                      Explore Fish &rarr;
+                    </Button>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              <Card
+                as={RouterLink}
+                to="/map?taxon_group=invertebrates"
+                bg="white"
+                shadow="md"
+                _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+                transition="all 0.2s"
+                cursor="pointer"
+              >
+                <CardBody>
+                  <VStack spacing={4}>
+                    <Flex w={20} h={20} align="center" justify="center" rounded="full" bg="orange.50">
+                      <InvertebratesIcon boxSize={12} color="orange.600" />
+                    </Flex>
+                    <Heading size="md" color="orange.600">Invertebrates</Heading>
+                    <Text color="gray.600" textAlign="center" fontSize="sm">
+                      Aquatic invertebrates including mayflies, dragonflies, crabs, and midges
+                    </Text>
+                    <Button variant="link" colorScheme="orange" size="sm">
+                      Explore Invertebrates &rarr;
+                    </Button>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              <Card
+                as={RouterLink}
+                to="/map?taxon_group=algae"
+                bg="white"
+                shadow="md"
+                _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
+                transition="all 0.2s"
+                cursor="pointer"
+              >
+                <CardBody>
+                  <VStack spacing={4}>
+                    <Flex w={20} h={20} align="center" justify="center" rounded="full" bg="green.50">
+                      <AlgaeIcon boxSize={12} color="green.600" />
+                    </Flex>
+                    <Heading size="md" color="green.600">Algae</Heading>
+                    <Text color="gray.600" textAlign="center" fontSize="sm">
+                      Freshwater algae including diatoms, green algae, and cyanobacteria
+                    </Text>
+                    <Button variant="link" colorScheme="green" size="sm">
+                      Explore Algae &rarr;
+                    </Button>
+                  </VStack>
+                </CardBody>
+              </Card>
+            </SimpleGrid>
+          )}
         </VStack>
       </Container>
 

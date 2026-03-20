@@ -46,9 +46,9 @@ import {
   BreadcrumbLink,
   Spinner,
 } from '@chakra-ui/react';
-import { CloseIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
-import { apiClient } from '../../api/client';
-import type { TaxonomyDetail, BiologicalRecord } from '../../types';
+import { CloseIcon, ChevronLeftIcon, ChevronRightIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import { taxonDetailApi, TaxonDetailResponse } from '../../api/client';
+import type { BiologicalRecord } from '../../types';
 
 interface TaxonDetailPanelProps {
   taxonId: number;
@@ -76,7 +76,7 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
   onClose,
   onTaxonSelect,
 }) => {
-  const [taxon, setTaxon] = useState<TaxonomyDetail | null>(null);
+  const [taxon, setTaxon] = useState<TaxonDetailResponse | null>(null);
   const [records, setRecords] = useState<BiologicalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
@@ -93,10 +93,8 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
       setIsLoading(true);
       setError(null);
       try {
-        const response = await apiClient.get<{ data: TaxonomyDetail }>(
-          `/api/v1/taxa/${taxonId}/`
-        );
-        setTaxon(response.data?.data || null);
+        const data = await taxonDetailApi.getDetail(taxonId);
+        setTaxon(data);
       } catch (err) {
         setError('Failed to load taxon details');
         console.error(err);
@@ -112,14 +110,12 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
   const fetchRecords = useCallback(async () => {
     setIsLoadingRecords(true);
     try {
-      const response = await apiClient.get<{
-        data: BiologicalRecord[];
-        meta: { count: number };
-      }>(`/api/v1/taxa/${taxonId}/records/`, {
-        params: { page: recordsPage, page_size: 10 },
+      const response = await taxonDetailApi.getRecords(taxonId, {
+        page: recordsPage,
+        page_size: 10,
       });
-      setRecords(response.data?.data || []);
-      setTotalRecords(response.data?.meta?.count || 0);
+      setRecords(response?.data || response?.results || []);
+      setTotalRecords(response?.meta?.count || response?.count || 0);
     } catch (err) {
       console.error('Failed to load records:', err);
     } finally {
@@ -276,7 +272,11 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
                 <StatGroup>
                   <Stat>
                     <StatLabel>Records</StatLabel>
-                    <StatNumber>{taxon.record_count || 0}</StatNumber>
+                    <StatNumber>{taxon.count || taxon.record_count || 0}</StatNumber>
+                  </Stat>
+                  <Stat>
+                    <StatLabel>Sites</StatLabel>
+                    <StatNumber>{taxon.total_sites || 0}</StatNumber>
                   </Stat>
                   <Stat>
                     <StatLabel>Status</StatLabel>
@@ -285,6 +285,21 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
                     </StatNumber>
                   </Stat>
                 </StatGroup>
+
+                {/* Origin */}
+                {taxon.origin && (
+                  <>
+                    <Box>
+                      <Heading size="sm" mb={2}>
+                        Origin
+                      </Heading>
+                      <Badge colorScheme={taxon.origin === 'Indigenous' ? 'green' : 'orange'}>
+                        {taxon.origin}
+                      </Badge>
+                    </Box>
+                    <Divider />
+                  </>
+                )}
 
                 <Divider />
 
@@ -311,10 +326,30 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
                         <Td fontWeight="medium">Status</Td>
                         <Td>{taxon.taxonomic_status}</Td>
                       </Tr>
+                      {taxon.author && (
+                        <Tr>
+                          <Td fontWeight="medium">Author</Td>
+                          <Td>{taxon.author}</Td>
+                        </Tr>
+                      )}
                       {taxon.gbif_key && (
                         <Tr>
-                          <Td fontWeight="medium">GBIF Key</Td>
-                          <Td>{taxon.gbif_key}</Td>
+                          <Td fontWeight="medium">GBIF</Td>
+                          <Td>
+                            <HStack spacing={2}>
+                              <Text>{taxon.gbif_key}</Text>
+                              <IconButton
+                                as="a"
+                                href={`https://www.gbif.org/species/${taxon.gbif_key}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="View on GBIF"
+                                icon={<ExternalLinkIcon />}
+                                size="xs"
+                                variant="ghost"
+                              />
+                            </HStack>
+                          </Td>
                         </Tr>
                       )}
                     </Tbody>
@@ -499,7 +534,62 @@ export const TaxonDetailPanel: React.FC<TaxonDetailPanelProps> = ({
             {/* Classification Tab */}
             <TabPanel>
               <VStack spacing={4} align="stretch">
-                {/* Hierarchy */}
+                {/* Taxonomic Rank Fields */}
+                {(taxon.kingdom || taxon.phylum || taxon.class_name || taxon.order || taxon.family || taxon.genus || taxon.species) && (
+                  <Box>
+                    <Heading size="sm" mb={3}>
+                      Classification
+                    </Heading>
+                    <Table size="sm" variant="simple">
+                      <Tbody>
+                        {taxon.kingdom && (
+                          <Tr>
+                            <Td fontWeight="medium" width="100px">Kingdom</Td>
+                            <Td>{taxon.kingdom}</Td>
+                          </Tr>
+                        )}
+                        {taxon.phylum && (
+                          <Tr>
+                            <Td fontWeight="medium">Phylum</Td>
+                            <Td>{taxon.phylum}</Td>
+                          </Tr>
+                        )}
+                        {taxon.class_name && (
+                          <Tr>
+                            <Td fontWeight="medium">Class</Td>
+                            <Td>{taxon.class_name}</Td>
+                          </Tr>
+                        )}
+                        {taxon.order && (
+                          <Tr>
+                            <Td fontWeight="medium">Order</Td>
+                            <Td>{taxon.order}</Td>
+                          </Tr>
+                        )}
+                        {taxon.family && (
+                          <Tr>
+                            <Td fontWeight="medium">Family</Td>
+                            <Td>{taxon.family}</Td>
+                          </Tr>
+                        )}
+                        {taxon.genus && (
+                          <Tr>
+                            <Td fontWeight="medium">Genus</Td>
+                            <Td fontStyle="italic">{taxon.genus}</Td>
+                          </Tr>
+                        )}
+                        {taxon.species && (
+                          <Tr>
+                            <Td fontWeight="medium">Species</Td>
+                            <Td fontStyle="italic">{taxon.species}</Td>
+                          </Tr>
+                        )}
+                      </Tbody>
+                    </Table>
+                  </Box>
+                )}
+
+                {/* Hierarchy (visual tree) */}
                 {taxon.hierarchy && taxon.hierarchy.length > 0 && (
                   <Box>
                     <Heading size="sm" mb={3}>

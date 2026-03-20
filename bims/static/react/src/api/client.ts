@@ -192,11 +192,95 @@ export const userBoundariesApi = {
   delete: (id: number) => api.delete<any>(`user-boundaries/${id}/`),
 };
 
+export interface DownloadRequest {
+  id: number;
+  task_id?: string;
+  request_date?: string;
+  request_type?: string;
+  status?: string;
+  download_url?: string;
+  progress?: number;
+}
+
+export interface DownloadRequestPurpose {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface DownloadTaskStatus {
+  task_id: string;
+  status: 'PENDING' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'REVOKED';
+  ready: boolean;
+  result?: { download_url?: string; filename?: string };
+  error?: string;
+}
+
 export const downloadsApi = {
-  csv: (filters?: Record<string, unknown>) => api.post<any>('downloads/csv/', { filters }),
-  checklist: (taxonGroupId: number, boundaryId?: number) =>
-    api.post<any>('downloads/checklist/', { taxon_group_id: taxonGroupId, boundary_id: boundaryId }),
-  status: (taskId: string) => api.get<any>(`downloads/${taskId}/status/`),
+  // List user's download requests
+  list: async (): Promise<DownloadRequest[]> => {
+    const response = await apiClient.get('downloads/');
+    return response.data?.data || [];
+  },
+
+  // Request CSV download
+  csv: async (filters?: Record<string, unknown>) => {
+    const response = await apiClient.post('downloads/csv/', { filters });
+    return response.data?.data || response.data;
+  },
+
+  // Request checklist download
+  checklist: async (taxonGroupId: number, boundaryId?: number) => {
+    const response = await apiClient.post('downloads/checklist/', {
+      taxon_group_id: taxonGroupId,
+      boundary_id: boundaryId,
+    });
+    return response.data?.data || response.data;
+  },
+
+  // Check download task status
+  status: async (taskId: string): Promise<DownloadTaskStatus> => {
+    const response = await apiClient.get(`downloads/${taskId}/status/`);
+    return response.data?.data || response.data;
+  },
+
+  // Get download request purposes (for form dropdown)
+  purposes: async (): Promise<DownloadRequestPurpose[]> => {
+    const response = await legacyClient.get('download-request-purpose/');
+    return response.data || [];
+  },
+
+  // Create a download request (legacy flow with approval)
+  createRequest: async (data: {
+    resource_name: string;
+    resource_type: string;
+    purpose: number;
+    dashboard_url?: string;
+    site_id?: number;
+    taxon_id?: number;
+    notes?: string;
+    auto_approved?: boolean;
+  }) => {
+    const formData = new FormData();
+    formData.append('resource_name', data.resource_name);
+    formData.append('resource_type', data.resource_type);
+    formData.append('purpose', String(data.purpose));
+    if (data.dashboard_url) formData.append('dashboard_url', data.dashboard_url);
+    if (data.site_id) formData.append('site_id', String(data.site_id));
+    if (data.taxon_id) formData.append('taxon_id', String(data.taxon_id));
+    if (data.notes) formData.append('notes', data.notes);
+    if (data.auto_approved) formData.append('auto_approved', String(data.auto_approved));
+
+    const response = await legacyClient.post('download-request/', formData);
+    return response.data;
+  },
+
+  // Start actual CSV download (after request is approved)
+  startCsvDownload: async (downloadRequestId: number, filters?: Record<string, unknown>) => {
+    const params = { ...filters, downloadRequestId };
+    const response = await legacyClient.get('csv-download/', { params });
+    return response.data;
+  },
 };
 
 export const tasksApi = {
@@ -361,6 +445,111 @@ export const taxonImagesApi = {
   },
 };
 
+// Taxon detail API (combines v1 and legacy endpoints)
+export interface TaxonDetailResponse {
+  id: number;
+  scientific_name: string;
+  canonical_name: string;
+  rank: string;
+  taxonomic_status?: string;
+  iucn_status?: { category: string; sensitive?: boolean };
+  national_conservation_status?: { category: string };
+  endemism?: { id: number; name: string; description?: string };
+  origin?: string;
+  common_name?: string;
+  vernacular_names?: { id: number; name: string; language?: string }[];
+  gbif_key?: number;
+  verified?: boolean;
+  count?: number;
+  total_sites?: number;
+  record_count?: number;
+  tags?: string[];
+  hierarchy?: { id: number; name: string; rank: string }[];
+  biographic_distributions?: { name: string; doubtful: boolean }[];
+  parent?: { id: number; scientific_name: string; canonical_name: string; rank: string };
+  images?: { id: number; url?: string; title?: string }[];
+  author?: string;
+  kingdom?: string;
+  phylum?: string;
+  class_name?: string;
+  order?: string;
+  family?: string;
+  genus?: string;
+  species?: string;
+}
+
+export const taxonDetailApi = {
+  // Get full taxon details (combines v1 and legacy data)
+  getDetail: async (taxonId: number): Promise<TaxonDetailResponse> => {
+    try {
+      // First try the v1 API
+      const response = await apiClient.get(`taxa/${taxonId}/`);
+      const v1Data = response.data?.data || response.data || {};
+
+      // Also fetch legacy taxon detail for additional fields
+      try {
+        const legacyResponse = await legacyClient.get(`taxon/${taxonId}/`);
+        const legacyData = legacyResponse.data || {};
+
+        // Merge data, preferring v1 data but adding legacy extras
+        return {
+          ...v1Data,
+          origin: legacyData.origin,
+          count: legacyData.count || v1Data.record_count,
+          total_sites: legacyData.total_sites,
+          kingdom: legacyData.kingdom,
+          phylum: legacyData.phylum,
+          class_name: legacyData.class_name,
+          order: legacyData.order,
+          family: legacyData.family,
+          genus: legacyData.genus,
+          species: legacyData.species,
+        };
+      } catch {
+        // If legacy fails, return v1 data only
+        return v1Data;
+      }
+    } catch {
+      // Fallback to legacy API only
+      const legacyResponse = await legacyClient.get(`taxon/${taxonId}/`);
+      return legacyResponse.data;
+    }
+  },
+
+  // Get taxon tree
+  getTree: async (taxonId: number, direction: 'up' | 'down' = 'down', depth = 10) => {
+    const response = await apiClient.get(`taxa/${taxonId}/tree/`, {
+      params: { direction, depth },
+    });
+    return response.data?.data || response.data;
+  },
+
+  // Get taxon images
+  getImages: async (taxonId: number) => {
+    const response = await apiClient.get(`taxa/${taxonId}/images/`);
+    return response.data?.data || [];
+  },
+
+  // Find taxa by name
+  find: async (query: string, options?: { rank?: string; limit?: number; taxonGroupId?: number }) => {
+    const response = await legacyClient.get('find-taxon/', {
+      params: {
+        q: query,
+        rank: options?.rank,
+        limit: options?.limit || 20,
+        taxonGroupId: options?.taxonGroupId,
+      },
+    });
+    return response.data || [];
+  },
+
+  // Get records for a taxon
+  getRecords: async (taxonId: number, params?: { page?: number; page_size?: number }) => {
+    const response = await apiClient.get(`taxa/${taxonId}/records/`, { params });
+    return response.data;
+  },
+};
+
 // Module summary API (for landing page taxon groups)
 export interface ModuleSummary {
   total: number;
@@ -423,6 +612,74 @@ export const locationSiteApi = {
       params: { siteId },
     });
     return response.data;
+  },
+};
+
+// Spatial Dashboard API
+export interface SpatialDashboardResponse {
+  status?: 'processing' | 'success' | 'error';
+  process?: string;
+  task_id?: string;
+  data?: any;
+  extent?: [number, number, number, number];
+  sites_raw_query?: string;
+}
+
+export interface ConservationStatusData {
+  labels: string[];
+  data: number[];
+  colors: string[];
+}
+
+export interface RLIData {
+  years: string[];
+  values: number[];
+}
+
+export interface SpatialSummaryData {
+  total_occurrences: number;
+  total_taxa: number;
+  total_sites: number;
+  origins?: Record<string, number>;
+  endemism?: Record<string, number>;
+  conservation_status?: Record<string, number>;
+}
+
+export const spatialDashboardApi = {
+  // Get conservation status chart data for filtered area
+  conservationStatus: async (filters?: Record<string, unknown>): Promise<SpatialDashboardResponse> => {
+    const response = await legacyClient.get('spatial-dashboard/cons-status/', { params: filters });
+    return response.data;
+  },
+
+  // Get Red List Index (RLI) data for filtered area
+  rli: async (filters?: Record<string, unknown>): Promise<SpatialDashboardResponse> => {
+    const response = await legacyClient.get('spatial-dashboard/rli/', { params: filters });
+    return response.data;
+  },
+
+  // Get map extent and site data for filtered area
+  map: async (filters?: Record<string, unknown>): Promise<SpatialDashboardResponse> => {
+    const response = await legacyClient.get('spatial-dashboard/map/', { params: filters });
+    return response.data;
+  },
+
+  // Get summary statistics for filtered area
+  summary: async (filters?: Record<string, unknown>): Promise<SpatialDashboardResponse> => {
+    const response = await legacyClient.get('spatial-dashboard/summary/', { params: filters });
+    return response.data;
+  },
+
+  // Download species list for filtered area
+  speciesDownload: async (filters?: Record<string, unknown>): Promise<SpatialDashboardResponse> => {
+    const response = await legacyClient.get('spatial-dashboard/species-download/', { params: filters });
+    return response.data;
+  },
+
+  // Check task status for any spatial dashboard async operation
+  checkTaskStatus: async (taskId: string): Promise<{ status: string; result?: any }> => {
+    const response = await apiClient.get(`tasks/${taskId}/`);
+    return response.data?.data || response.data;
   },
 };
 
