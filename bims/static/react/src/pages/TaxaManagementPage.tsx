@@ -69,6 +69,9 @@ interface TaxonGroup {
   category?: string;
   logo?: string;
   taxonCount?: number;
+  is_approved?: boolean;
+  proposed_by_username?: string;
+  rejection_reason?: string;
 }
 
 interface Taxon {
@@ -188,6 +191,7 @@ const TaxaManagementPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [taxonGroups, setTaxonGroups] = useState<TaxonGroup[]>([]);
+  const [pendingGroups, setPendingGroups] = useState<TaxonGroup[]>([]);
   const [taxa, setTaxa] = useState<Taxon[]>([]);
   const [proposals, setProposals] = useState<TaxonProposal[]>([]);
   const [selectedTaxa, setSelectedTaxa] = useState<number[]>([]);
@@ -359,6 +363,21 @@ const TaxaManagementPage: React.FC = () => {
     };
     fetchGroups();
   }, []);
+
+  // Fetch pending groups (for staff only)
+  useEffect(() => {
+    const fetchPendingGroups = async () => {
+      if (!canManageTaxa) return;
+
+      try {
+        const response = await apiClient.get('taxon-groups/pending/');
+        setPendingGroups(response.data?.data || []);
+      } catch (error) {
+        console.error('Failed to fetch pending groups:', error);
+      }
+    };
+    fetchPendingGroups();
+  }, [canManageTaxa]);
 
   // Fetch taxa based on filters (uses debounced search)
   useEffect(() => {
@@ -637,6 +656,7 @@ const TaxaManagementPage: React.FC = () => {
     try {
       await apiClient.delete(`taxon-groups/${groupId}/`);
       setTaxonGroups(taxonGroups.filter((g) => g.id !== groupId));
+      setPendingGroups(pendingGroups.filter((g) => g.id !== groupId));
       toast({
         title: 'Deleted',
         description: 'Taxon group has been deleted',
@@ -651,7 +671,56 @@ const TaxaManagementPage: React.FC = () => {
         duration: 5000,
       });
     }
-  }, [taxonGroups, toast]);
+  }, [taxonGroups, pendingGroups, toast]);
+
+  const handleApproveGroup = useCallback(async (groupId: number) => {
+    try {
+      const response = await apiClient.post(`taxon-groups/${groupId}/approve/`);
+      const approvedGroup = response.data?.data;
+
+      // Move from pending to approved
+      setPendingGroups(pendingGroups.filter((g) => g.id !== groupId));
+      setTaxonGroups([...taxonGroups, { ...approvedGroup, is_approved: true }]);
+
+      toast({
+        title: 'Approved',
+        description: 'Taxon group has been approved',
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to approve taxon group',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [taxonGroups, pendingGroups, toast]);
+
+  const handleRejectGroup = useCallback(async (groupId: number) => {
+    const reason = window.prompt('Please provide a reason for rejection:');
+    if (!reason) return;
+
+    try {
+      await apiClient.post(`taxon-groups/${groupId}/reject/`, { reason });
+      setPendingGroups(pendingGroups.filter((g) => g.id !== groupId));
+
+      toast({
+        title: 'Rejected',
+        description: 'Taxon group has been rejected',
+        status: 'info',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to reject taxon group',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [pendingGroups, toast]);
 
   const handleDeleteTaxon = useCallback(async (taxonId: number) => {
     if (!window.confirm('Are you sure you want to delete this taxon? This action cannot be undone.')) {
@@ -1372,60 +1441,122 @@ const TaxaManagementPage: React.FC = () => {
 
               {/* Groups Tab */}
               <TabPanel px={0}>
-                <Card bg={cardBg}>
-                  <CardBody>
-                    <HStack justify="flex-end" mb={4}>
-                      <Button
-                        leftIcon={<AddIcon />}
-                        colorScheme="brand"
-                        onClick={openAddGroup}
-                      >
-                        Propose New Group
-                      </Button>
-                    </HStack>
-                    <Table variant="simple">
-                      <Thead>
-                        <Tr>
-                          <Th>Name</Th>
-                          <Th>Category</Th>
-                          <Th>Taxa Count</Th>
-                          <Th w="120px">Actions</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {taxonGroups.map((group) => (
-                          <Tr key={group.id}>
-                            <Td>{group.name}</Td>
-                            <Td>
-                              <Badge colorScheme="blue">{group.category || 'other'}</Badge>
-                            </Td>
-                            <Td>{group.taxonCount?.toLocaleString() || 0}</Td>
-                            <Td>
-                              <HStack spacing={1}>
-                                <IconButton
-                                  aria-label="Edit group"
-                                  icon={<EditIcon />}
-                                  size="sm"
-                                  variant="ghost"
-                                  colorScheme="blue"
-                                  onClick={() => openEditGroup(group)}
-                                />
-                                <IconButton
-                                  aria-label="Delete group"
-                                  icon={<DeleteIcon />}
-                                  size="sm"
-                                  variant="ghost"
-                                  colorScheme="red"
-                                  onClick={() => handleDeleteGroup(group.id)}
-                                />
-                              </HStack>
-                            </Td>
+                <VStack spacing={4} align="stretch">
+                  {/* Pending Groups Section (Staff Only) */}
+                  {pendingGroups.length > 0 && (
+                    <Card bg="orange.50" borderColor="orange.200" borderWidth={1}>
+                      <CardBody>
+                        <Heading size="sm" mb={4} color="orange.700">
+                          Pending Proposals ({pendingGroups.length})
+                        </Heading>
+                        <Table variant="simple" size="sm">
+                          <Thead>
+                            <Tr>
+                              <Th>Name</Th>
+                              <Th>Category</Th>
+                              <Th>Proposed By</Th>
+                              <Th w="150px">Actions</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {pendingGroups.map((group) => (
+                              <Tr key={group.id}>
+                                <Td>{group.name}</Td>
+                                <Td>
+                                  <Badge colorScheme="blue">{group.category || 'other'}</Badge>
+                                </Td>
+                                <Td>{group.proposed_by_username || 'Unknown'}</Td>
+                                <Td>
+                                  <HStack spacing={1}>
+                                    <IconButton
+                                      aria-label="Approve"
+                                      icon={<CheckIcon />}
+                                      size="sm"
+                                      colorScheme="green"
+                                      onClick={() => handleApproveGroup(group.id)}
+                                    />
+                                    <IconButton
+                                      aria-label="Reject"
+                                      icon={<CloseIcon />}
+                                      size="sm"
+                                      colorScheme="red"
+                                      onClick={() => handleRejectGroup(group.id)}
+                                    />
+                                    <IconButton
+                                      aria-label="Edit"
+                                      icon={<EditIcon />}
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => openEditGroup(group)}
+                                    />
+                                  </HStack>
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </CardBody>
+                    </Card>
+                  )}
+
+                  {/* Approved Groups */}
+                  <Card bg={cardBg}>
+                    <CardBody>
+                      <HStack justify="space-between" mb={4}>
+                        <Heading size="sm">Approved Groups</Heading>
+                        <Button
+                          leftIcon={<AddIcon />}
+                          colorScheme="brand"
+                          size="sm"
+                          onClick={openAddGroup}
+                        >
+                          Propose New Group
+                        </Button>
+                      </HStack>
+                      <Table variant="simple">
+                        <Thead>
+                          <Tr>
+                            <Th>Name</Th>
+                            <Th>Category</Th>
+                            <Th>Taxa Count</Th>
+                            <Th w="120px">Actions</Th>
                           </Tr>
-                        ))}
-                      </Tbody>
-                    </Table>
-                  </CardBody>
-                </Card>
+                        </Thead>
+                        <Tbody>
+                          {taxonGroups.filter(g => g.is_approved !== false).map((group) => (
+                            <Tr key={group.id}>
+                              <Td>{group.name}</Td>
+                              <Td>
+                                <Badge colorScheme="blue">{group.category || 'other'}</Badge>
+                              </Td>
+                              <Td>{group.taxonCount?.toLocaleString() || 0}</Td>
+                              <Td>
+                                <HStack spacing={1}>
+                                  <IconButton
+                                    aria-label="Edit group"
+                                    icon={<EditIcon />}
+                                    size="sm"
+                                    variant="ghost"
+                                    colorScheme="blue"
+                                    onClick={() => openEditGroup(group)}
+                                  />
+                                  <IconButton
+                                    aria-label="Delete group"
+                                    icon={<DeleteIcon />}
+                                    size="sm"
+                                    variant="ghost"
+                                    colorScheme="red"
+                                    onClick={() => handleDeleteGroup(group.id)}
+                                  />
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </CardBody>
+                  </Card>
+                </VStack>
               </TabPanel>
             </TabPanels>
           </Tabs>

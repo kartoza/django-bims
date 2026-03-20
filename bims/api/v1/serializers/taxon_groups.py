@@ -18,6 +18,8 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     parent_name = serializers.CharField(source="parent.name", read_only=True)
     taxa_count = serializers.SerializerMethodField()
     logo_url = serializers.SerializerMethodField()
+    proposed_by_username = serializers.CharField(source="proposed_by.username", read_only=True)
+    approved_by_username = serializers.CharField(source="approved_by.username", read_only=True)
 
     class Meta:
         model = TaxonGroup
@@ -30,6 +32,11 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             "parent_name",
             "taxa_count",
             "logo_url",
+            "is_approved",
+            "proposed_by_username",
+            "approved_by_username",
+            "approved_at",
+            "rejection_reason",
         ]
         read_only_fields = fields
 

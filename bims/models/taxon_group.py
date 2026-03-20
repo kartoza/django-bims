@@ -152,6 +152,42 @@ class TaxonGroup(models.Model):
         )
     )
 
+    # Approval workflow fields
+    is_approved = models.BooleanField(
+        default=True,
+        help_text='Whether this taxon group has been approved for use'
+    )
+
+    proposed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proposed_taxon_groups',
+        help_text='User who proposed this taxon group'
+    )
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_taxon_groups',
+        help_text='User who approved this taxon group'
+    )
+
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When this taxon group was approved'
+    )
+
+    rejection_reason = models.TextField(
+        null=True,
+        blank=True,
+        help_text='Reason for rejection if not approved'
+    )
+
     class Meta:
         ordering = ('display_order',)
         permissions = (
