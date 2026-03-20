@@ -159,11 +159,13 @@ class DownloadViewSet(viewsets.ViewSet):
             except TaxonGroup.DoesNotExist:
                 return validation_error_response({"detail": "Invalid taxon_group_id"})
 
-            # Build dashboard URL with filters (this is how the checklist system works)
-            filters = [f"modules={taxon_group_id}"]
+            # Build dashboard URL with filters in fragment format
+            # The parse_url_to_filters function expects URL with fragment containing query params
+            filter_parts = [f"modules={taxon_group_id}"]
             if boundary_id:
-                filters.append(f"boundary={boundary_id}")
-            dashboard_url = "&".join(filters)
+                filter_parts.append(f"boundary={boundary_id}")
+            # Format: /map/#site-detail/?modules=X&boundary=Y
+            dashboard_url = f"/map/#site-detail/?{'&'.join(filter_parts)}"
 
             # Get or create a default purpose
             purpose, _ = DownloadRequestPurpose.objects.get_or_create(

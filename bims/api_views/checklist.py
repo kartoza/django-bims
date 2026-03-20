@@ -1,19 +1,45 @@
 import csv
 import os
+from datetime import datetime
 from django.conf import settings
 from django.db.models import F
 from django.http import Http404
 from preferences import preferences
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, TableStyle, Table, Spacer
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.platypus import SimpleDocTemplate, TableStyle, Table, Spacer, Image
 from reportlab.platypus.para import Paragraph
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.contrib.auth import get_user_model
+
+
+def get_theme_colors():
+    """Get theme colors from CustomTheme or return defaults."""
+    try:
+        from bims_theme.models.theme import CustomTheme
+        theme = CustomTheme.objects.filter(is_enabled=True).first()
+        if theme:
+            return {
+                'primary': theme.main_accent_color or '#18A090',
+                'secondary': theme.secondary_accent_color or '#DBAF00',
+                'text': theme.main_button_text_color or '#FFFFFF',
+                'site_name': theme.site_name or 'BIMS',
+                'logo_path': theme.logo.path if theme.logo else None,
+            }
+    except Exception:
+        pass
+    return {
+        'primary': '#18A090',
+        'secondary': '#DBAF00',
+        'text': '#FFFFFF',
+        'site_name': 'BIMS',
+        'logo_path': None,
+    }
 
 from bims.api_views.search import CollectionSearch
 from bims.enums import TaxonomicRank
@@ -237,6 +263,11 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     if os.path.exists(pdf_file_path):
         os.remove(pdf_file_path)
 
+    # Get theme colors
+    theme = get_theme_colors()
+    primary_color = colors.HexColor(theme['primary'])
+    text_color = colors.HexColor(theme['text'])
+
     written_taxa_ids = set()
     all_taxa = []
     common_names_and_count = {}
@@ -248,6 +279,22 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     )
     taxonomy_collection_records_count = taxonomy_collection_records.count()
     taxonomy_ids = list(taxonomy_collection_records.values_list('taxonomy_id', flat=True))
+
+    # Create custom styles
+    styles = getSampleStyleSheet()
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=9,
+        leading=11,
+    )
+    italic_style = ParagraphStyle(
+        'CustomItalic',
+        parent=styles['Normal'],
+        fontSize=9,
+        leading=11,
+        fontName='Helvetica-Oblique',
+    )
 
     for start in range(0, taxonomy_collection_records_count, batch_size):
         record_taxonomy_ids = taxonomy_ids[start:start + batch_size]
@@ -275,10 +322,10 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                 common_name = taxon['common_name'].lower().strip()
 
                 taxon_entry = [
-                    Paragraph(taxon['scientific_name'], getSampleStyleSheet()['Normal']),
-                    Paragraph(taxon['common_name'], getSampleStyleSheet()['Normal']),
-                    Paragraph(taxon['threat_status'], getSampleStyleSheet()['Normal']),
-                    Paragraph(taxon['sources'], getSampleStyleSheet()['Normal'])
+                    Paragraph(taxon['scientific_name'], italic_style),
+                    Paragraph(taxon['common_name'], normal_style),
+                    Paragraph(taxon['threat_status'], normal_style),
+                    Paragraph(taxon['sources'], normal_style)
                 ]
 
                 if common_name != '':
@@ -303,40 +350,95 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
         )
         download_request.save()
 
-    # Generate the PDF
+    # Generate the PDF with themed styling
     doc = SimpleDocTemplate(
         pdf_file_path,
-        pagesize=landscape(A4), topMargin=0.5 * cm, bottomMargin=0.35 * cm)
+        pagesize=landscape(A4),
+        topMargin=1.5 * cm,
+        bottomMargin=1 * cm,
+        leftMargin=1 * cm,
+        rightMargin=1 * cm
+    )
     elements = []
 
-    # Define table style
+    # Add header with site branding
+    header_style = ParagraphStyle(
+        'Header',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=primary_color,
+        spaceAfter=6,
+        alignment=TA_LEFT,
+    )
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontSize=11,
+        textColor=colors.gray,
+        spaceAfter=12,
+    )
+
+    # Site name and report title
+    title = f"{theme['site_name']} - Species Checklist"
+    if module_name:
+        title = f"{theme['site_name']} - {module_name} Checklist"
+    elements.append(Paragraph(title, header_style))
+
+    # Subtitle with date and count
+    generated_date = datetime.now().strftime('%d %B %Y')
+    species_count = len(all_taxa)
+    subtitle = f"Generated on {generated_date} | {species_count} species"
+    elements.append(Paragraph(subtitle, subtitle_style))
+    elements.append(Spacer(1, 0.3 * cm))
+
+    # Define table style with theme colors
     style_table = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), '#0D3511'),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('BACKGROUND', (0, 0), (-1, 0), primary_color),
+        ('TEXTCOLOR', (0, 0), (-1, 0), text_color),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 5),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('LEFTPADDING', (0, 0), (-1, -1), 5),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.8, 0.8, 0.8)),
+        ('BOX', (0, 0), (-1, -1), 1, primary_color),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 1), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
     ])
 
-    data = [
-               ['Accepted Scientific name and authority',
-                'Common Name',
-                'Threat Status',
-                'Sources']] + all_taxa
-    table_width = doc.width
-    col_widths = [table_width * 0.35, table_width * 0.30, table_width * 0.15, table_width * 0.30]
+    # Build data table
+    header_row = [
+        'Scientific Name',
+        'Common Name',
+        'Conservation Status',
+        'Data Sources'
+    ]
+    data = [header_row] + all_taxa
 
-    table = Table(data, colWidths=col_widths)
+    table_width = doc.width
+    col_widths = [table_width * 0.32, table_width * 0.28, table_width * 0.15, table_width * 0.25]
+
+    table = Table(data, colWidths=col_widths, repeatRows=1)
     table.setStyle(style_table)
 
     elements.append(table)
+
+    # Add footer
+    elements.append(Spacer(1, 0.5 * cm))
+    footer_style = ParagraphStyle(
+        'Footer',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.gray,
+        alignment=TA_CENTER,
+    )
+    footer_text = f"Generated by {theme['site_name']} | {site_domain_name}"
+    elements.append(Paragraph(footer_text, footer_style))
+
     doc.build(elements)
 
     download_request.progress = (
