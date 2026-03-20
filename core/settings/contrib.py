@@ -19,7 +19,8 @@ STOP_WORDS = (
 
 STATICFILES_STORAGE = 'bims.storage.NoSourceMapsStorage'
 STATICFILES_FINDERS += (
-    'pipeline.finders.PipelineFinder',
+    # Use custom Django 6.0 compatible finder instead of pipeline.finders.PipelineFinder
+    'core.finders.PipelineFinder',
 )
 
 # Django-allauth related settings

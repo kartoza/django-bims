@@ -71,22 +71,67 @@ const BugReportPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // In a real implementation, this would submit to the API
-      // For now, simulate submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Build the additional information JSON
+      const additionalInfo = {
+        category: formData.category,
+        severity: formData.severity,
+        steps_to_reproduce: formData.stepsToReproduce,
+        expected_behavior: formData.expectedBehavior,
+        actual_behavior: formData.actualBehavior,
+        browser: formData.browserInfo,
+        url: formData.url,
+      };
+
+      // Map severity to labels
+      const labels = ['bug'];
+      if (formData.severity === 'critical') {
+        labels.push('critical');
+      } else if (formData.severity === 'high') {
+        labels.push('high-priority');
+      }
+      if (formData.category) {
+        labels.push(formData.category);
+      }
+
+      // Get CSRF token
+      const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ||
+        document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
+
+      // Submit to Django bug report endpoint
+      const response = await fetch('/bug-report/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken,
+        },
+        body: new URLSearchParams({
+          summary: formData.title,
+          description: formData.description,
+          labels: labels.join(','),
+          json_additional_information: JSON.stringify(additionalInfo),
+        }).toString(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to submit bug report');
+      }
+
+      const result = await response.json();
 
       setSubmitted(true);
       toast({
         title: 'Bug report submitted',
-        description: 'Thank you for your feedback. We will investigate this issue.',
+        description: `Ticket #${result.ticket_number} has been created. Thank you for your feedback!`,
         status: 'success',
         duration: 5000,
         isClosable: true,
       });
     } catch (error) {
+      console.error('Bug report submission error:', error);
       toast({
         title: 'Submission failed',
-        description: 'There was an error submitting your report. Please try again.',
+        description: error instanceof Error ? error.message : 'There was an error submitting your report. Please try again.',
         status: 'error',
         duration: 5000,
         isClosable: true,

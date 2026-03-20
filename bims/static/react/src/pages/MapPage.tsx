@@ -43,6 +43,7 @@ const VIEWPORT_DEBOUNCE_MS = 500;
 const URL_UPDATE_DEBOUNCE_MS = 300;
 
 const MapPage: React.FC = () => {
+  console.log('[MapPage] Rendering, pathname:', window.location.pathname);
   const mapRef = useRef<DeckGLMapRef>(null);
   const { siteId, taxonId } = useParams<{ siteId?: string; taxonId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -153,6 +154,12 @@ const MapPage: React.FC = () => {
     if (Object.keys(urlFilters).length > 0) {
       setSearchFilters(urlFilters);
     }
+
+    // Mark URL initialization as complete after a short delay
+    // This prevents the filter-to-URL sync from running immediately
+    setTimeout(() => {
+      isInitializingFromUrl.current = false;
+    }, 500);
   }, []); // Only run on mount
 
   // Local state
@@ -181,6 +188,8 @@ const MapPage: React.FC = () => {
   const loadedBoundsRef = useRef<string | null>(null);
   const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
+  const isInitializingFromUrl = useRef(true);
+  const isUnmounting = useRef(false);
 
   // Load and manage WMS context layers
   useContextLayers({ map: mapInstance, enabled: isMapReady });
@@ -216,6 +225,18 @@ const MapPage: React.FC = () => {
     }
 
     urlUpdateTimeoutRef.current = setTimeout(() => {
+      // Skip if component is unmounting to prevent navigation interference
+      if (isUnmounting.current) {
+        console.log('[MapPage] Skipping URL update - component unmounting');
+        return;
+      }
+
+      // Skip if we've navigated away from the map page
+      if (!window.location.pathname.includes('/map')) {
+        console.log('[MapPage] Skipping URL update - no longer on map page');
+        return;
+      }
+
       const newParams = new URLSearchParams(searchParams);
 
       // Update map position params
@@ -345,11 +366,14 @@ const MapPage: React.FC = () => {
     }, URL_UPDATE_DEBOUNCE_MS);
   }, [searchParams, setSearchParams]);
 
-  // Cleanup URL update timeout on unmount
+  // Cleanup URL update timeout on unmount and set unmounting flag
   useEffect(() => {
     return () => {
+      console.log('[MapPage] Unmounting, canceling pending URL updates');
+      isUnmounting.current = true;
       if (urlUpdateTimeoutRef.current) {
         clearTimeout(urlUpdateTimeoutRef.current);
+        urlUpdateTimeoutRef.current = null;
       }
     };
   }, []);
@@ -393,23 +417,27 @@ const MapPage: React.FC = () => {
     updateUrl({ query: searchQuery || null });
   }, [searchQuery, updateUrl]);
 
-  // Sync search filters to URL
-  const searchFilters = useSearchStore((state) => state.filters);
+  // Sync search filters to URL - use filterVersion to track actual changes
+  // and avoid re-running when object reference changes
+  const filterVersionForUrl = useSearchStore((state) => state.filterVersion);
   useEffect(() => {
-    if (isInitialMount.current) return;
+    // Skip during initial mount and URL initialization
+    if (isInitialMount.current || isInitializingFromUrl.current) return;
+    // Get current filters from store
+    const currentFilters = useSearchStore.getState().filters;
     updateUrl({
       filters: {
-        taxonGroups: searchFilters.taxonGroups,
-        yearFrom: searchFilters.yearFrom,
-        yearTo: searchFilters.yearTo,
-        iucnCategories: searchFilters.iucnCategories,
-        endemism: searchFilters.endemism,
-        referenceCategories: searchFilters.referenceCategories,
-        sourceCollections: searchFilters.sourceCollections,
-        boundaryId: searchFilters.boundaryId,
+        taxonGroups: currentFilters.taxonGroups,
+        yearFrom: currentFilters.yearFrom,
+        yearTo: currentFilters.yearTo,
+        iucnCategories: currentFilters.iucnCategories,
+        endemism: currentFilters.endemism,
+        referenceCategories: currentFilters.referenceCategories,
+        sourceCollections: currentFilters.sourceCollections,
+        boundaryId: currentFilters.boundaryId,
       },
     });
-  }, [searchFilters, updateUrl]);
+  }, [filterVersionForUrl, updateUrl]);
 
   // Handle map ready - register with MapProvider context
   const handleMapReady = useCallback((map: MapLibreMap) => {

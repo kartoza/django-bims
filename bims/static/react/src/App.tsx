@@ -14,6 +14,7 @@ import { AppProvider } from './providers/AppProvider';
 import { MapProvider } from './providers/MapProvider';
 import Header from './components/Header';
 import MapLayout from './layouts/MapLayout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load pages for better performance
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -107,6 +108,7 @@ const Footer: React.FC = () => (
 );
 
 const App: React.FC = () => {
+  console.log('[App] Rendering, pathname:', window.location.pathname);
   return (
     <AppProvider>
       <BrowserRouter basename="/new">
@@ -117,6 +119,7 @@ const App: React.FC = () => {
 
             {/* Main content - uses flex=1 to fill space, position relative for absolute children */}
             <Box flex="1" position="relative" overflow="hidden" minH={0} minW={0}>
+              <ErrorBoundary>
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
                   {/* Landing page */}
@@ -214,6 +217,7 @@ const App: React.FC = () => {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </Box>
 
             {/* Footer - always visible */}

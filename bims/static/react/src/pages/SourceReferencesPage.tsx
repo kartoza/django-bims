@@ -72,6 +72,7 @@ interface PaginatedResponse {
 }
 
 const SourceReferencesPage: React.FC = () => {
+  console.log('[SourceReferencesPage] Rendering component');
   const [references, setReferences] = useState<SourceReference[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

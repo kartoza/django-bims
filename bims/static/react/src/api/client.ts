@@ -23,6 +23,7 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
+  withCredentials: true, // Send cookies with requests for authentication
 });
 
 // Request interceptor to add CSRF token

@@ -2,11 +2,11 @@
  * SPDX-FileCopyrightText: Kartoza
  * SPDX-License-Identifier: AGPL-3.0
  *
- * Summary Report generation page.
+ * Summary Report generation page - connected to real backend APIs.
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -19,7 +19,6 @@ import {
   CardHeader,
   FormControl,
   FormLabel,
-  FormHelperText,
   Select,
   Button,
   useToast,
@@ -42,25 +41,52 @@ import {
   Progress,
   Alert,
   AlertIcon,
+  Spinner,
+  Center,
+  Link,
+  Skeleton,
+  SkeletonText,
 } from '@chakra-ui/react';
-import { DownloadIcon, RepeatIcon, ViewIcon } from '@chakra-ui/icons';
+import { DownloadIcon, RepeatIcon, ViewIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import axios from 'axios';
+import { apiClient } from '../api/client';
 
-interface ReportConfig {
-  reportType: string;
-  taxonGroup: string;
-  boundary: string;
-  dateRange: string;
-  sections: string[];
+interface SummaryData {
+  total_sites: number;
+  total_duplicated_sites: number;
+  total_records: number;
+  total_duplicate_records: number;
+  total_modules: number;
+  total_species: number;
+  species_per_module: Record<string, Record<string, number>>;
+  records_per_modules: Record<string, Record<string, number>>;
+  sites_per_modules: Record<string, Record<string, number>>;
+  total_records_per_source_collection: Record<string, number>;
+  total_species_per_source_collection: Record<string, number>;
+  total_sites_per_source_collection: Record<string, number>;
+  _cached?: boolean;
+  _cache_version?: string;
 }
 
-interface GeneratedReport {
-  id: string;
+interface DownloadRequest {
+  id: number;
+  task_id: string;
+  request_date: string;
+  request_type: string;
+  status: string;
+  download_url: string | null;
+  progress: number;
+  resource_name?: string;
+  resource_type?: string;
+  approved?: boolean;
+  rejected?: boolean;
+  processing?: boolean;
+}
+
+interface TaxonGroup {
+  id: number;
   name: string;
-  type: string;
-  generatedAt: string;
-  status: 'ready' | 'generating' | 'failed';
-  downloadUrl?: string;
-  size?: string;
+  logo?: string;
 }
 
 const SummaryReportPage: React.FC = () => {
@@ -68,93 +94,246 @@ const SummaryReportPage: React.FC = () => {
   const headerBg = useColorModeValue('brand.500', 'brand.600');
   const cardBg = useColorModeValue('white', 'gray.700');
 
-  const [config, setConfig] = useState<ReportConfig>({
-    reportType: 'overview',
-    taxonGroup: '',
-    boundary: '',
-    dateRange: 'all',
-    sections: ['summary', 'species_list', 'conservation', 'charts'],
-  });
-
+  // State
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [downloads, setDownloads] = useState<DownloadRequest[]>([]);
+  const [loadingDownloads, setLoadingDownloads] = useState(true);
+  const [taxonGroups, setTaxonGroups] = useState<TaxonGroup[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
 
-  const [reports, setReports] = useState<GeneratedReport[]>([
-    {
-      id: '1',
-      name: 'Fish Module Overview - 2024',
-      type: 'Module Summary',
-      generatedAt: '2024-01-15T10:30:00Z',
-      status: 'ready',
-      downloadUrl: '#',
-      size: '2.4 MB',
-    },
-    {
-      id: '2',
-      name: 'Western Cape Biodiversity Report',
-      type: 'Regional Summary',
-      generatedAt: '2024-01-14T14:20:00Z',
-      status: 'ready',
-      downloadUrl: '#',
-      size: '5.1 MB',
-    },
-    {
-      id: '3',
-      name: 'Conservation Status Analysis',
-      type: 'Conservation Report',
-      generatedAt: '2024-01-13T09:15:00Z',
-      status: 'ready',
-      downloadUrl: '#',
-      size: '1.8 MB',
-    },
-  ]);
+  // Report config
+  const [reportType, setReportType] = useState('csv');
+  const [selectedTaxonGroup, setSelectedTaxonGroup] = useState('');
 
-  const handleSectionChange = (values: string[]) => {
-    setConfig((prev) => ({ ...prev, sections: values }));
-  };
+  // Fetch summary data (uses legacy API endpoint, not v1)
+  const fetchSummaryData = useCallback(async (forceRefresh = false) => {
+    setLoadingSummary(true);
+    try {
+      // Use axios directly since this is a legacy endpoint, not under /api/v1/
+      const url = forceRefresh
+        ? '/api/summary-general-report/?refresh=true'
+        : '/api/summary-general-report/';
+      const response = await axios.get(url);
+      setSummaryData(response.data);
 
-  const generateReport = async () => {
+      if (forceRefresh) {
+        toast({
+          title: 'Cache refreshed',
+          description: 'Summary statistics have been recalculated.',
+          status: 'success',
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch summary data:', error);
+      toast({
+        title: 'Error loading summary',
+        description: 'Could not load summary statistics. You may need superuser access.',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setLoadingSummary(false);
+    }
+  }, [toast]);
+
+  // Fetch download requests
+  const fetchDownloads = useCallback(async () => {
+    setLoadingDownloads(true);
+    try {
+      // apiClient already has baseURL /api/v1/, so just use relative path
+      const response = await apiClient.get('downloads/');
+      const data = response.data?.data || [];
+      setDownloads(data);
+    } catch (error) {
+      console.error('Failed to fetch downloads:', error);
+      // Don't show error toast - user might not be logged in
+    } finally {
+      setLoadingDownloads(false);
+    }
+  }, []);
+
+  // Fetch taxon groups
+  const fetchTaxonGroups = useCallback(async () => {
+    try {
+      // apiClient already has baseURL /api/v1/, so just use relative path
+      const response = await apiClient.get('taxon-groups/');
+      const data = response.data?.data || [];
+      setTaxonGroups(data);
+    } catch (error) {
+      console.error('Failed to fetch taxon groups:', error);
+    }
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchSummaryData();
+    fetchDownloads();
+    fetchTaxonGroups();
+  }, [fetchSummaryData, fetchDownloads, fetchTaxonGroups]);
+
+  // Poll for task status
+  useEffect(() => {
+    if (!pollingTaskId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await apiClient.get(`downloads/${pollingTaskId}/status/`);
+        const data = response.data?.data;
+
+        if (data?.ready) {
+          setIsGenerating(false);
+          setGenerationProgress(100);
+          setPollingTaskId(null);
+          clearInterval(pollInterval);
+
+          if (data.status === 'SUCCESS') {
+            toast({
+              title: 'Report ready',
+              description: 'Your report is ready for download.',
+              status: 'success',
+              duration: 5000,
+            });
+            // Refresh downloads list
+            fetchDownloads();
+          } else {
+            toast({
+              title: 'Report generation failed',
+              description: data.error || 'An error occurred while generating the report.',
+              status: 'error',
+              duration: 5000,
+            });
+          }
+        } else {
+          // Update progress (estimate based on time)
+          setGenerationProgress((prev) => Math.min(prev + 10, 90));
+        }
+      } catch (error) {
+        console.error('Failed to poll task status:', error);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [pollingTaskId, toast, fetchDownloads]);
+
+  // Generate CSV report
+  const generateCsvReport = async () => {
     setIsGenerating(true);
     setGenerationProgress(0);
 
     try {
-      // Simulate report generation with progress
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setGenerationProgress(i);
+      const filters: Record<string, unknown> = {};
+      if (selectedTaxonGroup) {
+        filters.taxon_group = selectedTaxonGroup;
       }
 
-      const newReport: GeneratedReport = {
-        id: Date.now().toString(),
-        name: `${config.reportType === 'overview' ? 'Overview' : 'Custom'} Report - ${new Date().toLocaleDateString()}`,
-        type: config.reportType,
-        generatedAt: new Date().toISOString(),
-        status: 'ready',
-        downloadUrl: '#',
-        size: '1.2 MB',
-      };
+      const response = await apiClient.post('downloads/csv/', { filters });
+      const data = response.data?.data;
 
-      setReports((prev) => [newReport, ...prev]);
-
-      toast({
-        title: 'Report generated',
-        description: 'Your summary report is ready for download.',
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (error) {
+      if (data?.task_id) {
+        setPollingTaskId(data.task_id);
+        toast({
+          title: 'Report generation started',
+          description: 'Your CSV report is being generated. This may take a few minutes.',
+          status: 'info',
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      setIsGenerating(false);
       toast({
         title: 'Generation failed',
-        description: 'Failed to generate report. Please try again.',
+        description: error.response?.data?.errors?.detail || 'Failed to start report generation.',
         status: 'error',
         duration: 5000,
-        isClosable: true,
       });
-    } finally {
-      setIsGenerating(false);
-      setGenerationProgress(0);
     }
+  };
+
+  // Generate checklist report
+  const generateChecklistReport = async () => {
+    if (!selectedTaxonGroup) {
+      toast({
+        title: 'Taxon group required',
+        description: 'Please select a taxon group to generate a checklist.',
+        status: 'warning',
+        duration: 3000,
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationProgress(0);
+
+    try {
+      const response = await apiClient.post('downloads/checklist/', {
+        taxon_group_id: parseInt(selectedTaxonGroup),
+      });
+      const data = response.data?.data;
+
+      if (data?.task_id) {
+        setPollingTaskId(data.task_id);
+        toast({
+          title: 'Checklist generation started',
+          description: 'Your checklist is being generated. This may take a few minutes.',
+          status: 'info',
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      setIsGenerating(false);
+      const errorDetail = error.response?.data?.errors?.detail
+        || error.response?.data?.detail
+        || error.message
+        || 'Failed to start checklist generation.';
+      console.error('Checklist generation error:', error.response?.data || error);
+      toast({
+        title: 'Generation failed',
+        description: errorDetail,
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  };
+
+  // Handle generate click
+  const handleGenerate = () => {
+    if (reportType === 'csv') {
+      generateCsvReport();
+    } else if (reportType === 'checklist') {
+      generateChecklistReport();
+    }
+  };
+
+  // Get status badge color
+  const getStatusColor = (status: string, approved?: boolean, rejected?: boolean) => {
+    if (rejected) return 'red';
+    if (approved) return 'green';
+    if (status === 'SUCCESS') return 'green';
+    if (status === 'PENDING' || status === 'STARTED') return 'blue';
+    if (status === 'FAILURE') return 'red';
+    return 'gray';
+  };
+
+  // Get status label
+  const getStatusLabel = (download: DownloadRequest) => {
+    if (download.rejected) return 'Rejected';
+    if (download.approved && download.download_url) return 'Ready';
+    if (download.processing) return 'Processing';
+    if (download.status === 'SUCCESS') return 'Ready';
+    if (download.status === 'PENDING') return 'Pending';
+    if (download.status === 'STARTED') return 'Processing';
+    if (download.status === 'FAILURE') return 'Failed';
+    return download.status || 'Unknown';
+  };
+
+  // Format number with commas
+  const formatNumber = (num: number | undefined): string => {
+    if (num === undefined) return '—';
+    return num.toLocaleString();
   };
 
   return (
@@ -166,7 +345,7 @@ const SummaryReportPage: React.FC = () => {
             <VStack align="start" spacing={1}>
               <Heading size="lg">Summary Reports</Heading>
               <Text opacity={0.9}>
-                Generate comprehensive biodiversity summary reports
+                View system statistics and generate biodiversity reports
               </Text>
             </VStack>
           </HStack>
@@ -174,105 +353,125 @@ const SummaryReportPage: React.FC = () => {
       </Box>
 
       <Container maxW="container.xl" py={8}>
+        {/* System Statistics */}
+        <Card bg={cardBg} mb={8}>
+          <CardHeader>
+            <HStack justify="space-between">
+              <HStack spacing={3}>
+                <Heading size="md">System Statistics</Heading>
+                {summaryData?._cached && (
+                  <Badge colorScheme="blue" variant="subtle">
+                    Cached
+                  </Badge>
+                )}
+              </HStack>
+              <Button
+                size="sm"
+                variant="ghost"
+                leftIcon={<RepeatIcon />}
+                onClick={() => fetchSummaryData(true)}
+                isLoading={loadingSummary}
+              >
+                Refresh
+              </Button>
+            </HStack>
+          </CardHeader>
+          <CardBody>
+            {loadingSummary ? (
+              <SimpleGrid columns={{ base: 2, md: 3, lg: 6 }} spacing={4}>
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} height="80px" />
+                ))}
+              </SimpleGrid>
+            ) : summaryData ? (
+              <SimpleGrid columns={{ base: 2, md: 3, lg: 6 }} spacing={4}>
+                <Stat>
+                  <StatLabel>Total Sites</StatLabel>
+                  <StatNumber color="blue.500">{formatNumber(summaryData.total_sites)}</StatNumber>
+                  <StatHelpText>
+                    {summaryData.total_duplicated_sites > 0 && (
+                      <Text as="span" color="orange.500">
+                        {summaryData.total_duplicated_sites} duplicates
+                      </Text>
+                    )}
+                  </StatHelpText>
+                </Stat>
+                <Stat>
+                  <StatLabel>Total Records</StatLabel>
+                  <StatNumber color="green.500">{formatNumber(summaryData.total_records)}</StatNumber>
+                  <StatHelpText>
+                    {summaryData.total_duplicate_records > 0 && (
+                      <Text as="span" color="orange.500">
+                        {summaryData.total_duplicate_records} duplicates
+                      </Text>
+                    )}
+                  </StatHelpText>
+                </Stat>
+                <Stat>
+                  <StatLabel>Total Species</StatLabel>
+                  <StatNumber color="purple.500">{formatNumber(summaryData.total_species)}</StatNumber>
+                </Stat>
+                <Stat>
+                  <StatLabel>Modules</StatLabel>
+                  <StatNumber>{formatNumber(summaryData.total_modules)}</StatNumber>
+                </Stat>
+                <Stat>
+                  <StatLabel>Source Collections</StatLabel>
+                  <StatNumber>
+                    {Object.keys(summaryData.total_records_per_source_collection || {}).length}
+                  </StatNumber>
+                </Stat>
+                <Stat>
+                  <StatLabel>Data Quality</StatLabel>
+                  <StatNumber color={summaryData.total_duplicate_records > 100 ? 'orange.500' : 'green.500'}>
+                    {summaryData.total_duplicate_records > 100 ? 'Review' : 'Good'}
+                  </StatNumber>
+                </Stat>
+              </SimpleGrid>
+            ) : (
+              <Alert status="warning">
+                <AlertIcon />
+                Could not load summary statistics. You may need to be logged in as a superuser.
+              </Alert>
+            )}
+          </CardBody>
+        </Card>
+
         <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-          {/* Report Configuration */}
+          {/* Report Generation */}
           <Card bg={cardBg}>
             <CardHeader>
-              <Heading size="md">Generate New Report</Heading>
+              <Heading size="md">Generate Report</Heading>
             </CardHeader>
             <CardBody>
               <VStack spacing={6} align="stretch">
                 <FormControl>
                   <FormLabel>Report Type</FormLabel>
                   <Select
-                    value={config.reportType}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, reportType: e.target.value }))
-                    }
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
                   >
-                    <option value="overview">System Overview</option>
-                    <option value="module">Module Summary</option>
-                    <option value="regional">Regional Report</option>
-                    <option value="conservation">Conservation Status</option>
-                    <option value="trends">Temporal Trends</option>
-                    <option value="custom">Custom Report</option>
+                    <option value="csv">CSV Data Export</option>
+                    <option value="checklist">Species Checklist (PDF)</option>
                   </Select>
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel>Taxon Group</FormLabel>
+                  <FormLabel>Taxon Group {reportType === 'checklist' && <Badge>Required</Badge>}</FormLabel>
                   <Select
-                    value={config.taxonGroup}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, taxonGroup: e.target.value }))
-                    }
+                    value={selectedTaxonGroup}
+                    onChange={(e) => setSelectedTaxonGroup(e.target.value)}
                     placeholder="All groups"
                   >
-                    <option value="fish">Fish</option>
-                    <option value="invertebrates">Invertebrates</option>
-                    <option value="algae">Algae</option>
-                    <option value="plants">Plants</option>
-                    <option value="odonata">Odonata</option>
-                  </Select>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Geographic Boundary</FormLabel>
-                  <Select
-                    value={config.boundary}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, boundary: e.target.value }))
-                    }
-                    placeholder="All regions"
-                  >
-                    <option value="wc">Western Cape</option>
-                    <option value="ec">Eastern Cape</option>
-                    <option value="kzn">KwaZulu-Natal</option>
-                    <option value="gp">Gauteng</option>
-                    <option value="lp">Limpopo</option>
-                    <option value="mp">Mpumalanga</option>
-                    <option value="nw">North West</option>
-                    <option value="fs">Free State</option>
-                    <option value="nc">Northern Cape</option>
-                  </Select>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Date Range</FormLabel>
-                  <Select
-                    value={config.dateRange}
-                    onChange={(e) =>
-                      setConfig((prev) => ({ ...prev, dateRange: e.target.value }))
-                    }
-                  >
-                    <option value="all">All Time</option>
-                    <option value="year">Past Year</option>
-                    <option value="5years">Past 5 Years</option>
-                    <option value="10years">Past 10 Years</option>
-                    <option value="custom">Custom Range</option>
+                    {taxonGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
                   </Select>
                 </FormControl>
 
                 <Divider />
-
-                <FormControl>
-                  <FormLabel>Report Sections</FormLabel>
-                  <CheckboxGroup
-                    value={config.sections}
-                    onChange={handleSectionChange}
-                    colorScheme="brand"
-                  >
-                    <VStack align="start" spacing={2}>
-                      <Checkbox value="summary">Executive Summary</Checkbox>
-                      <Checkbox value="species_list">Species List</Checkbox>
-                      <Checkbox value="conservation">Conservation Status</Checkbox>
-                      <Checkbox value="charts">Charts & Visualizations</Checkbox>
-                      <Checkbox value="maps">Distribution Maps</Checkbox>
-                      <Checkbox value="trends">Temporal Trends</Checkbox>
-                      <Checkbox value="references">Source References</Checkbox>
-                    </VStack>
-                  </CheckboxGroup>
-                </FormControl>
 
                 {isGenerating && (
                   <Box>
@@ -283,6 +482,7 @@ const SummaryReportPage: React.FC = () => {
                       value={generationProgress}
                       colorScheme="brand"
                       borderRadius="full"
+                      isIndeterminate={generationProgress < 10}
                     />
                   </Box>
                 )}
@@ -291,136 +491,180 @@ const SummaryReportPage: React.FC = () => {
                   colorScheme="brand"
                   size="lg"
                   leftIcon={<RepeatIcon />}
-                  onClick={generateReport}
+                  onClick={handleGenerate}
                   isLoading={isGenerating}
                   loadingText="Generating..."
                 >
                   Generate Report
                 </Button>
+
+                <Alert status="info" borderRadius="md">
+                  <AlertIcon />
+                  <Text fontSize="sm">
+                    Reports are generated asynchronously. Large datasets may take several minutes.
+                  </Text>
+                </Alert>
               </VStack>
             </CardBody>
           </Card>
 
-          {/* Quick Stats */}
+          {/* Quick Actions */}
           <VStack spacing={6} align="stretch">
-            <SimpleGrid columns={2} spacing={4}>
-              <Card bg={cardBg}>
-                <CardBody>
-                  <Stat>
-                    <StatLabel>Total Reports</StatLabel>
-                    <StatNumber>{reports.length}</StatNumber>
-                    <StatHelpText>Generated</StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-              <Card bg={cardBg}>
-                <CardBody>
-                  <Stat>
-                    <StatLabel>Available</StatLabel>
-                    <StatNumber color="green.500">
-                      {reports.filter((r) => r.status === 'ready').length}
-                    </StatNumber>
-                    <StatHelpText>Ready to download</StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-            </SimpleGrid>
-
             <Card bg={cardBg}>
               <CardHeader>
-                <Heading size="md">Report Templates</Heading>
+                <Heading size="md">Quick Reports</Heading>
               </CardHeader>
               <CardBody>
                 <VStack spacing={3} align="stretch">
-                  <Alert status="info" borderRadius="md">
-                    <AlertIcon />
-                    <Text fontSize="sm">
-                      Use templates to quickly generate standardized reports
-                    </Text>
-                  </Alert>
-
-                  <Button variant="outline" justifyContent="start">
-                    Annual Biodiversity Summary
+                  <Button
+                    variant="outline"
+                    justifyContent="start"
+                    leftIcon={<ExternalLinkIcon />}
+                    as="a"
+                    href="/summary-report/"
+                    target="_blank"
+                  >
+                    Full System Summary (Admin)
                   </Button>
-                  <Button variant="outline" justifyContent="start">
-                    Module Status Report
+                  <Button
+                    variant="outline"
+                    justifyContent="start"
+                    leftIcon={<DownloadIcon />}
+                    as="a"
+                    href="/download-taxa-list/"
+                  >
+                    Download Complete Taxa List
                   </Button>
-                  <Button variant="outline" justifyContent="start">
-                    Conservation Assessment
-                  </Button>
-                  <Button variant="outline" justifyContent="start">
-                    Data Quality Report
+                  <Button
+                    variant="outline"
+                    justifyContent="start"
+                    leftIcon={<ViewIcon />}
+                    as="a"
+                    href="/download-request/"
+                    target="_blank"
+                  >
+                    Manage Download Requests (Admin)
                   </Button>
                 </VStack>
               </CardBody>
             </Card>
+
+            {/* Module Statistics */}
+            {summaryData && Object.keys(summaryData.records_per_modules || {}).length > 0 && (
+              <Card bg={cardBg}>
+                <CardHeader>
+                  <Heading size="md">Records by Module</Heading>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={2} align="stretch">
+                    {Object.entries(summaryData.records_per_modules).map(([module, sources]) => {
+                      const total = Object.values(sources).reduce((a, b) => a + b, 0);
+                      return (
+                        <HStack key={module} justify="space-between">
+                          <Text fontSize="sm" fontWeight="medium">{module}</Text>
+                          <Badge colorScheme="blue">{formatNumber(total)}</Badge>
+                        </HStack>
+                      );
+                    })}
+                  </VStack>
+                </CardBody>
+              </Card>
+            )}
           </VStack>
         </SimpleGrid>
 
-        {/* Generated Reports */}
+        {/* Download Requests */}
         <Card bg={cardBg} mt={8}>
           <CardHeader>
-            <Heading size="md">Generated Reports</Heading>
+            <HStack justify="space-between">
+              <Heading size="md">Your Download Requests</Heading>
+              <Button size="sm" variant="ghost" onClick={fetchDownloads} leftIcon={<RepeatIcon />}>
+                Refresh
+              </Button>
+            </HStack>
           </CardHeader>
           <CardBody>
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Report Name</Th>
-                  <Th>Type</Th>
-                  <Th>Generated</Th>
-                  <Th>Size</Th>
-                  <Th>Status</Th>
-                  <Th>Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {reports.map((report) => (
-                  <Tr key={report.id}>
-                    <Td fontWeight="medium">{report.name}</Td>
-                    <Td>
-                      <Badge colorScheme="purple">{report.type}</Badge>
-                    </Td>
-                    <Td>{new Date(report.generatedAt).toLocaleDateString()}</Td>
-                    <Td>{report.size}</Td>
-                    <Td>
-                      <Badge
-                        colorScheme={
-                          report.status === 'ready'
-                            ? 'green'
-                            : report.status === 'generating'
-                              ? 'blue'
-                              : 'red'
-                        }
-                      >
-                        {report.status}
-                      </Badge>
-                    </Td>
-                    <Td>
-                      <HStack spacing={2}>
-                        <Button
-                          size="sm"
-                          leftIcon={<ViewIcon />}
-                          variant="ghost"
-                          isDisabled={report.status !== 'ready'}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          leftIcon={<DownloadIcon />}
-                          colorScheme="brand"
-                          variant="ghost"
-                          isDisabled={report.status !== 'ready'}
-                        >
-                          Download
-                        </Button>
-                      </HStack>
-                    </Td>
+            {loadingDownloads ? (
+              <Center py={8}>
+                <Spinner size="lg" />
+              </Center>
+            ) : downloads.length === 0 ? (
+              <VStack spacing={3} py={4}>
+                <Alert status="info" borderRadius="md">
+                  <AlertIcon />
+                  <Text>No download requests found. Generate a report above to get started.</Text>
+                </Alert>
+                <Text fontSize="sm" color="gray.500">
+                  Note: You must be logged in to see your download requests.
+                  If you just generated a report, click Refresh to update the list.
+                </Text>
+              </VStack>
+            ) : (
+              <Table variant="simple">
+                <Thead>
+                  <Tr>
+                    <Th>Date</Th>
+                    <Th>Type</Th>
+                    <Th>Status</Th>
+                    <Th>Progress</Th>
+                    <Th>Actions</Th>
                   </Tr>
-                ))}
-              </Tbody>
-            </Table>
+                </Thead>
+                <Tbody>
+                  {downloads.map((download) => (
+                    <Tr key={download.id || download.task_id}>
+                      <Td>
+                        {download.request_date
+                          ? new Date(download.request_date).toLocaleDateString()
+                          : '—'}
+                      </Td>
+                      <Td>
+                        <Badge colorScheme="purple">
+                          {download.resource_type || download.request_type || 'Download'}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        <Badge colorScheme={getStatusColor(download.status, download.approved, download.rejected)}>
+                          {getStatusLabel(download)}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        {download.processing && (
+                          <Progress
+                            value={download.progress || 0}
+                            size="sm"
+                            colorScheme="blue"
+                            width="100px"
+                            borderRadius="full"
+                          />
+                        )}
+                        {!download.processing && download.progress > 0 && `${download.progress}%`}
+                      </Td>
+                      <Td>
+                        <HStack spacing={2}>
+                          {download.download_url && (
+                            <Button
+                              size="sm"
+                              leftIcon={<DownloadIcon />}
+                              colorScheme="brand"
+                              variant="ghost"
+                              as="a"
+                              href={download.download_url}
+                              download
+                            >
+                              Download
+                            </Button>
+                          )}
+                          {!download.download_url && download.status === 'PENDING' && (
+                            <Text fontSize="sm" color="gray.500">Waiting...</Text>
+                          )}
+                        </HStack>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            )}
           </CardBody>
         </Card>
       </Container>
