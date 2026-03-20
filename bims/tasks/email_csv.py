@@ -49,7 +49,11 @@ def send_csv_via_email(
 
     if download_request and not download_request.request_file:
         download_request.request_category = file_name
-        download_request.request_file = csv_file
+        # Store path relative to MEDIA_ROOT for proper URL generation
+        if os.path.isabs(csv_file):
+            download_request.request_file = os.path.relpath(csv_file, settings.MEDIA_ROOT)
+        else:
+            download_request.request_file = csv_file
         try:
             download_request.save()
         except (DatabaseError, OperationalError):
@@ -82,7 +86,11 @@ def send_csv_via_email(
 
         workbook.save(excel_file_path)
 
-        download_request.request_file = excel_file_path
+        # Store path relative to MEDIA_ROOT for proper URL generation
+        if os.path.isabs(excel_file_path):
+            download_request.request_file = os.path.relpath(excel_file_path, settings.MEDIA_ROOT)
+        else:
+            download_request.request_file = excel_file_path
         download_request.save()
         extension = 'xlsx'
         download_file_path = excel_file_path

@@ -217,7 +217,9 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
         f'{taxonomy_collection_records_count}/{taxonomy_collection_records_count}'
     )
     download_request.processing = False
-    download_request.request_file = csv_file_path
+    # Store path relative to MEDIA_ROOT for proper URL generation
+    csv_relative_path = os.path.relpath(csv_file_path, settings.MEDIA_ROOT)
+    download_request.request_file = csv_relative_path
     download_request.request_category = f'{module_name} Checklist'
     download_request.save()
 
@@ -341,7 +343,9 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
         f'{taxonomy_collection_records_count}/{taxonomy_collection_records_count}'
     )
     download_request.processing = False
-    download_request.request_file = pdf_file_path
+    # Store path relative to MEDIA_ROOT for proper URL generation
+    pdf_relative_path = os.path.relpath(pdf_file_path, settings.MEDIA_ROOT)
+    download_request.request_file = pdf_relative_path
     download_request.request_category = f'{module_name} Checklist'
     download_request.save()
 

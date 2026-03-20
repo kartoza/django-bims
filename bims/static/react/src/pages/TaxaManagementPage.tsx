@@ -73,6 +73,7 @@ import {
 } from '@chakra-ui/icons';
 import { useAuth } from '../providers/AuthProvider';
 import { apiClient } from '../api/client';
+import TaxaListDownloadModal from '../components/TaxaListDownloadModal';
 
 interface TaxonGroup {
   id: number;
@@ -108,6 +109,7 @@ const TaxaManagementPage: React.FC = () => {
   const toast = useToast();
   const { user, isAuthenticated } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isTaxaDownloadOpen, onOpen: onTaxaDownloadOpen, onClose: onTaxaDownloadClose } = useDisclosure();
 
   const [activeTab, setActiveTab] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -367,7 +369,7 @@ const TaxaManagementPage: React.FC = () => {
               <Button
                 leftIcon={<DownloadIcon />}
                 variant="outline"
-                onClick={() => window.open('/download-taxa-list/', '_blank')}
+                onClick={onTaxaDownloadOpen}
               >
                 Export
               </Button>
@@ -816,6 +818,13 @@ const TaxaManagementPage: React.FC = () => {
             </ModalFooter>
           </ModalContent>
         </Modal>
+
+        {/* Taxa List Download Modal */}
+        <TaxaListDownloadModal
+          isOpen={isTaxaDownloadOpen}
+          onClose={onTaxaDownloadClose}
+          preselectedTaxonGroupId={selectedGroup || undefined}
+        />
       </Container>
     </Box>
   );

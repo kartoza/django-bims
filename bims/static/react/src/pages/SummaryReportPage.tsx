@@ -23,6 +23,7 @@ import {
   Button,
   useToast,
   useColorModeValue,
+  useDisclosure,
   SimpleGrid,
   Checkbox,
   CheckboxGroup,
@@ -50,6 +51,7 @@ import {
 import { DownloadIcon, RepeatIcon, ViewIcon, ExternalLinkIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import { apiClient } from '../api/client';
+import TaxaListDownloadModal from '../components/TaxaListDownloadModal';
 
 interface SummaryData {
   total_sites: number;
@@ -93,6 +95,7 @@ const SummaryReportPage: React.FC = () => {
   const toast = useToast();
   const headerBg = useColorModeValue('brand.500', 'brand.600');
   const cardBg = useColorModeValue('white', 'gray.700');
+  const { isOpen: isTaxaModalOpen, onOpen: onTaxaModalOpen, onClose: onTaxaModalClose } = useDisclosure();
 
   // State
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
@@ -530,8 +533,7 @@ const SummaryReportPage: React.FC = () => {
                     variant="outline"
                     justifyContent="start"
                     leftIcon={<DownloadIcon />}
-                    as="a"
-                    href="/download-taxa-list/"
+                    onClick={onTaxaModalOpen}
                   >
                     Download Complete Taxa List
                   </Button>
@@ -667,6 +669,12 @@ const SummaryReportPage: React.FC = () => {
             )}
           </CardBody>
         </Card>
+
+        {/* Taxa List Download Modal */}
+        <TaxaListDownloadModal
+          isOpen={isTaxaModalOpen}
+          onClose={onTaxaModalClose}
+        />
       </Container>
     </Box>
   );

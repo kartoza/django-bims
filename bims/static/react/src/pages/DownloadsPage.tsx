@@ -29,6 +29,7 @@ import {
   IconButton,
   Progress,
   useToast,
+  useDisclosure,
   Flex,
   Spacer,
   Link,
@@ -45,6 +46,7 @@ import {
 } from '@chakra-ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
 import { downloadsApi, tasksApi } from '../api/client';
+import TaxaListDownloadModal from '../components/TaxaListDownloadModal';
 
 interface DownloadRequest {
   id: string;
@@ -66,6 +68,7 @@ const DownloadsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const toast = useToast();
+  const { isOpen: isTaxaModalOpen, onOpen: onTaxaModalOpen, onClose: onTaxaModalClose } = useDisclosure();
 
   useEffect(() => {
     fetchDownloads();
@@ -179,10 +182,9 @@ const DownloadsPage: React.FC = () => {
                 Export from Map Search
               </Button>
               <Button
-                as="a"
-                href="/download-taxa-list/"
                 leftIcon={<DownloadIcon />}
                 variant="outline"
+                onClick={onTaxaModalOpen}
               >
                 Download Taxa Checklist
               </Button>
@@ -318,6 +320,12 @@ const DownloadsPage: React.FC = () => {
           </HStack>
         )}
       </VStack>
+
+      {/* Taxa List Download Modal */}
+      <TaxaListDownloadModal
+        isOpen={isTaxaModalOpen}
+        onClose={onTaxaModalClose}
+      />
     </Container>
     </Box>
   );

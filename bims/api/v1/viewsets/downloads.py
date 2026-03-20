@@ -22,6 +22,7 @@ class DownloadViewSet(viewsets.ViewSet):
     - GET /api/v1/downloads/ - List user's download requests
     - POST /api/v1/downloads/csv/ - Request CSV download
     - POST /api/v1/downloads/checklist/ - Request checklist download
+    - POST /api/v1/downloads/taxa-list/ - Request taxa list download
     - GET /api/v1/downloads/{task_id}/status/ - Check download status
     """
 
@@ -53,8 +54,19 @@ class DownloadViewSet(viewsets.ViewSet):
 
             def get_download_url(d):
                 """Get download URL if file exists."""
+                import os
+                from django.conf import settings
                 try:
                     if d.request_file and d.request_file.name:
+                        file_name = d.request_file.name
+                        # Handle old records with absolute paths stored in the field
+                        if os.path.isabs(file_name):
+                            # Try to extract relative path from MEDIA_ROOT
+                            if settings.MEDIA_ROOT in file_name:
+                                relative_path = os.path.relpath(file_name, settings.MEDIA_ROOT)
+                                return f"{settings.MEDIA_URL}{relative_path}"
+                            # Fallback: just use the filename
+                            return f"{settings.MEDIA_URL}{os.path.basename(file_name)}"
                         return d.request_file.url
                 except (ValueError, AttributeError):
                     pass
@@ -183,6 +195,112 @@ class DownloadViewSet(viewsets.ViewSet):
                     "download_request_id": download_request.id,
                     "status": "PENDING",
                     "message": "Checklist download request submitted",
+                },
+            )
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return error_response(
+                errors={"detail": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=False, methods=["post"], url_path="taxa-list")
+    def taxa_list(self, request):
+        """
+        Request a taxa list download.
+
+        Body:
+        - taxon_group_id: Taxon group to download taxa for
+        - output: Output format ('csv' or 'xlsx'), defaults to 'csv'
+        - filters: Optional additional filters
+        """
+        import datetime
+        import hashlib
+        import os
+        from django.conf import settings
+        from bims.tasks.download_taxa_list import download_taxa_list_task
+        from bims.tasks.email_csv import send_csv_via_email
+        from bims.models.taxon_group import TaxonGroup
+        from bims.models.download_request import DownloadRequest, DownloadRequestPurpose
+
+        taxon_group_id = request.data.get("taxon_group_id")
+        output = request.data.get("output", "csv")
+        filters = request.data.get("filters", {})
+
+        if not taxon_group_id:
+            return validation_error_response({"detail": "taxon_group_id is required"})
+
+        try:
+            try:
+                taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+            except TaxonGroup.DoesNotExist:
+                return validation_error_response({"detail": "Invalid taxon_group_id"})
+
+            # Build filter dict for the task (mimicking legacy GET params)
+            filter_dict = {"taxonGroup": str(taxon_group_id), "output": output}
+            filter_dict.update(filters)
+
+            current_time = datetime.datetime.now()
+            filter_hash = hashlib.md5(str(filter_dict).encode()).hexdigest()[:8]
+
+            filename = (
+                f'{taxon_group.name}-{current_time.year}-'
+                f'{current_time.month}-{current_time.day}-'
+                f'{current_time.hour}-{filter_hash}'
+            ).replace(' ', '_')
+
+            folder = settings.PROCESSED_CSV_PATH
+            path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+            path_file = os.path.join(path_folder, filename)
+
+            if not os.path.exists(path_folder):
+                os.makedirs(path_folder, exist_ok=True)
+
+            # Get or create a default purpose
+            purpose, _ = DownloadRequestPurpose.objects.get_or_create(
+                name="Taxa List",
+                defaults={"order": 2}
+            )
+
+            # Create download request for tracking
+            download_request = DownloadRequest.objects.create(
+                requester=request.user,
+                resource_type=DownloadRequest.XLS if output == 'xlsx' else DownloadRequest.CSV,
+                resource_name=f"{taxon_group.name} Taxa List",
+                purpose=purpose,
+                dashboard_url=f"taxonGroup={taxon_group_id}",
+                approved=True,
+                processing=True,
+            )
+
+            if os.path.exists(path_file):
+                # File already exists, send it via email
+                send_csv_via_email.delay(
+                    user_id=request.user.id,
+                    csv_file=path_file,
+                    file_name=filename,
+                    approved=True,
+                    download_request_id=download_request.id,
+                )
+            else:
+                # Start the async task
+                download_taxa_list_task.delay(
+                    filter_dict,
+                    csv_file=path_file,
+                    filename=filename,
+                    user_id=request.user.id,
+                    output=output,
+                    download_request_id=download_request.id,
+                    taxon_group_id=taxon_group_id
+                )
+
+            return success_response(
+                data={
+                    "download_request_id": download_request.id,
+                    "status": "PROCESSING",
+                    "message": "Taxa list download request submitted. You will receive an email when ready.",
+                    "filename": filename,
                 },
             )
         except Exception as e:

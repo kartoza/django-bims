@@ -57,6 +57,7 @@ import {
 } from '@chakra-ui/icons';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
+import TaxaListDownloadModal from './TaxaListDownloadModal';
 
 interface NavLinkProps {
   to: string;
@@ -87,6 +88,7 @@ const NavLink: React.FC<NavLinkProps> = ({ to, children, isActive }) => (
 
 const Header: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isTaxaModalOpen, onOpen: onTaxaModalOpen, onClose: onTaxaModalClose } = useDisclosure();
   const location = useLocation();
   const isMobile = useBreakpointValue({ base: true, lg: false });
 
@@ -183,8 +185,8 @@ const Header: React.FC = () => {
               <MenuItem as={RouterLink} to="/downloads" icon={<DownloadIcon />}>
                 Download Requests
               </MenuItem>
-              <MenuItem as="a" href="/download-taxa-list/" icon={<DownloadIcon />}>
-                Download Taxa List <ExternalLinkIcon ml={1} boxSize={3} />
+              <MenuItem icon={<DownloadIcon />} onClick={onTaxaModalOpen}>
+                Download Taxa List
               </MenuItem>
             </MenuList>
           </Menu>
@@ -657,6 +659,12 @@ const Header: React.FC = () => {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+
+      {/* Taxa List Download Modal */}
+      <TaxaListDownloadModal
+        isOpen={isTaxaModalOpen}
+        onClose={onTaxaModalClose}
+      />
     </Box>
   );
 };
