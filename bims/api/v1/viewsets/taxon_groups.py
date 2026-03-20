@@ -7,34 +7,39 @@ from django.db.models import Count
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
+from bims.api.v1.permissions import IsSuperUserOrReadOnly
 from bims.api.v1.responses import success_response
 from bims.api.v1.serializers.taxon_groups import (
+    TaxonGroupCreateSerializer,
     TaxonGroupDetailSerializer,
     TaxonGroupSerializer,
 )
-from bims.api.v1.viewsets.base import ReadOnlyStandardViewSet
+from bims.api.v1.viewsets.base import StandardModelViewSet
 from bims.models.taxon_group import TaxonGroup
 
 
-class TaxonGroupViewSet(ReadOnlyStandardViewSet):
+class TaxonGroupViewSet(StandardModelViewSet):
     """
-    ViewSet for TaxonGroup read operations.
-
-    TaxonGroups are read-only as they represent system-configured organism groups.
+    ViewSet for TaxonGroup CRUD operations.
 
     Endpoints:
     - GET /api/v1/taxon-groups/ - List taxon groups
+    - POST /api/v1/taxon-groups/ - Create taxon group (staff only)
     - GET /api/v1/taxon-groups/{id}/ - Get taxon group detail
+    - PUT /api/v1/taxon-groups/{id}/ - Update taxon group (staff only)
+    - DELETE /api/v1/taxon-groups/{id}/ - Delete taxon group (superuser only)
     - GET /api/v1/taxon-groups/{id}/taxa/ - Get taxa in group
     """
 
     queryset = TaxonGroup.objects.all()
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsSuperUserOrReadOnly]
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action == "retrieve":
             return TaxonGroupDetailSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return TaxonGroupCreateSerializer
         return TaxonGroupSerializer
 
     def get_queryset(self):

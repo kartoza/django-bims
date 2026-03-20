@@ -46,6 +46,27 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         return None
 
 
+class TaxonGroupCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating/updating TaxonGroup.
+    """
+
+    class Meta:
+        model = TaxonGroup
+        fields = [
+            "id",
+            "name",
+            "singular_name",
+            "category",
+            "display_order",
+            "parent",
+            "source_collection",
+            "chart_data",
+            "level",
+        ]
+        read_only_fields = ["id"]
+
+
 class TaxonGroupDetailSerializer(TaxonGroupSerializer):
     """
     Detailed serializer for single taxon group.

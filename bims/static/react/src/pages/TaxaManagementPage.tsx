@@ -56,6 +56,8 @@ import {
   DownloadIcon,
   ExternalLinkIcon,
   ArrowBackIcon,
+  ViewIcon,
+  HamburgerIcon,
 } from '@chakra-ui/icons';
 import { useAuth } from '../providers/AuthProvider';
 import { apiClient } from '../api/client';
@@ -91,6 +93,90 @@ interface TaxonProposal {
   change_type: 'add' | 'update' | 'merge' | 'delete';
 }
 
+interface TaxonTreeNode {
+  id: number;
+  name: string;
+  rank: string;
+  children: TaxonTreeNode[];
+  expanded?: boolean;
+}
+
+// Tree Node Component for recursive rendering
+const TreeNode: React.FC<{
+  node: TaxonTreeNode;
+  level: number;
+  onToggle: (id: number) => void;
+  onSelect: (id: number) => void;
+  expandedNodes: Set<number>;
+}> = ({ node, level, onToggle, onSelect, expandedNodes }) => {
+  const isExpanded = expandedNodes.has(node.id);
+  const hasChildren = node.children && node.children.length > 0;
+  const indent = level * 20;
+
+  const rankColors: Record<string, string> = {
+    KINGDOM: 'purple',
+    PHYLUM: 'blue',
+    CLASS: 'cyan',
+    ORDER: 'teal',
+    FAMILY: 'green',
+    GENUS: 'yellow',
+    SPECIES: 'orange',
+    SUBSPECIES: 'red',
+  };
+
+  return (
+    <Box>
+      <HStack
+        py={1}
+        px={2}
+        pl={`${indent + 8}px`}
+        _hover={{ bg: 'gray.50' }}
+        cursor="pointer"
+        borderLeftWidth={level > 0 ? 2 : 0}
+        borderLeftColor="gray.200"
+        ml={level > 0 ? 2 : 0}
+      >
+        {hasChildren ? (
+          <IconButton
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            icon={<Text fontSize="xs">{isExpanded ? '▼' : '▶'}</Text>}
+            size="xs"
+            variant="ghost"
+            onClick={() => onToggle(node.id)}
+          />
+        ) : (
+          <Box w="24px" />
+        )}
+        <Badge colorScheme={rankColors[node.rank] || 'gray'} size="sm" fontSize="xs">
+          {node.rank?.substring(0, 3)}
+        </Badge>
+        <Text
+          fontStyle={node.rank === 'SPECIES' || node.rank === 'GENUS' ? 'italic' : 'normal'}
+          fontSize="sm"
+          onClick={() => onSelect(node.id)}
+          _hover={{ textDecoration: 'underline' }}
+        >
+          {node.name}
+        </Text>
+      </HStack>
+      {isExpanded && hasChildren && (
+        <Box>
+          {node.children.map((child) => (
+            <TreeNode
+              key={child.id}
+              node={child}
+              level={level + 1}
+              onToggle={onToggle}
+              onSelect={onSelect}
+              expandedNodes={expandedNodes}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 const TaxaManagementPage: React.FC = () => {
   const toast = useToast();
   const { user, isAuthenticated } = useAuth();
@@ -108,6 +194,12 @@ const TaxaManagementPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Tree view state
+  const [showTreeView, setShowTreeView] = useState(false);
+  const [treeData, setTreeData] = useState<TaxonTreeNode[]>([]);
+  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
+  const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   // Debounce search query (300ms delay)
   useEffect(() => {
@@ -131,15 +223,126 @@ const TaxaManagementPage: React.FC = () => {
     setPage(1);
   }, [debouncedSearch]);
 
-  // View state: 'list' | 'edit' | 'gbif-import'
-  const [viewMode, setViewMode] = useState<'list' | 'edit' | 'gbif-import'>('list');
+  // View state: 'list' | 'edit' | 'gbif-import' | 'edit-group'
+  const [viewMode, setViewMode] = useState<'list' | 'edit' | 'gbif-import' | 'edit-group'>('list');
   const [editingTaxon, setEditingTaxon] = useState<Taxon | null>(null);
+  const [editingGroup, setEditingGroup] = useState<TaxonGroup | null>(null);
   const [gbifSearchQuery, setGbifSearchQuery] = useState('');
   const [gbifResults, setGbifResults] = useState<any[]>([]);
   const [isSearchingGbif, setIsSearchingGbif] = useState(false);
 
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
+
+  // Fetch tree data when tree view is enabled
+  useEffect(() => {
+    const fetchTreeData = async () => {
+      if (!showTreeView) return;
+
+      setIsLoadingTree(true);
+      try {
+        // Get root taxa (those without parents or at kingdom/phylum level)
+        const params: Record<string, any> = {
+          has_parent: false,
+          page_size: 100,
+        };
+        if (selectedGroup) params.taxon_group = selectedGroup;
+
+        const response = await apiClient.get('taxa/', { params });
+        const rootTaxa = response.data?.data || [];
+
+        // Transform to tree nodes
+        const treeNodes: TaxonTreeNode[] = rootTaxa.map((taxon: Taxon) => ({
+          id: taxon.id,
+          name: taxon.canonical_name || taxon.scientific_name,
+          rank: taxon.rank,
+          children: [],
+        }));
+
+        setTreeData(treeNodes);
+      } catch (error) {
+        console.error('Failed to fetch tree data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load taxonomy tree',
+          status: 'error',
+          duration: 5000,
+        });
+      } finally {
+        setIsLoadingTree(false);
+      }
+    };
+
+    fetchTreeData();
+  }, [showTreeView, selectedGroup, toast]);
+
+  // Fetch children for a node when expanded
+  const fetchChildren = useCallback(async (parentId: number): Promise<TaxonTreeNode[]> => {
+    try {
+      const response = await apiClient.get(`taxa/${parentId}/tree/`, {
+        params: { direction: 'down', depth: 1 },
+      });
+      const data = response.data?.data;
+      if (data?.children) {
+        return data.children.map((child: any) => ({
+          id: child.id,
+          name: child.name,
+          rank: child.rank,
+          children: child.children || [],
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch children:', error);
+      return [];
+    }
+  }, []);
+
+  // Toggle node expansion
+  const handleTreeToggle = useCallback(async (nodeId: number) => {
+    const newExpanded = new Set(expandedNodes);
+
+    if (expandedNodes.has(nodeId)) {
+      newExpanded.delete(nodeId);
+    } else {
+      newExpanded.add(nodeId);
+
+      // Fetch children if not already loaded
+      const updateTreeWithChildren = async (nodes: TaxonTreeNode[]): Promise<TaxonTreeNode[]> => {
+        return Promise.all(nodes.map(async (node) => {
+          if (node.id === nodeId && node.children.length === 0) {
+            const children = await fetchChildren(nodeId);
+            return { ...node, children };
+          }
+          if (node.children.length > 0) {
+            return { ...node, children: await updateTreeWithChildren(node.children) };
+          }
+          return node;
+        }));
+      };
+
+      const updatedTree = await updateTreeWithChildren(treeData);
+      setTreeData(updatedTree);
+    }
+
+    setExpandedNodes(newExpanded);
+  }, [expandedNodes, treeData, fetchChildren]);
+
+  // Handle tree node selection
+  const handleTreeSelect = useCallback((nodeId: number) => {
+    // Find the taxon and open edit view
+    const findTaxon = async () => {
+      try {
+        const response = await apiClient.get(`taxa/${nodeId}/`);
+        if (response.data?.data) {
+          openEditView(response.data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch taxon:', error);
+      }
+    };
+    findTaxon();
+  }, []);
 
   // Check permissions
   const canManageTaxa = user?.isStaff || user?.isSuperuser;
@@ -366,7 +569,89 @@ const TaxaManagementPage: React.FC = () => {
   const goBackToList = () => {
     setViewMode('list');
     setEditingTaxon(null);
+    setEditingGroup(null);
   };
+
+  const openAddGroup = () => {
+    setViewMode('edit-group');
+    setEditingGroup({ id: 0, name: '', category: '' });
+  };
+
+  const openEditGroup = (group: TaxonGroup) => {
+    setViewMode('edit-group');
+    setEditingGroup({ ...group });
+  };
+
+  const handleSaveGroup = useCallback(async () => {
+    if (!editingGroup) return;
+
+    try {
+      if (editingGroup.id === 0) {
+        // Create new group
+        const response = await apiClient.post('taxon-groups/', {
+          name: editingGroup.name,
+          singular_name: editingGroup.name,
+          category: editingGroup.category || 'other',
+          display_order: taxonGroups.length + 1,
+        });
+        setTaxonGroups([...taxonGroups, response.data?.data]);
+        toast({
+          title: 'Created',
+          description: 'Taxon group has been created',
+          status: 'success',
+          duration: 3000,
+        });
+      } else {
+        // Update existing group
+        const response = await apiClient.patch(`taxon-groups/${editingGroup.id}/`, {
+          name: editingGroup.name,
+          category: editingGroup.category,
+        });
+        setTaxonGroups(taxonGroups.map((g) =>
+          g.id === editingGroup.id ? { ...g, ...response.data?.data } : g
+        ));
+        toast({
+          title: 'Saved',
+          description: 'Taxon group has been updated',
+          status: 'success',
+          duration: 3000,
+        });
+      }
+      setViewMode('list');
+      setEditingGroup(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to save taxon group',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [editingGroup, taxonGroups, toast]);
+
+  const handleDeleteGroup = useCallback(async (groupId: number) => {
+    if (!window.confirm('Are you sure you want to delete this taxon group? This will not delete the taxa within it.')) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`taxon-groups/${groupId}/`);
+      setTaxonGroups(taxonGroups.filter((g) => g.id !== groupId));
+      toast({
+        title: 'Deleted',
+        description: 'Taxon group has been deleted',
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.error || 'Failed to delete taxon group',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  }, [taxonGroups, toast]);
 
   const handleDeleteTaxon = useCallback(async (taxonId: number) => {
     if (!window.confirm('Are you sure you want to delete this taxon? This action cannot be undone.')) {
@@ -430,6 +715,79 @@ const TaxaManagementPage: React.FC = () => {
           You do not have permission to access taxa management.
         </Alert>
       </Container>
+    );
+  }
+
+  // Edit Group View
+  if (viewMode === 'edit-group' && editingGroup) {
+    return (
+      <Box bg={bgColor} minH="calc(100vh - 100px)" py={8}>
+        <Container maxW="container.lg">
+          <VStack spacing={6} align="stretch">
+            <HStack>
+              <IconButton
+                aria-label="Back to list"
+                icon={<ArrowBackIcon />}
+                variant="ghost"
+                onClick={goBackToList}
+              />
+              <Heading size="lg">
+                {editingGroup.id === 0 ? 'Propose New Taxon Group' : 'Edit Taxon Group'}
+              </Heading>
+            </HStack>
+
+            {editingGroup.id === 0 && (
+              <Alert status="info">
+                <AlertIcon />
+                New taxon groups require approval before they can be used. Your proposal will be reviewed by an administrator.
+              </Alert>
+            )}
+
+            <Card bg={cardBg}>
+              <CardBody>
+                <VStack spacing={4} align="stretch">
+                  <FormControl isRequired>
+                    <FormLabel>Group Name</FormLabel>
+                    <Input
+                      placeholder="e.g., Freshwater Fish"
+                      value={editingGroup.name || ''}
+                      onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      value={editingGroup.category || ''}
+                      onChange={(e) => setEditingGroup({ ...editingGroup, category: e.target.value })}
+                    >
+                      <option value="">Select category...</option>
+                      <option value="fish">Fish</option>
+                      <option value="invertebrate">Invertebrate</option>
+                      <option value="algae">Algae</option>
+                      <option value="plant">Plant</option>
+                      <option value="other">Other</option>
+                    </Select>
+                  </FormControl>
+
+                  <HStack justify="flex-end" pt={4}>
+                    <Button variant="ghost" onClick={goBackToList}>
+                      Cancel
+                    </Button>
+                    <Button
+                      colorScheme="brand"
+                      onClick={handleSaveGroup}
+                      isDisabled={!editingGroup.name}
+                    >
+                      {editingGroup.id === 0 ? 'Submit for Review' : 'Save Changes'}
+                    </Button>
+                  </HStack>
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Container>
+      </Box>
     );
   }
 
@@ -713,7 +1071,25 @@ const TaxaManagementPage: React.FC = () => {
                         ))}
                       </Select>
                       <Spacer />
-                      {selectedTaxa.length > 0 && (
+                      <HStack>
+                        <IconButton
+                          aria-label="Table view"
+                          icon={<HamburgerIcon />}
+                          size="sm"
+                          variant={!showTreeView ? 'solid' : 'outline'}
+                          colorScheme={!showTreeView ? 'brand' : 'gray'}
+                          onClick={() => setShowTreeView(false)}
+                        />
+                        <IconButton
+                          aria-label="Tree view"
+                          icon={<ViewIcon />}
+                          size="sm"
+                          variant={showTreeView ? 'solid' : 'outline'}
+                          colorScheme={showTreeView ? 'brand' : 'gray'}
+                          onClick={() => setShowTreeView(true)}
+                        />
+                      </HStack>
+                      {selectedTaxa.length > 0 && !showTreeView && (
                         <HStack>
                           <Text fontSize="sm" color="gray.500">
                             {selectedTaxa.length} selected
@@ -729,12 +1105,49 @@ const TaxaManagementPage: React.FC = () => {
                       )}
                     </HStack>
 
-                    {/* Taxa Table */}
-                    {isLoading ? (
-                      <Center py={10}>
-                        <Spinner size="xl" color="brand.500" />
-                      </Center>
+                    {/* Taxa Display - Table or Tree */}
+                    {showTreeView ? (
+                      // Tree View
+                      isLoadingTree ? (
+                        <Center py={10}>
+                          <Spinner size="xl" color="brand.500" />
+                        </Center>
+                      ) : (
+                        <Box
+                          border="1px"
+                          borderColor="gray.200"
+                          borderRadius="md"
+                          maxH="600px"
+                          overflowY="auto"
+                          bg="white"
+                        >
+                          {treeData.length === 0 ? (
+                            <Center py={10}>
+                              <Text color="gray.500">No taxa found. Select a group to view the taxonomy tree.</Text>
+                            </Center>
+                          ) : (
+                            <Box py={2}>
+                              {treeData.map((node) => (
+                                <TreeNode
+                                  key={node.id}
+                                  node={node}
+                                  level={0}
+                                  onToggle={handleTreeToggle}
+                                  onSelect={handleTreeSelect}
+                                  expandedNodes={expandedNodes}
+                                />
+                              ))}
+                            </Box>
+                          )}
+                        </Box>
+                      )
                     ) : (
+                      // Table View
+                      isLoading ? (
+                        <Center py={10}>
+                          <Spinner size="xl" color="brand.500" />
+                        </Center>
+                      ) : (
                       <>
                         <Box overflowX="auto">
                           <Table variant="simple" size="sm">
@@ -882,6 +1295,7 @@ const TaxaManagementPage: React.FC = () => {
                           </Button>
                         </HStack>
                       </>
+                      )
                     )}
                   </CardBody>
                 </Card>
@@ -960,28 +1374,51 @@ const TaxaManagementPage: React.FC = () => {
               <TabPanel px={0}>
                 <Card bg={cardBg}>
                   <CardBody>
+                    <HStack justify="flex-end" mb={4}>
+                      <Button
+                        leftIcon={<AddIcon />}
+                        colorScheme="brand"
+                        onClick={openAddGroup}
+                      >
+                        Propose New Group
+                      </Button>
+                    </HStack>
                     <Table variant="simple">
                       <Thead>
                         <Tr>
                           <Th>Name</Th>
                           <Th>Category</Th>
                           <Th>Taxa Count</Th>
-                          <Th>Actions</Th>
+                          <Th w="120px">Actions</Th>
                         </Tr>
                       </Thead>
                       <Tbody>
                         {taxonGroups.map((group) => (
                           <Tr key={group.id}>
                             <Td>{group.name}</Td>
-                            <Td>{group.category || '-'}</Td>
+                            <Td>
+                              <Badge colorScheme="blue">{group.category || 'other'}</Badge>
+                            </Td>
                             <Td>{group.taxonCount?.toLocaleString() || 0}</Td>
                             <Td>
-                              <IconButton
-                                aria-label="Edit"
-                                icon={<EditIcon />}
-                                size="sm"
-                                variant="ghost"
-                              />
+                              <HStack spacing={1}>
+                                <IconButton
+                                  aria-label="Edit group"
+                                  icon={<EditIcon />}
+                                  size="sm"
+                                  variant="ghost"
+                                  colorScheme="blue"
+                                  onClick={() => openEditGroup(group)}
+                                />
+                                <IconButton
+                                  aria-label="Delete group"
+                                  icon={<DeleteIcon />}
+                                  size="sm"
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  onClick={() => handleDeleteGroup(group.id)}
+                                />
+                              </HStack>
                             </Td>
                           </Tr>
                         ))}
