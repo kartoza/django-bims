@@ -18,7 +18,7 @@ function getCsrfToken(): string | null {
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
   baseURL: '/api/v1/',
-  timeout: 30000,
+  timeout: 60000, // 60 second timeout for large queries
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -203,6 +203,231 @@ export const tasksApi = {
   get: (taskId: string) => api.get<any>(`tasks/${taskId}/`),
   cancel: (taskId: string) => api.delete<any>(`tasks/${taskId}/`),
 };
+
+// Legacy API client for endpoints not yet migrated to v1
+const legacyClient = axios.create({
+  baseURL: '/api/',
+  timeout: 60000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+});
+
+// Add CSRF token to legacy client
+legacyClient.interceptors.request.use(
+  (config) => {
+    const csrfToken = getCsrfToken();
+    if (csrfToken && config.headers) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Chart data API (legacy endpoints)
+export interface ChartData {
+  dataset_labels: string[];
+  labels: string[];
+  data: Record<string, number[]>;
+  colours?: Record<string, string>;
+}
+
+export const chartsApi = {
+  // Endemism chart data for filtered records
+  endemism: async (filters?: Record<string, unknown>): Promise<ChartData> => {
+    const response = await legacyClient.get<ChartData>('location-sites-endemism-chart-data/', { params: filters });
+    return response.data;
+  },
+
+  // Conservation status (IUCN) chart data
+  conservation: async (filters?: Record<string, unknown>): Promise<ChartData> => {
+    const response = await legacyClient.get<ChartData>('location-sites-cons-chart-data/', { params: filters });
+    return response.data;
+  },
+
+  // Taxa distribution chart data
+  taxa: async (filters?: Record<string, unknown>): Promise<ChartData> => {
+    const response = await legacyClient.get<ChartData>('location-sites-taxa-chart-data/', { params: filters });
+    return response.data;
+  },
+
+  // Occurrences by origin chart data
+  occurrences: async (filters?: Record<string, unknown>): Promise<ChartData> => {
+    const response = await legacyClient.get<ChartData>('location-sites-occurrences-chart-data/', { params: filters });
+    return response.data;
+  },
+
+  // Total occurrences chart data
+  totalOccurrences: async (filters?: Record<string, unknown>): Promise<ChartData> => {
+    const response = await legacyClient.get<ChartData>('location-sites-total-occurrences-chart-data/', { params: filters });
+    return response.data;
+  },
+};
+
+// Filter options API (legacy endpoints)
+export const filterOptionsApi = {
+  // Get list of boundaries for filtering
+  boundaries: async (type?: string) => {
+    const response = await legacyClient.get<any[]>('list-boundary/', { params: { type } });
+    return response.data;
+  },
+
+  // Get list of collectors for autocomplete
+  collectors: async () => {
+    const response = await legacyClient.get<any[]>('list-collector/');
+    return response.data;
+  },
+
+  // Get endemism options
+  endemism: async () => {
+    const response = await legacyClient.get<any[]>('endemism-list/');
+    return response.data;
+  },
+
+  // Get reference categories
+  referenceCategories: async () => {
+    const response = await legacyClient.get<Array<{ category: string }>>('list-reference-category/');
+    return response.data;
+  },
+
+  // Get data source descriptions
+  dataSources: async () => {
+    const response = await legacyClient.get<Record<string, string>>('data-source-descriptions/');
+    return response.data;
+  },
+
+  // Get non-biodiversity layers (context layers)
+  contextLayers: async () => {
+    const response = await legacyClient.get<any[]>('list-non-biodiversity-layer/');
+    return response.data;
+  },
+};
+
+// Autocomplete API
+export const autocompleteApi = {
+  // Autocomplete for collectors
+  collectors: async (query: string) => {
+    const response = await apiClient.get<{ data: string[] }>('autocomplete/collectors/', { params: { q: query } });
+    return response.data?.data || [];
+  },
+
+  // Autocomplete for taxa
+  taxa: async (query: string, taxonGroup?: string) => {
+    const response = await apiClient.get<{ data: any[] }>('autocomplete/taxa/', {
+      params: { q: query, taxon_group: taxonGroup },
+    });
+    return response.data?.data || [];
+  },
+
+  // Autocomplete for sites
+  sites: async (query: string) => {
+    const response = await apiClient.get<{ data: any[] }>('autocomplete/sites/', { params: { q: query } });
+    return response.data?.data || [];
+  },
+};
+
+// Site detail API (combines multiple data sources)
+export const siteDetailApi = {
+  // Get full site details including charts
+  getFullDetails: async (siteId: number) => {
+    const [site, chartFilters] = await Promise.all([
+      sitesApi.get(siteId),
+      { siteId: String(siteId) },
+    ]);
+    return site;
+  },
+
+  // Get chart data for a specific site
+  getCharts: async (siteId: number) => {
+    const filters = { siteId: String(siteId) };
+    const [endemism, conservation, taxa, occurrences] = await Promise.all([
+      chartsApi.endemism(filters).catch(() => null),
+      chartsApi.conservation(filters).catch(() => null),
+      chartsApi.taxa(filters).catch(() => null),
+      chartsApi.occurrences(filters).catch(() => null),
+    ]);
+    return { endemism, conservation, taxa, occurrences };
+  },
+};
+
+// Taxon images API
+export const taxonImagesApi = {
+  // Get images for a taxon
+  getImages: async (taxonId: number) => {
+    const response = await legacyClient.get<any[]>(`taxon-images/${taxonId}/`);
+    return response.data;
+  },
+};
+
+// Module summary API (for landing page taxon groups)
+export interface ModuleSummary {
+  total: number;
+  total_site: number;
+  total_site_visit: number;
+  total_validated: number;
+  icon?: string;
+  origin?: Record<string, number>;
+  endemism?: Record<string, number>;
+  'conservation-status'?: {
+    chart_data: Record<string, number>;
+    colors: string[];
+  };
+}
+
+export interface GeneralSummary {
+  total_occurrences: number;
+  total_taxa: number;
+  total_users: number;
+  total_uploads: number;
+  total_downloads: number;
+}
+
+export interface ModuleSummaryResponse {
+  status?: string;
+  message?: string;
+  general_summary: GeneralSummary;
+  [moduleName: string]: ModuleSummary | GeneralSummary | string | undefined;
+}
+
+export const moduleSummaryApi = {
+  // Get module summary for landing page
+  getSummary: async (): Promise<ModuleSummaryResponse> => {
+    const response = await legacyClient.get<ModuleSummaryResponse>('module-summary/');
+    return response.data;
+  },
+};
+
+// Location site detail API
+export const locationSiteApi = {
+  // Get site detail
+  getDetail: async (siteId: number) => {
+    const response = await legacyClient.get<any>('location-site-detail/', {
+      params: { siteId },
+    });
+    return response.data;
+  },
+
+  // Get site summary (public)
+  getSummaryPublic: async (siteId: number) => {
+    const response = await legacyClient.get<any>('location-site-summary-public/', {
+      params: { siteId },
+    });
+    return response.data;
+  },
+
+  // Get location context report
+  getContextReport: async (siteId: number) => {
+    const response = await legacyClient.get<any>('location-context-report/', {
+      params: { siteId },
+    });
+    return response.data;
+  },
+};
+
+// Export legacy client for direct use if needed
+export { legacyClient };
 
 // Export apiClient as both named and default export
 export { apiClient };
