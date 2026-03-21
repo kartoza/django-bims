@@ -77,18 +77,23 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'  Tenant exists: {tenant.name}')
 
-        # Create domain for tenant
-        domain, domain_created = Domain.objects.get_or_create(
-            domain='localhost',
-            defaults={
-                'tenant': tenant,
-                'is_primary': True,
-            }
-        )
-        if domain_created:
-            self.stdout.write(self.style.SUCCESS(f'  Created domain: {domain.domain}'))
-        else:
-            self.stdout.write(f'  Domain exists: {domain.domain}')
+        # Create domains for tenant
+        domains_to_create = [
+            ('localhost', True),
+            ('127.0.0.1', False),
+        ]
+        for domain_name, is_primary in domains_to_create:
+            domain, domain_created = Domain.objects.get_or_create(
+                domain=domain_name,
+                defaults={
+                    'tenant': tenant,
+                    'is_primary': is_primary,
+                }
+            )
+            if domain_created:
+                self.stdout.write(self.style.SUCCESS(f'  Created domain: {domain.domain}'))
+            else:
+                self.stdout.write(f'  Domain exists: {domain.domain}')
 
         # Switch to tenant schema
         connection.set_tenant(tenant)
