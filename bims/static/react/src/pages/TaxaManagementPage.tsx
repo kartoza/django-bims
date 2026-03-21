@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Container,
@@ -62,6 +62,7 @@ import {
 import { useAuth } from '../providers/AuthProvider';
 import { apiClient } from '../api/client';
 import TaxaListDownloadModal from '../components/TaxaListDownloadModal';
+import { PhylogeneticTree } from '../components/tree';
 
 interface TaxonGroup {
   id: number;
@@ -96,90 +97,6 @@ interface TaxonProposal {
   change_type: 'add' | 'update' | 'merge' | 'delete';
 }
 
-interface TaxonTreeNode {
-  id: number;
-  name: string;
-  rank: string;
-  children: TaxonTreeNode[];
-  expanded?: boolean;
-}
-
-// Tree Node Component for recursive rendering
-const TreeNode: React.FC<{
-  node: TaxonTreeNode;
-  level: number;
-  onToggle: (id: number) => void;
-  onSelect: (id: number) => void;
-  expandedNodes: Set<number>;
-}> = ({ node, level, onToggle, onSelect, expandedNodes }) => {
-  const isExpanded = expandedNodes.has(node.id);
-  const hasChildren = node.children && node.children.length > 0;
-  const indent = level * 20;
-
-  const rankColors: Record<string, string> = {
-    KINGDOM: 'purple',
-    PHYLUM: 'blue',
-    CLASS: 'cyan',
-    ORDER: 'teal',
-    FAMILY: 'green',
-    GENUS: 'yellow',
-    SPECIES: 'orange',
-    SUBSPECIES: 'red',
-  };
-
-  return (
-    <Box>
-      <HStack
-        py={1}
-        px={2}
-        pl={`${indent + 8}px`}
-        _hover={{ bg: 'gray.50' }}
-        cursor="pointer"
-        borderLeftWidth={level > 0 ? 2 : 0}
-        borderLeftColor="gray.200"
-        ml={level > 0 ? 2 : 0}
-      >
-        {hasChildren ? (
-          <IconButton
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-            icon={<Text fontSize="xs">{isExpanded ? '▼' : '▶'}</Text>}
-            size="xs"
-            variant="ghost"
-            onClick={() => onToggle(node.id)}
-          />
-        ) : (
-          <Box w="24px" />
-        )}
-        <Badge colorScheme={rankColors[node.rank] || 'gray'} size="sm" fontSize="xs">
-          {node.rank?.substring(0, 3)}
-        </Badge>
-        <Text
-          fontStyle={node.rank === 'SPECIES' || node.rank === 'GENUS' ? 'italic' : 'normal'}
-          fontSize="sm"
-          onClick={() => onSelect(node.id)}
-          _hover={{ textDecoration: 'underline' }}
-        >
-          {node.name}
-        </Text>
-      </HStack>
-      {isExpanded && hasChildren && (
-        <Box>
-          {node.children.map((child) => (
-            <TreeNode
-              key={child.id}
-              node={child}
-              level={level + 1}
-              onToggle={onToggle}
-              onSelect={onSelect}
-              expandedNodes={expandedNodes}
-            />
-          ))}
-        </Box>
-      )}
-    </Box>
-  );
-};
-
 const TaxaManagementPage: React.FC = () => {
   const toast = useToast();
   const { user, isAuthenticated } = useAuth();
@@ -201,9 +118,6 @@ const TaxaManagementPage: React.FC = () => {
 
   // Tree view state
   const [showTreeView, setShowTreeView] = useState(false);
-  const [treeData, setTreeData] = useState<TaxonTreeNode[]>([]);
-  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
-  const [isLoadingTree, setIsLoadingTree] = useState(false);
 
   // Debounce search query (300ms delay)
   useEffect(() => {
@@ -237,116 +151,6 @@ const TaxaManagementPage: React.FC = () => {
 
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-
-  // Fetch tree data when tree view is enabled
-  useEffect(() => {
-    const fetchTreeData = async () => {
-      if (!showTreeView) return;
-
-      setIsLoadingTree(true);
-      try {
-        // Get root taxa (those without parents or at kingdom/phylum level)
-        const params: Record<string, any> = {
-          has_parent: false,
-          page_size: 100,
-        };
-        if (selectedGroup) params.taxon_group = selectedGroup;
-
-        const response = await apiClient.get('taxa/', { params });
-        const rootTaxa = response.data?.data || [];
-
-        // Transform to tree nodes
-        const treeNodes: TaxonTreeNode[] = rootTaxa.map((taxon: Taxon) => ({
-          id: taxon.id,
-          name: taxon.canonical_name || taxon.scientific_name,
-          rank: taxon.rank,
-          children: [],
-        }));
-
-        setTreeData(treeNodes);
-      } catch (error) {
-        console.error('Failed to fetch tree data:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load taxonomy tree',
-          status: 'error',
-          duration: 5000,
-        });
-      } finally {
-        setIsLoadingTree(false);
-      }
-    };
-
-    fetchTreeData();
-  }, [showTreeView, selectedGroup, toast]);
-
-  // Fetch children for a node when expanded
-  const fetchChildren = useCallback(async (parentId: number): Promise<TaxonTreeNode[]> => {
-    try {
-      const response = await apiClient.get(`taxa/${parentId}/tree/`, {
-        params: { direction: 'down', depth: 1 },
-      });
-      const data = response.data?.data;
-      if (data?.children) {
-        return data.children.map((child: any) => ({
-          id: child.id,
-          name: child.name,
-          rank: child.rank,
-          children: child.children || [],
-        }));
-      }
-      return [];
-    } catch (error) {
-      console.error('Failed to fetch children:', error);
-      return [];
-    }
-  }, []);
-
-  // Toggle node expansion
-  const handleTreeToggle = useCallback(async (nodeId: number) => {
-    const newExpanded = new Set(expandedNodes);
-
-    if (expandedNodes.has(nodeId)) {
-      newExpanded.delete(nodeId);
-    } else {
-      newExpanded.add(nodeId);
-
-      // Fetch children if not already loaded
-      const updateTreeWithChildren = async (nodes: TaxonTreeNode[]): Promise<TaxonTreeNode[]> => {
-        return Promise.all(nodes.map(async (node) => {
-          if (node.id === nodeId && node.children.length === 0) {
-            const children = await fetchChildren(nodeId);
-            return { ...node, children };
-          }
-          if (node.children.length > 0) {
-            return { ...node, children: await updateTreeWithChildren(node.children) };
-          }
-          return node;
-        }));
-      };
-
-      const updatedTree = await updateTreeWithChildren(treeData);
-      setTreeData(updatedTree);
-    }
-
-    setExpandedNodes(newExpanded);
-  }, [expandedNodes, treeData, fetchChildren]);
-
-  // Handle tree node selection
-  const handleTreeSelect = useCallback((nodeId: number) => {
-    // Find the taxon and open edit view
-    const findTaxon = async () => {
-      try {
-        const response = await apiClient.get(`taxa/${nodeId}/`);
-        if (response.data?.data) {
-          openEditView(response.data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch taxon:', error);
-      }
-    };
-    findTaxon();
-  }, []);
 
   // Check permissions
   const canManageTaxa = user?.isStaff || user?.isSuperuser;
@@ -584,6 +388,24 @@ const TaxaManagementPage: React.FC = () => {
     setViewMode('edit');
     setEditingTaxon({ ...taxon });
   };
+
+  // Handle tree node selection - fetch taxon and open edit view
+  const handleTreeNodeSelect = useCallback(async (nodeId: number) => {
+    try {
+      const response = await apiClient.get(`taxa/${nodeId}/`);
+      if (response.data?.data) {
+        openEditView(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch taxon:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load taxon details',
+        status: 'error',
+        duration: 3000,
+      });
+    }
+  }, [toast]);
 
   const goBackToList = () => {
     setViewMode('list');
@@ -1176,40 +998,16 @@ const TaxaManagementPage: React.FC = () => {
 
                     {/* Taxa Display - Table or Tree */}
                     {showTreeView ? (
-                      // Tree View
-                      isLoadingTree ? (
-                        <Center py={10}>
-                          <Spinner size="xl" color="brand.500" />
-                        </Center>
-                      ) : (
-                        <Box
-                          border="1px"
-                          borderColor="gray.200"
-                          borderRadius="md"
-                          maxH="600px"
-                          overflowY="auto"
-                          bg="white"
-                        >
-                          {treeData.length === 0 ? (
-                            <Center py={10}>
-                              <Text color="gray.500">No taxa found. Select a group to view the taxonomy tree.</Text>
-                            </Center>
-                          ) : (
-                            <Box py={2}>
-                              {treeData.map((node) => (
-                                <TreeNode
-                                  key={node.id}
-                                  node={node}
-                                  level={0}
-                                  onToggle={handleTreeToggle}
-                                  onSelect={handleTreeSelect}
-                                  expandedNodes={expandedNodes}
-                                />
-                              ))}
-                            </Box>
-                          )}
-                        </Box>
-                      )
+                      // Phylogenetic Tree View with D3 dendrogram
+                      <Box h="70vh" position="relative">
+                        <PhylogeneticTree
+                          taxonGroupId={selectedGroup || undefined}
+                          onNodeDoubleClick={handleTreeNodeSelect}
+                          showLegend
+                          showControls
+                          height="70vh"
+                        />
+                      </Box>
                     ) : (
                       // Table View
                       isLoading ? (
