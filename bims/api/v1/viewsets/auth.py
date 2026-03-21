@@ -314,6 +314,9 @@ class AuthViewSet(ViewSet):
 
     def _serialize_user(self, user):
         """Serialize user object."""
+        # Check if user is in a validator group
+        is_validator = user.groups.filter(name__icontains="validator").exists()
+
         return {
             "id": user.id,
             "username": user.username,
@@ -322,6 +325,7 @@ class AuthViewSet(ViewSet):
             "last_name": user.last_name,
             "is_staff": user.is_staff,
             "is_superuser": user.is_superuser,
+            "is_validator": is_validator,
             "date_joined": user.date_joined.isoformat(),
             "profile_image": getattr(user, "profile_image", {}).get("url") if hasattr(user, "profile_image") else None,
         }

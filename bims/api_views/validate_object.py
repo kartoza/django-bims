@@ -26,8 +26,19 @@ class ValidateObject(UserPassesTestMixin, LoginRequiredMixin, APIView):
         try:
             site_visit = Survey.objects.get(pk=object_pk)
             if not site_visit.can_be_validated:
+                # Provide a detailed error message explaining why validation failed
+                if site_visit.validated:
+                    error_msg = 'Site visit is already validated'
+                elif not site_visit.ready_for_validation:
+                    error_msg = 'Site visit is not ready for validation'
+                elif site_visit.unvalidated_species_exists:
+                    error_msg = ('Site visit contains unvalidated taxa. '
+                                'Please validate all taxa in this site visit first '
+                                'before validating the site visit itself.')
+                else:
+                    error_msg = 'Site visit cannot be validated'
                 return HttpResponse(
-                    'Site visit cannot be validated',
+                    error_msg,
                     status=status.HTTP_400_BAD_REQUEST
                 )
             site_visit.validate()

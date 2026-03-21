@@ -18,6 +18,7 @@ interface User {
   lastName: string;
   isStaff: boolean;
   isSuperuser: boolean;
+  isValidator: boolean;
   dateJoined: string;
   profileImage?: string;
 }
@@ -72,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           lastName: userData.last_name || '',
           isStaff: userData.is_staff || false,
           isSuperuser: userData.is_superuser || false,
+          isValidator: userData.is_validator || false,
           dateJoined: userData.date_joined,
           profileImage: userData.profile_image,
         });

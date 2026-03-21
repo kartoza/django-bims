@@ -76,6 +76,26 @@ class SurveyViewSet(StandardModelViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Check if survey has unvalidated taxa
+        if hasattr(survey, 'unvalidated_species_exists') and survey.unvalidated_species_exists:
+            return error_response(
+                errors={
+                    "detail": (
+                        "Site visit contains unvalidated taxa. "
+                        "Please validate all taxa in this site visit first "
+                        "before validating the site visit itself."
+                    )
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if survey is ready for validation
+        if hasattr(survey, 'ready_for_validation') and not survey.ready_for_validation:
+            return error_response(
+                errors={"detail": "Site visit is not ready for validation"},
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         survey.validated = True
         survey.save()
 

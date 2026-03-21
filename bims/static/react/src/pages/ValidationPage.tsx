@@ -137,7 +137,9 @@ const ValidationPage: React.FC = () => {
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
 
-  const canValidate = user?.isStaff || user?.isSuperuser;
+  // User can validate if they are staff, superuser, or in a validator group
+  // Note: Group membership check happens on the server side
+  const canValidate = user?.isStaff || user?.isSuperuser || user?.isValidator;
 
   // Fetch pending items
   useEffect(() => {
@@ -222,6 +224,26 @@ const ValidationPage: React.FC = () => {
     fetchPending();
   }, [activeTab, toast]);
 
+  // Helper to extract error message from API response
+  const getErrorMessage = (error: any, defaultMessage: string): string => {
+    if (error?.response?.data?.errors?.detail) {
+      return error.response.data.errors.detail;
+    }
+    if (error?.response?.data?.error) {
+      return error.response.data.error;
+    }
+    if (error?.response?.status === 403) {
+      return 'You do not have permission to perform this action. You need to be a superuser, staff member, or in a validator group.';
+    }
+    if (error?.response?.status === 404) {
+      return 'Item not found. It may have been deleted.';
+    }
+    if (error?.message) {
+      return error.message;
+    }
+    return defaultMessage;
+  };
+
   // Approve site
   const handleApproveSite = useCallback(async (siteId: number) => {
     try {
@@ -233,10 +255,25 @@ const ValidationPage: React.FC = () => {
         status: 'success',
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to validate site:', error);
+      const errorMsg = getErrorMessage(error, 'Failed to validate site');
+
+      // If already validated, just remove from list (stale data)
+      if (errorMsg.toLowerCase().includes('already validated')) {
+        setPendingSites(pendingSites.filter((s) => s.id !== siteId));
+        toast({
+          title: 'Already Validated',
+          description: 'This site was already validated. Removing from list.',
+          status: 'info',
+          duration: 3000,
+        });
+        return;
+      }
+
       toast({
         title: 'Error',
-        description: 'Failed to validate site',
+        description: errorMsg,
         status: 'error',
         duration: 5000,
       });
@@ -254,10 +291,25 @@ const ValidationPage: React.FC = () => {
         status: 'success',
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to validate survey:', error);
+      const errorMsg = getErrorMessage(error, 'Failed to validate site visit');
+
+      // If already validated, just remove from list (stale data)
+      if (errorMsg.toLowerCase().includes('already validated')) {
+        setPendingSurveys(pendingSurveys.filter((s) => s.id !== surveyId));
+        toast({
+          title: 'Already Validated',
+          description: 'This site visit was already validated. Removing from list.',
+          status: 'info',
+          duration: 3000,
+        });
+        return;
+      }
+
       toast({
         title: 'Error',
-        description: 'Failed to validate site visit',
+        description: errorMsg,
         status: 'error',
         duration: 5000,
       });
@@ -275,10 +327,25 @@ const ValidationPage: React.FC = () => {
         status: 'success',
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to validate record:', error);
+      const errorMsg = getErrorMessage(error, 'Failed to validate record');
+
+      // If already validated, just remove from list (stale data)
+      if (errorMsg.toLowerCase().includes('already validated')) {
+        setPendingRecords(pendingRecords.filter((r) => r.id !== recordId));
+        toast({
+          title: 'Already Validated',
+          description: 'This record was already validated. Removing from list.',
+          status: 'info',
+          duration: 3000,
+        });
+        return;
+      }
+
       toast({
         title: 'Error',
-        description: 'Failed to validate record',
+        description: errorMsg,
         status: 'error',
         duration: 5000,
       });
@@ -296,10 +363,11 @@ const ValidationPage: React.FC = () => {
         status: 'success',
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to approve proposal:', error);
       toast({
         title: 'Error',
-        description: 'Failed to approve proposal',
+        description: getErrorMessage(error, 'Failed to approve proposal'),
         status: 'error',
         duration: 5000,
       });
@@ -346,10 +414,11 @@ const ValidationPage: React.FC = () => {
         status: 'info',
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to reject item:', error);
       toast({
         title: 'Error',
-        description: 'Failed to reject item',
+        description: getErrorMessage(error, 'Failed to reject item'),
         status: 'error',
         duration: 5000,
       });
@@ -393,10 +462,11 @@ const ValidationPage: React.FC = () => {
         status: 'success',
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Failed to bulk approve items:', error);
       toast({
         title: 'Error',
-        description: 'Failed to approve items',
+        description: getErrorMessage(error, 'Failed to approve items'),
         status: 'error',
         duration: 5000,
       });
