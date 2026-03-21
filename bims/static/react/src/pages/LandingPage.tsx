@@ -39,6 +39,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { apiClient, moduleSummaryApi, ModuleSummaryResponse, ModuleSummary } from '../api/client';
 import { FishIcon, InvertebratesIcon, AlgaeIcon } from '../components/icons';
+import { ModuleSummaryDonut, ConservationStatusData } from '../components/charts';
 
 interface PlatformStats {
   total_sites: number;
@@ -53,9 +54,12 @@ interface ModuleCardData {
   icon?: string;
   total: number;
   total_site: number;
+  total_site_visit?: number;
   total_validated: number;
+  total_sass?: number;
   color: string;
   bgColor: string;
+  conservationStatus?: ConservationStatusData;
 }
 
 interface FeatureCardProps {
@@ -207,9 +211,12 @@ const LandingPage: React.FC = () => {
               icon: moduleData.icon,
               total: moduleData.total || 0,
               total_site: moduleData.total_site || 0,
+              total_site_visit: moduleData.total_site_visit || 0,
               total_validated: moduleData.total_validated || 0,
+              total_sass: (moduleData as any).total_sass || 0,
               color: colors.color,
               bgColor: colors.bgColor,
+              conservationStatus: moduleData['conservation-status'],
             });
           }
         }
@@ -290,6 +297,7 @@ const LandingPage: React.FC = () => {
                 size={{ base: 'xl', md: '2xl', lg: '3xl' }}
                 fontWeight="bold"
                 lineHeight="shorter"
+                color="white"
               >
                 Biodiversity Information
                 <br />
@@ -516,99 +524,37 @@ const LandingPage: React.FC = () => {
           </VStack>
 
           {isLoadingModules ? (
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} bg="white" shadow="md">
-                  <CardBody>
-                    <VStack spacing={4}>
-                      <Skeleton borderRadius="full" w={20} h={20} />
-                      <Skeleton height="24px" width="100px" />
-                      <Skeleton height="40px" width="100%" />
-                      <Skeleton height="16px" width="80px" />
-                    </VStack>
-                  </CardBody>
-                </Card>
+            <SimpleGrid columns={{ base: 2, md: 3, lg: 4, xl: 6 }} spacing={8} w="100%">
+              {[1, 2, 3, 4].map((i) => (
+                <Box key={i} textAlign="center">
+                  <Skeleton borderRadius="full" w="150px" h="150px" mx="auto" mb={4} />
+                  <Skeleton height="24px" width="100px" mx="auto" mb={2} />
+                  <Skeleton height="16px" width="80px" mx="auto" />
+                  <Skeleton height="16px" width="80px" mx="auto" mt={1} />
+                </Box>
               ))}
             </SimpleGrid>
           ) : modules.length > 0 ? (
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
-              {modules.map((module) => {
-                // Get the appropriate icon component
-                const IconComponent =
-                  module.slug === 'fish' ? FishIcon :
-                  module.slug === 'invertebrates' ? InvertebratesIcon :
-                  module.slug === 'algae' ? AlgaeIcon : null;
-
-                return (
-                  <Card
-                    key={module.slug}
-                    as={RouterLink}
-                    to={`/map?taxon_group=${module.slug}`}
-                    bg="white"
-                    shadow="md"
-                    _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-                    transition="all 0.2s"
-                    cursor="pointer"
-                  >
-                    <CardBody>
-                      <VStack spacing={4}>
-                        <Flex
-                          w={20}
-                          h={20}
-                          align="center"
-                          justify="center"
-                          rounded="full"
-                          bg={module.bgColor}
-                        >
-                          {module.icon ? (
-                            <Image
-                              src={module.icon}
-                              alt={module.name}
-                              boxSize={12}
-                              objectFit="contain"
-                            />
-                          ) : IconComponent ? (
-                            <IconComponent boxSize={12} color={module.color} />
-                          ) : (
-                            <Text fontSize="2xl">{module.name.charAt(0)}</Text>
-                          )}
-                        </Flex>
-                        <Heading size="md" color={module.color}>{module.name}</Heading>
-
-                        {/* Statistics */}
-                        <HStack spacing={4} fontSize="sm" color="gray.600">
-                          <VStack spacing={0}>
-                            <Text fontWeight="bold" color={module.color}>
-                              {module.total.toLocaleString()}
-                            </Text>
-                            <Text fontSize="xs">Records</Text>
-                          </VStack>
-                          <VStack spacing={0}>
-                            <Text fontWeight="bold" color={module.color}>
-                              {module.total_site.toLocaleString()}
-                            </Text>
-                            <Text fontSize="xs">Sites</Text>
-                          </VStack>
-                          <VStack spacing={0}>
-                            <Text fontWeight="bold" color={module.color}>
-                              {module.total_validated.toLocaleString()}
-                            </Text>
-                            <Text fontSize="xs">Species</Text>
-                          </VStack>
-                        </HStack>
-
-                        <Button
-                          variant="link"
-                          colorScheme={module.color.split('.')[0]}
-                          size="sm"
-                        >
-                          Explore {module.name} &rarr;
-                        </Button>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                );
-              })}
+            <SimpleGrid columns={{ base: 2, md: 3, lg: 4, xl: 6 }} spacing={8} w="100%">
+              {modules.map((module, index) => (
+                <Box
+                  key={module.slug}
+                  as={RouterLink}
+                  to={`/map?taxon_group=${module.slug}`}
+                  _hover={{ textDecoration: 'none' }}
+                >
+                  <ModuleSummaryDonut
+                    name={module.name}
+                    icon={module.icon}
+                    total={module.total}
+                    totalSite={module.total_site}
+                    totalSiteVisit={module.total_site_visit}
+                    totalSass={module.total_sass}
+                    conservationStatus={module.conservationStatus}
+                    delay={index * 100}
+                  />
+                </Box>
+              ))}
             </SimpleGrid>
           ) : (
             /* Fallback to static cards if no module data */
