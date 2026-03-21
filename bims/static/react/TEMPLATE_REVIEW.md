@@ -14,8 +14,8 @@ This document tracks the review of Django templates against their React implemen
 |----------|-----------|--------|----------|----------------|
 | `landing_page.html` | `LandingPage.tsx` | Reviewed | See detailed notes below | [ ] |
 | `landing_page_fbis.html` | `LandingPage.tsx` | Reviewed | ~70% complete, missing theme/CMS | [ ] |
-| `landing_page_dashboard.html` | `LandingPage.tsx` | Not Started | Dashboard variant | [ ] |
-| `landing_page_dashboard_fbis.html` | `LandingPage.tsx` | Not Started | FBIS dashboard variant | [ ] |
+| `landing_page_dashboard.html` | `LandingPage.tsx` | Reviewed | 0% - Module summary dials missing | [ ] |
+| `landing_page_dashboard_fbis.html` | `LandingPage.tsx` | Reviewed | 0% - Module summary dials missing | [ ] |
 | `map_page/bims.html` | `MapPage.tsx` | Reviewed | ~90% complete, missing config modals | [ ] |
 | `summary_report.html` | `SummaryReportPage.tsx` | Reviewed | ~87% complete, missing nested reports | [ ] |
 
@@ -79,6 +79,36 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **Authentication conditional buttons** - Same buttons for all users
 - [ ] **Chart.js visualization** - No charts
 - [ ] **Site ready status** - Not checked
+
+### landing_page_dashboard.html / landing_page_dashboard_fbis.html - Detailed Review
+
+**Django Template Features:**
+1. Module summary donut charts with conservation status
+2. `/api/module-summary` API with polling for processing status
+3. Chart.js doughnut charts with 70% cutout
+4. Module icon overlaid on donut center
+5. Per-module statistics (Records, Sites, Site Visits, SASS)
+6. Number formatting with commas
+7. Conservation status color scheme
+8. Custom theme styling (font, color, size)
+9. Responsive grid layout (col-lg-2 col-md-3 col-sm-12)
+10. 60-second polling timeout for data generation
+
+**React Implementation Status:**
+- [ ] No module summary dials exist in React
+
+**Missing/Incomplete:**
+- [ ] **Donut chart component** - Chart.js doughnut with 70% cutout
+- [ ] **Module summary API integration** - `/api/module-summary`
+- [ ] **Conservation status colors** - CR/EN/VU/NT/LC/DD/NE
+- [ ] **Module icon overlay** - Icon centered in donut
+- [ ] **Per-module stats** - Records, Sites, Site Visits
+- [ ] **Polling for processing status** - With timeout
+- [ ] **Number formatting** - Comma-separated values
+- [ ] **SASS assessment counts** - Per module
+- [ ] **Custom theme support** - Font/color customization
+
+**Priority: HIGH** - This is the main landing page feature showing data summaries per taxonomic group.
 
 ### map_page/bims.html - Detailed Review
 
@@ -156,13 +186,15 @@ This document tracks the review of Django templates against their React implemen
 | `account/login.html` | `LoginPage.tsx` | Reviewed | Core auth works, missing OAuth | [ ] |
 | `account/signup.html` | `RegisterPage.tsx` | Reviewed | Good validation, missing reCAPTCHA | [ ] |
 | `account/logout.html` | N/A | N/A | Handled by auth provider | [ ] |
-| `account/password_reset.html` | `LoginPage.tsx` | Not Started | Password reset flow | [ ] |
+| `account/password_reset.html` | `LoginPage.tsx` | Reviewed | 0% - Not in React | [ ] |
 | `account/password_reset_done.html` | N/A | N/A | Redirect/message only | [ ] |
-| `account/password_reset_from_key.html` | N/A | Not Started | Reset from email link | [ ] |
+| `account/password_reset_from_key.html` | N/A | Reviewed | 0% - Server-side only | [ ] |
 | `account/password_change.html` | `ProfilePage.tsx` | Reviewed | Modal-based change works | [ ] |
 | `account/email_confirm.html` | N/A | N/A | Email verification | [ ] |
 | `account/verification_sent.html` | N/A | N/A | Confirmation message | [ ] |
-| `account/email.html` | `ProfilePage.tsx` | Not Started | Email management | [ ] |
+| `account/email.html` | `ProfilePage.tsx` | Reviewed | 0% - No email management | [ ] |
+| `account/password_set.html` | N/A | N/A | Initial password set | [ ] |
+| `account/admin_approval_sent.html` | N/A | N/A | Admin approval notification | [ ] |
 
 ### account/login.html - Detailed Review
 
@@ -190,6 +222,47 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **OAuth integration** - Google/GitHub login buttons
 - [ ] **Custom theme logo** - Not supported
 - [ ] **Social account connections** - Not implemented
+
+### account/password_reset.html - Detailed Review
+
+**Django Template Features:**
+1. Email input field for reset request
+2. CSRF token protection
+3. Already-logged-in warning snippet
+4. Form auto-rendering with `form.as_p`
+5. Contact help text for issues
+6. Bootstrap styling
+
+**React Implementation Status:**
+- [x] "Forgot password?" link exists on login page (links to Django)
+- [ ] No native React password reset flow
+
+**Missing/Incomplete:**
+- [ ] **Email input form** - Native React form
+- [ ] **Reset submission** - API call to Django
+- [ ] **Success/error messaging** - User feedback
+- [ ] **Contact help text** - Assistance info
+
+### avatar/add.html & avatar/change.html - Detailed Review
+
+**Django Template Features:**
+1. Current avatar display with template tag
+2. File input for new avatar upload
+3. Primary avatar selection from multiple uploads
+4. Delete avatar button
+5. Back to profile link
+6. Form validation
+7. Dynamic visibility of upload/delete buttons
+
+**React Implementation Status:**
+- [x] ProfilePage shows avatar display
+- [ ] No avatar upload functionality
+
+**Missing/Incomplete:**
+- [ ] **Avatar file upload** - multipart/form-data
+- [ ] **Multiple avatar selection** - Choose primary
+- [ ] **Avatar deletion** - Remove uploaded avatar
+- [ ] **Avatar preview** - Before upload
 
 ### account/signup.html - Detailed Review
 
@@ -226,8 +299,8 @@ This document tracks the review of Django templates against their React implemen
 |----------|-----------|--------|----------|----------------|
 | `user/profile.html` | `ProfilePage.tsx` | Reviewed | Partial - missing contributions | [ ] |
 | `people/profile_detail.html` | `ProfilePage.tsx` | Reviewed | Same as above | [ ] |
-| `avatar/add.html` | `ProfilePage.tsx` | Not Started | Avatar upload | [ ] |
-| `avatar/change.html` | `ProfilePage.tsx` | Not Started | Change avatar | [ ] |
+| `avatar/add.html` | `ProfilePage.tsx` | Reviewed | 0% - No avatar upload | [ ] |
+| `avatar/change.html` | `ProfilePage.tsx` | Reviewed | 0% - No avatar change | [ ] |
 
 ### user/profile.html - Detailed Review
 
@@ -283,7 +356,7 @@ This document tracks the review of Django templates against their React implemen
 |----------|-----------|--------|----------|----------------|
 | `location_site_form_view.html` | `AddSitePage.tsx` | Reviewed | ~40% complete, missing geocontext | [ ] |
 | `location_site/location_site_form_base.html` | `AddSitePage.tsx` | Reviewed | Same as above | [ ] |
-| `wetland_site_form.html` | `AddSitePage.tsx` | Not Started | Wetland-specific site form | [ ] |
+| `wetland_site_form.html` | `AddSitePage.tsx` | Reviewed | 0% - Wetland fields missing | [ ] |
 | `location_site_detail.html` | `SiteVisitsPage.tsx` | Not Started | Site detail view | [ ] |
 
 ### location_site_form_view.html - Detailed Review
@@ -320,6 +393,47 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **Owner selection** - Field missing
 - [ ] **Delete functionality** - Not implemented
 - [ ] **Wetland-specific fields** - Not implemented
+
+### wetland_site_form.html - Detailed Review
+
+**Django Template Features:**
+1. Map with coordinate picker and loading overlay
+2. Latitude/Longitude inputs with "Update coordinate" button
+3. Wetland name auto-fetch from coordinates
+4. User wetland name override field
+5. Site code auto-generation (Quaternary + Wetland name + count)
+6. Legacy/User site code field
+7. Hydrogeomorphic type auto-fetch and dropdown
+8. User hydrogeomorphic type override
+9. Site description field
+10. Owner field with autocomplete
+11. Site image upload with carousel gallery
+12. Image deletion with modal confirmation
+13. Disclaimer checkbox (required for new sites)
+14. 500m proximity warning modal
+15. Delete site modal with confirmation
+16. Module data links (add taxa, water temp, physico-chemical)
+17. Catchment geocontext hidden field
+
+**React Implementation Status:**
+- [x] AddSitePage exists with basic fields
+- [x] Map with marker placement
+- [x] Lat/Lng inputs
+- [ ] No wetland-specific support
+
+**Missing/Incomplete:**
+- [ ] **Wetland name fetch** - API call to get name from coords
+- [ ] **User wetland name** - Override field
+- [ ] **Hydrogeomorphic type fetch** - Context data
+- [ ] **User hydrogeomorphic type** - Dropdown selection
+- [ ] **Site code generation** - Wetland naming convention
+- [ ] **Legacy site code** - User-defined code
+- [ ] **Site image carousel** - Gallery with prev/next
+- [ ] **Image deletion** - Remove from gallery
+- [ ] **Disclaimer checkbox** - Required validation
+- [ ] **Proximity warning** - 500m modal
+- [ ] **Delete confirmation** - Modal dialog
+- [ ] **Module data links** - Links to add taxa data
 
 ---
 
@@ -706,8 +820,8 @@ This document tracks the review of Django templates against their React implemen
 | `taxa_uploader.html` | `UploadPage.tsx` | Reviewed | Same upload component | [ ] |
 | `taxa_validation_uploader.html` | `UploadPage.tsx` | Not Started | Taxa validation upload | [ ] |
 | `collections_uploader.html` | `UploadPage.tsx` | Reviewed | Same upload component | [ ] |
-| `harvest_collection.html` | `HarvestPage.tsx` | Not Started | Harvest external data | [ ] |
-| `harvest_gbif_species.html` | `HarvestPage.tsx` | Not Started | GBIF species import | [ ] |
+| `harvest_collection.html` | `HarvestPage.tsx` | Reviewed | 0% - No React page | [ ] |
+| `harvest_gbif_species.html` | `HarvestPage.tsx` | Reviewed | 0% - No React page | [ ] |
 | `shapefile_uploader.html` | `UploadPage.tsx` | Reviewed | Same upload component | [ ] |
 
 ### uploader.html - Detailed Review
@@ -747,6 +861,53 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **Guidelines download** - Link missing
 - [ ] **Embargo/metadata fields** - Not implemented
 
+### harvest_collection.html - Detailed Review
+
+**Django Template Features:**
+1. GBIF credentials check with admin link
+2. Boundary selection with map preview (OpenLayers)
+3. Taxon group selection dropdown
+4. "Add new taxon group" modal with name and logo
+5. Start harvesting button (requires boundary + taxon group)
+6. Current harvest session with live log
+7. Cancel session modal
+8. Finished sessions list with download logs
+9. Status polling every second (60 attempts max)
+10. Duplicate detection notice
+
+**React Implementation Status:**
+- [ ] No HarvestPage exists in React
+
+**Missing/Incomplete:**
+- [ ] **GBIF credentials check** - Admin settings link
+- [ ] **Boundary map preview** - OpenLayers with fit-to-extent
+- [ ] **Taxon group selector** - Dropdown with add new
+- [ ] **Add taxon group modal** - Name + logo upload
+- [ ] **Live harvest log** - Textarea with auto-scroll
+- [ ] **Cancel session** - Modal confirmation
+- [ ] **Finished sessions** - History with log downloads
+- [ ] **Status polling** - Real-time progress updates
+
+### harvest_gbif_species.html - Detailed Review
+
+**Django Template Features:**
+1. Similar to harvest_collection but for species only
+2. GBIF credentials check
+3. Boundary selection with map preview
+4. Taxon group with GBIF parent species display
+5. "Harvest synonyms for accepted" checkbox option
+6. Live harvest log with status polling
+7. Cancel and finished session management
+8. Duplicate handling notice
+
+**React Implementation Status:**
+- [ ] No HarvestPage exists in React
+
+**Missing/Incomplete:**
+- [ ] **Synonym harvesting option** - Checkbox for accepted taxa
+- [ ] **GBIF parent species display** - In taxon group dropdown
+- [ ] All features from harvest_collection.html
+
 ---
 
 ## Layers & Context
@@ -755,9 +916,9 @@ This document tracks the review of Django templates against their React implemen
 |----------|-----------|--------|----------|----------------|
 | `context_layers.html` | `ContextLayersPage.tsx` | Reviewed | ~86% complete | [ ] |
 | `visualization_layers.html` | `VisualizationLayersPage.tsx` | Reviewed | ~92% complete | [ ] |
-| `layers/layer_metadata_upload.html` | `ContextLayersPage.tsx` | Not Started | Layer metadata form | [ ] |
-| `spatial_layer_upload.html` | `ContextLayersPage.tsx` | Not Started | Spatial layer upload | [ ] |
-| `upload_layer.html` | `ContextLayersPage.tsx` | Not Started | Generic layer upload | [ ] |
+| `layers/layer_metadata_upload.html` | `ContextLayersPage.tsx` | Reviewed | N/A - GeoNode integration | [ ] |
+| `spatial_layer_upload.html` | `ContextLayersPage.tsx` | Reviewed | 0% - No React page | [ ] |
+| `upload_layer.html` | `ContextLayersPage.tsx` | Reviewed | N/A - Uses spatial_layer_upload | [ ] |
 
 ### context_layers.html - Detailed Review
 
@@ -804,6 +965,45 @@ This document tracks the review of Django templates against their React implemen
 **Missing/Incomplete:**
 - [ ] **Actual drag-and-drop** - Visual indicator only
 - [ ] **Backend persistence** - Client-side state only
+
+### layers/layer_metadata_upload.html - Detailed Review
+
+**Django Template Features:**
+1. GeoNode integration for layer metadata upload
+2. XML file upload (ISO, FGDC, ebRIM, Dublin Core)
+3. Drag-and-drop file zone
+4. Incomplete uploads list with resume/delete
+5. File queue display
+6. Permissions form integration
+7. RequireJS module loading
+
+**React Implementation Status:**
+- [ ] N/A - This is a GeoNode-specific feature
+- [x] ContextLayersPage handles client-side layer management
+
+**Note:** This template is for GeoNode layer metadata uploads. React app uses a different approach for context layer management.
+
+### spatial_layer_upload.html - Detailed Review
+
+**Django Template Features:**
+1. Shapefile upload form
+2. EPSG:4326 projection requirement notice
+3. Layer name input
+4. Multiple file input (shapefile components)
+5. Current upload sessions status
+6. Processed layers list
+7. Maputnik style editor link
+8. Upload status tracking
+
+**React Implementation Status:**
+- [ ] No spatial layer upload in React
+
+**Missing/Incomplete:**
+- [ ] **Shapefile upload** - Multiple file component
+- [ ] **Projection requirements** - EPSG:4326 notice
+- [ ] **Upload session tracking** - Status display
+- [ ] **Style editor link** - Maputnik integration
+- [ ] **Processed layers list** - History display
 
 ---
 
@@ -973,7 +1173,7 @@ This document tracks the review of Django templates against their React implemen
 | `bug_report_template.html` | `BugReportPage.tsx` | Reviewed | 100% complete | [ ] |
 | `contactus/contact.html` | `ContactPage.tsx` | Reviewed | 100% complete | [ ] |
 | `links/links.html` | `ResourcesPage.tsx` | Reviewed | ~50% complete | [ ] |
-| `flatpages/default.html` | `AboutPage.tsx` | Not Started | Static content pages | [ ] |
+| `flatpages/default.html` | `AboutPage.tsx` | Reviewed | Partial - static only | [ ] |
 
 ### bug_report_template.html - Detailed Review
 
@@ -1022,6 +1222,25 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **Link count badges** - Not shown
 - [ ] **Description truncation** - Not implemented
 
+### flatpages/default.html - Detailed Review
+
+**Django Template Features:**
+1. Extends main_base.html layout
+2. Dynamic title from flatpage model
+3. Article content from CMS
+4. Landing page CSS styling
+5. Chart.js and jQuery libraries
+6. Responsive container layout
+
+**React Implementation Status:**
+- [x] AboutPage exists with static content
+- [ ] No dynamic flatpage content loading
+
+**Missing/Incomplete:**
+- [ ] **Dynamic content from API** - Load flatpage by URL
+- [ ] **CMS integration** - Admin-editable content
+- [ ] **Multiple flatpages support** - Various static pages
+
 ---
 
 ## Not Applicable for React (Server-side only)
@@ -1058,10 +1277,10 @@ This document tracks the review of Django templates against their React implemen
 | Category | Total | Reviewed | Human Verified |
 |----------|-------|----------|----------------|
 | Core Pages | 6 | 6 | 0 |
-| Authentication | 10 | 3 | 0 |
-| User Profile | 4 | 2 | 0 |
+| Authentication | 13 | 9 | 0 |
+| User Profile | 4 | 4 | 0 |
 | Taxa Management | 3 | 3 | 0 |
-| Location Sites | 4 | 2 | 0 |
+| Location Sites | 4 | 3 | 0 |
 | Collections | 2 | 2 | 0 |
 | Abiotic/Chemical | 5 | 5 | 0 |
 | Water Temperature | 3 | 3 | 0 |
@@ -1069,12 +1288,12 @@ This document tracks the review of Django templates against their React implemen
 | Validation | 3 | 3 | 0 |
 | Source References | 9 | 9 | 0 |
 | Upload/Import | 7 | 7 | 0 |
-| Layers | 5 | 2 | 0 |
+| Layers | 5 | 5 | 0 |
 | Dashboards | 3 | 3 | 0 |
 | SASS | 5 | 5 | 0 |
 | Admin | 2 | 2 | 0 |
-| Utility | 4 | 3 | 0 |
-| **TOTAL** | **79** | **64** | **0** |
+| Utility | 4 | 4 | 0 |
+| **TOTAL** | **82** | **77** | **0** |
 
 ---
 
