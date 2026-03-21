@@ -35,10 +35,10 @@ class TaxonomyFilterSet(filters.FilterSet):
     parent = filters.ModelChoiceFilter(queryset=Taxonomy.objects.all())
     has_parent = filters.BooleanFilter(field_name="parent", lookup_expr="isnull", exclude=True)
 
-    # Taxon group filter
-    taxon_group = filters.ModelChoiceFilter(
-        field_name="taxongrouptaxonomy__taxon_group",
-        queryset=TaxonGroup.objects.all(),
+    # Taxon group filter - filter by the related taxon group's ID
+    # Note: the through model field is 'taxongroup' (no underscore)
+    taxon_group = filters.NumberFilter(
+        field_name="taxongrouptaxonomy__taxongroup__id",
     )
 
     # Conservation status filters
