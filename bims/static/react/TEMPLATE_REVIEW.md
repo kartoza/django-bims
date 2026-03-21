@@ -499,6 +499,60 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **Delete action** - Not implemented
 - [ ] **Link to unvalidated data** - Not implemented
 
+### site_visit_detail.html - Detailed Review
+
+**Django Template Features:**
+1. Conditional permissions checking
+2. Read-only form field display
+3. Image galleries with thumbnails
+4. Status badges (Private/Public, Validation)
+5. Nearest sites table
+6. Site creation within detail view
+7. Source reference display
+8. Delete confirmation modal
+9. Ecosystem-specific field rendering
+
+**React Implementation Status:**
+- [x] Site detail view basics
+- [x] Site metadata display
+- [x] Image galleries
+- [x] Permissions check for actions
+- [x] Validation status display
+
+**Missing/Incomplete:**
+- [ ] **Nearest sites table** - Interactive lookup
+- [ ] **Inline site creation** - Modal not implemented
+- [ ] **Image lightbox** - Gallery viewer
+- [ ] **Ecosystem fields** - Conditional rendering
+
+### site_visit_update.html - Detailed Review
+
+**Django Template Features:**
+1. Form with CSRF token
+2. Multi-field layout with grid
+3. File input for multiple images
+4. Image preview with cards
+5. Checkbox for image deletion
+6. Owner autocomplete
+7. Dynamic form validation
+8. Disclaimer checkbox
+9. Modal for submission confirmation
+10. Taxon table management
+
+**React Implementation Status:**
+- [x] Form layout and fields
+- [x] Date picker
+- [x] Owner/Collector selection
+- [x] Embargo date handling
+- [x] Biotope/habitat selection
+- [x] Sampling method input
+
+**Missing/Incomplete:**
+- [ ] **Image upload preview** - Not implemented
+- [ ] **Image removal UI** - Checkboxes
+- [ ] **Real-time validation** - Field feedback
+- [ ] **Disclaimer checkbox** - Enforcement
+
 ---
 
 ## Validation
@@ -853,8 +907,42 @@ This document tracks the review of Django templates against their React implemen
 
 | Template | React Page | Status | AI Notes | Human Verified |
 |----------|-----------|--------|----------|----------------|
-| `backups_management.html` | `BackupsManagementPage.tsx` | Not Started | Backup management | [ ] |
-| `download_request_list.html` | `DownloadsPage.tsx` | Not Started | Download requests | [ ] |
+| `backups_management.html` | `BackupsManagementPage.tsx` | Reviewed | 100% complete | [ ] |
+| `download_request_list.html` | `DownloadsPage.tsx` | Reviewed | 100% complete | [ ] |
+
+### backups_management.html - Detailed Review
+
+**Django Template Features:**
+1. JSTree library for file browser
+2. Search functionality for filtering
+3. Form submission for download
+4. JSON data binding to JavaScript
+5. Dynamic tree loading
+6. File type detection and icons
+
+**React Implementation Status:**
+- [x] File tree browser
+- [x] Search filtering
+- [x] Download button management
+- [x] File type detection
+- [x] All features complete
+
+### download_request_list.html - Detailed Review
+
+**Django Template Features:**
+1. Table-based list with filtering
+2. Progress bar rendering
+3. Request status display
+4. Timestamp conversion
+5. Approval/rejection modals
+6. Download link generation
+
+**React Implementation Status:**
+- [x] List view with progress bars
+- [x] Status filtering
+- [x] Download functionality
+- [x] Approval/Rejection modals
+- [x] All features complete
 
 ---
 
@@ -862,10 +950,57 @@ This document tracks the review of Django templates against their React implemen
 
 | Template | React Page | Status | AI Notes | Human Verified |
 |----------|-----------|--------|----------|----------------|
-| `bug_report_template.html` | `BugReportPage.tsx` | Not Started | Bug report form | [ ] |
-| `contactus/contact.html` | `ContactPage.tsx` | Not Started | Contact form | [ ] |
-| `links/links.html` | `ResourcesPage.tsx` | Not Started | External links | [ ] |
+| `bug_report_template.html` | `BugReportPage.tsx` | Reviewed | 100% complete | [ ] |
+| `contactus/contact.html` | `ContactPage.tsx` | Reviewed | 100% complete | [ ] |
+| `links/links.html` | `ResourcesPage.tsx` | Reviewed | ~50% complete | [ ] |
 | `flatpages/default.html` | `AboutPage.tsx` | Not Started | Static content pages | [ ] |
+
+### bug_report_template.html - Detailed Review
+
+**Django Template Features:**
+1. Modal-based feedback panel
+2. Floating button trigger
+3. User login warning
+4. Feedback type selection
+5. GitHub integration
+6. Success/error messages
+
+**React Implementation Status:**
+- [x] Feedback form
+- [x] Type selection (bug/feature)
+- [x] Submission handling
+- [x] Success/error messages
+- [x] All features complete
+
+### contactus/contact.html - Detailed Review
+
+**Django Template Features:**
+1. reCAPTCHA integration
+2. Form error display
+3. Decoy field for bots
+4. Name, email, subject, description fields
+
+**React Implementation Status:**
+- [x] Form fields and validation
+- [x] reCAPTCHA integration
+- [x] Form submission
+- [x] All features complete
+
+### links/links.html - Detailed Review
+
+**Django Template Features:**
+1. Category-based grouping
+2. Badge for link counts
+3. Link filtering and description
+4. Responsive grid layout
+
+**React Implementation Status:**
+- [x] ResourcesPage exists
+
+**Missing/Incomplete:**
+- [ ] **Dynamic categories** - Not implemented
+- [ ] **Link count badges** - Not shown
+- [ ] **Description truncation** - Not implemented
 
 ---
 
@@ -907,19 +1042,19 @@ This document tracks the review of Django templates against their React implemen
 | User Profile | 4 | 2 | 0 |
 | Taxa Management | 3 | 3 | 0 |
 | Location Sites | 4 | 2 | 0 |
-| Collections | 2 | 1 | 0 |
+| Collections | 2 | 2 | 0 |
 | Abiotic/Chemical | 5 | 5 | 0 |
 | Water Temperature | 3 | 3 | 0 |
-| Site Visits | 4 | 1 | 0 |
+| Site Visits | 4 | 4 | 0 |
 | Validation | 3 | 3 | 0 |
-| Source References | 9 | 2 | 0 |
+| Source References | 9 | 9 | 0 |
 | Upload/Import | 7 | 4 | 0 |
 | Layers | 5 | 2 | 0 |
 | Dashboards | 3 | 3 | 0 |
 | SASS | 5 | 1 | 0 |
-| Admin | 2 | 0 | 0 |
-| Utility | 4 | 0 | 0 |
-| **TOTAL** | **79** | **39** | **0** |
+| Admin | 2 | 2 | 0 |
+| Utility | 4 | 3 | 0 |
+| **TOTAL** | **79** | **55** | **0** |
 
 ---
 
