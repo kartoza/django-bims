@@ -230,6 +230,88 @@ class AuthViewSet(ViewSet):
             meta={"message": "Password changed successfully"}
         )
 
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def create_expert(self, request):
+        """
+        Create a new user to be added as an expert.
+
+        This creates a user with a random password (they can reset it later).
+        Only authenticated users with change_taxongroup permission can do this.
+
+        Required fields: first_name, email
+        Optional fields: last_name
+        """
+        from django.contrib.auth import get_user_model
+        import uuid
+
+        # Check permission
+        if not request.user.has_perm('bims.change_taxongroup'):
+            return error_response(
+                errors={"detail": "You do not have permission to create experts"},
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
+        User = get_user_model()
+
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        email = request.data.get("email", "").strip()
+
+        # Validation
+        errors = {}
+
+        if not first_name:
+            errors["first_name"] = "First name is required"
+
+        if not email:
+            errors["email"] = "Email is required"
+        elif User.objects.filter(email=email).exists():
+            errors["email"] = "A user with this email already exists"
+
+        if errors:
+            return error_response(
+                errors=errors,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Generate username from email
+        base_username = email.split('@')[0].lower()
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        # Generate a random password (user can reset via email)
+        random_password = str(uuid.uuid4())
+
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=random_password,
+                first_name=first_name,
+                last_name=last_name,
+            )
+
+            return success_response(
+                data={
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "name": f"{first_name} {last_name}".strip(),
+                },
+                meta={"message": "Expert created successfully"}
+            )
+
+        except Exception as e:
+            return error_response(
+                errors={"detail": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     def _serialize_user(self, user):
         """Serialize user object."""
         return {
