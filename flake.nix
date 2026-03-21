@@ -271,6 +271,7 @@
         cleanVenvScript = wrapSimpleScript "bims-clean-venv";
         loadDummyDataScript = wrapSimpleScript "bims-load-dummy-data";
         loadDummyOccurrencesScript = wrapSimpleScript "bims-load-dummy-occurrences";
+        populateAfricanTaxaScript = wrapSimpleScript "bims-populate-african-taxa";
         statusScript = wrapSimpleScript "bims-status";
         validateScript = wrapSimpleScript "bims-validate";
         cleanLocksScript = wrapSimpleScript "bims-clean-locks";
@@ -354,6 +355,7 @@
             cleanVenvScript
             loadDummyDataScript
             loadDummyOccurrencesScript
+            populateAfricanTaxaScript
             statusScript
             validateScript
             cleanLocksScript
@@ -397,6 +399,7 @@
             echo "  bims-test             Run tests"
             echo "  bims-lint             Linting"
             echo "  bims-load-dummy-data  Load test data"
+            echo "  bims-populate-african-taxa  Populate African freshwater taxa"
             echo "  bims-validate         Bulk validate pending data"
             echo "  bims-clean-venv       Remove old venv"
             echo ""
@@ -431,6 +434,7 @@
           clean-venv = { type = "app"; program = "${cleanVenvScript}/bin/bims-clean-venv"; };
           load-dummy-data = { type = "app"; program = "${loadDummyDataScript}/bin/bims-load-dummy-data"; };
           load-dummy-occurrences = { type = "app"; program = "${loadDummyOccurrencesScript}/bin/bims-load-dummy-occurrences"; };
+          populate-african-taxa = { type = "app"; program = "${populateAfricanTaxaScript}/bin/bims-populate-african-taxa"; };
           status = { type = "app"; program = "${statusScript}/bin/bims-status"; };
           validate = { type = "app"; program = "${validateScript}/bin/bims-validate"; };
           clean-locks = { type = "app"; program = "${cleanLocksScript}/bin/bims-clean-locks"; };
