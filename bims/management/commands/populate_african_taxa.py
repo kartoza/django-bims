@@ -3,14 +3,17 @@
 """
 Management command to populate African freshwater taxa from GBIF.
 
-Creates taxon groups for Fish, Invertebrates, and Algae, and populates
+Creates a tenant, taxon groups for Fish, Invertebrates, and Algae, and populates
 each with common African freshwater species including full taxonomic hierarchy.
 """
 import requests
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from django.db import connection
 from django.utils import timezone
+
+from tenants.models import Client, Domain
 
 User = get_user_model()
 
@@ -60,10 +63,41 @@ class Command(BaseCommand):
 
         from bims.models import Taxonomy, TaxonGroup, TaxonGroupTaxonomy, IUCNStatus
 
+        # Create or get tenant
+        self.stdout.write(self.style.NOTICE('Setting up tenant...'))
+        tenant, tenant_created = Client.objects.get_or_create(
+            schema_name='bims',
+            defaults={
+                'name': 'BIMS Africa',
+                'on_trial': False,
+            }
+        )
+        if tenant_created:
+            self.stdout.write(self.style.SUCCESS(f'  Created tenant: {tenant.name}'))
+        else:
+            self.stdout.write(f'  Tenant exists: {tenant.name}')
+
+        # Create domain for tenant
+        domain, domain_created = Domain.objects.get_or_create(
+            domain='localhost',
+            defaults={
+                'tenant': tenant,
+                'is_primary': True,
+            }
+        )
+        if domain_created:
+            self.stdout.write(self.style.SUCCESS(f'  Created domain: {domain.domain}'))
+        else:
+            self.stdout.write(f'  Domain exists: {domain.domain}')
+
+        # Switch to tenant schema
+        connection.set_tenant(tenant)
+        self.stdout.write(f'  Switched to schema: {connection.schema_name}')
+
         # Ensure we have a default site
         site, _ = Site.objects.get_or_create(
             id=1,
-            defaults={'domain': 'localhost', 'name': 'BIMS'}
+            defaults={'domain': 'localhost', 'name': 'BIMS Africa'}
         )
 
         # Get admin user for approval
