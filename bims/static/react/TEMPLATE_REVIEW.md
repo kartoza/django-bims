@@ -379,11 +379,36 @@ This document tracks the review of Django templates against their React implemen
 
 | Template | React Page | Status | AI Notes | Human Verified |
 |----------|-----------|--------|----------|----------------|
-| `abiotic/abiotic_form.html` | Not Implemented | Not Started | Abiotic data entry form | [ ] |
-| `chemical/chemical_form.html` | Not Implemented | Not Started | Chemical records form | [ ] |
-| `physico_chemical_form.html` | `PhysicoChemicalDashboardPage.tsx` | Not Started | Physico-chemical data | [ ] |
-| `physico_chemical_single_site.html` | `PhysicoChemicalDashboardPage.tsx` | Not Started | Single site view | [ ] |
-| `physico_chemical_uploader.html` | `UploadPage.tsx` | Not Started | Bulk upload | [ ] |
+| `abiotic/abiotic_form.html` | Not Implemented | Reviewed | 0% - No form in React | [ ] |
+| `chemical/chemical_form.html` | Not Implemented | Reviewed | 0% - No form in React | [ ] |
+| `physico_chemical_form.html` | `PhysicoChemicalDashboardPage.tsx` | Reviewed | Dashboard only, no form | [ ] |
+| `physico_chemical_single_site.html` | `PhysicoChemicalDashboardPage.tsx` | Reviewed | Dashboard works | [ ] |
+| `physico_chemical_uploader.html` | `UploadPage.tsx` | Reviewed | In upload tabs | [ ] |
+
+### abiotic/abiotic_form.html - Detailed Review
+
+**Django Template Features:**
+1. Form validation with disclaimer checkbox
+2. Dynamic chemical input with autocomplete
+3. Measured checkbox per parameter
+4. Min/max validation with warnings
+5. Add more rows functionality
+6. Delete individual rows
+7. JSON field for submission
+8. Modal confirmation dialog
+9. jQuery autocomplete integration
+
+**React Implementation Status:**
+- [ ] No dedicated form page exists
+- [x] PhysicoChemicalDashboardPage (READ-ONLY)
+
+**Missing/Incomplete:**
+- [ ] **Chemical parameter input form** - Not implemented
+- [ ] **Autocomplete search** - Not implemented
+- [ ] **Dynamic row add/remove** - Not implemented
+- [ ] **Value range validation** - Not implemented
+- [ ] **Measured checkbox** - Not implemented
+- [ ] **Disclaimer requirement** - Not implemented
 
 ---
 
@@ -391,9 +416,39 @@ This document tracks the review of Django templates against their React implemen
 
 | Template | React Page | Status | AI Notes | Human Verified |
 |----------|-----------|--------|----------|----------------|
-| `water_temperature_form.html` | `WaterTemperatureDashboardPage.tsx` | Not Started | Temperature data entry | [ ] |
-| `water_temperature_edit_form.html` | `WaterTemperatureDashboardPage.tsx` | Not Started | Edit temperature data | [ ] |
-| `water_temperature_single_site.html` | `WaterTemperatureDashboardPage.tsx` | Not Started | Single site view | [ ] |
+| `water_temperature_form.html` | `WaterTemperatureDashboardPage.tsx` | Reviewed | ~30% - Dashboard only | [ ] |
+| `water_temperature_edit_form.html` | `WaterTemperatureDashboardPage.tsx` | Reviewed | Edit form missing | [ ] |
+| `water_temperature_single_site.html` | `WaterTemperatureDashboardPage.tsx` | Reviewed | Dashboard partial | [ ] |
+
+### water_temperature_form.html - Detailed Review
+
+**Django Template Features:**
+1. Map display with OpenLayers
+2. Owner field with autocomplete
+3. Logging interval selector
+4. Clock picker for times
+5. Date format selector (9 formats)
+6. CSV file upload
+7. Site image upload
+8. Source reference selection
+9. Disclaimer checkbox
+10. Modal confirmation
+
+**React Implementation Status:**
+- [x] Thermal data visualization
+- [x] Year selection dropdown
+- [x] Threshold edit modal
+- [x] Statistics display (mean, max, min)
+- [x] Table-based data display
+
+**Missing/Incomplete:**
+- [ ] **Data input form** - Not implemented
+- [ ] **Map display** - Not in React
+- [ ] **Owner autocomplete** - Not implemented
+- [ ] **Logging interval config** - Not implemented
+- [ ] **Clock picker** - Not implemented
+- [ ] **CSV file upload** - Not implemented
+- [ ] **Download functionality** - Not implemented
 
 ---
 
@@ -560,6 +615,33 @@ This document tracks the review of Django templates against their React implemen
 - [ ] **Delete reference action** - Not implemented
 - [ ] **Delete records action** - Not implemented
 
+### source_reference_page.html - Detailed Review (Add/Edit Form)
+
+**Django Template Features:**
+1. Session recovery modal
+2. Reference category selector (database, bibliography, document, unpublished)
+3. DOI/URL input with fetch button
+4. Bibliography title display
+5. Study reference dropdown
+6. Document upload modal
+7. Database reference dropdown
+8. Notes/unpublished data textarea
+9. Form validation and errors
+10. Confirmation modal
+
+**React Implementation Status:**
+- [x] SourceReferencesPage exists (listing)
+- [x] Search and type filtering
+- [x] Pagination and record counts
+
+**Missing/Incomplete:**
+- [ ] **Add/Edit form** - Not implemented
+- [ ] **DOI lookup/fetch** - CrossRef API not integrated
+- [ ] **Category selection form** - Not implemented
+- [ ] **Document upload modal** - Not implemented
+- [ ] **Database creation modal** - Not implemented
+- [ ] **Session recovery** - Not implemented
+
 ---
 
 ## Upload/Import Pages
@@ -617,11 +699,57 @@ This document tracks the review of Django templates against their React implemen
 
 | Template | React Page | Status | AI Notes | Human Verified |
 |----------|-----------|--------|----------|----------------|
-| `context_layers.html` | `ContextLayersPage.tsx` | Not Started | Context layer management | [ ] |
-| `visualization_layers.html` | `VisualizationLayersPage.tsx` | Not Started | Visualization layers | [ ] |
+| `context_layers.html` | `ContextLayersPage.tsx` | Reviewed | ~86% complete | [ ] |
+| `visualization_layers.html` | `VisualizationLayersPage.tsx` | Reviewed | ~92% complete | [ ] |
 | `layers/layer_metadata_upload.html` | `ContextLayersPage.tsx` | Not Started | Layer metadata form | [ ] |
 | `spatial_layer_upload.html` | `ContextLayersPage.tsx` | Not Started | Spatial layer upload | [ ] |
 | `upload_layer.html` | `ContextLayersPage.tsx` | Not Started | Generic layer upload | [ ] |
+
+### context_layers.html - Detailed Review
+
+**Django Template Features:**
+1. Webpack bundle loader integration
+2. Full-height responsive container
+3. CSRF token management
+4. Close button with navigation
+5. Message/alert display
+6. Geocontext URL configuration
+
+**React Implementation Status:**
+- [x] Layer management (add/edit/delete)
+- [x] Category filtering
+- [x] Layer type support (WMS, WMTS, XYZ, GeoJSON)
+- [x] Enable/disable toggle
+- [x] URL validation
+- [x] Test connection functionality
+- [x] Modal dialog for add/edit
+- [x] Toast notifications
+
+**Missing/Incomplete:**
+- [ ] **Backend persistence** - Client-side state only
+- [ ] **Layer preview** - Not implemented
+- [ ] **Drag-to-reorder** - Not implemented
+
+### visualization_layers.html - Detailed Review
+
+**Django Template Features:**
+1. Webpack bundle loader
+2. Full-height container
+3. Message/alert handling
+
+**React Implementation Status:**
+- [x] Layer management (add/edit/delete)
+- [x] Layer types (point, polygon, heatmap, cluster)
+- [x] Data source selection
+- [x] Opacity control slider
+- [x] Zoom range configuration
+- [x] Enable/disable toggle
+- [x] Color customization
+- [x] Modal dialog for add/edit
+
+**Missing/Incomplete:**
+- [ ] **Actual drag-and-drop** - Visual indicator only
+- [ ] **Backend persistence** - Client-side state only
 
 ---
 
@@ -780,18 +908,18 @@ This document tracks the review of Django templates against their React implemen
 | Taxa Management | 3 | 3 | 0 |
 | Location Sites | 4 | 2 | 0 |
 | Collections | 2 | 1 | 0 |
-| Abiotic/Chemical | 5 | 0 | 0 |
-| Water Temperature | 3 | 0 | 0 |
+| Abiotic/Chemical | 5 | 5 | 0 |
+| Water Temperature | 3 | 3 | 0 |
 | Site Visits | 4 | 1 | 0 |
 | Validation | 3 | 3 | 0 |
-| Source References | 9 | 1 | 0 |
+| Source References | 9 | 2 | 0 |
 | Upload/Import | 7 | 4 | 0 |
-| Layers | 5 | 0 | 0 |
+| Layers | 5 | 2 | 0 |
 | Dashboards | 3 | 3 | 0 |
 | SASS | 5 | 1 | 0 |
 | Admin | 2 | 0 | 0 |
 | Utility | 4 | 0 | 0 |
-| **TOTAL** | **79** | **28** | **0** |
+| **TOTAL** | **79** | **39** | **0** |
 
 ---
 
