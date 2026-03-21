@@ -1259,21 +1259,6 @@ const TaxaManagementPage: React.FC = () => {
                                     <Text fontStyle="italic">
                                       {taxon.canonical_name}
                                     </Text>
-                                    {taxon.gbif_key && (
-                                      <IconButton
-                                        aria-label="View on GBIF"
-                                        icon={<ExternalLinkIcon />}
-                                        size="xs"
-                                        variant="ghost"
-                                        ml={1}
-                                        onClick={() =>
-                                          window.open(
-                                            `https://www.gbif.org/species/${taxon.gbif_key}`,
-                                            '_blank'
-                                          )
-                                        }
-                                      />
-                                    )}
                                   </Td>
                                   <Td>{taxon.rank}</Td>
                                   <Td>
@@ -1319,6 +1304,20 @@ const TaxaManagementPage: React.FC = () => {
                                   </Td>
                                   <Td>
                                     <HStack spacing={1}>
+                                      {taxon.gbif_key && (
+                                        <IconButton
+                                          aria-label="View on GBIF"
+                                          icon={<ExternalLinkIcon />}
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() =>
+                                            window.open(
+                                              `https://www.gbif.org/species/${taxon.gbif_key}`,
+                                              '_blank'
+                                            )
+                                          }
+                                        />
+                                      )}
                                       <IconButton
                                         aria-label="Edit taxon"
                                         icon={<EditIcon />}
