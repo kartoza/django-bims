@@ -22,6 +22,7 @@ import {
   ViewIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  DownloadIcon,
 } from '@chakra-ui/icons';
 
 export interface TreeControlsProps {
@@ -31,6 +32,7 @@ export interface TreeControlsProps {
   onFitToView: () => void;
   onExpandAll?: () => void;
   onCollapseAll?: () => void;
+  onPrint?: () => void;
   scale: number;
   isExpandingAll?: boolean;
 }
@@ -42,6 +44,7 @@ const TreeControls: React.FC<TreeControlsProps> = ({
   onFitToView,
   onExpandAll,
   onCollapseAll,
+  onPrint,
   scale,
   isExpandingAll = false,
 }) => {
@@ -138,6 +141,23 @@ const TreeControls: React.FC<TreeControlsProps> = ({
               onClick={onCollapseAll}
               isDisabled={isExpandingAll}
               colorScheme="orange"
+            />
+          </Tooltip>
+        </>
+      )}
+
+      {onPrint && (
+        <>
+          <Divider />
+
+          <Tooltip label="Export as PDF" placement="left">
+            <IconButton
+              aria-label="Export as PDF"
+              icon={<DownloadIcon />}
+              size="sm"
+              variant="ghost"
+              onClick={onPrint}
+              colorScheme="blue"
             />
           </Tooltip>
         </>

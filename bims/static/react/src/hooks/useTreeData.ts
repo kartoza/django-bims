@@ -51,13 +51,33 @@ const useTreeData = (options: UseTreeDataOptions = {}): UseTreeDataReturn => {
 
     try {
       const params: Record<string, unknown> = {
-        has_parent: false,
-        page_size: 100,
+        page_size: 500, // Get more taxa to build tree client-side
       };
-      if (taxonGroupId) params.taxon_group = taxonGroupId;
 
+      // When filtering by taxon group, we can't use has_parent=false
+      // because root taxa in a group may have parents outside the group
+      if (taxonGroupId) {
+        params.taxon_group = taxonGroupId;
+      } else {
+        // Only use has_parent filter when showing all taxa
+        params.has_parent = false;
+        params.page_size = 100;
+      }
+
+      console.log('[TreeData] Loading root nodes with params:', params);
       const response = await apiClient.get('taxa/', { params });
-      const rootTaxa = response.data?.data || [];
+      let rootTaxa = response.data?.data || [];
+      console.log('[TreeData] Received', rootTaxa.length, 'taxa');
+
+      // When filtering by taxon group, find root taxa for this group
+      // (taxa whose parent is not in the result set)
+      if (taxonGroupId && rootTaxa.length > 0) {
+        const taxaIds = new Set(rootTaxa.map((t: { id: number }) => t.id));
+        rootTaxa = rootTaxa.filter((t: { parent_id?: number | null }) =>
+          !t.parent_id || !taxaIds.has(t.parent_id)
+        );
+        console.log('[TreeData] Filtered to', rootTaxa.length, 'root taxa for group');
+      }
 
       const treeNodes: TreeNode[] = rootTaxa.map(
         (taxon: {

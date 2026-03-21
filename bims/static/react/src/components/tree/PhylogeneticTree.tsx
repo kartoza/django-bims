@@ -161,6 +161,97 @@ const PhylogeneticTree: React.FC<PhylogeneticTreeProps> = ({
     }
   }, [rootNodes, loadNodeChildren, expandAll]);
 
+  // Reference to SVG element for printing
+  const svgRef = React.useRef<SVGSVGElement>(null);
+
+  // Handle print/export as PDF
+  const handlePrint = useCallback(() => {
+    const svgElement = svgRef.current;
+    if (!svgElement) return;
+
+    // Clone the SVG to avoid modifying the original
+    const svgClone = svgElement.cloneNode(true) as SVGSVGElement;
+
+    // Get the tree bounds
+    const padding = 50;
+    const treeWidth = width + padding * 2;
+    const treeHeightWithPadding = treeHeight + padding * 2;
+
+    // Set viewBox to show the entire tree
+    svgClone.setAttribute('viewBox', `${-padding} ${-padding} ${treeWidth} ${treeHeightWithPadding}`);
+    svgClone.setAttribute('width', `${treeWidth}`);
+    svgClone.setAttribute('height', `${treeHeightWithPadding}`);
+
+    // Remove the transform from the main group (we're using viewBox instead)
+    const mainGroup = svgClone.querySelector('g');
+    if (mainGroup) {
+      mainGroup.removeAttribute('transform');
+    }
+
+    // Serialize the SVG
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svgClone);
+
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to export the tree as PDF');
+      return;
+    }
+
+    // Write the HTML with the SVG and print styles
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Phylogenetic Tree</title>
+          <style>
+            @page {
+              size: landscape;
+              margin: 10mm;
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+            svg {
+              max-width: 100%;
+              height: auto;
+              display: block;
+            }
+            h1 {
+              font-size: 18px;
+              margin-bottom: 10px;
+              color: #333;
+            }
+            .print-info {
+              font-size: 10px;
+              color: #666;
+              margin-top: 10px;
+            }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Phylogenetic Tree</h1>
+          ${svgString}
+          <p class="print-info">Generated on ${new Date().toLocaleString()}</p>
+          <p class="no-print" style="margin-top: 20px;">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px; cursor: pointer;">
+              Print / Save as PDF
+            </button>
+          </p>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+  }, [width, treeHeight]);
+
   // Reset store when taxon group changes
   useEffect(() => {
     reset();
@@ -245,6 +336,7 @@ const PhylogeneticTree: React.FC<PhylogeneticTreeProps> = ({
           onFitToView={handleFitToView}
           onExpandAll={handleExpandAll}
           onCollapseAll={collapseAll}
+          onPrint={handlePrint}
           scale={transform.scale}
           isExpandingAll={isExpandingAll}
         />
@@ -267,6 +359,7 @@ const PhylogeneticTree: React.FC<PhylogeneticTreeProps> = ({
         {...handlers}
       >
         <svg
+          ref={svgRef}
           width="100%"
           height="100%"
           style={{
