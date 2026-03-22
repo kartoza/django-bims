@@ -38,6 +38,12 @@ class TaxonomyListSerializer(serializers.ModelSerializer):
     endemism = EndemismSerializer(read_only=True)
     common_name = serializers.SerializerMethodField()
     record_count = serializers.SerializerMethodField()
+    family = serializers.SerializerMethodField()
+    accepted_taxonomy_name = serializers.SerializerMethodField()
+    accepted_taxonomy_id = serializers.SerializerMethodField()
+    biographic_distributions = serializers.SerializerMethodField()
+    tag_list = serializers.SerializerMethodField()
+    parent_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Taxonomy
@@ -54,6 +60,13 @@ class TaxonomyListSerializer(serializers.ModelSerializer):
             "gbif_key",
             "verified",
             "record_count",
+            "author",
+            "family",
+            "accepted_taxonomy_name",
+            "accepted_taxonomy_id",
+            "biographic_distributions",
+            "tag_list",
+            "parent_id",
         ]
         read_only_fields = fields
 
@@ -69,6 +82,54 @@ class TaxonomyListSerializer(serializers.ModelSerializer):
             return obj.record_count
         return None
 
+    def get_family(self, obj):
+        """Return family name from hierarchy."""
+        # Check hierarchical_data first
+        if obj.hierarchical_data and isinstance(obj.hierarchical_data, dict):
+            family = obj.hierarchical_data.get("family")
+            if family:
+                return family
+        # Fall back to parent traversal
+        current = obj
+        for _ in range(10):  # Limit traversal depth
+            if current.rank and current.rank.upper() == "FAMILY":
+                return current.canonical_name or current.scientific_name
+            if not current.parent:
+                break
+            current = current.parent
+        return None
+
+    def get_accepted_taxonomy_name(self, obj):
+        """Return the canonical name of the accepted taxonomy if this is a synonym."""
+        if obj.accepted_taxonomy:
+            return obj.accepted_taxonomy.canonical_name or obj.accepted_taxonomy.scientific_name
+        return None
+
+    def get_accepted_taxonomy_id(self, obj):
+        """Return the ID of the accepted taxonomy if this is a synonym."""
+        if obj.accepted_taxonomy:
+            return obj.accepted_taxonomy.id
+        return None
+
+    def get_biographic_distributions(self, obj):
+        """Return comma-separated list of biographic distributions."""
+        try:
+            distributions = obj.biographic_distributions.all()
+            return ", ".join([d.name for d in distributions])
+        except Exception:
+            return ""
+
+    def get_tag_list(self, obj):
+        """Return comma-separated list of tags."""
+        try:
+            return ", ".join(obj.tags.names())
+        except Exception:
+            return ""
+
+    def get_parent_id(self, obj):
+        """Return parent ID for tree building."""
+        return obj.parent_id if obj.parent else None
+
 
 class TaxonomyDetailSerializer(TaxonomyListSerializer):
     """
@@ -80,9 +141,23 @@ class TaxonomyDetailSerializer(TaxonomyListSerializer):
     parent = serializers.SerializerMethodField()
     vernacular_names = serializers.SerializerMethodField()
     tags = serializers.SerializerMethodField()
-    biographic_distributions = serializers.SerializerMethodField()
+    biographic_distributions_detail = serializers.SerializerMethodField()
     hierarchy = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    # Hierarchical rank fields for expanded row view
+    kingdom = serializers.SerializerMethodField()
+    phylum = serializers.SerializerMethodField()
+    class_name = serializers.SerializerMethodField()
+    order = serializers.SerializerMethodField()
+    subfamily = serializers.SerializerMethodField()
+    tribe = serializers.SerializerMethodField()
+    subtribe = serializers.SerializerMethodField()
+    genus = serializers.SerializerMethodField()
+    subgenus = serializers.SerializerMethodField()
+    species_name = serializers.SerializerMethodField()
+    subspecies = serializers.SerializerMethodField()
+    species_group_name = serializers.SerializerMethodField()
+    iucn_status_full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Taxonomy
@@ -90,10 +165,9 @@ class TaxonomyDetailSerializer(TaxonomyListSerializer):
             "parent",
             "vernacular_names",
             "tags",
-            "biographic_distributions",
+            "biographic_distributions_detail",
             "hierarchy",
             "images",
-            "author",
             "legacy_canonical_name",
             "origin",
             "additional_data",
@@ -101,8 +175,93 @@ class TaxonomyDetailSerializer(TaxonomyListSerializer):
             "iucn_redlist_id",
             "iucn_data",
             "fada_id",
+            # Hierarchical rank fields
+            "kingdom",
+            "phylum",
+            "class_name",
+            "order",
+            "subfamily",
+            "tribe",
+            "subtribe",
+            "genus",
+            "subgenus",
+            "species_name",
+            "subspecies",
+            "species_group_name",
+            "iucn_status_full_name",
         ]
         read_only_fields = fields
+
+    def _get_hierarchical_value(self, obj, key):
+        """Helper to get value from hierarchical_data or traverse parents."""
+        if obj.hierarchical_data and isinstance(obj.hierarchical_data, dict):
+            value = obj.hierarchical_data.get(key)
+            if value:
+                return value
+        return None
+
+    def _get_rank_value(self, obj, target_rank):
+        """Get value for a specific taxonomic rank by traversing hierarchy."""
+        # First check hierarchical_data
+        hierarchy_key = target_rank.lower()
+        if hierarchy_key == "class":
+            hierarchy_key = "class_name"
+        value = self._get_hierarchical_value(obj, hierarchy_key)
+        if value:
+            return value
+
+        # Traverse parents
+        current = obj
+        for _ in range(15):  # Limit traversal
+            if current.rank and current.rank.upper() == target_rank.upper():
+                return current.canonical_name or current.scientific_name
+            if not current.parent:
+                break
+            current = current.parent
+        return ""
+
+    def get_kingdom(self, obj):
+        return self._get_rank_value(obj, "KINGDOM")
+
+    def get_phylum(self, obj):
+        return self._get_rank_value(obj, "PHYLUM")
+
+    def get_class_name(self, obj):
+        return self._get_rank_value(obj, "CLASS")
+
+    def get_order(self, obj):
+        return self._get_rank_value(obj, "ORDER")
+
+    def get_subfamily(self, obj):
+        return self._get_rank_value(obj, "SUBFAMILY")
+
+    def get_tribe(self, obj):
+        return self._get_rank_value(obj, "TRIBE")
+
+    def get_subtribe(self, obj):
+        return self._get_rank_value(obj, "SUBTRIBE")
+
+    def get_genus(self, obj):
+        return self._get_rank_value(obj, "GENUS")
+
+    def get_subgenus(self, obj):
+        return self._get_rank_value(obj, "SUBGENUS")
+
+    def get_species_name(self, obj):
+        return self._get_rank_value(obj, "SPECIES")
+
+    def get_subspecies(self, obj):
+        return self._get_rank_value(obj, "SUBSPECIES")
+
+    def get_species_group_name(self, obj):
+        if obj.species_group:
+            return obj.species_group.name
+        return ""
+
+    def get_iucn_status_full_name(self, obj):
+        if obj.iucn_status:
+            return obj.iucn_status.get_category_display() if hasattr(obj.iucn_status, 'get_category_display') else obj.iucn_status.category
+        return "Not evaluated"
 
     def get_parent(self, obj):
         """Return parent taxonomy details."""
@@ -123,8 +282,8 @@ class TaxonomyDetailSerializer(TaxonomyListSerializer):
         """Return all tags."""
         return list(obj.tags.names())
 
-    def get_biographic_distributions(self, obj):
-        """Return biographic distribution tags."""
+    def get_biographic_distributions_detail(self, obj):
+        """Return biographic distribution tags with details."""
         return [{"name": tag.name, "doubtful": tag.doubtful} for tag in obj.biographic_distributions.all()]
 
     def get_hierarchy(self, obj):

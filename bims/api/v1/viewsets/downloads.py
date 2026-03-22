@@ -345,3 +345,51 @@ class DownloadViewSet(viewsets.ViewSet):
                 errors={"detail": str(e)},
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    def destroy(self, request, pk=None):
+        """
+        Delete a download request.
+
+        Only allows deletion of the user's own download requests.
+        Also deletes the associated file if it exists.
+        """
+        import os
+        from django.conf import settings
+        from bims.models.download_request import DownloadRequest
+
+        if not pk:
+            return validation_error_response({"detail": "Download request ID is required"})
+
+        try:
+            # Only allow users to delete their own download requests
+            download_request = DownloadRequest.objects.get(
+                id=pk,
+                requester=request.user
+            )
+
+            # Delete the associated file if it exists
+            if download_request.request_file:
+                try:
+                    file_path = download_request.request_file.path
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except Exception:
+                    pass  # File deletion is not critical
+
+            # Delete the download request
+            download_request.delete()
+
+            return success_response(
+                data={"message": "Download request deleted successfully"},
+            )
+
+        except DownloadRequest.DoesNotExist:
+            return error_response(
+                errors={"detail": "Download request not found or access denied"},
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return error_response(
+                errors={"detail": str(e)},
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

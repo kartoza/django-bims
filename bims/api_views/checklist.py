@@ -6,12 +6,17 @@ from django.db.models import F
 from django.http import Http404
 from preferences import preferences
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import A4, landscape, letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from reportlab.platypus import SimpleDocTemplate, TableStyle, Table, Spacer, Image
+from reportlab.lib.units import cm, inch, mm
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.platypus import (
+    BaseDocTemplate, SimpleDocTemplate, TableStyle, Table, Spacer,
+    Image, PageTemplate, Frame, PageBreak, KeepTogether, HRFlowable
+)
 from reportlab.platypus.para import Paragraph
+from reportlab.graphics.shapes import Drawing, Rect, String, Line
+from reportlab.graphics.charts.piecharts import Pie
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -30,6 +35,7 @@ def get_theme_colors():
                 'text': theme.main_button_text_color or '#FFFFFF',
                 'site_name': theme.site_name or 'BIMS',
                 'logo_path': theme.logo.path if theme.logo else None,
+                'navbar_logo_path': theme.navbar_logo.path if theme.navbar_logo else None,
             }
     except Exception:
         pass
@@ -39,7 +45,199 @@ def get_theme_colors():
         'text': '#FFFFFF',
         'site_name': 'BIMS',
         'logo_path': None,
+        'navbar_logo_path': None,
     }
+
+
+class ChecklistPDFTemplate(BaseDocTemplate):
+    """Custom PDF template with branded headers and footers."""
+
+    def __init__(self, filename, theme, module_name, species_count, site_domain, **kwargs):
+        self.theme = theme
+        self.module_name = module_name
+        self.species_count = species_count
+        self.site_domain = site_domain
+        self.primary_color = colors.HexColor(theme['primary'])
+        self.secondary_color = colors.HexColor(theme['secondary'])
+        super().__init__(filename, **kwargs)
+
+    def afterPage(self):
+        """Called after each page is created."""
+        pass
+
+    def handle_pageBegin(self):
+        """Handle page begin - reset for new page."""
+        self._handle_pageBegin()
+
+    def _add_header_footer(self, canvas, doc):
+        """Add header and footer to each page."""
+        canvas.saveState()
+
+        page_width, page_height = landscape(A4)
+
+        # Header bar
+        canvas.setFillColor(self.primary_color)
+        canvas.rect(0, page_height - 40, page_width, 40, fill=1, stroke=0)
+
+        # Header text
+        canvas.setFillColor(colors.white)
+        canvas.setFont('Helvetica-Bold', 12)
+        header_text = f"{self.theme['site_name']} | {self.module_name} Species Checklist"
+        canvas.drawString(20, page_height - 26, header_text)
+
+        # Page number on right side of header
+        canvas.setFont('Helvetica', 10)
+        page_num_text = f"Page {doc.page}"
+        canvas.drawRightString(page_width - 20, page_height - 26, page_num_text)
+
+        # Footer bar
+        canvas.setFillColor(colors.Color(0.95, 0.95, 0.95))
+        canvas.rect(0, 0, page_width, 30, fill=1, stroke=0)
+
+        # Footer line
+        canvas.setStrokeColor(self.primary_color)
+        canvas.setLineWidth(2)
+        canvas.line(0, 30, page_width, 30)
+
+        # Footer text
+        canvas.setFillColor(colors.Color(0.4, 0.4, 0.4))
+        canvas.setFont('Helvetica', 8)
+        generated_text = f"Generated on {datetime.now().strftime('%d %B %Y at %H:%M')} | {self.site_domain}"
+        canvas.drawString(20, 10, generated_text)
+
+        # Species count on right
+        canvas.drawRightString(page_width - 20, 10, f"Total Species: {self.species_count}")
+
+        canvas.restoreState()
+
+    def build_cover_page(self, story):
+        """Build an elegant cover page."""
+        page_width, page_height = landscape(A4)
+
+        # Create styles
+        styles = getSampleStyleSheet()
+
+        # Add spacer for top margin
+        story.append(Spacer(1, 2 * cm))
+
+        # Logo if available
+        logo_path = self.theme.get('logo_path') or self.theme.get('navbar_logo_path')
+        if logo_path and os.path.exists(logo_path):
+            try:
+                logo = Image(logo_path, width=3*cm, height=3*cm)
+                logo.hAlign = 'CENTER'
+                story.append(logo)
+                story.append(Spacer(1, 1 * cm))
+            except Exception:
+                pass
+
+        # Site name
+        site_style = ParagraphStyle(
+            'SiteName',
+            parent=styles['Heading1'],
+            fontSize=14,
+            textColor=colors.Color(0.4, 0.4, 0.4),
+            alignment=TA_CENTER,
+            spaceAfter=6,
+            fontName='Helvetica',
+            textTransform='uppercase',
+            letterSpacing=3,
+        )
+        story.append(Paragraph(self.theme['site_name'], site_style))
+
+        # Decorative line
+        story.append(Spacer(1, 0.3 * cm))
+        line = HRFlowable(
+            width="30%",
+            thickness=2,
+            color=self.primary_color,
+            spaceBefore=0,
+            spaceAfter=0,
+            hAlign='CENTER'
+        )
+        story.append(line)
+        story.append(Spacer(1, 0.5 * cm))
+
+        # Main title
+        title_style = ParagraphStyle(
+            'CoverTitle',
+            parent=styles['Heading1'],
+            fontSize=36,
+            textColor=self.primary_color,
+            alignment=TA_CENTER,
+            spaceAfter=12,
+            fontName='Helvetica-Bold',
+            leading=42,
+        )
+        story.append(Paragraph("Species Checklist", title_style))
+
+        # Module name as subtitle
+        subtitle_style = ParagraphStyle(
+            'CoverSubtitle',
+            parent=styles['Heading2'],
+            fontSize=24,
+            textColor=colors.Color(0.3, 0.3, 0.3),
+            alignment=TA_CENTER,
+            spaceAfter=30,
+            fontName='Helvetica',
+        )
+        story.append(Paragraph(self.module_name, subtitle_style))
+
+        story.append(Spacer(1, 1 * cm))
+
+        # Stats box
+        stats_data = [
+            [
+                Paragraph(f'<font size="28" color="#{self.theme["primary"][1:]}">{self.species_count}</font>', styles['Normal']),
+            ],
+            [
+                Paragraph('<font size="10" color="#666666">Species Recorded</font>', styles['Normal']),
+            ]
+        ]
+        stats_table = Table(stats_data, colWidths=[4*cm])
+        stats_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOX', (0, 0), (-1, -1), 1, self.primary_color),
+            ('TOPPADDING', (0, 0), (-1, -1), 15),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
+            ('LEFTPADDING', (0, 0), (-1, -1), 20),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 20),
+        ]))
+        stats_table.hAlign = 'CENTER'
+        story.append(stats_table)
+
+        story.append(Spacer(1, 2 * cm))
+
+        # Generation date
+        date_style = ParagraphStyle(
+            'CoverDate',
+            parent=styles['Normal'],
+            fontSize=11,
+            textColor=colors.Color(0.5, 0.5, 0.5),
+            alignment=TA_CENTER,
+            fontName='Helvetica',
+        )
+        generated_date = datetime.now().strftime('%d %B %Y')
+        story.append(Paragraph(f"Generated on {generated_date}", date_style))
+
+        story.append(Spacer(1, 0.5 * cm))
+
+        # Domain
+        domain_style = ParagraphStyle(
+            'CoverDomain',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.Color(0.6, 0.6, 0.6),
+            alignment=TA_CENTER,
+            fontName='Helvetica',
+        )
+        story.append(Paragraph(self.site_domain, domain_style))
+
+        # Page break after cover
+        story.append(PageBreak())
+
+        return story
 
 from bims.api_views.search import CollectionSearch
 from bims.enums import TaxonomicRank
@@ -253,6 +451,7 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
 
 
 def generate_pdf_checklist(download_request, module_name, collection_records, batch_size):
+    """Generate a beautifully formatted PDF species checklist."""
     site_domain_name = get_current_domain()
     pdf_file_path = os.path.join(
         settings.MEDIA_ROOT,
@@ -266,11 +465,13 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
     # Get theme colors
     theme = get_theme_colors()
     primary_color = colors.HexColor(theme['primary'])
+    secondary_color = colors.HexColor(theme['secondary'])
     text_color = colors.HexColor(theme['text'])
 
     written_taxa_ids = set()
     all_taxa = []
     common_names_and_count = {}
+    threat_status_counts = {}
 
     taxonomy_collection_records = (
         collection_records.distinct(
@@ -282,18 +483,45 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
 
     # Create custom styles
     styles = getSampleStyleSheet()
-    normal_style = ParagraphStyle(
-        'CustomNormal',
+
+    # Scientific name style (italic)
+    scientific_style = ParagraphStyle(
+        'Scientific',
         parent=styles['Normal'],
         fontSize=9,
-        leading=11,
-    )
-    italic_style = ParagraphStyle(
-        'CustomItalic',
-        parent=styles['Normal'],
-        fontSize=9,
-        leading=11,
+        leading=12,
         fontName='Helvetica-Oblique',
+        textColor=colors.Color(0.2, 0.2, 0.2),
+    )
+
+    # Common name style
+    common_style = ParagraphStyle(
+        'Common',
+        parent=styles['Normal'],
+        fontSize=9,
+        leading=12,
+        fontName='Helvetica',
+        textColor=colors.Color(0.3, 0.3, 0.3),
+    )
+
+    # Status style with color coding potential
+    status_style = ParagraphStyle(
+        'Status',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=11,
+        fontName='Helvetica',
+        alignment=TA_CENTER,
+    )
+
+    # Source style (smaller)
+    source_style = ParagraphStyle(
+        'Source',
+        parent=styles['Normal'],
+        fontSize=7,
+        leading=10,
+        fontName='Helvetica',
+        textColor=colors.Color(0.5, 0.5, 0.5),
     )
 
     for start in range(0, taxonomy_collection_records_count, batch_size):
@@ -321,11 +549,36 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                 written_taxa_ids.add(taxon['id'])
                 common_name = taxon['common_name'].lower().strip()
 
+                # Track threat status for summary
+                status = taxon['threat_status'] or 'Not Evaluated'
+                threat_status_counts[status] = threat_status_counts.get(status, 0) + 1
+
+                # Color code threat status
+                status_color = colors.Color(0.4, 0.4, 0.4)  # Default gray
+                status_text = taxon['threat_status'] or '-'
+                if 'Critically' in status_text or 'CR' in status_text:
+                    status_color = colors.HexColor('#D32F2F')  # Red
+                elif 'Endangered' in status_text or 'EN' in status_text:
+                    status_color = colors.HexColor('#F57C00')  # Orange
+                elif 'Vulnerable' in status_text or 'VU' in status_text:
+                    status_color = colors.HexColor('#FBC02D')  # Yellow
+                elif 'Near Threatened' in status_text or 'NT' in status_text:
+                    status_color = colors.HexColor('#7CB342')  # Light green
+                elif 'Least Concern' in status_text or 'LC' in status_text:
+                    status_color = colors.HexColor('#388E3C')  # Green
+
+                status_para_style = ParagraphStyle(
+                    'StatusColored',
+                    parent=status_style,
+                    textColor=status_color,
+                    fontName='Helvetica-Bold',
+                )
+
                 taxon_entry = [
-                    Paragraph(taxon['scientific_name'], italic_style),
-                    Paragraph(taxon['common_name'], normal_style),
-                    Paragraph(taxon['threat_status'], normal_style),
-                    Paragraph(taxon['sources'], normal_style)
+                    Paragraph(taxon['scientific_name'], scientific_style),
+                    Paragraph(taxon['common_name'] or '-', common_style),
+                    Paragraph(status_text, status_para_style),
+                    Paragraph(taxon['sources'] or '-', source_style)
                 ]
 
                 if common_name != '':
@@ -350,95 +603,185 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
         )
         download_request.save()
 
-    # Generate the PDF with themed styling
-    doc = SimpleDocTemplate(
+    # Generate the PDF with branded template
+    species_count = len(all_taxa)
+    page_width, page_height = landscape(A4)
+
+    # Create custom document with header/footer
+    doc = ChecklistPDFTemplate(
         pdf_file_path,
+        theme=theme,
+        module_name=module_name or 'All Taxa',
+        species_count=species_count,
+        site_domain=site_domain_name,
         pagesize=landscape(A4),
-        topMargin=1.5 * cm,
-        bottomMargin=1 * cm,
-        leftMargin=1 * cm,
-        rightMargin=1 * cm
+        topMargin=50,  # Space for header
+        bottomMargin=40,  # Space for footer
+        leftMargin=20,
+        rightMargin=20
     )
+
+    # Create frame for content
+    content_frame = Frame(
+        20, 40,  # x, y from bottom-left
+        page_width - 40,  # width
+        page_height - 90,  # height (leaving room for header/footer)
+        id='content'
+    )
+
+    # Create page template with header/footer callback
+    template = PageTemplate(
+        id='checklist',
+        frames=[content_frame],
+        onPage=doc._add_header_footer
+    )
+    doc.addPageTemplates([template])
+
     elements = []
 
-    # Add header with site branding
-    header_style = ParagraphStyle(
-        'Header',
-        parent=styles['Heading1'],
-        fontSize=18,
+    # Build cover page
+    doc.build_cover_page(elements)
+
+    # Add summary section before the table
+    summary_title_style = ParagraphStyle(
+        'SummaryTitle',
+        parent=styles['Heading2'],
+        fontSize=14,
         textColor=primary_color,
-        spaceAfter=6,
-        alignment=TA_LEFT,
+        spaceAfter=12,
+        spaceBefore=6,
     )
-    subtitle_style = ParagraphStyle(
-        'Subtitle',
-        parent=styles['Normal'],
-        fontSize=11,
-        textColor=colors.gray,
+    elements.append(Paragraph("Conservation Status Summary", summary_title_style))
+
+    # Create summary table for threat status distribution
+    if threat_status_counts:
+        summary_data = []
+        status_order = ['Critically Endangered', 'Endangered', 'Vulnerable',
+                       'Near Threatened', 'Least Concern', 'Data Deficient', 'Not Evaluated']
+
+        for status in status_order:
+            count = threat_status_counts.get(status, 0)
+            if count > 0:
+                # Determine color
+                if 'Critically' in status:
+                    color_hex = '#D32F2F'
+                elif status == 'Endangered':
+                    color_hex = '#F57C00'
+                elif status == 'Vulnerable':
+                    color_hex = '#FBC02D'
+                elif 'Near' in status:
+                    color_hex = '#7CB342'
+                elif 'Least' in status:
+                    color_hex = '#388E3C'
+                else:
+                    color_hex = '#757575'
+
+                status_style_sum = ParagraphStyle(
+                    f'Status_{status}',
+                    fontSize=9,
+                    textColor=colors.HexColor(color_hex),
+                    fontName='Helvetica-Bold',
+                )
+                summary_data.append([
+                    Paragraph(status, status_style_sum),
+                    Paragraph(str(count), ParagraphStyle('Count', fontSize=9, alignment=TA_RIGHT)),
+                ])
+
+        # Add any remaining statuses not in the order
+        for status, count in threat_status_counts.items():
+            if status not in status_order and count > 0:
+                summary_data.append([
+                    Paragraph(status, ParagraphStyle('StatusOther', fontSize=9)),
+                    Paragraph(str(count), ParagraphStyle('Count', fontSize=9, alignment=TA_RIGHT)),
+                ])
+
+        if summary_data:
+            summary_table = Table(summary_data, colWidths=[6*cm, 2*cm])
+            summary_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LINEBELOW', (0, 0), (-1, -2), 0.5, colors.Color(0.9, 0.9, 0.9)),
+                ('LINEBELOW', (0, -1), (-1, -1), 1, primary_color),
+            ]))
+            elements.append(summary_table)
+
+    elements.append(Spacer(1, 1 * cm))
+
+    # Section title for species list
+    list_title_style = ParagraphStyle(
+        'ListTitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=primary_color,
         spaceAfter=12,
     )
+    elements.append(Paragraph("Species List", list_title_style))
 
-    # Site name and report title
-    title = f"{theme['site_name']} - Species Checklist"
-    if module_name:
-        title = f"{theme['site_name']} - {module_name} Checklist"
-    elements.append(Paragraph(title, header_style))
+    # Create header style for table
+    header_cell_style = ParagraphStyle(
+        'HeaderCell',
+        fontSize=9,
+        textColor=colors.white,
+        fontName='Helvetica-Bold',
+        alignment=TA_LEFT,
+    )
 
-    # Subtitle with date and count
-    generated_date = datetime.now().strftime('%d %B %Y')
-    species_count = len(all_taxa)
-    subtitle = f"Generated on {generated_date} | {species_count} species"
-    elements.append(Paragraph(subtitle, subtitle_style))
-    elements.append(Spacer(1, 0.3 * cm))
-
-    # Define table style with theme colors
-    style_table = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), primary_color),
-        ('TEXTCOLOR', (0, 0), (-1, 0), text_color),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('TOPPADDING', (0, 0), (-1, 0), 8),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(0.8, 0.8, 0.8)),
-        ('BOX', (0, 0), (-1, -1), 1, primary_color),
-        ('LEFTPADDING', (0, 0), (-1, -1), 6),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-        ('TOPPADDING', (0, 1), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
-    ])
-
-    # Build data table
+    # Build data table with styled header
     header_row = [
-        'Scientific Name',
-        'Common Name',
-        'Conservation Status',
-        'Data Sources'
+        Paragraph('Scientific Name', header_cell_style),
+        Paragraph('Common Name', header_cell_style),
+        Paragraph('Status', ParagraphStyle('HeaderCenter', parent=header_cell_style, alignment=TA_CENTER)),
+        Paragraph('Data Sources', header_cell_style),
     ]
     data = [header_row] + all_taxa
 
-    table_width = doc.width
-    col_widths = [table_width * 0.32, table_width * 0.28, table_width * 0.15, table_width * 0.25]
+    # Calculate column widths
+    available_width = page_width - 40  # Account for margins
+    col_widths = [
+        available_width * 0.30,  # Scientific name
+        available_width * 0.28,  # Common name
+        available_width * 0.14,  # Status
+        available_width * 0.28,  # Sources
+    ]
 
+    # Create table with professional styling
     table = Table(data, colWidths=col_widths, repeatRows=1)
-    table.setStyle(style_table)
+    table.setStyle(TableStyle([
+        # Header styling
+        ('BACKGROUND', (0, 0), (-1, 0), primary_color),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('TOPPADDING', (0, 0), (-1, 0), 10),
+
+        # Content styling
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+
+        # Alignment
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (2, 0), (2, -1), 'CENTER'),  # Status column centered
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+
+        # Borders
+        ('BOX', (0, 0), (-1, -1), 1.5, primary_color),
+        ('LINEBELOW', (0, 0), (-1, 0), 1.5, primary_color),
+        ('LINEBELOW', (0, 1), (-1, -2), 0.5, colors.Color(0.85, 0.85, 0.85)),
+
+        # Alternating row colors
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(0.97, 0.97, 0.97)]),
+    ]))
 
     elements.append(table)
 
-    # Add footer
-    elements.append(Spacer(1, 0.5 * cm))
-    footer_style = ParagraphStyle(
-        'Footer',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.gray,
-        alignment=TA_CENTER,
-    )
-    footer_text = f"Generated by {theme['site_name']} | {site_domain_name}"
-    elements.append(Paragraph(footer_text, footer_style))
-
+    # Build the document
     doc.build(elements)
 
     download_request.progress = (

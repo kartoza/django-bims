@@ -47,8 +47,16 @@ import {
   Link,
   Skeleton,
   SkeletonText,
+  IconButton,
+  Tooltip,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react';
-import { DownloadIcon, RepeatIcon, ViewIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import { DownloadIcon, RepeatIcon, ViewIcon, ExternalLinkIcon, DeleteIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import { apiClient } from '../api/client';
 import TaxaListDownloadModal from '../components/TaxaListDownloadModal';
@@ -96,6 +104,8 @@ const SummaryReportPage: React.FC = () => {
   const headerBg = useColorModeValue('brand.500', 'brand.600');
   const cardBg = useColorModeValue('white', 'gray.700');
   const { isOpen: isTaxaModalOpen, onOpen: onTaxaModalOpen, onClose: onTaxaModalClose } = useDisclosure();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const cancelRef = React.useRef<HTMLButtonElement>(null);
 
   // State
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
@@ -106,6 +116,8 @@ const SummaryReportPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [pollingTaskId, setPollingTaskId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Report config
   const [reportType, setReportType] = useState('csv');
@@ -337,6 +349,54 @@ const SummaryReportPage: React.FC = () => {
   const formatNumber = (num: number | undefined): string => {
     if (num === undefined) return '—';
     return num.toLocaleString();
+  };
+
+  // Format date and time
+  const formatDateTime = (dateStr: string | null): string => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Handle delete confirmation
+  const handleDeleteClick = (id: number) => {
+    setDeleteTargetId(id);
+    onDeleteOpen();
+  };
+
+  // Delete download request
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) return;
+
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`downloads/${deleteTargetId}/`);
+      toast({
+        title: 'Deleted',
+        description: 'Download request has been removed.',
+        status: 'success',
+        duration: 3000,
+      });
+      // Remove from local state
+      setDownloads((prev) => prev.filter((d) => d.id !== deleteTargetId));
+    } catch (error: any) {
+      toast({
+        title: 'Delete failed',
+        description: error.response?.data?.errors?.detail || 'Could not delete download request.',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
+      onDeleteClose();
+    }
   };
 
   return (
@@ -602,10 +662,11 @@ const SummaryReportPage: React.FC = () => {
                 </Text>
               </VStack>
             ) : (
-              <Table variant="simple">
+              <Table variant="simple" size="sm">
                 <Thead>
                   <Tr>
-                    <Th>Date</Th>
+                    <Th>Date & Time</Th>
+                    <Th>Report</Th>
                     <Th>Type</Th>
                     <Th>Status</Th>
                     <Th>Progress</Th>
@@ -615,18 +676,24 @@ const SummaryReportPage: React.FC = () => {
                 <Tbody>
                   {downloads.map((download) => (
                     <Tr key={download.id || download.task_id}>
-                      <Td>
-                        {download.request_date
-                          ? new Date(download.request_date).toLocaleDateString()
-                          : '—'}
+                      <Td whiteSpace="nowrap" fontSize="sm">
+                        {formatDateTime(download.request_date)}
                       </Td>
                       <Td>
-                        <Badge colorScheme="purple">
-                          {download.resource_type || download.request_type || 'Download'}
+                        <Text fontWeight="medium" fontSize="sm">
+                          {download.resource_name || 'Download'}
+                        </Text>
+                      </Td>
+                      <Td>
+                        <Badge colorScheme="purple" fontSize="xs">
+                          {download.resource_type || download.request_type || 'File'}
                         </Badge>
                       </Td>
                       <Td>
-                        <Badge colorScheme={getStatusColor(download.status, download.approved, download.rejected)}>
+                        <Badge
+                          colorScheme={getStatusColor(download.status, download.approved, download.rejected)}
+                          fontSize="xs"
+                        >
                           {getStatusLabel(download)}
                         </Badge>
                       </Td>
@@ -636,30 +703,43 @@ const SummaryReportPage: React.FC = () => {
                             value={download.progress || 0}
                             size="sm"
                             colorScheme="blue"
-                            width="100px"
+                            width="80px"
                             borderRadius="full"
                           />
                         )}
-                        {!download.processing && download.progress > 0 && `${download.progress}%`}
+                        {!download.processing && download.progress !== '' && (
+                          <Text fontSize="xs" color="gray.500">{download.progress}</Text>
+                        )}
                       </Td>
                       <Td>
-                        <HStack spacing={2}>
+                        <HStack spacing={1}>
                           {download.download_url && (
-                            <Button
-                              size="sm"
-                              leftIcon={<DownloadIcon />}
-                              colorScheme="brand"
-                              variant="ghost"
-                              as="a"
-                              href={download.download_url}
-                              download
-                            >
-                              Download
-                            </Button>
+                            <Tooltip label="Download file">
+                              <IconButton
+                                size="sm"
+                                icon={<DownloadIcon />}
+                                colorScheme="brand"
+                                variant="ghost"
+                                aria-label="Download"
+                                as="a"
+                                href={download.download_url}
+                                download
+                              />
+                            </Tooltip>
                           )}
                           {!download.download_url && download.status === 'PENDING' && (
-                            <Text fontSize="sm" color="gray.500">Waiting...</Text>
+                            <Text fontSize="xs" color="gray.500">Waiting...</Text>
                           )}
+                          <Tooltip label="Delete">
+                            <IconButton
+                              size="sm"
+                              icon={<DeleteIcon />}
+                              colorScheme="red"
+                              variant="ghost"
+                              aria-label="Delete"
+                              onClick={() => handleDeleteClick(download.id)}
+                            />
+                          </Tooltip>
                         </HStack>
                       </Td>
                     </Tr>
@@ -675,6 +755,40 @@ const SummaryReportPage: React.FC = () => {
           isOpen={isTaxaModalOpen}
           onClose={onTaxaModalClose}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          isOpen={isDeleteOpen}
+          leastDestructiveRef={cancelRef}
+          onClose={onDeleteClose}
+        >
+          <AlertDialogOverlay>
+            <AlertDialogContent>
+              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                Delete Download Request
+              </AlertDialogHeader>
+
+              <AlertDialogBody>
+                Are you sure you want to delete this download request? This will also remove the
+                associated file. This action cannot be undone.
+              </AlertDialogBody>
+
+              <AlertDialogFooter>
+                <Button ref={cancelRef} onClick={onDeleteClose}>
+                  Cancel
+                </Button>
+                <Button
+                  colorScheme="red"
+                  onClick={handleDeleteConfirm}
+                  ml={3}
+                  isLoading={isDeleting}
+                >
+                  Delete
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialogOverlay>
+        </AlertDialog>
       </Container>
     </Box>
   );

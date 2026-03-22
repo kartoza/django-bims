@@ -15,11 +15,14 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     Represents organism groups like Fish, Invertebrates, etc.
     """
 
+    parent_id = serializers.IntegerField(source="parent.id", read_only=True, allow_null=True)
     parent_name = serializers.CharField(source="parent.name", read_only=True)
     taxa_count = serializers.SerializerMethodField()
     logo_url = serializers.SerializerMethodField()
     proposed_by_username = serializers.CharField(source="proposed_by.username", read_only=True)
     approved_by_username = serializers.CharField(source="approved_by.username", read_only=True)
+    children = serializers.SerializerMethodField()
+    validation_stats = serializers.SerializerMethodField()
 
     class Meta:
         model = TaxonGroup
@@ -29,6 +32,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             "singular_name",
             "category",
             "display_order",
+            "parent_id",
             "parent_name",
             "taxa_count",
             "logo_url",
@@ -37,6 +41,8 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             "approved_by_username",
             "approved_at",
             "rejection_reason",
+            "children",
+            "validation_stats",
         ]
         read_only_fields = fields
 
@@ -51,6 +57,30 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         if obj.logo:
             return obj.logo.url
         return None
+
+    def get_children(self, obj):
+        """Return child taxon groups."""
+        children = TaxonGroup.objects.filter(parent=obj, is_approved=True).order_by("display_order", "name")
+        # Prevent infinite recursion by not including children of children here
+        return [{"id": c.id, "name": c.name} for c in children]
+
+    def get_validation_stats(self, obj):
+        """Return validation statistics for this group."""
+        from bims.models.taxonomy import Taxonomy
+        from django.db.models import Q, Count
+
+        # Get taxa in this group
+        taxa_qs = Taxonomy.objects.filter(taxongroup=obj)
+
+        # Count validated vs unvalidated, and accepted vs synonym
+        stats = taxa_qs.aggregate(
+            accepted_validated=Count("id", filter=Q(validated=True, taxonomic_status="ACCEPTED")),
+            synonym_validated=Count("id", filter=Q(validated=True) & ~Q(taxonomic_status="ACCEPTED")),
+            accepted_unvalidated=Count("id", filter=Q(validated=False, taxonomic_status="ACCEPTED")),
+            synonym_unvalidated=Count("id", filter=Q(validated=False) & ~Q(taxonomic_status="ACCEPTED")),
+        )
+        stats["total_unvalidated"] = stats["accepted_unvalidated"] + stats["synonym_unvalidated"]
+        return stats
 
 
 class TaxonGroupCreateSerializer(serializers.ModelSerializer):
