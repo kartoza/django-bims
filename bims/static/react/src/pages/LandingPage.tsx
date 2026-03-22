@@ -645,7 +645,7 @@ const LandingPage: React.FC = () => {
               <Badge colorScheme="brand" fontSize="md" px={4} py={1}>
                 For Institutions
               </Badge>
-              <Heading size="xl" lineHeight="shorter">
+              <Heading size="xl" lineHeight="shorter" color="white">
                 Create Your Own BIMS Instance
               </Heading>
               <Text fontSize="lg" opacity={0.9} maxW="lg">
