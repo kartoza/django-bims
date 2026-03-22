@@ -163,18 +163,12 @@ const LandingPage: React.FC = () => {
   const [isLoadingModules, setIsLoadingModules] = useState(true);
 
   // Get settings from the dashboard settings store
-  const { branding, landingPage: landingPageSettings, widgets } = useDashboardSettingsStore();
+  const { branding, landingPage: landingPageSettings } = useDashboardSettingsStore();
 
-  // Helper to check if a widget is enabled
-  const isWidgetEnabled = (widgetId: string): boolean => {
-    const widget = widgets.find((w) => w.id === widgetId);
-    return widget?.enabled ?? false;
-  };
-
-  // Map widgets to landing page sections
-  const showStatsSection = landingPageSettings.showStats && isWidgetEnabled('species-stats');
-  const showEcosystemsSection = landingPageSettings.showEcosystems && isWidgetEnabled('ecosystem-breakdown');
-  const showTaxonGroups = isWidgetEnabled('taxon-groups');
+  // Landing page section visibility - controlled directly by toggles
+  const showStatsSection = landingPageSettings.showStats;
+  const showEcosystemsSection = landingPageSettings.showEcosystems;
+  const showTaxonGroups = true; // Always show taxon groups in hero
 
   // Fetch platform stats
   useEffect(() => {
@@ -623,6 +617,133 @@ const LandingPage: React.FC = () => {
           </CardBody>
         </Card>
       </Container>
+
+      {/* Institutional Instance CTA Section */}
+      <Box
+        bg="gray.900"
+        color="white"
+        py={20}
+        position="relative"
+        overflow="hidden"
+      >
+        {/* Background pattern */}
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          opacity={0.1}
+          bgImage="radial-gradient(circle at 25% 25%, brand.500 1px, transparent 1px), radial-gradient(circle at 75% 75%, brand.500 1px, transparent 1px)"
+          bgSize="50px 50px"
+        />
+
+        <Container maxW="container.xl" position="relative" zIndex={1}>
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={12} alignItems="center">
+            {/* Left side - Text content */}
+            <VStack align={{ base: 'center', lg: 'start' }} spacing={6} textAlign={{ base: 'center', lg: 'left' }}>
+              <Badge colorScheme="brand" fontSize="md" px={4} py={1}>
+                For Institutions
+              </Badge>
+              <Heading size="xl" lineHeight="shorter">
+                Create Your Own BIMS Instance
+              </Heading>
+              <Text fontSize="lg" opacity={0.9} maxW="lg">
+                Get a dedicated biodiversity data platform for your institution with your
+                branding, subdomain, and complete control over your data. Join leading
+                research organizations and conservation agencies using BIMS.
+              </Text>
+              <SimpleGrid columns={3} spacing={4} w="100%">
+                <VStack align={{ base: 'center', lg: 'start' }} spacing={1}>
+                  <Text fontSize="3xl" fontWeight="bold" color="brand.400">
+                    EUR 600
+                  </Text>
+                  <Text fontSize="sm" opacity={0.8}>
+                    per month
+                  </Text>
+                </VStack>
+                <VStack align={{ base: 'center', lg: 'start' }} spacing={1}>
+                  <Text fontSize="3xl" fontWeight="bold" color="brand.400">
+                    10h
+                  </Text>
+                  <Text fontSize="sm" opacity={0.8}>
+                    onboarding included
+                  </Text>
+                </VStack>
+                <VStack align={{ base: 'center', lg: 'start' }} spacing={1}>
+                  <Text fontSize="3xl" fontWeight="bold" color="brand.400">
+                    48h
+                  </Text>
+                  <Text fontSize="sm" opacity={0.8}>
+                    setup time
+                  </Text>
+                </VStack>
+              </SimpleGrid>
+              <HStack spacing={4} pt={4}>
+                <Button
+                  as={RouterLink}
+                  to="/institutional-signup"
+                  size="lg"
+                  colorScheme="brand"
+                  px={8}
+                  _hover={{ transform: 'translateY(-2px)', boxShadow: 'xl' }}
+                  transition="all 0.2s"
+                >
+                  Get Started
+                </Button>
+                <Button
+                  as={RouterLink}
+                  to="/institutional-signup#signup-form"
+                  size="lg"
+                  variant="outline"
+                  borderColor="white"
+                  color="white"
+                  px={8}
+                  _hover={{ bg: 'whiteAlpha.200' }}
+                >
+                  Contact Us
+                </Button>
+              </HStack>
+            </VStack>
+
+            {/* Right side - Feature highlights */}
+            <VStack spacing={4} align="stretch">
+              {[
+                { title: 'Dedicated Platform', desc: 'Your own domain or subdomain with custom branding' },
+                { title: 'Fully Managed', desc: 'We handle hosting, backups, and security updates' },
+                { title: 'GBIF Integration', desc: 'Publish your data to global biodiversity networks' },
+                { title: 'Expert Support', desc: 'Access to biologist advice and technical consulting' },
+                { title: 'Sustainability', desc: 'Your subscription supports ongoing BIMS development' },
+              ].map((feature, index) => (
+                <HStack
+                  key={index}
+                  bg="whiteAlpha.100"
+                  p={4}
+                  borderRadius="lg"
+                  _hover={{ bg: 'whiteAlpha.200' }}
+                  transition="all 0.2s"
+                >
+                  <Flex
+                    w={8}
+                    h={8}
+                    bg="brand.500"
+                    borderRadius="full"
+                    align="center"
+                    justify="center"
+                    flexShrink={0}
+                  >
+                    <Icon as={ViewIcon} boxSize={4} />
+                  </Flex>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="semibold">{feature.title}</Text>
+                    <Text fontSize="sm" opacity={0.8}>{feature.desc}</Text>
+                  </VStack>
+                </HStack>
+              ))}
+            </VStack>
+          </SimpleGrid>
+        </Container>
+      </Box>
     </Box>
   );
 };
