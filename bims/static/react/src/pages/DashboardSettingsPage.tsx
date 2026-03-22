@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Container,
@@ -98,8 +98,6 @@ const DashboardSettingsPage: React.FC = () => {
     resetToDefaults,
   } = useDashboardSettingsStore();
 
-  const [isSaving, setIsSaving] = useState(false);
-
   // Get widgets that haven't been added yet
   const availableToAdd = AVAILABLE_WIDGET_TYPES.filter(
     (wt) => !widgets.some((w) => w.id === wt.id)
@@ -132,33 +130,6 @@ const DashboardSettingsPage: React.FC = () => {
     });
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      // Settings are auto-saved to localStorage via Zustand persist
-      // This could also sync to an API in the future
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      toast({
-        title: 'Settings saved',
-        description: 'Dashboard settings have been saved.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error saving settings',
-        description: 'There was an error saving the settings. Please try again.',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const toggleWidget = (id: string) => {
     storeToggleWidget(id);
   };
@@ -176,14 +147,9 @@ const DashboardSettingsPage: React.FC = () => {
               </HStack>
               <Text opacity={0.9}>Configure site appearance and dashboard widgets</Text>
             </VStack>
-            <Button
-              colorScheme="whiteAlpha"
-              onClick={handleSave}
-              isLoading={isSaving}
-              loadingText="Saving..."
-            >
-              Save Changes
-            </Button>
+            <Badge colorScheme="whiteAlpha" variant="subtle" fontSize="xs">
+              Changes save automatically
+            </Badge>
           </HStack>
         </Container>
       </Box>
