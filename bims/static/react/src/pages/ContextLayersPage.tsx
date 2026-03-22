@@ -60,19 +60,7 @@ import {
   ExternalLinkIcon,
   RepeatIcon,
 } from '@chakra-ui/icons';
-
-interface ContextLayer {
-  id: string;
-  name: string;
-  type: 'wms' | 'wmts' | 'xyz' | 'geojson' | 'vector';
-  url: string;
-  layerName?: string;
-  enabled: boolean;
-  category: string;
-  attribution?: string;
-  description?: string;
-  order: number;
-}
+import { useContextLayersStore, ContextLayer } from '../stores/contextLayersStore';
 
 const ContextLayersPage: React.FC = () => {
   const toast = useToast();
@@ -80,70 +68,8 @@ const ContextLayersPage: React.FC = () => {
   const headerBg = useColorModeValue('brand.500', 'brand.600');
   const cardBg = useColorModeValue('white', 'gray.700');
 
-  const [layers, setLayers] = useState<ContextLayer[]>([
-    {
-      id: '1',
-      name: 'OpenStreetMap',
-      type: 'xyz',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      enabled: true,
-      category: 'Base Maps',
-      attribution: '© OpenStreetMap contributors',
-      order: 1,
-    },
-    {
-      id: '2',
-      name: 'Satellite Imagery',
-      type: 'xyz',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      enabled: true,
-      category: 'Base Maps',
-      attribution: '© Esri',
-      order: 2,
-    },
-    {
-      id: '3',
-      name: 'Rivers & Water Bodies',
-      type: 'wms',
-      url: 'https://maps.kartoza.com/geoserver/wms',
-      layerName: 'rivers',
-      enabled: true,
-      category: 'Hydrology',
-      description: 'Major rivers and water bodies of South Africa',
-      order: 3,
-    },
-    {
-      id: '4',
-      name: 'Protected Areas',
-      type: 'wms',
-      url: 'https://maps.kartoza.com/geoserver/wms',
-      layerName: 'protected_areas',
-      enabled: true,
-      category: 'Conservation',
-      description: 'National parks and protected areas',
-      order: 4,
-    },
-    {
-      id: '5',
-      name: 'Catchment Boundaries',
-      type: 'geojson',
-      url: '/api/v1/boundaries/catchments/',
-      enabled: false,
-      category: 'Administrative',
-      description: 'River catchment boundaries',
-      order: 5,
-    },
-    {
-      id: '6',
-      name: 'Provincial Boundaries',
-      type: 'geojson',
-      url: '/api/v1/boundaries/provinces/',
-      enabled: true,
-      category: 'Administrative',
-      description: 'South African provincial boundaries',
-      order: 6,
-    },
-  ]);
+  // Use the shared store instead of local state
+  const { layers, updateLayer, addLayer: storeAddLayer, deleteLayer: storeDeleteLayer, toggleEnabled } = useContextLayersStore();
 
   const [editingLayer, setEditingLayer] = useState<ContextLayer | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -152,11 +78,7 @@ const ContextLayersPage: React.FC = () => {
   const categories = ['Base Maps', 'Hydrology', 'Conservation', 'Administrative', 'Custom'];
 
   const toggleLayer = (id: string) => {
-    setLayers((prev) =>
-      prev.map((layer) =>
-        layer.id === id ? { ...layer, enabled: !layer.enabled } : layer
-      )
-    );
+    toggleEnabled(id);
   };
 
   const openEditModal = (layer: ContextLayer) => {
@@ -172,6 +94,8 @@ const ContextLayersPage: React.FC = () => {
       type: 'wms',
       url: '',
       enabled: true,
+      visible: false,
+      opacity: 0.7,
       category: 'Custom',
       order: layers.length + 1,
     });
@@ -183,16 +107,18 @@ const ContextLayersPage: React.FC = () => {
     if (!editingLayer) return;
 
     if (isEditing) {
-      setLayers((prev) =>
-        prev.map((layer) => (layer.id === editingLayer.id ? editingLayer : layer))
-      );
+      updateLayer(editingLayer.id, editingLayer);
       toast({
         title: 'Layer updated',
         status: 'success',
         duration: 3000,
       });
     } else {
-      setLayers((prev) => [...prev, { ...editingLayer, id: Date.now().toString() }]);
+      storeAddLayer({
+        ...editingLayer,
+        visible: false,
+        opacity: 0.7,
+      });
       toast({
         title: 'Layer added',
         status: 'success',
@@ -203,7 +129,7 @@ const ContextLayersPage: React.FC = () => {
   };
 
   const deleteLayer = (id: string) => {
-    setLayers((prev) => prev.filter((layer) => layer.id !== id));
+    storeDeleteLayer(id);
     toast({
       title: 'Layer deleted',
       status: 'info',

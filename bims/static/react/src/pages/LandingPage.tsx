@@ -37,8 +37,7 @@ import {
   InfoIcon,
 } from '@chakra-ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
-import { apiClient, moduleSummaryApi, ModuleSummaryResponse, ModuleSummary } from '../api/client';
-import { FishIcon, InvertebratesIcon, AlgaeIcon } from '../components/icons';
+import { apiClient, moduleSummaryApi, ModuleSummary } from '../api/client';
 import { ModuleSummaryDonut, ConservationStatusData } from '../components/charts';
 
 interface PlatformStats {
@@ -184,21 +183,33 @@ const LandingPage: React.FC = () => {
     fetchStats();
   }, []);
 
-  // Fetch module summary data
+  // Fetch module summary data with polling support
   useEffect(() => {
+    let pollCount = 0;
+    const maxPolls = 60; // Poll for up to 60 seconds
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const fetchModules = async () => {
       try {
         const data = await moduleSummaryApi.getSummary();
 
-        // Skip if still processing
+        // If still processing, poll again after 1 second
         if (data.status === 'processing') {
-          setIsLoadingModules(false);
-          return;
+          pollCount++;
+          if (pollCount < maxPolls) {
+            pollTimeout = setTimeout(fetchModules, 1000);
+            return;
+          } else {
+            // Timeout - show fallback
+            console.log('[LandingPage] Module summary generation timed out');
+            setIsLoadingModules(false);
+            return;
+          }
         }
 
-        // Extract module data (skip general_summary and status fields)
+        // Data is ready - extract module data
         const moduleCards: ModuleCardData[] = [];
-        for (const [key, value] of Object.entries(data)) {
+        for (const [key, value] of Object.entries(data || {})) {
           if (key === 'general_summary' || key === 'status' || key === 'message') continue;
           if (typeof value === 'object' && value !== null && 'total' in value) {
             const moduleData = value as ModuleSummary;
@@ -222,14 +233,19 @@ const LandingPage: React.FC = () => {
         }
 
         setModules(moduleCards);
+        setIsLoadingModules(false);
       } catch (error) {
-        console.error('Failed to fetch module summary:', error);
-      } finally {
+        console.error('[LandingPage] Failed to fetch module summary:', error);
         setIsLoadingModules(false);
       }
     };
 
     fetchModules();
+
+    // Cleanup polling on unmount
+    return () => {
+      if (pollTimeout) clearTimeout(pollTimeout);
+    };
   }, []);
 
   return (
@@ -340,6 +356,44 @@ const LandingPage: React.FC = () => {
                   Get Started
                 </Button>
               </HStack>
+
+              {/* Module Summary Donut Charts in Hero */}
+              <Box pt={8} w="100%">
+                {isLoadingModules ? (
+                  <Flex justify="center" wrap="wrap" gap={6}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <Box key={i} textAlign="center">
+                        <Skeleton borderRadius="full" w="120px" h="120px" mx="auto" mb={3} />
+                        <Skeleton height="20px" width="80px" mx="auto" mb={2} />
+                        <Skeleton height="14px" width="60px" mx="auto" />
+                      </Box>
+                    ))}
+                  </Flex>
+                ) : modules.length > 0 ? (
+                  <Flex justify="center" wrap="wrap" gap={6}>
+                    {modules.map((module, index) => (
+                      <Box
+                        key={module.slug}
+                        as={RouterLink}
+                        to={`/map?taxon_group=${module.slug}`}
+                        _hover={{ textDecoration: 'none', transform: 'scale(1.05)' }}
+                        transition="transform 0.2s"
+                      >
+                        <ModuleSummaryDonut
+                          name={module.name}
+                          icon={module.icon}
+                          total={module.total}
+                          totalSite={module.total_site}
+                          totalSiteVisit={module.total_site_visit}
+                          totalSass={module.total_sass}
+                          conservationStatus={module.conservationStatus}
+                          delay={index * 100}
+                        />
+                      </Box>
+                    ))}
+                  </Flex>
+                ) : null}
+              </Box>
             </VStack>
           </Box>
         </Container>
@@ -512,131 +566,6 @@ const LandingPage: React.FC = () => {
           </VStack>
         </Container>
       </Box>
-
-      {/* Taxon Groups Section */}
-      <Container maxW="container.xl" py={16}>
-        <VStack spacing={8}>
-          <VStack spacing={4} textAlign="center">
-            <Heading size="lg">Taxonomic Groups</Heading>
-            <Text color="gray.600">
-              Explore biodiversity across major taxonomic groups
-            </Text>
-          </VStack>
-
-          {isLoadingModules ? (
-            <SimpleGrid columns={{ base: 2, md: 3, lg: 4, xl: 6 }} spacing={8} w="100%">
-              {[1, 2, 3, 4].map((i) => (
-                <Box key={i} textAlign="center">
-                  <Skeleton borderRadius="full" w="150px" h="150px" mx="auto" mb={4} />
-                  <Skeleton height="24px" width="100px" mx="auto" mb={2} />
-                  <Skeleton height="16px" width="80px" mx="auto" />
-                  <Skeleton height="16px" width="80px" mx="auto" mt={1} />
-                </Box>
-              ))}
-            </SimpleGrid>
-          ) : modules.length > 0 ? (
-            <SimpleGrid columns={{ base: 2, md: 3, lg: 4, xl: 6 }} spacing={8} w="100%">
-              {modules.map((module, index) => (
-                <Box
-                  key={module.slug}
-                  as={RouterLink}
-                  to={`/map?taxon_group=${module.slug}`}
-                  _hover={{ textDecoration: 'none' }}
-                >
-                  <ModuleSummaryDonut
-                    name={module.name}
-                    icon={module.icon}
-                    total={module.total}
-                    totalSite={module.total_site}
-                    totalSiteVisit={module.total_site_visit}
-                    totalSass={module.total_sass}
-                    conservationStatus={module.conservationStatus}
-                    delay={index * 100}
-                  />
-                </Box>
-              ))}
-            </SimpleGrid>
-          ) : (
-            /* Fallback to static cards if no module data */
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
-              <Card
-                as={RouterLink}
-                to="/map?taxon_group=fish"
-                bg="white"
-                shadow="md"
-                _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-                transition="all 0.2s"
-                cursor="pointer"
-              >
-                <CardBody>
-                  <VStack spacing={4}>
-                    <Flex w={20} h={20} align="center" justify="center" rounded="full" bg="blue.50">
-                      <FishIcon boxSize={12} color="blue.600" />
-                    </Flex>
-                    <Heading size="md" color="blue.600">Fish</Heading>
-                    <Text color="gray.600" textAlign="center" fontSize="sm">
-                      Freshwater fish species including yellowfish, tilapia, catfish, and barbs
-                    </Text>
-                    <Button variant="link" colorScheme="blue" size="sm">
-                      Explore Fish &rarr;
-                    </Button>
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              <Card
-                as={RouterLink}
-                to="/map?taxon_group=invertebrates"
-                bg="white"
-                shadow="md"
-                _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-                transition="all 0.2s"
-                cursor="pointer"
-              >
-                <CardBody>
-                  <VStack spacing={4}>
-                    <Flex w={20} h={20} align="center" justify="center" rounded="full" bg="orange.50">
-                      <InvertebratesIcon boxSize={12} color="orange.600" />
-                    </Flex>
-                    <Heading size="md" color="orange.600">Invertebrates</Heading>
-                    <Text color="gray.600" textAlign="center" fontSize="sm">
-                      Aquatic invertebrates including mayflies, dragonflies, crabs, and midges
-                    </Text>
-                    <Button variant="link" colorScheme="orange" size="sm">
-                      Explore Invertebrates &rarr;
-                    </Button>
-                  </VStack>
-                </CardBody>
-              </Card>
-
-              <Card
-                as={RouterLink}
-                to="/map?taxon_group=algae"
-                bg="white"
-                shadow="md"
-                _hover={{ shadow: 'lg', transform: 'translateY(-2px)' }}
-                transition="all 0.2s"
-                cursor="pointer"
-              >
-                <CardBody>
-                  <VStack spacing={4}>
-                    <Flex w={20} h={20} align="center" justify="center" rounded="full" bg="green.50">
-                      <AlgaeIcon boxSize={12} color="green.600" />
-                    </Flex>
-                    <Heading size="md" color="green.600">Algae</Heading>
-                    <Text color="gray.600" textAlign="center" fontSize="sm">
-                      Freshwater algae including diatoms, green algae, and cyanobacteria
-                    </Text>
-                    <Button variant="link" colorScheme="green" size="sm">
-                      Explore Algae &rarr;
-                    </Button>
-                  </VStack>
-                </CardBody>
-              </Card>
-            </SimpleGrid>
-          )}
-        </VStack>
-      </Container>
 
       {/* CTA Section */}
       <Container maxW="container.xl" py={16}>

@@ -861,11 +861,20 @@ const TaxaManagementPage: React.FC = () => {
         formData.append('module_id', editingModule.id.toString());
       }
 
+      // Get CSRF token
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1] || '';
+
       // Call the original Django API endpoint
       const response = await fetch('/api/update-taxon-group/', {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        headers: {
+          'X-CSRFToken': csrfToken,
+        },
       });
 
       if (!response.ok) {

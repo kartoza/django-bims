@@ -100,6 +100,14 @@
         <p class="loading-text">Loading BIMS...</p>
     </div>
 
+    <!-- App Configuration -->
+    <script>
+        window.BIMS_CONFIG = {
+            geoserverUrl: '{{ geoserver_public_location|default:"/geoserver/" }}',
+            csrfToken: '{{ csrf_token }}',
+        };
+    </script>
+
     <!-- React Application Bundle -->
     {% render_bundle 'react-app' 'js' 'V2' %}
 

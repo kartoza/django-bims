@@ -46,7 +46,7 @@ export function useContextLayers({ map, enabled = true }: UseContextLayersOption
     const fetchLayers = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/list-non-biodiversity-layer/');
+        const response = await fetch('/api/list-non-biodiversity/');
         if (response.ok) {
           const data = await response.json();
           setLayerConfigs(data);

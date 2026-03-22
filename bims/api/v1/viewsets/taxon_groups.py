@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
-from bims.api.v1.permissions import IsSuperUserOrReadOnly
+from bims.api.v1.permissions import IsSuperUserOrReadOnly, IsExpertOrSuperuser
 from bims.api.v1.responses import (
     error_response,
     success_response,
@@ -47,7 +47,10 @@ class TaxonGroupViewSet(StandardModelViewSet):
         """Return appropriate permissions based on action."""
         if self.action in ["approve", "reject", "pending"]:
             return [IsSuperUserOrReadOnly()]
-        if self.action in ["update", "partial_update", "destroy"]:
+        if self.action in ["update", "partial_update"]:
+            # Allow staff and experts to edit taxon groups
+            return [IsExpertOrSuperuser()]
+        if self.action == "destroy":
             return [IsSuperUserOrReadOnly()]
         return super().get_permissions()
 

@@ -238,8 +238,9 @@ const ModuleSummaryDonut: React.FC<ModuleSummaryDonutProps> = ({
       <Text
         fontSize="lg"
         fontWeight="bold"
-        color="gray.800"
+        color="white"
         mb={2}
+        textShadow="0 1px 3px rgba(0,0,0,0.3)"
         animation={isVisible ? `${fadeIn} 0.5s ease-out 0.2s both` : undefined}
       >
         {name}
@@ -251,34 +252,34 @@ const ModuleSummaryDonut: React.FC<ModuleSummaryDonutProps> = ({
         animation={isVisible ? `${fadeIn} 0.5s ease-out 0.4s both` : undefined}
       >
         <HStack spacing={1} fontSize="sm">
-          <Text fontWeight="bold" color="brand.600">
+          <Text fontWeight="bold" color="green.300">
             {formatNumber(total)}
           </Text>
-          <Text color="gray.600">Records</Text>
+          <Text color="whiteAlpha.900">Records</Text>
         </HStack>
 
         <HStack spacing={1} fontSize="sm">
-          <Text fontWeight="bold" color="brand.600">
+          <Text fontWeight="bold" color="green.300">
             {formatNumber(totalSite)}
           </Text>
-          <Text color="gray.600">Sites</Text>
+          <Text color="whiteAlpha.900">Sites</Text>
         </HStack>
 
         {totalSiteVisit !== undefined && totalSiteVisit > 0 && (
           <HStack spacing={1} fontSize="sm">
-            <Text fontWeight="bold" color="brand.600">
+            <Text fontWeight="bold" color="green.300">
               {formatNumber(totalSiteVisit)}
             </Text>
-            <Text color="gray.600">Site Visits</Text>
+            <Text color="whiteAlpha.900">Site Visits</Text>
           </HStack>
         )}
 
         {totalSass !== undefined && totalSass > 0 && (
           <HStack spacing={1} fontSize="sm">
-            <Text fontWeight="bold" color="teal.600">
+            <Text fontWeight="bold" color="teal.300">
               {formatNumber(totalSass)}
             </Text>
-            <Text color="gray.600">SASS Assessments</Text>
+            <Text color="whiteAlpha.900">SASS Assessments</Text>
           </HStack>
         )}
       </VStack>

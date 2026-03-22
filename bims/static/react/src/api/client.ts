@@ -584,7 +584,10 @@ export interface ModuleSummaryResponse {
 export const moduleSummaryApi = {
   // Get module summary for landing page
   getSummary: async (): Promise<ModuleSummaryResponse> => {
-    const response = await legacyClient.get<ModuleSummaryResponse>('module-summary/');
+    // Use sync=1 to generate data synchronously (bypasses cache issues in dev)
+    const response = await legacyClient.get<ModuleSummaryResponse>('module-summary/', {
+      params: { sync: '1' }
+    });
     return response.data;
   },
 };

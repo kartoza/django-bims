@@ -30,6 +30,7 @@ import {
   setCachedPoints,
 } from '../utils/mapPointsCache';
 import { useContextLayers } from '../hooks/useContextLayers';
+import { useContextLayersRenderer } from '../hooks/useContextLayersRenderer';
 
 // Site point format from API: [id, longitude, latitude, record_count]
 type SitePoint = [number, number, number, number];
@@ -191,8 +192,11 @@ const MapPage: React.FC = () => {
   const isInitializingFromUrl = useRef(true);
   const isUnmounting = useRef(false);
 
-  // Load and manage WMS context layers
+  // Load and manage WMS context layers from API (NonBiodiversityLayer model)
   useContextLayers({ map: mapInstance, enabled: isMapReady });
+
+  // Render context layers from the store (ContextLayersPage)
+  useContextLayersRenderer({ map: mapInstance, enabled: isMapReady });
 
   // Update URL when map state changes (debounced)
   const updateUrl = useCallback((params: {

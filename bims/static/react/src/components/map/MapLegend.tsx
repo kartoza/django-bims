@@ -36,6 +36,7 @@ import {
 } from '@chakra-ui/react';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { useMapStore, MapLayer } from '../../stores/mapStore';
+import { useContextLayersStore } from '../../stores/contextLayersStore';
 import { useUIStore } from '../../stores/uiStore';
 
 // Layer category definitions with icons and colors
@@ -71,7 +72,8 @@ const LAYER_CATEGORIES: LayerCategory[] = [
   },
 ];
 
-// Default layers for each category
+// Default layers for biodiversity and visualization categories
+// Context layers come from the database via useContextLayers hook
 const DEFAULT_LAYERS: MapLayer[] = [
   // Biodiversity data layers
   {
@@ -80,35 +82,6 @@ const DEFAULT_LAYERS: MapLayer[] = [
     visible: true,
     opacity: 1,
     type: 'data',
-  },
-  // Context layers
-  {
-    id: 'rivers',
-    name: 'Rivers',
-    visible: false,
-    opacity: 0.8,
-    type: 'overlay',
-  },
-  {
-    id: 'catchments',
-    name: 'Catchments',
-    visible: false,
-    opacity: 0.6,
-    type: 'overlay',
-  },
-  {
-    id: 'protected-areas',
-    name: 'Protected Areas',
-    visible: false,
-    opacity: 0.5,
-    type: 'overlay',
-  },
-  {
-    id: 'provinces',
-    name: 'Provinces',
-    visible: false,
-    opacity: 0.7,
-    type: 'overlay',
   },
   // Visualization layers
   {
@@ -390,6 +363,7 @@ interface MapLegendProps {
 
 const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
   const { layerList, layers, addLayer, setLayerVisibility, setLayerOpacity } = useMapStore();
+  const { layers: contextLayers, toggleVisibility: toggleContextVisibility, setOpacity: setContextOpacity } = useContextLayersStore();
 
   // All useColorModeValue calls must be at the top, before any conditional returns
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -417,6 +391,19 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
     }));
   }, [layerList, layers]);
 
+  // Convert context layers store to MapLayer format for display
+  const contextLayersAsMaplayers: MapLayer[] = React.useMemo(() => {
+    return contextLayers
+      .filter((cl) => cl.enabled && cl.category !== 'Base Maps') // Only enabled non-basemap layers
+      .map((cl) => ({
+        id: `context-${cl.id}`,
+        name: cl.name,
+        visible: cl.visible,
+        opacity: cl.opacity,
+        type: 'overlay' as const,
+      }));
+  }, [contextLayers]);
+
   // Group layers by category
   const layersByCategory = React.useMemo(() => {
     const grouped: Record<string, MapLayer[]> = {};
@@ -425,6 +412,7 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
       grouped[cat.id] = [];
     });
 
+    // Add default/map layers
     mergedLayers.forEach((layer) => {
       const category = getLayerCategory(layer);
       if (grouped[category]) {
@@ -435,8 +423,11 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
       }
     });
 
+    // Add context layers from the store to the 'context' category
+    grouped['context'] = [...grouped['context'], ...contextLayersAsMaplayers];
+
     return grouped;
-  }, [mergedLayers]);
+  }, [mergedLayers, contextLayersAsMaplayers]);
 
   // Count visible layers per category
   const visibleCounts = React.useMemo(() => {
@@ -446,6 +437,37 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
     });
     return counts;
   }, [layersByCategory]);
+
+  // Total active layers including context layers
+  const totalActiveCount = React.useMemo(() => {
+    const mapLayersCount = mergedLayers.filter((l) => l.visible).length;
+    const contextLayersCount = contextLayersAsMaplayers.filter((l) => l.visible).length;
+    return mapLayersCount + contextLayersCount;
+  }, [mergedLayers, contextLayersAsMaplayers]);
+
+  // Handler that works for both map store and context store layers
+  const handleToggleVisibility = (layerId: string, visible: boolean) => {
+    if (layerId.startsWith('context-')) {
+      // This is a context layer from the store
+      const contextId = layerId.replace('context-', '');
+      toggleContextVisibility(contextId);
+    } else {
+      // This is a map store layer
+      setLayerVisibility(layerId, visible);
+    }
+  };
+
+  // Handler that works for both map store and context store layers
+  const handleOpacityChange = (layerId: string, opacity: number) => {
+    if (layerId.startsWith('context-')) {
+      // This is a context layer from the store
+      const contextId = layerId.replace('context-', '');
+      setContextOpacity(contextId, opacity);
+    } else {
+      // This is a map store layer
+      setLayerOpacity(layerId, opacity);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -478,7 +500,7 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
         <Heading size="sm">Map Layers</Heading>
         <Spacer />
         <Badge colorScheme="brand" mr={2}>
-          {mergedLayers.filter((l) => l.visible).length} active
+          {totalActiveCount} active
         </Badge>
         <CloseButton size="sm" onClick={onClose} />
       </Flex>
@@ -527,8 +549,8 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
                       <LayerItem
                         key={layer.id}
                         layer={layer}
-                        onToggle={setLayerVisibility}
-                        onOpacityChange={setLayerOpacity}
+                        onToggle={handleToggleVisibility}
+                        onOpacityChange={handleOpacityChange}
                       />
                     ))}
                   </VStack>

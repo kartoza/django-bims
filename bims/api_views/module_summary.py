@@ -286,6 +286,11 @@ class ModuleSummary(APIView):
         cached_data = get_cache(self._cache_key())
         if cached_data:
             return Response(cached_data)
+
+        # Check if sync generation is requested (for development)
+        if request.GET.get('sync') == '1':
+            return Response(self.summary_data())
+
         # Cache miss - queue background task to generate summary
         from bims.tasks.module_summary import generate_module_summary
         schema_name = str(connection.schema_name)

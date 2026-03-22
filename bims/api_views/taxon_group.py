@@ -1,8 +1,8 @@
 import json
-from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.models import Site
 from django.http import Http404
 from django.db import transaction
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -118,9 +118,23 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
         )
 
 
-class TaxaUpdateMixin(UserPassesTestMixin, APIView):
-    def test_func(self):
-        return self.request.user.has_perm('bims.change_taxongroup')
+class CanChangeTaxonGroup(permissions.BasePermission):
+    """Permission class for taxon group changes."""
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        # Superusers always have permission
+        if request.user.is_superuser:
+            return True
+        # Staff have permission
+        if request.user.is_staff:
+            return True
+        # Check for specific permission
+        return request.user.has_perm('bims.change_taxongroup')
+
+
+class TaxaUpdateMixin(APIView):
+    permission_classes = [CanChangeTaxonGroup]
 
 
 class UpdateTaxonGroupOrder(TaxaUpdateMixin):
