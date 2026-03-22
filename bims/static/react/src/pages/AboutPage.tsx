@@ -47,6 +47,7 @@ const AboutPage: React.FC = () => {
 
   const partners = [
     { name: 'Kartoza', url: 'https://kartoza.com', role: 'Development Partner' },
+    { name: 'FRCSA', url: 'https://www.frcsa.org.za/', role: 'Funding Partner' },
     { name: 'SANBI', url: 'https://www.sanbi.org', role: 'Data Partner' },
     { name: 'FBIS', url: 'https://freshwaterbiodiversity.org', role: 'Freshwater Biodiversity' },
   ];

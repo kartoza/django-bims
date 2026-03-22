@@ -52,10 +52,17 @@ interface LayerCategory {
 const LAYER_CATEGORIES: LayerCategory[] = [
   {
     id: 'biodiversity',
-    name: 'Biodiversity Data',
-    description: 'Species and occurrence data',
+    name: 'Biodiversity Layers',
+    description: 'Site locations and occurrences',
     icon: '🦋',
     color: 'green.500',
+  },
+  {
+    id: 'visualization',
+    name: 'Visualization',
+    description: 'Clusters and heatmaps',
+    icon: '📊',
+    color: 'purple.500',
   },
   {
     id: 'context',
@@ -64,41 +71,13 @@ const LAYER_CATEGORIES: LayerCategory[] = [
     icon: '🗺️',
     color: 'blue.500',
   },
-  {
-    id: 'visualization',
-    name: 'Visualization',
-    description: 'Data analysis and visualization layers',
-    icon: '📊',
-    color: 'purple.500',
-  },
 ];
 
-// Default layers for biodiversity and visualization categories
-// Context layers come from the database via useContextLayers hook
+// Default layers for biodiversity categories
+// Visualization layers (sites, heatmap, clusters) come from visualizationLayersStore
+// Context layers come from contextLayersStore
 const DEFAULT_LAYERS: MapLayer[] = [
-  // Biodiversity data layers
-  {
-    id: 'sites',
-    name: 'Location Sites',
-    visible: true,
-    opacity: 1,
-    type: 'data',
-  },
-  // Visualization layers
-  {
-    id: 'heatmap',
-    name: 'Occurrence Heatmap',
-    visible: false,
-    opacity: 0.7,
-    type: 'data',
-  },
-  {
-    id: 'clusters',
-    name: 'Site Clusters',
-    visible: false,
-    opacity: 1,
-    type: 'data',
-  },
+  // Empty - visualization layers are now managed by visualizationLayersStore
 ];
 
 // Map layer types to categories
@@ -438,11 +417,20 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
       }
     });
 
+    // Add Site Points to 'biodiversity' category
+    const siteLayers = visualizationLayersAsMapLayers.filter(
+      (l) => l.id === 'visualization-sites'
+    );
+    grouped['biodiversity'] = [...grouped['biodiversity'], ...siteLayers];
+
+    // Add clusters and heatmap to 'visualization' category
+    const vizLayers = visualizationLayersAsMapLayers.filter(
+      (l) => l.id !== 'visualization-sites'
+    );
+    grouped['visualization'] = [...grouped['visualization'], ...vizLayers];
+
     // Add context layers from the store to the 'context' category
     grouped['context'] = [...grouped['context'], ...contextLayersAsMaplayers];
-
-    // Add visualization layers from the store to the 'visualization' category
-    grouped['visualization'] = [...grouped['visualization'], ...visualizationLayersAsMapLayers];
 
     return grouped;
   }, [mergedLayers, contextLayersAsMaplayers, visualizationLayersAsMapLayers]);

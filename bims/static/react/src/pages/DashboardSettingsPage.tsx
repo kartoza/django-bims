@@ -56,28 +56,11 @@ import {
   RepeatIcon,
 } from '@chakra-ui/icons';
 import { useMapCache } from '../hooks/useMapCache';
-
-interface DashboardWidget {
-  id: string;
-  name: string;
-  type: string;
-  enabled: boolean;
-  position: number;
-}
-
-// All available widget types that can be added
-const AVAILABLE_WIDGET_TYPES = [
-  { id: 'species-stats', name: 'Species Statistics', type: 'stats', description: 'Show total species counts and breakdown' },
-  { id: 'recent-records', name: 'Recent Records', type: 'table', description: 'Display recently added biological records' },
-  { id: 'conservation-chart', name: 'Conservation Status Chart', type: 'chart', description: 'Pie chart of IUCN conservation statuses' },
-  { id: 'endemism-chart', name: 'Endemism Chart', type: 'chart', description: 'Distribution of endemic vs alien species' },
-  { id: 'map-overview', name: 'Map Overview', type: 'map', description: 'Mini map showing site distributions' },
-  { id: 'recent-activity', name: 'Recent Activity', type: 'activity', description: 'Timeline of recent user actions' },
-  { id: 'taxon-groups', name: 'Taxon Groups Summary', type: 'stats', description: 'Records per taxon group' },
-  { id: 'validation-queue', name: 'Validation Queue', type: 'table', description: 'Pending items requiring validation' },
-  { id: 'ecosystem-breakdown', name: 'Ecosystem Breakdown', type: 'chart', description: 'Sites by ecosystem type' },
-  { id: 'data-quality', name: 'Data Quality Metrics', type: 'stats', description: 'Data completeness and quality scores' },
-];
+import {
+  useDashboardSettingsStore,
+  AVAILABLE_WIDGET_TYPES,
+  DashboardWidget,
+} from '../stores/dashboardSettingsStore';
 
 const DashboardSettingsPage: React.FC = () => {
   const toast = useToast();
@@ -98,35 +81,22 @@ const DashboardSettingsPage: React.FC = () => {
     refreshCacheStats();
   }, [refreshCacheStats]);
 
-  // Site branding settings
-  const [branding, setBranding] = useState({
-    siteName: 'BIMS',
-    siteDescription: 'Biodiversity Information Management System',
-    logoUrl: '/static/img/logo.png',
-    faviconUrl: '/static/img/favicon.ico',
-    primaryColor: '#3182CE',
-    bannerImage: '/static/img/landing_page_banner.jpeg',
-  });
-
-  // Landing page settings
-  const [landingPage, setLandingPage] = useState({
-    showStats: true,
-    showPartners: true,
-    showEcosystems: true,
-    heroTitle: 'Biodiversity Information Management System',
-    heroSubtitle: 'Explore, analyze, and manage biodiversity data across South Africa.',
-    ctaButtonText: 'Explore Map',
-    ctaButtonUrl: '/new/map',
-  });
-
-  // Dashboard widgets
-  const [widgets, setWidgets] = useState<DashboardWidget[]>([
-    { id: 'species-stats', name: 'Species Statistics', type: 'stats', enabled: true, position: 1 },
-    { id: 'recent-records', name: 'Recent Records', type: 'table', enabled: true, position: 2 },
-    { id: 'conservation-chart', name: 'Conservation Status Chart', type: 'chart', enabled: true, position: 3 },
-    { id: 'endemism-chart', name: 'Endemism Chart', type: 'chart', enabled: true, position: 4 },
-    { id: 'map-overview', name: 'Map Overview', type: 'map', enabled: true, position: 5 },
-  ]);
+  // Use the shared store for settings persistence
+  const {
+    branding,
+    landingPage,
+    mapSettings,
+    widgets,
+    setBranding: updateBranding,
+    setLandingPage: updateLandingPage,
+    setMapSettings: updateMapSettings,
+    addWidget: storeAddWidget,
+    removeWidget: storeRemoveWidget,
+    toggleWidget: storeToggleWidget,
+    moveWidgetUp,
+    moveWidgetDown,
+    resetToDefaults,
+  } = useDashboardSettingsStore();
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -142,15 +112,7 @@ const DashboardSettingsPage: React.FC = () => {
     const widgetType = AVAILABLE_WIDGET_TYPES.find((wt) => wt.id === widgetTypeId);
     if (!widgetType) return;
 
-    const newWidget: DashboardWidget = {
-      id: widgetType.id,
-      name: widgetType.name,
-      type: widgetType.type,
-      enabled: true,
-      position: widgets.length + 1,
-    };
-
-    setWidgets((prev) => [...prev, newWidget]);
+    storeAddWidget(widgetTypeId);
 
     toast({
       title: 'Widget added',
@@ -162,7 +124,7 @@ const DashboardSettingsPage: React.FC = () => {
 
   // Remove a widget
   const removeWidget = (id: string) => {
-    setWidgets((prev) => prev.filter((w) => w.id !== id));
+    storeRemoveWidget(id);
     toast({
       title: 'Widget removed',
       status: 'info',
@@ -173,12 +135,13 @@ const DashboardSettingsPage: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // In a real implementation, this would save to the API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Settings are auto-saved to localStorage via Zustand persist
+      // This could also sync to an API in the future
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       toast({
         title: 'Settings saved',
-        description: 'Dashboard settings have been updated successfully.',
+        description: 'Dashboard settings have been saved.',
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -197,9 +160,7 @@ const DashboardSettingsPage: React.FC = () => {
   };
 
   const toggleWidget = (id: string) => {
-    setWidgets((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w))
-    );
+    storeToggleWidget(id);
   };
 
   return (
@@ -251,7 +212,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Input
                           value={branding.siteName}
                           onChange={(e) =>
-                            setBranding((prev) => ({ ...prev, siteName: e.target.value }))
+                            updateBranding({ siteName: e.target.value })
                           }
                         />
                         <FormHelperText>Displayed in header and browser tab</FormHelperText>
@@ -263,7 +224,7 @@ const DashboardSettingsPage: React.FC = () => {
                           type="color"
                           value={branding.primaryColor}
                           onChange={(e) =>
-                            setBranding((prev) => ({ ...prev, primaryColor: e.target.value }))
+                            updateBranding({ primaryColor: e.target.value })
                           }
                         />
                       </FormControl>
@@ -273,10 +234,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Textarea
                           value={branding.siteDescription}
                           onChange={(e) =>
-                            setBranding((prev) => ({
-                              ...prev,
-                              siteDescription: e.target.value,
-                            }))
+                            updateBranding({ siteDescription: e.target.value })
                           }
                         />
                       </FormControl>
@@ -286,7 +244,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Input
                           value={branding.logoUrl}
                           onChange={(e) =>
-                            setBranding((prev) => ({ ...prev, logoUrl: e.target.value }))
+                            updateBranding({ logoUrl: e.target.value })
                           }
                           placeholder="/static/img/logo.png"
                         />
@@ -307,7 +265,7 @@ const DashboardSettingsPage: React.FC = () => {
                       <Input
                         value={branding.bannerImage}
                         onChange={(e) =>
-                          setBranding((prev) => ({ ...prev, bannerImage: e.target.value }))
+                          updateBranding({ bannerImage: e.target.value })
                         }
                         placeholder="/static/img/landing_page_banner.jpeg"
                       />
@@ -342,7 +300,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Input
                           value={landingPage.heroTitle}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({ ...prev, heroTitle: e.target.value }))
+                            updateLandingPage({ heroTitle: e.target.value })
                           }
                         />
                       </FormControl>
@@ -352,10 +310,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Input
                           value={landingPage.heroSubtitle}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({
-                              ...prev,
-                              heroSubtitle: e.target.value,
-                            }))
+                            updateLandingPage({ heroSubtitle: e.target.value })
                           }
                         />
                       </FormControl>
@@ -365,10 +320,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Input
                           value={landingPage.ctaButtonText}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({
-                              ...prev,
-                              ctaButtonText: e.target.value,
-                            }))
+                            updateLandingPage({ ctaButtonText: e.target.value })
                           }
                         />
                       </FormControl>
@@ -378,10 +330,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Input
                           value={landingPage.ctaButtonUrl}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({
-                              ...prev,
-                              ctaButtonUrl: e.target.value,
-                            }))
+                            updateLandingPage({ ctaButtonUrl: e.target.value })
                           }
                         />
                       </FormControl>
@@ -396,10 +345,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Switch
                           isChecked={landingPage.showStats}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({
-                              ...prev,
-                              showStats: e.target.checked,
-                            }))
+                            updateLandingPage({ showStats: e.target.checked })
                           }
                           colorScheme="brand"
                         />
@@ -410,10 +356,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Switch
                           isChecked={landingPage.showPartners}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({
-                              ...prev,
-                              showPartners: e.target.checked,
-                            }))
+                            updateLandingPage({ showPartners: e.target.checked })
                           }
                           colorScheme="brand"
                         />
@@ -424,10 +367,7 @@ const DashboardSettingsPage: React.FC = () => {
                         <Switch
                           isChecked={landingPage.showEcosystems}
                           onChange={(e) =>
-                            setLandingPage((prev) => ({
-                              ...prev,
-                              showEcosystems: e.target.checked,
-                            }))
+                            updateLandingPage({ showEcosystems: e.target.checked })
                           }
                           colorScheme="brand"
                         />
@@ -555,18 +495,37 @@ const DashboardSettingsPage: React.FC = () => {
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                       <FormControl>
                         <FormLabel>Default Center Latitude</FormLabel>
-                        <Input type="number" step="0.0001" defaultValue="-30.5595" />
+                        <Input
+                          type="number"
+                          step="0.0001"
+                          value={mapSettings.defaultLatitude}
+                          onChange={(e) =>
+                            updateMapSettings({ defaultLatitude: parseFloat(e.target.value) || 0 })
+                          }
+                        />
                       </FormControl>
 
                       <FormControl>
                         <FormLabel>Default Center Longitude</FormLabel>
-                        <Input type="number" step="0.0001" defaultValue="22.9375" />
+                        <Input
+                          type="number"
+                          step="0.0001"
+                          value={mapSettings.defaultLongitude}
+                          onChange={(e) =>
+                            updateMapSettings({ defaultLongitude: parseFloat(e.target.value) || 0 })
+                          }
+                        />
                       </FormControl>
 
                       <FormControl>
                         <FormLabel>Default Zoom Level</FormLabel>
-                        <Select defaultValue="5">
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((z) => (
+                        <Select
+                          value={mapSettings.defaultZoom}
+                          onChange={(e) =>
+                            updateMapSettings({ defaultZoom: parseInt(e.target.value, 10) })
+                          }
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((z) => (
                             <option key={z} value={z}>
                               {z}
                             </option>
@@ -576,7 +535,12 @@ const DashboardSettingsPage: React.FC = () => {
 
                       <FormControl>
                         <FormLabel>Default Base Map</FormLabel>
-                        <Select defaultValue="osm">
+                        <Select
+                          value={mapSettings.defaultBaseMap}
+                          onChange={(e) =>
+                            updateMapSettings({ defaultBaseMap: e.target.value as 'osm' | 'satellite' | 'terrain' | 'dark' })
+                          }
+                        >
                           <option value="osm">OpenStreetMap</option>
                           <option value="satellite">Satellite</option>
                           <option value="terrain">Terrain</option>
@@ -591,22 +555,46 @@ const DashboardSettingsPage: React.FC = () => {
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                       <FormControl display="flex" alignItems="center">
                         <FormLabel mb={0}>Enable Clustering</FormLabel>
-                        <Switch defaultChecked colorScheme="brand" />
+                        <Switch
+                          isChecked={mapSettings.enableClustering}
+                          onChange={(e) =>
+                            updateMapSettings({ enableClustering: e.target.checked })
+                          }
+                          colorScheme="brand"
+                        />
                       </FormControl>
 
                       <FormControl display="flex" alignItems="center">
                         <FormLabel mb={0}>Show Scale Bar</FormLabel>
-                        <Switch defaultChecked colorScheme="brand" />
+                        <Switch
+                          isChecked={mapSettings.showScaleBar}
+                          onChange={(e) =>
+                            updateMapSettings({ showScaleBar: e.target.checked })
+                          }
+                          colorScheme="brand"
+                        />
                       </FormControl>
 
                       <FormControl display="flex" alignItems="center">
                         <FormLabel mb={0}>Enable Drawing Tools</FormLabel>
-                        <Switch defaultChecked colorScheme="brand" />
+                        <Switch
+                          isChecked={mapSettings.enableDrawingTools}
+                          onChange={(e) =>
+                            updateMapSettings({ enableDrawingTools: e.target.checked })
+                          }
+                          colorScheme="brand"
+                        />
                       </FormControl>
 
                       <FormControl display="flex" alignItems="center">
                         <FormLabel mb={0}>Show Mini Map</FormLabel>
-                        <Switch colorScheme="brand" />
+                        <Switch
+                          isChecked={mapSettings.showMiniMap}
+                          onChange={(e) =>
+                            updateMapSettings({ showMiniMap: e.target.checked })
+                          }
+                          colorScheme="brand"
+                        />
                       </FormControl>
                     </SimpleGrid>
                   </VStack>

@@ -31,6 +31,7 @@ import {
 } from '../utils/mapPointsCache';
 import { useContextLayers } from '../hooks/useContextLayers';
 import { useContextLayersRenderer } from '../hooks/useContextLayersRenderer';
+import { useDashboardSettingsStore } from '../stores/dashboardSettingsStore';
 
 // Site point format from API: [id, longitude, latitude, record_count]
 type SitePoint = [number, number, number, number];
@@ -60,16 +61,19 @@ const MapPage: React.FC = () => {
   const { setLayerVisibility, setBasemapStyle } = useMapStore();
   const { set3DMap } = useUIStore();
 
-  // Parse initial map state from URL
+  // Get map settings from dashboard settings store
+  const { mapSettings } = useDashboardSettingsStore();
+
+  // Parse initial map state from URL (use dashboard settings as defaults)
   const initialPosition = useMemo(() => {
-    const lat = parseFloat(searchParams.get('lat') || '-29.0');
-    const lng = parseFloat(searchParams.get('lng') || '24.5');
-    const zoom = parseFloat(searchParams.get('z') || '5');
+    const lat = parseFloat(searchParams.get('lat') || String(mapSettings.defaultLatitude));
+    const lng = parseFloat(searchParams.get('lng') || String(mapSettings.defaultLongitude));
+    const zoom = parseFloat(searchParams.get('z') || String(mapSettings.defaultZoom));
     return {
       center: [lng, lat] as [number, number],
-      zoom: isNaN(zoom) ? 5 : zoom,
+      zoom: isNaN(zoom) ? mapSettings.defaultZoom : zoom,
     };
-  }, []); // Only compute once on mount
+  }, [mapSettings.defaultLatitude, mapSettings.defaultLongitude, mapSettings.defaultZoom]); // Recompute when defaults change
 
   // Get search store actions for initializing from URL
   const setSearchQuery = useSearchStore((state) => state.setQuery);
@@ -745,6 +749,9 @@ const MapPage: React.FC = () => {
         initialCenter={initialPosition.center}
         initialZoom={initialPosition.zoom}
         is3D={is3DMap}
+        showScaleBar={mapSettings.showScaleBar}
+        showMiniMap={mapSettings.showMiniMap}
+        enableClustering={mapSettings.enableClustering}
         onSiteSelect={handleSiteSelect}
         onBoundsChange={handleBoundsChange}
         onMapReady={handleMapReady}

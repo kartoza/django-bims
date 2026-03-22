@@ -171,6 +171,11 @@
       "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/77.chunk.js",
       "publicPath": "/static/bims/bundles/v2/77.chunk.js"
     },
+    "467.chunk.js": {
+      "name": "467.chunk.js",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/467.chunk.js",
+      "publicPath": "/static/bims/bundles/v2/467.chunk.js"
+    },
     "react-app.js.map": {
       "name": "react-app.js.map",
       "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/react-app.js.map",
@@ -340,6 +345,11 @@
       "name": "77.chunk.js.map",
       "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/77.chunk.js.map",
       "publicPath": "/static/bims/bundles/v2/77.chunk.js.map"
+    },
+    "467.chunk.js.map": {
+      "name": "467.chunk.js.map",
+      "path": "/home/timlinux/dev/python/django-bims/bims/static/bims/bundles/v2/467.chunk.js.map",
+      "publicPath": "/static/bims/bundles/v2/467.chunk.js.map"
     }
   },
   "chunks": {

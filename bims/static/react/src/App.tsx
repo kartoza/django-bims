@@ -87,6 +87,10 @@ const Footer: React.FC = () => (
       <Link href="https://kartoza.com" isExternal color="brand.500">
         Kartoza
       </Link>
+      {' '}and{' '}
+      <Link href="https://www.frcsa.org.za/" isExternal color="brand.500">
+        FRCSA
+      </Link>
     </Text>
     <Text mx={2}>|</Text>
     <Link

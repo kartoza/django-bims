@@ -18,6 +18,7 @@ import React, {
 } from 'react';
 import { Box } from '@chakra-ui/react';
 import maplibregl, { Map as MapLibreMap, NavigationControl, ScaleControl } from 'maplibre-gl';
+import { useVisualizationLayersStore } from '../../stores/visualizationLayersStore';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import { ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
 import { HeatmapLayer, HexagonLayer, GridLayer } from '@deck.gl/aggregation-layers';
@@ -33,6 +34,9 @@ export interface DeckGLMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   is3D?: boolean;
+  showScaleBar?: boolean;
+  showMiniMap?: boolean;
+  enableClustering?: boolean;
   onSiteSelect?: (siteId: number | null) => void;
   onSiteHover?: (siteId: number | null) => void;
   onBoundsChange?: (bounds: [number, number, number, number], zoom: number) => void;
@@ -55,6 +59,9 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
       initialCenter = [24.5, -29.0], // Default: South Africa
       initialZoom = 5,
       is3D: initialIs3D = false,
+      showScaleBar = true,
+      showMiniMap = false,
+      enableClustering = true,
       onSiteSelect,
       onSiteHover,
       onBoundsChange,
@@ -75,6 +82,9 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
     // Track layer visibility changes to trigger re-renders
     // We use visibleLayerIds as a dependency trigger, and read fresh state inside callback
     const visibleLayerIds = useMapStore((state) => state.visibleLayerIds);
+
+    // Also track visualization layers store for persisted layer visibility
+    const visualizationLayers = useVisualizationLayersStore((state) => state.layers);
 
     // Calculate max record count for scaling extrusion
     const maxRecordCount = points.reduce((max, p) => Math.max(max, p[3] || 1), 1);
@@ -136,13 +146,19 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
       const layerArray: unknown[] = [];
       const dynamicMinRadius = getZoomBasedRadius();
 
-      // Get fresh layer visibility from store (avoid stale closure)
-      const currentLayers = useMapStore.getState().layers;
+      // Get fresh layer visibility from visualization layers store (persisted)
+      const vizLayers = useVisualizationLayersStore.getState().layers;
 
-      // Check layer visibility - default to showing sites if not specified
-      const showSites = currentLayers.sites !== false;
-      const showHeatmap = currentLayers.heatmap === true;
-      const showClusters = currentLayers.clusters === true;
+      // Helper to check if a visualization layer is visible by ID
+      const isLayerVisible = (layerId: string) => {
+        const layer = vizLayers.find((l) => l.id === layerId);
+        return layer ? layer.enabled && layer.visible : false;
+      };
+
+      // Check layer visibility from visualization store by layer ID
+      const showSites = isLayerVisible('sites');
+      const showClusters = isLayerVisible('clusters');
+      const showHeatmap = isLayerVisible('heatmap');
 
       // Heatmap Layer (render first, behind other layers)
       // In 3D mode, use extruded grid for terrain-like 3D heatmap effect
@@ -360,7 +376,7 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
           }
         }
       });
-    }, [points, selectedId, hoveredId, is3D, maxRecordCount, onSiteSelect, onSiteHover, getZoomBasedRadius, zoomLevel, visibleLayerIds]);
+    }, [points, selectedId, hoveredId, is3D, maxRecordCount, onSiteSelect, onSiteHover, getZoomBasedRadius, zoomLevel, visibleLayerIds, visualizationLayers]);
 
     // Update layers when dependencies change
     // Include isLoaded to ensure layers update when deck overlay becomes ready
@@ -460,8 +476,10 @@ const DeckGLMap = forwardRef<DeckGLMapRef, DeckGLMapProps>(
         'top-right'
       );
 
-      // Add scale control
-      map.addControl(new ScaleControl({ maxWidth: 200 }), 'bottom-left');
+      // Add scale control (conditional)
+      if (showScaleBar) {
+        map.addControl(new ScaleControl({ maxWidth: 200 }), 'bottom-left');
+      }
 
       // Create deck.gl overlay
       const deckOverlay = new MapboxOverlay({

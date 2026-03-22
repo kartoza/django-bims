@@ -39,6 +39,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { apiClient, moduleSummaryApi, ModuleSummary } from '../api/client';
 import { ModuleSummaryDonut, ConservationStatusData } from '../components/charts';
+import { useDashboardSettingsStore } from '../stores/dashboardSettingsStore';
 
 interface PlatformStats {
   total_sites: number;
@@ -161,6 +162,20 @@ const LandingPage: React.FC = () => {
   const [modules, setModules] = useState<ModuleCardData[]>([]);
   const [isLoadingModules, setIsLoadingModules] = useState(true);
 
+  // Get settings from the dashboard settings store
+  const { branding, landingPage: landingPageSettings, widgets } = useDashboardSettingsStore();
+
+  // Helper to check if a widget is enabled
+  const isWidgetEnabled = (widgetId: string): boolean => {
+    const widget = widgets.find((w) => w.id === widgetId);
+    return widget?.enabled ?? false;
+  };
+
+  // Map widgets to landing page sections
+  const showStatsSection = landingPageSettings.showStats && isWidgetEnabled('species-stats');
+  const showEcosystemsSection = landingPageSettings.showEcosystems && isWidgetEnabled('ecosystem-breakdown');
+  const showTaxonGroups = isWidgetEnabled('taxon-groups');
+
   // Fetch platform stats
   useEffect(() => {
     const fetchStats = async () => {
@@ -267,7 +282,7 @@ const LandingPage: React.FC = () => {
           left={0}
           right={0}
           bottom={0}
-          backgroundImage="url(/static/img/landing_page_banner.jpeg)"
+          backgroundImage={`url(${branding.bannerImage})`}
           backgroundSize="cover"
           backgroundPosition="center"
           backgroundAttachment={{ base: 'scroll', md: 'fixed' }}
@@ -315,9 +330,7 @@ const LandingPage: React.FC = () => {
                 lineHeight="shorter"
                 color="white"
               >
-                Biodiversity Information
-                <br />
-                Management System
+                {landingPageSettings.heroTitle}
               </Heading>
               <Text
                 fontSize={{ base: 'md', md: 'lg' }}
@@ -325,13 +338,12 @@ const LandingPage: React.FC = () => {
                 maxW="2xl"
                 lineHeight="tall"
               >
-                Explore, analyze, and manage biodiversity data across South Africa.
-                Access comprehensive records of species, habitats, and conservation status.
+                {landingPageSettings.heroSubtitle}
               </Text>
               <HStack spacing={4} pt={4} flexWrap="wrap" justify="center">
                 <Button
                   as={RouterLink}
-                  to="/map"
+                  to={landingPageSettings.ctaButtonUrl}
                   size="lg"
                   colorScheme="brand"
                   leftIcon={<SearchIcon />}
@@ -339,7 +351,7 @@ const LandingPage: React.FC = () => {
                   _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
                   transition="all 0.2s"
                 >
-                  Explore Map
+                  {landingPageSettings.ctaButtonText}
                 </Button>
                 <Button
                   as={RouterLink}
@@ -358,42 +370,44 @@ const LandingPage: React.FC = () => {
               </HStack>
 
               {/* Module Summary Donut Charts in Hero */}
-              <Box pt={8} w="100%">
-                {isLoadingModules ? (
-                  <Flex justify="center" wrap="wrap" gap={6}>
-                    {[1, 2, 3, 4].map((i) => (
-                      <Box key={i} textAlign="center">
-                        <Skeleton borderRadius="full" w="120px" h="120px" mx="auto" mb={3} />
-                        <Skeleton height="20px" width="80px" mx="auto" mb={2} />
-                        <Skeleton height="14px" width="60px" mx="auto" />
-                      </Box>
-                    ))}
-                  </Flex>
-                ) : modules.length > 0 ? (
-                  <Flex justify="center" wrap="wrap" gap={6}>
-                    {modules.map((module, index) => (
-                      <Box
-                        key={module.slug}
-                        as={RouterLink}
-                        to={`/map?taxon_group=${module.slug}`}
-                        _hover={{ textDecoration: 'none', transform: 'scale(1.05)' }}
-                        transition="transform 0.2s"
-                      >
-                        <ModuleSummaryDonut
-                          name={module.name}
-                          icon={module.icon}
-                          total={module.total}
-                          totalSite={module.total_site}
-                          totalSiteVisit={module.total_site_visit}
-                          totalSass={module.total_sass}
-                          conservationStatus={module.conservationStatus}
-                          delay={index * 100}
-                        />
-                      </Box>
-                    ))}
-                  </Flex>
-                ) : null}
-              </Box>
+              {showTaxonGroups && (
+                <Box pt={8} w="100%">
+                  {isLoadingModules ? (
+                    <Flex justify="center" wrap="wrap" gap={6}>
+                      {[1, 2, 3, 4].map((i) => (
+                        <Box key={i} textAlign="center">
+                          <Skeleton borderRadius="full" w="120px" h="120px" mx="auto" mb={3} />
+                          <Skeleton height="20px" width="80px" mx="auto" mb={2} />
+                          <Skeleton height="14px" width="60px" mx="auto" />
+                        </Box>
+                      ))}
+                    </Flex>
+                  ) : modules.length > 0 ? (
+                    <Flex justify="center" wrap="wrap" gap={6}>
+                      {modules.map((module, index) => (
+                        <Box
+                          key={module.slug}
+                          as={RouterLink}
+                          to={`/map?taxon_group=${module.slug}`}
+                          _hover={{ textDecoration: 'none', transform: 'scale(1.05)' }}
+                          transition="transform 0.2s"
+                        >
+                          <ModuleSummaryDonut
+                            name={module.name}
+                            icon={module.icon}
+                            total={module.total}
+                            totalSite={module.total_site}
+                            totalSiteVisit={module.total_site_visit}
+                            totalSass={module.total_sass}
+                            conservationStatus={module.conservationStatus}
+                            delay={index * 100}
+                          />
+                        </Box>
+                      ))}
+                    </Flex>
+                  ) : null}
+                </Box>
+              )}
             </VStack>
           </Box>
         </Container>
@@ -451,43 +465,45 @@ const LandingPage: React.FC = () => {
       </Box>
 
       {/* Stats Section - overlapping the transition */}
-      <Box bg="gray.50" position="relative" mt={-20} pt={24} pb={8}>
-        <Container maxW="container.xl">
-          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-            <StatCard
-              label="Location Sites"
-              value={stats?.total_sites ?? 0}
-              helpText="Monitoring sites"
-              color="brand.500"
-              isLoading={isLoading}
-            />
-            <StatCard
-              label="Species Records"
-              value={stats?.total_records ?? 0}
-              helpText="Occurrence records"
-              color="green.500"
-              isLoading={isLoading}
-            />
-            <StatCard
-              label="Taxa"
-              value={stats?.total_taxa ?? 0}
-              helpText="Species catalogued"
-              color="purple.500"
-              isLoading={isLoading}
-            />
-            <StatCard
-              label="Contributors"
-              value={stats?.total_contributors ?? 0}
-              helpText="Active researchers"
-              color="orange.500"
-              isLoading={isLoading}
-            />
-          </SimpleGrid>
-        </Container>
-      </Box>
+      {showStatsSection && (
+        <Box bg="gray.50" position="relative" mt={-20} pt={24} pb={8}>
+          <Container maxW="container.xl">
+            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+              <StatCard
+                label="Location Sites"
+                value={stats?.total_sites ?? 0}
+                helpText="Monitoring sites"
+                color="brand.500"
+                isLoading={isLoading}
+              />
+              <StatCard
+                label="Species Records"
+                value={stats?.total_records ?? 0}
+                helpText="Occurrence records"
+                color="green.500"
+                isLoading={isLoading}
+              />
+              <StatCard
+                label="Taxa"
+                value={stats?.total_taxa ?? 0}
+                helpText="Species catalogued"
+                color="purple.500"
+                isLoading={isLoading}
+              />
+              <StatCard
+                label="Contributors"
+                value={stats?.total_contributors ?? 0}
+                helpText="Active researchers"
+                color="orange.500"
+                isLoading={isLoading}
+              />
+            </SimpleGrid>
+          </Container>
+        </Box>
+      )}
 
       {/* Features Section */}
-      <Box bg="gray.50" pb={16}>
+      <Box bg="gray.50" pb={16} pt={showStatsSection ? 0 : 16}>
         <Container maxW="container.xl">
           <VStack spacing={12}>
             <VStack spacing={4} textAlign="center">
@@ -516,7 +532,7 @@ const LandingPage: React.FC = () => {
             <FeatureCard
               icon={AddIcon}
               title="Contribute Data"
-              description="Upload your field observations and contribute to South Africa's biodiversity knowledge base."
+              description="Upload your field observations and contribute to the biodiversity knowledge base."
               linkTo="/upload"
               linkText="Upload Data"
             />
@@ -533,39 +549,41 @@ const LandingPage: React.FC = () => {
       </Box>
 
       {/* Ecosystem Types Section */}
-      <Box bg="white" py={16}>
-        <Container maxW="container.xl">
-          <VStack spacing={8}>
-            <VStack spacing={4} textAlign="center">
-              <Heading size="lg">Ecosystems Covered</Heading>
-              <Text color="gray.600">
-                Monitor and protect diverse freshwater ecosystems across the region
-              </Text>
-            </VStack>
+      {showEcosystemsSection && (
+        <Box bg="white" py={16}>
+          <Container maxW="container.xl">
+            <VStack spacing={8}>
+              <VStack spacing={4} textAlign="center">
+                <Heading size="lg">Ecosystems Covered</Heading>
+                <Text color="gray.600">
+                  Monitor and protect diverse freshwater ecosystems across the region
+                </Text>
+              </VStack>
 
-            <SimpleGrid columns={{ base: 2, md: 3, lg: 5 }} spacing={4}>
-              {[
-                { name: 'Rivers', color: 'blue.500', icon: '🏞️' },
-                { name: 'Wetlands', color: 'green.500', icon: '🌿' },
-                { name: 'Estuaries', color: 'teal.500', icon: '🌊' },
-                { name: 'Dams', color: 'cyan.500', icon: '💧' },
-                { name: 'Lakes', color: 'blue.400', icon: '🏔️' },
-              ].map((ecosystem) => (
-                <Card key={ecosystem.name} bg="white" textAlign="center">
-                  <CardBody>
-                    <VStack>
-                      <Text fontSize="3xl">{ecosystem.icon}</Text>
-                      <Text fontWeight="600" color={ecosystem.color}>
-                        {ecosystem.name}
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </SimpleGrid>
-          </VStack>
-        </Container>
-      </Box>
+              <SimpleGrid columns={{ base: 2, md: 3, lg: 5 }} spacing={4}>
+                {[
+                  { name: 'Rivers', color: 'blue.500', icon: '🏞️' },
+                  { name: 'Wetlands', color: 'green.500', icon: '🌿' },
+                  { name: 'Estuaries', color: 'teal.500', icon: '🌊' },
+                  { name: 'Dams', color: 'cyan.500', icon: '💧' },
+                  { name: 'Lakes', color: 'blue.400', icon: '🏔️' },
+                ].map((ecosystem) => (
+                  <Card key={ecosystem.name} bg="white" textAlign="center">
+                    <CardBody>
+                      <VStack>
+                        <Text fontSize="3xl">{ecosystem.icon}</Text>
+                        <Text fontWeight="600" color={ecosystem.color}>
+                          {ecosystem.name}
+                        </Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                ))}
+              </SimpleGrid>
+            </VStack>
+          </Container>
+        </Box>
+      )}
 
       {/* CTA Section */}
       <Container maxW="container.xl" py={16}>
@@ -574,7 +592,7 @@ const LandingPage: React.FC = () => {
             <VStack spacing={6} textAlign="center">
               <Heading size="lg">Ready to Explore?</Heading>
               <Text maxW="xl" opacity={0.9}>
-                Start exploring South Africa's biodiversity data today.
+                Start exploring biodiversity data today.
                 Search locations, discover species, and contribute to conservation.
               </Text>
               <HStack spacing={4}>

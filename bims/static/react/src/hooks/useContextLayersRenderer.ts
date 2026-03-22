@@ -245,8 +245,8 @@ export function useContextLayersRenderer({ map, enabled = true }: UseContextLaye
 
         const isAdded = addedLayersRef.current.has(layer.id);
 
-        if (layer.visible && !isAdded) {
-          // Add layer to map
+        // Add all enabled layers to the map (regardless of visibility)
+        if (!isAdded) {
           switch (layer.type) {
             case 'wms':
             case 'wmts':
@@ -261,11 +261,11 @@ export function useContextLayersRenderer({ map, enabled = true }: UseContextLaye
           }
         }
 
-        // Update visibility
-        if (isAdded) {
+        // Update visibility after a short delay to ensure layer is added
+        setTimeout(() => {
           updateLayerVisibility(map, layer);
           updateLayerOpacity(map, layer);
-        }
+        }, 100);
       });
     };
 
@@ -296,7 +296,8 @@ export function useContextLayersRenderer({ map, enabled = true }: UseContextLaye
 
         const isAdded = addedLayersRef.current.has(layer.id);
 
-        if (layer.visible && !isAdded) {
+        // Add layer if not already on map
+        if (!isAdded) {
           switch (layer.type) {
             case 'wms':
             case 'wmts':
@@ -311,10 +312,11 @@ export function useContextLayersRenderer({ map, enabled = true }: UseContextLaye
           }
         }
 
-        if (isAdded) {
+        // Update visibility after a short delay to ensure layer is added
+        setTimeout(() => {
           updateLayerVisibility(map, layer);
           updateLayerOpacity(map, layer);
-        }
+        }, 100);
       });
     };
 

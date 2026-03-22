@@ -44,12 +44,12 @@ interface VisualizationLayersState {
   reorderLayers: (layers: VisualizationLayer[]) => void;
 }
 
-// Default visualization layers
+// Default visualization layers - these control how site data is displayed on the map
 const DEFAULT_VISUALIZATION_LAYERS: VisualizationLayer[] = [
   {
-    id: '1',
-    name: 'Location Sites',
-    type: 'cluster',
+    id: 'sites',
+    name: 'Site Points',
+    type: 'point',
     source: 'sites',
     enabled: true,
     visible: true,
@@ -60,43 +60,30 @@ const DEFAULT_VISUALIZATION_LAYERS: VisualizationLayer[] = [
     order: 1,
   },
   {
-    id: '2',
-    name: 'Fish Records',
-    type: 'point',
-    source: 'fish_records',
+    id: 'clusters',
+    name: 'Hexbin Clusters',
+    type: 'cluster',
+    source: 'clusters',
     enabled: true,
     visible: false,
-    opacity: 80,
-    minZoom: 5,
+    opacity: 100,
+    minZoom: 0,
     maxZoom: 22,
-    style: { color: '#38A169', fillColor: '#38A169', radius: 6 },
+    style: { color: '#48BB78', fillColor: '#48BB78', radius: 8 },
     order: 2,
   },
   {
-    id: '3',
-    name: 'Species Heatmap',
+    id: 'heatmap',
+    name: 'Density Heatmap',
     type: 'heatmap',
     source: 'all_records',
-    enabled: false,
+    enabled: true,
     visible: false,
     opacity: 60,
     minZoom: 0,
     maxZoom: 10,
     style: { color: '#E53E3E' },
     order: 3,
-  },
-  {
-    id: '4',
-    name: 'River Catchments',
-    type: 'polygon',
-    source: 'catchments',
-    enabled: true,
-    visible: false,
-    opacity: 50,
-    minZoom: 0,
-    maxZoom: 22,
-    style: { color: '#0BC5EA', fillColor: '#0BC5EA' },
-    order: 4,
   },
 ];
 
