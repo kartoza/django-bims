@@ -6,7 +6,7 @@
  *
  * Made with love by Kartoza | https://kartoza.com
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -49,6 +49,9 @@ import {
   SimpleGrid,
   Alert,
   AlertIcon,
+  Spinner,
+  Progress,
+  Link,
 } from '@chakra-ui/react';
 import {
   AddIcon,
@@ -57,8 +60,33 @@ import {
   ViewIcon,
   ViewOffIcon,
   DragHandleIcon,
+  ExternalLinkIcon,
+  TimeIcon,
+  CheckCircleIcon,
+  WarningIcon,
+  CloseIcon,
 } from '@chakra-ui/icons';
+import { Link as RouterLink } from 'react-router-dom';
 import { useVisualizationLayersStore, VisualizationLayer } from '../stores/visualizationLayersStore';
+import { apiClient } from '../api/client';
+
+interface LayerUploadSession {
+  id: number;
+  layer: {
+    id: number;
+    unique_id: string;
+    name: string;
+    is_ready?: boolean;
+  };
+  status: 'pending' | 'processing' | 'success' | 'failed';
+  progress: number;
+  created_at: string;
+  created_by: string;
+  maputnik_url?: string;
+  error_message?: string;
+  status_display?: string;
+  has_style?: boolean;
+}
 
 const VisualizationLayersPage: React.FC = () => {
   const toast = useToast();
@@ -79,6 +107,233 @@ const VisualizationLayersPage: React.FC = () => {
 
   const [editingLayer, setEditingLayer] = useState<VisualizationLayer | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Cloud native layer upload sessions
+  const [uploadSessions, setUploadSessions] = useState<LayerUploadSession[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [deletingSessionIds, setDeletingSessionIds] = useState<Set<number>>(new Set());
+  const [isClearingFailed, setIsClearingFailed] = useState(false);
+
+  // Published visualization layers from API
+  interface PublishedLayer {
+    id: number;
+    name: string;
+    default_visibility: boolean;
+    native_layer?: {
+      id: number;
+      unique_id: string;
+      name: string;
+      maputnik_url?: string;
+    };
+  }
+  const [publishedLayers, setPublishedLayers] = useState<PublishedLayer[]>([]);
+  const [isLoadingPublished, setIsLoadingPublished] = useState(true);
+  const [renamingLayerId, setRenamingLayerId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [isSavingRename, setIsSavingRename] = useState(false);
+  const [unpublishingIds, setUnpublishingIds] = useState<Set<number>>(new Set());
+
+  // Fetch upload sessions
+  const fetchUploadSessions = useCallback(async () => {
+    try {
+      const response = await apiClient.get<{ data: LayerUploadSession[] }>(
+        'spatial-layers/upload-sessions/'
+      );
+      setUploadSessions(response.data?.data || []);
+    } catch (error) {
+      console.error('Failed to fetch upload sessions:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, []);
+
+  // Fetch published visualization layers
+  const fetchPublishedLayers = useCallback(async () => {
+    try {
+      const response = await apiClient.get<{ data: PublishedLayer[] }>(
+        'visualization-layers/'
+      );
+      setPublishedLayers(response.data?.data || []);
+    } catch (error) {
+      console.error('Failed to fetch published layers:', error);
+    } finally {
+      setIsLoadingPublished(false);
+    }
+  }, []);
+
+  // Rename a published layer
+  const handleStartRename = (layer: PublishedLayer) => {
+    setRenamingLayerId(layer.id);
+    setRenameValue(layer.name);
+  };
+
+  const handleCancelRename = () => {
+    setRenamingLayerId(null);
+    setRenameValue('');
+  };
+
+  const handleSaveRename = async (layerId: number) => {
+    if (!renameValue.trim()) {
+      toast({
+        title: 'Name required',
+        description: 'Layer name cannot be empty.',
+        status: 'error',
+        duration: 3000,
+      });
+      return;
+    }
+
+    setIsSavingRename(true);
+    try {
+      await apiClient.patch(`visualization-layers/${layerId}/`, {
+        name: renameValue.trim(),
+      });
+      toast({
+        title: 'Layer renamed',
+        status: 'success',
+        duration: 3000,
+      });
+      setRenamingLayerId(null);
+      setRenameValue('');
+      await fetchPublishedLayers();
+    } catch (error: any) {
+      toast({
+        title: 'Rename failed',
+        description: error.response?.data?.message || 'Failed to rename layer.',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsSavingRename(false);
+    }
+  };
+
+  // Unpublish a visualization layer
+  const handleUnpublish = async (layerId: number, layerName: string) => {
+    if (!confirm(`Are you sure you want to unpublish "${layerName}"? The source layer will remain available for re-publishing.`)) {
+      return;
+    }
+
+    setUnpublishingIds((prev) => new Set(prev).add(layerId));
+    try {
+      await apiClient.delete(`visualization-layers/${layerId}/`);
+      toast({
+        title: 'Layer unpublished',
+        description: `"${layerName}" has been removed from the map.`,
+        status: 'success',
+        duration: 3000,
+      });
+      await fetchPublishedLayers();
+    } catch (error: any) {
+      toast({
+        title: 'Unpublish failed',
+        description: error.response?.data?.message || 'Failed to unpublish layer.',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setUnpublishingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(layerId);
+        return next;
+      });
+    }
+  };
+
+  // Check if there are processing sessions
+  const hasProcessingSessions = uploadSessions.some(
+    (s) => s.status === 'pending' || s.status === 'processing'
+  );
+
+  // Check if there are failed sessions
+  const hasFailedSessions = uploadSessions.some((s) => s.status === 'failed');
+
+  // Delete a single upload session
+  const handleDeleteSession = async (sessionId: number, layerName: string) => {
+    if (!confirm(`Are you sure you want to delete "${layerName}"? This cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingSessionIds((prev) => new Set(prev).add(sessionId));
+
+    try {
+      await apiClient.delete(`spatial-layers/${sessionId}/`);
+      toast({
+        title: 'Session deleted',
+        description: `"${layerName}" has been removed.`,
+        status: 'success',
+        duration: 3000,
+      });
+      await fetchUploadSessions();
+    } catch (error: any) {
+      toast({
+        title: 'Delete failed',
+        description: error.response?.data?.message || 'Failed to delete session.',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setDeletingSessionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(sessionId);
+        return next;
+      });
+    }
+  };
+
+  // Clear all failed upload sessions
+  const handleClearAllFailed = async () => {
+    const failedCount = uploadSessions.filter((s) => s.status === 'failed').length;
+    if (!confirm(`Are you sure you want to delete all ${failedCount} failed upload(s)? This cannot be undone.`)) {
+      return;
+    }
+
+    setIsClearingFailed(true);
+
+    try {
+      const response = await apiClient.delete<{ message: string; count: number }>(
+        'spatial-layers/clear-failed/'
+      );
+      toast({
+        title: 'Failed sessions cleared',
+        description: response.data?.message || 'All failed sessions removed.',
+        status: 'success',
+        duration: 3000,
+      });
+      await fetchUploadSessions();
+    } catch (error: any) {
+      toast({
+        title: 'Clear failed',
+        description: error.response?.data?.message || 'Failed to clear sessions.',
+        status: 'error',
+        duration: 5000,
+      });
+    } finally {
+      setIsClearingFailed(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUploadSessions();
+    fetchPublishedLayers();
+    // Poll more frequently when processing
+    const pollInterval = hasProcessingSessions ? 2000 : 10000;
+    const interval = setInterval(fetchUploadSessions, pollInterval);
+    return () => clearInterval(interval);
+  }, [fetchUploadSessions, fetchPublishedLayers, hasProcessingSessions]);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <Badge colorScheme="green"><CheckCircleIcon mr={1} />Ready</Badge>;
+      case 'processing':
+        return <Badge colorScheme="blue"><TimeIcon mr={1} />Processing</Badge>;
+      case 'failed':
+        return <Badge colorScheme="red"><WarningIcon mr={1} />Failed</Badge>;
+      default:
+        return <Badge colorScheme="gray"><TimeIcon mr={1} />Pending</Badge>;
+    }
+  };
 
   const toggleLayer = (id: string) => {
     toggleEnabled(id);
@@ -167,31 +422,287 @@ const VisualizationLayersPage: React.FC = () => {
         <Container maxW="container.xl">
           <HStack justify="space-between">
             <VStack align="start" spacing={1}>
-              <Heading size="lg">Visualization Layers</Heading>
+              <Heading size="lg">Custom Vector Layers</Heading>
               <Text opacity={0.9}>
-                Configure map visualization layers and styling
+                Upload shapefiles and create custom-styled vector tile layers
               </Text>
             </VStack>
-            <Button
-              leftIcon={<AddIcon />}
-              colorScheme="whiteAlpha"
-              onClick={openAddModal}
-            >
-              Add Layer
-            </Button>
           </HStack>
         </Container>
       </Box>
 
       <Container maxW="container.xl" py={8}>
-        <Alert status="info" mb={6} borderRadius="md">
-          <AlertIcon />
-          Drag layers to reorder. Layers higher in the list appear on top of the map.
-        </Alert>
+        <VStack spacing={6} align="stretch">
+          {/* Cloud Native Layer Upload Status */}
+          {uploadSessions.length > 0 && (
+            <Card bg={cardBg}>
+              <CardHeader>
+                <HStack justify="space-between">
+                  <HStack>
+                    {hasProcessingSessions && <Spinner size="sm" />}
+                    <Heading size="md">Spatial Layer Status</Heading>
+                  </HStack>
+                  <HStack spacing={2}>
+                    {hasFailedSessions && (
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        variant="outline"
+                        leftIcon={<DeleteIcon />}
+                        onClick={handleClearAllFailed}
+                        isLoading={isClearingFailed}
+                        loadingText="Clearing..."
+                      >
+                        Clear All Failed
+                      </Button>
+                    )}
+                    <Button
+                      as={RouterLink}
+                      to="/admin/spatial-upload"
+                      size="sm"
+                      colorScheme="brand"
+                      leftIcon={<AddIcon />}
+                    >
+                      Upload New Layer
+                    </Button>
+                  </HStack>
+                </HStack>
+              </CardHeader>
+              <CardBody>
+                <Table variant="simple" size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th>Layer Name</Th>
+                      <Th>Status</Th>
+                      <Th>Style</Th>
+                      <Th>Progress</Th>
+                      <Th>Uploaded</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {uploadSessions.map((session) => (
+                      <Tr
+                        key={session.id}
+                        bg={
+                          session.status === 'processing' || session.status === 'pending'
+                            ? 'blue.50'
+                            : session.status === 'failed'
+                            ? 'red.50'
+                            : undefined
+                        }
+                      >
+                        <Td fontWeight="medium">{session.layer.name}</Td>
+                        <Td>{getStatusBadge(session.status)}</Td>
+                        <Td>
+                          {session.status === 'success' && (
+                            session.has_style ? (
+                              <Badge colorScheme="green">Styled</Badge>
+                            ) : (
+                              <Badge colorScheme="orange">No Style</Badge>
+                            )
+                          )}
+                        </Td>
+                        <Td width="150px">
+                          {session.status === 'processing' || session.status === 'pending' ? (
+                            <Progress
+                              value={session.progress || 0}
+                              size="sm"
+                              colorScheme="blue"
+                              borderRadius="md"
+                              isIndeterminate={!session.progress || session.progress === 0}
+                              hasStripe
+                              isAnimated
+                            />
+                          ) : session.status === 'success' ? (
+                            <Text fontSize="sm" color="green.600">Complete</Text>
+                          ) : (
+                            <Text fontSize="sm" color="red.600">-</Text>
+                          )}
+                        </Td>
+                        <Td>
+                          <Text fontSize="sm" color="gray.600">
+                            {new Date(session.created_at).toLocaleDateString()}
+                          </Text>
+                        </Td>
+                        <Td>
+                          <HStack spacing={2}>
+                            {session.status === 'success' && session.maputnik_url && (
+                              <Button
+                                as={Link}
+                                href={session.maputnik_url}
+                                isExternal
+                                size="xs"
+                                colorScheme={session.has_style ? 'purple' : 'orange'}
+                                leftIcon={session.has_style ? <EditIcon /> : <AddIcon />}
+                              >
+                                {session.has_style ? 'Edit Style' : 'Create Style'}
+                              </Button>
+                            )}
+                            {session.status === 'failed' && session.error_message && (
+                              <Text fontSize="xs" color="red.600" maxW="200px" noOfLines={2}>
+                                {session.error_message}
+                              </Text>
+                            )}
+                            {(session.status === 'failed' || session.status === 'success') && (
+                              <IconButton
+                                aria-label="Delete layer"
+                                icon={<DeleteIcon />}
+                                size="xs"
+                                colorScheme="red"
+                                variant="ghost"
+                                onClick={() => handleDeleteSession(session.id, session.layer.name)}
+                                isLoading={deletingSessionIds.has(session.id)}
+                              />
+                            )}
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Empty state for upload sessions */}
+          {!isLoadingSessions && uploadSessions.length === 0 && (
+            <Alert status="info" borderRadius="md">
+              <AlertIcon />
+              <HStack justify="space-between" w="100%">
+                <Text>
+                  No spatial layers uploaded yet. Upload shapefiles to create styled vector tile layers.
+                </Text>
+                <Button
+                  as={RouterLink}
+                  to="/admin/spatial-upload"
+                  size="sm"
+                  colorScheme="brand"
+                  leftIcon={<AddIcon />}
+                >
+                  Upload Layer
+                </Button>
+              </HStack>
+            </Alert>
+          )}
+
+          <Divider />
+
+          {/* Published Visualization Layers */}
+          {publishedLayers.length > 0 && (
+            <Card bg={cardBg}>
+              <CardHeader>
+                <Heading size="md">Published Map Layers</Heading>
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  These layers appear on the map and can be toggled by users.
+                </Text>
+              </CardHeader>
+              <CardBody>
+                <Table variant="simple" size="sm">
+                  <Thead>
+                    <Tr>
+                      <Th>Layer Name</Th>
+                      <Th>Source Layer</Th>
+                      <Th>Visible</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {publishedLayers.map((layer) => (
+                      <Tr key={layer.id}>
+                        <Td>
+                          {renamingLayerId === layer.id ? (
+                            <HStack>
+                              <Input
+                                size="sm"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveRename(layer.id);
+                                  if (e.key === 'Escape') handleCancelRename();
+                                }}
+                                autoFocus
+                              />
+                              <IconButton
+                                aria-label="Save"
+                                icon={<CheckCircleIcon />}
+                                size="sm"
+                                colorScheme="green"
+                                onClick={() => handleSaveRename(layer.id)}
+                                isLoading={isSavingRename}
+                              />
+                              <IconButton
+                                aria-label="Cancel"
+                                icon={<CloseIcon />}
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleCancelRename}
+                              />
+                            </HStack>
+                          ) : (
+                            <Text
+                              fontWeight="medium"
+                              cursor="pointer"
+                              _hover={{ color: 'brand.500' }}
+                              onClick={() => handleStartRename(layer)}
+                            >
+                              {layer.name}
+                            </Text>
+                          )}
+                        </Td>
+                        <Td>
+                          <Text fontSize="sm" color="gray.600">
+                            {layer.native_layer?.name || 'N/A'}
+                          </Text>
+                        </Td>
+                        <Td>
+                          <Badge colorScheme={layer.default_visibility ? 'green' : 'gray'}>
+                            {layer.default_visibility ? 'On' : 'Off'}
+                          </Badge>
+                        </Td>
+                        <Td>
+                          <HStack spacing={2}>
+                            <IconButton
+                              aria-label="Rename layer"
+                              icon={<EditIcon />}
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => handleStartRename(layer)}
+                            />
+                            <IconButton
+                              aria-label="Unpublish layer"
+                              icon={<DeleteIcon />}
+                              size="xs"
+                              colorScheme="red"
+                              variant="ghost"
+                              onClick={() => handleUnpublish(layer.id, layer.name)}
+                              isLoading={unpublishingIds.has(layer.id)}
+                            />
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </CardBody>
+            </Card>
+          )}
+
+          {!isLoadingPublished && publishedLayers.length === 0 && (
+            <Alert status="info" borderRadius="md">
+              <AlertIcon />
+              No layers published to the map yet. Upload and style a spatial layer, then publish it to make it available on the map.
+            </Alert>
+          )}
+
+          <Divider />
 
         <Card bg={cardBg}>
           <CardHeader>
-            <Heading size="md">Map Layers</Heading>
+            <Heading size="md">Site Layers</Heading>
+            <Text fontSize="sm" color="gray.500" mt={1}>
+              Configure how biodiversity site data is displayed on the map.
+            </Text>
           </CardHeader>
           <CardBody>
             <Table variant="simple">
@@ -299,6 +810,7 @@ const VisualizationLayersPage: React.FC = () => {
             </Table>
           </CardBody>
         </Card>
+        </VStack>
       </Container>
 
       {/* Edit/Add Layer Modal */}

@@ -217,13 +217,6 @@ const Header: React.FC = () => {
               <MenuItem as={RouterLink} to="/upload/water-temperature" icon={<AddIcon />}>
                 Water Temperature
               </MenuItem>
-              <MenuDivider />
-              <MenuItem as={RouterLink} to="/upload/shapefile" icon={<AddIcon />}>
-                Shapefile / Boundary
-              </MenuItem>
-              <MenuItem as={RouterLink} to="/upload/spatial-layer" icon={<AddIcon />}>
-                Spatial Layer
-              </MenuItem>
             </MenuList>
           </Menu>
 
@@ -319,19 +312,33 @@ const Header: React.FC = () => {
                 <MenuItem as={RouterLink} to="/admin/dashboard" icon={<SettingsIcon />}>
                   Dashboard Settings
                 </MenuItem>
-                <MenuItem as={RouterLink} to="/admin/layers" icon={<SettingsIcon />}>
-                  Visualization Layers
-                </MenuItem>
-                <MenuItem as={RouterLink} to="/admin/context-layers" icon={<SettingsIcon />}>
-                  Context Layers
-                </MenuItem>
                 <MenuDivider />
-                <MenuItem as={RouterLink} to="/harvest/gbif" icon={<DownloadIcon />}>
-                  Harvest from GBIF
-                </MenuItem>
-                <MenuItem as={RouterLink} to="/harvest/species" icon={<DownloadIcon />}>
-                  Harvest Species
-                </MenuItem>
+                <MenuGroup title="Map Layers">
+                  <MenuItem as={RouterLink} to="/admin/spatial-upload" icon={<AddIcon />}>
+                    Upload Vector Layer
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/admin/publish-layers" icon={<ViewIcon />}>
+                    Publish to Map
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/admin/layers" icon={<SettingsIcon />}>
+                    Custom Vector Layers
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/admin/context-layers" icon={<SettingsIcon />}>
+                    External Layers
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/admin/spatial-filters" icon={<SettingsIcon />}>
+                    Spatial Filters
+                  </MenuItem>
+                </MenuGroup>
+                <MenuDivider />
+                <MenuGroup title="Data Harvesting">
+                  <MenuItem as={RouterLink} to="/harvest/gbif" icon={<DownloadIcon />}>
+                    Harvest from GBIF
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/harvest/species" icon={<DownloadIcon />}>
+                    Harvest Species
+                  </MenuItem>
+                </MenuGroup>
                 <MenuDivider />
                 {user?.isSuperuser && (
                   <>
@@ -537,8 +544,8 @@ const Header: React.FC = () => {
                     <Link as={RouterLink} to="/upload/physico-chemical" onClick={onClose}>
                       Physico-Chemical
                     </Link>
-                    <Link as={RouterLink} to="/upload/shapefile" onClick={onClose}>
-                      Shapefile
+                    <Link as={RouterLink} to="/upload/water-temperature" onClick={onClose}>
+                      Water Temperature
                     </Link>
                   </VStack>
                 </AccordionPanel>

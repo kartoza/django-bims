@@ -8,7 +8,7 @@
  * Made with love by Kartoza | https://kartoza.com
  */
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { Map as MapLibreMap } from 'maplibre-gl';
+import type { Map as MapLibreMap, FillPaint, LinePaint, CirclePaint } from 'maplibre-gl';
 import { useMapStore, MapLayer } from '../stores/mapStore';
 
 interface WMSLayerConfig {
@@ -109,63 +109,173 @@ export function useContextLayers({ map, enabled = true }: UseContextLayersOption
 
     allLayers.forEach(layerConfig => {
       const layerId = layerConfig.wms_layer_name || layerConfig.name;
-      const sourceId = `wms-source-${layerId}`;
-      const rasterLayerId = `wms-layer-${layerId}`;
+      const sourceId = `context-source-${layerId}`;
       const isVisible = layerVisibility[layerId] === true;
 
-      // Check if layer should be added
-      if (isVisible && !addedLayersRef.current.has(layerId)) {
-        // Add WMS source if not exists
-        if (!map.getSource(sourceId)) {
-          // Build WMS URL with proper parameters
-          const wmsUrl = layerConfig.wms_url.startsWith('http')
-            ? `/bims_proxy/${layerConfig.wms_url}`
-            : layerConfig.wms_url;
+      // Determine if this is a vector tile layer or WMS layer
+      const isVectorTile = !!layerConfig.native_layer_url || !!layerConfig.pmtiles;
 
-          const tileUrl = `${wmsUrl}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=${layerConfig.wms_layer_name}&STYLES=&FORMAT=${layerConfig.wms_format || 'image/png'}&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}`;
-
-          map.addSource(sourceId, {
-            type: 'raster',
-            tiles: [tileUrl],
-            tileSize: 256,
-          });
+      // Always add layers to the map (they can be hidden via visibility)
+      // This ensures layers are ready when user toggles them on
+      if (!addedLayersRef.current.has(layerId)) {
+        // Find the first symbol layer to insert before (for proper layer ordering)
+        const layers = map.getStyle().layers;
+        let firstSymbolId: string | undefined;
+        for (const layer of layers || []) {
+          if (layer.type === 'symbol') {
+            firstSymbolId = layer.id;
+            break;
+          }
         }
 
-        // Add raster layer if not exists
-        if (!map.getLayer(rasterLayerId)) {
-          // Find the first symbol layer to insert before (for proper layer ordering)
-          const layers = map.getStyle().layers;
-          let firstSymbolId: string | undefined;
-          for (const layer of layers || []) {
-            if (layer.type === 'symbol') {
-              firstSymbolId = layer.id;
-              break;
-            }
+        if (isVectorTile) {
+          // Compute tile URL
+          const tileUrl = layerConfig.native_layer_url?.startsWith('/')
+            ? `${window.location.origin}${layerConfig.native_layer_url}`
+            : layerConfig.native_layer_url;
+
+          // Add vector tile source
+          if (!map.getSource(sourceId) && tileUrl) {
+            map.addSource(sourceId, {
+              type: 'vector',
+              tiles: [tileUrl],
+              minzoom: 0,
+              maxzoom: 14,
+            });
           }
 
-          map.addLayer(
-            {
-              id: rasterLayerId,
-              type: 'raster',
-              source: sourceId,
-              paint: {
-                'raster-opacity': 0.7,
-              },
-            },
-            firstSymbolId
-          );
-        }
+          // Add vector layer with styling from Maputnik or defaults
+          const vectorLayerId = `vector-layer-${layerId}`;
+          if (map.getSource(sourceId) && !map.getLayer(`${vectorLayerId}-fill`)) {
+            // Parse Maputnik style if available
+            const maputnikStyle = layerConfig.native_layer_style as {
+              layers?: Array<{
+                id: string;
+                type: string;
+                paint?: Record<string, unknown>;
+                layout?: Record<string, unknown>;
+              }>;
+            } | null;
 
-        addedLayersRef.current.add(layerId);
+            // Extract paint properties from Maputnik style layers
+            let fillPaint: Record<string, unknown> = {
+              'fill-color': '#3388ff',
+              'fill-opacity': 0.4,
+            };
+            let linePaint: Record<string, unknown> = {
+              'line-color': '#3388ff',
+              'line-width': 2,
+            };
+            let circlePaint: Record<string, unknown> = {
+              'circle-color': '#3388ff',
+              'circle-radius': 6,
+              'circle-stroke-color': '#fff',
+              'circle-stroke-width': 2,
+            };
+
+            if (maputnikStyle?.layers) {
+              for (const styleLayer of maputnikStyle.layers) {
+                if (styleLayer.type === 'fill' && styleLayer.paint) {
+                  fillPaint = { ...fillPaint, ...styleLayer.paint };
+                } else if (styleLayer.type === 'line' && styleLayer.paint) {
+                  linePaint = { ...linePaint, ...styleLayer.paint };
+                } else if (styleLayer.type === 'circle' && styleLayer.paint) {
+                  circlePaint = { ...circlePaint, ...styleLayer.paint };
+                }
+              }
+            }
+
+            // Add fill layer for polygons
+            map.addLayer(
+              {
+                id: `${vectorLayerId}-fill`,
+                type: 'fill',
+                source: sourceId,
+                'source-layer': 'default',
+                paint: fillPaint as FillPaint,
+                filter: ['==', '$type', 'Polygon'],
+              },
+              firstSymbolId
+            );
+
+            // Add line layer for lines and polygon outlines
+            map.addLayer(
+              {
+                id: `${vectorLayerId}-line`,
+                type: 'line',
+                source: sourceId,
+                'source-layer': 'default',
+                paint: linePaint as LinePaint,
+                filter: ['any', ['==', '$type', 'LineString'], ['==', '$type', 'Polygon']],
+              },
+              firstSymbolId
+            );
+
+            // Add circle layer for points
+            map.addLayer(
+              {
+                id: `${vectorLayerId}-point`,
+                type: 'circle',
+                source: sourceId,
+                'source-layer': 'default',
+                paint: circlePaint as CirclePaint,
+                filter: ['==', '$type', 'Point'],
+              },
+              firstSymbolId
+            );
+          }
+
+          addedLayersRef.current.add(layerId);
+        } else if (layerConfig.wms_url) {
+          // Add WMS raster source
+          const rasterLayerId = `wms-layer-${layerId}`;
+
+          if (!map.getSource(sourceId)) {
+            const wmsUrl = layerConfig.wms_url.startsWith('http')
+              ? `/bims_proxy/${layerConfig.wms_url}`
+              : layerConfig.wms_url;
+
+            const tileUrl = `${wmsUrl}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=${layerConfig.wms_layer_name}&STYLES=&FORMAT=${layerConfig.wms_format || 'image/png'}&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}`;
+
+            map.addSource(sourceId, {
+              type: 'raster',
+              tiles: [tileUrl],
+              tileSize: 256,
+            });
+          }
+
+          if (!map.getLayer(rasterLayerId)) {
+            map.addLayer(
+              {
+                id: rasterLayerId,
+                type: 'raster',
+                source: sourceId,
+                paint: {
+                  'raster-opacity': 0.7,
+                },
+              },
+              firstSymbolId
+            );
+          }
+
+          addedLayersRef.current.add(layerId);
+        }
       }
 
       // Update visibility of existing layers
+      const vectorLayerId = `vector-layer-${layerId}`;
+      const rasterLayerId = `wms-layer-${layerId}`;
+
+      // Toggle vector layers visibility
+      [`${vectorLayerId}-fill`, `${vectorLayerId}-line`, `${vectorLayerId}-point`].forEach(id => {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, 'visibility', isVisible ? 'visible' : 'none');
+        }
+      });
+
+      // Toggle raster layer visibility
       if (map.getLayer(rasterLayerId)) {
-        map.setLayoutProperty(
-          rasterLayerId,
-          'visibility',
-          isVisible ? 'visible' : 'none'
-        );
+        map.setLayoutProperty(rasterLayerId, 'visibility', isVisible ? 'visible' : 'none');
       }
     });
   }, [map, layerConfigs, layerVisibility]);

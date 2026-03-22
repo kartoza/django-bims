@@ -181,9 +181,9 @@ const ContextLayersPage: React.FC = () => {
         <Container maxW="container.xl">
           <HStack justify="space-between">
             <VStack align="start" spacing={1}>
-              <Heading size="lg">Context Layers</Heading>
+              <Heading size="lg">External Layers</Heading>
               <Text opacity={0.9}>
-                Manage external map layers (WMS, WMTS, XYZ, GeoJSON)
+                Remote layers from external servers (WMS, WMTS, XYZ, COG)
               </Text>
             </VStack>
             <Button
@@ -198,6 +198,19 @@ const ContextLayersPage: React.FC = () => {
       </Box>
 
       <Container maxW="container.xl" py={8}>
+        <Alert status="info" mb={6} borderRadius="md">
+          <AlertIcon />
+          <Box>
+            <Text fontWeight="medium">Remote layers from external servers</Text>
+            <Text fontSize="sm" mt={1}>
+              External layers are served from remote WMS, WMTS, or XYZ tile servers. The styling is controlled
+              by the remote server. These layers appear in the Context Layers section of the map legend alongside
+              custom vector layers. For custom-styled layers you control, use{' '}
+              <Text as="span" fontWeight="medium">Custom Vector Layers</Text> instead.
+            </Text>
+          </Box>
+        </Alert>
+
         <Tabs variant="soft-rounded" colorScheme="brand" mb={6}>
           <TabList flexWrap="wrap">
             <Tab onClick={() => setActiveCategory('all')}>All</Tab>
@@ -304,12 +317,19 @@ const ContextLayersPage: React.FC = () => {
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
-            {isEditing ? 'Edit Context Layer' : 'Add Context Layer'}
+            {isEditing ? 'Edit External Layer' : 'Add External Layer'}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {editingLayer && (
               <VStack spacing={4} align="stretch">
+                <Alert status="info" size="sm" borderRadius="md">
+                  <AlertIcon />
+                  <Text fontSize="sm">
+                    External layers are served from remote servers. The styling is controlled by the source server.
+                  </Text>
+                </Alert>
+
                 <FormControl isRequired>
                   <FormLabel>Layer Name</FormLabel>
                   <Input

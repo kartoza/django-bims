@@ -44,12 +44,12 @@ interface VisualizationLayersState {
   reorderLayers: (layers: VisualizationLayer[]) => void;
 }
 
-// Default visualization layers - these control how site data is displayed on the map
+// Site visualization layers - these control how biodiversity site data is displayed on the map
 const DEFAULT_VISUALIZATION_LAYERS: VisualizationLayer[] = [
   {
     id: 'sites',
-    name: 'Site Points',
-    type: 'point',
+    name: 'Location Sites',
+    type: 'cluster',
     source: 'sites',
     enabled: true,
     visible: true,
@@ -60,30 +60,17 @@ const DEFAULT_VISUALIZATION_LAYERS: VisualizationLayer[] = [
     order: 1,
   },
   {
-    id: 'clusters',
-    name: 'Hexbin Clusters',
-    type: 'cluster',
-    source: 'clusters',
-    enabled: true,
-    visible: false,
-    opacity: 100,
-    minZoom: 0,
-    maxZoom: 22,
-    style: { color: '#48BB78', fillColor: '#48BB78', radius: 8 },
-    order: 2,
-  },
-  {
     id: 'heatmap',
-    name: 'Density Heatmap',
+    name: 'Site Density Heatmap',
     type: 'heatmap',
-    source: 'all_records',
+    source: 'sites',
     enabled: true,
     visible: false,
     opacity: 60,
     minZoom: 0,
-    maxZoom: 10,
+    maxZoom: 12,
     style: { color: '#E53E3E' },
-    order: 3,
+    order: 2,
   },
 ];
 

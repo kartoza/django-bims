@@ -8,140 +8,22 @@
  * Made with love by Kartoza | https://kartoza.com
  */
 import React from 'react';
-import {
-  Box,
-  Flex,
-  IconButton,
-  useBreakpointValue,
-  Drawer,
-  DrawerContent,
-  DrawerOverlay,
-  useDisclosure,
-} from '@chakra-ui/react';
-import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { useUIStore } from '../stores/uiStore';
+import { Box } from '@chakra-ui/react';
 
 interface MapLayoutProps {
   children: React.ReactNode;
 }
 
 const MapLayout: React.FC<MapLayoutProps> = ({ children }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const isMobile = useBreakpointValue({ base: true, lg: false });
-
-  const {
-    activePanel,
-    panelWidth,
-    isPanelCollapsed,
-    sidebarPosition,
-  } = useUIStore();
-
-  const showPanel = activePanel !== null && !isPanelCollapsed;
-  const effectivePanelWidth = showPanel ? panelWidth : 0;
-
-  // Panel content - will be replaced with actual panel components
-  const PanelContent = () => (
-    <Box
-      h="100%"
-      bg="white"
-      overflowY="auto"
-      p={4}
-    >
-      <Box textAlign="center" color="gray.500" py={10}>
-        Panel content will be rendered here based on activePanel
-      </Box>
-    </Box>
-  );
-
-  // Mobile layout - full screen map with drawer
-  if (isMobile) {
-    return (
-      <Box
-        w="100%"
-        h="100%"
-        position="relative"
-      >
-        {/* Mobile menu button */}
-        <IconButton
-          aria-label="Open menu"
-          icon={<HamburgerIcon />}
-          position="absolute"
-          top={4}
-          left={4}
-          zIndex={20}
-          bg="white"
-          shadow="md"
-          onClick={onOpen}
-        />
-
-        {/* Main content (map) - fill parent with 100% */}
-        <Box
-          w="100%"
-          h="100%"
-          position="relative"
-        >
-          {children}
-        </Box>
-
-        {/* Mobile drawer */}
-        <Drawer
-          isOpen={isOpen}
-          placement={sidebarPosition}
-          onClose={onClose}
-          size="sm"
-        >
-          <DrawerOverlay />
-          <DrawerContent>
-            <IconButton
-              aria-label="Close menu"
-              icon={<CloseIcon />}
-              position="absolute"
-              top={4}
-              right={4}
-              zIndex={1}
-              size="sm"
-              onClick={onClose}
-            />
-            <PanelContent />
-          </DrawerContent>
-        </Drawer>
-      </Box>
-    );
-  }
-
-  // Desktop layout - use width/height 100% to fill parent
+  // Simple layout - map fills entire space
+  // Panel functionality can be added later when panel content is implemented
   return (
     <Box
       w="100%"
       h="100%"
       position="relative"
     >
-      <Flex
-        direction={sidebarPosition === 'left' ? 'row' : 'row-reverse'}
-        h="100%"
-        w="100%"
-      >
-        {/* Sidebar panel */}
-        <Box
-          w={showPanel ? `${effectivePanelWidth}px` : '0'}
-          minW={showPanel ? `${effectivePanelWidth}px` : '0'}
-          h="100%"
-          bg="white"
-          borderRightWidth={sidebarPosition === 'left' && showPanel ? 1 : 0}
-          borderLeftWidth={sidebarPosition === 'right' && showPanel ? 1 : 0}
-          borderColor="gray.200"
-          transition="width 0.2s ease-in-out"
-          overflow="hidden"
-          flexShrink={0}
-        >
-          {showPanel && <PanelContent />}
-        </Box>
-
-        {/* Main content (map) - use 100% height with relative position */}
-        <Box flex="1" h="100%" position="relative" minW={0}>
-          {children}
-        </Box>
-      </Flex>
+      {children}
     </Box>
   );
 };

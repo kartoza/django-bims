@@ -51,23 +51,16 @@ interface LayerCategory {
 
 const LAYER_CATEGORIES: LayerCategory[] = [
   {
-    id: 'biodiversity',
-    name: 'Biodiversity Layers',
-    description: 'Site locations and occurrences',
-    icon: '🦋',
+    id: 'sites',
+    name: 'Site Layers',
+    description: 'Site points and derived visualizations',
+    icon: '📍',
     color: 'green.500',
-  },
-  {
-    id: 'visualization',
-    name: 'Visualization',
-    description: 'Clusters and heatmaps',
-    icon: '📊',
-    color: 'purple.500',
   },
   {
     id: 'context',
     name: 'Context Layers',
-    description: 'Administrative and geographic boundaries',
+    description: 'Background reference layers',
     icon: '🗺️',
     color: 'blue.500',
   },
@@ -84,30 +77,14 @@ const DEFAULT_LAYERS: MapLayer[] = [
 const getLayerCategory = (layer: MapLayer): string => {
   if (layer.type === 'base') return 'base';
 
-  // Categorize overlay/data layers
+  // Site layers - biodiversity site points and derived visualizations
   const id = layer.id.toLowerCase();
-
-  // Biodiversity data layers
-  if (['sites', 'occurrences', 'taxa-distribution'].includes(id)) {
-    return 'biodiversity';
+  if (['sites', 'clusters', 'heatmap', 'occurrences', 'taxa-distribution', 'species-richness', 'endemism-hotspots'].includes(id)) {
+    return 'sites';
   }
 
-  // Context layers (boundaries, rivers, protected areas)
-  if ([
-    'provinces', 'municipalities', 'catchments', 'sub-catchments', 'ecoregions',
-    'rivers', 'wetlands', 'dams', 'estuaries',
-    'protected-areas', 'critical-biodiversity', 'ramsar-sites'
-  ].includes(id)) {
-    return 'context';
-  }
-
-  // Visualization/analysis layers
-  if (['heatmap', 'clusters', 'species-richness', 'endemism-hotspots'].includes(id)) {
-    return 'visualization';
-  }
-
-  // Default based on type
-  return layer.type === 'data' ? 'biodiversity' : 'context';
+  // Everything else is context (background reference layers)
+  return 'context';
 };
 
 // Legend item symbols for different layer types
@@ -406,30 +383,23 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
       grouped[cat.id] = [];
     });
 
-    // Add default/map layers
+    // Add site visualization layers (points, clusters, heatmap) to 'sites' category
+    visualizationLayersAsMapLayers.forEach((layer) => {
+      grouped['sites'].push(layer);
+    });
+
+    // Add layers from mapStore (fetched from API via useContextLayers)
     mergedLayers.forEach((layer) => {
       const category = getLayerCategory(layer);
       if (grouped[category]) {
         grouped[category].push(layer);
       } else {
-        // Fall back to biodiversity for unknown categories
-        grouped['biodiversity'].push(layer);
+        // Default to context for unknown categories
+        grouped['context'].push(layer);
       }
     });
 
-    // Add Site Points to 'biodiversity' category
-    const siteLayers = visualizationLayersAsMapLayers.filter(
-      (l) => l.id === 'visualization-sites'
-    );
-    grouped['biodiversity'] = [...grouped['biodiversity'], ...siteLayers];
-
-    // Add clusters and heatmap to 'visualization' category
-    const vizLayers = visualizationLayersAsMapLayers.filter(
-      (l) => l.id !== 'visualization-sites'
-    );
-    grouped['visualization'] = [...grouped['visualization'], ...vizLayers];
-
-    // Add context layers from the store to the 'context' category
+    // Add context layers from the local store (legacy WMS config)
     grouped['context'] = [...grouped['context'], ...contextLayersAsMaplayers];
 
     return grouped;
