@@ -37,6 +37,7 @@ import {
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { useMapStore, MapLayer } from '../../stores/mapStore';
 import { useContextLayersStore } from '../../stores/contextLayersStore';
+import { useVisualizationLayersStore } from '../../stores/visualizationLayersStore';
 import { useUIStore } from '../../stores/uiStore';
 
 // Layer category definitions with icons and colors
@@ -364,6 +365,7 @@ interface MapLegendProps {
 const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
   const { layerList, layers, addLayer, setLayerVisibility, setLayerOpacity } = useMapStore();
   const { layers: contextLayers, toggleVisibility: toggleContextVisibility, setOpacity: setContextOpacity } = useContextLayersStore();
+  const { layers: visualizationLayers, toggleVisibility: toggleVisualizationVisibility, setOpacity: setVisualizationOpacity } = useVisualizationLayersStore();
 
   // All useColorModeValue calls must be at the top, before any conditional returns
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -404,6 +406,19 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
       }));
   }, [contextLayers]);
 
+  // Convert visualization layers store to MapLayer format for display
+  const visualizationLayersAsMapLayers: MapLayer[] = React.useMemo(() => {
+    return visualizationLayers
+      .filter((vl) => vl.enabled)
+      .map((vl) => ({
+        id: `visualization-${vl.id}`,
+        name: vl.name,
+        visible: vl.visible,
+        opacity: vl.opacity / 100, // Store uses 0-100, MapLayer uses 0-1
+        type: 'data' as const,
+      }));
+  }, [visualizationLayers]);
+
   // Group layers by category
   const layersByCategory = React.useMemo(() => {
     const grouped: Record<string, MapLayer[]> = {};
@@ -426,8 +441,11 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
     // Add context layers from the store to the 'context' category
     grouped['context'] = [...grouped['context'], ...contextLayersAsMaplayers];
 
+    // Add visualization layers from the store to the 'visualization' category
+    grouped['visualization'] = [...grouped['visualization'], ...visualizationLayersAsMapLayers];
+
     return grouped;
-  }, [mergedLayers, contextLayersAsMaplayers]);
+  }, [mergedLayers, contextLayersAsMaplayers, visualizationLayersAsMapLayers]);
 
   // Count visible layers per category
   const visibleCounts = React.useMemo(() => {
@@ -438,31 +456,40 @@ const MapLegend: React.FC<MapLegendProps> = ({ isOpen, onClose }) => {
     return counts;
   }, [layersByCategory]);
 
-  // Total active layers including context layers
+  // Total active layers including context and visualization layers
   const totalActiveCount = React.useMemo(() => {
     const mapLayersCount = mergedLayers.filter((l) => l.visible).length;
     const contextLayersCount = contextLayersAsMaplayers.filter((l) => l.visible).length;
-    return mapLayersCount + contextLayersCount;
-  }, [mergedLayers, contextLayersAsMaplayers]);
+    const visualizationLayersCount = visualizationLayersAsMapLayers.filter((l) => l.visible).length;
+    return mapLayersCount + contextLayersCount + visualizationLayersCount;
+  }, [mergedLayers, contextLayersAsMaplayers, visualizationLayersAsMapLayers]);
 
-  // Handler that works for both map store and context store layers
+  // Handler that works for map store, context store, and visualization store layers
   const handleToggleVisibility = (layerId: string, visible: boolean) => {
     if (layerId.startsWith('context-')) {
       // This is a context layer from the store
       const contextId = layerId.replace('context-', '');
       toggleContextVisibility(contextId);
+    } else if (layerId.startsWith('visualization-')) {
+      // This is a visualization layer from the store
+      const visualizationId = layerId.replace('visualization-', '');
+      toggleVisualizationVisibility(visualizationId);
     } else {
       // This is a map store layer
       setLayerVisibility(layerId, visible);
     }
   };
 
-  // Handler that works for both map store and context store layers
+  // Handler that works for map store, context store, and visualization store layers
   const handleOpacityChange = (layerId: string, opacity: number) => {
     if (layerId.startsWith('context-')) {
       // This is a context layer from the store
       const contextId = layerId.replace('context-', '');
       setContextOpacity(contextId, opacity);
+    } else if (layerId.startsWith('visualization-')) {
+      // This is a visualization layer from the store
+      const visualizationId = layerId.replace('visualization-', '');
+      setVisualizationOpacity(visualizationId, opacity * 100); // Convert 0-1 to 0-100
     } else {
       // This is a map store layer
       setLayerOpacity(layerId, opacity);

@@ -58,23 +58,7 @@ import {
   ViewOffIcon,
   DragHandleIcon,
 } from '@chakra-ui/icons';
-
-interface VisualizationLayer {
-  id: string;
-  name: string;
-  type: 'point' | 'polygon' | 'heatmap' | 'cluster';
-  source: string;
-  enabled: boolean;
-  opacity: number;
-  minZoom: number;
-  maxZoom: number;
-  style: {
-    color: string;
-    fillColor?: string;
-    radius?: number;
-  };
-  order: number;
-}
+import { useVisualizationLayersStore, VisualizationLayer } from '../stores/visualizationLayersStore';
 
 const VisualizationLayersPage: React.FC = () => {
   const toast = useToast();
@@ -82,72 +66,26 @@ const VisualizationLayersPage: React.FC = () => {
   const headerBg = useColorModeValue('brand.500', 'brand.600');
   const cardBg = useColorModeValue('white', 'gray.700');
 
-  const [layers, setLayers] = useState<VisualizationLayer[]>([
-    {
-      id: '1',
-      name: 'Location Sites',
-      type: 'cluster',
-      source: 'sites',
-      enabled: true,
-      opacity: 100,
-      minZoom: 0,
-      maxZoom: 22,
-      style: { color: '#3182CE', fillColor: '#3182CE', radius: 8 },
-      order: 1,
-    },
-    {
-      id: '2',
-      name: 'Fish Records',
-      type: 'point',
-      source: 'fish_records',
-      enabled: true,
-      opacity: 80,
-      minZoom: 5,
-      maxZoom: 22,
-      style: { color: '#38A169', fillColor: '#38A169', radius: 6 },
-      order: 2,
-    },
-    {
-      id: '3',
-      name: 'Species Heatmap',
-      type: 'heatmap',
-      source: 'all_records',
-      enabled: false,
-      opacity: 60,
-      minZoom: 0,
-      maxZoom: 10,
-      style: { color: '#E53E3E' },
-      order: 3,
-    },
-    {
-      id: '4',
-      name: 'River Catchments',
-      type: 'polygon',
-      source: 'catchments',
-      enabled: true,
-      opacity: 50,
-      minZoom: 0,
-      maxZoom: 22,
-      style: { color: '#0BC5EA', fillColor: '#0BC5EA' },
-      order: 4,
-    },
-  ]);
+  // Use the shared store instead of local state
+  const {
+    layers,
+    updateLayer,
+    addLayer: storeAddLayer,
+    deleteLayer: storeDeleteLayer,
+    toggleEnabled,
+    setOpacity: storeSetOpacity,
+    reorderLayers,
+  } = useVisualizationLayersStore();
 
   const [editingLayer, setEditingLayer] = useState<VisualizationLayer | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const toggleLayer = (id: string) => {
-    setLayers((prev) =>
-      prev.map((layer) =>
-        layer.id === id ? { ...layer, enabled: !layer.enabled } : layer
-      )
-    );
+    toggleEnabled(id);
   };
 
   const updateOpacity = (id: string, opacity: number) => {
-    setLayers((prev) =>
-      prev.map((layer) => (layer.id === id ? { ...layer, opacity } : layer))
-    );
+    storeSetOpacity(id, opacity);
   };
 
   const openEditModal = (layer: VisualizationLayer) => {
@@ -163,6 +101,7 @@ const VisualizationLayersPage: React.FC = () => {
       type: 'point',
       source: '',
       enabled: true,
+      visible: false,
       opacity: 100,
       minZoom: 0,
       maxZoom: 22,
@@ -177,16 +116,17 @@ const VisualizationLayersPage: React.FC = () => {
     if (!editingLayer) return;
 
     if (isEditing) {
-      setLayers((prev) =>
-        prev.map((layer) => (layer.id === editingLayer.id ? editingLayer : layer))
-      );
+      updateLayer(editingLayer.id, editingLayer);
       toast({
         title: 'Layer updated',
         status: 'success',
         duration: 3000,
       });
     } else {
-      setLayers((prev) => [...prev, { ...editingLayer, id: Date.now().toString() }]);
+      storeAddLayer({
+        ...editingLayer,
+        visible: false,
+      });
       toast({
         title: 'Layer added',
         status: 'success',
@@ -197,7 +137,7 @@ const VisualizationLayersPage: React.FC = () => {
   };
 
   const deleteLayer = (id: string) => {
-    setLayers((prev) => prev.filter((layer) => layer.id !== id));
+    storeDeleteLayer(id);
     toast({
       title: 'Layer deleted',
       status: 'info',
