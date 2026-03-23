@@ -442,9 +442,13 @@ def process_download_pdf_taxa_list(
             paragraphs.append(Paragraph("To be cited as:", heading_style))
             for c in citations:
                 paragraphs.append(Paragraph(c.formatted_citation, citation_style))
-            paragraphs.append(Spacer(1, 12))
-        else:
-            paragraphs.append(Spacer(1, 12))
+            paragraphs.append(Spacer(1, 6))
+
+        paragraphs.append(Paragraph(
+            "<i>= denotes a synonym of the accepted taxon above it.</i>",
+            citation_style
+        ))
+        paragraphs.append(Spacer(1, 12))
 
         order_by_dict = {}
         species_qs = taxonomies.filter(
@@ -498,10 +502,9 @@ def process_download_pdf_taxa_list(
                     accepted_taxonomy=s_obj
                 )
                 for syn in synonyms:
-                    syn_lin = f'<i>{syn.canonical_name}</i>'
+                    syn_lin = f'= <i>{syn.canonical_name}</i>'
                     if syn.author:
                         syn_lin += f" {syn.author}"
-                    
                     paragraphs.append(Paragraph(syn_lin, syn_style))
 
             paragraphs.append(Spacer(1, 10))
