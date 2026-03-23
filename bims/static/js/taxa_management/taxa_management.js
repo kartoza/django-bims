@@ -215,7 +215,8 @@ export const taxaManagement = (() => {
 
         $saveTaxonBtn.on('click', handleSubmitEditTaxon)
         $('#download-csv').on('click', handleDownloadCsv)
-        $('#download-pdf').on('click', handleDownloadPdf)
+        $('#download-pdf').on('click', (e) => handleDownloadPdf(e, 'genus'))
+        $('#download-pdf-by-family').on('click', (e) => handleDownloadPdf(e, 'family'))
 
         const $approveAllBtn = $('#approve-all-proposals-btn');
         if ($approveAllBtn.length) {
@@ -317,7 +318,7 @@ export const taxaManagement = (() => {
         });
     }
 
-    function handleDownloadPdf(e) {
+    function handleDownloadPdf(e, order_by = 'genus') {
         if (typeof isPublicView !== 'undefined' && isPublicView) {
             e.preventDefault();
             $('#loginRequiredModal').modal('show');
@@ -326,7 +327,11 @@ export const taxaManagement = (() => {
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
-        showDownloadPopup('PDF', 'Taxa List', function (downloadRequestId) {
+        let pdfChecklistTitle = 'PDF Checklist';
+        if (order_by === 'family') {
+            pdfChecklistTitle += ' by Family';
+        }
+        showDownloadPopup('PDF', pdfChecklistTitle, function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
             let downloadUrl = taxaUrlList.replace('/api/taxa-list/', '/download-taxa-list/')
@@ -335,6 +340,7 @@ export const taxaManagement = (() => {
             }
             downloadUrl += '&downloadRequestId=' + downloadRequestId
             downloadUrl += '&output=pdf'
+            downloadUrl += '&orderBy=' + order_by
             fetch(downloadUrl)
                 .then((resp) => {
                     $target.prop('disabled', false);

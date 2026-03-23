@@ -467,6 +467,10 @@ class AbstractTaxonomy(AbstractValidation):
         return self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
 
     @property
+    def family(self):
+        return self.get_parent_by_rank(TaxonomicRank.FAMILY.name)
+
+    @property
     def genus(self):
         return self.get_parent_by_rank(TaxonomicRank.GENUS.name)
 
