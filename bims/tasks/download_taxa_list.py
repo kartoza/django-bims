@@ -4,6 +4,8 @@ import datetime
 import json
 import logging
 import os
+from typing import OrderedDict
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from celery import shared_task
@@ -326,11 +328,14 @@ def process_download_csv_taxa_list(
 
 
 def process_download_pdf_taxa_list(
-        request, pdf_file_path, filename, user_id, taxon_group_id, download_request_id):
+        request, pdf_file_path, filename, user_id, taxon_group_id, download_request_id, order_by=None):
     from bims.tasks import send_csv_via_email
     from bims.models.taxon_group import TaxonGroup
     from bims.api_views.taxon import TaxaList
     from bims.models import TaxonGroupCitation
+
+    if not order_by:
+        order_by = 'genus'
 
     class RequestGet:
         def __init__(self, get_data, user=None):
@@ -441,7 +446,7 @@ def process_download_pdf_taxa_list(
         else:
             paragraphs.append(Spacer(1, 12))
 
-        genus_dict = {}
+        order_by_dict = {}
         species_qs = taxonomies.filter(
             rank__in=['SPECIES', 'SUBSPECIES']
         ).exclude(
@@ -449,24 +454,35 @@ def process_download_pdf_taxa_list(
         ).order_by('canonical_name')
 
         for s in species_qs:
-            genus = s.genus
-            if not genus:
+            if order_by == 'family':
+                key = s.family.canonical_name if s.family else 'No Family'
+                key_author = s.family.author if s.family and s.family.author else ''
+                key_id = s.family.id
+            else:
+                key = s.genus.canonical_name if s.genus else ''
+                key_author = s.genus.author if s.genus and s.genus.author else ''
+                key_id = s.genus.id
+            if not key:
                 continue
-            if genus.id not in genus_dict:
-                genus_dict[genus.id] = {
-                    'obj': genus,
+            if key_id not in order_by_dict:
+                order_by_dict[key_id] = {
+                    'canonical_name': key,
+                    'author': key_author,
                     'species': []
                 }
-            genus_dict[genus.id]['species'].append(s)
+            order_by_dict[key_id]['species'].append(s)
 
-        for genus_id, info in genus_dict.items():
-            g_obj = info['obj']
-            genus_line = g_obj.canonical_name
-            genus_author = ''
-            if g_obj.author and g_obj.author not in genus_line:
-                genus_author += f" {g_obj.author}"
+        # Sort by key canonical name
+        order_by_dict = OrderedDict(
+            sorted(order_by_dict.items(), key=lambda item: item[1]['canonical_name']))
 
-            paragraphs.append(Paragraph(f"<i>{genus_line}</i>{genus_author}", genus_style))
+        for key_id, info in order_by_dict.items():
+            header_line = info['canonical_name']
+            header_author = ''
+            if info['author'] and info['author'] not in header_line:
+                header_author += f" {info['author']}"
+
+            paragraphs.append(Paragraph(f"<i>{header_line}</i>{header_author}", genus_style))
             paragraphs.append(Spacer(1, 10))
 
             for s_obj in info['species']:
@@ -570,7 +586,8 @@ def download_taxa_list(
                 )
             else:
                 return process_download_pdf_taxa_list(
-                    request, csv_file, filename, user_id, taxon_group_id, download_request_id
+                    request, csv_file, filename, user_id, taxon_group_id, download_request_id,
+                    order_by=order_by
                 )
     logger.info(
         'Csv %s is already being processed by another worker',
