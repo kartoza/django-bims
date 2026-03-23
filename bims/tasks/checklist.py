@@ -33,6 +33,14 @@ def download_checklist(download_request_id, send_email=False, user_id=None):
             return status
         except Exception as e:
             logger.error(f"Error generating checklist for request {download_request_id}: {e}")
+            # Mark as no longer processing so user isn't stuck waiting
+            try:
+                dr = DownloadRequest.objects.get(id=download_request_id)
+                dr.processing = False
+                dr.progress = f"Error: {str(e)[:200]}"
+                dr.save()
+            except DownloadRequest.DoesNotExist:
+                pass
             raise
 
     def log_processing_status(download_request_id):

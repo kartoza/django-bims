@@ -44,11 +44,12 @@ def send_csv_via_email(
                 id=download_request_id
             )
             approved = download_request.approved
-        except DownloadRequest.DoesNotExist:
+        except (DownloadRequest.DoesNotExist, ValueError):
             pass
 
     if download_request and not download_request.request_file:
         download_request.request_category = file_name
+        download_request.processing = False  # Mark as complete
         # Store path relative to MEDIA_ROOT for proper URL generation
         if os.path.isabs(csv_file):
             download_request.request_file = os.path.relpath(csv_file, settings.MEDIA_ROOT)

@@ -161,11 +161,13 @@ def download_collection_records(
         ]
 
     def get_download_request(request_id):
+        if not request_id:
+            return None
         try:
             return DownloadRequest.objects.get(
                 id=request_id
             )
-        except DownloadRequest.DoesNotExist:
+        except (DownloadRequest.DoesNotExist, ValueError):
             return None
 
     start = time.time()
@@ -192,7 +194,17 @@ def download_collection_records(
     if download_request and download_request.rejected:
         return
 
-    taxon_group = collection_results.first().module_group
+    # Check if there are any results
+    first_record = collection_results.first()
+    if not first_record:
+        # No records found - update download request and return
+        if download_request:
+            download_request.processing = False
+            download_request.progress = "No records found"
+            download_request.save()
+        return
+
+    taxon_group = first_record.module_group
     upload_template_headers = []
 
     def _extend_headers(headers):
@@ -204,7 +216,7 @@ def download_collection_records(
                 upload_template_headers.append(h)
                 seen.add(h)
 
-    legacy_field = getattr(taxon_group, 'occurrence_upload_template', None)
+    legacy_field = getattr(taxon_group, 'occurrence_upload_template', None) if taxon_group else None
     if legacy_field:
         try:
             with open(legacy_field.path, 'r', encoding='utf-8') as csvfile:
@@ -213,7 +225,7 @@ def download_collection_records(
         except (FileNotFoundError, UnicodeDecodeError, AttributeError):
             pass
 
-    if hasattr(taxon_group, 'occurrence_upload_templates'):
+    if taxon_group and hasattr(taxon_group, 'occurrence_upload_templates'):
         for tpl in taxon_group.occurrence_upload_templates.all():
             try:
                 with open(tpl.file.path, 'r', encoding='utf-8') as csvfile:
@@ -280,16 +292,17 @@ def download_collection_records(
 
             download_request = get_download_request(download_request_id)
 
-            if download_request.rejected:
-                logger.debug('Download request is rejected, closing.')
-                try:
-                    os.remove(path_file)
-                except Exception: # noqa
-                    pass
-                return
-            else:
-                download_request.progress = f'{start_index}/{total_records}'
-                download_request.save()
+            if download_request:
+                if download_request.rejected:
+                    logger.debug('Download request is rejected, closing.')
+                    try:
+                        os.remove(path_file)
+                    except Exception:  # noqa
+                        pass
+                    return
+                else:
+                    download_request.progress = f'{start_index}/{total_records}'
+                    download_request.save()
 
     if collection_data:
         start_index = current_csv_row
@@ -309,10 +322,11 @@ def download_collection_records(
         round(time.time() - start, 2))
     )
 
-    if download_request:
+    if download_request_id:
         download_request = get_download_request(download_request_id)
-        download_request.progress = f'{current_csv_row}/{total_records}'
-        download_request.save()
+        if download_request:
+            download_request.progress = f'{current_csv_row}/{total_records}'
+            download_request.save()
 
     logger.debug(
         'Write csv time : {}'.format(

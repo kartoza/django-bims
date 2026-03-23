@@ -41,6 +41,33 @@ def download_collection_record_task(
         path_file, request, send_email=False, user_id=None):
     from bims.utils.celery import memcache_lock
     from bims.download.collection_record import download_collection_records
+    from bims.models.download_request import DownloadRequest
+
+    def _mark_failed(error_msg):
+        """Mark download request as failed if it exists."""
+        download_request_id = None
+        if isinstance(request, dict):
+            download_request_id = request.get('downloadRequestId')
+        elif hasattr(request, 'get'):
+            download_request_id = request.get('downloadRequestId')
+        if download_request_id:
+            try:
+                dr = DownloadRequest.objects.get(id=download_request_id)
+                dr.processing = False
+                dr.progress = f"Error: {str(error_msg)[:200]}"
+                dr.save()
+            except (DownloadRequest.DoesNotExist, ValueError):
+                pass
+
+    def _run_download():
+        try:
+            return download_collection_records(
+                path_file, request, send_email, user_id
+            )
+        except Exception as e:
+            logger.error(f"Error downloading collection records: {e}")
+            _mark_failed(e)
+            raise
 
     if IN_CELERY_WORKER_PROCESS:
         lock_id = '{0}-lock-{1}'.format(
@@ -51,16 +78,12 @@ def download_collection_record_task(
         oid = '{0}'.format(path_file)
         with memcache_lock(lock_id, oid) as acquired:
             if acquired:
-                return download_collection_records(
-                    path_file, request, send_email, user_id
-                )
+                return _run_download()
         logger.info(
             'Csv %s is already being processed by another worker',
             path_file)
     else:
-        return download_collection_records(
-            path_file, request, send_email, user_id
-        )
+        return _run_download()
 
     logger.info(
         'Csv %s is already being processed by another worker',

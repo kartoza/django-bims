@@ -106,28 +106,88 @@ class DownloadViewSet(viewsets.ViewSet):
         Request a CSV download of biological records.
 
         Body:
-        - filters: Filter parameters for the records
+        - filters: Filter parameters for the records (same format as search API)
         """
-        from bims.download.csv_download import download_csv_task
+        import os
+        from hashlib import sha256
+        from datetime import datetime
+        from django.conf import settings
+        from bims.tasks.collection_record import download_collection_record_task
+        from bims.models.download_request import DownloadRequest, DownloadRequestPurpose
 
         filters = request.data.get("filters", {})
 
-        # Start async download task
         try:
-            task = download_csv_task.delay(
-                user_id=request.user.id,
-                filters=filters,
+            # Generate filename from filters
+            query_string = str(filters) + datetime.today().strftime('%Y%m%d')
+            filename = sha256(query_string.encode('utf-8')).hexdigest()
+
+            # Set up the file path
+            folder = settings.PROCESSED_CSV_PATH
+            if not os.path.exists(os.path.join(settings.MEDIA_ROOT, folder)):
+                os.makedirs(os.path.join(settings.MEDIA_ROOT, folder), exist_ok=True)
+
+            path_folder = os.path.join(
+                settings.MEDIA_ROOT,
+                folder,
+                request.user.username
+            )
+            os.makedirs(path_folder, exist_ok=True)
+
+            path_file = os.path.join(path_folder, filename)
+
+            # Get or create a default purpose
+            purpose, _ = DownloadRequestPurpose.objects.get_or_create(
+                name="Data Export",
+                defaults={"order": 0}
+            )
+
+            # Create download request for tracking
+            download_request = DownloadRequest.objects.create(
+                requester=request.user,
+                resource_type=DownloadRequest.CSV,
+                resource_name="Occurrence Data Export",
+                purpose=purpose,
+                dashboard_url=str(filters),
+                approved=True,
+                processing=True,
+            )
+
+            # Convert filters dict to QueryDict-like format for the task
+            # The task expects request.GET style parameters
+            from django.http import QueryDict
+            query_dict = QueryDict(mutable=True)
+            for key, value in filters.items():
+                if isinstance(value, list):
+                    for v in value:
+                        query_dict.appendlist(key, str(v))
+                else:
+                    query_dict[key] = str(value)
+
+            # Add download request ID for progress tracking
+            query_dict['downloadRequestId'] = str(download_request.id)
+
+            # Start async download task
+            # Note: Task will send email when complete
+            task = download_collection_record_task.delay(
+                path_file,
+                query_dict,
+                send_email=True,
+                user_id=request.user.id
             )
 
             return success_response(
                 data={
                     "task_id": task.id,
+                    "download_request_id": download_request.id,
                     "status": "PENDING",
-                    "message": "Download request submitted",
+                    "message": "Download request submitted. You will receive an email when ready.",
                 },
                 meta={"filters": filters},
             )
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return error_response(
                 errors={"detail": str(e)},
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -221,7 +281,7 @@ class DownloadViewSet(viewsets.ViewSet):
         import hashlib
         import os
         from django.conf import settings
-        from bims.tasks.download_taxa_list import download_taxa_list_task
+        from bims.tasks.download_taxa_list import download_taxa_list as download_taxa_list_task
         from bims.tasks.email_csv import send_csv_via_email
         from bims.models.taxon_group import TaxonGroup
         from bims.models.download_request import DownloadRequest, DownloadRequestPurpose

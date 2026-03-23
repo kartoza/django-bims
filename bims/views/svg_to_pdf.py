@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -11,6 +12,60 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseNotFound
 
 
+def _hex_to_rgb(hex_color):
+    """Convert a hex color string to rgb() format for svglib compatibility."""
+    # Remove # prefix if present
+    hex_color = hex_color.lstrip('#')
+    if len(hex_color) == 3:
+        # Expand shorthand #RGB to #RRGGBB
+        hex_color = ''.join([c*2 for c in hex_color])
+    if len(hex_color) != 6:
+        return None  # Invalid, skip conversion
+    try:
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return f'rgb({r},{g},{b})'
+    except (ValueError, IndexError):
+        return None
+
+
+def _preprocess_svg_colors(svg_content):
+    """
+    Convert hex colors in SVG to rgb() format for svglib compatibility.
+    svglib has issues parsing hex colors like #18A090.
+    """
+    # Find all hex color patterns and replace them
+    # This handles: #RGB, #RRGGBB in any context
+    def replace_hex(match):
+        rgb = _hex_to_rgb(match.group(0))
+        return rgb if rgb else match.group(0)
+
+    # Match # followed by exactly 3 or 6 hex digits
+    # Use word boundary or lookahead to avoid matching too much
+    hex_pattern = r'#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})(?![0-9A-Fa-f])'
+    return re.sub(hex_pattern, replace_hex, svg_content)
+
+
+def _ensure_hex_color(color_value, default='#18A090'):
+    """Ensure color value is a valid hex color string for ReportLab."""
+    if not color_value:
+        return default
+    color_str = str(color_value).strip()
+    # Ensure it starts with #
+    if not color_str.startswith('#'):
+        color_str = f'#{color_str}'
+    # Validate it looks like a hex color
+    if len(color_str) not in (4, 7, 9):  # #RGB, #RRGGBB, #RRGGBBAA
+        return default
+    try:
+        # Verify all characters after # are hex digits
+        int(color_str[1:], 16)
+    except ValueError:
+        return default
+    return color_str
+
+
 def get_theme_colors():
     """Get theme colors from CustomTheme or return defaults."""
     try:
@@ -18,9 +73,9 @@ def get_theme_colors():
         theme = CustomTheme.objects.filter(is_enabled=True).first()
         if theme:
             return {
-                'primary': theme.main_accent_color or '#18A090',
-                'secondary': theme.secondary_accent_color or '#DBAF00',
-                'text': theme.main_button_text_color or '#FFFFFF',
+                'primary': _ensure_hex_color(theme.main_accent_color, '#18A090'),
+                'secondary': _ensure_hex_color(theme.secondary_accent_color, '#DBAF00'),
+                'text': _ensure_hex_color(theme.main_button_text_color, '#FFFFFF'),
                 'site_name': theme.site_name or 'BIMS',
                 'logo_path': theme.logo.path if theme.logo else None,
                 'navbar_logo_path': theme.navbar_logo.path if theme.navbar_logo else None,
@@ -77,8 +132,12 @@ def svg_to_pdf(request):
         os.mkdir(path_folder)
 
     path_file = os.path.join(path_folder, '{}.pdf'.format(title))
-    svg_file = NamedTemporaryFile(delete=False)
-    with open(svg_file.name, svg_file.mode) as f_svg:
+
+    # Preprocess SVG to convert hex colors to rgb() for svglib compatibility
+    svg = _preprocess_svg_colors(svg)
+
+    svg_file = NamedTemporaryFile(delete=False, mode='w', suffix='.svg')
+    with open(svg_file.name, 'w') as f_svg:
         f_svg.write(svg)
 
     max_width, max_height = A4
@@ -99,7 +158,19 @@ def svg_to_pdf(request):
     svg_canvas.drawString(20, max_height - 80, title)
 
     # Draw the SVG chart
-    drawing = svg2rlg(svg_file.name)
+    try:
+        drawing = svg2rlg(svg_file.name)
+    except AttributeError as e:
+        # svglib may fail to parse hex colors - clean up and re-raise with context
+        svg_file.close()
+        os.unlink(svg_file.name)
+        error_msg = str(e)
+        if "has no attribute '#" in error_msg:
+            raise ValueError(
+                f"SVG contains a color that svglib cannot parse: {error_msg}. "
+                "Try using named colors (e.g., 'blue') instead of hex codes."
+            ) from e
+        raise
     svg_width = request.POST.get('svgWidth', None)
     if svg_width:
         svg_width = float(svg_width)

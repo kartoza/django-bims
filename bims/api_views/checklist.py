@@ -23,6 +23,25 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 
 
+def _ensure_hex_color(color_value, default='#18A090'):
+    """Ensure color value is a valid hex color string for ReportLab."""
+    if not color_value:
+        return default
+    color_str = str(color_value).strip()
+    # Ensure it starts with #
+    if not color_str.startswith('#'):
+        color_str = f'#{color_str}'
+    # Validate it looks like a hex color
+    if len(color_str) not in (4, 7, 9):  # #RGB, #RRGGBB, #RRGGBBAA
+        return default
+    try:
+        # Verify all characters after # are hex digits
+        int(color_str[1:], 16)
+    except ValueError:
+        return default
+    return color_str
+
+
 def get_theme_colors():
     """Get theme colors from CustomTheme or return defaults."""
     try:
@@ -30,9 +49,9 @@ def get_theme_colors():
         theme = CustomTheme.objects.filter(is_enabled=True).first()
         if theme:
             return {
-                'primary': theme.main_accent_color or '#18A090',
-                'secondary': theme.secondary_accent_color or '#DBAF00',
-                'text': theme.main_button_text_color or '#FFFFFF',
+                'primary': _ensure_hex_color(theme.main_accent_color, '#18A090'),
+                'secondary': _ensure_hex_color(theme.secondary_accent_color, '#DBAF00'),
+                'text': _ensure_hex_color(theme.main_button_text_color, '#FFFFFF'),
                 'site_name': theme.site_name or 'BIMS',
                 'logo_path': theme.logo.path if theme.logo else None,
                 'navbar_logo_path': theme.navbar_logo.path if theme.navbar_logo else None,
@@ -185,13 +204,27 @@ class ChecklistPDFTemplate(BaseDocTemplate):
 
         story.append(Spacer(1, 1 * cm))
 
-        # Stats box
+        # Stats box - use ParagraphStyle instead of inline font tags for colors
+        stats_count_style = ParagraphStyle(
+            'StatsCount',
+            parent=styles['Normal'],
+            fontSize=28,
+            textColor=self.primary_color,
+            alignment=TA_CENTER,
+        )
+        stats_label_style = ParagraphStyle(
+            'StatsLabel',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.Color(0.4, 0.4, 0.4),
+            alignment=TA_CENTER,
+        )
         stats_data = [
             [
-                Paragraph(f'<font size="28" color="#{self.theme["primary"][1:]}">{self.species_count}</font>', styles['Normal']),
+                Paragraph(str(self.species_count), stats_count_style),
             ],
             [
-                Paragraph('<font size="10" color="#666666">Species Recorded</font>', styles['Normal']),
+                Paragraph('Species Recorded', stats_label_style),
             ]
         ]
         stats_table = Table(stats_data, colWidths=[4*cm])
@@ -319,11 +352,18 @@ def generate_checklist(download_request_id):
     )
     module_name = ''
 
-    if collection_records.count() > 0:
-        module_name = collection_records.values_list(
-            'module_group__name',
-            flat=True
-        )[0]
+    record_count = collection_records.count()
+    if record_count == 0:
+        # No records found - mark as complete with message
+        download_request.processing = False
+        download_request.progress = "No records found matching the filters"
+        download_request.save()
+        return False
+
+    module_name = collection_records.values_list(
+        'module_group__name',
+        flat=True
+    )[0] or 'Unknown'
 
     if (
         download_request.resource_type and

@@ -329,6 +329,25 @@ def process_download_csv_taxa_list(
         pass
 
 
+def _ensure_hex_color(color_value, default='#18A090'):
+    """Ensure color value is a valid hex color string for ReportLab."""
+    if not color_value:
+        return default
+    color_str = str(color_value).strip()
+    # Ensure it starts with #
+    if not color_str.startswith('#'):
+        color_str = f'#{color_str}'
+    # Validate it looks like a hex color
+    if len(color_str) not in (4, 7, 9):  # #RGB, #RRGGBB, #RRGGBBAA
+        return default
+    try:
+        # Verify all characters after # are hex digits
+        int(color_str[1:], 16)
+    except ValueError:
+        return default
+    return color_str
+
+
 def get_theme_colors():
     """Get theme colors from CustomTheme or return defaults."""
     try:
@@ -336,9 +355,9 @@ def get_theme_colors():
         theme = CustomTheme.objects.filter(is_enabled=True).first()
         if theme:
             return {
-                'primary': theme.main_accent_color or '#18A090',
-                'secondary': theme.secondary_accent_color or '#DBAF00',
-                'text': theme.main_button_text_color or '#FFFFFF',
+                'primary': _ensure_hex_color(theme.main_accent_color, '#18A090'),
+                'secondary': _ensure_hex_color(theme.secondary_accent_color, '#DBAF00'),
+                'text': _ensure_hex_color(theme.main_button_text_color, '#FFFFFF'),
                 'site_name': theme.site_name or 'BIMS',
                 'logo_path': theme.logo.path if theme.logo else None,
                 'navbar_logo_path': theme.navbar_logo.path if theme.navbar_logo else None,
@@ -719,9 +738,10 @@ def process_download_pdf_taxa_list(
         for s_obj in sorted(info['species'], key=lambda x: x.canonical_name):
             sp_line = f"<i>{s_obj.canonical_name}</i>"
             if s_obj.author:
-                sp_line += f" <font color='#666666'>{s_obj.author}</font>"
+                # Use named color 'gray' instead of hex code for ReportLab compatibility
+                sp_line += f" <font color='gray'>{s_obj.author}</font>"
             if s_obj.additional_data and "type species" in s_obj.additional_data:
-                sp_line += " <font color='#999999'>(Type species)</font>"
+                sp_line += " <font color='silver'>(Type species)</font>"
 
             story.append(Paragraph(sp_line, species_style))
 
