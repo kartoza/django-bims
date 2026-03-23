@@ -907,6 +907,11 @@ class TaxaProcessor(object):
 
         authors = _safe_strip(self.get_row_value(row, AUTHORS))
 
+        subgenus = ''
+        is_species = rank.lower() == 'species'
+        if is_species:
+            subgenus = _safe_strip(self.get_row_value(row, SUBGENUS))
+
         species_group = self.get_row_value(row, SPECIES_GROUP)
         if species_group:
             species_group, _ = SpeciesGroup.objects.get_or_create(name=species_group)
@@ -959,7 +964,8 @@ class TaxaProcessor(object):
             taxa = Taxonomy.objects.filter(canonical_name__iexact=taxon_name)
             # Homonymy guard: taxa can share a canonical name but belong to
             # different authors (e.g. Epeorus soldani (Braasch, 1979) vs.
-            # Epeorus soldani Nguyen & Bae, 2004). 
+            # Epeorus soldani Nguyen & Bae, 2004).
+            # Or have different subgenus
             if taxa.exists() and authors:
                 stripped_authors = authors.strip('()').strip()
                 taxa_by_author = taxa.filter(author__iexact=authors)
@@ -980,25 +986,8 @@ class TaxaProcessor(object):
                     )
                     taxa = Taxonomy.objects.none()
 
-        update_canonical_name = False
-        if not taxa.exists() and ' ' in taxon_name:
-            orphan = taxon_name.split(' ', 1)[1].strip()
-            taxa = Taxonomy.objects.filter(
-                canonical_name__iexact=orphan,
-                rank=_safe_upper(rank),
-                author=authors.strip(),
-                taxonomic_status__iexact=taxonomic_status
-            )
-            update_canonical_name = taxa.exists()
-
         proposal = None
         new_taxon = False
-
-        if taxa.exists() and update_canonical_name:
-            obtained = taxa.first()
-            obtained.canonical_name = taxon_name
-            obtained.scientific_name = scientific_name
-            obtained.save()
 
         try:
             taxonomy = None
@@ -1009,6 +998,13 @@ class TaxaProcessor(object):
             if taxa.exists():
                 taxa_same_rank = taxa.filter(rank=_safe_upper(rank))
                 if taxa_same_rank.exists():
+
+                    if is_species and subgenus:
+                        taxa_same_parent = taxa_same_rank.filter(
+                            parent__rank__iexact=SUBGENUS,
+                            parent__canonical_name__iexact=subgenus
+                        )
+
                     candidate = taxa_same_rank.first()
 
                     candidate_author = (candidate.author or '').strip('()').strip().lower()

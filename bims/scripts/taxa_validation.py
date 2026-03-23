@@ -18,7 +18,7 @@ from collections import defaultdict
 
 from bims.scripts.species_keys import (
     GBIF_LINK, GBIF_URL, FADA_ID, TAXON, TAXON_RANK, GENUS, SPECIES,
-    TAXONOMIC_STATUS, ACCEPTED_TAXON, SYNONYM, KINGDOM, AUTHORS
+    TAXONOMIC_STATUS, ACCEPTED_TAXON, SYNONYM, AUTHORS, SUBGENUS
 )
 from bims.scripts.data_upload import FALLBACK_ENCODINGS
 from bims.models import Taxonomy, UploadSession
@@ -329,11 +329,14 @@ class TaxaValidator:
         taxon_name = self._get_input_taxon_name(row)
         taxon_rank = self.row_value(row, TAXON_RANK)
         author = self.row_value(row, AUTHORS)
+        subgenus = self.row_value(row, SUBGENUS)
+
         if taxon_name:
             name_rank_key = (taxon_name.lower(), (taxon_rank or '').upper())
             name_rank_author_key = (
                 taxon_name.lower(),
                 (taxon_rank or '').upper(),
+                (subgenus or '').upper(),
                 (author or '').lower().strip(),
             )
             rows_same_name_rank = self.file_taxon_name_rank.get(name_rank_key, [])
