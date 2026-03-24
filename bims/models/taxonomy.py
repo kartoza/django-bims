@@ -291,6 +291,15 @@ class AbstractTaxonomy(AbstractValidation):
         related_name='%(class)s_last_modified_by',
     )
 
+    subgenus = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='%(class)s_subgenus',
+        on_delete=models.SET_NULL,
+        limit_choices_to={'rank': TaxonomicRank.SUBGENUS.value},
+    )
+
     class Meta:
         abstract = True
 
@@ -465,6 +474,10 @@ class AbstractTaxonomy(AbstractValidation):
     @property
     def family_name(self):
         return self.get_taxon_rank_name(TaxonomicRank.FAMILY.name)
+
+    @property
+    def family(self):
+        return self.get_parent_by_rank(TaxonomicRank.FAMILY.name)
 
     @property
     def genus(self):

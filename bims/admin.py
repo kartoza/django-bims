@@ -1518,6 +1518,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'gbif_key',
                 'fada_id',
                 'last_modified_by',
+                'subgenus',
                 'verified',
             )
         }),
@@ -1800,6 +1801,31 @@ class TaxonomyAdmin(admin.ModelAdmin):
         if 'has_duplicates' not in request.GET:
             actions.pop('export_taxa_list', None)
         return actions
+
+    def get_fieldsets(self, request, obj:Taxonomy=None):
+        fieldsets = super().get_fieldsets(request, obj)
+
+        hierarchy = TaxonomicRank.hierarchy()
+        subgenus_index = next(
+            i for i, r in enumerate(hierarchy) if r == TaxonomicRank.SUBGENUS
+        )
+
+        show_subgenus = False
+        if obj and obj.rank:
+            current_rank  = next(
+                (r for r in hierarchy if r.name == obj.rank), None
+            )
+            if current_rank:
+                show_subgenus = hierarchy.index(current_rank) > subgenus_index
+
+        if not show_subgenus:
+            result = []
+            for name, options in fieldsets:
+                new_fields = tuple(f for f in options['fields'] if f != 'subgenus')
+                result.append((name, {**options, 'fields': new_fields}))
+            return result
+
+        return fieldsets
 
 
 class VernacularNameAdmin(admin.ModelAdmin):
