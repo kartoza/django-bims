@@ -250,6 +250,7 @@ def download_taxa_list(request):
         folder
     )
     path_file = os.path.join(path_folder, filename)
+    order_by = request.GET.get('orderBy', None)
 
     dr = DownloadRequest.objects.get(
         id=download_request_id
@@ -275,7 +276,8 @@ def download_taxa_list(request):
             user_id=request.user.id,
             output=output,
             download_request_id=download_request_id,
-            taxon_group_id=taxon_group_id
+            taxon_group_id=taxon_group_id,
+            order_by=order_by
         )
 
     return JsonResponse({
