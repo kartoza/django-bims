@@ -2,6 +2,9 @@
 FROM python:3.12.3-slim-bookworm as prod
 MAINTAINER Dimas Ciputra <dimas@kartoza.com>
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+ENV UV_SYSTEM_PYTHON=1
+
 # Set up directories
 RUN mkdir -p /usr/src/{app,geonode}
 WORKDIR /usr/src/app
@@ -27,20 +30,20 @@ RUN echo "Updating apt-get" && \
     tippecanoe --version && \
     cd /usr/src/app && \
     echo "Python server" && \
-    pip install --no-cache-dir uwsgi
+    uv pip install --no-cache uwsgi
 
 # Add application requirements (do this while libpq-dev is still installed)
 COPY deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 # Ensure pg_config is available, then install requirements
 RUN which pg_config && pg_config --version && \
-    pip install --no-cache-dir -r /REQUIREMENTS.txt
+    uv pip install --no-cache -r /REQUIREMENTS.txt
 
 # NOW it's safe to remove build-only deps (keep libpq5)
 RUN echo "Removing build dependencies and cleaning up" && \
     apt-get -y --purge autoremove \
       make g++ libpcre3-dev libprotobuf-dev protobuf-compiler zlib1g-dev libsqlite3-dev libpq-dev && \
     rm -rf /var/lib/apt/lists/* /tmp/tippecanoe && \
-    rm -rf ~/.cache/pip
+    rm -rf ~/.cache/uv
 
 # Add and install Node.js dependencies
 RUN npm --quiet -g install yuglify && npm install -g grunt-cli
@@ -93,13 +96,8 @@ ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
 ADD deployment/docker/REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
-RUN pip install -r /REQUIREMENTS-dev.txt
+RUN uv pip install --no-cache -r /REQUIREMENTS-dev.txt
 ADD bashrc /root/.bashrc
-
-RUN apt-get install -y chromium
-RUN mkdir -p /opt/karma
-RUN npm install -g karma
-RUN cd / && npm install
 
 RUN apt-get install -y vim
 ADD karma.conf.docker.js /karma.conf.js
