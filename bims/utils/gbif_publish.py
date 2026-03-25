@@ -47,7 +47,7 @@ def gather_data() -> Iterable[BiologicalCollectionRecord]:
             survey__validated=True,
         )
         .exclude(source_collection__iexact="gbif")
-        .select_related("taxonomy", "site", "record_type", "survey")
+        .select_related("taxonomy", "site", "record_type", "survey", "licence")
         .distinct()
     )
 
@@ -74,7 +74,7 @@ def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecor
         "occurrenceID", "basisOfRecord", "scientificName", "eventDate",
         "decimalLatitude", "decimalLongitude", "locality", "recordedBy",
         "datasetName", "institutionCode", "collectionCode", "catalogNumber",
-        "dataGeneralizations"
+        "dataGeneralizations", "license"
     ]
     written_ids: List[int] = []
     with open(path, "w", newline="\n", encoding="utf-8") as f:
@@ -114,11 +114,15 @@ def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecor
             if r.collection_date:
                 event_date = r.collection_date.isoformat()
 
+            record_license = (
+                (r.licence.url if r.licence and r.licence.url else None)
+                or LICENSE_URL
+            )
             row = [
                 "bims" + occurrence_id, basis, sci_name, event_date,
                 lat, lon, locality, recorded_by,
                 dataset_name, inst_code, collection_code, catalog_number,
-                dg
+                dg, record_license
             ]
             w.writerow(row)
             written_ids.append(r.id)
@@ -142,6 +146,7 @@ def _write_meta_xml(path: str):
         <field index="10" term="http://rs.tdwg.org/dwc/terms/collectionCode"/>
         <field index="11" term="http://rs.tdwg.org/dwc/terms/catalogNumber"/>
         <field index="12" term="http://rs.tdwg.org/dwc/terms/dataGeneralizations"/>
+        <field index="13" term="http://purl.org/dc/terms/license"/>
       </core>
     </archive>
     """
@@ -284,7 +289,7 @@ def _gather_data_for_module_group(module_group) -> Iterable[BiologicalCollection
             module_group=module_group
         )
         .exclude(source_collection__iexact="gbif")
-        .select_related("taxonomy", "site", "record_type", "survey")
+        .select_related("taxonomy", "site", "record_type", "survey", "licence")
         .distinct()
     )
     return queryset
