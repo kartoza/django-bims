@@ -291,6 +291,15 @@ class AbstractTaxonomy(AbstractValidation):
         related_name='%(class)s_last_modified_by',
     )
 
+    subgenus = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='%(class)s_subgenus',
+        on_delete=models.SET_NULL,
+        limit_choices_to={'rank': TaxonomicRank.SUBGENUS.name},
+    )
+
     class Meta:
         abstract = True
 
@@ -1010,6 +1019,10 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         Taxonomy.objects.filter(
             accepted_taxonomy=instance
         ).update(national_conservation_status_id=instance_ncs_id)
+
+    # --- Subgenus propagation ----
+    if instance.parent and instance.parent.rank.lower() == 'subgenus' and not instance.subgenus:
+        instance.subgenus = instance.parent
 
 
 class TaxonImage(models.Model):

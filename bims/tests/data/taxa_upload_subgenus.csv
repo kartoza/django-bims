@@ -1,0 +1,6 @@
+Taxon Rank,Kingdom,Phylum,Class,Order,Family,Genus,SubGenus,Taxon,Taxonomic status,On GBIF,Author(s)
+Genus,Animalia,Arthropoda,Insecta,Diptera,Culicidae,Aedes,,,Aedes,accepted,No,
+SubGenus,Animalia,Arthropoda,Insecta,Diptera,Culicidae,Aedes,Stegomyia,,Stegomyia,accepted,No,
+Species,Animalia,Arthropoda,Insecta,Diptera,Culicidae,Aedes,Stegomyia,Aedes aegypti,accepted,No,Linnaeus 1762
+Species,Animalia,Arthropoda,Insecta,Diptera,Culicidae,Aedes,Stegomyia,Aedes albopictus,accepted,No,Skuse 1894
+Species,Animalia,Arthropoda,Insecta,Diptera,Culicidae,Aedes,,Aedes vexans,accepted,No,Meigen 1830

@@ -718,6 +718,8 @@ class TaxaProcessor(object):
         taxon_name = _safe_strip(self.get_row_value(row, TAXON))
         csv_taxon = taxon_name
 
+        should_fetch_from_gbif = True
+
         accepted_taxon = None
 
         # Rank
@@ -731,6 +733,14 @@ class TaxaProcessor(object):
         if not rank:
             self.handle_error(row=row, message='Missing taxon rank')
             return
+
+        subgenus = ''
+        is_species = 'species' in rank.lower()
+        if is_species:
+            subgenus = _safe_strip(self.get_row_value(row, SUBGENUS))
+
+        if is_species and subgenus:
+            should_fetch_from_gbif = False
 
         # on_gbif flag
         raw_on_gbif = self.get_row_value(row, ON_GBIF)
@@ -951,15 +961,19 @@ class TaxaProcessor(object):
 
         # Resolve existing taxa (by gbif, fada, or canonical)
         taxa = Taxonomy.objects.none()
+        taxa_found_by_id = False
+
         if gbif_key:
             taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
         if not taxa and fada_id:
             taxa = Taxonomy.objects.filter(fada_id=fada_id)
+            taxa_found_by_id = taxa.exists()
         if not taxa:
             taxa = Taxonomy.objects.filter(canonical_name__iexact=taxon_name)
             # Homonymy guard: taxa can share a canonical name but belong to
             # different authors (e.g. Epeorus soldani (Braasch, 1979) vs.
-            # Epeorus soldani Nguyen & Bae, 2004). 
+            # Epeorus soldani Nguyen & Bae, 2004).
+            # Or have different subgenus
             if taxa.exists() and authors:
                 stripped_authors = authors.strip('()').strip()
                 taxa_by_author = taxa.filter(author__iexact=authors)
@@ -980,25 +994,8 @@ class TaxaProcessor(object):
                     )
                     taxa = Taxonomy.objects.none()
 
-        update_canonical_name = False
-        if not taxa.exists() and ' ' in taxon_name:
-            orphan = taxon_name.split(' ', 1)[1].strip()
-            taxa = Taxonomy.objects.filter(
-                canonical_name__iexact=orphan,
-                rank=_safe_upper(rank),
-                author=authors.strip(),
-                taxonomic_status__iexact=taxonomic_status
-            )
-            update_canonical_name = taxa.exists()
-
         proposal = None
         new_taxon = False
-
-        if taxa.exists() and update_canonical_name:
-            obtained = taxa.first()
-            obtained.canonical_name = taxon_name
-            obtained.scientific_name = scientific_name
-            obtained.save()
 
         try:
             taxonomy = None
@@ -1007,10 +1004,14 @@ class TaxaProcessor(object):
             should_fetch_vernacular_names = common_name_objs is None
 
             if taxa.exists():
+                if is_species and subgenus and not taxa_found_by_id:
+                    taxa = taxa.filter(
+                        subgenus__canonical_name__iexact=subgenus
+                    )
                 taxa_same_rank = taxa.filter(rank=_safe_upper(rank))
+
                 if taxa_same_rank.exists():
                     candidate = taxa_same_rank.first()
-
                     candidate_author = (candidate.author or '').strip('()').strip().lower()
                     csv_author = authors.strip('()').strip().lower() if authors else ''
                     author_conflict = (
@@ -1037,9 +1038,8 @@ class TaxaProcessor(object):
 
                         if (is_synonym or is_doubtful) and taxonomy.parent:
                             taxonomy.parent = None
-                else:
+                elif taxa.exists():
                     taxonomy = taxa.first()
-
                     if fada_id and taxonomy.fada_id != fada_id:
                         # New taxon
                         taxonomy = None
@@ -1048,8 +1048,8 @@ class TaxaProcessor(object):
                             taxon_name)
                     else:
                         taxonomy.rank = _safe_upper(rank)
-                        
-            if not taxonomy and gbif_key:
+
+            if not taxonomy and gbif_key and should_fetch_from_gbif:
                 taxonomy = fetch_all_species_from_gbif(
                     gbif_key=gbif_key,
                     taxonomic_rank=rank,
@@ -1063,7 +1063,7 @@ class TaxaProcessor(object):
                     if (is_synonym or is_doubtful) and taxonomy.parent:
                         taxonomy.parent = None
 
-            if not taxonomy and on_gbif:
+            if not taxonomy and on_gbif and should_fetch_from_gbif:
                 # Build classifiers from CSV to ensure we match the correct taxon
                 classifiers = {}
                 csv_genus = _safe_strip(self.get_row_value(row, GENUS))
@@ -1122,6 +1122,30 @@ class TaxaProcessor(object):
                     taxonomic_status=taxonomic_status.upper()
                 )
 
+            if is_species and subgenus:
+                subgenus_taxon = Taxonomy.objects.filter(
+                    canonical_name=subgenus,
+                    rank=TaxonomicRank.SUBGENUS.name
+                )
+                if not subgenus_taxon.exists():
+                    # Create one
+                    genus = _safe_strip(self.get_row_value(row, GENUS))
+                    genus_obj = Taxonomy.objects.none()
+                    if genus:
+                        genus_obj = Taxonomy.objects.filter(
+                            canonical_name=genus,
+                            rank=TaxonomicRank.GENUS.name,
+                        ).first()
+                    subgenus_taxon, _ = Taxonomy.objects.get_or_create(
+                        scientific_name=subgenus,
+                        canonical_name=subgenus,
+                        rank=TaxonomicRank.SUBGENUS.name,
+                        parent=genus_obj
+                    )
+                else:
+                    subgenus_taxon = subgenus_taxon.first()
+                taxonomy.subgenus = subgenus_taxon
+
             # Backfill parent and author if missing (skip for synonyms and doubtful species)
             if taxonomy and not taxonomy.parent and not is_synonym and not is_doubtful:
                 # Ensure taxonomy is not its own parent (check by pk if both are saved)
@@ -1134,7 +1158,9 @@ class TaxaProcessor(object):
                     parent_rank_val = _safe_upper(parent.rank) if parent.rank else ''
                     is_sub_to_nonsub = taxonomy_rank.startswith('SUB') and taxonomy_rank[3:] == parent_rank_val
                     if not is_sub_to_nonsub and taxonomy_rank != parent_rank_val:
-                        self.handle_error(row=row, message=f"Parent '{parent.canonical_name}' ({parent_rank_val}) cannot have the same name as taxonomy '{taxonomy.canonical_name}' ({taxonomy_rank})")
+                        self.handle_error(row=row, message=f"Parent '{parent.canonical_name}' ({parent_rank_val}) "
+                                                           f"cannot have the same name as taxonomy '{taxonomy.canonical_name}' "
+                                                           f"({taxonomy_rank})")
                         return
                 taxonomy.parent = parent
 
