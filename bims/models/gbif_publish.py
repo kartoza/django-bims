@@ -68,10 +68,12 @@ class GbifPublishConfig(models.Model):
 
 
 class GbifPublish(models.Model):
-    module_group = models.ForeignKey(
-        'bims.TaxonGroup',
+    source_reference = models.ForeignKey(
+        'bims.SourceReference',
         on_delete=models.CASCADE,
-        related_name="gbif_publish_schedules"
+        related_name="gbif_publish_schedules",
+        null=True,
+        blank=True,
     )
     gbif_config = models.ForeignKey(
         GbifPublishConfig,
@@ -105,7 +107,8 @@ class GbifPublish(models.Model):
         verbose_name_plural = "GBIF Publish Schedules"
 
     def __str__(self):
-        return f"GBIF Publish[{self.module_group_id}] - {self.period}"
+        ref = str(self.source_reference) if self.source_reference else "all"
+        return f"GBIF Publish[{ref}] - {self.period}"
 
 
 class PublishTrigger(models.TextChoices):
@@ -129,8 +132,8 @@ class GbifPublishSession(models.Model):
         related_name="sessions",
         help_text="The publish schedule that triggered this session"
     )
-    module_group = models.ForeignKey(
-        'bims.TaxonGroup',
+    source_reference = models.ForeignKey(
+        'bims.SourceReference',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -210,7 +213,7 @@ def gbif_publish_post_delete(sender, instance: GbifPublish, **kwargs):
 
 @receiver(post_save, sender=GbifPublish)
 def sync_gbif_publish_periodic_task(sender, instance: GbifPublish, **kwargs):
-    name = f"GBIF publish: taxon_group={instance.module_group_id} id={instance.id}"
+    name = f"GBIF publish: source_reference={instance.source_reference_id} id={instance.id}"
 
     if instance.period == PublishPeriod.CUSTOM and instance.cron_expression:
         m, h, dom, mon, dow = (instance.cron_expression.split() + ["*"]*5)[:5]

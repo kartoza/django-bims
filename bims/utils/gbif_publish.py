@@ -15,14 +15,10 @@ from requests.auth import HTTPBasicAuth
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-GBIF_TEST_API = "https://api.gbif-test.org/v1"
 LICENSE_URL = getattr(
     settings, "GBIF_DATASET_LICENSE",
     "https://creativecommons.org/publicdomain/zero/1.0/legalcode"
 )
-
-def _base_url() -> str:
-    return getattr(settings, "GBIF_EXPORT_BASE_URL", "").rstrip("/")
 
 def _media_url() -> str:
     return getattr(settings, "MEDIA_URL", "/media/").rstrip("/")
@@ -30,46 +26,20 @@ def _media_url() -> str:
 def _site_name() -> str:
     return getattr(settings, "SITE_NAME", "BIMS")
 
-def _gbif_auth() -> HTTPBasicAuth:
-    user = getattr(settings, "GBIF_TEST_USERNAME", "")
-    pwd = getattr(settings, "GBIF_TEST_PASSWORD", "")
-    return HTTPBasicAuth(user, pwd)
 
-PUBLISHING_ORG_KEY = getattr(settings, "GBIF_TEST_PUBLISHING_ORG_KEY", "")
-INSTALLATION_KEY = getattr(settings, "GBIF_TEST_INSTALLATION_KEY", "")
-
-
-def gather_data() -> Iterable[BiologicalCollectionRecord]:
-    return (
-        BiologicalCollectionRecord.objects
-        .filter(
-            Q(data_type="public") | Q(data_type__isnull=True) | Q(data_type=""),
-            survey__validated=True,
-        )
-        .exclude(source_collection__iexact="gbif")
-        .select_related("taxonomy", "site", "record_type", "survey", "licence")
-        .distinct()
-    )
-
-
-def _lat_lon_from_site(site) -> Tuple[str, str]:
-    if not site:
-        return "", ""
-    lat = getattr(site, "latitude", None)
-    lon = getattr(site, "longitude", None)
-    if lat is not None and lon is not None:
-        return str(lat), str(lon)
-    return "", ""
-
-
-def _dwca_dir() -> str:
+def dwca_dir() -> str:
     ts = now().strftime("%Y%m%d-%H%M%S")
     rel = os.path.join("exports", "gbif", ts + "-" + uuid.uuid4().hex[:8])
     abs_dir = os.path.join(settings.MEDIA_ROOT, rel)
     os.makedirs(abs_dir, exist_ok=True)
     return abs_dir
 
-def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecord]) -> List[int]:
+
+def write_occurrence_txt(
+    path: str,
+    records: Iterable[BiologicalCollectionRecord],
+    dataset_name: str = "",
+) -> List[int]:
     header = [
         "occurrenceID", "basisOfRecord", "scientificName", "eventDate",
         "decimalLatitude", "decimalLongitude", "locality", "recordedBy",
@@ -81,7 +51,6 @@ def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecor
         w = csv.writer(f, delimiter="\t")
         w.writerow(header)
         for r in records:
-            # Skip if no taxon
             sci_name = (
                     getattr(r.taxonomy, "canonical_name", None) or
                     r.original_species_name or ""
@@ -89,7 +58,14 @@ def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecor
             if not sci_name:
                 continue
 
-            lat, lon = _lat_lon_from_site(r.site)
+            lat = getattr(r.site, "latitude", None)
+            lon = getattr(r.site, "longitude", None)
+
+            if not lat or not lon:
+                continue
+
+            lat, lon = str(lat), str(lon)
+
             locality = getattr(r.site, "name", "") or getattr(r.site, "site_name", "") or ""
             basis = "HUMAN_OBSERVATION"
             try:
@@ -106,7 +82,7 @@ def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecor
             catalog_number = str(r.pk)
 
             recorded_by = (r.collector or r.identified_by or "").strip()
-            dataset_name = f"{_site_name()} Occurrence Export {datetime.utcnow().date().isoformat()}"
+            row_dataset_name = dataset_name or _site_name()
             inst_code = (r.institution_id or "").strip()
             dg = ""
 
@@ -121,14 +97,14 @@ def _write_occurrence_txt(path: str, records: Iterable[BiologicalCollectionRecor
             row = [
                 "bims" + occurrence_id, basis, sci_name, event_date,
                 lat, lon, locality, recorded_by,
-                dataset_name, inst_code, collection_code, catalog_number,
+                row_dataset_name, inst_code, collection_code, catalog_number,
                 dg, record_license
             ]
             w.writerow(row)
             written_ids.append(r.id)
     return written_ids
 
-def _write_meta_xml(path: str):
+def write_meta_xml(path: str):
     meta = f"""<archive xmlns="http://rs.tdwg.org/dwc/text/" metadata="eml.xml">
       <core encoding="UTF-8" fieldsTerminatedBy="\\t" linesTerminatedBy="\\n" fieldsEnclosedBy="" ignoreHeaderLines="1" rowType="http://rs.tdwg.org/dwc/terms/Occurrence">
         <files><location>occurrence.txt</location></files>
@@ -153,7 +129,8 @@ def _write_meta_xml(path: str):
     with open(path, "w", encoding="utf-8") as f:
         f.write(meta)
 
-def _write_eml_xml(path: str, title: str, abstract: str):
+
+def write_eml_xml(path: str, title: str, abstract: str):
     today = datetime.utcnow().date().isoformat()
     eml = f"""<?xml version="1.0" encoding="UTF-8"?>
     <eml:eml packageId="{uuid.uuid4()}" system="GBIF" xmlns:eml="eml://ecoinformatics.org/eml-2.1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd">
@@ -181,121 +158,31 @@ def _write_eml_xml(path: str, title: str, abstract: str):
     with open(path, "w", encoding="utf-8") as f:
         f.write(eml)
 
-def _zip_dwca(folder: str) -> str:
+
+def zip_dwca(folder: str) -> str:
     zip_path = os.path.join(folder, "dwca.zip")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
         for fname in ["occurrence.txt", "meta.xml", "eml.xml"]:
             z.write(os.path.join(folder, fname), arcname=fname)
     return zip_path
 
-def _build_dwca(records: Iterable[BiologicalCollectionRecord]) -> Tuple[str, str, List[int]]:
-    out_dir = _dwca_dir()
-    occ_path = os.path.join(out_dir, "occurrence.txt")
-    meta_path = os.path.join(out_dir, "meta.xml")
-    eml_path = os.path.join(out_dir, "eml.xml")
 
-    written_ids = _write_occurrence_txt(occ_path, records)
-    if not written_ids:
-        raise ValueError("No eligible records to export.")
-
-    title = f"{_site_name()} test export ({datetime.utcnow().isoformat(timespec='seconds')} UTC)"
-    abstract = "Automated occurrence export from BIMS for GBIF-Test ingestion."
-    _write_meta_xml(meta_path)
-    _write_eml_xml(eml_path, title, abstract)
-    zip_path = _zip_dwca(out_dir)
-
-    rel_media = os.path.relpath(zip_path, settings.MEDIA_ROOT)
-    archive_url = f"{_base_url()}{_media_url()}/{rel_media}".replace("//", "/").replace(":/", "://")
-    return zip_path, archive_url, written_ids
-
-
-def _register_dataset_on_gbif_test(title: str, description: str, license_url: str) -> str:
-    if not PUBLISHING_ORG_KEY or not INSTALLATION_KEY:
-        raise RuntimeError("Missing GBIF_TEST_PUBLISHING_ORG_KEY or GBIF_TEST_INSTALLATION_KEY in settings.")
-
-    payload = {
-        "publishingOrganizationKey": PUBLISHING_ORG_KEY,
-        "installationKey": INSTALLATION_KEY,
-        "type": "OCCURRENCE",
-        "title": title,
-        "description": description,
-        "language": "eng",
-        "license": license_url,
-    }
-    r = requests.post(
-        f"{GBIF_TEST_API}/dataset",
-        json=payload,
-        auth=_gbif_auth(),
-        timeout=30,
-        headers={"Content-Type": "application/json"},
-    )
-    r.raise_for_status()
-    dataset_key = r.json()
-    if not isinstance(dataset_key, str) or len(dataset_key) < 32:
-        raise RuntimeError(f"Unexpected dataset key response: {dataset_key}")
-    return dataset_key
-
-def _add_endpoint(dataset_key: str, archive_url: str):
-    payload = {
-        "type": "DWC_ARCHIVE",
-        "url": archive_url,
-    }
-    r = requests.post(
-        f"{GBIF_TEST_API}/dataset/{dataset_key}/endpoint",
-        json=payload,
-        auth=_gbif_auth(),
-        timeout=30,
-        headers={"Content-Type": "application/json"},
-    )
-    r.raise_for_status()
-
-
-@transaction.atomic
-def publish_gbif_data() -> str:
-    """
-    Build a DwC-A for 10 public, validated records, register it on GBIF-Test,
-    add the DWC_ARCHIVE endpoint, and store dataset_key back to those records.
-
-    Returns the dataset UUID (dataset_key).
-    """
-    records = list(gather_data())
-    if not records:
-        raise ValueError("No records to publish (need public+validated).")
-
-    zip_path, archive_url, written_ids = _build_dwca(records)
-
-    title = f"{_site_name()} occurrence dataset (test)"
-    description = "Minimal test dataset registered via the GBIF-Test API. Data generated from BIMS."
-
-    dataset_key = _register_dataset_on_gbif_test(
-        title, description, LICENSE_URL
-    )
-    _add_endpoint(dataset_key, archive_url)
-
-    BiologicalCollectionRecord.objects.filter(
-        id__in=written_ids
-    ).update(dataset_key=dataset_key)
-
-    return dataset_key
-
-
-def _gather_data_for_module_group(module_group) -> Iterable[BiologicalCollectionRecord]:
-    """Gather publishable records for a specific module group."""
-    queryset = (
+def gather_data_for_source_reference(source_reference) -> Iterable[BiologicalCollectionRecord]:
+    """Gather publishable records for a specific source reference."""
+    return (
         BiologicalCollectionRecord.objects
         .filter(
             Q(data_type="public") | Q(data_type__isnull=True) | Q(data_type=""),
             survey__validated=True,
-            module_group=module_group
+            source_reference=source_reference,
         )
         .exclude(source_collection__iexact="gbif")
         .select_related("taxonomy", "site", "record_type", "survey", "licence")
         .distinct()
     )
-    return queryset
 
 
-def _register_dataset_with_config(
+def register_dataset(
     config,
     title: str,
     description: str,
@@ -344,7 +231,7 @@ def _register_dataset_with_config(
     return dataset_key
 
 
-def _add_endpoint_with_config(config, dataset_key: str, archive_url: str):
+def add_endpoint(config, dataset_key: str, archive_url: str):
     """Add a DWC_ARCHIVE endpoint to a dataset using config credentials."""
     payload = {
         "type": "DWC_ARCHIVE",
@@ -364,16 +251,12 @@ def _add_endpoint_with_config(config, dataset_key: str, archive_url: str):
     r.raise_for_status()
 
 
-def _dir_from_archive_url(archive_url: str) -> str:
+def archive_url_dir(archive_url: str) -> str:
     """Return the filesystem directory that corresponds to a stored archive_url.
-
-    The URL was originally built as ``{base_url}{MEDIA_URL}/{rel_to_MEDIA_ROOT}``.
-    We strip the MEDIA_URL prefix from the URL path and join the remainder with
-    MEDIA_ROOT to get the absolute path to the zip file, then return its directory.
     """
     from urllib.parse import urlparse
-    url_path = urlparse(archive_url).path          # e.g. /media/exports/gbif/…/dwca.zip
-    media_prefix = _media_url()                    # e.g. /media
+    url_path = urlparse(archive_url).path
+    media_prefix = _media_url()
     if url_path.startswith(media_prefix):
         rel = url_path[len(media_prefix):].lstrip("/")
     else:
@@ -381,38 +264,36 @@ def _dir_from_archive_url(archive_url: str) -> str:
     return os.path.dirname(os.path.join(settings.MEDIA_ROOT, rel))
 
 
-def _build_dwca_with_config(
+def build_dwca(
     config,
     records: Iterable[BiologicalCollectionRecord],
-    module_group=None,
+    source_reference=None,
     out_dir: str = None,
 ) -> Tuple[str, str, List[int]]:
     """Build DwC-A using config for base URL.
-
-    If *out_dir* is provided the archive is written there (overwriting any
-    existing files), so the public URL stays identical to the previous run.
-    When reusing an existing GBIF dataset pass the directory derived from the
-    previous session's archive_url via ``_dir_from_archive_url()``.
     """
     from bims.utils.mail import get_domain_name
 
     if out_dir is None:
-        out_dir = _dwca_dir()
+        out_dir = dwca_dir()
     occ_path = os.path.join(out_dir, "occurrence.txt")
     meta_path = os.path.join(out_dir, "meta.xml")
     eml_path = os.path.join(out_dir, "eml.xml")
 
-    written_ids = _write_occurrence_txt(occ_path, records)
+    ref_title = source_reference.title if source_reference else _site_name()
+
+    written_ids = write_occurrence_txt(occ_path, records, dataset_name=ref_title)
     if not written_ids:
         raise ValueError("No eligible records to export.")
 
-    module_name = module_group.name if module_group else _site_name()
-    title = f"{module_name} occurrence dataset ({datetime.utcnow().isoformat(timespec='seconds')} UTC)"
-    abstract = f"Occurrence export from {_site_name()} for GBIF ingestion."
+    title = ref_title
+    abstract = (
+        f"Occurrence dataset for {ref_title} uploaded to {_site_name()}."
+    )
 
-    _write_meta_xml(meta_path)
-    _write_eml_xml(eml_path, title, abstract)
-    zip_path = _zip_dwca(out_dir)
+    write_meta_xml(meta_path)
+    write_eml_xml(eml_path, title, abstract)
+    zip_path = zip_dwca(out_dir)
 
     domain_name = get_domain_name()
     base_url = config.export_base_url.rstrip("/") if config.export_base_url else f'https://{domain_name}/'
@@ -424,8 +305,8 @@ def _build_dwca_with_config(
     return zip_path, archive_url, written_ids
 
 
-def _trigger_crawl_with_config(config, dataset_key: str) -> None:
-    """Ask GBIF to re-crawl an existing dataset (after its archive is updated)."""
+def trigger_crawl_with_config(config, dataset_key: str) -> None:
+    """Ask GBIF to re-crawl an existing dataset."""
     auth = HTTPBasicAuth(config.username, config.password)
     api_url = config.gbif_api_url.rstrip("/")
     r = requests.post(
@@ -466,63 +347,59 @@ def create_new_installation(config, title = "", description = "") -> str:
 @transaction.atomic
 def publish_gbif_data_with_config(
     config,
-    module_group=None,
+    source_reference=None,
     existing_dataset_key: str = "",
     existing_archive_url: str = "",
 ) -> dict:
     """
     Build a DwC-A for public, validated records and publish it to GBIF.
 
-    When *existing_dataset_key* and *existing_archive_url* are supplied (from
-    a previous successful publish session) the archive is overwritten in-place
-    at the same filesystem path so the GBIF endpoint URL is unchanged, then a
-    re-crawl is triggered.  This ensures one dataset per module per platform.
+    Records are filtered by *source_reference* when provided.  The dataset
+    title is the source reference title (no date appended), and the description
+    follows the pattern:
+        "Occurrence dataset for <title> uploaded to <site_name>."
 
-    When called without those arguments (first-time publish) a new dataset is
-    registered on GBIF and the DWC_ARCHIVE endpoint is attached to it.
+    When *existing_dataset_key* and *existing_archive_url* are supplied the
+    archive is overwritten in-place and a re-crawl is triggered so the GBIF
+    endpoint URL stays unchanged.
 
     Args:
         config: GbifPublishConfig instance with API credentials and settings
-        module_group: Optional TaxonGroup to filter records by
+        source_reference: Optional SourceReference to filter records by
         existing_dataset_key: GBIF dataset UUID from a previous successful
             publish for this schedule.  Empty string means "first publish".
         existing_archive_url: Public URL of the archive from the previous
-            successful publish.  Used to derive the directory to overwrite so
-            the endpoint URL on GBIF stays the same.
+            successful publish.  Used to derive the directory to overwrite.
 
     Returns:
         dict with dataset_key, records_published, and archive_url
     """
-    if module_group:
-        records = list(_gather_data_for_module_group(module_group))
-    else:
-        records = list(gather_data())
+    records = None
+
+    if source_reference:
+        records = list(gather_data_for_source_reference(source_reference))
 
     if not records:
         raise ValueError("No records to publish (need public+validated).")
 
-    # Overwrite the archive in the exact same directory as the previous run so
-    # the GBIF endpoint URL is unchanged and re-crawl picks up the new content.
-    # On first publish out_dir is None and _build_dwca_with_config creates a
-    # fresh timestamped directory.
-    out_dir = _dir_from_archive_url(existing_archive_url) if existing_archive_url else None
+    out_dir = archive_url_dir(existing_archive_url) if existing_archive_url else None
 
-    zip_path, archive_url, written_ids = _build_dwca_with_config(
-        config, records, module_group, out_dir=out_dir
+    zip_path, archive_url, written_ids = build_dwca(
+        config, records, source_reference, out_dir=out_dir
     )
 
+    ref_title = source_reference.title if source_reference else _site_name()
+
     if existing_dataset_key:
-        # Reuse the previously-created GBIF dataset and trigger a re-crawl so
-        # GBIF picks up the updated archive at the unchanged URL.
         dataset_key = existing_dataset_key
-        _trigger_crawl_with_config(config, dataset_key)
+        trigger_crawl_with_config(config, dataset_key)
     else:
-        # First publish: register a new dataset and attach the archive endpoint.
-        module_name = module_group.name if module_group else _site_name()
-        title = f"{module_name} occurrence dataset"
-        description = f"Occurrence dataset from {_site_name()} registered via GBIF API."
-        dataset_key = _register_dataset_with_config(config, title, description)
-        _add_endpoint_with_config(config, dataset_key, archive_url)
+        title = ref_title
+        description = (
+            f"Occurrence dataset for {ref_title} uploaded to {_site_name()}."
+        )
+        dataset_key = register_dataset(config, title, description)
+        add_endpoint(config, dataset_key, archive_url)
 
     BiologicalCollectionRecord.objects.filter(
         id__in=written_ids

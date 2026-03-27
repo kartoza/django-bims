@@ -20,13 +20,13 @@ from bims.models.gbif_publish import (
 )
 from bims.tasks.gbif_publish import run_scheduled_gbif_publish
 from bims.tests.model_factories import (
-    TaxonGroupF,
+    SourceReferenceF,
     BiologicalCollectionRecordF,
-    SurveyF,
+    SurveyF, SourceReferenceBibliographyF,
 )
 from bims.utils.gbif_publish import (
-    _build_dwca_with_config,
-    _register_dataset_with_config,
+    build_dwca,
+    register_dataset,
     publish_gbif_data_with_config,
 )
 
@@ -48,10 +48,10 @@ class GbifPublishModelSignalTests(FastTenantTestCase):
         return GbifPublishConfig.objects.create(**defaults)
 
     def test_sync_gbif_publish_periodic_task_daily(self):
-        module_group = TaxonGroupF.create()
+        source_reference = SourceReferenceF.create()
         config = self._create_config()
         schedule = GbifPublish.objects.create(
-            module_group=module_group,
+            source_reference=source_reference,
             gbif_config=config,
             enabled=True,
             period=PublishPeriod.DAILY,
@@ -61,7 +61,7 @@ class GbifPublishModelSignalTests(FastTenantTestCase):
 
         with schema_context(get_public_schema_name()):
             task = PeriodicTask.objects.get(
-                name=f"GBIF publish: taxon_group={module_group.id} id={schedule.id}"
+                name=f"GBIF publish: source_reference={source_reference.id} id={schedule.id}"
             )
             self.assertEqual(task.task, "bims.tasks.gbif_publish.run_scheduled_gbif_publish")
             self.assertEqual(json.loads(task.args), [self.tenant.schema_name, schedule.id])
@@ -71,10 +71,10 @@ class GbifPublishModelSignalTests(FastTenantTestCase):
             self.assertEqual(task.crontab.hour, "2")
 
     def test_sync_gbif_publish_periodic_task_custom_cron(self):
-        module_group = TaxonGroupF.create()
+        source_reference = SourceReferenceF.create()
         config = self._create_config()
         schedule = GbifPublish.objects.create(
-            module_group=module_group,
+            source_reference=source_reference,
             gbif_config=config,
             enabled=False,
             period=PublishPeriod.CUSTOM,
@@ -84,7 +84,7 @@ class GbifPublishModelSignalTests(FastTenantTestCase):
 
         with schema_context(get_public_schema_name()):
             task = PeriodicTask.objects.get(
-                name=f"GBIF publish: taxon_group={module_group.id} id={schedule.id}"
+                name=f"GBIF publish: source_reference={source_reference.id} id={schedule.id}"
             )
             self.assertFalse(task.enabled)
             self.assertEqual(task.crontab.minute, "15")
@@ -93,10 +93,10 @@ class GbifPublishModelSignalTests(FastTenantTestCase):
             self.assertEqual(task.crontab.day_of_week, "*")
 
     def test_gbif_publish_post_delete_removes_task(self):
-        module_group = TaxonGroupF.create()
+        source_reference = SourceReferenceF.create()
         config = self._create_config()
         schedule = GbifPublish.objects.create(
-            module_group=module_group,
+            source_reference=source_reference,
             gbif_config=config,
             enabled=True,
             period=PublishPeriod.DAILY,
@@ -107,7 +107,7 @@ class GbifPublishModelSignalTests(FastTenantTestCase):
         with schema_context(get_public_schema_name()):
             self.assertTrue(
                 PeriodicTask.objects.filter(
-                    name=f"GBIF publish: taxon_group={module_group.id} id={schedule.id}"
+                    name=f"GBIF publish: source_reference={source_reference.id} id={schedule.id}"
                 ).exists()
             )
 
@@ -138,10 +138,10 @@ class GbifPublishTaskTests(FastTenantTestCase):
         return GbifPublishConfig.objects.create(**defaults)
 
     def _create_schedule(self, **kwargs):
-        module_group = kwargs.pop("module_group", TaxonGroupF.create())
+        source_reference = SourceReferenceBibliographyF.create()
         config = kwargs.pop("gbif_config", self._create_config())
         defaults = {
-            "module_group": module_group,
+            "source_reference": source_reference,
             "gbif_config": config,
             "enabled": True,
             "period": PublishPeriod.DAILY,
@@ -248,16 +248,16 @@ class GbifPublishApiTests(FastTenantTestCase):
         defaults.update(kwargs)
         return GbifPublishConfig.objects.create(**defaults)
 
-    def _make_record(self, module_group):
+    def _make_record(self, source_reference):
         survey = SurveyF.create(validated=True)
         record = BiologicalCollectionRecordF.create(
             survey=survey,
-            module_group=module_group,
+            source_reference=source_reference,
             data_type="public",
         )
         return record
 
-    def test_register_dataset_with_config_401(self):
+    def testregister_dataset_401(self):
         config = self._create_config()
 
         response = mock.Mock()
@@ -267,9 +267,9 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with mock.patch("bims.utils.gbif_publish.requests.post", return_value=response):
             with self.assertRaisesRegex(RuntimeError, "401 Unauthorized"):
-                _register_dataset_with_config(config, "title", "desc")
+                register_dataset(config, "title", "desc")
 
-    def test_register_dataset_with_config_403(self):
+    def testregister_dataset_403(self):
         config = self._create_config()
 
         response = mock.Mock()
@@ -279,41 +279,87 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with mock.patch("bims.utils.gbif_publish.requests.post", return_value=response):
             with self.assertRaisesRegex(RuntimeError, "403 Forbidden"):
-                _register_dataset_with_config(config, "title", "desc")
+                register_dataset(config, "title", "desc")
 
-    def test_build_dwca_with_config_uses_export_base_url(self):
-        module_group = TaxonGroupF.create()
-        record = self._make_record(module_group)
+    def test_build_dwca_uses_export_base_url(self):
+        source_reference = SourceReferenceF.create()
+        record = self._make_record(source_reference)
         config = self._create_config(export_base_url="https://example.org")
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, archive_url, written_ids = _build_dwca_with_config(
-                config, [record], module_group
+            zip_path, archive_url, written_ids = build_dwca(
+                config, [record], source_reference
             )
 
         self.assertTrue(os.path.exists(zip_path))
         self.assertIn(record.id, written_ids)
         self.assertTrue(archive_url.startswith("https://example.org/media/"))
 
+    def test_build_dwca_title_is_source_reference_title(self):
+        source_reference = SourceReferenceF.create()
+        source_reference.source_name = "My Reference Title"
+        source_reference.save()
+        record = self._make_record(source_reference)
+        config = self._create_config(export_base_url="https://example.org")
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, archive_url, written_ids = build_dwca(
+                config, [record], source_reference
+            )
+
+        import zipfile as zf
+        with zf.ZipFile(zip_path) as z:
+            eml_content = z.read("eml.xml").decode("utf-8")
+
+        self.assertIn("My Reference Title", eml_content)
+        self.assertNotIn("UTC", eml_content.split("<title>")[1].split("</title>")[0])
+
+    def test_build_dwca_description_format(self):
+        source_reference = SourceReferenceF.create()
+        source_reference.source_name = "Fish Survey 2022"
+        source_reference.save()
+        record = self._make_record(source_reference)
+        config = self._create_config(export_base_url="https://example.org")
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="FBIS"):
+            zip_path, archive_url, written_ids = build_dwca(
+                config, [record], source_reference
+            )
+
+        import zipfile as zf
+        with zf.ZipFile(zip_path) as z:
+            eml_content = z.read("eml.xml").decode("utf-8")
+
+        self.assertIn(
+            "Occurrence dataset for Fish Survey 2022 uploaded to FBIS.",
+            eml_content
+        )
+
     def test_publish_gbif_data_with_config_updates_records(self):
-        module_group = TaxonGroupF.create()
-        record = self._make_record(module_group)
+        source_reference = SourceReferenceF.create()
+        record = self._make_record(source_reference)
         config = self._create_config()
 
         with mock.patch(
-            "bims.utils.gbif_publish._build_dwca_with_config",
+            "bims.utils.gbif_publish.build_dwca",
             return_value=("/tmp/dwca.zip", "https://example.org/media/dwca.zip", [record.id]),
         ), mock.patch(
-            "bims.utils.gbif_publish._register_dataset_with_config",
+            "bims.utils.gbif_publish.register_dataset",
             return_value="dataset-xyz",
         ), mock.patch(
-            "bims.utils.gbif_publish._add_endpoint_with_config",
+            "bims.utils.gbif_publish.add_endpoint",
             return_value=None,
         ):
-            result = publish_gbif_data_with_config(config, module_group=module_group)
+            result = publish_gbif_data_with_config(config, source_reference=source_reference)
 
         record.refresh_from_db()
         self.assertEqual(record.dataset_key, "dataset-xyz")
@@ -338,10 +384,10 @@ class GbifPublishCrontabTests(FastTenantTestCase):
         return GbifPublishConfig.objects.create(**defaults)
 
     def test_monthly_crontab_defaults_day_of_month(self):
-        module_group = TaxonGroupF.create()
+        source_reference = SourceReferenceF.create()
         config = self._create_config()
         schedule = GbifPublish.objects.create(
-            module_group=module_group,
+            source_reference=source_reference,
             gbif_config=config,
             enabled=True,
             period=PublishPeriod.MONTHLY,
@@ -352,6 +398,6 @@ class GbifPublishCrontabTests(FastTenantTestCase):
 
         with schema_context(get_public_schema_name()):
             task = PeriodicTask.objects.get(
-                name=f"GBIF publish: taxon_group={module_group.id} id={schedule.id}"
+                name=f"GBIF publish: source_reference={source_reference.id} id={schedule.id}"
             )
             self.assertEqual(task.crontab.day_of_month, "1")
