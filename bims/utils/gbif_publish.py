@@ -35,15 +35,29 @@ def dwca_dir() -> str:
     return abs_dir
 
 
+_ABUNDANCE_TYPE_MAP = {
+    "number":                        ("individuals",     True),
+    "percentage":                    ("% cover",         False),
+    "density (m2)":                  ("individuals/m2",  False),
+    "density (cells/m2)":            ("cells/m2",        False),
+    "density (cells/ml)":            ("cells/mL",        False),
+    "species valve/frustule count":  ("valves/frustules", True),
+}
+
+
 def write_occurrence_txt(
     path: str,
     records: Iterable[BiologicalCollectionRecord],
     dataset_name: str = "",
 ) -> List[int]:
+    from django.db import connection
+    tenant_name = connection.schema_name
+
     header = [
         "occurrenceID", "basisOfRecord", "scientificName", "eventDate",
         "decimalLatitude", "decimalLongitude", "locality", "recordedBy",
         "datasetName", "institutionCode", "collectionCode", "catalogNumber",
+        "individualCount", "organismQuantity", "organismQuantityType",
         "dataGeneralizations", "license"
     ]
     written_ids: List[int] = []
@@ -66,7 +80,11 @@ def write_occurrence_txt(
 
             lat, lon = str(lat), str(lon)
 
-            locality = getattr(r.site, "name", "") or getattr(r.site, "site_name", "") or ""
+            if r.site.river:
+                locality = r.site.river.name
+            else:
+                locality = r.site.site_description
+
             basis = "HUMAN_OBSERVATION"
             try:
                 rt = (r.record_type.name or "").lower()
@@ -81,7 +99,12 @@ def write_occurrence_txt(
             collection_code = (getattr(getattr(r, "module_group", None), "name", "") or "BIMS")
             catalog_number = str(r.pk)
 
-            recorded_by = (r.collector or r.identified_by or "").strip()
+            recorded_by = (r.collector or "").strip()
+            if not recorded_by and r.collector_user:
+                recorded_by = (
+                        r.collector_user.get_full_name() or
+                        r.collector_user.username).strip()
+
             row_dataset_name = dataset_name or _site_name()
             inst_code = (r.institution_id or "").strip()
             dg = ""
@@ -94,10 +117,26 @@ def write_occurrence_txt(
                 (r.licence.url if r.licence and r.licence.url else None)
                 or LICENSE_URL
             )
+
+            abundance_name = ""
+            try:
+                abundance_name = (r.abundance_type.name or "").lower().strip()
+            except Exception:
+                pass
+
+            oqt, use_individual_count = _ABUNDANCE_TYPE_MAP.get(
+                abundance_name, ("individuals", True)
+            )
+            qty = r.abundance_number if r.abundance_number is not None else 1
+            individual_count = qty if use_individual_count else ""
+            organism_quantity = qty
+            organism_quantity_type = oqt
+
             row = [
-                "bims" + occurrence_id, basis, sci_name, event_date,
+                f"{tenant_name}:{occurrence_id}", basis, sci_name, event_date,
                 lat, lon, locality, recorded_by,
                 row_dataset_name, inst_code, collection_code, catalog_number,
+                individual_count, organism_quantity, organism_quantity_type,
                 dg, record_license
             ]
             w.writerow(row)
