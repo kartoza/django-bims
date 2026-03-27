@@ -99,7 +99,7 @@ class GbifPublishAdmin(admin.ModelAdmin):
     form = GbifPublishAdminForm
 
     list_display = (
-        "module_group",
+        "source_reference",
         "gbif_config",
         "enabled",
         "period",
@@ -109,14 +109,14 @@ class GbifPublishAdmin(admin.ModelAdmin):
         "updated_at",
     )
     list_filter = ("enabled", "period", "timezone", "gbif_config")
-    search_fields = ("module_group__name", "gbif_config__name")
-    raw_id_fields = ("module_group",)
+    search_fields = ("source_reference__source_name", "gbif_config__name")
+    raw_id_fields = ("source_reference",)
     readonly_fields = ("last_publish", "updated_at", "schedule_preview")
     actions = ["action_run_now", "action_enable", "action_disable"]
 
     fieldsets = (
         ("Target", {
-            "fields": ("module_group", "gbif_config", "enabled"),
+            "fields": ("source_reference", "gbif_config", "enabled"),
         }),
         ("When to run", {
             "fields": (
@@ -191,7 +191,7 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "schedule",
-        "module_group",
+        "source_reference",
         "status",
         "trigger",
         "dataset_key_short",
@@ -199,11 +199,11 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
         "start_time",
         "duration_display",
     )
-    list_filter = ("status", "trigger", "module_group", "gbif_config")
-    search_fields = ("dataset_key", "error_message", "schedule__module_group__name")
+    list_filter = ("status", "trigger", "source_reference", "gbif_config")
+    search_fields = ("dataset_key", "error_message", "source_reference__source_name")
     readonly_fields = (
         "schedule",
-        "module_group",
+        "source_reference",
         "gbif_config",
         "status",
         "trigger",
@@ -220,7 +220,7 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Session Info", {
-            "fields": ("schedule", "module_group", "gbif_config", "trigger"),
+            "fields": ("schedule", "source_reference", "gbif_config", "trigger"),
         }),
         ("Status", {
             "fields": ("status", "start_time", "end_time", "duration_display"),
