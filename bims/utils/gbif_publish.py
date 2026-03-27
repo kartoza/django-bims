@@ -198,6 +198,58 @@ def eml_author(author) -> str:
     return '\n  '.join(parts)
 
 
+def eml_citation(source_reference) -> str:
+    """Return an EML <citation> string for SourceReferenceBibliography or SourceReferenceDocument.
+    Returns empty string for any other type.
+    """
+    from bims.models.source_reference import (
+        SourceReferenceBibliography,
+        SourceReferenceDocument,
+    )
+    if not isinstance(source_reference, (SourceReferenceBibliography, SourceReferenceDocument)):
+        return ""
+
+    authors = source_reference.authors
+    authors = "" if authors == "-" else authors
+    year = source_reference.year
+    year = "" if year == "-" else str(year)
+    title = source_reference.title or ""
+
+    identifier = ""
+    journal_str = ""
+    doi_str = ""
+
+    if isinstance(source_reference, SourceReferenceBibliography):
+        doi = (getattr(source_reference.source, "doi", "") or "").strip()
+        identifier = doi
+        if doi:
+            doi_str = f" doi:{doi}"
+        if source_reference.source.journal:
+            abbr = (getattr(source_reference.source.journal, "abbreviation", "") or "").strip()
+            name = (getattr(source_reference.source.journal, "name", "") or "").strip()
+            journal_str = abbr or name
+    elif isinstance(source_reference, SourceReferenceDocument):
+        identifier = (getattr(source_reference.source, "doc_url", "") or "").strip()
+
+    parts = []
+    if authors:
+        parts.append(authors)
+    if year:
+        parts.append(f"({year})")
+    if title:
+        parts.append(title)
+    if journal_str:
+        parts.append(journal_str)
+    text = " ".join(parts)
+    if doi_str:
+        text = f"{text}.{doi_str}."
+    elif text:
+        text = f"{text}."
+
+    id_attr = f' identifier="{identifier}"' if identifier else ""
+    return f"<citation{id_attr}>{text}</citation>"
+
+
 def intellectual_rights_text(licence=None) -> str:
     """Format a single Licence object into an intellectualRights string."""
     name = (licence.name if licence and licence.name else "Creative Commons CCZero 1.0 License")
@@ -205,7 +257,7 @@ def intellectual_rights_text(licence=None) -> str:
     return f"This work is licensed under a {name} {url}."
 
 
-def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, licences: list = None):
+def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, licences: list = None, citation: str = ""):
     today = datetime.utcnow().date().isoformat()
     site = _site_name()
 
@@ -240,6 +292,17 @@ def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, li
     else:
         rights_paras = f"              <para>{intellectual_rights_text()}</para>"
 
+    additional_metadata = ""
+    if citation:
+        additional_metadata = f"""
+        <additionalMetadata>
+          <metadata>
+            <gbif>
+              {citation}
+            </gbif>
+          </metadata>
+        </additionalMetadata>"""
+
     eml = f"""<?xml version="1.0" encoding="UTF-8"?>
         <eml:eml packageId="{uuid.uuid4()}" system="GBIF" xmlns:eml="eml://ecoinformatics.org/eml-2.1.1"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -253,7 +316,7 @@ def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, li
 {rights_paras}
             </intellectualRights>
             {contact_blocks}
-          </dataset>
+          </dataset>{additional_metadata}
         </eml:eml>
         """
     with open(path, "w", encoding="utf-8") as f:
@@ -402,8 +465,10 @@ def build_dwca(
             licences.append(lic)
     licences = licences or None
 
+    citation = eml_citation(source_reference) if source_reference else ""
+
     write_meta_xml(meta_path)
-    write_eml_xml(eml_path, title, abstract, authors=authors, licences=licences)
+    write_eml_xml(eml_path, title, abstract, authors=authors, licences=licences, citation=citation)
     zip_path = zip_dwca(out_dir)
 
     domain_name = get_domain_name()
