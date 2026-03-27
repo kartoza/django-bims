@@ -130,31 +130,93 @@ def write_meta_xml(path: str):
         f.write(meta)
 
 
-def write_eml_xml(path: str, title: str, abstract: str):
+def eml_author(author) -> str:
+    """Return EML XML snippet for one author (GeoNode Profile/User or BIMS Profile object)."""
+    user = author
+    try:
+        bims_profile = user.bims_profile
+        role_name = bims_profile.role.display_name if getattr(bims_profile, 'role', None) else None
+    except Exception:
+        role_name = None
+
+    given = getattr(user, 'first_name', '').strip()
+    sur = getattr(user, 'last_name', '').strip()
+    email = getattr(user, 'email', '').strip()
+    org = (getattr(user, 'organization', '') or '').strip()
+
+    parts = ['<individualName>']
+    if given:
+        parts.append(f'    <givenName>{given}</givenName>')
+    if sur:
+        parts.append(f'    <surName>{sur}</surName>')
+    parts.append('  </individualName>')
+    if org:
+        parts.append(f'  <organizationName>{org}</organizationName>')
+    if role_name:
+        parts.append(f'  <positionName>{role_name}</positionName>')
+    if email:
+        parts.append(f'  <electronicMailAddress>{email}</electronicMailAddress>')
+    return '\n  '.join(parts)
+
+
+def intellectual_rights_text(licence=None) -> str:
+    """Format a single Licence object into an intellectualRights string."""
+    name = (licence.name if licence and licence.name else "Creative Commons CCZero 1.0 License")
+    url = (licence.url if licence and licence.url else LICENSE_URL)
+    return f"This work is licensed under a {name} {url}."
+
+
+def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, licences: list = None):
     today = datetime.utcnow().date().isoformat()
+    site = _site_name()
+
+    if authors:
+        creator_blocks = "\n".join(
+            f"  <creator>\n  {eml_author(a)}\n  </creator>"
+            for a in authors
+        )
+        contact_blocks = "\n".join(
+            f"  <contact>\n  {eml_author(a)}\n  </contact>"
+            for a in authors
+        )
+    else:
+        creator_blocks = (
+            f"  <creator>\n"
+            f"    <individualName><surName>{site}</surName></individualName>\n"
+            f"    <organizationName>{site}</organizationName>\n"
+            f"  </creator>"
+        )
+        contact_blocks = (
+            f"  <contact>\n"
+            f"    <individualName><surName>{site}</surName></individualName>\n"
+            f"    <organizationName>{site}</organizationName>\n"
+            f"  </contact>"
+        )
+
+    if licences:
+        rights_paras = "\n".join(
+            f"              <para>{intellectual_rights_text(lic)}</para>"
+            for lic in licences
+        )
+    else:
+        rights_paras = f"              <para>{intellectual_rights_text()}</para>"
+
     eml = f"""<?xml version="1.0" encoding="UTF-8"?>
-    <eml:eml packageId="{uuid.uuid4()}" system="GBIF" xmlns:eml="eml://ecoinformatics.org/eml-2.1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd">
-      <dataset>
-        <title>{title}</title>
-        <creator>
-          <individualName>
-            <surName>{_site_name()}</surName>
-          </individualName>
-          <organizationName>{_site_name()}</organizationName>
-        </creator>
-        <metadataProvider>
-          <individualName>
-            <surName>{_site_name()}</surName>
-          </individualName>
-        </metadataProvider>
-        <pubDate>{today}</pubDate>
-        <abstract><para>{abstract}</para></abstract>
-        <intellectualRights>
-          <para>{LICENSE_URL}</para>
-        </intellectualRights>
-      </dataset>
-    </eml:eml>
-    """
+        <eml:eml packageId="{uuid.uuid4()}" system="GBIF" xmlns:eml="eml://ecoinformatics.org/eml-2.1.1"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd">
+          <dataset>
+            <title>{title}</title>
+            {creator_blocks}
+            <pubDate>{today}</pubDate>
+            <abstract><para>{abstract}</para></abstract>
+            <intellectualRights>
+{rights_paras}
+            </intellectualRights>
+            {contact_blocks}
+          </dataset>
+        </eml:eml>
+        """
     with open(path, "w", encoding="utf-8") as f:
         f.write(eml)
 
@@ -290,9 +352,19 @@ def build_dwca(
     abstract = (
         f"Occurrence dataset for {ref_title} uploaded to {_site_name()}."
     )
+    authors = list(source_reference.author_list or []) if source_reference else []
+
+    seen = set()
+    licences = []
+    for r in records:
+        lic = getattr(r, 'licence', None)
+        if lic and lic.pk not in seen:
+            seen.add(lic.pk)
+            licences.append(lic)
+    licences = licences or None
 
     write_meta_xml(meta_path)
-    write_eml_xml(eml_path, title, abstract)
+    write_eml_xml(eml_path, title, abstract, authors=authors, licences=licences)
     zip_path = zip_dwca(out_dir)
 
     domain_name = get_domain_name()
