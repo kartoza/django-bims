@@ -198,6 +198,60 @@ def eml_author(author) -> str:
     return '\n  '.join(parts)
 
 
+def eml_contact_from_model(contact) -> str:
+    """Return EML XML body snippet for a GbifPublishContact model instance.
+
+    Applies the resolved_* properties so blank fields fall back to the linked
+    user's profile data.
+    """
+    given = contact.resolved_given_name
+    sur = contact.resolved_sur_name
+    org = contact.resolved_organization_name
+    position = contact.resolved_position_name
+    email = contact.resolved_email
+    phone = contact.phone.strip() if contact.phone else ""
+    url = contact.online_url.strip() if contact.online_url else ""
+
+    # address sub-fields
+    dp = (contact.delivery_point or "").strip()
+    city = (contact.city or "").strip()
+    postal = (contact.postal_code or "").strip()
+    country = (contact.country or "").strip()
+
+    parts = ["<individualName>"]
+    if given:
+        parts.append(f"    <givenName>{given}</givenName>")
+    if sur:
+        parts.append(f"    <surName>{sur}</surName>")
+    parts.append("  </individualName>")
+
+    if org:
+        parts.append(f"  <organizationName>{org}</organizationName>")
+    if position:
+        parts.append(f"  <positionName>{position}</positionName>")
+
+    if dp or city or postal or country:
+        parts.append("  <address>")
+        if dp:
+            parts.append(f"    <deliveryPoint>{dp}</deliveryPoint>")
+        if city:
+            parts.append(f"    <city>{city}</city>")
+        if postal:
+            parts.append(f"    <postalCode>{postal}</postalCode>")
+        if country:
+            parts.append(f"    <country>{country}</country>")
+        parts.append("  </address>")
+
+    if phone:
+        parts.append(f"  <phone>{phone}</phone>")
+    if email:
+        parts.append(f"  <electronicMailAddress>{email}</electronicMailAddress>")
+    if url:
+        parts.append(f"  <onlineUrl>{url}</onlineUrl>")
+
+    return "\n  ".join(parts)
+
+
 def eml_citation(source_reference) -> str:
     """Return an EML <citation> string for SourceReferenceBibliography or SourceReferenceDocument.
     Returns empty string for any other type.
@@ -257,17 +311,20 @@ def intellectual_rights_text(licence=None) -> str:
     return f"This work is licensed under a {name} {url}."
 
 
-def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, licences: list = None, citation: str = ""):
+def write_eml_xml(
+        path: str,
+        title: str,
+        abstract: str,
+        contacts: list,
+        authors: list = None,
+        licences: list = None,
+        citation: str = ""):
     today = datetime.utcnow().date().isoformat()
     site = _site_name()
 
     if authors:
         creator_blocks = "\n".join(
             f"  <creator>\n  {eml_author(a)}\n  </creator>"
-            for a in authors
-        )
-        contact_blocks = "\n".join(
-            f"  <contact>\n  {eml_author(a)}\n  </contact>"
             for a in authors
         )
     else:
@@ -277,12 +334,11 @@ def write_eml_xml(path: str, title: str, abstract: str, authors: list = None, li
             f"    <organizationName>{site}</organizationName>\n"
             f"  </creator>"
         )
-        contact_blocks = (
-            f"  <contact>\n"
-            f"    <individualName><surName>{site}</surName></individualName>\n"
-            f"    <organizationName>{site}</organizationName>\n"
-            f"  </contact>"
-        )
+
+    contact_blocks = "\n".join(
+        f"  <contact>\n  {eml_contact_from_model(c)}\n  </contact>"
+        for c in contacts
+    )
 
     if licences:
         rights_paras = "\n".join(
@@ -433,6 +489,7 @@ def build_dwca(
     records: Iterable[BiologicalCollectionRecord],
     source_reference=None,
     out_dir: str = None,
+    contacts: list = None,
 ) -> Tuple[str, str, List[int]]:
     """Build DwC-A using config for base URL.
     """
@@ -468,7 +525,14 @@ def build_dwca(
     citation = eml_citation(source_reference) if source_reference else ""
 
     write_meta_xml(meta_path)
-    write_eml_xml(eml_path, title, abstract, authors=authors, licences=licences, citation=citation)
+    write_eml_xml(
+        eml_path,
+        title,
+        abstract,
+        contacts=contacts,
+        authors=authors,
+        licences=licences,
+        citation=citation)
     zip_path = zip_dwca(out_dir)
 
     domain_name = get_domain_name()
@@ -526,6 +590,7 @@ def publish_gbif_data_with_config(
     source_reference=None,
     existing_dataset_key: str = "",
     existing_archive_url: str = "",
+    contacts: list = None,
 ) -> dict:
     """
     Build a DwC-A for public, validated records and publish it to GBIF.
@@ -546,6 +611,8 @@ def publish_gbif_data_with_config(
             publish for this schedule.  Empty string means "first publish".
         existing_archive_url: Public URL of the archive from the previous
             successful publish.  Used to derive the directory to overwrite.
+        contacts: List of GbifPublishContact instances to embed as EML
+            <contact> elements.  Required — raises ValueError if empty.
 
     Returns:
         dict with dataset_key, records_published, and archive_url
@@ -555,13 +622,19 @@ def publish_gbif_data_with_config(
     if source_reference:
         records = list(gather_data_for_source_reference(source_reference))
 
+    if not contacts:
+        raise ValueError(
+            "No contacts configured for this GBIF config. "
+            "Add at least one contact via the GBIF Config admin before publishing."
+        )
+
     if not records:
         raise ValueError("No records to publish (need public+validated).")
 
     out_dir = archive_url_dir(existing_archive_url) if existing_archive_url else None
 
     zip_path, archive_url, written_ids = build_dwca(
-        config, records, source_reference, out_dir=out_dir
+        config, records, source_reference, out_dir=out_dir, contacts=contacts
     )
 
     ref_title = source_reference.title if source_reference else _site_name()

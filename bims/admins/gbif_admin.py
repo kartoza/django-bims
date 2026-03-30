@@ -3,6 +3,7 @@
 GBIF Admin models - registered under a separate "GBIF Publishing" section
 in the default Django admin site using proxy models.
 """
+from django import forms
 from django.contrib import admin, messages
 from django.db import connection
 from django.utils.html import format_html
@@ -13,9 +14,37 @@ from bims.models.gbif_publish import (
     GbifPublishConfig,
     GbifPublish,
     GbifPublishSession,
+    GbifPublishContact,
 )
 from bims.forms.gbif_publish import GbifPublishAdminForm
 from bims.tasks import run_scheduled_gbif_publish
+
+
+class GbifPublishConfigForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(render_value=False),
+        required=False,
+        help_text=(
+            "GBIF password for authentication (encrypted at rest). "
+            "Leave blank to keep the existing password."
+        ),
+    )
+
+    class Meta:
+        model = GbifPublishConfig
+        fields = "__all__"
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        new_password = self.cleaned_data.get("password")
+        if not new_password:
+            # Keep the existing encrypted value — reload from DB
+            if instance.pk:
+                instance.password = GbifPublishConfig.objects.get(pk=instance.pk).password
+            # else: new object with no password — leave blank (validation should catch this)
+        if commit:
+            instance.save()
+        return instance
 
 
 # Proxy models with custom app_label for admin grouping
@@ -40,8 +69,16 @@ class GbifPublishSessionProxy(GbifPublishSession):
         verbose_name_plural = 'GBIF Publish Sessions'
 
 
+class GbifPublishContactInline(admin.StackedInline):
+    classes = ('grp-collapse grp-open',)
+    inline_classes = ('grp-collapse grp-open',)
+    model = GbifPublishContact
+
+
 @admin.register(GbifPublishConfigProxy)
 class GbifPublishConfigAdmin(admin.ModelAdmin):
+    form = GbifPublishConfigForm
+    inlines = [GbifPublishContactInline]
     list_display = (
         "name",
         "gbif_api_url",
@@ -92,6 +129,28 @@ class GbifPublishConfigAdmin(admin.ModelAdmin):
             self.message_user(
                 request,
                 f"Failed to create installation key", messages.ERROR)
+
+
+class GbifPublishContactInline(admin.TabularInline):
+    model = GbifPublishContact
+    extra = 1
+    autocomplete_fields = ("user",)
+    fields = (
+        "user",
+        "individual_name_given",
+        "individual_name_sur",
+        "organization_name",
+        "position_name",
+        "delivery_point",
+        "city",
+        "postal_code",
+        "country",
+        "phone",
+        "electronic_mail_address",
+        "online_url",
+    )
+    verbose_name = "Contact"
+    verbose_name_plural = "Contacts"
 
 
 @admin.register(GbifPublishProxy)

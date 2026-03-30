@@ -52,7 +52,7 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
     in the GbifPublish schedule.
     """
     from bims.models.gbif_publish import (
-        GbifPublish, GbifPublishSession, PublishStatus, PublishTrigger
+        GbifPublish, GbifPublishSession, GbifPublishContact, PublishStatus, PublishTrigger
     )
 
     Tenant = get_tenant_model()
@@ -88,8 +88,15 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
 
                 config = publish_schedule.gbif_config
                 source_reference = publish_schedule.source_reference
+                contacts = list(
+                    GbifPublishContact.objects
+                    .filter(gbif_config=config)
+                    .select_related("user", "user__bims_profile", "user__bims_profile__role")
+                )
 
-                # Create session record
+                if not contacts:
+                    return {"status": "no_contacts", "publish_id": publish_id}
+
                 session = GbifPublishSession.objects.create(
                     schedule=publish_schedule,
                     source_reference=source_reference,
@@ -97,7 +104,6 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
                     status=PublishStatus.RUNNING,
                     trigger=trigger if trigger in [t.value for t in PublishTrigger] else PublishTrigger.SCHEDULED,
                 )
-
 
             # Reuse the existing GBIF dataset if this schedule has published
             # successfully before (one dataset per module per platform).
@@ -117,6 +123,7 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
                     source_reference=source_reference,
                     existing_dataset_key=existing_dataset_key,
                     existing_archive_url=existing_archive_url,
+                    contacts=contacts,
                 )
 
                 # Update session with success
