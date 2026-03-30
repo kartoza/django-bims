@@ -213,6 +213,9 @@ class DownloadRequestDetailView(
             preferences.SiteSetting.enable_download_request_approval or
             preferences.SiteSetting.max_download_records > 0
         )
+        ctx['expiry_months'] = getattr(
+            preferences.SiteSetting, 'download_request_expiry_months', 2
+        ) or None
         referer = self.request.META.get('HTTP_REFERER', '')
         from urllib.parse import urlparse
         parsed = urlparse(referer)
