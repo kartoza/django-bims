@@ -3,6 +3,7 @@
 GBIF Admin models - registered under a separate "GBIF Publishing" section
 in the default Django admin site using proxy models.
 """
+from django import forms
 from django.contrib import admin, messages
 from django.db import connection
 from django.utils.html import format_html
@@ -13,9 +14,37 @@ from bims.models.gbif_publish import (
     GbifPublishConfig,
     GbifPublish,
     GbifPublishSession,
+    GbifPublishContact,
 )
 from bims.forms.gbif_publish import GbifPublishAdminForm
 from bims.tasks import run_scheduled_gbif_publish
+
+
+class GbifPublishConfigForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(render_value=False),
+        required=False,
+        help_text=(
+            "GBIF password for authentication (encrypted at rest). "
+            "Leave blank to keep the existing password."
+        ),
+    )
+
+    class Meta:
+        model = GbifPublishConfig
+        fields = "__all__"
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        new_password = self.cleaned_data.get("password")
+        if not new_password:
+            # Keep the existing encrypted value — reload from DB
+            if instance.pk:
+                instance.password = GbifPublishConfig.objects.get(pk=instance.pk).password
+            # else: new object with no password — leave blank (validation should catch this)
+        if commit:
+            instance.save()
+        return instance
 
 
 # Proxy models with custom app_label for admin grouping
@@ -40,8 +69,16 @@ class GbifPublishSessionProxy(GbifPublishSession):
         verbose_name_plural = 'GBIF Publish Sessions'
 
 
+class GbifPublishContactInline(admin.StackedInline):
+    classes = ('grp-collapse grp-open',)
+    inline_classes = ('grp-collapse grp-open',)
+    model = GbifPublishContact
+
+
 @admin.register(GbifPublishConfigProxy)
 class GbifPublishConfigAdmin(admin.ModelAdmin):
+    form = GbifPublishConfigForm
+    inlines = [GbifPublishContactInline]
     list_display = (
         "name",
         "gbif_api_url",
@@ -94,12 +131,34 @@ class GbifPublishConfigAdmin(admin.ModelAdmin):
                 f"Failed to create installation key", messages.ERROR)
 
 
+class GbifPublishContactInline(admin.TabularInline):
+    model = GbifPublishContact
+    extra = 1
+    autocomplete_fields = ("user",)
+    fields = (
+        "user",
+        "individual_name_given",
+        "individual_name_sur",
+        "organization_name",
+        "position_name",
+        "delivery_point",
+        "city",
+        "postal_code",
+        "country",
+        "phone",
+        "electronic_mail_address",
+        "online_url",
+    )
+    verbose_name = "Contact"
+    verbose_name_plural = "Contacts"
+
+
 @admin.register(GbifPublishProxy)
 class GbifPublishAdmin(admin.ModelAdmin):
     form = GbifPublishAdminForm
 
     list_display = (
-        "module_group",
+        "source_reference",
         "gbif_config",
         "enabled",
         "period",
@@ -109,14 +168,14 @@ class GbifPublishAdmin(admin.ModelAdmin):
         "updated_at",
     )
     list_filter = ("enabled", "period", "timezone", "gbif_config")
-    search_fields = ("module_group__name", "gbif_config__name")
-    raw_id_fields = ("module_group",)
+    search_fields = ("source_reference__source_name", "gbif_config__name")
+    raw_id_fields = ("source_reference",)
     readonly_fields = ("last_publish", "updated_at", "schedule_preview")
     actions = ["action_run_now", "action_enable", "action_disable"]
 
     fieldsets = (
         ("Target", {
-            "fields": ("module_group", "gbif_config", "enabled"),
+            "fields": ("source_reference", "gbif_config", "enabled"),
         }),
         ("When to run", {
             "fields": (
@@ -191,7 +250,7 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "schedule",
-        "module_group",
+        "source_reference",
         "status",
         "trigger",
         "dataset_key_short",
@@ -199,11 +258,11 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
         "start_time",
         "duration_display",
     )
-    list_filter = ("status", "trigger", "module_group", "gbif_config")
-    search_fields = ("dataset_key", "error_message", "schedule__module_group__name")
+    list_filter = ("status", "trigger", "source_reference", "gbif_config")
+    search_fields = ("dataset_key", "error_message", "source_reference__source_name")
     readonly_fields = (
         "schedule",
-        "module_group",
+        "source_reference",
         "gbif_config",
         "status",
         "trigger",
@@ -220,7 +279,7 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Session Info", {
-            "fields": ("schedule", "module_group", "gbif_config", "trigger"),
+            "fields": ("schedule", "source_reference", "gbif_config", "trigger"),
         }),
         ("Status", {
             "fields": ("status", "start_time", "end_time", "duration_display"),
