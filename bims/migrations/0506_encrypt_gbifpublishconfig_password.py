@@ -30,6 +30,7 @@ def _migrate_passwords(apps, schema_editor):
             FROM information_schema.columns
             WHERE table_name = 'bims_gbifpublishconfig'
               AND column_name = 'password'
+              AND table_schema = current_schema()
             """
         )
         meta = cursor.fetchone()
