@@ -202,6 +202,21 @@ class GbifPublishSession(models.Model):
         return None
 
 
+class RoleType(models.TextChoices):
+    AUTHOR = "author", "Author"
+    CONTENT_PROVIDER = "contentProvider", "Content Provider"
+    CUSTODIAN_STEWARD = "custodianSteward", "Custodian Steward"
+    DISTRIBUTOR = "distributor", "Distributor"
+    EDITOR = "editor", "Editor"
+    METADATA_PROVIDER = "metadataProvider", "Metadata Provider"
+    ORIGINATOR = "originator", "Originator"
+    POINT_OF_CONTACT = "pointOfContact", "Point of Contact"
+    PRINCIPAL_INVESTIGATOR = "principalInvestigator", "Principal Investigator"
+    PROCESSOR = "processor", "Processor"
+    PUBLISHER = "publisher", "Publisher"
+    USER = "user", "User"
+
+
 class GbifPublishContact(models.Model):
     """
     Contact information embedded in the EML metadata for a GBIF config.
@@ -221,6 +236,15 @@ class GbifPublishContact(models.Model):
         help_text=(
             "Optional: link a user to auto-populate blank fields "
             "(name, email, organisation, position)."
+        ),
+    )
+    role = models.CharField(
+        max_length=32,
+        choices=RoleType.choices,
+        default=RoleType.ORIGINATOR,
+        help_text=(
+            "How this person or organisation is related to the resource "
+            "(EML roleType). E.g. originator, author, pointOfContact, publisher."
         ),
     )
     individual_name_given = models.CharField(

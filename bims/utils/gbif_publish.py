@@ -249,6 +249,10 @@ def eml_contact_from_model(contact) -> str:
     if url:
         parts.append(f"  <onlineUrl>{url}</onlineUrl>")
 
+    role = (getattr(contact, "role", "") or "").strip()
+    if role:
+        parts.append(f"  <role>{role}</role>")
+
     return "\n  ".join(parts)
 
 
@@ -318,8 +322,10 @@ def write_eml_xml(
         contacts: list,
         authors: list = None,
         licences: list = None,
-        citation: str = ""):
+        citation: str = "",
+        pub_date: str = ""):
     today = datetime.utcnow().date().isoformat()
+    pub_date = pub_date or today
     site = _site_name()
 
     if authors:
@@ -366,7 +372,7 @@ def write_eml_xml(
           <dataset>
             <title>{title}</title>
             {creator_blocks}
-            <pubDate>{today}</pubDate>
+            <pubDate>{pub_date}</pubDate>
             <abstract><para>{abstract}</para></abstract>
             <intellectualRights>
 {rights_paras}
@@ -487,9 +493,9 @@ def archive_url_dir(archive_url: str) -> str:
 def build_dwca(
     config,
     records: Iterable[BiologicalCollectionRecord],
+    contacts: list,
     source_reference=None,
     out_dir: str = None,
-    contacts: list = None,
 ) -> Tuple[str, str, List[int]]:
     """Build DwC-A using config for base URL.
     """
@@ -524,6 +530,15 @@ def build_dwca(
 
     citation = eml_citation(source_reference) if source_reference else ""
 
+    pub_date = ""
+    if source_reference:
+        try:
+            year = source_reference.year
+            if year:
+                pub_date = str(year)
+        except Exception:
+            pass
+
     write_meta_xml(meta_path)
     write_eml_xml(
         eml_path,
@@ -532,7 +547,8 @@ def build_dwca(
         contacts=contacts,
         authors=authors,
         licences=licences,
-        citation=citation)
+        citation=citation,
+        pub_date=pub_date)
     zip_path = zip_dwca(out_dir)
 
     domain_name = get_domain_name()
@@ -634,7 +650,7 @@ def publish_gbif_data_with_config(
     out_dir = archive_url_dir(existing_archive_url) if existing_archive_url else None
 
     zip_path, archive_url, written_ids = build_dwca(
-        config, records, source_reference, out_dir=out_dir, contacts=contacts
+        config, records, contacts, source_reference, out_dir=out_dir,
     )
 
     ref_title = source_reference.title if source_reference else _site_name()
