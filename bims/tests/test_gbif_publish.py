@@ -22,6 +22,7 @@ from bims.models.gbif_publish import (
     GbifPublishSession,
     PublishPeriod,
     PublishStatus,
+    RoleType,
 )
 from bims.models.licence import Licence
 from bims.tasks.gbif_publish import run_scheduled_gbif_publish
@@ -336,7 +337,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, archive_url, written_ids = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference
             )
 
         self.assertTrue(os.path.exists(zip_path))
@@ -355,7 +356,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference
             )
 
         eml = self._read_eml(zip_path)
@@ -372,7 +373,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="FBIS"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference
             )
 
         eml = self._read_eml(zip_path)
@@ -391,7 +392,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, written_ids = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference
             )
 
         rows = self._read_occurrence_rows(zip_path)
@@ -422,7 +423,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference
             )
 
         rows = self._read_occurrence_rows(zip_path)
@@ -438,7 +439,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference,
             )
 
         rows = self._read_occurrence_rows(zip_path)
@@ -453,7 +454,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference,
             )
 
         rows = self._read_occurrence_rows(zip_path)
@@ -487,7 +488,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record1, record2], source_reference, contacts=[self.contact]
+                self.config, [record1, record2], [self.contact], source_reference
             )
 
         eml = self._read_eml(zip_path)
@@ -519,8 +520,6 @@ class GbifPublishApiTests(FastTenantTestCase):
         self.assertIn("University of Cape Town", snippet)
         self.assertIn("<positionName>Researcher</positionName>", snippet)
         self.assertIn("jane@example.com", snippet)
-
-    # -- eml_citation --
 
     def test_eml_citation_bibliography(self):
         source_reference = SourceReferenceBibliographyF.create()
@@ -558,7 +557,7 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], source_reference, contacts=[self.contact]
+                self.config, [record], [self.contact], source_reference
             )
 
         eml = self._read_eml(zip_path)
@@ -793,6 +792,53 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertIn("<surName>Baker</surName>", snippet)
         self.assertIn("<electronicMailAddress>tom@example.com</electronicMailAddress>", snippet)
 
+    def test_eml_contact_default_role_is_point_of_contact(self):
+        contact = GbifPublishContact(
+            gbif_config=self.config,
+            individual_name_sur="Default",
+        )
+        snippet = eml_contact_from_model(contact)
+        self.assertIn("<role>originator</role>", snippet)
+
+    def test_eml_contact_role_originator(self):
+        contact = GbifPublishContact(
+            gbif_config=self.config,
+            individual_name_sur="Origin",
+            role=RoleType.ORIGINATOR,
+        )
+        snippet = eml_contact_from_model(contact)
+        self.assertIn("<role>originator</role>", snippet)
+
+    def test_eml_contact_role_all_choices_rendered(self):
+        """Every RoleType value should render a matching <role> element."""
+        for role_value, _ in RoleType.choices:
+            contact = GbifPublishContact(
+                gbif_config=self.config,
+                individual_name_sur="Test",
+                role=role_value,
+            )
+            snippet = eml_contact_from_model(contact)
+            self.assertIn(f"<role>{role_value}</role>", snippet, msg=f"Missing role: {role_value}")
+
+    def test_eml_contact_role_embedded_in_dwca_eml(self):
+        """Role value should appear inside <contact> in the generated eml.xml."""
+        source_reference = SourceReferenceF.create()
+        record = self._make_record(source_reference)
+        contact = _make_contact(
+            self.config,
+            individual_name_given="Publisher",
+            individual_name_sur="Person",
+            role=RoleType.PUBLISHER,
+        )
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
+
+        eml = self._read_eml(zip_path)
+        self.assertIn("<role>publisher</role>", eml)
+
     # -- contacts in EML via build_dwca --
 
     def _make_record(self, source_reference, **kwargs):
@@ -823,7 +869,7 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], source_reference, contacts=[contact])
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
 
         eml = self._read_eml(zip_path)
         self.assertIn("<contact>", eml)
@@ -848,7 +894,7 @@ class GbifPublishContactTests(FastTenantTestCase):
         )
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="TestSite"):
-            zip_path, _, _ = build_dwca(self.config, [record], source_reference, contacts=[contact])
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
 
         eml = self._read_eml(zip_path)
         self.assertIn("<contact>", eml)
@@ -863,7 +909,7 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], source_reference, contacts=[contact])
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
 
         eml = self._read_eml(zip_path)
         # contact name appears inside <contact> block
@@ -871,3 +917,37 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertIn("ContactOnly", eml)
         # but <creator> block still exists (site default since no authors on this ref)
         self.assertIn("<creator>", eml)
+
+    def test_pubdate_uses_source_reference_year(self):
+        """<pubDate> should reflect the source reference publication year."""
+        import datetime
+        source_reference = SourceReferenceBibliographyF.create()
+        source_reference.source.publication_date = datetime.date(2019, 6, 15)
+        source_reference.source.save()
+
+        record = self._make_record(source_reference)
+        contact = _make_contact(self.config)
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
+
+        eml = self._read_eml(zip_path)
+        self.assertIn("<pubDate>2019</pubDate>", eml)
+
+    def test_pubdate_falls_back_to_today_without_source_reference(self):
+        """<pubDate> should fall back to today's date when no source reference is given."""
+        from datetime import datetime as dt
+        today = dt.utcnow().date().isoformat()
+        source_reference = SourceReferenceF.create()
+        record = self._make_record(source_reference)
+        contact = _make_contact(self.config)
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], None)
+
+        eml = self._read_eml(zip_path)
+        self.assertIn(f"<pubDate>{today}</pubDate>", eml)

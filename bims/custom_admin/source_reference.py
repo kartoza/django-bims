@@ -14,6 +14,28 @@ from bims.models.source_reference import (
 )
 
 
+class HasGbifPublishFilter(admin.SimpleListFilter):
+    title = "GBIF publish schedule"
+    parameter_name = "has_gbif_publish"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Has GBIF publish schedule"),
+            ("no", "No GBIF publish schedule"),
+        )
+
+    def queryset(self, request, queryset):
+        from bims.models.gbif_publish import GbifPublish
+        scheduled_ids = GbifPublish.objects.values_list(
+            "source_reference_id", flat=True
+        ).distinct()
+        if self.value() == "yes":
+            return queryset.filter(pk__in=scheduled_ids)
+        if self.value() == "no":
+            return queryset.exclude(pk__in=scheduled_ids)
+        return queryset
+
+
 class DatabaseRecordAdmin(admin.ModelAdmin):
     list_display = ('name', 'url')
 
@@ -56,7 +78,8 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
         'reference_type',
         'verified',
         'total_records',
-        'has_metadata'
+        'has_metadata',
+        'has_gbif_publish',
     )
     child_models = (
         SourceReferenceBibliography,
@@ -64,7 +87,7 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
         SourceReferenceDocument,
         SourceReference
     )
-    list_filter = (PolymorphicChildModelFilter,)
+    list_filter = (PolymorphicChildModelFilter, HasGbifPublishFilter)
     search_fields = (
         'sourcereferencebibliography__source__title',
         'sourcereferencedocument__source__title',
@@ -110,10 +133,16 @@ class SourceReferenceAdmin(PolymorphicParentModelAdmin):
     def has_metadata(self, obj):
         return 'Yes' if obj.metadata_file else 'No'
 
+    def has_gbif_publish(self, obj):
+        from bims.models.gbif_publish import GbifPublish
+        return GbifPublish.objects.filter(source_reference=obj).exists()
+    has_gbif_publish.boolean = True
+
     source_reference_title.short_description = 'Title'
     reference_type.short_description = 'Reference Type'
     total_records.short_description = 'Total Occurrences'
     has_metadata.short_description = 'Has Metadata'
+    has_gbif_publish.short_description = 'GBIF Publish'
 
     actions = ['merge_source_references']
 

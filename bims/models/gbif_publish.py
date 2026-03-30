@@ -202,6 +202,21 @@ class GbifPublishSession(models.Model):
         return None
 
 
+class RoleType(models.TextChoices):
+    AUTHOR = "author", "Author"
+    CONTENT_PROVIDER = "contentProvider", "Content Provider"
+    CUSTODIAN_STEWARD = "custodianSteward", "Custodian Steward"
+    DISTRIBUTOR = "distributor", "Distributor"
+    EDITOR = "editor", "Editor"
+    METADATA_PROVIDER = "metadataProvider", "Metadata Provider"
+    ORIGINATOR = "originator", "Originator"
+    POINT_OF_CONTACT = "pointOfContact", "Point of Contact"
+    PRINCIPAL_INVESTIGATOR = "principalInvestigator", "Principal Investigator"
+    PROCESSOR = "processor", "Processor"
+    PUBLISHER = "publisher", "Publisher"
+    USER = "user", "User"
+
+
 class GbifPublishContact(models.Model):
     """
     Contact information embedded in the EML metadata for a GBIF config.
@@ -221,6 +236,15 @@ class GbifPublishContact(models.Model):
         help_text=(
             "Optional: link a user to auto-populate blank fields "
             "(name, email, organisation, position)."
+        ),
+    )
+    role = models.CharField(
+        max_length=32,
+        choices=RoleType.choices,
+        default=RoleType.ORIGINATOR,
+        help_text=(
+            "How this person or organisation is related to the resource "
+            "(EML roleType). E.g. originator, author, pointOfContact, publisher."
         ),
     )
     individual_name_given = models.CharField(
@@ -362,16 +386,37 @@ def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', 
             setattr(instance, field, value)
             update_fields.append(field)
 
-    _fill("individual_name_given", (getattr(user, "first_name", "") or "").strip())
-    _fill("individual_name_sur", (getattr(user, "last_name", "") or "").strip())
-    _fill("electronic_mail_address", (getattr(user, "email", "") or "").strip())
-    _fill("organization_name", (getattr(user, "organization", "") or "").strip())
+    sibling = (
+        GbifPublishContact.objects
+        .filter(user_id=user.id, gbif_config=instance.gbif_config)
+        .exclude(id=instance.id)
+        .first()
+    )
 
-    try:
-        role_name = (user.bims_profile.role.display_name or "").strip()
-        _fill("position_name", role_name)
-    except Exception:
-        pass
+    if sibling:
+        for field in (
+                "individual_name_given", "individual_name_sur",
+                "electronic_mail_address", "organization_name",
+                "postal_code", "position_name", "delivery_point",
+                "city", "phone", "country", "online_url",
+        ):
+            _fill(field, (getattr(sibling, field, "") or "").strip())
+    else:
+        _fill("individual_name_given", (getattr(user, "first_name", "") or "").strip())
+        _fill("individual_name_sur", (getattr(user, "last_name", "") or "").strip())
+        _fill("electronic_mail_address", (getattr(user, "email", "") or "").strip())
+        _fill("organization_name", (getattr(user, "organization", "") or "").strip())
+        _fill("postal_code", (getattr(user, "zipcode", "") or "").strip())
+        _fill("delivery_point", (getattr(user, "delivery", "") or "").strip())
+        _fill("city", (getattr(user, "city", "") or "").strip())
+        _fill("phone", (getattr(user, "voice", "") or "").strip())
+        _fill("country", (getattr(user, "country", "") or "").strip())
+        _fill("position_name", (getattr(user, "position", "") or "").strip())
+        try:
+            role_name = (user.bims_profile.role.display_name or "").strip()
+            _fill("position_name", role_name)
+        except Exception:
+            pass
 
     if update_fields:
         sender.objects.filter(pk=instance.pk).update(
