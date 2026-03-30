@@ -386,16 +386,37 @@ def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', 
             setattr(instance, field, value)
             update_fields.append(field)
 
-    _fill("individual_name_given", (getattr(user, "first_name", "") or "").strip())
-    _fill("individual_name_sur", (getattr(user, "last_name", "") or "").strip())
-    _fill("electronic_mail_address", (getattr(user, "email", "") or "").strip())
-    _fill("organization_name", (getattr(user, "organization", "") or "").strip())
+    sibling = (
+        GbifPublishContact.objects
+        .filter(user_id=user.id, gbif_config=instance.gbif_config)
+        .exclude(id=instance.id)
+        .first()
+    )
 
-    try:
-        role_name = (user.bims_profile.role.display_name or "").strip()
-        _fill("position_name", role_name)
-    except Exception:
-        pass
+    if sibling:
+        for field in (
+                "individual_name_given", "individual_name_sur",
+                "electronic_mail_address", "organization_name",
+                "postal_code", "position_name", "delivery_point",
+                "city", "phone", "country", "online_url",
+        ):
+            _fill(field, (getattr(sibling, field, "") or "").strip())
+    else:
+        _fill("individual_name_given", (getattr(user, "first_name", "") or "").strip())
+        _fill("individual_name_sur", (getattr(user, "last_name", "") or "").strip())
+        _fill("electronic_mail_address", (getattr(user, "email", "") or "").strip())
+        _fill("organization_name", (getattr(user, "organization", "") or "").strip())
+        _fill("postal_code", (getattr(user, "zipcode", "") or "").strip())
+        _fill("delivery_point", (getattr(user, "delivery", "") or "").strip())
+        _fill("city", (getattr(user, "city", "") or "").strip())
+        _fill("phone", (getattr(user, "voice", "") or "").strip())
+        _fill("country", (getattr(user, "country", "") or "").strip())
+        _fill("position_name", (getattr(user, "position", "") or "").strip())
+        try:
+            role_name = (user.bims_profile.role.display_name or "").strip()
+            _fill("position_name", role_name)
+        except Exception:
+            pass
 
     if update_fields:
         sender.objects.filter(pk=instance.pk).update(
