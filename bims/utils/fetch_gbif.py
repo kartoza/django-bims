@@ -503,10 +503,13 @@ def fetch_all_species_from_gbif(
     species_key = taxonomy.gbif_key
     scientific_name = taxonomy.scientific_name
 
-    if parent or is_synonym:
+    gbif_status_lower = (species_data.get('taxonomicStatus') or '').strip().lower()
+    is_synonym_or_doubtful = 'synonym' in gbif_status_lower or gbif_status_lower == 'doubtful'
+
+    if parent and not is_synonym:
         taxonomy.parent = parent
         taxonomy.save()
-    else:
+    elif not is_synonym_or_doubtful:
         # For infraspecific ranks (variety, subspecies, form), use speciesKey as parent if available
         # because parentKey in GBIF often points to genus instead of species for these ranks
         rank_lower = (taxonomy.rank or '').lower()
@@ -538,46 +541,54 @@ def fetch_all_species_from_gbif(
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
-    max_tries = 20
-    tries = 0
-    cursor = taxonomy
-    while tries < max_tries and cursor and cursor.rank and cursor.rank.lower() != 'kingdom':
-        if not cursor.parent:
-            pk = (cursor.gbif_data or {}).get('parentKey') if hasattr(cursor, 'gbif_data') else None
-            if pk and pk != cursor.gbif_key and pk not in _visited:
-                pt = fetch_all_species_from_gbif(
-                    gbif_key=pk,
-                    parent=None,
-                    fetch_children=False,
-                    fetch_vernacular_names=fetch_vernacular_names,
-                    use_name_lookup=use_name_lookup,
-                    log_file_path=log_file_path,
-                    preserve_taxonomic_status=preserve_taxonomic_status,
-                    _visited=_visited,
-                    _depth=_depth + 1,
-                )
-                if pt:
-                    cursor.parent = pt
-                    cursor.save()
+    if not is_synonym_or_doubtful:
+        max_tries = 20
+        tries = 0
+        cursor = taxonomy
+        while tries < max_tries and cursor and cursor.rank and cursor.rank.lower() != 'kingdom':
+            if not cursor.parent:
+                pk = (cursor.gbif_data or {}).get('parentKey') if hasattr(cursor, 'gbif_data') else None
+                if pk and pk != cursor.gbif_key and pk not in _visited:
+                    pt = fetch_all_species_from_gbif(
+                        gbif_key=pk,
+                        parent=None,
+                        fetch_children=False,
+                        fetch_vernacular_names=fetch_vernacular_names,
+                        use_name_lookup=use_name_lookup,
+                        log_file_path=log_file_path,
+                        preserve_taxonomic_status=preserve_taxonomic_status,
+                        _visited=_visited,
+                        _depth=_depth + 1,
+                    )
+                    if pt:
+                        cursor.parent = pt
+                        cursor.save()
+                    else:
+                        break
                 else:
                     break
-            else:
-                break
-        cursor = cursor.parent
-        tries += 1
+            cursor = cursor.parent
+            tries += 1
+    else:
+        log_info(
+            f'Skipping parent fetch for {gbif_status_lower} taxon '
+            f'(gbif_key={species_key}, name={scientific_name})'
+        )
+        if taxonomy.parent:
+            log_info(
+                f'Detaching parent from {gbif_status_lower} taxon '
+                f'(gbif_key={species_key}, name={scientific_name})'
+            )
+            taxonomy.parent = None
+            taxonomy.save()
 
     # Check if there is an accepted key
-    try:
-        status = (species_data.get('taxonomicStatus') or "").strip().lower()
-    except Exception:
-        status = ""
-
     if (
-            is_synonym and
+            (is_synonym or is_synonym_or_doubtful) and
             not preserve_taxonomic_status and
             species_data and
             'acceptedKey' in species_data and
-            'synonym' in status
+            not taxonomy.accepted_taxonomy
     ):
         ak = species_data['acceptedKey']
         if ak and ak != taxonomy.gbif_key and ak not in _visited:
