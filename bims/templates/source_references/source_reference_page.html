@@ -233,6 +233,24 @@
                         </table>
                     </div>
                 </div>
+                <div class="form-group row references-row" id="author-row">
+                    <label for="author-reference"
+                           class="col-sm-2 col-form-label col-form-label">Author(s)</label>
+                    <div class="col-sm-10">
+                        <input id="author-reference" type="text" class="form-control form-control-sm"
+                               name="author" placeholder="Enter author(s)"
+                               value="{% if additional_context_data.author %}{{ additional_context_data.author }}{% endif %}">
+                    </div>
+                </div>
+                <div class="form-group row references-row" id="date-row">
+                    <label for="source-date-reference"
+                           class="col-sm-2 col-form-label col-form-label">Date</label>
+                    <div class="col-sm-10">
+                        <input id="source-date-reference" type="date" class="form-control form-control-sm"
+                               name="source_date"
+                               value="{% if additional_context_data.source_date %}{{ additional_context_data.source_date }}{% endif %}">
+                    </div>
+                </div>
                 <div class="form-group row references-row">
                     <label for="notes-reference"
                            class="col-sm-2 col-form-label col-form-label">Notes</label>

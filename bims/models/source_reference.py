@@ -13,7 +13,7 @@ from django.db.models import Q
 from django.db.models.fields.reverse_related import ForeignObjectRel
 from django.dispatch import receiver
 from polymorphic.models import PolymorphicModel
-from td_biblio.models.bibliography import Entry
+from td_biblio.models.bibliography import Entry, Author
 from geonode.documents.models import Document
 from bims.helpers.remove_duplicates import remove_duplicates
 from bims.utils.decorator import prevent_recursion
@@ -117,6 +117,17 @@ class SourceReference(PolymorphicModel):
         blank=True,
         help_text='Upload metadata documentation (PDF or Word document) describing this source reference'
     )
+    source_authors = models.ManyToManyField(
+        Author,
+        blank=True,
+        related_name='source_references',
+        help_text='Author(s) of this source reference'
+    )
+    source_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date of this source reference'
+    )
 
     @property
     def reference_source(self):
@@ -152,6 +163,8 @@ class SourceReference(PolymorphicModel):
 
     @property
     def year(self):
+        if self.source_date:
+            return str(self.source_date.year)
         if re.search(r'[12]\d{3}', self.source_name):
             year = re.findall(r'[12]\d{3}', self.source_name)[0]
             return year
@@ -159,12 +172,20 @@ class SourceReference(PolymorphicModel):
 
     @property
     def author_list(self):
-        """Return list of authors object"""
-        return None
+        """Return list of Author objects"""
+        return list(self.source_authors.all())
+
+    @property
+    def author_names_list(self):
+        """Return list of author display name strings for template iteration."""
+        return [a.get_formatted_name() for a in self.source_authors.all()]
 
     @property
     def authors(self):
-        """Return list of authors in string"""
+        """Return authors as a formatted string"""
+        names = self.author_names_list
+        if names:
+            return '; '.join(names)
         return '-'
 
     @property
@@ -404,15 +425,9 @@ class SourceReferenceDatabase(SourceReference):
         return 'Database'
 
     @property
-    def author_list(self):
-        return []
-
-    @property
-    def authors(self):
-        return '-'
-
-    @property
     def year(self):
+        if self.source_date:
+            return str(self.source_date.year)
         if re.search(r'[12]\d{3}', self.source_name):
             year = re.findall(r'[12]\d{3}', self.source_name)[0]
             return year

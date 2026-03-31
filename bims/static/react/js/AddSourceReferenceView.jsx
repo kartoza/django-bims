@@ -36,6 +36,7 @@ class AddSourceReferenceView extends React.Component {
       description: '',
       url: '',
       year: '',
+      source_date: '',
       notes: '',
       report_source: REPORT_SOURCE[1],
       authors: []
@@ -110,6 +111,10 @@ class AddSourceReferenceView extends React.Component {
       case 'doi':
         return this.state.selected_reference_type === PEER_REVIEWED
       case 'author':
+        return this.state.selected_reference_type === PEER_REVIEWED ||
+            this.state.selected_reference_type === PUBLISHED_REPORT ||
+            this.state.selected_reference_type === DATABASE ||
+            this.state.selected_reference_type === UNPUBLISHED
       case 'year':
       case 'title':
         return this.state.selected_reference_type === PEER_REVIEWED ||
@@ -120,6 +125,9 @@ class AddSourceReferenceView extends React.Component {
         return this.state.selected_reference_type === PUBLISHED_REPORT ||
             this.state.selected_reference_type === UNPUBLISHED ||
             this.state.selected_reference_type === PEER_REVIEWED
+      case 'date':
+        return this.state.selected_reference_type === DATABASE ||
+            this.state.selected_reference_type === UNPUBLISHED
       case 'description':
       case 'url':
       case 'name':
@@ -232,6 +240,15 @@ class AddSourceReferenceView extends React.Component {
             <input type="number" className="form-control" maxLength="4"
                    name="year" id="year" aria-describedby="yearHelp"
                    placeholder="Enter Year"  value={this.state.year} onChange={(e) => this.handleInputChange('year', e)} />
+          </div> : null
+        }
+
+        {this.field('date') ?
+          <div className="form-group">
+            <label>Date</label>
+            <input type="date" className="form-control"
+                   name="source_date" id="source_date"
+                   value={this.state.source_date || ''} onChange={(e) => this.handleInputChange('source_date', e)} />
           </div> : null
         }
 

@@ -16,6 +16,7 @@ class UnpublishedData(APIView):
             unpublished = SourceReference.objects.create(
                 note=data['note'],
                 source_name=data.get('source', None),
+                source_date=data.get('source_date', None) or None,
             )
         except Exception as e:
             return HttpResponseBadRequest('%s' % e)
