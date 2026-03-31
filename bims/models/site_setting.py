@@ -21,7 +21,11 @@ class SiteSetting(Preferences):
         (
             'kafue',
             'KAFUE (1st five district name + site count)'
-        )
+        ),
+        (
+            'fips',
+            'FIPS (GBIF continent code + basin name + site count)'
+        ),
     )
     site_notice = models.TextField(
         null=True,
