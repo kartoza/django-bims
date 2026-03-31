@@ -140,7 +140,8 @@ def resume_stalled_downloads():
 @shared_task(name='bims.tasks.cleanup_expired_download_files', queue='update', ignore_result=True)
 def cleanup_expired_download_files():
     """
-    Periodic task: delete download files for requests older than one month.
+    Periodic task: delete download files for requests older than the configured
+    expiry period (SiteSetting.download_request_expiry_months, default 2 months).
     Only the file is removed; the DownloadRequest record is kept.
     Runs across all tenants.
     """
@@ -150,10 +151,15 @@ def cleanup_expired_download_files():
     from django_tenants.utils import get_tenant_model, tenant_context
     from bims.models.download_request import DownloadRequest
 
-    expiry_cutoff = timezone.now() - relativedelta(months=1)
-
     for tenant in get_tenant_model().objects.all():
         with tenant_context(tenant):
+            from preferences import preferences
+            months = getattr(preferences.SiteSetting, 'download_request_expiry_months', 2)
+            if not months:
+                # Infinite retention — nothing to clean up for this tenant.
+                continue
+            expiry_cutoff = timezone.now() - relativedelta(months=months)
+
             expired = DownloadRequest.objects.filter(
                 request_date__lt=expiry_cutoff,
                 request_file__isnull=False,

@@ -273,6 +273,16 @@ class SiteSetting(Preferences):
             'even if automatic approval is enabled.'
         )
     )
+    download_request_expiry_months = models.PositiveSmallIntegerField(
+        default=2,
+        null=True,
+        blank=True,
+        help_text=(
+            'Number of months to keep approved download files before they '
+            'are automatically deleted. Leave blank or set to 0 for files '
+            'to never expire.'
+        )
+    )
 
     show_module_summary_on_dashboard = models.BooleanField(
         default=False,
