@@ -41,7 +41,8 @@ from bims.models import (
     LocationSite,
     LocationContextGroup,
     Survey,
-    TaxonGroup
+    TaxonGroup,
+    TaxonOrigin
 )
 from bims.tasks.search import search_task
 from sass.models import (
@@ -291,13 +292,20 @@ class CollectionSearch(object):
 
     @property
     def categories(self):
-        categories = self.parse_request_json('category')
+        category_list = self.parse_request_json('category')
+        categories = []
         # Add invasive alien
-        if categories and 'alien' in categories:
-            categories.append('alien-non-invasive')
-            categories.append('alien-invasive')
-            if 'non-native' not in categories:
-                categories.append('non-native')
+        if category_list and 'alien' in category_list:
+            category_list.append('alien-non-invasive')
+            category_list.append('alien-invasive')
+            if 'non-native' not in category_list:
+                category_list.append('non-native')
+
+        if category_list:
+            categories = list(TaxonOrigin.objects.filter(
+                origin_key__in=category_list
+            ).values_list('id', flat=True))
+
         return categories
 
     @property
@@ -716,7 +724,7 @@ class CollectionSearch(object):
         if self.categories:
             self.filter_taxa_records(
                 {
-                    'origin__in': self.categories
+                    'origin__id__in': self.categories
                 }
             )
         if self.taxon_tags:
