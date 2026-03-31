@@ -687,12 +687,13 @@ def generate_site_code(
         open_waterbody_catchment,
         generate_sanparks_site_code,
         generate_fbis_africa_site_code,
-        kafue_site_code
+        kafue_site_code,
+        fips_generator,
     )
     from preferences import preferences
     site_code = ''
     catchments_data = {}
-    project_name = preferences.SiteSetting.project_name
+    site_code_generator = preferences.SiteSetting.site_code_generator
     site_count_width = 5
 
     site_name = kwargs.get('site_name', '')
@@ -701,7 +702,7 @@ def generate_site_code(
     if site_name == 'undefined':
         site_name = ''
 
-    if project_name == 'fbis':
+    if site_code_generator == 'fbis':
         if ecosystem_type.lower() == 'wetland':
             wetland_data = location_site.additional_data if (
                 location_site and
@@ -721,38 +722,43 @@ def generate_site_code(
                 lon=lon,
                 river_name=river_name
             )
-    elif project_name == 'rbis':
+    elif site_code_generator == 'rbis':
         site_code, catchments_data = rbis_catchment_generator(
             location_site=location_site,
             lat=lat,
             lon=lon
         )
-    elif project_name == 'sanparks':
+    elif site_code_generator == 'sanparks':
         site_code = generate_sanparks_site_code(
             lat=float(lat),
             lon=float(lon),
             site_name=site_name
         )
-    elif project_name == 'fbis_africa':
+    elif site_code_generator == 'fbis_africa':
         site_count_width = 6
         site_code = generate_fbis_africa_site_code(
             latitude=float(lat),
             longitude=float(lon),
             site_name=site_name
         )
-    elif project_name == 'kafue':
+    elif site_code_generator == 'kafue':
         site_code = kafue_site_code(
             lat=float(lat),
             lon=float(lon),
             site_name=site_name
         )
+    elif site_code_generator == 'fips':
+        site_code = fips_generator(
+            lat=float(lat),
+            lon=float(lon),
+        )
     else:
         site_name = kwargs.get('site_name', '')
         site_description = kwargs.get('site_desc', '')
         site_name_length = 2
-        if project_name in ['bims'] and (site_name or site_description):
+        if site_code_generator in ['bims'] and (site_name or site_description):
             site_code = site_name[:site_name_length].upper()
-            if project_name == 'bims':
+            if site_code_generator == 'bims':
                 site_code += site_description[:2].upper()
         elif location_site:
             site_code += location_site.name[:site_name_length].upper()
@@ -762,6 +768,6 @@ def generate_site_code(
     site_code += '-'
 
     site_code_full = next_site_code(
-        project_name=project_name, site_prefix=site_code, width=site_count_width)
+        project_name=site_code_generator, site_prefix=site_code, width=site_count_width)
 
     return site_code_full, catchments_data

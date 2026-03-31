@@ -83,10 +83,15 @@ def get_feature_data(lon, lat, context_key, layer_name, tolerance=0, location_si
         name__istartswith=layer_name
     ).first()
 
-    feature_data = ''
+    if not layer:
+        layer = Layer.objects.filter(
+            name__icontains=layer_name
+        ).first()
 
     if not layer:
         return ''
+
+    feature_data = ''
 
     features = query_features(
         table_name=layer.query_table_name,
@@ -366,6 +371,40 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
         wetland_site_code += user_wetland_name.replace(' ', '')[:4]
 
     return wetland_data, wetland_site_code
+
+
+def fips_generator(lat: float, lon: float) -> str:
+    """
+    Generate site code prefix for FIPS:
+      [2-char GBIF continent code]-[basin code if available]-
+
+    Continent is read from a layer whose name contains "continent",
+    using field ``cont_code`` (e.g. "EU", "AF", "AS").
+    Basin is read from a layer whose name contains "basin",
+    using field ``name``; first 6 alphanumeric characters are used.
+    If neither is found the respective part is omitted.
+    """
+    cont_code = get_feature_data(
+        lon=lon,
+        lat=lat,
+        context_key='cont_code',
+        layer_name='continent',
+        tolerance=0.01,
+    )
+    cont_code = re.sub('[^A-Za-z]', '', cont_code or '')[:2].upper() or 'XX'
+
+    basin_name = get_feature_data(
+        lon=lon,
+        lat=lat,
+        context_key='WMOBB_NAME',
+        layer_name='basin',
+        tolerance=0.01,
+    )
+    if basin_name:
+        basin_code = re.sub('[^A-Za-z0-9]', '', basin_name)[:6].upper()
+        return f"{cont_code}{basin_code}"
+
+    return f"{cont_code}"
 
 
 def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
