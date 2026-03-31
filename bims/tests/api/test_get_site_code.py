@@ -96,6 +96,7 @@ class TestGetSiteCode(FastTenantTestCase):
 
         if site_setting:
             site_setting.default_data_source = 'sanparks'
+            site_setting.site_code_generator = 'sanparks'
             site_setting.save()
 
         site_code, catchment_data = generate_site_code(
