@@ -452,10 +452,15 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 url += self.apiParameters(filterParameters);
                 window.location.href = url;
             });
-            $('.sp-climate').click(function (e) {
-                let url = '/climate/' + self.siteId + '/';
-                url += self.apiParameters(filterParameters);
-                window.location.href = url;
+            $('.sp-climate-dashboard').click(function (e) {
+                let climateUrl = '';
+                if (typeof self.siteId !== 'undefined') {
+                    climateUrl = '/climate/' + self.siteId + '/';
+                } else {
+                    climateUrl = '/climate/dashboard-multi-sites/';
+                }
+                climateUrl += self.apiParameters(filterParameters);
+                window.location.href = climateUrl;
             });
             $('.sp-pesticide-dashboard').click(function(e) {
                 let url = '/pesticide-dashboard/' + self.siteId + '/';

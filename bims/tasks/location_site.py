@@ -62,6 +62,9 @@ def location_sites_overview(
             results[LocationSiteOverviewData.SASS_EXIST] = (
                 overview_data.is_sass_exist
             )
+            results[LocationSiteOverviewData.CLIMATE_EXIST] = (
+                overview_data.is_climate_data_exist
+            )
             search_process.set_status(SEARCH_FINISHED, False)
             search_process.save_to_file(results)
     logger.info(

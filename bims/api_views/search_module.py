@@ -147,6 +147,11 @@ class SearchModule(CollectionSearch):
                 spatial_filters
             )
 
+        if self.get_request_data('siteId'):
+            self.sites = self.sites.filter(
+                id=self.get_request_data('siteId')
+            )
+
         if self.get_request_data('polygon'):
             self.sites = self.sites.filter(
                 geometry_point__within=self.polygon

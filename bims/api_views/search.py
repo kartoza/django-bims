@@ -605,6 +605,10 @@ class CollectionSearch(object):
         else:
             return False
 
+    @property
+    def climate_module(self):
+        return self.get_request_data('module') == 'climate'
+
     def filter_taxa_records(self, query_dict):
         """
         Filter taxa records
