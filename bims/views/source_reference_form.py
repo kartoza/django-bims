@@ -203,6 +203,11 @@ class SourceReferenceView(TemplateView, SessionFormMixin):
         except CategoryIsNotRecognized as e:
             return HttpResponseBadRequest('%s' % e)
 
+        source_date = data.get('source_date', '').strip() or None
+        if source_reference and source_date:
+            source_reference.source_date = source_date
+            source_reference.save()
+
         if biological_records:
             biological_records.update(source_reference=source_reference)
 

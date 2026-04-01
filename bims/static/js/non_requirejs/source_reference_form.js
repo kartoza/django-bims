@@ -19,6 +19,8 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
         case 'database':
             showReferenceRow($databaseReference);
             showReferenceRow($notesReference);
+            showReferenceRow($('#author-row'));
+            showReferenceRow($('#date-row'));
             $unpublishedList.hide();
             if(_sourceReferenceId) {
                 $databaseReference.val(_sourceReferenceId);
@@ -52,6 +54,8 @@ let categoryChanged = (value, _sourceReferenceId=null) => {
             break;
         case 'no-source':
             showReferenceRow($notesReference);
+            showReferenceRow($('#author-row'));
+            showReferenceRow($('#date-row'));
             $unpublishedList.show();
             $notesReference.attr(
                 "placeholder",
