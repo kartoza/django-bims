@@ -167,6 +167,8 @@ class BioCollectionOneRowSerializer(
     dataset = serializers.SerializerMethodField()
     end_embargo_date = serializers.SerializerMethodField()
     licence = serializers.SerializerMethodField()
+    gbif_coordinate_uncertainty_m = serializers.SerializerMethodField()
+    gbif_coordinate_precision = serializers.SerializerMethodField()
 
     @staticmethod
     def _has_value(v) -> bool:
@@ -722,6 +724,18 @@ class BioCollectionOneRowSerializer(
             return obj.licence.identifier
         return ''
 
+    def get_gbif_coordinate_uncertainty_m(self, obj: BiologicalCollectionRecord):
+        value = getattr(obj.site, 'coordinate_uncertainty_in_meters', None)
+        if value is not None:
+            return f"{value:.2f}"
+        return ''
+
+    def get_gbif_coordinate_precision(self, obj: BiologicalCollectionRecord):
+        value = getattr(obj.site, 'coordinate_precision', None)
+        if value is not None:
+            return f"{value:.6f}"
+        return ''
+
     class Meta:
         model = BiologicalCollectionRecord
         fields = [
@@ -790,7 +804,9 @@ class BioCollectionOneRowSerializer(
             'cites_listing',
             'data_type',
             'end_embargo_date',
-            'licence'
+            'licence',
+            'gbif_coordinate_uncertainty_m',
+            'gbif_coordinate_precision',
         ]
 
     def _get_geocontext_parks_group(self):
