@@ -451,6 +451,10 @@ class TaxaProcessor(object):
         """
         origin_value = _safe_strip(self.get_row_value(row, ORIGIN))
         invasion_category = _safe_strip(self.get_row_value(row, INVASION))
+        if not invasion_category:
+            invastion_category = _safe_strip(
+                self.get_row_value(row, preferences.SiteSetting.invasion_label)
+            )
         invasion_instance = None
 
         if invasion_category:
