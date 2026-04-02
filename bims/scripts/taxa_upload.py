@@ -1326,7 +1326,7 @@ class TaxaProcessor(object):
                 accepted_key = taxonomy.gbif_data.get('acceptedKey', '')
                 if accepted_key:
                     accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
-                if not accepted_taxon:
+                if accepted_key and not accepted_taxon:
                     accepted_taxon = fetch_all_species_from_gbif(
                         gbif_key=accepted_key,
                         taxonomic_rank=taxonomy.rank,
