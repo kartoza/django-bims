@@ -3,6 +3,7 @@ import requests
 import logging
 import urllib
 import simplejson
+from django.conf import settings
 from requests.exceptions import HTTPError
 from requests.adapters import HTTPAdapter, Retry
 from pygbif import species
@@ -12,7 +13,7 @@ from bims.enums import TaxonomicRank, TaxonomicStatus
 from bims.utils.logger import log
 
 
-GBIF_API = "https://api.gbif.org/v1"
+GBIF_API = getattr(settings, 'GBIF_API_BASE_URL', 'https://api.gbif.org/v1')
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def get_species(gbif_id):
     :param gbif_id: gbif id
     :return: species dictionary
     """
-    api_url = 'http://api.gbif.org/v1/species/' + str(gbif_id)
+    api_url = GBIF_API + '/species/' + str(gbif_id)
     try:
         response = requests.get(api_url)
         json_result = response.json()
@@ -65,7 +66,7 @@ def get_vernacular_names(species_id):
     :param species_id: taxonomy id
     :return: array of vernacular name
     """
-    api_url = 'http://api.gbif.org/v1/species/%s/vernacularNames' % (
+    api_url = GBIF_API + '/species/%s/vernacularNames' % (
         str(species_id)
     )
     try:
@@ -82,7 +83,7 @@ def get_children(key):
     Lists all direct child usages for a name usage
     :return: list of species
     """
-    api_url = 'http://api.gbif.org/v1/species/{key}/children'.format(
+    api_url = GBIF_API + '/species/{key}/children'.format(
         key=key
     )
     try:
@@ -233,7 +234,7 @@ def search_exact_match(species_name):
     :param species_name: species name
     :return: species detail if found
     """
-    api_url = 'http://api.gbif.org/v1/species/match?name=' + str(species_name)
+    api_url = GBIF_API + '/species/match?name=' + str(species_name)
     try:
         response = requests.get(api_url)
         json_result = response.json()
@@ -433,7 +434,7 @@ def suggest_search(query_params):
     :param query_params: Query parameter
     :return: list of taxon
     """
-    api_url = 'https://api.gbif.org/v1/species/suggest?{param}'.format(
+    api_url = GBIF_API + '/species/suggest?{param}'.format(
         param=urllib.parse.urlencode(query_params)
     )
     try:

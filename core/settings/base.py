@@ -92,3 +92,5 @@ DATABASE_ROUTERS = (
     'django_tenants.routers.TenantSyncRouter',
     'bims.utils.router.PrimaryReplicaRouter'
 )
+
+GBIF_API_BASE_URL = 'https://api.gbif.org/v1'
