@@ -1322,6 +1322,21 @@ class TaxaProcessor(object):
             if taxonomic_status:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'taxonomic_status', taxonomic_status.strip().upper())
 
+            if is_synonym or is_doubtful and not accepted_taxon and taxonomy.gbif_data:
+                accepted_key = taxonomy.gbif_data.get('acceptedKey', '')
+                if accepted_key:
+                    accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
+                if not accepted_taxon:
+                    accepted_taxon = fetch_all_species_from_gbif(
+                        gbif_key=accepted_key,
+                        taxonomic_rank=taxonomy.rank,
+                        fetch_children=False,
+                        is_synonym=False,
+                        fetch_vernacular_names=False,
+                        use_name_lookup=False,
+                        preserve_taxonomic_status=False
+                    )
+
             if accepted_taxon:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'accepted_taxonomy', accepted_taxon)
 
