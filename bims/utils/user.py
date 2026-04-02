@@ -41,7 +41,7 @@ def get_user_from_name(first_name, last_name):
             Q(last_name__iexact=last_name),
             Q(first_name__iexact=first_name) |
             Q(first_name__istartswith=first_name[0])
-        )[0]
+        ).order_by('id').first()
     user.last_name = last_name[0:30]
     user.first_name = first_name[0:30]
     user.save()
