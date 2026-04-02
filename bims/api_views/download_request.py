@@ -8,7 +8,6 @@ from django.http import FileResponse
 from django.utils import timezone
 from django.utils.timezone import make_aware
 from preferences import preferences
-import ast
 
 from rest_framework import status
 
@@ -54,9 +53,7 @@ class DownloadRequestApi(APIView):
         site_id = request.POST.get('site_id', '')
         taxon_id = request.POST.get('taxon_id', '')
         notes = request.POST.get('notes', '')
-        auto_approved = ast.literal_eval(
-            request.POST.get('auto_approved', 'False')
-        )
+        auto_approved = request.POST.get('auto_approved', 'False').lower() == 'true'
         location_site = None
         taxon = None
         success = False

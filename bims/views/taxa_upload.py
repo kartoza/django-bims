@@ -1,7 +1,6 @@
 # coding=utf-8
 """Taxa uploader view
 """
-import ast
 import os
 from datetime import datetime
 
@@ -54,7 +53,7 @@ class TaxaUploadView(DataUploadView):
         upload_file = request.FILES.get('csv_file')
         taxon_group_id = request.POST.get('taxon_group', None)
 
-        cancel = ast.literal_eval(request.POST.get('cancel', 'False'))
+        cancel = request.POST.get('cancel', 'False').lower() == 'true'
         if cancel:
             session_id = request.POST.get('canceled_session_id', '')
             try:

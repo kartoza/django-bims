@@ -2,7 +2,6 @@
 """Collections uploader view
 """
 
-import ast
 import os
 from datetime import datetime, timedelta
 
@@ -76,9 +75,7 @@ class DataUploadView(
         template = request.POST.get('template', '')
         harvest_synonyms = request.POST.get("harvest_synonyms_for_accepted") == "1"
 
-        cancel = ast.literal_eval(request.POST.get(
-            'cancel', 'False'
-        ))
+        cancel = request.POST.get('cancel', 'False').lower() == 'true'
         if cancel:
             session_id = request.POST.get('canceled_session_id', '')
             try:

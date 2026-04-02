@@ -1,6 +1,5 @@
 
 # coding=utf-8
-import ast
 import os
 
 from django.views.generic import ListView, DetailView
@@ -55,9 +54,7 @@ class DownloadRequestListView(
     def post(self, request, *args, **kwargs):
         if not user_has_permission_to_validate(self.request.user):
             raise Http404('User has no permission to approve download requests')
-        approved = ast.literal_eval(
-            request.POST.get('approved', 'False')
-        )
+        approved = request.POST.get('approved', 'False').lower() == 'true'
         next_url = request.POST.get('next', '/')
         if approved:
             approved_id = request.POST.get('approved_id')
@@ -282,7 +279,7 @@ class DownloadRequestDetailView(
 
         if not user_has_permission_to_validate(request.user):
             raise Http404('User has no permission to approve download requests')
-        approved = ast.literal_eval(request.POST.get('approved', 'False'))
+        approved = request.POST.get('approved', 'False').lower() == 'true'
         if approved:
             if download_request.request_file:
                 send_csv_via_email.delay(
