@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal, InvalidOperation
 
 import requests
+from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from django_tenants.utils import get_tenant_model, schema_context
@@ -10,7 +11,7 @@ from requests.exceptions import RequestException
 
 from bims.models import BiologicalCollectionRecord
 
-GBIF_OCCURRENCE_URL = "https://api.gbif.org/v1/occurrence/{occurrence_id}"
+GBIF_OCCURRENCE_URL = getattr(settings, 'GBIF_API_BASE_URL', 'https://api.gbif.org/v1') + '/occurrence/{occurrence_id}'
 LOG = logging.getLogger(__name__)
 
 

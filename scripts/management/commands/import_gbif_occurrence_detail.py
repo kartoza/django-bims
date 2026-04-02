@@ -1,5 +1,6 @@
 import requests
 import simplejson
+from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import signals
 from requests import HTTPError
@@ -34,7 +35,7 @@ class Command(BaseCommand):
         log('Total gbif occurrences to update : {}'.format(
             occurrences.count()))
 
-        api_url = 'https://api.gbif.org/v1/occurrence/'
+        api_url = getattr(settings, 'GBIF_API_BASE_URL', 'https://api.gbif.org/v1') + '/occurrence/'
         index = 1
         total = occurrences.count()
 

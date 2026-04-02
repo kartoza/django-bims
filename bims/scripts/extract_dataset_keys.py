@@ -1,12 +1,15 @@
 import requests
+from django.conf import settings
 from bims.models import (
     BiologicalCollectionRecord,
     Dataset
 )
 
+GBIF_API = getattr(settings, 'GBIF_API_BASE_URL', 'https://api.gbif.org/v1')
+
 
 def get_dataset_details_from_gbif(dataset_uuid):
-    url = f'https://api.gbif.org/v1/dataset/{dataset_uuid}'
+    url = f'{GBIF_API}/dataset/{dataset_uuid}'
     try:
         response = requests.get(url)
         response.raise_for_status()
