@@ -276,3 +276,35 @@ fetchHydrogeomorphicBtn.click(function () {
     }
   })
 })
+
+function validateSiteImage(input) {
+    const errorEl = input.closest('.col-10, .col-sm-10')
+        ? input.closest('.col-10, .col-sm-10').querySelector('.site-image-error')
+        : null;
+    const maxSize = 5 * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png'];
+
+    if (!input.files || !input.files.length) return;
+
+    const file = input.files[0];
+    let error = '';
+
+    if (!allowedTypes.includes(file.type)) {
+        error = 'Only JPEG and PNG files are accepted.';
+    } else if (file.size > maxSize) {
+        error = 'File exceeds the 5 MB size limit.';
+    }
+
+    if (error) {
+        if (errorEl) {
+            errorEl.textContent = error;
+            errorEl.style.display = '';
+        } else {
+            alert(error);
+        }
+        input.value = '';
+    } else if (errorEl) {
+        errorEl.textContent = '';
+        errorEl.style.display = 'none';
+    }
+}
