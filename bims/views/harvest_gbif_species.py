@@ -1,4 +1,3 @@
-import ast
 import os
 from collections import deque
 from datetime import datetime
@@ -75,9 +74,7 @@ class HarvestGbifSpeciesView(
     def post(self, request, *args, **kwargs):
         taxon_group_id = request.POST.get('taxon_group', None)
         boundary_id = request.POST.get('boundary', None)
-        cancel = ast.literal_eval(request.POST.get(
-            'cancel', 'False'
-        ))
+        cancel = request.POST.get('cancel', 'False').lower() == 'true'
         harvest_synonyms = request.POST.get("harvest_synonyms_for_accepted") == "1"
         if cancel:
             session_id = request.POST.get('canceled_session_id', '')
