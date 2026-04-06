@@ -166,6 +166,7 @@ function isSynonymOrDoubtfulStatus(status) {
 document.addEventListener('DOMContentLoaded', function() {
     const taxonomicStatus = document.getElementById('taxonomic_status');
     const acceptedTaxonField = document.getElementById('accepted-taxon-field');
+    const subgenusField = document.getElementById('subgenus-field');
     const parentField = document.getElementById('parent-field');
     const parentTaxonSelect = document.getElementById('parent-taxon');
 
@@ -182,6 +183,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function toggleStatusFields() {
         const shouldHideParent = isSynonymOrDoubtfulStatus(taxonomicStatus.value);
         acceptedTaxonField.style.display = shouldHideParent ? 'flex' : 'none';
+        if (subgenusField) {
+            subgenusField.style.display = shouldHideParent ? 'flex' : 'none';
+        }
         if (parentField) {
             parentField.style.display = shouldHideParent ? 'none' : 'flex';
         }
@@ -219,6 +223,18 @@ document.addEventListener('DOMContentLoaded', function() {
         let acceptedTaxon = $('#accepted-taxon');
         acceptedTaxon.append(option).trigger('change');
         acceptedTaxon.trigger({
+            type: 'select2:select',
+            params: {
+                data: {}
+            }
+        });
+    }
+
+    if (subgenusTaxon) {
+        let option = new Option(subgenusTaxon, subgenusTaxonId, true, true);
+        let subgenusSelect = $('#subgenus-taxon');
+        subgenusSelect.append(option).trigger('change');
+        subgenusSelect.trigger({
             type: 'select2:select',
             params: {
                 data: {}

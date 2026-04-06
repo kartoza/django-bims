@@ -120,6 +120,14 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         blank=True
     )
 
+    subgenus = models.ForeignKey(
+        'bims.Taxonomy',
+        null=True,
+        blank=True,
+        related_name='taxonomy_update_proposal_subgenus',
+        on_delete=models.SET_NULL,
+    )
+
     original_taxonomy = models.ForeignKey(
         Taxonomy,
         verbose_name='Original Taxonomy',
@@ -316,7 +324,8 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'gbif_key',
                     'gbif_data',
                     'fada_id',
-                    'origin']
+                    'origin',
+                    'subgenus']
                 for field in fields_to_update:
                     if field == 'tags':
                         self.original_taxonomy.tags.clear()
@@ -333,6 +342,8 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                         # Don't overwrite existing endemism with None unless
                         # the original taxonomy also has no endemism
                         pass
+                    elif field == 'subgenus':
+                        self.original_taxonomy.subgenus_id = self.subgenus_id
                     else:
                         setattr(
                             self.original_taxonomy,

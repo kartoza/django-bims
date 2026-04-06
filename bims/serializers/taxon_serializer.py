@@ -176,6 +176,8 @@ class TaxonSerializer(serializers.ModelSerializer):
         """Get subgenus name from hierarchy."""
         if obj.rank and obj.rank.upper() == 'SUBGENUS':
             return obj.canonical_name
+        if obj.subgenus:
+            return obj.subgenus.canonical_name
         subgenus_ancestor = self._find_ancestor_by_rank(obj, 'SUBGENUS')
         if subgenus_ancestor:
             return subgenus_ancestor.canonical_name

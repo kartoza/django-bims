@@ -1348,7 +1348,7 @@ class TaxaProcessor(object):
             if taxonomic_status:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'taxonomic_status', taxonomic_status.strip().upper())
 
-            if is_synonym or is_doubtful and not accepted_taxon and taxonomy.gbif_data:
+            if (is_synonym or is_doubtful) and not accepted_taxon and taxonomy.gbif_data:
                 accepted_key = taxonomy.gbif_data.get('acceptedKey', '')
                 if accepted_key:
                     accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
