@@ -586,7 +586,17 @@ class PermissionAdmin(admin.ModelAdmin):
 
 
 class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
-    date_hierarchy = 'collection_date'
+    show_full_result_count = False
+    list_per_page = 25
+    list_select_related = (
+        'taxonomy',
+        'taxonomy__origin',
+        'site',
+        'biotope',
+        'record_type',
+        'sampling_method',
+        'owner',
+    )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -643,19 +653,25 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'original_species_name',
         'uuid',
         'site__site_code',
-        'survey__uuid',
         'upstream_id',
         'source_collection'
     )
     actions = ['export_as_csv']
 
     def get_search_results(self, request, queryset, search_term):
-        uuid_queryset = queryset.filter(
-            Q(uuid__icontains=search_term) |
-            Q(uuid__icontains=search_term.replace('-', '')),
+        import re
+        uuid_pattern = re.compile(
+            r'^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$',
+            re.IGNORECASE
         )
-        if uuid_queryset.count() > 0:
-            return uuid_queryset, False
+        if uuid_pattern.match(search_term.strip()):
+            normalised = search_term.strip().replace('-', '')
+            uuid_queryset = queryset.filter(
+                Q(uuid__iexact=search_term.strip()) |
+                Q(uuid__icontains=normalised),
+            )
+            if uuid_queryset.exists():
+                return uuid_queryset, False
         queryset, use_distinct = super(
             BiologicalCollectionAdmin, self
         ).get_search_results(request, queryset, search_term)

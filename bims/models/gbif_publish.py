@@ -1,8 +1,10 @@
 import json
 from django.db import models, connection
+from django.conf import settings
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django_cryptography.fields import encrypt
 from django_tenants.utils import schema_context, get_public_schema_name
 
 
@@ -38,10 +40,10 @@ class GbifPublishConfig(models.Model):
         max_length=255,
         help_text="GBIF username for authentication"
     )
-    password = models.CharField(
+    password = encrypt(models.CharField(
         max_length=255,
-        help_text="GBIF password for authentication"
-    )
+        help_text="GBIF password for authentication (encrypted at rest)."
+    ))
     publishing_org_key = models.CharField(
         max_length=64,
         help_text="GBIF Publishing Organization Key (UUID)"
@@ -68,10 +70,12 @@ class GbifPublishConfig(models.Model):
 
 
 class GbifPublish(models.Model):
-    module_group = models.ForeignKey(
-        'bims.TaxonGroup',
+    source_reference = models.ForeignKey(
+        'bims.SourceReference',
         on_delete=models.CASCADE,
-        related_name="gbif_publish_schedules"
+        related_name="gbif_publish_schedules",
+        null=True,
+        blank=True,
     )
     gbif_config = models.ForeignKey(
         GbifPublishConfig,
@@ -105,7 +109,8 @@ class GbifPublish(models.Model):
         verbose_name_plural = "GBIF Publish Schedules"
 
     def __str__(self):
-        return f"GBIF Publish[{self.module_group_id}] - {self.period}"
+        ref = str(self.source_reference) if self.source_reference else "all"
+        return f"GBIF Publish[{ref}] - {self.period}"
 
 
 class PublishTrigger(models.TextChoices):
@@ -129,8 +134,8 @@ class GbifPublishSession(models.Model):
         related_name="sessions",
         help_text="The publish schedule that triggered this session"
     )
-    module_group = models.ForeignKey(
-        'bims.TaxonGroup',
+    source_reference = models.ForeignKey(
+        'bims.SourceReference',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -197,6 +202,228 @@ class GbifPublishSession(models.Model):
         return None
 
 
+class RoleType(models.TextChoices):
+    AUTHOR = "author", "Author"
+    CONTENT_PROVIDER = "contentProvider", "Content Provider"
+    CUSTODIAN_STEWARD = "custodianSteward", "Custodian Steward"
+    DISTRIBUTOR = "distributor", "Distributor"
+    EDITOR = "editor", "Editor"
+    METADATA_PROVIDER = "metadataProvider", "Metadata Provider"
+    ORIGINATOR = "originator", "Originator"
+    POINT_OF_CONTACT = "pointOfContact", "Point of Contact"
+    PRINCIPAL_INVESTIGATOR = "principalInvestigator", "Principal Investigator"
+    PROCESSOR = "processor", "Processor"
+    PUBLISHER = "publisher", "Publisher"
+    USER = "user", "User"
+
+
+class GbifPublishContact(models.Model):
+    """
+    Contact information embedded in the EML metadata for a GBIF config.
+    All schedules that use the same GbifPublishConfig will share these contacts.
+    """
+    gbif_config = models.ForeignKey(
+        GbifPublishConfig,
+        on_delete=models.CASCADE,
+        related_name="contacts",
+        help_text="The GBIF config these contacts belong to."
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        help_text=(
+            "Optional: link a user to auto-populate blank fields "
+            "(name, email, organisation, position)."
+        ),
+    )
+    role = models.CharField(
+        max_length=32,
+        choices=RoleType.choices,
+        default=RoleType.ORIGINATOR,
+        help_text=(
+            "How this person or organisation is related to the resource "
+            "(EML roleType). E.g. originator, author, pointOfContact, publisher."
+        ),
+    )
+    individual_name_given = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Given name",
+        help_text="First name. Leave blank to use the linked user's first_name.",
+    )
+    individual_name_sur = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Surname",
+        help_text="Last name / surname. Leave blank to use the linked user's last_name.",
+    )
+    organization_name = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        verbose_name="Organisation name",
+        help_text=(
+            "Full name of the organisation. "
+            "Leave blank to use the linked user's organisation."
+        ),
+    )
+    position_name = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="Position / title",
+        help_text=(
+            "Title or position associated with this contact. "
+            "Leave blank to use the linked user's role (bims_profile.role)."
+        ),
+    )
+    delivery_point = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        verbose_name="Delivery point (street address)",
+        help_text="Street address or PO Box.",
+    )
+    city = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+    )
+    postal_code = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+    )
+    country = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Country name or ISO 3166-1 alpha-2 code.",
+    )
+    phone = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        help_text="Telephone number including country code, e.g. +27 21 123 4567.",
+    )
+    electronic_mail_address = models.EmailField(
+        blank=True,
+        default="",
+        verbose_name="Email address",
+        help_text=(
+            "Contact email address. "
+            "Leave blank to use the linked user's email."
+        ),
+    )
+    online_url = models.URLField(
+        blank=True,
+        default="",
+        verbose_name="Online URL",
+        help_text="Link to associated online information, usually a web site.",
+    )
+
+    class Meta:
+        verbose_name = "GBIF Publish Contact"
+        verbose_name_plural = "GBIF Publish Contacts"
+        ordering = ["id"]
+
+    def __str__(self):
+        name = self.resolved_given_name or self.resolved_sur_name or ""
+        org = self.resolved_organization_name
+        label = f"{name} ({org})" if org else name
+        return label or f"Contact #{self.pk}"
+
+    def _user_attr(self, attr, default=""):
+        if self.user_id:
+            return (getattr(self.user, attr, None) or "").strip()
+        return default
+
+    def _profile_attr(self):
+        """Return bims_profile.role.display_name for the linked user, or ''."""
+        try:
+            if self.user_id:
+                return (self.user.bims_profile.role.display_name or "").strip()
+        except Exception:
+            pass
+        return ""
+
+    @property
+    def resolved_given_name(self):
+        return self.individual_name_given or self._user_attr("first_name")
+
+    @property
+    def resolved_sur_name(self):
+        return self.individual_name_sur or self._user_attr("last_name")
+
+    @property
+    def resolved_organization_name(self):
+        return self.organization_name or self._user_attr("organization")
+
+    @property
+    def resolved_position_name(self):
+        return self.position_name or self._profile_attr()
+
+    @property
+    def resolved_email(self):
+        return self.electronic_mail_address or self._user_attr("email")
+
+
+@receiver(post_save, sender=GbifPublishContact)
+def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', **kwargs):
+    """Fill blank optional fields from the linked user's profile on save."""
+    if not instance.user_id:
+        return
+
+    user = instance.user
+    update_fields = []
+
+    def _fill(field, value):
+        if not getattr(instance, field) and value:
+            setattr(instance, field, value)
+            update_fields.append(field)
+
+    sibling = (
+        GbifPublishContact.objects
+        .filter(user_id=user.id, gbif_config=instance.gbif_config)
+        .exclude(id=instance.id)
+        .first()
+    )
+
+    if sibling:
+        for field in (
+                "individual_name_given", "individual_name_sur",
+                "electronic_mail_address", "organization_name",
+                "postal_code", "position_name", "delivery_point",
+                "city", "phone", "country", "online_url",
+        ):
+            _fill(field, (getattr(sibling, field, "") or "").strip())
+    else:
+        _fill("individual_name_given", (getattr(user, "first_name", "") or "").strip())
+        _fill("individual_name_sur", (getattr(user, "last_name", "") or "").strip())
+        _fill("electronic_mail_address", (getattr(user, "email", "") or "").strip())
+        _fill("organization_name", (getattr(user, "organization", "") or "").strip())
+        _fill("postal_code", (getattr(user, "zipcode", "") or "").strip())
+        _fill("delivery_point", (getattr(user, "delivery", "") or "").strip())
+        _fill("city", (getattr(user, "city", "") or "").strip())
+        _fill("phone", (getattr(user, "voice", "") or "").strip())
+        _fill("country", (getattr(user, "country", "") or "").strip())
+        _fill("position_name", (getattr(user, "position", "") or "").strip())
+        try:
+            role_name = (user.bims_profile.role.display_name or "").strip()
+            _fill("position_name", role_name)
+        except Exception:
+            pass
+
+    if update_fields:
+        sender.objects.filter(pk=instance.pk).update(
+            **{f: getattr(instance, f) for f in update_fields}
+        )
+
+
 def _mins_hrs(t):
     return (str(t.minute), str(t.hour)) if t else ("0", "2")
 
@@ -210,7 +437,7 @@ def gbif_publish_post_delete(sender, instance: GbifPublish, **kwargs):
 
 @receiver(post_save, sender=GbifPublish)
 def sync_gbif_publish_periodic_task(sender, instance: GbifPublish, **kwargs):
-    name = f"GBIF publish: taxon_group={instance.module_group_id} id={instance.id}"
+    name = f"GBIF publish: source_reference={instance.source_reference_id} id={instance.id}"
 
     if instance.period == PublishPeriod.CUSTOM and instance.cron_expression:
         m, h, dom, mon, dow = (instance.cron_expression.split() + ["*"]*5)[:5]

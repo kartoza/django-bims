@@ -196,13 +196,16 @@
                 <div class="col-10">
                     <div class="input-group input-file">
                         <input type="file" class="form-control"
-                               accept="image/*" name="site-image"
-                               placeholder='Choose a file...'/>
+                               accept="image/jpeg,image/png" name="site-image"
+                               placeholder='Choose a file...'
+                               onchange="validateSiteImage(this)"/>
                         <input type="hidden" id="id_site_image_delete" name="id_site_image_delete" value="">
                     </div>
-                    <small id="emailHelp" class="form-text text-muted" style="margin-bottom: 10px;">
+                    <small class="form-text text-muted" style="margin-bottom: 10px;">
+                        Accepted formats: JPEG, PNG. Maximum file size: 5 MB.
                         Click the <b>save</b> button after choosing the file to upload a new image.
                     </small>
+                    <small class="form-text text-danger site-image-error" style="margin-bottom: 10px; display: none;"></small>
 
                     {% if site_image %}
                         <div id="siteImageCarousel" class="site-image-gallery carousel slide" data-ride="carousel" data-interval="false">

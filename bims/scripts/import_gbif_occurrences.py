@@ -11,6 +11,7 @@ from typing import Tuple, Optional, List
 
 import requests
 from dateutil.parser import parse
+from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point, MultiPolygon, GEOSGeometry
 from django.contrib.gis.measure import D
@@ -56,7 +57,7 @@ MODIFIED_DATE_KEY = 'modified'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 MISSING_KEY_ERROR = 'Missing taxon GBIF key'
 
-API_BASE_URL = 'http://api.gbif.org/v1/occurrence/search'
+API_BASE_URL = getattr(settings, 'GBIF_API_BASE_URL', 'https://api.gbif.org/v1') + '/occurrence/search'
 DEFAULT_LIMIT = 300
 LIMIT = 20  # Seems unused but kept if you still need it.
 LOG_TEMPLATE = (

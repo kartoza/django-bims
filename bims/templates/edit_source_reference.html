@@ -59,6 +59,53 @@
                             <textarea name="source_name" id="source_name" class="form-control">{{ object.source_name }}</textarea>
                         </div>
                     </div>
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label">Author(s)</label>
+                        <div class="col-sm-10">
+                            <div class="author-group" id="sortable">
+                            {% for author_name in object.author_names_list %}
+                                <div class="ui-state-default row">
+                                    <span class="ui-icon ui-icon-arrowthick-2-n-s" style="margin-top: 10px;"></span>
+                                    <div class="col-10" style="padding-left: 10px">
+                                        <input
+                                               data-index="{{ forloop.counter0 }}"
+                                               name="author_{{ forloop.counter0 }}"
+                                               onClick="this.setSelectionRange(0, this.value.length)"
+                                               class="form-control authors"
+                                               value="{{ author_name }}"
+                                               placeholder="Author's name: [First name] [Space] [Last name]">
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger deleteAuthor">Delete</button>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="ui-state-default row">
+                                    <span class="ui-icon ui-icon-arrowthick-2-n-s" style="margin-top: 10px;"></span>
+                                    <div class="col-10" style="padding-left: 10px">
+                                        <input
+                                               data-index="0"
+                                               name="author_0"
+                                               onClick="this.setSelectionRange(0, this.value.length)"
+                                               class="form-control authors"
+                                               value=""
+                                               placeholder="Author's name: [First name] [Space] [Last name]">
+                                    </div>
+                                    <div class="col-1">
+                                        <button class="btn btn-danger deleteAuthor">Delete</button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            </div>
+                            <button class="btn btn-default" id="addAuthor">Add new author</button>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="source_date" class="col-sm-2 col-form-label">Date</label>
+                        <div class="col-sm-10">
+                            <input type="date" name="source_date" id="source_date" class="form-control" value="{% if object.source_date %}{{ object.source_date|date:'Y-m-d' }}{% endif %}">
+                        </div>
+                    </div>
                 {% endif %}
                 {% if object.is_bibliography %}
                     <div class="form-group row">
@@ -241,14 +288,16 @@
 
         $(function () {
             const rad = document.source_reference_form.doc_type;
-            for (let i = 0; i < rad.length; i++) {
-                rad[i].addEventListener('change', function () {
-                    if (this !== prev) {
-                        prev = this;
-                    }
-                    $(`.doc_type_input`).hide();
-                    $(`#${this.value}_input`).show();
-                });
+            if (rad && rad.length) {
+                for (let i = 0; i < rad.length; i++) {
+                    rad[i].addEventListener('change', function () {
+                        if (this !== prev) {
+                            prev = this;
+                        }
+                        $(`.doc_type_input`).hide();
+                        $(`#${this.value}_input`).show();
+                    });
+                }
             }
             $("#sortable").sortable({
                 stop: function( event, ui ) {

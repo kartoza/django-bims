@@ -2,7 +2,6 @@ import codecs
 import csv
 import json
 import time
-import ast
 from datetime import datetime
 
 from django.contrib.auth.mixins import UserPassesTestMixin
@@ -183,9 +182,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
         start_time = request.POST.get('start_time')
         end_time = request.POST.get('end_time')
 
-        edit = ast.literal_eval(
-            request.POST.get('edit', 'false').capitalize()
-        )
+        edit = request.POST.get('edit', 'false').lower() == 'true'
 
         if not water_file and edit:
             return JsonResponse({
@@ -328,9 +325,7 @@ class WaterTemperatureUploadView(LoginRequiredMixin, View):
             return HttpResponseForbidden()
 
         upload_session_id = request.POST.get('upload_session_id', None)
-        edit = ast.literal_eval(
-            request.POST.get('edit', 'false').capitalize()
-        )
+        edit = request.POST.get('edit', 'false').lower() == 'true'
         location_site = LocationSite.objects.get(
             pk=request.POST.get('site-id', None)
         )

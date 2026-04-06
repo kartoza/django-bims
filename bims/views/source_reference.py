@@ -277,6 +277,61 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         )
         return user
 
+    def _collect_authors_from_post(self, post_dict):
+        """
+        Collect Author objects from author_N / author_id_N POST keys.
+        """
+        indices = set()
+        for key in post_dict:
+            if key.startswith('author_id_'):
+                try:
+                    indices.add(int(key[len('author_id_'):]))
+                except ValueError:
+                    pass
+            elif key.startswith('author_'):
+                try:
+                    indices.add(int(key[len('author_'):]))
+                except ValueError:
+                    pass
+
+        if not indices:
+            return None
+
+        author_objects = []
+        for idx in sorted(indices):
+            id_key = f'author_id_{idx}'
+            name_key = f'author_{idx}'
+
+            if id_key in post_dict and post_dict[id_key].strip():
+                try:
+                    user = get_user_model().objects.get(
+                        id=post_dict[id_key].strip()
+                    )
+                    author_obj, _ = Author.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            'first_name': user.first_name,
+                            'last_name': user.last_name,
+                        }
+                    )
+                    author_objects.append(author_obj)
+                except get_user_model().DoesNotExist:
+                    pass
+            elif name_key in post_dict and post_dict[name_key].strip():
+                raw = post_dict[name_key].strip()
+                user = self.get_user_from_string(raw)
+                if user:
+                    author_obj, _ = Author.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            'first_name': user.first_name,
+                            'last_name': user.last_name,
+                        }
+                    )
+                    author_objects.append(author_obj)
+
+        return author_objects
+
     def update_published_report_reference(self, post_dict):
         order = 1
         year = post_dict.get('year', None)
@@ -478,11 +533,23 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         self.object.source_name = source_name
         self.object.source.name = title
         self.object.source.save()
+        author_objects = self._collect_authors_from_post(post_dict)
+        if author_objects is not None:
+            self.object.source_authors.set(author_objects)
+        source_date = post_dict.get('source_date', '').strip() or None
+        if source_date is not None:
+            self.object.source_date = source_date or None
 
     def update_unpublished(self, post_dict):
         title = post_dict.get('title', '')
         source_name = post_dict.get('source_name', '')
         self.object.note = title
+        author_objects = self._collect_authors_from_post(post_dict)
+        if author_objects is not None:
+            self.object.source_authors.set(author_objects)
+        source_date = post_dict.get('source_date', '').strip() or None
+        if source_date is not None:
+            self.object.source_date = source_date or None
         self.object.save()
         source_references = SourceReference.objects.filter(
             note=title.strip(),

@@ -686,7 +686,7 @@ class TaxaList(APIView):
                 ).distinct()
         if validated:
             try:
-                validated = ast.literal_eval(validated.replace('/', ''))
+                validated = validated.replace('/', '').lower() == 'true'
                 if not validated:
                     # Check if the user is a superuser or has expert permissions for the taxon group
                     is_user_expert = is_expert(
@@ -715,7 +715,7 @@ class TaxaList(APIView):
                 pass
         if is_gbif:
             try:
-                is_gbif = ast.literal_eval(is_gbif)
+                is_gbif = is_gbif.lower() == 'true'
                 if is_gbif:
                     taxon_list = taxon_list.exclude(
                         gbif_key__isnull=True
@@ -728,7 +728,7 @@ class TaxaList(APIView):
                 pass
         if is_iucn:
             try:
-                is_iucn = ast.literal_eval(is_iucn)
+                is_iucn = is_iucn.lower() == 'true'
                 if is_iucn:
                     taxon_list = taxon_list.exclude(
                         iucn_redlist_id__isnull=True
@@ -822,7 +822,7 @@ class TaxaList(APIView):
 
         self.pagination_class.page_size = request.GET.get('page_size', 20)
         page = self.paginate_queryset(taxon_list)
-        validated = ast.literal_eval(request.GET.get('validated', 'True'))
+        validated = request.GET.get('validated', 'True').lower() == 'true'
         if page is not None:
             taxon_group_id = request.GET.get('taxonGroup', None)
             serializer = self.get_paginated_response(

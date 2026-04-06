@@ -116,12 +116,10 @@ def process_water_temperature_data(
 
                 query = WaterTemperature.objects.raw(
                     'SELECT * FROM "bims_watertemperature" WHERE '
-                    '("bims_watertemperature"."date_time" = \'{date}\' AND '
-                    '"bims_watertemperature"."location_site_id" = {site_id}) '
-                    'LIMIT 1'.format(
-                        date=date_time,
-                        site_id=location_site.id
-                    )
+                    '"bims_watertemperature"."date_time" = %s AND '
+                    '"bims_watertemperature"."location_site_id" = %s '
+                    'LIMIT 1',
+                    [date_time, location_site.id]
                 )
 
                 try:

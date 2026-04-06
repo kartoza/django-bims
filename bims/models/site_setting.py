@@ -21,7 +21,11 @@ class SiteSetting(Preferences):
         (
             'kafue',
             'KAFUE (1st five district name + site count)'
-        )
+        ),
+        (
+            'fips',
+            'FIPS (GBIF continent code + basin name + site count)'
+        ),
     )
     site_notice = models.TextField(
         null=True,
@@ -273,6 +277,16 @@ class SiteSetting(Preferences):
             'even if automatic approval is enabled.'
         )
     )
+    download_request_expiry_months = models.PositiveSmallIntegerField(
+        default=2,
+        null=True,
+        blank=True,
+        help_text=(
+            'Number of months to keep approved download files before they '
+            'are automatically deleted. Leave blank or set to 0 for files '
+            'to never expire.'
+        )
+    )
 
     show_module_summary_on_dashboard = models.BooleanField(
         default=False,
@@ -463,6 +477,16 @@ class SiteSetting(Preferences):
         blank=True,
         default='',
         help_text="Google Analytics Measurement ID or API key."
+    )
+
+    invasion_label = models.CharField(
+        max_length=100,
+        default='Invasion',
+        blank=True,
+        help_text=(
+            "Label for the invasion column in taxa checklist downloads. "
+            "Default is 'Invasion'. SANParks uses 'National NEMBA Status'."
+        )
     )
 
     def _tenant_default_exclusions(self) -> set[str]:

@@ -618,20 +618,33 @@ define([
         },
         exportLocationsiteMap: function () {
             $('.ol-control').hide();
+            let title = 'Distribution Map'
+            let mapElm = $('#locationsite-map');
             this.mapLocationSite.once('postrender', function (event) {
-                showDownloadPopup('IMAGE', 'Distribution Map', function (downloadRequestId) {
-                    let canvas = $('#locationsite-map')[0];
-                    HtmlToCanvas(canvas, {
+                showDownloadPopup('IMAGE', title, function (downloadRequestId) {
+                    let canvas = mapElm[0];
+                    let render = HtmlToCanvas(canvas, {
                         useCORS: false,
+                        width: mapElm.width(),
                         background: '#FFFFFF',
                         allowTaint: true,
                         onrendered: function (canvas) {
-                            $('.ol-control').show();
                             canvas.toBlob(function (blob) {
-                                uploadToDownloadRequest(downloadRequestId, blob, 'Distribution Map.png');
+                                uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
                             }, 'image/png');
                         }
                     });
+                    if (render && typeof render.then === 'function') {
+                        render.then(function (canvas) {
+                            canvas.toBlob(function (blob) {
+                                uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                            }, 'image/png');
+                        }).catch(function (err) {
+                            console.error('HtmlToCanvas error:', err);
+                        });
+                    }
+
+                    $('.ol-control').show();
                 })
             });
             this.mapLocationSite.renderSync();
@@ -1844,18 +1857,26 @@ define([
             let self = this;
             let element = this.$el.find('#detailed-site-dashboard-wrapper')[0];
             element.scrollIntoView();
-            showDownloadPopup('IMAGE', 'Site dashboard', function (downloadRequestId) {
+            let title = 'Site dashboard'
+            showDownloadPopup('IMAGE', title, function (downloadRequestId) {
                 self.$el.find('.btn').hide();
-                HtmlToCanvas(element, {
-                    width: 10000,
-                    height: 10000,
+                let render = HtmlToCanvas(element, {
                     onrendered: function (canvas) {
-                        self.$el.find('.btn').show();
                         canvas.toBlob(function (blob) {
-                            uploadToDownloadRequest(downloadRequestId, blob, 'Site dashboard.png');
+                            uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
                         }, 'image/png');
                     }
-                })
+                });
+                if (render && typeof render.then === 'function') {
+                    render.then(function (canvas) {
+                        canvas.toBlob(function (blob) {
+                            uploadToDownloadRequest(downloadRequestId, blob, title + '.png');
+                        }, 'image/png');
+                    }).catch(function (err) {
+                        console.error('HtmlToCanvas error:', err);
+                    });
+                }
+                self.$el.find('.btn').show();
             });
         },
     })

@@ -197,9 +197,17 @@
                             The download file has been deleted (expired on {{ download_request.file_expiry_date|date:'Y-m-d' }}).
                         </div>
                     {% elif download_request.request_file %}
+                        {% if expiry_months %}
                         <div class="alert alert-info mb-2">
-                            This file is available until <strong>{{ download_request.file_expiry_date|date:'Y-m-d' }}</strong>. After that date it will be automatically deleted.
+                            This file is available for <strong>{{ expiry_months }} month{{ expiry_months|pluralize }}</strong>
+                            from the request date and will be automatically deleted on
+                            <strong>{{ download_request.file_expiry_date|date:'Y-m-d' }}</strong>.
                         </div>
+                        {% else %}
+                        <div class="alert alert-info mb-2">
+                            This file is available indefinitely and will not be automatically deleted.
+                        </div>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
                 <div class="d-flex flex-wrap gap-2">

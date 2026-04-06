@@ -109,12 +109,12 @@
                 <a class="p-2" href="/source-references/">Source References</a>
             {% endif %}
             <span class="p-2"></span>
-{#            {% if preferences.SiteSetting.github_app_id %}#}
-{#                <a id="navbar-upload" class="p-2" href="/upload/">#}
-{#                    Upload <i class="fa fa-upload" aria-hidden="true"></i>#}
-{#                </a>#}
-{#            {% endif %}#}
             {% if not user.is_authenticated %}
+                {% if preferences.SiteSetting.github_app_id %}
+                    <a class="nav-login-button" href="/upload/" style="margin-right: 4px;">
+                        UPLOAD <i class="fa fa-upload" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
                 <a class="nav-login-button" href="/accounts/login">LOG IN</a>
                 <a class="nav-login-button" href="/accounts/signup">SIGN UP</a>
             {% else %}
@@ -196,6 +196,12 @@
                 <a class="p-2" href="/location-site-form/add/">Add Site</a>
                 {% endif %}
                 <span class="p-2"></span>
+
+                {% if preferences.SiteSetting.github_app_id %}
+                    <a class="nav-login-button" href="/upload/" style="margin-right: 4px;">
+                        UPLOAD <i class="fa fa-upload" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
                 <a class="nav-login-button" href="/accounts/logout">LOGOUT</a>
             {% endif %}
         {% else %}

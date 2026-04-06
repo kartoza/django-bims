@@ -116,3 +116,15 @@ django_project/media
 # Backups
 *.dmp
 deployment/backups
+
+# Large GIS data / layer-processing files — not needed inside the container
+layers/
+django_project/layers
+*.tif
+*.pmtiles
+*.mbtiles
+*.geojson
+*.tar.gz
+martin
+martin-cp
+mbtiles

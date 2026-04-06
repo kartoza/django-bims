@@ -145,6 +145,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "occurrence_upload_guidelines",  # NEW
                 "occurrence_upload_template",
                 "auto_validate_taxa_on_upload",
+                "invasion_label",
             ),
         }),
         (_("Features / Toggles"), {
@@ -155,6 +156,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "enable_ecosystem_type",
                 "enable_download_request_approval",
                 "max_download_records",
+                "download_request_expiry_months",
                 "show_module_summary_on_dashboard",
                 "show_general_summary_on_landing",
                 "enable_remove_all_occurrences_tool",

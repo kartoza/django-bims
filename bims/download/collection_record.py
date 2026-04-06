@@ -41,6 +41,8 @@ HEADER_TITLES = {
     'park_or_mpa_name': PARK_OR_MPA_NAME,
     'authors': 'Author(s)',
     'end_embargo_date': END_EMBARGO_DATE,
+    'gbif_coordinate_uncertainty_m': 'GBIF coordinate uncertainty (m)',
+    'gbif_coordinate_precision': 'GBIF coordinate precision',
 }
 
 
@@ -176,6 +178,11 @@ def download_collection_records(
             'sampling_effort_value',
             'abundance_value',
             'abundance_measure'
+        ]
+    else:
+        exclude_fields = [
+            'gbif_coordinate_uncertainty_m',
+            'gbif_coordinate_precision',
         ]
 
     def get_download_request(request_id):

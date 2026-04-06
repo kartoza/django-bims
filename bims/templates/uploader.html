@@ -14,7 +14,7 @@
     <script src="{% static 'js/libs/bootstrap-4.0.0/js/bootstrap.min.js' %}"></script>
 
     <style>
-        html{overflow-y:hidden}.content{min-height:100vh;overflow:visible}.container{overflow:visible}.btn-upload{background:var(--main-accent-color);color:var(--main-button-text-color)!important;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-radius:4px;padding:.75rem 2rem;border:none}.btn-upload:hover,.btn-upload:focus{background:var(--main-accent-color);color:var(--main-button-text-color)!important;text-decoration:none}.upload-hero{background:#f7f9f8;border:1px solid #dfe6e2;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}.section-card{border:1px solid #dfe6e2;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;background:#fff}.section-card h2{font-size:1.25rem;margin-bottom:.75rem}.download-list .list-group-item{display:flex;align-items:center;justify-content:space-between}.help-block.decoy{display:none}.required-hint{font-size:.875rem;color:#666}.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}#id_email{height:39px!important}
+        html{overflow-y:hidden}.content{min-height:100vh;overflow:visible}.container{overflow:visible}.btn-upload{background:var(--main-accent-color);color:var(--main-button-text-color)!important;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-radius:4px;padding:.75rem 2rem;border:none}.btn-upload:hover,.btn-upload:focus{background:var(--main-accent-color);color:var(--main-button-text-color)!important;text-decoration:none}.upload-hero{background:#f7f9f8;border:1px solid #dfe6e2;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}.section-card{border:1px solid #dfe6e2;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;background:#fff}.section-card h2{font-size:1.25rem;margin-bottom:.75rem}.download-list .list-group-item{display:flex;align-items:center;justify-content:space-between}.help-block.decoy{display:none}.required-hint{font-size:.875rem;color:#666}.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}#id_email{height:39px!important}.confirmation-box{padding-top: 5px; padding-bottom: 5px;}
     </style>
 {% endblock %}
 
@@ -208,6 +208,16 @@
                         <p class="help-block">
                             <a href="https://creativecommons.org/licenses/" target="_blank" rel="noopener">{% trans "Learn about Creative Commons licences" %}</a>.
                         </p>
+
+                        <div class="confirmation-box">
+                            <input type="checkbox" name="confirmation_1" id="confirmation_1" required/>
+                            <label for="confirmation_1">I confirm that the data being shared have not already been published on <a href="https://gbif.org" target="_blank">GBIF</a></label>
+                        </div>
+
+                        <div class="confirmation-box">
+                            <input type="checkbox" name="confirmation_2" id="confirmation_2" required/>
+                            <label for="confirmation_2">I have read the upload guidelines and accept the terms and conditions</label>
+                        </div>
                     </div>
 
                     <div class="form-group visually-hidden">

@@ -230,15 +230,21 @@ class DownloadRequest(models.Model):
 
     @property
     def file_expiry_date(self):
-        """Return the date when the download file will be (or was) deleted."""
-        return self.request_date + relativedelta(months=1)
+        """Return the expiry date, or None if files never expire."""
+        from preferences import preferences
+        months = getattr(preferences.SiteSetting, 'download_request_expiry_months', 2)
+        if not months:
+            return None
+        return self.request_date + relativedelta(months=months)
 
     @property
     def file_has_expired(self):
         """Return True if the file retention period has passed."""
         from django.utils import timezone
-        now = timezone.now()
         expiry = self.file_expiry_date
+        if expiry is None:
+            return False
+        now = timezone.now()
         if expiry.tzinfo is None:
             from django.utils.timezone import make_aware
             expiry = make_aware(expiry)
