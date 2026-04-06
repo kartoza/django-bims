@@ -4,3 +4,14 @@
     padding-right: 45px;
     border-bottom: 1px solid #eaeaea;
 }
+
+/* Quality badge */
+.quality-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    color: #fff;
+    font-weight: bold;
+    cursor: help;
+    white-space: nowrap;
+}
