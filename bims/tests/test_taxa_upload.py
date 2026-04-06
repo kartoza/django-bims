@@ -5,9 +5,10 @@ from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 from mock import mock
 
+from bims.enums import TaxonomicRank
 from bims.models import TaxonGroupTaxonomy
 from bims.models.taxon_origin import TaxonOrigin
-from bims.scripts.taxa_upload import TaxaCSVUpload
+from bims.scripts.taxa_upload import TaxaCSVUpload, TaxaProcessor
 from bims.tests.model_factories import (
     UploadSessionF,
     TaxonGroupF,
@@ -608,3 +609,241 @@ class TestTaxaUpload(FastTenantTestCase):
             taxongroup=self.taxon_group
         )
         self.assertTrue(accepted_in_group.is_validated)
+
+
+class TestSubgenusUpload(FastTenantTestCase):
+    """Tests for the subgenus upload feature added in the subgenus_validation branch."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.taxon_group = TaxonGroupF.create()
+        self.owner = UserF.create(first_name='tester')
+
+        for key in ('indigenous', 'alien', 'unknown', 'alien-invasive', 'alien-non-invasive'):
+            TaxonOrigin.objects.get_or_create(
+                origin_key=key,
+                defaults={'category': key}
+            )
+
+    def _make_upload_session(self, csv_filename):
+        with open(os.path.join(test_data_directory, csv_filename), 'rb') as f:
+            return UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(f),
+                module_group=self.taxon_group
+            )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_species_with_subgenus_assigns_subgenus_fk(
+        self, mock_gbif, mock_finish
+    ):
+        """
+        A species row that has a SubGenus column value should end up with
+        taxonomy.subgenus pointing to the corresponding SUBGENUS-ranked taxon.
+        """
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_subgenus.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        # The SUBGENUS-rank taxonomy should have been created.
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                canonical_name='Stegomyia',
+                rank='SUBGENUS',
+            ).exists(),
+            'Expected a SUBGENUS-ranked taxonomy named Stegomyia.'
+        )
+
+        stegomyia = Taxonomy.objects.get(canonical_name='Stegomyia', rank='SUBGENUS')
+
+        # Species that carry SubGenus=Stegomyia must have subgenus FK set.
+        for name in ('Aedes aegypti', 'Aedes albopictus'):
+            taxon = Taxonomy.objects.filter(
+                canonical_name__iexact=name,
+                rank='SPECIES',
+            ).first()
+            self.assertIsNotNone(taxon, f'Expected SPECIES taxon for {name!r}.')
+            self.assertEqual(
+                taxon.subgenus_id, stegomyia.pk,
+                f'{name} should have subgenus=Stegomyia, got {taxon.subgenus}.'
+            )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_species_without_subgenus_has_no_subgenus_fk(
+        self, mock_gbif, mock_finish
+    ):
+        """
+        A species row without a SubGenus column value should have subgenus=None.
+        """
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_subgenus.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        taxon = Taxonomy.objects.filter(
+            canonical_name__iexact='Aedes vexans',
+            rank='SPECIES',
+        ).first()
+        self.assertIsNotNone(taxon, 'Expected SPECIES taxon for Aedes vexans.')
+        self.assertIsNone(
+            taxon.subgenus,
+            'Species without SubGenus column should have subgenus=None.'
+        )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_species_with_subgenus_skips_gbif(
+        self, mock_gbif, mock_finish
+    ):
+        """
+        When a species row has a SubGenus value, should_fetch_from_gbif=False
+        so GBIF must NOT be consulted for any SPECIES-ranked taxa.
+        Parent-resolution may still call GBIF for higher ranks (family, order,
+        etc.) when they are not already in the DB — that is expected behaviour.
+        """
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_subgenus.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        # Assert that fetch_all_species_from_gbif was never called with
+        # taxonomic_rank='SPECIES' (or 'species') for any of the subgenus rows.
+        species_calls = [
+            c for c in mock_gbif.call_args_list
+            if c.kwargs.get('taxonomic_rank', '').upper() == 'SPECIES'
+            or (len(c.args) >= 2 and str(c.args[1]).upper() == 'SPECIES')
+        ]
+        self.assertEqual(
+            len(species_calls), 0,
+            f'GBIF should not be called for SPECIES rank when a subgenus is '
+            f'present, but got calls: {species_calls}'
+        )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_same_name_different_subgenus_creates_separate_taxa(
+        self, mock_gbif, mock_finish
+    ):
+        """
+        Two species rows that share the same canonical name but have different
+        subgenus values should result in two distinct Taxonomy records, each
+        linked to their respective subgenus.
+        """
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        # Pre-create a genus and two subgenera.
+        genus = TaxonomyF.create(canonical_name='Culex', rank='GENUS')
+        subgenus_a = TaxonomyF.create(
+            canonical_name='Culex',
+            rank='SUBGENUS',
+        )
+        subgenus_b = TaxonomyF.create(
+            canonical_name='Neoculex',
+            rank='SUBGENUS',
+        )
+        # Pre-create an existing species already linked to subgenus_a.
+        existing_species = TaxonomyF.create(
+            canonical_name='Culex pipiens',
+            rank='SPECIES',
+            subgenus=subgenus_a,
+        )
+
+        taxon_group = TaxonGroupF.create()
+        processor = TaxaProcessor()
+
+        row_b = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Insecta',
+            'Order': 'Diptera',
+            'Family': 'Culicidae',
+            'Genus': 'Culex',
+            'SubGenus': 'Neoculex',
+            'Taxon': 'Culex pipiens',
+            'Taxonomic status': 'accepted',
+            'On GBIF': 'No',
+            'Author(s)': 'Linnaeus 1758',
+        }
+
+        with mock.patch('bims.scripts.taxa_upload.preferences') as mock_prefs:
+            mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+            processor.process_data(row_b, taxon_group)
+
+        # There should now be two SPECIES taxa with the same canonical name.
+        qs = Taxonomy.objects.filter(canonical_name='Culex pipiens', rank='SPECIES')
+        self.assertEqual(
+            qs.count(), 2,
+            f'Expected 2 separate taxa for "Culex pipiens", found {qs.count()}.'
+        )
+
+        names = set(qs.values_list('subgenus__canonical_name', flat=True))
+        self.assertIn('Culex', names, 'One taxon should be linked to Culex subgenus.')
+        self.assertIn('Neoculex', names, 'One taxon should be linked to Neoculex subgenus.')
+
+    def test_choose_taxon_display_name_returns_subgenus_column_for_subgenus_rank(self):
+        """
+        _choose_taxon_display_name should return the value from the SubGenus
+        column (not the Taxon column) when the rank is SubGenus.
+        """
+        processor = TaxaProcessor()
+        processor.all_keys = {
+            'TAXON': 'Taxon',
+            'GENUS': 'Genus',
+            'SUBGENUS': 'SubGenus',
+        }
+
+        row = {
+            'Taxon': '',
+            'Genus': 'Aedes',
+            'SubGenus': 'Stegomyia',
+        }
+
+        result = processor._choose_taxon_display_name(
+            row=row,
+            rank='SubGenus',
+            taxonomic_status='accepted',
+            csv_taxon='',
+            composed_taxon='',
+        )
+        self.assertEqual(result, 'Stegomyia')
+
+    def test_choose_taxon_display_name_subgenus_falls_back_to_composed(self):
+        """
+        When the SubGenus column is empty, _choose_taxon_display_name should
+        fall back to composed_taxon for a subgenus rank row.
+        """
+        processor = TaxaProcessor()
+        processor.all_keys = {
+            'TAXON': 'Taxon',
+            'GENUS': 'Genus',
+            'SUBGENUS': 'SubGenus',
+        }
+
+        row = {
+            'Taxon': '',
+            'Genus': 'Aedes',
+            'SubGenus': '',
+        }
+
+        result = processor._choose_taxon_display_name(
+            row=row,
+            rank='SubGenus',
+            taxonomic_status='accepted',
+            csv_taxon='',
+            composed_taxon='Aedes subgenus',
+        )
+        self.assertEqual(result, 'Aedes subgenus')

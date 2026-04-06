@@ -477,14 +477,25 @@ $("#embargo-end-date").datepicker({
 
 function updateMultiViewer(input) {
     const container = $('#site-images-viewer');
+    const errorEl = $('#site-images-error');
     container.empty();
+    errorEl.hide().text('');
 
     if (!input.files || !input.files.length) return;
 
+    const maxSize = 5 * 1024 * 1024;
+    const allowedTypes = ['image/jpeg', 'image/png'];
+    const errors = [];
+
     Array.from(input.files).forEach(function (file) {
-        const ext = (file.name.split('.').pop() || '').toLowerCase();
-        const ok = ['gif', 'png', 'jpeg', 'jpg', 'webp', 'bmp', 'tiff', 'svg'].includes(ext);
-        if (!ok) return;
+        if (!allowedTypes.includes(file.type)) {
+            errors.push(file.name + ': only JPEG and PNG are accepted.');
+            return;
+        }
+        if (file.size > maxSize) {
+            errors.push(file.name + ': exceeds the 5 MB size limit.');
+            return;
+        }
 
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -500,5 +511,11 @@ function updateMultiViewer(input) {
         };
         reader.readAsDataURL(file);
     });
+
+    if (errors.length) {
+        errorEl.html(errors.join('<br>')).show();
+        input.value = '';
+        container.empty();
+    }
 }
 
