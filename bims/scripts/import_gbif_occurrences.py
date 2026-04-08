@@ -496,6 +496,8 @@ def process_gbif_row(
         collection_record.collection_date = collection_date
         collection_record.owner = owner
         collection_record.validated = True
+        collection_record.coordinate_uncertainty_in_meters = coord_uncertainty
+        collection_record.coordinate_precision = coord_precision
 
         if dataset_key:
             collection_record.dataset_key = dataset_key
@@ -537,7 +539,9 @@ def process_gbif_row(
             module_group=taxon_group,
             validated=True,
             additional_data=additional_data,
-            dataset_key=dataset_key or ''
+            dataset_key=dataset_key or '',
+            coordinate_uncertainty_in_meters=coord_uncertainty,
+            coordinate_precision=coord_precision
         )
 
         if habitat:

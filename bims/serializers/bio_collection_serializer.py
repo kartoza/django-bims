@@ -725,12 +725,18 @@ class BioCollectionOneRowSerializer(
         return ''
 
     def get_gbif_coordinate_uncertainty_m(self, obj: BiologicalCollectionRecord):
+        value = getattr(obj, 'coordinate_uncertainty_in_meters', None)
+        if value:
+            return f"{value:.2f}"
         value = getattr(obj.site, 'coordinate_uncertainty_in_meters', None)
         if value is not None:
             return f"{value:.2f}"
         return ''
 
     def get_gbif_coordinate_precision(self, obj: BiologicalCollectionRecord):
+        value = getattr(obj, 'coordinate_precision', None)
+        if value:
+            return f"{value:.6f}"
         value = getattr(obj.site, 'coordinate_precision', None)
         if value is not None:
             return f"{value:.6f}"
