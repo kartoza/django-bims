@@ -24,7 +24,7 @@ function dashboardClose(e, storageKey = '') {
     }
     let url = new URL(window.location.href);
     let params = url.searchParams.toString();
-    if (params && url.searchParams.has('taxon') && !params.includes('taxa-management')) {
+    if (params && url.searchParams.has('taxon') && !params.includes('taxa-management') && !params.includes('climate')) {
         previousUrl += '/#site-detail/';
         previousUrl += params;
         let regex = new RegExp("&page=\\d+|page=\\d+")
