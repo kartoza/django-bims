@@ -1,3 +1,7 @@
+body {
+    position: initial;
+}
+
 .spatial-dashboard-table table {
     margin-bottom: 0;
 }
@@ -28,8 +32,8 @@
 }
 .cons-status-chart-wrap {
     width: 100%;
-    height: 260px;
-    min-height: 180px;
+    padding-top: 10px;
+    height: 400px;
 }
 .occurrence-pies {
     overflow-x: auto;
@@ -86,6 +90,14 @@
     overflow-wrap: break-word;
     word-break: break-word;
     white-space: normal;
+}
+
+.chart-subtitle {
+    display: block;
+    font-size: 12pt;
+    font-weight: normal;
+    color: #777;
+    margin-top: 2px;
 }
 
 .chart-bottom-title {

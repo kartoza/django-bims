@@ -838,12 +838,12 @@
                     });
                 }
                 if (type === 'rli') {
-                    showDownloadPopup('CHART', 'Red List Index', function (downloadRequestId) {
+                    showDownloadPopup('CHART', 'IUCN Red List Index of species (RLI)', function (downloadRequestId) {
                         downloadCanvasAsPng(rliChartEl, 'red-list-index', downloadRequestId);
                     });
                 }
                 if (type === 'cons-status-per-module') {
-                    showDownloadPopup('CHART', 'IUCN Conservation Status', function (downloadRequestId) {
+                    showDownloadPopup('CHART', 'Conservation Status Global (IUCN)', function (downloadRequestId) {
                         downloadCanvasAsPng(consChartPerModuleEl, 'conservation-status-per-module', downloadRequestId);
                     });
                 }
@@ -851,7 +851,7 @@
                     if (!consPerModuleData) {
                         return;
                     }
-                    showDownloadPopup('CSV', 'IUCN Conservation Status', function () {
+                    showDownloadPopup('CSV', 'Conservation Status Global (IUCN)', function () {
                         var moduleLabels = consPerModuleData.moduleLabels;
                         var categories = consPerModuleData.categories;
                         var datasets = consPerModuleData.datasets;
@@ -930,4 +930,8 @@
             });
         });
         $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="popover"]').popover({
+            container: 'body',
+            delay: { show: 100, hide: 150 }
+        });
     })();

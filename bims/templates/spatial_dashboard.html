@@ -259,7 +259,8 @@
         
          <div class="chart-container" id="cons-status-per-module-section">
             <div class="chart-title">
-                IUCN Conservation Status
+                Conservation Status Global (IUCN)
+                <small class="chart-subtitle">Percentage of species' IUCN statuses per biodiversity module.</small>
                 <i data-download="cons-status-per-module-csv"
                    data-toggle="tooltip" data-placement="left"
                    title="Download percentage data (CSV)"
@@ -286,7 +287,13 @@
 
         <div class="chart-container" id="rli-section">
             <div class="chart-title">
-                Red List Index
+                IUCN Red List Index of species (RLI)
+                <i class="fa fa-info-circle rli-info-icon"
+                   data-toggle="popover"
+                   data-trigger="hover"
+                   data-offset="0,8"
+                   data-content="The IUCN Red List Index of species (RLI) is calculated for specific taxonomic groups based on genuine changes in Red List categories over time. The RLI value ranges from 0 to 1 where lower values indicate that more species within the taxonomic group are at a high risk of extinction, the slope of the plot shows the rate of decline towards extinction. If the value is 1, all taxa are Least Concern and if the value is 0, all taxa are Extinct."
+                   title="IUCN Red List Index"></i>
                 <i data-download="rli"
                    data-toggle="tooltip" data-placement="left"
                    title="Download chart"
@@ -299,7 +306,7 @@
             <div class="section-error d-none" data-error></div>
             <div class="d-none" data-body>
                 <div class="cons-status-chart-wrap">
-                    <canvas id="rli-chart" height="220"></canvas>
+                    <canvas id="rli-chart"></canvas>
                 </div>
             </div>
         </div>
