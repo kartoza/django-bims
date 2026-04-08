@@ -144,6 +144,15 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 sassUrl += self.apiParameters(filterParameters);
                 window.location.href = sassUrl;
             });
+            $sectionWrapper.find('.sp-climate-dashboard').click(function () {
+                 if (typeof self.siteId !== 'undefined') {
+                    climateUrl = '/climate/' + self.siteId + '/';
+                } else {
+                    climateUrl = '/climate/dashboard-multi-sites/';
+                }
+                climateUrl += self.apiParameters(filterParameters);
+                window.location.href = climateUrl;
+            });
         },
         createPieChart: function (chartData) {
             let self = this;

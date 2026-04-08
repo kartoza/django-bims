@@ -534,3 +534,132 @@ class ClimateEdgeCasesTests(FastTenantTestCase):
         self.assertEqual(len(records), 1)
         self.assertIsNone(records[0]['avg_temperature'])
         self.assertIsNone(records[0]['total_rainfall'])
+
+
+class ClimateDashboardMultipleSitesViewTests(FastTenantTestCase):
+    """Tests for the multi-site climate dashboard template view."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.url = '/climate/dashboard-multi-sites/'
+
+    def test_view_returns_200(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_uses_correct_template(self):
+        response = self.client.get(self.url)
+        self.assertTemplateUsed(response, 'climate/multi_site.html')
+
+
+class ClimateDashboardMultipleSitesApiViewTests(FastTenantTestCase):
+    """Tests for the multi-site climate dashboard API view."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.api_url = '/climate/dashboard-multi-sites-api/'
+
+        self.site_a = LocationSiteF.create(site_code='MULTI001')
+        self.site_b = LocationSiteF.create(site_code='MULTI002')
+        self.site_no_climate = LocationSiteF.create(site_code='NOCLIM')
+
+        for d, site in [
+            (date(2023, 1, 10), self.site_a),
+            (date(2023, 3, 15), self.site_a),
+            (date(2023, 6, 20), self.site_b),
+        ]:
+            Climate.objects.create(
+                location_site=site,
+                station_name='Station',
+                date=d,
+                year=d.year,
+                month=d.month,
+                avg_temperature=20.0,
+                min_temperature=10.0,
+                max_temperature=30.0,
+                avg_humidity=50.0,
+                min_humidity=45.0,
+                max_humidity=55.0,
+                avg_windspeed=5.0,
+                daily_rainfall=10.0,
+            )
+
+    def _get_json(self, params=None):
+        response = self.client.get(self.api_url, params or {})
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_returns_only_sites_with_climate_data(self):
+        data = self._get_json()
+        site_ids = data['climate_summary_data']['site_id']
+        self.assertIn(self.site_a.id, site_ids)
+        self.assertIn(self.site_b.id, site_ids)
+        self.assertNotIn(self.site_no_climate.id, site_ids)
+
+    def test_response_structure(self):
+        data = self._get_json()
+        summary = data['climate_summary_data']
+        for key in ('site_id', 'site_code', 'avg_temp', 'min_temp', 'max_temp',
+                    'avg_humidity', 'avg_windspeed', 'total_rainfall',
+                    'max_rainfall', 'record_count'):
+            self.assertIn(key, summary)
+        self.assertIn('coordinates', data)
+        self.assertIn('bing_map_key', data)
+
+    def test_site_code_values(self):
+        data = self._get_json()
+        site_codes = data['climate_summary_data']['site_code']
+        self.assertIn('MULTI001', site_codes)
+        self.assertIn('MULTI002', site_codes)
+
+    def test_aggregate_stats_for_site_a(self):
+        """site_a has 2 records, each with rainfall=10 → total=20."""
+        data = self._get_json()
+        summary = data['climate_summary_data']
+        idx = summary['site_id'].index(self.site_a.id)
+        self.assertEqual(summary['record_count'][idx], 2)
+        self.assertEqual(summary['total_rainfall'][idx], 20.0)
+        self.assertEqual(summary['avg_temp'][idx], 20.0)
+        self.assertEqual(summary['min_temp'][idx], 10.0)
+        self.assertEqual(summary['max_temp'][idx], 30.0)
+
+    def test_aggregate_stats_for_site_b(self):
+        """site_b has 1 record."""
+        data = self._get_json()
+        summary = data['climate_summary_data']
+        idx = summary['site_id'].index(self.site_b.id)
+        self.assertEqual(summary['record_count'][idx], 1)
+        self.assertEqual(summary['total_rainfall'][idx], 10.0)
+
+    def test_filter_by_site_id(self):
+        data = self._get_json({'siteId': self.site_a.id})
+        summary = data['climate_summary_data']
+        self.assertEqual(summary['site_id'], [self.site_a.id])
+
+    def test_filter_by_search_term_matches_site_code(self):
+        data = self._get_json({'search': 'MULTI001'})
+        summary = data['climate_summary_data']
+        self.assertEqual(summary['site_id'], [self.site_a.id])
+
+    def test_filter_by_search_term_no_match(self):
+        data = self._get_json({'search': 'ZZZNOMATCH'})
+        summary = data['climate_summary_data']
+        self.assertEqual(summary['site_id'], [])
+
+    def test_coordinates_match_returned_sites(self):
+        data = self._get_json()
+        self.assertEqual(
+            len(data['coordinates']),
+            len(data['climate_summary_data']['site_id'])
+        )
+
+    def test_empty_result_when_no_climate_data(self):
+        Climate.objects.all().delete()
+        data = self._get_json()
+        self.assertEqual(data['climate_summary_data']['site_id'], [])
+        self.assertEqual(data['coordinates'], [])
+
+    def test_sites_ordered_by_site_code(self):
+        data = self._get_json()
+        codes = data['climate_summary_data']['site_code']
+        self.assertEqual(codes, sorted(codes))

@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import time
 from collections import OrderedDict
@@ -9,13 +10,21 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import TemplateView
 from django.db.models import Avg, Min, Max, Sum, Count
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from .models import Climate
 from bims.models.location_site import LocationSite
 from bims.models.location_context import LocationContext
+from bims.models.search_process import (
+    SEARCH_RESULTS,
+    SEARCH_PROCESSING,
+)
 from bims.utils.location_site import overview_site_detail
+from bims.utils.search_process import get_or_create_search_process
 from bims.views.data_upload import DataUploadView
 from climate.tasks.climate_upload import climate_upload
+from climate.tasks.climate_multi_site import climate_multi_site_summary
 
 EXTREME_HEADERS = [
     ('hot_days', 'Days above 35°C'),
@@ -732,3 +741,38 @@ class ClimateUploadView(DataUploadView):
     template_name = 'climate/climate_uploader.html'
     upload_task = climate_upload
     category = 'climate'
+
+
+class ClimateDashboardMultipleSitesView(TemplateView):
+    """Multiple sites climate dashboard view."""
+    template_name = 'climate/multi_site.html'
+
+
+class ClimateDashboardMultipleSitesApiView(APIView):
+    """API endpoint for multi-site climate summary data."""
+
+    def get(self, request):
+        parameters = request.GET.dict()
+        search_uri = request.build_absolute_uri()
+
+        search_process, created = get_or_create_search_process(
+            search_type=SEARCH_RESULTS,
+            query=search_uri,
+            requester=request.user if request.user.is_authenticated else None,
+        )
+
+        if not created:
+            results = search_process.get_file_if_exits()
+            if results:
+                return Response(results)
+
+        process_id = hashlib.sha256(search_uri.encode('utf-8')).hexdigest()
+        search_process.set_process_id(process_id)
+        search_process.set_status(SEARCH_PROCESSING)
+
+        climate_multi_site_summary.delay(parameters, search_process.id)
+
+        result_file = search_process.get_file_if_exits(finished=False)
+        if result_file:
+            return Response(result_file)
+        return Response({'status': SEARCH_PROCESSING})

@@ -1,0 +1,118 @@
+{% extends 'main_base.html' %}
+{% load static %}
+
+{% block subtitle %}
+    Multiple Sites Dashboard - Climate
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/sass_dashboard.css" %}" rel="stylesheet">
+    <link href="{% static "css/dashboard_buttons.css" %}" rel="stylesheet">
+    <link href="{% static "js/libs/openlayers-4.6.4/ol.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'climate/css/dashboard.css' %}">
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <link href="{% static "js/libs/pace-0.5.3/pace-theme.css" %}" rel="stylesheet">
+    <script type="text/javascript">
+        paceOptions = {
+            elements: { selectors: ['.map-container'] },
+            restartOnRequestAfter: false
+        }
+    </script>
+{% endblock %}
+
+{% block body_content %}
+    <div class="body-form container">
+        <div class="logo hide-logo pull-right">
+            <img width="50" src="{% static 'img/bims-stamp.png' %}">
+        </div>
+
+        <div class="modal fade" id="alertModal" tabindex="-1" role="dialog"
+             aria-labelledby="alertModalLabel" aria-hidden="true"
+             style="z-index: 99999">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body" id="alertModalBody"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                                data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-title">
+            <h2>Multiple Sites Dashboard - Climate</h2>
+            <div class="dashboard-close"><i class="fa fa-times" aria-hidden="true"></i></div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-7">
+                <div class="map-container ajax-container">
+                    <div class="chart-title">Map
+                        <i data-download-title="Climate map"
+                           data-toggle="tooltip" data-placement="left"
+                           title="Download map as PNG"
+                           class="fa fa-download pull-right download-icon download-map"></i>
+                    </div>
+                    <div id="map"></div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="table-container ajax-container">
+                    <div class="table-title">Filters</div>
+                    <table class="table table-condensed table-striped filter-table filter-history-table"></table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="vertical-space"></div>
+                <div class="table-container ajax-container">
+                    <div class="table-title">
+                        Climate Summary
+                        <div class="download-top-container">
+                            Download summary data:
+                            <button class="btn btn-info download-summary-as-csv">
+                                Download as CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-overflow">
+                        <table class="table table-condensed table-striped climate-summary-table">
+                            <thead>
+                            <tr>
+                                <th>Site Code</th>
+                                <th>Avg Temperature (°C)</th>
+                                <th>Min Temperature (°C)</th>
+                                <th>Max Temperature (°C)</th>
+                                <th>Avg Humidity (%)</th>
+                                <th>Avg Wind Speed (m/s)</th>
+                                <th>Total Rainfall (mm)</th>
+                                <th>Max Daily Rainfall (mm)</th>
+                                <th>Total Days on Record</th>
+                            </tr>
+                            </thead>
+                            <tbody id="climate-summary-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="vertical-space"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block foot %}
+    <script src="{% static "js/libs/pace-0.5.3/pace.min.js" %}"></script>
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.bundle.min.js" %}"></script>
+    <script src="{% static "js/libs/openlayers-4.6.4/ol.js" %}"></script>
+    <script src="{% static "js/libs/moment.js" %}"></script>
+    <script src="{% static "js/libs/htmlToCanvas/html2canvas.js" %}"></script>
+    <script src="{% static "js/utils/download_csv.js" %}"></script>
+    <script src="{% static "js/utils/filter_list.js" %}"></script>
+    <script src="{% static "climate/js/multi_site_dashboard.js" %}"></script>
+    <script src="{% static "js/sass_dashboard_close.js" %}"></script>
+{% endblock %}

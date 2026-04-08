@@ -136,12 +136,14 @@ def physico_chemical_chart_data(
                 continue
             value = ChemicalRecordsSerializer(qs, many=True)
 
-            # Get chemical unit
-            chem_unit = qs.first().chem.chem_unit.unit
+            chemical_record = qs.first()
+
+            chem_unit = chemical_record.chem.chem_unit.unit if chemical_record.chem.chem_unit else '-'
+            chem_desc = chemical_record.chem.chem_description if chemical_record.chem.chem_description else '-'
 
             data = {
                 'unit': chem_unit,
-                'name': qs.first().chem.chem_description,
+                'name': chem_desc,
                 'values': value.data
             }
             for val in value.data:
