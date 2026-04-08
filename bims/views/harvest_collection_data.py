@@ -2,7 +2,6 @@
 """Collections uploader view
 """
 
-import ast
 import os
 from collections import deque
 from datetime import datetime
@@ -79,9 +78,7 @@ class HarvestCollectionView(
         boundary_id = request.POST.get('boundary', None)
         taxon_group_logo = request.FILES.get('taxon_group_logo')
         taxon_group_name = request.POST.get('taxon_group_name', '')
-        cancel = ast.literal_eval(request.POST.get(
-            'cancel', 'False'
-        ))
+        cancel = request.POST.get('cancel', 'False').lower() == 'true'
         if cancel:
             session_id = request.POST.get('canceled_session_id', '')
             try:

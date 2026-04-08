@@ -66,7 +66,6 @@ from bims.views.bug_report import BugReportView
 from bims.views.wetland_feedback import WetlandFeedbackView
 from bims.views.abiotic_form import AbioticFormView
 from bims.views.svg_to_pdf import svg_to_pdf
-from bims.api_views.delete_collection_data import CollectionDeleteApiView
 from bims.views.documents import BimsDocumentUpdateView
 from bims.views.site_visit import (
     SiteVisitUpdateView,
@@ -192,9 +191,6 @@ urlpatterns = [
     re_path(r'^abiotic/$', AbioticFormView.as_view(),
             name='abiotic-form'),
     re_path(r'^svg_to_pdf/$', svg_to_pdf, name='svg-to-pdf'),
-    re_path(r'^collection/delete/(?P<col_id>\d+)/$',
-            CollectionDeleteApiView.as_view(),
-            name='collection-delete'),
     re_path(r'^bims-document/(?P<pk>\d+)/$',
             BimsDocumentUpdateView.as_view(),
             name='bims-document-update-view'),

@@ -1463,6 +1463,64 @@ class InvalidParentRankFilter(django_admin.SimpleListFilter):
         )
 
 
+class QualityCheckFilter(django_admin.SimpleListFilter):
+    title = 'Quality check'
+    parameter_name = 'quality_check'
+
+    # Rank values that are exempt from the "must have parent" rule.
+    # Both enum names and display values are included to guard against
+    # data that was imported using the display value.
+    TOP_LEVEL_RANKS = ['DOMAIN', 'KINGDOM', 'Domain', 'Kingdom']
+
+    def _accepted_no_parent_q(self):
+        return Q(
+            taxonomic_status='ACCEPTED',
+            parent__isnull=True,
+        ) & ~Q(rank__in=self.TOP_LEVEL_RANKS)
+
+    def _synonym_no_accepted_q(self):
+        return Q(
+            Q(taxonomic_status='DOUBTFUL') | Q(taxonomic_status__icontains='SYNONYM'),
+            accepted_taxonomy__isnull=True,
+        )
+
+    def _no_upstream_id_q(self):
+        # Missing upstream ID = no GBIF key AND no FADA ID (null or empty)
+        return Q(gbif_key__isnull=True) & (Q(fada_id__isnull=True) | Q(fada_id=''))
+
+    def lookups(self, request, model_admin):
+        return (
+            ('all_passed', 'All passed (100%)'),
+            ('has_issues', 'Has issues'),
+            ('accepted_no_parent', 'Accepted missing parent'),
+            ('synonym_no_accepted', 'Synonym/Doubtful missing accepted taxon'),
+            ('no_upstream_id', 'Missing upstream ID'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if not value:
+            return queryset
+        no_parent_q = self._accepted_no_parent_q()
+        no_accepted_q = self._synonym_no_accepted_q()
+        no_upstream_q = self._no_upstream_id_q()
+        if value == 'has_issues':
+            return queryset.filter(no_parent_q | no_accepted_q | no_upstream_q)
+        if value == 'all_passed':
+            return queryset.exclude(no_parent_q | no_accepted_q | no_upstream_q).filter(
+                Q(taxonomic_status='ACCEPTED') |
+                Q(taxonomic_status='DOUBTFUL') |
+                Q(taxonomic_status__icontains='SYNONYM')
+            )
+        if value == 'accepted_no_parent':
+            return queryset.filter(no_parent_q)
+        if value == 'synonym_no_accepted':
+            return queryset.filter(no_accepted_q)
+        if value == 'no_upstream_id':
+            return queryset.filter(no_upstream_q)
+        return queryset
+
+
 class TaxonomyAdmin(admin.ModelAdmin):
     form = TaxonomyAdminForm
     change_form_template = 'admin/taxonomy_changeform.html'
@@ -1486,7 +1544,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'accepted_taxonomy',
         'iucn_status',
         'verified',
-        'tag_list'
+        'tag_list',
+        'quality_check',
     )
 
     list_filter = (
@@ -1498,6 +1557,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         TaxonGroupListFilter,
         DuplicateTaxonomyFilter,
         InvalidParentRankFilter,
+        QualityCheckFilter,
     )
 
     search_fields = (
@@ -1534,6 +1594,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'gbif_key',
                 'fada_id',
                 'last_modified_by',
+                'subgenus',
                 'verified',
             )
         }),
@@ -1599,6 +1660,12 @@ class TaxonomyAdmin(admin.ModelAdmin):
     extract_author.short_description = "Extract author"
 
     inlines = [TaxonImagesInline]
+
+    class Media:
+        css = {
+            'all': ('admin/custom-admin.css',)
+        }
+        js = ('js/admin/quality-tooltip.js',)
 
     def fetch_cites_listing(self, request, queryset):
         taxa_ids = list(queryset.values_list('id', flat=True))
@@ -1690,6 +1757,62 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def tag_list(self, obj):
         return u", ".join(o.name for o in obj.tags.all())
+
+    # Ranks that are top-level and are not expected to have a parent
+    _top_level_ranks = {'DOMAIN', 'KINGDOM', 'Domain', 'Kingdom'}
+
+    def quality_check(self, obj):
+        status = (obj.taxonomic_status or '').upper()
+        is_accepted = status == 'ACCEPTED'
+        is_synonym_or_doubtful = status == 'DOUBTFUL' or 'SYNONYM' in status
+
+        checks = []
+        issues = []
+
+        if is_accepted and (obj.rank or '') not in self._top_level_ranks:
+            if obj.parent_id:
+                checks.append(True)
+            else:
+                checks.append(False)
+                issues.append('Missing parent taxon')
+
+        if is_synonym_or_doubtful:
+            if obj.accepted_taxonomy_id:
+                checks.append(True)
+            else:
+                checks.append(False)
+                issues.append('Missing accepted taxon')
+
+        # Upstream ID check applies to all statuses
+        if obj.gbif_key or obj.fada_id:
+            checks.append(True)
+        else:
+            checks.append(False)
+            issues.append('Missing upstream ID')
+
+        if not checks:
+            return '-'
+
+        percentage = max(0, 100 - len(issues) * 25)
+
+        if percentage == 100:
+            color = '#28a745'
+        elif percentage >= 50:
+            color = '#ffc107'
+        else:
+            color = '#dc3545'
+
+        tooltip = '; '.join(issues) if issues else 'All checks passed'
+
+        return format_html(
+            '<span class="quality-badge" data-tooltip="{}" style="background:{};">{}</span>',
+            tooltip,
+            color,
+            '{}%'.format(percentage),
+        )
+
+    quality_check.short_description = 'Quality'
+    quality_check.allow_tags = True
 
     @admin.display(description=_('Parent hierarchy'))
     def parent_hierarchy(self, obj):
@@ -1816,6 +1939,31 @@ class TaxonomyAdmin(admin.ModelAdmin):
         if 'has_duplicates' not in request.GET:
             actions.pop('export_taxa_list', None)
         return actions
+
+    def get_fieldsets(self, request, obj:Taxonomy=None):
+        fieldsets = super().get_fieldsets(request, obj)
+
+        hierarchy = TaxonomicRank.hierarchy()
+        subgenus_index = next(
+            i for i, r in enumerate(hierarchy) if r == TaxonomicRank.SUBGENUS
+        )
+
+        show_subgenus = False
+        if obj and obj.rank:
+            current_rank  = next(
+                (r for r in hierarchy if r.name == obj.rank), None
+            )
+            if current_rank:
+                show_subgenus = hierarchy.index(current_rank) > subgenus_index
+
+        if not show_subgenus:
+            result = []
+            for name, options in fieldsets:
+                new_fields = tuple(f for f in options['fields'] if f != 'subgenus')
+                result.append((name, {**options, 'fields': new_fields}))
+            return result
+
+        return fieldsets
 
 
 class VernacularNameAdmin(admin.ModelAdmin):

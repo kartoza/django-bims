@@ -10,13 +10,13 @@ class VernacularName(models.Model):
     name = models.CharField(
         null=False,
         blank=False,
-        max_length=250
+        max_length=500
     )
 
     source = models.CharField(
         null=True,
         blank=True,
-        max_length=250
+        max_length=500
     )
 
     language = models.CharField(

@@ -1,4 +1,5 @@
-"""Tests for BioCollectionOneRowSerializer.get_conservation_status_global."""
+"""Tests for BioCollectionOneRowSerializer coordinate and conservation methods."""
+from decimal import Decimal
 from unittest import mock
 
 from django_tenants.test.cases import FastTenantTestCase
@@ -8,6 +9,7 @@ from bims.serializers.bio_collection_serializer import BioCollectionOneRowSerial
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     IUCNStatusF,
+    LocationSiteF,
     TaxonomyF,
 )
 
@@ -197,3 +199,109 @@ class TestGetConservationStatusGlobal(FastTenantTestCase):
             result = self._serialize(record)
 
         self.assertEqual(result, 'Least Concern')
+
+
+@mock.patch('bims.models.location_site.update_location_site_context')
+@mock.patch('bims.models.taxonomy.get_iucn_status', return_value=(None, None, None))
+class TestGetGbifCoordinateUncertainty(FastTenantTestCase):
+    """
+    Tests for BioCollectionOneRowSerializer.get_gbif_coordinate_uncertainty_m.
+
+    Priority order:
+      1. Record-level coordinate_uncertainty_in_meters (new field)
+      2. Site-level coordinate_uncertainty_in_meters (fallback)
+      3. Empty string when neither is set
+    """
+
+    def _serialize(self, record):
+        serializer = BioCollectionOneRowSerializer()
+        return serializer.get_gbif_coordinate_uncertainty_m(record)
+
+    def test_returns_record_level_value_when_set(self, mock_iucn, mock_loc):
+        """Record-level value takes priority over site-level value."""
+        site = LocationSiteF.create(coordinate_uncertainty_in_meters=Decimal('500.00'))
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_uncertainty_in_meters=Decimal('30.00'),
+        )
+        self.assertEqual(self._serialize(record), '30.00')
+
+    def test_falls_back_to_site_value_when_record_value_is_none(self, mock_iucn, mock_loc):
+        """Falls back to site-level value when record field is None."""
+        site = LocationSiteF.create(coordinate_uncertainty_in_meters=Decimal('100.50'))
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_uncertainty_in_meters=None,
+        )
+        self.assertEqual(self._serialize(record), '100.50')
+
+    def test_returns_empty_string_when_both_are_none(self, mock_iucn, mock_loc):
+        """Returns empty string when both record and site values are None."""
+        site = LocationSiteF.create(coordinate_uncertainty_in_meters=None)
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_uncertainty_in_meters=None,
+        )
+        self.assertEqual(self._serialize(record), '')
+
+    def test_formats_to_two_decimal_places(self, mock_iucn, mock_loc):
+        """Value is formatted to exactly two decimal places."""
+        site = LocationSiteF.create(coordinate_uncertainty_in_meters=None)
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_uncertainty_in_meters=Decimal('7.1'),
+        )
+        self.assertEqual(self._serialize(record), '7.10')
+
+
+@mock.patch('bims.models.location_site.update_location_site_context')
+@mock.patch('bims.models.taxonomy.get_iucn_status', return_value=(None, None, None))
+class TestGetGbifCoordinatePrecision(FastTenantTestCase):
+    """
+    Tests for BioCollectionOneRowSerializer.get_gbif_coordinate_precision.
+
+    Priority order:
+      1. Record-level coordinate_precision (new field)
+      2. Site-level coordinate_precision (fallback)
+      3. Empty string when neither is set
+    """
+
+    def _serialize(self, record):
+        serializer = BioCollectionOneRowSerializer()
+        return serializer.get_gbif_coordinate_precision(record)
+
+    def test_returns_record_level_value_when_set(self, mock_iucn, mock_loc):
+        """Record-level value takes priority over site-level value."""
+        site = LocationSiteF.create(coordinate_precision=Decimal('1.0'))
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_precision=Decimal('0.00001'),
+        )
+        self.assertEqual(self._serialize(record), '0.000010')
+
+    def test_falls_back_to_site_value_when_record_value_is_none(self, mock_iucn, mock_loc):
+        """Falls back to site-level value when record field is None."""
+        site = LocationSiteF.create(coordinate_precision=Decimal('0.01667'))
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_precision=None,
+        )
+        self.assertEqual(self._serialize(record), '0.016670')
+
+    def test_returns_empty_string_when_both_are_none(self, mock_iucn, mock_loc):
+        """Returns empty string when both record and site values are None."""
+        site = LocationSiteF.create(coordinate_precision=None)
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_precision=None,
+        )
+        self.assertEqual(self._serialize(record), '')
+
+    def test_formats_to_six_decimal_places(self, mock_iucn, mock_loc):
+        """Value is formatted to exactly six decimal places."""
+        site = LocationSiteF.create(coordinate_precision=None)
+        record = BiologicalCollectionRecordF.create(
+            site=site,
+            coordinate_precision=Decimal('0.000278'),
+        )
+        self.assertEqual(self._serialize(record), '0.000278')

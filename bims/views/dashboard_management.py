@@ -1,7 +1,6 @@
 # coding=utf-8
 """Dashboard management view
 """
-import ast
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.http import HttpResponseRedirect
@@ -44,7 +43,7 @@ class DashboardManagementView(
         return context
 
     def post(self, request, *args, **kwargs):
-        reset = ast.literal_eval(request.POST.get('reset', 'False'))
+        reset = request.POST.get('reset', 'False').lower() == 'true'
         module_group_id = request.POST.get('module_group')
         if reset:
             try:

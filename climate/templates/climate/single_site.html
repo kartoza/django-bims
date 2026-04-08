@@ -289,7 +289,7 @@
     <script src="{% static "js/utils/svg_download.js" %}"></script>
     <script src="{% static "js/utils/download_csv.js" %}"></script>
     <script src="{% static "js/map-dashboard.js" %}"></script>
-    <script src="{% static "js/sass_dashboard_close.js" %}"></script>
+    <script src="{% static "js/non_requirejs/dashboard_buttons.js" %}"></script>
     <script src="{% static "js/non_requirejs/download_request_popup.js" %}"></script>
     <script id="climate-dashboard-data" type="application/json">
         {{ chart_payload|default:'{}'|safe }}
@@ -314,15 +314,12 @@
             }
             $('#year-select').change(function() {
                 const selectedYear = $(this).val();
-                window.location.href = `/climate/${siteId}/${selectedYear}/?siteId=${siteId}`;
+                window.location.replace(`/climate/${siteId}/${selectedYear}/?siteId=${siteId}`);
             });
             $('#update-date').click(function() {
                 const startDate = $('#startDate').val();
                 const endDate = $('#endDate').val();
-                window.location.href = `/climate/${siteId}/?siteId=${siteId}&startDate=${startDate}&endDate=${endDate}`;
-            });
-            $('.dashboard-close').click(function() {
-                window.history.back();
+                window.location.replace(`/climate/${siteId}/?siteId=${siteId}&startDate=${startDate}&endDate=${endDate}`);
             });
             let map = null;
             map = createDashboardMap(map, coordinates);

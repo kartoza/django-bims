@@ -165,7 +165,7 @@
                     <input type="file"
                            class="form-control"
                            style="height: 43px !important;"
-                           accept="image/*"
+                           accept="image/jpeg,image/png"
                            name="site-images"
                            id="site-images-input"
                            multiple
@@ -176,8 +176,9 @@
                 <div id="site-images-viewer" class="d-flex flex-wrap" style="gap:10px;"></div>
 
                 <small class="form-text text-muted">
-                    You can select multiple files at once.
+                    Accepted formats: JPEG, PNG. Maximum file size: 5 MB per image. You can select multiple files at once.
                 </small>
+                <small class="form-text text-danger" id="site-images-error" style="display: none;"></small>
                 <br/><small class="error-upload"></small>
             </div>
         </div>

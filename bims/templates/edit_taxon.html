@@ -27,6 +27,8 @@
         const taxonId = {{ object.original_taxonomy.id|default:object.id }};
         let acceptedTaxonomy = null;
         let acceptedTaxonomyId = null;
+        let subgenusTaxon = null;
+        let subgenusTaxonId = null;
         const speciesGroup = {% if object.species_group %}"{{ object.species_group.name }}"{% else %}""{% endif %};
         const speciesGroupId = {% if object.species_group %}{{ object.species_group.id }}{% else %}null{% endif %};
     </script>
@@ -174,12 +176,28 @@
                 </script>
             {% endif %}
 
+            {% if object.subgenus %}
+                <script>
+                    subgenusTaxon = "{{ object.subgenus.canonical_name }} ({{ object.subgenus.rank }})";
+                    subgenusTaxonId = {{ object.subgenus.id }};
+                </script>
+            {% endif %}
+
             <div class="form-group row" style="display: none" id="accepted-taxon-field">
                 <label for="rank" class="col-sm-2 col-form-label col-form-label">
                     Accepted Taxon
                 </label>
                 <div class="col-sm-10">
                     <select id="accepted-taxon" class="taxa-auto-complete" name="accepted_taxonomy" style="width: 100%"></select>
+                </div>
+            </div>
+
+            <div class="form-group row" style="display: none" id="subgenus-field">
+                <label for="subgenus-taxon" class="col-sm-2 col-form-label col-form-label">
+                    Subgenus
+                </label>
+                <div class="col-sm-10">
+                    <select id="subgenus-taxon" class="taxa-auto-complete" name="subgenus" data-rank="SUBGENUS" style="width: 100%"></select>
                 </div>
             </div>
 

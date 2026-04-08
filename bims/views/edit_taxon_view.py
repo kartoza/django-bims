@@ -164,6 +164,15 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             self.request.POST.get('additional_data__Conservation_References', '')).strip()
         data['fada_id'] = self.request.POST.get('fada_id', '').strip() or None
 
+        subgenus_id = self.request.POST.get('subgenus', '').strip()
+        if is_synonym_or_doubtful and subgenus_id:
+            try:
+                data['subgenus'] = Taxonomy.objects.get(pk=int(subgenus_id))
+            except (ValueError, Taxonomy.DoesNotExist):
+                data['subgenus'] = None
+        elif is_synonym_or_doubtful:
+            data['subgenus'] = None
+
         new_proposal = False
 
         with transaction.atomic():
