@@ -121,7 +121,8 @@ class SourceReference(PolymorphicModel):
         Author,
         blank=True,
         related_name='source_references',
-        help_text='Author(s) of this source reference'
+        help_text='Author(s) of this source reference',
+        through='SourceReferenceAuthor'
     )
     source_date = models.DateField(
         null=True,
@@ -173,12 +174,15 @@ class SourceReference(PolymorphicModel):
     @property
     def author_list(self):
         """Return list of Author objects"""
-        return list(self.source_authors.all())
+        return list(
+            SourceReferenceAuthor.objects.filter(source_reference_id=self.id).order_by('order'))
 
     @property
     def author_names_list(self):
         """Return list of author display name strings for template iteration."""
-        return [a.get_formatted_name() for a in self.source_authors.all()]
+        return [
+            a.author.get_formatted_name() for a in
+            SourceReferenceAuthor.objects.filter(source_reference_id=self.id).order_by('order')]
 
     @property
     def authors(self):
@@ -310,6 +314,27 @@ class SourceReference(PolymorphicModel):
                 **model_fields
             )[0]
         return source_reference
+
+
+class SourceReferenceAuthor(models.Model):
+    """Through model for ordered authors on a SourceReference."""
+    source_reference = models.ForeignKey(
+        SourceReference,
+        on_delete=models.CASCADE,
+        related_name='source_reference_authors',
+        db_column='sourcereference_id'
+    )
+    author = models.ForeignKey(
+        Author,
+        on_delete=models.CASCADE,
+        related_name='source_reference_authorships'
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ('source_reference', 'author')
+        db_table = 'bims_sourcereference_source_authors'
 
 
 class SourceReferenceBibliography(SourceReference):
