@@ -1,3 +1,4 @@
+import base64
 import json
 from datetime import datetime
 from unittest.mock import patch
@@ -241,6 +242,72 @@ class TestAddSiteVisit(FastTenantTestCase):
         self.assertEqual(
             bio.biotope, biotope
         )
+
+    @patch('bims.views.collections_form.SiteImage.objects.create')
+    def test_add_survey_with_data_url_site_image(self, mock_site_image_create):
+        """data:image/jpeg;base64,... prefix is stripped before decoding."""
+        location_site = LocationSiteF.create()
+        raw_bytes = b'fake-image-data'
+        b64_str = base64.b64encode(raw_bytes).decode()
+        data = {
+            'date': '2022-12-30',
+            'owner_id': f'{self.user.id}',
+            'site-id': location_site.id,
+            'site_image': f'data:image/jpeg;base64,{b64_str}',
+        }
+        res = self.client.post(
+            self.api_url,
+            json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        mock_site_image_create.assert_called_once()
+        image_arg = mock_site_image_create.call_args[1]['image']
+        self.assertEqual(image_arg.read(), raw_bytes)
+        self.assertIn('site_image_mobile.jpeg', image_arg.name)
+
+    @patch('bims.views.collections_form.SiteImage.objects.create')
+    def test_add_survey_with_bare_base64_site_image(self, mock_site_image_create):
+        """Bare base64 (no data URL prefix) is also handled correctly."""
+        location_site = LocationSiteF.create()
+        raw_bytes = b'fake-image-data'
+        b64_str = base64.b64encode(raw_bytes).decode()
+        data = {
+            'date': '2022-12-30',
+            'owner_id': f'{self.user.id}',
+            'site-id': location_site.id,
+            'site_image': b64_str,
+        }
+        res = self.client.post(
+            self.api_url,
+            json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        mock_site_image_create.assert_called_once()
+        image_arg = mock_site_image_create.call_args[1]['image']
+        self.assertEqual(image_arg.read(), raw_bytes)
+
+    def test_add_survey_with_invalid_site_image_returns_400(self):
+        """Invalid base64 returns 400 instead of a 500.
+
+        'abc' has length 3 which is 3 mod 4 — binascii raises
+        'Incorrect padding' even with validate=False.
+        """
+        location_site = LocationSiteF.create()
+        data = {
+            'date': '2022-12-30',
+            'owner_id': f'{self.user.id}',
+            'site-id': location_site.id,
+            'site_image': 'abc',
+        }
+        res = self.client.post(
+            self.api_url,
+            json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', res.data)
 
     def test_add_survey_occurrences_missing_abundance(self):
         location_site = LocationSiteF.create()

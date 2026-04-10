@@ -72,9 +72,21 @@ class AddSiteVisit(APIView):
                     f'{post_data["date"]}_{request.user.id}_'
                     f'site_image_mobile.jpeg'
                 )
-                site_image = ContentFile(
-                    base64.b64decode(site_image_str), name=site_image_name)
-            survey = add_survey_occurrences(self, post_data, site_image)
+                # Strip data URL prefix (e.g. "data:image/jpeg;base64,...")
+                # if the mobile app sends a data URL instead of bare base64.
+                if ',' in site_image_str:
+                    site_image_str = site_image_str.split(',', 1)[1]
+                try:
+                    decoded = base64.b64decode(site_image_str)
+                except Exception:
+                    from rest_framework import status
+                    return Response(
+                        {'error': 'Invalid site_image encoding.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                site_image = ContentFile(decoded, name=site_image_name)
+            survey = add_survey_occurrences(
+                self, post_data, [site_image] if site_image else None)
             survey.mobile = True
             survey.save()
 
