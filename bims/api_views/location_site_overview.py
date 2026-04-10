@@ -50,6 +50,7 @@ class LocationSiteOverviewData(object):
 
     search_filters = None
     is_sass_exist = False
+    is_climate_data_exist = False
 
     search_process = None
 

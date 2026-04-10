@@ -144,6 +144,18 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                 sassUrl += self.apiParameters(filterParameters);
                 window.location.href = sassUrl;
             });
+            // Show climate button only when climate module is selected
+            if ($('#climate-module').is(':checked')) {
+                $sectionWrapper.find('.climate-data-row').show();
+            }
+            $('input[name="module"]').on('change', function () {
+                if ($(this).val() === 'climate') {
+                    $sectionWrapper.find('.climate-data-row').show();
+                } else {
+                    $sectionWrapper.find('.climate-data-row').hide();
+                }
+            });
+
             $sectionWrapper.find('.sp-climate-dashboard').click(function () {
                  if (typeof self.siteId !== 'undefined') {
                     climateUrl = '/climate/' + self.siteId + '/';
