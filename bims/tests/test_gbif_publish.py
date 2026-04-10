@@ -15,6 +15,8 @@ from django_tenants.utils import schema_context, get_public_schema_name
 
 from django_celery_beat.models import PeriodicTask
 
+from td_biblio.models.bibliography import Author
+
 from bims.models.gbif_publish import (
     GbifPublish,
     GbifPublishConfig,
@@ -25,10 +27,12 @@ from bims.models.gbif_publish import (
     RoleType,
 )
 from bims.models.licence import Licence
+from bims.models.source_reference import SourceReferenceAuthor
 from bims.tasks.gbif_publish import run_scheduled_gbif_publish
 from bims.tests.model_factories import (
     SourceReferenceF,
     SourceReferenceBibliographyF,
+    SourceReferenceDatabaseF,
     SourceReferenceDocumentF,
     BiologicalCollectionRecordF,
     SurveyF,
@@ -568,7 +572,8 @@ class GbifPublishApiTests(FastTenantTestCase):
     # -- publish_gbif_data_with_config --
 
     def test_publish_gbif_data_with_config_raises_without_contacts(self):
-        source_reference = SourceReferenceF.create()
+        # Use a bibliography reference so the date/author gate is not triggered.
+        source_reference = SourceReferenceBibliographyF.create()
         self._make_record(source_reference)
 
         with self.assertRaisesRegex(ValueError, "No contacts configured"):
@@ -577,7 +582,8 @@ class GbifPublishApiTests(FastTenantTestCase):
             )
 
     def test_publish_gbif_data_with_config_updates_records(self):
-        source_reference = SourceReferenceF.create()
+        # Use a bibliography reference so the date/author gate is not triggered.
+        source_reference = SourceReferenceBibliographyF.create()
         record = self._make_record(source_reference)
 
         with mock.patch(
@@ -951,3 +957,216 @@ class GbifPublishContactTests(FastTenantTestCase):
 
         eml = self._read_eml(zip_path)
         self.assertIn(f"<pubDate>{today}</pubDate>", eml)
+
+
+# ---------------------------------------------------------------------------
+# Unpublished / Database GBIF eligibility gate tests
+# ---------------------------------------------------------------------------
+
+class GbifPublishEligibilityGateTests(FastTenantTestCase):
+    """publish_gbif_data_with_config must reject unpublished/database source
+    references that are missing a date or authors."""
+
+    def setUp(self):
+        self.config = _make_config()
+        self.contact = _make_contact(self.config)
+
+    def _make_record(self, source_reference):
+        survey = SurveyF.create(validated=True)
+        return BiologicalCollectionRecordF.create(
+            survey=survey,
+            source_reference=source_reference,
+            data_type="public",
+        )
+
+    def _add_author(self, source_reference):
+        user = UserF.create(first_name="Alice", last_name="Author")
+        author = Author.objects.create(
+            first_name="Alice", last_name="Author", user=user
+        )
+        SourceReferenceAuthor.objects.create(
+            source_reference=source_reference, author=author, order=0
+        )
+        return author
+
+    # -- unpublished (plain SourceReference) --
+
+    def test_unpublished_without_date_raises(self):
+        sr = SourceReferenceF.create()
+        self._add_author(sr)
+        self._make_record(sr)
+
+        with self.assertRaisesRegex(ValueError, "no date"):
+            publish_gbif_data_with_config(
+                self.config, source_reference=sr, contacts=[self.contact]
+            )
+
+    def test_unpublished_without_authors_raises(self):
+        import datetime
+        sr = SourceReferenceF.create(source_date=datetime.date(2022, 1, 1))
+        self._make_record(sr)
+
+        with self.assertRaisesRegex(ValueError, "no authors"):
+            publish_gbif_data_with_config(
+                self.config, source_reference=sr, contacts=[self.contact]
+            )
+
+    def test_unpublished_with_date_and_authors_passes_gate(self):
+        import datetime
+        sr = SourceReferenceF.create(source_date=datetime.date(2022, 6, 1))
+        self._add_author(sr)
+        self._make_record(sr)
+
+        with mock.patch(
+            "bims.utils.gbif_publish.build_dwca",
+            return_value=("/tmp/dwca.zip", "https://example.org/media/dwca.zip", [1]),
+        ), mock.patch(
+            "bims.utils.gbif_publish.register_dataset", return_value="ds-key"
+        ), mock.patch(
+            "bims.utils.gbif_publish.add_endpoint", return_value=None
+        ):
+            result = publish_gbif_data_with_config(
+                self.config, source_reference=sr, contacts=[self.contact]
+            )
+        self.assertEqual(result["dataset_key"], "ds-key")
+
+    # -- database (SourceReferenceDatabase) --
+
+    def test_database_without_date_raises(self):
+        sr = SourceReferenceDatabaseF.create()
+        self._add_author(sr)
+        self._make_record(sr)
+
+        with self.assertRaisesRegex(ValueError, "no date"):
+            publish_gbif_data_with_config(
+                self.config, source_reference=sr, contacts=[self.contact]
+            )
+
+    def test_database_without_authors_raises(self):
+        import datetime
+        sr = SourceReferenceDatabaseF.create(source_date=datetime.date(2021, 3, 15))
+        self._make_record(sr)
+
+        with self.assertRaisesRegex(ValueError, "no authors"):
+            publish_gbif_data_with_config(
+                self.config, source_reference=sr, contacts=[self.contact]
+            )
+
+    def test_database_with_date_and_authors_passes_gate(self):
+        import datetime
+        sr = SourceReferenceDatabaseF.create(source_date=datetime.date(2021, 3, 15))
+        self._add_author(sr)
+        self._make_record(sr)
+
+        with mock.patch(
+            "bims.utils.gbif_publish.build_dwca",
+            return_value=("/tmp/dwca.zip", "https://example.org/media/dwca.zip", [1]),
+        ), mock.patch(
+            "bims.utils.gbif_publish.register_dataset", return_value="ds-db-key"
+        ), mock.patch(
+            "bims.utils.gbif_publish.add_endpoint", return_value=None
+        ):
+            result = publish_gbif_data_with_config(
+                self.config, source_reference=sr, contacts=[self.contact]
+            )
+        self.assertEqual(result["dataset_key"], "ds-db-key")
+
+    # -- bibliography / document are exempt from the gate --
+
+    def test_bibliography_without_date_and_authors_is_not_blocked(self):
+        """SourceReferenceBibliography skips the date/author gate entirely."""
+        sr = SourceReferenceBibliographyF.create()
+
+        # Patch everything after the gate so no network call is made.
+        with mock.patch(
+            "bims.utils.gbif_publish.gather_data_for_source_reference",
+            return_value=[],
+        ):
+            with self.assertRaisesRegex(ValueError, "No records to publish"):
+                # Fails at "no records", NOT at the date/author gate.
+                publish_gbif_data_with_config(
+                    self.config, source_reference=sr, contacts=[self.contact]
+                )
+
+
+# ---------------------------------------------------------------------------
+# EML author resolution from SourceReferenceAuthor
+# ---------------------------------------------------------------------------
+
+class GbifPublishEmlAuthorResolutionTests(FastTenantTestCase):
+    """build_dwca must resolve SourceReferenceAuthor → User/Author for EML."""
+
+    def setUp(self):
+        self.config = _make_config(export_base_url="https://example.org")
+        self.contact = _make_contact(self.config)
+
+    def _make_record(self, source_reference):
+        survey = SurveyF.create(validated=True)
+        return BiologicalCollectionRecordF.create(
+            survey=survey,
+            source_reference=source_reference,
+            data_type="public",
+        )
+
+    def _read_eml(self, zip_path):
+        with zf.ZipFile(zip_path) as z:
+            return z.read("eml.xml").decode("utf-8")
+
+    def test_build_dwca_eml_includes_author_from_through_model_with_user(self):
+        """Author linked to a User: EML <creator> contains first/last name."""
+        import datetime
+        sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
+        user = UserF.create(first_name="Thabo", last_name="Nkosi", email="thabo@example.com")
+        author = Author.objects.create(first_name="Thabo", last_name="Nkosi", user=user)
+        SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=0)
+        record = self._make_record(sr)
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+
+        eml = self._read_eml(zip_path)
+        self.assertIn("<creator>", eml)
+        self.assertIn("<givenName>Thabo</givenName>", eml)
+        self.assertIn("<surName>Nkosi</surName>", eml)
+
+    def test_build_dwca_eml_includes_author_without_user(self):
+        """Author with no linked User: EML <creator> still contains first/last name."""
+        import datetime
+        sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
+        author = Author.objects.create(first_name="Maria", last_name="Santos")
+        SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=0)
+        record = self._make_record(sr)
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+
+        eml = self._read_eml(zip_path)
+        self.assertIn("<creator>", eml)
+        self.assertIn("<givenName>Maria</givenName>", eml)
+        self.assertIn("<surName>Santos</surName>", eml)
+
+    def test_build_dwca_eml_author_order_preserved(self):
+        """Multiple authors appear in EML in their defined order."""
+        import datetime
+        sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
+        for i, (first, last) in enumerate([("First", "Author"), ("Second", "Writer")]):
+            author = Author.objects.create(first_name=first, last_name=last)
+            SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=i)
+        record = self._make_record(sr)
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+
+        eml = self._read_eml(zip_path)
+        pos_first = eml.index("First")
+        pos_second = eml.index("Second")
+        self.assertLess(pos_first, pos_second, "First author should appear before Second in EML")

@@ -517,7 +517,11 @@ def build_dwca(
     abstract = (
         f"Occurrence dataset for {ref_title} uploaded to {_site_name()}."
     )
-    authors = list(source_reference.author_list or []) if source_reference else []
+    raw_sra = list(source_reference.author_list or []) if source_reference else []
+    authors = []
+    for sra in raw_sra:
+        author_obj = getattr(sra, 'author', sra)
+        authors.append(author_obj.user if getattr(author_obj, 'user_id', None) else author_obj)
 
     seen = set()
     licences = []
@@ -636,6 +640,24 @@ def publish_gbif_data_with_config(
     records = None
 
     if source_reference:
+        from bims.models.source_reference import (
+            SourceReferenceBibliography,
+            SourceReferenceDocument,
+        )
+        is_typed = isinstance(
+            source_reference, (SourceReferenceBibliography, SourceReferenceDocument)
+        )
+        if not is_typed:
+            if not source_reference.source_date:
+                raise ValueError(
+                    "Cannot publish to GBIF: this source reference has no date. "
+                    "Add a date before publishing."
+                )
+            if not source_reference.source_authors.exists():
+                raise ValueError(
+                    "Cannot publish to GBIF: this source reference has no authors. "
+                    "Add at least one author before publishing."
+                )
         records = list(gather_data_for_source_reference(source_reference))
 
     if not contacts:
