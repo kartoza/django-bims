@@ -22,7 +22,10 @@ from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
     SourceReferenceDatabase,
-    SourceReferenceDocument, DatabaseRecord, PUBLISHED_REPORT
+    SourceReferenceDocument,
+    SourceReferenceAuthor,
+    DatabaseRecord,
+    PUBLISHED_REPORT,
 )
 from bims.serializers.source_reference_serializer import (
     SourceReferenceSerializer
@@ -527,6 +530,17 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         self.object.save()
         self.object.source.save()
 
+    def set_ordered_authors(self, author_objects):
+        SourceReferenceAuthor.objects.filter(
+            source_reference=self.object
+        ).delete()
+        for order, author in enumerate(author_objects):
+            SourceReferenceAuthor.objects.create(
+                source_reference=self.object,
+                author=author,
+                order=order,
+            )
+
     def update_database_reference(self, post_dict):
         title = post_dict.get('title', '')
         source_name = post_dict.get('source_name', '')
@@ -535,7 +549,7 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         self.object.source.save()
         author_objects = self._collect_authors_from_post(post_dict)
         if author_objects is not None:
-            self.object.source_authors.set(author_objects)
+            self.set_ordered_authors(author_objects)
         source_date = post_dict.get('source_date', '').strip() or None
         if source_date is not None:
             self.object.source_date = source_date or None
@@ -546,7 +560,7 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         self.object.note = title
         author_objects = self._collect_authors_from_post(post_dict)
         if author_objects is not None:
-            self.object.source_authors.set(author_objects)
+            self.set_ordered_authors(author_objects)
         source_date = post_dict.get('source_date', '').strip() or None
         if source_date is not None:
             self.object.source_date = source_date or None
