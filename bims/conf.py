@@ -55,3 +55,30 @@ TRACK_QUERY_STRING = getattr(
         django_settings,
         'TRACK_QUERY_STRING',
         False)
+
+# ---------------------------------------------------------------------------
+# FIPS site-code generator – spatial layer configuration
+# These mirror the Django settings of the same name (see project.py) so that
+# application code can import them from bims.conf rather than reaching into
+# django.conf.settings directly.
+# ---------------------------------------------------------------------------
+
+FIPS_GBIF_CONTINENT_LAYER = getattr(
+    django_settings, 'FIPS_GBIF_CONTINENT_LAYER', 'continent')
+FIPS_GBIF_CONTINENT_FIELD = getattr(
+    django_settings, 'FIPS_GBIF_CONTINENT_FIELD', 'cont_code')
+
+FIPS_BASIN_LAYER = getattr(
+    django_settings, 'FIPS_BASIN_LAYER', 'basin')
+FIPS_BASIN_FIELD = getattr(
+    django_settings, 'FIPS_BASIN_FIELD', 'WMOBB_NAME')
+
+FIPS_SUBBASIN_LAYER = getattr(
+    django_settings, 'FIPS_SUBBASIN_LAYER', '')
+FIPS_SUBBASIN_FIELD = getattr(
+    django_settings, 'FIPS_SUBBASIN_FIELD', 'name')
+
+FIPS_HYDROBASIN_LAYER = getattr(
+    django_settings, 'FIPS_HYDROBASIN_LAYER', '')
+FIPS_HYDROBASIN_FIELD = getattr(
+    django_settings, 'FIPS_HYDROBASIN_FIELD', 'HYBAS_ID')

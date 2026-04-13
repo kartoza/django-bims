@@ -375,36 +375,61 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
 
 def fips_generator(lat: float, lon: float) -> str:
     """
-    Generate site code prefix for FIPS:
-      [2-char GBIF continent code]-[basin code if available]-
+    Generate site code prefix for FIPS using up to four spatial layers:
 
-    Continent is read from a layer whose name contains "continent",
-    using field ``cont_code`` (e.g. "EU", "AF", "AS").
-    Basin is read from a layer whose name contains "basin",
-    using field ``name``; first 6 alphanumeric characters are used.
-    If neither is found the respective part is omitted.
+      [2-char GBIF continent code]
+      [up to 6-char basin short name]
+      [up to 4-char sub-basin short name]
+      [HydroBASIN ID]
     """
+    from bims import conf as bims_conf
+
     cont_code = get_feature_data(
         lon=lon,
         lat=lat,
-        context_key='cont_code',
-        layer_name='continent',
+        context_key=bims_conf.FIPS_GBIF_CONTINENT_FIELD,
+        layer_name=bims_conf.FIPS_GBIF_CONTINENT_LAYER,
         tolerance=0.01,
     )
     cont_code = re.sub('[^A-Za-z]', '', cont_code or '')[:2].upper() or 'XX'
 
-    basin_name = get_feature_data(
-        lon=lon,
-        lat=lat,
-        context_key='WMOBB_NAME',
-        layer_name='basin',
-        tolerance=0.01,
-    )
-    if basin_name:
-        basin_code = re.sub('[^A-Za-z0-9]', '', basin_name)[:6].upper()
-        return f"{cont_code}{basin_code}"
+    basin_code = ''
+    if bims_conf.FIPS_BASIN_LAYER:
+        basin_name = get_feature_data(
+            lon=lon,
+            lat=lat,
+            context_key=bims_conf.FIPS_BASIN_FIELD,
+            layer_name=bims_conf.FIPS_BASIN_LAYER,
+            tolerance=0.01,
+        )
+        if basin_name:
+            basin_code = re.sub('[^A-Za-z0-9]', '', basin_name)[:3].upper()
 
-    return f"{cont_code}"
+    subbasin_code = ''
+    if bims_conf.FIPS_SUBBASIN_LAYER:
+        subbasin_name = get_feature_data(
+            lon=lon,
+            lat=lat,
+            context_key=bims_conf.FIPS_SUBBASIN_FIELD,
+            layer_name=bims_conf.FIPS_SUBBASIN_LAYER,
+            tolerance=0.01,
+        )
+        if subbasin_name:
+            subbasin_code = re.sub('[^A-Za-z0-9]', '', subbasin_name)[:3].upper()
+
+    hydrobasin_code = ''
+    if bims_conf.FIPS_HYDROBASIN_LAYER:
+        hydrobasin_id = get_feature_data(
+            lon=lon,
+            lat=lat,
+            context_key=bims_conf.FIPS_HYDROBASIN_FIELD,
+            layer_name=bims_conf.FIPS_HYDROBASIN_LAYER,
+            tolerance=0.01,
+        )
+        if hydrobasin_id:
+            hydrobasin_code = re.sub('[^A-Za-z0-9]', '', str(hydrobasin_id)).upper()
+
+    return cont_code + basin_code + subbasin_code + hydrobasin_code
 
 
 def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
