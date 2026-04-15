@@ -43,7 +43,7 @@
     "express": "^4.22.1",
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.2",
-    "follow-redirects": "^1.15.6",
+    "follow-redirects": "^1.16.0",
     "gl-matrix": "^2.3.2",
     "history": "^4.7.2",
     "immutability-helper": "^2.0.0",
