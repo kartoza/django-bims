@@ -41,8 +41,6 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             geometry_point=Point(25.5, -28.5, srid=4326),
             name="GBIF Test Site",
             location_type=self.location_type,
-            coordinate_precision=Decimal("0.00001"),
-            coordinate_uncertainty_in_meters=Decimal("30"),
             harvested_from_gbif=True
         )
 
@@ -50,7 +48,9 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
         record = BiologicalCollectionRecordF.create(
             site=site,
             taxonomy=self.taxonomy,
-            validated=True
+            validated=True,
+            coordinate_precision=Decimal("0.00001"),
+            coordinate_uncertainty_in_meters=Decimal("30"),
         )
 
         # Serialize the taxonomy with collection records context
@@ -71,8 +71,6 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             geometry_point=Point(25.5, -28.5, srid=4326),
             name="GBIF Site 1",
             location_type=self.location_type,
-            coordinate_precision=Decimal("0.00001"),  # Highest precision
-            coordinate_uncertainty_in_meters=Decimal("50"),
             harvested_from_gbif=True
         )
 
@@ -80,8 +78,6 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             geometry_point=Point(26.5, -29.5, srid=4326),
             name="GBIF Site 2",
             location_type=self.location_type,
-            coordinate_precision=Decimal("0.01667"),  # Lower precision
-            coordinate_uncertainty_in_meters=Decimal("30"),  # Lowest uncertainty
             harvested_from_gbif=True
         )
 
@@ -89,19 +85,33 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             geometry_point=Point(27.5, -30.5, srid=4326),
             name="GBIF Site 3",
             location_type=self.location_type,
-            coordinate_precision=Decimal("0.000278"),
-            coordinate_uncertainty_in_meters=Decimal("100"),
             harvested_from_gbif=True
         )
 
         # Create biological records for all sites
         records = []
-        for site in [site1, site2, site3]:
-            records.append(BiologicalCollectionRecordF.create(
-                site=site,
-                taxonomy=self.taxonomy,
-                validated=True
-            ))
+        records.append(BiologicalCollectionRecordF.create(
+            site=site1,
+            taxonomy=self.taxonomy,
+            validated=True,
+            coordinate_precision=Decimal("0.01667"),  # Lower precision
+            coordinate_uncertainty_in_meters=Decimal("30"),  # Lowest uncertainty
+        ))
+        records.append(BiologicalCollectionRecordF.create(
+            site=site2,
+            taxonomy=self.taxonomy,
+            validated=True,
+            coordinate_precision=Decimal("0.00001"),  # Highest precision
+            coordinate_uncertainty_in_meters=Decimal("50"),
+        ))
+        records.append(BiologicalCollectionRecordF.create(
+            site=site3,
+            taxonomy=self.taxonomy,
+            validated=True,
+            coordinate_precision=Decimal("0.000278"),
+            coordinate_uncertainty_in_meters=Decimal("100"),
+        ))
+
 
         # Serialize the taxonomy
         serializer = ChecklistSerializer(
@@ -123,8 +133,6 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             geometry_point=Point(25.5, -28.5, srid=4326),
             name="GBIF Site",
             location_type=self.location_type,
-            coordinate_precision=Decimal("0.00001"),
-            coordinate_uncertainty_in_meters=Decimal("30"),
             harvested_from_gbif=True
         )
 
@@ -133,8 +141,6 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             geometry_point=Point(26.5, -29.5, srid=4326),
             name="Manual Site",
             location_type=self.location_type,
-            coordinate_precision=Decimal("0.000001"),  # Better precision
-            coordinate_uncertainty_in_meters=Decimal("10"),  # Lower uncertainty
             harvested_from_gbif=False  # Not from GBIF
         )
 
@@ -143,12 +149,16 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
             BiologicalCollectionRecordF.create(
                 site=gbif_site,
                 taxonomy=self.taxonomy,
-                validated=True
+                validated=True,
+                coordinate_precision=Decimal("0.000001"),  # Better precision
+                coordinate_uncertainty_in_meters=Decimal("10"),  # Lower uncertaint
             ),
             BiologicalCollectionRecordF.create(
                 site=manual_site,
                 taxonomy=self.taxonomy,
-                validated=True
+                validated=True,
+                coordinate_precision=Decimal("0.00001"),
+                coordinate_uncertainty_in_meters=Decimal("30"),
             )
         ]
 
@@ -162,8 +172,8 @@ class TestChecklistGBIFCoordinates(FastTenantTestCase):
         data = serializer.data
 
         # Should only use GBIF site values
-        self.assertEqual(data['gbif_coordinate_uncertainty_m'], "30.00")
-        self.assertEqual(data['gbif_coordinate_precision'], "0.000010")
+        self.assertEqual(data['gbif_coordinate_uncertainty_m'], "10.00")
+        self.assertEqual(data['gbif_coordinate_precision'], "0.000001")
 
     def test_checklist_gbif_fields_with_no_gbif_records(self, mock_update_location_context):
         """Test that empty strings are returned when no GBIF records exist in checklist."""

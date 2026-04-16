@@ -418,71 +418,84 @@ def process_gbif_row(
         if not dataset_qs.exists():
             create_dataset_from_gbif(dataset_key)
 
-    # Build or find a location site
-    site_point = Point(longitude, latitude, srid=4326)
-    if coord_uncertainty and coord_uncertainty > 0:
-        location_sites = LocationSite.objects.filter(
-            geometry_point__distance_lte=(site_point, D(m=coord_uncertainty))
-        )
-    else:
-        location_sites = LocationSite.objects.filter(geometry_point__equals=site_point)
-
-    if location_sites.exists():
-        location_site = location_sites[0]
-        update_fields = []
-
-        if coord_precision is not None and location_site.coordinate_precision is None:
-            location_site.coordinate_precision = coord_precision
-            update_fields.append('coordinate_precision')
-
-        if coord_uncertainty is not None and location_site.coordinate_uncertainty_in_meters is None:
-            location_site.coordinate_uncertainty_in_meters = coord_uncertainty
-            update_fields.append('coordinate_uncertainty_in_meters')
-
-        if not location_site.harvested_from_gbif:
-            location_site.harvested_from_gbif = True
-            update_fields.append('harvested_from_gbif')
-
-        if update_fields:
-            location_site.save(update_fields=update_fields)
-    else:
-        # Create new site
-        locality = row.get(LOCALITY_KEY) or \
-                   row.get(VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY)
-
-        location_type, _ = LocationType.objects.get_or_create(
-            name='PointObservation',
-            allowed_geometry='POINT'
-        )
-        location_site = LocationSite.objects.create(
-            geometry_point=site_point,
-            name=locality[:200],
-            location_type=location_type,
-            site_description=locality[:300],
-            coordinate_precision=coord_precision,
-            coordinate_uncertainty_in_meters=coord_uncertainty,
-            harvested_from_gbif=True
-        )
-
-        if not location_site.site_code:
-            site_code, _ = generate_site_code(
-                location_site,
-                lat=location_site.latitude,
-                lon=location_site.longitude
-            )
-            location_site.site_code = site_code
-            location_site.save()
-
     # Additional data
     additional_data = {
         'fetch_from_gbif': True,
         'date_fetched': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
-    # Check if a record with this upstream_id exists
+    site_point = Point(longitude, latitude, srid=4326)
+
+    # Resolve location site and handle existing records
     try:
         collection_record = BiologicalCollectionRecord.objects.get(upstream_id=upstream_id)
-        # Update fields
+
+        old_site = collection_record.site
+
+        if old_site and old_site.geometry_point and old_site.geometry_point.equals(site_point):
+            location_site = old_site
+            site_update_fields = []
+            if coord_precision is not None and location_site.coordinate_precision is None:
+                location_site.coordinate_precision = coord_precision
+                site_update_fields.append('coordinate_precision')
+            if coord_uncertainty is not None and location_site.coordinate_uncertainty_in_meters is None:
+                location_site.coordinate_uncertainty_in_meters = coord_uncertainty
+                site_update_fields.append('coordinate_uncertainty_in_meters')
+            if not location_site.harvested_from_gbif:
+                location_site.harvested_from_gbif = True
+                site_update_fields.append('harvested_from_gbif')
+            if site_update_fields:
+                location_site.save(update_fields=site_update_fields)
+        else:
+            other_records_count = BiologicalCollectionRecord.objects.filter(
+                site=old_site
+            ).exclude(upstream_id=upstream_id).count() if old_site else 1
+
+            if old_site and other_records_count == 0:
+                location_site = old_site
+                location_site.geometry_point = site_point
+                location_site.latitude = latitude
+                location_site.longitude = longitude
+                location_site.harvested_from_gbif = True
+                if coord_precision is not None:
+                    location_site.coordinate_precision = coord_precision
+                if coord_uncertainty is not None:
+                    location_site.coordinate_uncertainty_in_meters = coord_uncertainty
+                location_site.save()
+                log(
+                    f'--- Updated site coordinates for upstream ID: {upstream_id} '
+                    f'(site id={location_site.id})\n'
+                )
+            else:
+                locality = row.get(LOCALITY_KEY) or \
+                           row.get(VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY)
+                location_type, _ = LocationType.objects.get_or_create(
+                    name='PointObservation',
+                    allowed_geometry='POINT'
+                )
+                location_site = LocationSite.objects.create(
+                    geometry_point=site_point,
+                    name=locality[:200],
+                    location_type=location_type,
+                    site_description=locality[:300],
+                    coordinate_precision=coord_precision,
+                    coordinate_uncertainty_in_meters=coord_uncertainty,
+                    harvested_from_gbif=True
+                )
+                if not location_site.site_code:
+                    site_code, _ = generate_site_code(
+                        location_site,
+                        lat=location_site.latitude,
+                        lon=location_site.longitude
+                    )
+                    location_site.site_code = site_code
+                    location_site.save()
+                log(
+                    f'--- Created new site for updated coordinates, upstream ID: {upstream_id} '
+                    f'(new site id={location_site.id})\n'
+                )
+
+        # Update the existing collection record
         collection_record.site = location_site
         collection_record.taxonomy = taxonomy
         collection_record.source_reference = source_reference
@@ -514,7 +527,6 @@ def process_gbif_row(
             collection_record.category = origin
 
         assign_survey_to_record(collection_record, owner)
-
         collection_record.save()
 
         log(
@@ -522,7 +534,55 @@ def process_gbif_row(
         )
 
         return None, True
+
     except BiologicalCollectionRecord.DoesNotExist:
+        # --- Create path: find or create location site by coordinates ---
+        if coord_uncertainty and coord_uncertainty > 0:
+            location_sites = LocationSite.objects.filter(
+                geometry_point__distance_lte=(site_point, D(m=coord_uncertainty))
+            )
+        else:
+            location_sites = LocationSite.objects.filter(geometry_point__equals=site_point)
+
+        if location_sites.exists():
+            location_site = location_sites[0]
+            site_update_fields = []
+            if coord_precision is not None and location_site.coordinate_precision is None:
+                location_site.coordinate_precision = coord_precision
+                site_update_fields.append('coordinate_precision')
+            if coord_uncertainty is not None and location_site.coordinate_uncertainty_in_meters is None:
+                location_site.coordinate_uncertainty_in_meters = coord_uncertainty
+                site_update_fields.append('coordinate_uncertainty_in_meters')
+            if not location_site.harvested_from_gbif:
+                location_site.harvested_from_gbif = True
+                site_update_fields.append('harvested_from_gbif')
+            if site_update_fields:
+                location_site.save(update_fields=site_update_fields)
+        else:
+            locality = row.get(LOCALITY_KEY) or \
+                       row.get(VERBATIM_LOCALITY_KEY, DEFAULT_LOCALITY)
+            location_type, _ = LocationType.objects.get_or_create(
+                name='PointObservation',
+                allowed_geometry='POINT'
+            )
+            location_site = LocationSite.objects.create(
+                geometry_point=site_point,
+                name=locality[:200],
+                location_type=location_type,
+                site_description=locality[:300],
+                coordinate_precision=coord_precision,
+                coordinate_uncertainty_in_meters=coord_uncertainty,
+                harvested_from_gbif=True
+            )
+            if not location_site.site_code:
+                site_code, _ = generate_site_code(
+                    location_site,
+                    lat=location_site.latitude,
+                    lon=location_site.longitude
+                )
+                location_site.site_code = site_code
+                location_site.save()
+
         # Prepare a new record
         new_record = BiologicalCollectionRecord(
             upstream_id=upstream_id,
@@ -554,7 +614,6 @@ def process_gbif_row(
                     break
             new_record.category = origin
 
-        # Assign a Survey to the new record (before bulk_create)
         assign_survey_to_record(new_record, owner)
 
         log(
@@ -562,6 +621,7 @@ def process_gbif_row(
         )
 
         return new_record, True
+
     except BiologicalCollectionRecord.MultipleObjectsReturned:
         # If duplicates exist for the same upstream_id, keep the last and delete the others
         duplicates = BiologicalCollectionRecord.objects.filter(upstream_id=upstream_id)

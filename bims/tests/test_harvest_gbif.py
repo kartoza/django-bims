@@ -6,10 +6,11 @@ from pathlib import Path
 from unittest import mock
 
 import requests
+from django.contrib.gis.geos import Point
 from django_tenants.test.cases import FastTenantTestCase
 from urllib3.exceptions import ProtocolError
 
-from bims.models import Survey, BiologicalCollectionRecord
+from bims.models import Survey, BiologicalCollectionRecord, LocationSite, LocationType
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF,
@@ -161,6 +162,28 @@ def _create_dummy_gbif_zip() -> str:
     with NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
         with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zf:
             content = "\t".join(header) + "\n" + "\n".join("\t".join(r) for r in rows)
+            zf.writestr("occurrence.txt", content)
+        return tmp.name
+
+
+def _create_single_row_zip(gbif_id: str, lon: str, lat: str, taxon_key: str) -> str:
+    """Create a Darwin-Core zip with a single occurrence row."""
+    header = [
+        "gbifID", "decimalLongitude", "decimalLatitude",
+        "coordinateUncertaintyInMeters", "eventDate", "recordedBy",
+        "institutionCode", "references", "verbatimLocality", "locality",
+        "species", "datasetKey", "modified", "basisOfRecord", "projectId",
+        "taxonKey",
+    ]
+    row = [
+        gbif_id, lon, lat, "", "2021-06-15", "Collector X", "INST",
+        f"http://example.org/{gbif_id}", "Test Site", "Test Site",
+        "Test species", "ead9ec8e-b346-4f4f-bad4-7cbaf0e0066f",
+        "2021-06-16", "OBSERVATION", "", taxon_key,
+    ]
+    with NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zf:
+            content = "\t".join(header) + "\n" + "\t".join(row)
             zf.writestr("occurrence.txt", content)
         return tmp.name
 
@@ -330,3 +353,129 @@ class TestHarvestGbif(FastTenantTestCase):
 
         status = import_gbif_occurrences([self.taxonomy.id], session_id=1)
         self.assertEqual(status, "Download request failed")
+
+    # ------------------------------------------------------------------
+    # Coordinate update – site used only by the re-harvested record
+    # ------------------------------------------------------------------
+    @mock.patch("bims.scripts.import_gbif_occurrences.submit_download", _mock_submit_download)
+    @mock.patch("bims.scripts.import_gbif_occurrences.get_ready_download_url", _mock_get_ready_download_url)
+    @mock.patch("bims.scripts.import_gbif_occurrences.is_canceled", lambda *_: False)
+    @mock.patch("bims.scripts.import_gbif_occurrences.create_dataset_from_gbif", _noop)
+    @mock.patch("bims.models.HarvestSession.objects.get", _mock_harvest_session_get)
+    @mock.patch("bims.scripts.import_gbif_occurrences.preferences")
+    def test_coordinate_update_sole_site(self, mock_preferences, mock_update_location_context):
+        """Re-harvest with corrected coords updates the existing site in place
+        when no other records share it."""
+        mock_preferences.SiteSetting.base_country_code = "ZA"
+        mock_preferences.SiteSetting.site_boundary = None
+
+        old_lon, old_lat = 19.815377, -34.580192
+        new_lon, new_lat = 18.487083, -33.846342
+
+        location_type, _ = LocationType.objects.get_or_create(
+            name="PointObservation", allowed_geometry="POINT"
+        )
+        old_site = LocationSite.objects.create(
+            geometry_point=Point(old_lon, old_lat, srid=4326),
+            name="Old Site",
+            location_type=location_type,
+            harvested_from_gbif=True,
+        )
+        existing_record = BiologicalCollectionRecordF.create(
+            upstream_id="9999001",
+            site=old_site,
+            taxonomy=self.taxonomy,
+        )
+        old_site_id = old_site.id
+
+        zip_path = _create_single_row_zip(
+            gbif_id="9999001",
+            lon=str(new_lon),
+            lat=str(new_lat),
+            taxon_key=str(self.taxonomy.gbif_key),
+        )
+        with mock.patch(
+            "bims.scripts.import_gbif_occurrences.download_archive",
+            return_value=zip_path,
+        ):
+            import_gbif_occurrences([self.taxonomy.id], session_id=1)
+
+        existing_record.refresh_from_db()
+        updated_site = existing_record.site
+
+        # Same site object must have been updated in place
+        self.assertEqual(updated_site.id, old_site_id)
+        self.assertAlmostEqual(updated_site.geometry_point.x, new_lon, places=5)
+        self.assertAlmostEqual(updated_site.geometry_point.y, new_lat, places=5)
+        self.assertAlmostEqual(updated_site.longitude, new_lon, places=5)
+        self.assertAlmostEqual(updated_site.latitude, new_lat, places=5)
+
+    # ------------------------------------------------------------------
+    # Coordinate update – site shared by another record → new site created
+    # ------------------------------------------------------------------
+    @mock.patch("bims.scripts.import_gbif_occurrences.submit_download", _mock_submit_download)
+    @mock.patch("bims.scripts.import_gbif_occurrences.get_ready_download_url", _mock_get_ready_download_url)
+    @mock.patch("bims.scripts.import_gbif_occurrences.is_canceled", lambda *_: False)
+    @mock.patch("bims.scripts.import_gbif_occurrences.create_dataset_from_gbif", _noop)
+    @mock.patch("bims.models.HarvestSession.objects.get", _mock_harvest_session_get)
+    @mock.patch("bims.scripts.import_gbif_occurrences.preferences")
+    def test_coordinate_update_shared_site(self, mock_preferences, mock_update_location_context):
+        """Re-harvest with corrected coords creates a new site when the old
+        site is referenced by another record, and reassigns the occurrence."""
+        mock_preferences.SiteSetting.base_country_code = "ZA"
+        mock_preferences.SiteSetting.site_boundary = None
+
+        old_lon, old_lat = 20.015752, 34.8084
+        new_lon, new_lat = 19.956449, -34.8095
+
+        location_type, _ = LocationType.objects.get_or_create(
+            name="PointObservation", allowed_geometry="POINT"
+        )
+        shared_site = LocationSite.objects.create(
+            geometry_point=Point(old_lon, old_lat, srid=4326),
+            name="Shared Site",
+            location_type=location_type,
+            harvested_from_gbif=True,
+        )
+        # The record we are about to re-harvest
+        existing_record = BiologicalCollectionRecordF.create(
+            upstream_id="9999002",
+            site=shared_site,
+            taxonomy=self.taxonomy,
+        )
+        # Another record that shares the same site
+        other_record = BiologicalCollectionRecordF.create(
+            site=shared_site,
+            taxonomy=self.taxonomy,
+        )
+        shared_site_id = shared_site.id
+
+        zip_path = _create_single_row_zip(
+            gbif_id="9999002",
+            lon=str(new_lon),
+            lat=str(new_lat),
+            taxon_key=str(self.taxonomy.gbif_key),
+        )
+        with mock.patch(
+            "bims.scripts.import_gbif_occurrences.download_archive",
+            return_value=zip_path,
+        ):
+            import_gbif_occurrences([self.taxonomy.id], session_id=1)
+
+        existing_record.refresh_from_db()
+        other_record.refresh_from_db()
+        new_site = existing_record.site
+
+        # A brand-new site must have been created
+        self.assertNotEqual(new_site.id, shared_site_id)
+        self.assertAlmostEqual(new_site.geometry_point.x, new_lon, places=5)
+        self.assertAlmostEqual(new_site.geometry_point.y, new_lat, places=5)
+        self.assertTrue(new_site.site_code)
+
+        # The other record must still point to the original shared site
+        self.assertEqual(other_record.site_id, shared_site_id)
+
+        # The original shared site must be unchanged
+        shared_site.refresh_from_db()
+        self.assertAlmostEqual(shared_site.geometry_point.x, old_lon, places=5)
+        self.assertAlmostEqual(shared_site.geometry_point.y, old_lat, places=5)
