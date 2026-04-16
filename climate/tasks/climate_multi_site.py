@@ -9,7 +9,7 @@ def climate_multi_site_summary(parameters, search_process_id):
     from django.db.models import Avg, Min, Max, Sum, Count
 
     from bims.api_views.search_module import ClimateModule
-    from bims.models import BaseMapLayer
+    from bims.models import BaseMapLayer, LocationContext
     from bims.models.search_process import (
         SearchProcess,
         SEARCH_PROCESSING,
@@ -17,6 +17,8 @@ def climate_multi_site_summary(parameters, search_process_id):
         SEARCH_FAILED,
     )
     from bims.utils.celery import memcache_lock
+    from bims.utils.site_code import SANPARK_PARK_KEY
+    from preferences import preferences
 
     try:
         search_process = SearchProcess.objects.get(id=search_process_id)
@@ -42,9 +44,12 @@ def climate_multi_site_summary(parameters, search_process_id):
             climate_qs = search.module
             location_sites = search.sites.order_by('site_code')
 
+            is_sanparks = preferences.SiteSetting.site_code_generator == 'sanparks'
+
             summary = {
                 'site_id': [],
                 'site_code': [],
+                'park_name': [] if is_sanparks else None,
                 'avg_temp': [],
                 'min_temp': [],
                 'max_temp': [],
@@ -75,6 +80,16 @@ def climate_multi_site_summary(parameters, search_process_id):
                 summary['site_code'].append(
                     site.site_code if site.site_code else site.name
                 )
+                if is_sanparks:
+                    park_context = LocationContext.objects.filter(
+                        site=site,
+                        group__name__iexact=SANPARK_PARK_KEY
+                    ).first()
+                    park_name = (
+                        park_context.value
+                        if park_context and park_context.value else ''
+                    )
+                    summary['park_name'].append(park_name)
                 summary['avg_temp'].append(
                     round(stats['avg_temp'], 1) if stats['avg_temp'] is not None else None
                 )

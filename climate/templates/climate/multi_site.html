@@ -17,6 +17,7 @@
             elements: { selectors: ['.map-container'] },
             restartOnRequestAfter: false
         }
+        const BASEMAP_CONFIG = {{ basemap|safe }};
     </script>
 {% endblock %}
 
@@ -82,6 +83,7 @@
                         <table class="table table-condensed table-striped climate-summary-table">
                             <thead>
                             <tr>
+                                {% if is_sanparks %}<th>Park Name</th>{% endif %}
                                 <th>Site Code</th>
                                 <th>Avg Temperature (°C)</th>
                                 <th>Min Temperature (°C)</th>

@@ -747,6 +747,29 @@ class ClimateDashboardMultipleSitesView(TemplateView):
     """Multiple sites climate dashboard view."""
     template_name = 'climate/multi_site.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from preferences import preferences
+        from bims.models import BaseMapLayer
+        context['is_sanparks'] = (
+            preferences.SiteSetting.site_code_generator == 'sanparks'
+        )
+        terrain_layer = BaseMapLayer.objects.filter(
+            source_type='map_tiler',
+            title__icontains='terrain'
+        ).first()
+        if terrain_layer:
+            context['basemap'] = json.dumps({
+                'source_type': 'map_tiler',
+                'url': terrain_layer.url,
+                'key': terrain_layer.key,
+                'title': terrain_layer.title,
+            })
+        else:
+            context['basemap'] = json.dumps({'source_type': 'osm'})
+        return context
+
+
 
 class ClimateDashboardMultipleSitesApiView(APIView):
     """API endpoint for multi-site climate summary data."""

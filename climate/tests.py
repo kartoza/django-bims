@@ -11,7 +11,11 @@ from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 
 from bims.models.upload_session import UploadSession
-from bims.tests.model_factories import LocationSiteF
+from bims.tests.model_factories import (
+    LocationSiteF,
+    LocationContextF,
+    LocationContextGroupF,
+)
 from climate.models import Climate
 from climate.views import (
     _build_daily_records,
@@ -663,3 +667,95 @@ class ClimateDashboardMultipleSitesApiViewTests(FastTenantTestCase):
         data = self._get_json()
         codes = data['climate_summary_data']['site_code']
         self.assertEqual(codes, sorted(codes))
+
+
+class ClimateDashboardMultipleSitesSanparksTests(FastTenantTestCase):
+    """Tests for park name in multi-site summary when site_code_generator is sanparks."""
+
+    def setUp(self):
+        from bims.models.site_setting import SiteSetting
+        self.client = TenantClient(self.tenant)
+        self.api_url = '/climate/dashboard-multi-sites-api/'
+        self.template_url = '/climate/dashboard-multi-sites/'
+
+        self._site_setting = SiteSetting.singleton.get()
+        self._original_generator = self._site_setting.site_code_generator
+        self._site_setting.site_code_generator = 'sanparks'
+        self._site_setting.save()
+
+        self.park_group = LocationContextGroupF.create(
+            name='sanparks and mpas',
+        )
+
+        self.site = LocationSiteF.create(site_code='KNP00001')
+        self.site_no_park = LocationSiteF.create(site_code='KNP00002')
+
+        LocationContextF.create(
+            site=self.site,
+            group=self.park_group,
+            value='Kruger National Park',
+        )
+
+        for site in [self.site, self.site_no_park]:
+            Climate.objects.create(
+                location_site=site,
+                station_name='Station',
+                date=date(2024, 1, 10),
+                year=2024,
+                month=1,
+                avg_temperature=25.0,
+                min_temperature=15.0,
+                max_temperature=35.0,
+                avg_humidity=50.0,
+                avg_windspeed=5.0,
+                daily_rainfall=10.0,
+            )
+
+    def tearDown(self):
+        self._site_setting.site_code_generator = self._original_generator
+        self._site_setting.save()
+
+    def _get_json(self):
+        response = self.client.get(self.api_url)
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_park_name_field_present_in_summary(self):
+        data = self._get_json()
+        self.assertIn('park_name', data['climate_summary_data'])
+        self.assertIsNotNone(data['climate_summary_data']['park_name'])
+
+    def test_park_name_populated_from_location_context(self):
+        data = self._get_json()
+        summary = data['climate_summary_data']
+        idx = summary['site_id'].index(self.site.id)
+        self.assertEqual(summary['park_name'][idx], 'Kruger National Park')
+
+    def test_site_code_unchanged(self):
+        """site_code should remain the raw site code, not prefixed with park name."""
+        data = self._get_json()
+        summary = data['climate_summary_data']
+        idx = summary['site_id'].index(self.site.id)
+        self.assertEqual(summary['site_code'][idx], 'KNP00001')
+
+    def test_park_name_empty_when_no_context(self):
+        """Sites without a park context entry get an empty park name."""
+        data = self._get_json()
+        summary = data['climate_summary_data']
+        idx = summary['site_id'].index(self.site_no_park.id)
+        self.assertEqual(summary['park_name'][idx], '')
+
+    def test_park_name_field_absent_for_non_sanparks(self):
+        self._site_setting.site_code_generator = 'bims'
+        self._site_setting.save()
+        data = self._get_json()
+        self.assertIsNone(data['climate_summary_data']['park_name'])
+
+    def test_template_view_is_sanparks_context(self):
+        response = self.client.get(self.template_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['is_sanparks'])
+
+    def test_template_shows_park_name_column(self):
+        response = self.client.get(self.template_url)
+        self.assertContains(response, 'Park Name')
