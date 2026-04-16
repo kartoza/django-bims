@@ -598,6 +598,13 @@ class ChecklistSerializer(ChecklistBaseSerializer):
 
         return ', '.join(sorted(set(sources)))
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        invasion_label = preferences.SiteSetting.invasion_label or 'Invasion'
+        if invasion_label != 'invasion' and 'invasion' in ret:
+            ret[invasion_label] = ret.pop('invasion')
+        return ret
+
     class Meta:
         model = Taxonomy
         fields = [
