@@ -167,9 +167,15 @@ def generate_csv_checklist(download_request, module_name, collection_records, ba
         f'{site_domain_name}_checklist_{module_name}_{download_request.id}.csv')
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
-    fieldnames = [key for key in get_serializer_keys(ChecklistSerializer) if key != 'id']
+    invasion_label = preferences.SiteSetting.invasion_label or 'Invasion'
+    fieldnames = [
+        invasion_label if key == 'invasion' else key
+        for key in get_serializer_keys(ChecklistSerializer)
+        if key != 'id'
+    ]
 
     header_title_dict = dict(CSV_HEADER_TITLE)
+    header_title_dict[invasion_label] = invasion_label
     park_field_map = {}
 
     if preferences.SiteSetting.project_name == 'sanparks':
