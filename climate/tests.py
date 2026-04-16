@@ -673,14 +673,15 @@ class ClimateDashboardMultipleSitesSanparksTests(FastTenantTestCase):
     """Tests for park name in multi-site summary when site_code_generator is sanparks."""
 
     def setUp(self):
-        from preferences import preferences
+        from bims.models.site_setting import SiteSetting
         self.client = TenantClient(self.tenant)
         self.api_url = '/climate/dashboard-multi-sites-api/'
         self.template_url = '/climate/dashboard-multi-sites/'
 
-        self._original_generator = preferences.SiteSetting.site_code_generator
-        preferences.SiteSetting.site_code_generator = 'sanparks'
-        preferences.SiteSetting.save()
+        self._site_setting = SiteSetting.singleton.get()
+        self._original_generator = self._site_setting.site_code_generator
+        self._site_setting.site_code_generator = 'sanparks'
+        self._site_setting.save()
 
         self.park_group = LocationContextGroupF.create(
             name='sanparks and mpas',
@@ -711,9 +712,8 @@ class ClimateDashboardMultipleSitesSanparksTests(FastTenantTestCase):
             )
 
     def tearDown(self):
-        from preferences import preferences
-        preferences.SiteSetting.site_code_generator = self._original_generator
-        preferences.SiteSetting.save()
+        self._site_setting.site_code_generator = self._original_generator
+        self._site_setting.save()
 
     def _get_json(self):
         response = self.client.get(self.api_url)
@@ -746,9 +746,8 @@ class ClimateDashboardMultipleSitesSanparksTests(FastTenantTestCase):
         self.assertEqual(summary['park_name'][idx], '')
 
     def test_park_name_field_absent_for_non_sanparks(self):
-        from preferences import preferences
-        preferences.SiteSetting.site_code_generator = 'bims'
-        preferences.SiteSetting.save()
+        self._site_setting.site_code_generator = 'bims'
+        self._site_setting.save()
         data = self._get_json()
         self.assertIsNone(data['climate_summary_data']['park_name'])
 
