@@ -100,6 +100,26 @@ WEBPACK_LOADER = {
 
 CITES_TOKEN_API = os.environ.get('CITES_TOKEN_API', '')
 
+# ---------------------------------------------------------------------------
+# FIPS site-code generator – spatial layer configuration
+# ---------------------------------------------------------------------------
+
+# GBIF continent layer
+FIPS_GBIF_CONTINENT_LAYER = os.environ.get('FIPS_GBIF_CONTINENT_LAYER', 'continent')
+FIPS_GBIF_CONTINENT_FIELD = os.environ.get('FIPS_GBIF_CONTINENT_FIELD', 'cont_code')
+
+# River-basin layer (WMO / major basin polygons)
+FIPS_BASIN_LAYER = os.environ.get('FIPS_BASIN_LAYER', 'basin')
+FIPS_BASIN_FIELD = os.environ.get('FIPS_BASIN_FIELD', 'WMOBB_NAME')
+
+# Sub-basin layer (optional – leave blank to omit from code)
+FIPS_SUBBASIN_LAYER = os.environ.get('FIPS_SUBBASIN_LAYER', '')
+FIPS_SUBBASIN_FIELD = os.environ.get('FIPS_SUBBASIN_FIELD', 'name')
+
+# HydroBASINS layer (optional – leave blank to omit from code)
+FIPS_HYDROBASIN_LAYER = os.environ.get('FIPS_HYDROBASIN_LAYER', '')
+FIPS_HYDROBASIN_FIELD = os.environ.get('FIPS_HYDROBASIN_FIELD', 'HYBAS_ID')
+
 MIDDLEWARE += (
     'bims.middleware.RedirectHomePageMiddleware',
 )

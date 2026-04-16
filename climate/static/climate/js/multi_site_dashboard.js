@@ -3,11 +3,13 @@ let map = null;
 function drawMap(data) {
     let scaleLineControl = new ol.control.ScaleLine();
     const baseLayer = [];
-    if (data['bing_map_key']) {
+    let basemap = (typeof BASEMAP_CONFIG !== 'undefined' ? BASEMAP_CONFIG : null) || {};
+    if (basemap['source_type'] === 'map_tiler' && basemap['url'] && basemap['key']) {
         baseLayer.push(new ol.layer.Tile({
-            source: new ol.source.BingMaps({
-                key: data['bing_map_key'],
-                imagerySet: 'AerialWithLabels'
+            source: new ol.source.TileJSON({
+                url: basemap['url'] + '?key=' + basemap['key'],
+                tileSize: 512,
+                crossOrigin: 'anonymous'
             })
         }));
     } else {
@@ -88,6 +90,9 @@ function renderClimateSummaryTable(data) {
         let singleSiteUrl = '/climate/' + siteId + '/?siteId=' + siteId + baseQuery;
 
         let $tr = $('<tr>');
+        if (summaryData.hasOwnProperty('park_name')) {
+            $tr.append('<td>' + (summaryData['park_name'][index] || '-') + '</td>');
+        }
         $tr.append(
             '<td><a href="' + singleSiteUrl + '">' + siteCode + '</a></td>'
         );
