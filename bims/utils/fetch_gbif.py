@@ -602,7 +602,6 @@ def fetch_all_species_from_gbif(
             else:
                 accepted_taxonomy = fetch_all_species_from_gbif(
                     gbif_key=ak,
-                    taxonomic_rank=taxonomy.rank,
                     parent=taxonomy.parent,
                     fetch_children=False,
                     fetch_vernacular_names=fetch_vernacular_names,
