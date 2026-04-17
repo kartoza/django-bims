@@ -226,15 +226,6 @@ class TestGetGbifCoordinateUncertainty(FastTenantTestCase):
         )
         self.assertEqual(self._serialize(record), '30.00')
 
-    def test_falls_back_to_site_value_when_record_value_is_none(self, mock_iucn, mock_loc):
-        """Falls back to site-level value when record field is None."""
-        site = LocationSiteF.create(coordinate_uncertainty_in_meters=Decimal('100.50'))
-        record = BiologicalCollectionRecordF.create(
-            site=site,
-            coordinate_uncertainty_in_meters=None,
-        )
-        self.assertEqual(self._serialize(record), '100.50')
-
     def test_returns_empty_string_when_both_are_none(self, mock_iucn, mock_loc):
         """Returns empty string when both record and site values are None."""
         site = LocationSiteF.create(coordinate_uncertainty_in_meters=None)
@@ -278,15 +269,6 @@ class TestGetGbifCoordinatePrecision(FastTenantTestCase):
             coordinate_precision=Decimal('0.00001'),
         )
         self.assertEqual(self._serialize(record), '0.000010')
-
-    def test_falls_back_to_site_value_when_record_value_is_none(self, mock_iucn, mock_loc):
-        """Falls back to site-level value when record field is None."""
-        site = LocationSiteF.create(coordinate_precision=Decimal('0.01667'))
-        record = BiologicalCollectionRecordF.create(
-            site=site,
-            coordinate_precision=None,
-        )
-        self.assertEqual(self._serialize(record), '0.016670')
 
     def test_returns_empty_string_when_both_are_none(self, mock_iucn, mock_loc):
         """Returns empty string when both record and site values are None."""

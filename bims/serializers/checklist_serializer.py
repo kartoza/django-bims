@@ -398,21 +398,17 @@ class ChecklistSerializer(ChecklistBaseSerializer):
 
         bio = self.get_bio_data(obj)
 
-        # Get GBIF records with coordinate uncertainty
         gbif_records = bio.filter(
-            site__harvested_from_gbif=True,
-            site__coordinate_uncertainty_in_meters__isnull=False
+            coordinate_uncertainty_in_meters__isnull=False
         )
 
-        # Check if we have any records
         if not gbif_records.exists():
             return ''
 
-        # Apply the 10,000 threshold rule
         gbif_records = apply_gbif_record_threshold(gbif_records)
 
         result = gbif_records.aggregate(
-            min_uncertainty=Min('site__coordinate_uncertainty_in_meters')
+            min_uncertainty=Min('coordinate_uncertainty_in_meters')
         )
 
         min_uncertainty = result.get('min_uncertainty')
@@ -430,20 +426,17 @@ class ChecklistSerializer(ChecklistBaseSerializer):
 
         bio = self.get_bio_data(obj)
 
-        # Get GBIF records with coordinate precision
         gbif_records = bio.filter(
-            site__harvested_from_gbif=True,
-            site__coordinate_precision__isnull=False
+            coordinate_precision__isnull=False
         )
 
-        # Check if we have any records
         if not gbif_records.exists():
             return ''
 
         gbif_records = apply_gbif_record_threshold(gbif_records)
 
         result = gbif_records.aggregate(
-            max_precision=Min('site__coordinate_precision')
+            max_precision=Min('coordinate_precision')
         )
 
         max_precision = result.get('max_precision')
