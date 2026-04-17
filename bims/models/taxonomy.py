@@ -981,7 +981,10 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
 
     if is_synonym and accepted and getattr(accepted, "id", None):
         if instance_origin_id:
-            Taxonomy.objects.filter(pk=accepted.pk).update(origin_id=instance_origin_id)
+            Taxonomy.objects.filter(
+                pk=accepted.pk,
+                endemism__isnull=True
+            ).update(origin_id=instance_origin_id)
         elif not instance_origin_id and getattr(accepted, "origin_id", None):
             instance.origin_id = accepted.origin_id
 
@@ -995,7 +998,10 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
 
     if is_synonym and accepted and getattr(accepted, "id", None):
         if instance_endemism_id:
-            Taxonomy.objects.filter(pk=accepted.pk).update(endemism_id=instance_endemism_id)
+            Taxonomy.objects.filter(
+                pk=accepted.pk,
+                endemism__isnull=True
+            ).update(endemism_id=instance_endemism_id)
         elif not instance_endemism_id and getattr(accepted, "endemism_id", None):
             instance.endemism_id = accepted.endemism_id
 
@@ -1009,7 +1015,10 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
 
     if is_synonym and accepted and getattr(accepted, "id", None):
         if instance_ncs_id:
-            Taxonomy.objects.filter(pk=accepted.pk).update(
+            Taxonomy.objects.filter(
+                pk=accepted.pk,
+                national_conservation_status__isnull=True
+            ).update(
                 national_conservation_status_id=instance_ncs_id
             )
         elif not instance_ncs_id and getattr(accepted, "national_conservation_status_id", None):
@@ -1017,7 +1026,8 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
 
     if not is_synonym and getattr(instance, "pk", None) and instance_ncs_id:
         Taxonomy.objects.filter(
-            accepted_taxonomy=instance
+            accepted_taxonomy=instance,
+            national_conservation_status__isnull=True
         ).update(national_conservation_status_id=instance_ncs_id)
 
     # --- Subgenus propagation ----
