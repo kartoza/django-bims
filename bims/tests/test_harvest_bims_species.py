@@ -32,6 +32,7 @@ from bims.models.tag_group import TagGroup
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 from bims.tasks.harvest_bims_species import (
     _apply_tags,
+    _compute_taxon_checksum,
     _find_or_create_taxonomy,
     _parse_tag_list,
     harvest_bims_species,
@@ -1607,3 +1608,205 @@ class TestTaxonSerializerPublicExclusion(FastTenantTestCase):
             for field in ('id', 'canonical_name', 'scientific_name', 'rank'):
                 self.assertIn(field, data,
                               msg=f'Core field "{field}" absent when is_public={is_public}')
+
+
+# ---------------------------------------------------------------------------
+# _compute_taxon_checksum
+# ---------------------------------------------------------------------------
+
+class TestComputeTaxonChecksum(TestCase):
+    """Unit tests for the checksum helper (no DB needed)."""
+
+    def _td(self, **kwargs):
+        base = {
+            'id': 1,
+            'canonical_name': 'Foo bar',
+            'rank': 'SPECIES',
+            'author': 'L.',
+            'taxonomic_status': 'ACCEPTED',
+            'gbif_key': 12345,
+            'parent': 99,
+            'additional_data': {'key': 'val'},
+            'tag_list': 'freshwater (#51FF3E)',
+        }
+        base.update(kwargs)
+        return base
+
+    def test_returns_64_char_hex_string(self):
+        cs = _compute_taxon_checksum(self._td())
+        self.assertRegex(cs, r'^[0-9a-f]{64}$')
+
+    def test_same_data_same_checksum(self):
+        td = self._td()
+        self.assertEqual(
+            _compute_taxon_checksum(td),
+            _compute_taxon_checksum(dict(td)),
+        )
+
+    def test_different_canonical_name_different_checksum(self):
+        self.assertNotEqual(
+            _compute_taxon_checksum(self._td(canonical_name='Foo bar')),
+            _compute_taxon_checksum(self._td(canonical_name='Foo baz')),
+        )
+
+    def test_different_author_different_checksum(self):
+        self.assertNotEqual(
+            _compute_taxon_checksum(self._td(author='L.')),
+            _compute_taxon_checksum(self._td(author='Smith')),
+        )
+
+    def test_different_additional_data_different_checksum(self):
+        self.assertNotEqual(
+            _compute_taxon_checksum(self._td(additional_data={'k': 'v1'})),
+            _compute_taxon_checksum(self._td(additional_data={'k': 'v2'})),
+        )
+
+    def test_irrelevant_field_ignored(self):
+        """The 'id' field is NOT part of the checksum — only content matters."""
+        cs1 = _compute_taxon_checksum(self._td(id=1))
+        cs2 = _compute_taxon_checksum(self._td(id=999))
+        self.assertEqual(cs1, cs2)
+
+    def test_rank_normalised_to_upper(self):
+        """rank is normalised to uppercase before hashing."""
+        self.assertEqual(
+            _compute_taxon_checksum(self._td(rank='species')),
+            _compute_taxon_checksum(self._td(rank='SPECIES')),
+        )
+
+    def test_missing_fields_dont_raise(self):
+        """Completely sparse dict should not raise."""
+        cs = _compute_taxon_checksum({'canonical_name': 'Min'})
+        self.assertRegex(cs, r'^[0-9a-f]{64}$')
+
+
+# ---------------------------------------------------------------------------
+# Checksum-based skip and timestamp update in the harvest task loop
+# ---------------------------------------------------------------------------
+
+class TestChecksumSkipAndTimestamp(FastTenantTestCase):
+    """
+    Verify that:
+    - A taxon whose upstream payload is unchanged (matching checksum) is
+      skipped and NOT re-processed.
+    - A taxon whose upstream payload has changed IS re-processed and its
+      membership checksum / last_synced_at are updated.
+    - A brand-new taxon gets its membership stamped with checksum and
+      last_synced_at on first harvest.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.schema_name = connection.schema_name
+
+    def _run_task(self, taxa_list, target_group, mark_readonly=False, base_url='http://remote.bims/'):
+        session = HarvestSession.objects.create(
+            module_group=target_group,
+            additional_data={
+                'base_url': base_url,
+                'remote_group_id': 1,
+                'import_mode': 'existing',
+            },
+        )
+        prefs_mock = mock.MagicMock()
+        prefs_mock.SiteSetting.auto_validate_taxa_on_upload = False
+
+        with mock.patch(_PATCH_DISCONNECT), \
+             mock.patch(_PATCH_CONNECT), \
+             mock.patch('preferences.preferences', prefs_mock), \
+             mock.patch(_PATCH_GET_ALL_TAXA, return_value=taxa_list), \
+             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None):
+            harvest_bims_species(session.id, self.schema_name)
+
+        session.refresh_from_db()
+        return session
+
+    def test_new_taxon_gets_checksum_and_last_synced_at(self):
+        group = TaxonGroupF()
+        td = _taxon(1, 'Canis lupus', rank='SPECIES')
+        self._run_task([td], group)
+
+        membership = TaxonGroupTaxonomy.objects.get(
+            taxongroup=group,
+            upstream_taxon_id='1',
+        )
+        expected_cs = _compute_taxon_checksum(td)
+        self.assertEqual(membership.upstream_checksum, expected_cs)
+        self.assertIsNotNone(membership.last_synced_at)
+
+    def test_unchanged_taxon_is_skipped_on_reharvest(self):
+        group = TaxonGroupF()
+        td = _taxon(1, 'Canis lupus', rank='SPECIES')
+
+        # First harvest — creates the membership
+        self._run_task([td], group)
+        membership_before = TaxonGroupTaxonomy.objects.get(
+            taxongroup=group, upstream_taxon_id='1',
+        )
+        ts_before = membership_before.last_synced_at
+        cs_before = membership_before.upstream_checksum
+
+        # Second harvest with identical payload — should be skipped
+        session2 = self._run_task([td], group)
+
+        membership_after = TaxonGroupTaxonomy.objects.get(
+            taxongroup=group, upstream_taxon_id='1',
+        )
+        # Checksum unchanged, last_synced_at unchanged (no update happened)
+        self.assertEqual(membership_after.upstream_checksum, cs_before)
+        self.assertEqual(membership_after.last_synced_at, ts_before)
+        # Session status reflects 0 processed (only skipped)
+        self.assertIn('0', session2.status)
+
+    def test_changed_taxon_is_reprocessed(self):
+        group = TaxonGroupF()
+        td_v1 = _taxon(1, 'Canis lupus', rank='SPECIES', author='L.')
+        td_v2 = _taxon(1, 'Canis lupus', rank='SPECIES', author='Linnaeus')  # author changed
+
+        # First harvest
+        self._run_task([td_v1], group)
+        membership_v1 = TaxonGroupTaxonomy.objects.get(
+            taxongroup=group, upstream_taxon_id='1',
+        )
+        ts_v1 = membership_v1.last_synced_at
+        cs_v1 = membership_v1.upstream_checksum
+
+        # Second harvest with changed author — must re-process
+        self._run_task([td_v2], group)
+        membership_v2 = TaxonGroupTaxonomy.objects.get(
+            taxongroup=group, upstream_taxon_id='1',
+        )
+        expected_cs = _compute_taxon_checksum(td_v2)
+        self.assertEqual(membership_v2.upstream_checksum, expected_cs)
+        self.assertNotEqual(membership_v2.upstream_checksum, cs_v1)
+        # last_synced_at should be updated (≥ v1 timestamp)
+        self.assertGreaterEqual(membership_v2.last_synced_at, ts_v1)
+
+    def test_taxon_without_remote_id_always_processed(self):
+        """
+        Taxa with no remote id cannot be keyed by upstream_taxon_id.
+        The checksum-skip path is bypassed entirely for such taxa, so
+        they are always processed.
+        """
+        group = TaxonGroupF()
+        td = _taxon(None, 'Unknown taxon', rank='GENUS')
+        td['id'] = None
+
+        # Two harvests — both should show the taxon was processed (not skipped)
+        self._run_task([td], group)
+        s2 = self._run_task([td], group)
+        # Without remote id there is no checksum-based skip; status shows ≥1 processed
+        self.assertNotIn('0 taxa', s2.status)
+
+    def test_membership_checksum_matches_helper(self):
+        """Stored checksum must equal _compute_taxon_checksum output."""
+        group = TaxonGroupF()
+        td = _taxon(42, 'Panthera leo', rank='SPECIES',
+                    additional_data={'notes': 'big cat'},
+                    tag_list='african (#AA0000)')
+        self._run_task([td], group)
+        membership = TaxonGroupTaxonomy.objects.get(
+            taxongroup=group, upstream_taxon_id='42',
+        )
+        self.assertEqual(membership.upstream_checksum, _compute_taxon_checksum(td))

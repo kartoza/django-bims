@@ -2,6 +2,8 @@
 """Celery task: harvest species from a remote BIMS instance."""
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 
@@ -71,6 +73,30 @@ def _apply_tags(taxonomy, tag_list_str: str) -> None:
                 tag_group = TagGroup.objects.create(name=tag_name, colour=colour)
             if not tag_group.tags.filter(id=tag.id).exists():
                 tag_group.tags.add(tag)
+
+
+def _compute_taxon_checksum(taxon_data: dict) -> str:
+    """
+    Return a stable SHA-256 hex digest for the fields of *taxon_data* that
+    drive conflict resolution.  Only the keys that the harvest task actually
+    reads are included so that irrelevant upstream changes (e.g. metadata
+    added to the API payload) don't invalidate a match unnecessarily.
+
+    The digest is over a canonical (sorted-keys, separators-free) JSON
+    encoding of a normalised subset of the payload.
+    """
+    subset = {
+        'canonical_name': (taxon_data.get('canonical_name') or '').strip(),
+        'rank': (taxon_data.get('rank') or '').strip().upper(),
+        'author': (taxon_data.get('author') or '').strip(),
+        'taxonomic_status': (taxon_data.get('taxonomic_status') or '').strip().upper(),
+        'gbif_key': taxon_data.get('gbif_key'),
+        'parent': taxon_data.get('parent'),
+        'additional_data': taxon_data.get('additional_data') or {},
+        'tag_list': (taxon_data.get('tag_list') or '').strip(),
+    }
+    raw = json.dumps(subset, sort_keys=True, separators=(',', ':'), default=str)
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
@@ -437,6 +463,8 @@ def harvest_bims_species(session_id: int, schema_name: str):
         save_interval = 50
         since_last_save = 0
 
+        from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+
         for taxon_data in get_all_taxa(base_url, remote_group_id):
             if HarvestSession.objects.filter(id=session_id, canceled=True).exists():
                 _log("Harvest canceled by user")
@@ -453,6 +481,30 @@ def harvest_bims_species(session_id: int, schema_name: str):
                 remote_taxon_id = taxon_data.get('id')
                 remote_taxon_id_str = str(remote_taxon_id) if remote_taxon_id is not None else ''
 
+                # ----------------------------------------------------------
+                # Checksum-based skip: if the upstream payload is unchanged
+                # since the last harvest we can skip conflict resolution and
+                # taxonomy updates entirely.
+                # ----------------------------------------------------------
+                checksum = _compute_taxon_checksum(taxon_data)
+                existing_membership = None
+                if remote_taxon_id_str:
+                    existing_membership = TaxonGroupTaxonomy.objects.filter(
+                        taxongroup=target_group,
+                        upstream_taxon_id=remote_taxon_id_str,
+                    ).first()
+
+                if (
+                    existing_membership is not None
+                    and existing_membership.upstream_checksum == checksum
+                ):
+                    _log(
+                        f"[SKIP] {canonical_name} ({rank}) — upstream unchanged "
+                        f"(checksum={checksum[:8]}…)"
+                    )
+                    total_skipped += 1
+                    continue
+
                 taxonomy = _find_or_create_taxonomy(
                     taxon_data, base_url, remote_cache,
                     target_group=target_group,
@@ -463,25 +515,31 @@ def harvest_bims_species(session_id: int, schema_name: str):
                     total_skipped += 1
                     continue
 
+                now = timezone.now()
+
                 # Add to target group (no-op if already a member)
                 target_group.taxonomies.add(
                     taxonomy,
                     through_defaults={
                         'is_validated': auto_validate,
                         'upstream_taxon_id': remote_taxon_id_str,
+                        'upstream_checksum': checksum,
+                        'last_synced_at': now,
                     },
                 )
                 # Update membership fields that through_defaults only sets on INSERT
-                update_fields = {}
+                update_fields = {
+                    'upstream_checksum': checksum,
+                    'last_synced_at': now,
+                }
                 if not auto_validate:
                     update_fields['is_validated'] = False
                 if remote_taxon_id_str:
                     update_fields['upstream_taxon_id'] = remote_taxon_id_str
-                if update_fields:
-                    target_group.taxonomies.through.objects.filter(
-                        taxongroup=target_group,
-                        taxonomy=taxonomy,
-                    ).update(**update_fields)
+                target_group.taxonomies.through.objects.filter(
+                    taxongroup=target_group,
+                    taxonomy=taxonomy,
+                ).update(**update_fields)
 
                 total_processed += 1
                 since_last_save += 1
