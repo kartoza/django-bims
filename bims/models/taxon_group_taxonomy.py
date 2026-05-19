@@ -38,5 +38,17 @@ class TaxonGroupTaxonomy(models.Model):
         help_text='Origin'
     )
 
+    upstream_taxon_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        db_index=True,
+        help_text=(
+            'ID of the corresponding taxon on the upstream BIMS instance. '
+            'Set during harvest; used to match taxa on re-harvest without '
+            'relying solely on gbif_key or canonical name.'
+        ),
+    )
+
     class Meta:
         unique_together = ('taxongroup', 'taxonomy')

@@ -6,12 +6,12 @@ import logging
 import re
 
 from celery import shared_task
+from django.db import IntegrityError
 from django.utils import timezone
 from django_tenants.utils import schema_context
 
 logger = logging.getLogger(__name__)
 
-# Matches "(#RRGGBB)" at the end of a tag label, e.g. "aquatic (#51FF3E)"
 _TAG_COLOUR_RE = re.compile(r'\s*\(#([0-9A-Fa-f]{3,6})\)\s*$')
 
 
@@ -60,8 +60,6 @@ def _apply_tags(taxonomy, tag_list_str: str) -> None:
         taxonomy.tags.add(tag_name)
 
         if colour:
-            # Find a TagGroup that already owns this tag with the same colour,
-            # or create one named after the tag (colour used as key).
             tag_group = TagGroup.objects.filter(
                 colour__iexact=colour,
                 tags=tag,
@@ -76,7 +74,10 @@ def _apply_tags(taxonomy, tag_list_str: str) -> None:
 
 
 def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
-                              remote_cache: dict) -> object | None:
+                              remote_cache: dict,
+                              target_group=None,
+                              is_readonly: bool = False,
+                              _log=None) -> object | None:
     """
     Ensure a local Taxonomy record exists for *taxon_data* fetched from a
     remote BIMS instance.  Parents are resolved recursively.
@@ -86,15 +87,33 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
 
     Matching priority
     -----------------
-    1. gbif_key  (if present)
-    2. canonical_name + rank
+    1. upstream_taxon_id in TaxonGroupTaxonomy  (if target_group provided)
+    2. gbif_key  (if present)
+    3. canonical_name + rank
 
-    If no match is found a minimal record is created.
-    additional_data from the remote is merged into the local record.
-    tag_list is applied via _apply_tags().
+    Conflict resolution
+    -------------------
+    Non-readonly group (default):
+      - additional_data : local wins on conflict
+      - canonical_name, author, taxonomic_status : never updated
+      - parent : filled only when missing locally
+      - tags : additive only
+
+    Read-only group (is_readonly=True):
+      - additional_data : remote wins; overridden local keys are logged
+      - canonical_name, author, taxonomic_status : updated when remote differs; logged
+      - parent : always updated to match upstream
+      - tags : additive only (safe default)
     """
     from bims.models.taxonomy import Taxonomy
+    from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
     from bims.utils.bims_instance import get_taxon_by_id
+
+    def _emit(msg: str):
+        if _log:
+            _log(msg)
+        else:
+            logger.debug(msg)
 
     remote_id = taxon_data.get('id')
     if remote_id is not None:
@@ -131,15 +150,28 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
             parent_data = get_taxon_by_id(base_url, remote_parent_id)
             if parent_data:
                 parent_taxonomy = _find_or_create_taxonomy(
-                    parent_data, base_url, remote_cache
+                    parent_data, base_url, remote_cache,
+                    target_group=target_group,
+                    is_readonly=is_readonly,
+                    _log=_log,
                 )
 
     # ------------------------------------------------------------------
     # Find existing local record
     # ------------------------------------------------------------------
     taxonomy = None
-    if gbif_key:
+
+    if target_group is not None and remote_id is not None:
+        membership = TaxonGroupTaxonomy.objects.filter(
+            taxongroup=target_group,
+            upstream_taxon_id=str(remote_id),
+        ).select_related('taxonomy').first()
+        if membership:
+            taxonomy = membership.taxonomy
+
+    if taxonomy is None and gbif_key:
         taxonomy = Taxonomy.objects.filter(gbif_key=gbif_key).first()
+
     if taxonomy is None and rank:
         taxonomy = Taxonomy.objects.filter(
             canonical_name__iexact=canonical_name,
@@ -162,11 +194,58 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
         if parent_taxonomy:
             create_kwargs['parent'] = parent_taxonomy
         taxonomy = Taxonomy.objects.create(**create_kwargs)
+
+    # ------------------------------------------------------------------
+    # Update existing record - policy differs by group type
+    # ------------------------------------------------------------------
     else:
-        # Update parent if it was missing locally
-        if parent_taxonomy and not taxonomy.parent:
-            taxonomy.parent = parent_taxonomy
-            taxonomy.save(update_fields=['parent'])
+        update_fields = []
+
+        if is_readonly:
+            # --- Read-only: upstream is source of truth ---
+            if taxonomy.canonical_name != canonical_name:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"canonical_name local={taxonomy.canonical_name!r} "
+                    f"remote={canonical_name!r} — updating"
+                )
+                taxonomy.canonical_name = canonical_name
+                taxonomy.scientific_name = scientific_name or canonical_name
+                update_fields += ['canonical_name', 'scientific_name']
+
+            if author and taxonomy.author != author:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"author local={taxonomy.author!r} remote={author!r} — updating"
+                )
+                taxonomy.author = author
+                update_fields.append('author')
+
+            if taxonomic_status and (taxonomy.taxonomic_status or '').upper() != taxonomic_status:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"taxonomic_status local={taxonomy.taxonomic_status!r} "
+                    f"remote={taxonomic_status!r} - updating"
+                )
+                taxonomy.taxonomic_status = taxonomic_status
+                update_fields.append('taxonomic_status')
+
+            if parent_taxonomy and taxonomy.parent_id != parent_taxonomy.pk:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"parent local={taxonomy.parent_id!r} "
+                    f"remote={parent_taxonomy.pk!r} — updating"
+                )
+                taxonomy.parent = parent_taxonomy
+                update_fields.append('parent')
+
+        else:
+            if parent_taxonomy and not taxonomy.parent:
+                taxonomy.parent = parent_taxonomy
+                update_fields.append('parent')
+
+        if update_fields:
+            taxonomy.save(update_fields=update_fields)
 
     # ------------------------------------------------------------------
     # Merge additional_data
@@ -174,13 +253,32 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     remote_additional = taxon_data.get('additional_data')
     if isinstance(remote_additional, dict) and remote_additional:
         existing = taxonomy.additional_data or {}
-        merged = {**remote_additional, **existing}  # local values win on conflict
+
+        if is_readonly:
+            overridden = {
+                k: existing[k]
+                for k in remote_additional
+                if k in existing and existing[k] != remote_additional[k]
+            }
+            if overridden:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"additional_data keys overridden by upstream: "
+                    + ", ".join(
+                        f"{k}={existing[k]!r}→{remote_additional[k]!r}"
+                        for k in overridden
+                    )
+                )
+            merged = {**existing, **remote_additional}
+        else:
+            merged = {**remote_additional, **existing}
+
         if merged != taxonomy.additional_data:
             taxonomy.additional_data = merged
             taxonomy.save(update_fields=['additional_data'])
 
     # ------------------------------------------------------------------
-    # Apply tags
+    # Apply tags (additive for both group types)
     # ------------------------------------------------------------------
     tag_list_str = taxon_data.get('tag_list') or ''
     if tag_list_str:
@@ -257,15 +355,40 @@ def harvest_bims_species(session_id: int, schema_name: str):
                         break
 
             from django.contrib.sites.models import Site
-            target_group, created = TaxonGroup.objects.get_or_create(
-                name=group_name,
-                defaults={
-                    'category': TaxonomicGroupCategory.SPECIES_MODULE.name,
-                    'site': Site.objects.get_current(),
-                },
-            )
+            mark_readonly = additional.get("mark_readonly", False)
+            try:
+                target_group, created = TaxonGroup.objects.get_or_create(
+                    name=group_name,
+                    defaults={
+                        'category': TaxonomicGroupCategory.SPECIES_MODULE.name,
+                        'site': Site.objects.get_current(),
+                        'is_readonly': mark_readonly,
+                        'upstream_url': base_url if mark_readonly else '',
+                        'upstream_id': str(remote_group_id) if mark_readonly else '',
+                    },
+                )
+            except IntegrityError:
+                # Recover from concurrent insert / sequence desync by fetching
+                # the logical group by name.
+                target_group = TaxonGroup.objects.get(name=group_name)
+                created = False
+            if not created and mark_readonly:
+                # Ensure upstream metadata is kept up to date on re-harvest
+                update_fields = []
+                if not target_group.upstream_url:
+                    target_group.upstream_url = base_url
+                    update_fields.append('upstream_url')
+                if not target_group.upstream_id:
+                    target_group.upstream_id = str(remote_group_id)
+                    update_fields.append('upstream_id')
+                if not target_group.is_readonly:
+                    target_group.is_readonly = True
+                    update_fields.append('is_readonly')
+                if update_fields:
+                    target_group.save(update_fields=update_fields)
             action_word = "Created" if created else "Using existing"
-            _log(f"{action_word} taxon group: '{group_name}' (id={target_group.id})")
+            _log(f"{action_word} taxon group: '{group_name}' (id={target_group.id})"
+                 + (" [read-only]" if target_group.is_readonly else ""))
             session.module_group = target_group
             session.save(update_fields=["module_group"])
         else:
@@ -278,6 +401,24 @@ def harvest_bims_species(session_id: int, schema_name: str):
                 )
                 connect_bims_signals()
                 return
+
+            # For read-only groups, verify the harvest source matches
+            if target_group.is_readonly and target_group.upstream_url and target_group.upstream_id:
+                if (
+                    target_group.upstream_url.rstrip('/') != base_url.rstrip('/')
+                    or str(target_group.upstream_id) != str(remote_group_id)
+                ):
+                    _log(
+                        f"Read-only group '{target_group.name}' is bound to "
+                        f"{target_group.upstream_url} group {target_group.upstream_id}. "
+                        f"Cannot harvest from {base_url} group {remote_group_id} — aborting."
+                    )
+                    HarvestSession.objects.filter(id=session_id).update(
+                        status="Failed: upstream source mismatch for read-only group",
+                        finished=True,
+                    )
+                    connect_bims_signals()
+                    return
 
         _log(
             f"Starting BIMS harvest from {base_url} "
@@ -309,21 +450,38 @@ def harvest_bims_species(session_id: int, schema_name: str):
                 continue
 
             try:
-                taxonomy = _find_or_create_taxonomy(taxon_data, base_url, remote_cache)
+                remote_taxon_id = taxon_data.get('id')
+                remote_taxon_id_str = str(remote_taxon_id) if remote_taxon_id is not None else ''
+
+                taxonomy = _find_or_create_taxonomy(
+                    taxon_data, base_url, remote_cache,
+                    target_group=target_group,
+                    is_readonly=target_group.is_readonly,
+                    _log=_log,
+                )
                 if taxonomy is None:
                     total_skipped += 1
                     continue
 
-                # Add to target group
+                # Add to target group (no-op if already a member)
                 target_group.taxonomies.add(
                     taxonomy,
-                    through_defaults={'is_validated': auto_validate},
+                    through_defaults={
+                        'is_validated': auto_validate,
+                        'upstream_taxon_id': remote_taxon_id_str,
+                    },
                 )
+                # Update membership fields that through_defaults only sets on INSERT
+                update_fields = {}
                 if not auto_validate:
+                    update_fields['is_validated'] = False
+                if remote_taxon_id_str:
+                    update_fields['upstream_taxon_id'] = remote_taxon_id_str
+                if update_fields:
                     target_group.taxonomies.through.objects.filter(
                         taxongroup=target_group,
                         taxonomy=taxonomy,
-                    ).update(is_validated=False)
+                    ).update(**update_fields)
 
                 total_processed += 1
                 since_last_save += 1

@@ -29,6 +29,7 @@ from taggit.models import Tag
 from bims.models import Taxonomy
 from bims.models.harvest_session import HarvestSession
 from bims.models.tag_group import TagGroup
+from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 from bims.tasks.harvest_bims_species import (
     _apply_tags,
     _find_or_create_taxonomy,
@@ -41,11 +42,11 @@ User = get_user_model()
 
 _PATCH_DISCONNECT = 'bims.signals.utils.disconnect_bims_signals'
 _PATCH_CONNECT = 'bims.signals.utils.connect_bims_signals'
-_PATCH_PREFS = 'bims.tasks.harvest_bims_species.preferences'
-_PATCH_GET_ALL_TAXA = 'bims.tasks.harvest_bims_species.get_all_taxa'
-_PATCH_GET_TAXON_BY_ID = 'bims.tasks.harvest_bims_species.get_taxon_by_id'
+_PATCH_PREFS = 'preferences.preferences'
+_PATCH_GET_ALL_TAXA = 'bims.utils.bims_instance.get_all_taxa'
+_PATCH_GET_TAXON_BY_ID = 'bims.utils.bims_instance.get_taxon_by_id'
 _PATCH_GET_TAXON_BY_ID_UTIL = 'bims.utils.bims_instance.get_taxon_by_id'
-_PATCH_GET_GROUPS = 'bims.tasks.harvest_bims_species.get_taxon_groups'
+_PATCH_GET_GROUPS = 'bims.utils.bims_instance.get_taxon_groups'
 
 
 # ---------------------------------------------------------------------------
@@ -300,6 +301,64 @@ class TestFindOrCreateTaxonomy(FastTenantTestCase):
         self.assertEqual(existing.additional_data['Key'], 'local_value')
         self.assertEqual(existing.additional_data['NewKey'], 'new')
 
+    # -- upstream_taxon_id matching (priority 1) ----------------------------
+
+    def test_finds_by_upstream_taxon_id_in_group(self):
+        """Membership with upstream_taxon_id matches before gbif_key / name."""
+        taxon_group = TaxonGroupF.create()
+        existing = Taxonomy.objects.create(
+            canonical_name='Upstream matched species',
+            scientific_name='Upstream matched species',
+            rank='SPECIES',
+        )
+        TaxonGroupTaxonomy.objects.create(
+            taxongroup=taxon_group,
+            taxonomy=existing,
+            upstream_taxon_id='777',
+        )
+        data = _taxon(777, 'Upstream matched species', rank='SPECIES')
+        result = _find_or_create_taxonomy(
+            data, 'http://bims.test', self.remote_cache, target_group=taxon_group
+        )
+        self.assertEqual(result.id, existing.id)
+        self.assertEqual(Taxonomy.objects.filter(
+            canonical_name='Upstream matched species', rank='SPECIES'
+        ).count(), 1)
+
+    def test_upstream_taxon_id_match_takes_priority_over_gbif_key(self):
+        """upstream_taxon_id match wins even when gbif_key points elsewhere."""
+        taxon_group = TaxonGroupF.create()
+        correct = Taxonomy.objects.create(
+            canonical_name='Correct species', scientific_name='Correct species',
+            rank='SPECIES', gbif_key=None,
+        )
+        decoy = Taxonomy.objects.create(
+            canonical_name='Decoy species', scientific_name='Decoy species',
+            rank='SPECIES', gbif_key=99999,
+        )
+        TaxonGroupTaxonomy.objects.create(
+            taxongroup=taxon_group,
+            taxonomy=correct,
+            upstream_taxon_id='888',
+        )
+        data = _taxon(888, 'Decoy species', rank='SPECIES', gbif_key=99999)
+        result = _find_or_create_taxonomy(
+            data, 'http://bims.test', self.remote_cache, target_group=taxon_group
+        )
+        self.assertEqual(result.id, correct.id)
+
+    def test_no_target_group_skips_upstream_id_lookup(self):
+        """Without target_group the upstream_taxon_id path is not used."""
+        existing = Taxonomy.objects.create(
+            canonical_name='Gbif species', scientific_name='Gbif species',
+            rank='SPECIES', gbif_key=55555,
+        )
+        data = _taxon(55, 'Gbif species', rank='SPECIES', gbif_key=55555)
+        result = _find_or_create_taxonomy(
+            data, 'http://bims.test', self.remote_cache, target_group=None
+        )
+        self.assertEqual(result.id, existing.id)
+
     # -- tag application ----------------------------------------------------
 
     @mock.patch(_PATCH_GET_TAXON_BY_ID)
@@ -471,6 +530,63 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
         self.assertEqual(session.additional_data['total_processed'], 0)
         self.assertEqual(session.additional_data['total_skipped'], 1)
 
+    # -- upstream_taxon_id stored on membership -----------------------------
+
+    def test_upstream_taxon_id_stored_on_membership(self):
+        taxa = [_taxon(42, 'Upstream id species', rank='SPECIES')]
+        session = self._make_session()
+        self._run(session, taxa=taxa)
+        taxonomy = Taxonomy.objects.get(canonical_name='Upstream id species', rank='SPECIES')
+        membership = self.taxon_group.taxonomies.through.objects.get(
+            taxongroup=self.taxon_group,
+            taxonomy=taxonomy,
+        )
+        self.assertEqual(membership.upstream_taxon_id, '42')
+
+    def test_upstream_taxon_id_updated_on_reharvest(self):
+        """A second harvest run updates upstream_taxon_id on the existing membership."""
+        existing = Taxonomy.objects.create(
+            canonical_name='Reharvest species', scientific_name='Reharvest species',
+            rank='SPECIES',
+        )
+        # Create membership without upstream_taxon_id (simulates pre-feature data)
+        TaxonGroupTaxonomy.objects.create(
+            taxongroup=self.taxon_group,
+            taxonomy=existing,
+            upstream_taxon_id='',
+        )
+        taxa = [_taxon(99, 'Reharvest species', rank='SPECIES')]
+        session = self._make_session()
+        self._run(session, taxa=taxa)
+        membership = self.taxon_group.taxonomies.through.objects.get(
+            taxongroup=self.taxon_group,
+            taxonomy=existing,
+        )
+        self.assertEqual(membership.upstream_taxon_id, '99')
+
+    def test_reharvest_matches_by_upstream_taxon_id_not_name(self):
+        """On re-harvest the existing membership is found by upstream_taxon_id,
+        so a renamed canonical_name on the remote does not create a duplicate."""
+        existing = Taxonomy.objects.create(
+            canonical_name='Original name', scientific_name='Original name',
+            rank='SPECIES',
+        )
+        TaxonGroupTaxonomy.objects.create(
+            taxongroup=self.taxon_group,
+            taxonomy=existing,
+            upstream_taxon_id='200',
+        )
+        # Remote now returns the same ID but a different canonical_name
+        taxa = [_taxon(200, 'Renamed species', rank='SPECIES')]
+        session = self._make_session()
+        self._run(session, taxa=taxa)
+        # Must not create a new Taxonomy record
+        self.assertEqual(
+            Taxonomy.objects.filter(rank='SPECIES').count(), 1
+        )
+        self.assertEqual(self.taxon_group.taxonomies.count(), 1)
+        self.assertEqual(self.taxon_group.taxonomies.first().id, existing.id)
+
     # -- import modes -------------------------------------------------------
 
     def test_import_mode_new_creates_taxon_group(self):
@@ -482,8 +598,13 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
              mock.patch(_PATCH_GET_ALL_TAXA, return_value=iter(taxa)), \
              mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
              mock.patch('django.contrib.sites.models.Site.objects.get_current') as mock_get_current_site:
+            from django.contrib.sites.models import Site
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
-            mock_get_current_site.return_value = mock.MagicMock()
+            site, _ = Site.objects.get_or_create(
+                id=1,
+                defaults={'domain': 'example.com', 'name': 'example.com'},
+            )
+            mock_get_current_site.return_value = site
             harvest_bims_species(session.id, schema_name=self.schema_name)
         from bims.models.taxon_group import TaxonGroup
         session.refresh_from_db()
@@ -509,8 +630,13 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
              mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
              mock.patch(_PATCH_GET_GROUPS, return_value=[{'id': 3, 'name': 'Remote Fish'}]), \
              mock.patch('django.contrib.sites.models.Site.objects.get_current') as mock_get_current_site:
+            from django.contrib.sites.models import Site
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
-            mock_get_current_site.return_value = mock.MagicMock()
+            site, _ = Site.objects.get_or_create(
+                id=1,
+                defaults={'domain': 'example.com', 'name': 'example.com'},
+            )
+            mock_get_current_site.return_value = site
             harvest_bims_species(session.id, schema_name=self.schema_name)
         session.refresh_from_db()
         self.assertEqual(session.module_group.name, 'Remote Fish')
@@ -568,6 +694,494 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
         self.assertEqual(session.additional_data['total_skipped'], 0)
         # Fewer than all taxa should have been processed
         self.assertLess(self.taxon_group.taxonomies.count(), 19)
+
+
+# ===========================================================================
+# Conflict resolution policy (_find_or_create_taxonomy with is_readonly flag)
+# ===========================================================================
+
+class TestConflictResolutionPolicy(FastTenantTestCase):
+    """
+    Verifies the two conflict resolution strategies applied by
+    _find_or_create_taxonomy depending on is_readonly.
+    """
+
+    def setUp(self):
+        self.remote_cache = {}
+        self.log_lines = []
+
+    def _log(self, msg):
+        self.log_lines.append(msg)
+
+    def _run(self, taxon_data, is_readonly=False, target_group=None):
+        return _find_or_create_taxonomy(
+            taxon_data, 'http://bims.test', self.remote_cache,
+            target_group=target_group,
+            is_readonly=is_readonly,
+            _log=self._log,
+        )
+
+    # -- additional_data: local wins (non-readonly) -------------------------
+
+    def test_non_readonly_additional_data_local_wins(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Local wins sp', scientific_name='Local wins sp',
+            rank='SPECIES', additional_data={'key': 'local_value'},
+        )
+        data = _taxon(1, 'Local wins sp', rank='SPECIES',
+                      additional_data={'key': 'remote_value', 'new_key': 'new'})
+        self._run(data, is_readonly=False)
+        existing.refresh_from_db()
+        self.assertEqual(existing.additional_data['key'], 'local_value')
+        self.assertEqual(existing.additional_data['new_key'], 'new')
+
+    # -- additional_data: remote wins (readonly) ----------------------------
+
+    def test_readonly_additional_data_remote_wins(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Remote wins sp', scientific_name='Remote wins sp',
+            rank='SPECIES', additional_data={'key': 'local_value'},
+        )
+        data = _taxon(2, 'Remote wins sp', rank='SPECIES',
+                      additional_data={'key': 'remote_value', 'new_key': 'new'})
+        self._run(data, is_readonly=True)
+        existing.refresh_from_db()
+        self.assertEqual(existing.additional_data['key'], 'remote_value')
+        self.assertEqual(existing.additional_data['new_key'], 'new')
+
+    def test_readonly_additional_data_override_is_logged(self):
+        Taxonomy.objects.create(
+            canonical_name='Log override sp', scientific_name='Log override sp',
+            rank='SPECIES', additional_data={'key': 'local_value'},
+        )
+        data = _taxon(3, 'Log override sp', rank='SPECIES',
+                      additional_data={'key': 'remote_value'})
+        self._run(data, is_readonly=True)
+        self.assertTrue(any('DIVERGENCE' in line and 'key' in line
+                            for line in self.log_lines))
+
+    def test_non_readonly_additional_data_no_divergence_log(self):
+        Taxonomy.objects.create(
+            canonical_name='No log sp', scientific_name='No log sp',
+            rank='SPECIES', additional_data={'key': 'local_value'},
+        )
+        data = _taxon(4, 'No log sp', rank='SPECIES',
+                      additional_data={'key': 'remote_value'})
+        self._run(data, is_readonly=False)
+        self.assertFalse(any('DIVERGENCE' in line for line in self.log_lines))
+
+    # -- canonical_name: never updated (non-readonly) -----------------------
+
+    def test_non_readonly_canonical_name_not_updated(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Original name', scientific_name='Original name',
+            rank='SPECIES',
+        )
+        data = _taxon(5, 'Changed name', rank='SPECIES')
+        # Force match by gbif_key or name — here by name since it still matches
+        # Use a fresh taxon so it matches by 'Original name' via gbif_key shortcut
+        existing2 = Taxonomy.objects.create(
+            canonical_name='Stable name', scientific_name='Stable name',
+            rank='SPECIES', gbif_key=77001,
+        )
+        data2 = _taxon(50, 'Different remote name', rank='SPECIES', gbif_key=77001)
+        self._run(data2, is_readonly=False)
+        existing2.refresh_from_db()
+        self.assertEqual(existing2.canonical_name, 'Stable name')
+
+    # -- canonical_name: updated when different (readonly) ------------------
+
+    def test_readonly_canonical_name_updated(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Old name', scientific_name='Old name',
+            rank='SPECIES', gbif_key=88001,
+        )
+        data = _taxon(6, 'New name', rank='SPECIES', gbif_key=88001)
+        self._run(data, is_readonly=True)
+        existing.refresh_from_db()
+        self.assertEqual(existing.canonical_name, 'New name')
+
+    def test_readonly_canonical_name_change_logged(self):
+        Taxonomy.objects.create(
+            canonical_name='Will change', scientific_name='Will change',
+            rank='SPECIES', gbif_key=88002,
+        )
+        data = _taxon(7, 'Has changed', rank='SPECIES', gbif_key=88002)
+        self._run(data, is_readonly=True)
+        self.assertTrue(any('DIVERGENCE' in line and 'canonical_name' in line
+                            for line in self.log_lines))
+
+    # -- author: never updated (non-readonly) -------------------------------
+
+    def test_non_readonly_author_not_updated(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Author sp', scientific_name='Author sp',
+            rank='SPECIES', author='Local Author',
+        )
+        data = _taxon(8, 'Author sp', rank='SPECIES', author='Remote Author')
+        self._run(data, is_readonly=False)
+        existing.refresh_from_db()
+        self.assertEqual(existing.author, 'Local Author')
+
+    # -- author: updated when different (readonly) --------------------------
+
+    def test_readonly_author_updated(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Auth update sp', scientific_name='Auth update sp',
+            rank='SPECIES', author='Old Author', gbif_key=90001,
+        )
+        data = _taxon(9, 'Auth update sp', rank='SPECIES',
+                      author='New Author', gbif_key=90001)
+        self._run(data, is_readonly=True)
+        existing.refresh_from_db()
+        self.assertEqual(existing.author, 'New Author')
+
+    def test_readonly_author_change_logged(self):
+        Taxonomy.objects.create(
+            canonical_name='Auth log sp', scientific_name='Auth log sp',
+            rank='SPECIES', author='Old Author', gbif_key=90002,
+        )
+        data = _taxon(10, 'Auth log sp', rank='SPECIES',
+                      author='New Author', gbif_key=90002)
+        self._run(data, is_readonly=True)
+        self.assertTrue(any('DIVERGENCE' in line and 'author' in line
+                            for line in self.log_lines))
+
+    # -- taxonomic_status: never updated (non-readonly) ---------------------
+
+    def test_non_readonly_taxonomic_status_not_updated(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Status sp', scientific_name='Status sp',
+            rank='SPECIES', taxonomic_status='ACCEPTED', gbif_key=91001,
+        )
+        data = _taxon(11, 'Status sp', rank='SPECIES',
+                      taxonomic_status='SYNONYM', gbif_key=91001)
+        self._run(data, is_readonly=False)
+        existing.refresh_from_db()
+        self.assertEqual(existing.taxonomic_status, 'ACCEPTED')
+
+    # -- taxonomic_status: updated when different (readonly) ----------------
+
+    def test_readonly_taxonomic_status_updated(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Status update sp', scientific_name='Status update sp',
+            rank='SPECIES', taxonomic_status='ACCEPTED', gbif_key=91002,
+        )
+        data = _taxon(12, 'Status update sp', rank='SPECIES',
+                      taxonomic_status='SYNONYM', gbif_key=91002)
+        self._run(data, is_readonly=True)
+        existing.refresh_from_db()
+        self.assertEqual(existing.taxonomic_status, 'SYNONYM')
+
+    def test_readonly_taxonomic_status_change_logged(self):
+        Taxonomy.objects.create(
+            canonical_name='Status log sp', scientific_name='Status log sp',
+            rank='SPECIES', taxonomic_status='ACCEPTED', gbif_key=91003,
+        )
+        data = _taxon(13, 'Status log sp', rank='SPECIES',
+                      taxonomic_status='DOUBTFUL', gbif_key=91003)
+        self._run(data, is_readonly=True)
+        self.assertTrue(any('DIVERGENCE' in line and 'taxonomic_status' in line
+                            for line in self.log_lines))
+
+    # -- parent: filled when missing (non-readonly) -------------------------
+
+    def test_non_readonly_parent_filled_when_missing(self):
+        parent = Taxonomy.objects.create(
+            canonical_name='Parent genus', scientific_name='Parent genus',
+            rank='GENUS',
+        )
+        existing = Taxonomy.objects.create(
+            canonical_name='Parentless sp', scientific_name='Parentless sp',
+            rank='SPECIES', gbif_key=92001,
+        )
+        self.remote_cache[500] = parent
+        data = _taxon(14, 'Parentless sp', rank='SPECIES',
+                      gbif_key=92001, parent=500)
+        self._run(data, is_readonly=False)
+        existing.refresh_from_db()
+        self.assertEqual(existing.parent_id, parent.pk)
+
+    def test_non_readonly_existing_parent_not_replaced(self):
+        old_parent = Taxonomy.objects.create(
+            canonical_name='Old parent', scientific_name='Old parent', rank='GENUS',
+        )
+        new_parent = Taxonomy.objects.create(
+            canonical_name='New parent', scientific_name='New parent', rank='GENUS',
+        )
+        existing = Taxonomy.objects.create(
+            canonical_name='Has parent sp', scientific_name='Has parent sp',
+            rank='SPECIES', gbif_key=92002, parent=old_parent,
+        )
+        self.remote_cache[600] = new_parent
+        data = _taxon(15, 'Has parent sp', rank='SPECIES',
+                      gbif_key=92002, parent=600)
+        self._run(data, is_readonly=False)
+        existing.refresh_from_db()
+        self.assertEqual(existing.parent_id, old_parent.pk)
+
+    # -- parent: always synced to upstream (readonly) -----------------------
+
+    def test_readonly_parent_updated_to_match_upstream(self):
+        old_parent = Taxonomy.objects.create(
+            canonical_name='Old parent ro', scientific_name='Old parent ro',
+            rank='GENUS',
+        )
+        new_parent = Taxonomy.objects.create(
+            canonical_name='New parent ro', scientific_name='New parent ro',
+            rank='GENUS',
+        )
+        existing = Taxonomy.objects.create(
+            canonical_name='Parent sync sp', scientific_name='Parent sync sp',
+            rank='SPECIES', gbif_key=93001, parent=old_parent,
+        )
+        self.remote_cache[700] = new_parent
+        data = _taxon(16, 'Parent sync sp', rank='SPECIES',
+                      gbif_key=93001, parent=700)
+        self._run(data, is_readonly=True)
+        existing.refresh_from_db()
+        self.assertEqual(existing.parent_id, new_parent.pk)
+
+    def test_readonly_parent_change_logged(self):
+        old_parent = Taxonomy.objects.create(
+            canonical_name='Old par log', scientific_name='Old par log', rank='GENUS',
+        )
+        new_parent = Taxonomy.objects.create(
+            canonical_name='New par log', scientific_name='New par log', rank='GENUS',
+        )
+        Taxonomy.objects.create(
+            canonical_name='Parent log sp', scientific_name='Parent log sp',
+            rank='SPECIES', gbif_key=93002, parent=old_parent,
+        )
+        self.remote_cache[800] = new_parent
+        data = _taxon(17, 'Parent log sp', rank='SPECIES',
+                      gbif_key=93002, parent=800)
+        self._run(data, is_readonly=True)
+        self.assertTrue(any('DIVERGENCE' in line and 'parent' in line
+                            for line in self.log_lines))
+
+    # -- tags: always additive regardless of group type ---------------------
+
+    def test_tags_additive_for_non_readonly(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Tag sp nr', scientific_name='Tag sp nr', rank='SPECIES',
+        )
+        existing.tags.add('existing_tag')
+        data = _taxon(18, 'Tag sp nr', rank='SPECIES', tag_list='new_tag')
+        self._run(data, is_readonly=False)
+        tag_names = [t.name for t in existing.tags.all()]
+        self.assertIn('existing_tag', tag_names)
+        self.assertIn('new_tag', tag_names)
+
+    def test_tags_additive_for_readonly(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Tag sp ro', scientific_name='Tag sp ro', rank='SPECIES',
+            gbif_key=94001,
+        )
+        existing.tags.add('existing_tag')
+        data = _taxon(19, 'Tag sp ro', rank='SPECIES',
+                      gbif_key=94001, tag_list='new_tag')
+        self._run(data, is_readonly=True)
+        tag_names = [t.name for t in existing.tags.all()]
+        self.assertIn('existing_tag', tag_names)
+        self.assertIn('new_tag', tag_names)
+
+    # -- no spurious updates when data matches ------------------------------
+
+    def test_readonly_no_update_when_data_identical(self):
+        existing = Taxonomy.objects.create(
+            canonical_name='Identical sp', scientific_name='Identical sp',
+            rank='SPECIES', author='Same Author',
+            taxonomic_status='ACCEPTED', gbif_key=95001,
+            additional_data={'key': 'value'},
+        )
+        data = _taxon(20, 'Identical sp', rank='SPECIES',
+                      author='Same Author', taxonomic_status='ACCEPTED',
+                      gbif_key=95001, additional_data={'key': 'value'})
+        self._run(data, is_readonly=True)
+        self.assertFalse(any('DIVERGENCE' in line for line in self.log_lines))
+
+
+# ===========================================================================
+# Read-only taxon group behaviour in harvest task
+# ===========================================================================
+
+class TestHarvestBimsReadOnly(FastTenantTestCase):
+    """
+    Tests for is_readonly / upstream_url / upstream_id behaviour in the
+    harvest_bims_species Celery task.
+    """
+
+    def setUp(self):
+        self.user = UserF.create()
+        self.schema_name = connection.schema_name
+
+    def _make_session(self, import_mode='new', module_group=None,
+                      base_url='http://bims.test', remote_group_id=3,
+                      remote_group_name='Fish', mark_readonly=False):
+        session = HarvestSession.objects.create(
+            harvester=self.user,
+            module_group=module_group,
+            category='bims',
+            additional_data={
+                'base_url': base_url,
+                'remote_group_id': remote_group_id,
+                'remote_group_name': remote_group_name,
+                'import_mode': import_mode,
+                'mark_readonly': mark_readonly,
+            },
+        )
+        session.log_file.save(f'bims-ro-test-{session.id}.log', ContentFile(b''))
+        return session
+
+    def _run(self, session, taxa=None):
+        taxa = taxa or []
+        with mock.patch(_PATCH_DISCONNECT), \
+             mock.patch(_PATCH_CONNECT), \
+             mock.patch(_PATCH_PREFS) as mock_prefs, \
+             mock.patch(_PATCH_GET_ALL_TAXA, return_value=iter(taxa)), \
+             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+             mock.patch('django.contrib.sites.models.Site.objects.get_current') as mock_site:
+            from django.contrib.sites.models import Site
+            mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+            site, _ = Site.objects.get_or_create(
+                id=1,
+                defaults={'domain': 'example.com', 'name': 'example.com'},
+            )
+            mock_site.return_value = site
+            harvest_bims_species(session.id, schema_name=self.schema_name)
+
+    # -- new mode: mark_readonly=True stamps upstream metadata ---------------
+
+    def test_new_mode_mark_readonly_sets_is_readonly(self):
+        session = self._make_session(import_mode='new', mark_readonly=True)
+        self._run(session)
+        session.refresh_from_db()
+        self.assertTrue(session.module_group.is_readonly)
+
+    def test_new_mode_mark_readonly_sets_upstream_url(self):
+        session = self._make_session(import_mode='new', mark_readonly=True,
+                                     base_url='http://bims.test')
+        self._run(session)
+        session.refresh_from_db()
+        self.assertEqual(session.module_group.upstream_url, 'http://bims.test')
+
+    def test_new_mode_mark_readonly_sets_upstream_id(self):
+        session = self._make_session(import_mode='new', mark_readonly=True,
+                                     remote_group_id=7)
+        self._run(session)
+        session.refresh_from_db()
+        self.assertEqual(session.module_group.upstream_id, '7')
+
+    def test_new_mode_without_mark_readonly_leaves_fields_blank(self):
+        session = self._make_session(import_mode='new', mark_readonly=False)
+        self._run(session)
+        session.refresh_from_db()
+        self.assertFalse(session.module_group.is_readonly)
+        self.assertEqual(session.module_group.upstream_url, '')
+        self.assertEqual(session.module_group.upstream_id, '')
+
+    # -- new mode: re-harvest updates upstream metadata on existing group ----
+
+    def test_new_mode_reharvest_updates_upstream_metadata(self):
+        from bims.models.taxon_group import TaxonGroup
+        from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
+        # Pre-create a group with the same name but missing upstream info
+        existing_group = TaxonGroup.objects.create(
+            name='Fish',
+            category=TaxonomicGroupCategory.SPECIES_MODULE.name,
+            is_readonly=False,
+            upstream_url='',
+            upstream_id='',
+        )
+        session = self._make_session(import_mode='new', mark_readonly=True,
+                                     remote_group_name='Fish',
+                                     base_url='http://bims.test',
+                                     remote_group_id=3)
+        self._run(session)
+        existing_group.refresh_from_db()
+        self.assertTrue(existing_group.is_readonly)
+        self.assertEqual(existing_group.upstream_url, 'http://bims.test')
+        self.assertEqual(existing_group.upstream_id, '3')
+
+    # -- existing mode: read-only group with matching source proceeds --------
+
+    def test_existing_readonly_group_matching_source_proceeds(self):
+        taxon_group = TaxonGroupF.create(
+            is_readonly=True,
+            upstream_url='http://bims.test',
+            upstream_id='3',
+        )
+        session = self._make_session(
+            import_mode='existing',
+            module_group=taxon_group,
+            base_url='http://bims.test',
+            remote_group_id=3,
+        )
+        taxa = [_taxon(1, 'Matching species', rank='SPECIES')]
+        self._run(session, taxa=taxa)
+        session.refresh_from_db()
+        self.assertTrue(session.finished)
+        self.assertNotIn('Failed', session.status)
+        self.assertEqual(taxon_group.taxonomies.count(), 1)
+
+    # -- existing mode: read-only group with wrong URL aborts ----------------
+
+    def test_existing_readonly_group_wrong_url_aborts(self):
+        taxon_group = TaxonGroupF.create(
+            is_readonly=True,
+            upstream_url='http://correct-bims.test',
+            upstream_id='3',
+        )
+        session = self._make_session(
+            import_mode='existing',
+            module_group=taxon_group,
+            base_url='http://wrong-bims.test',
+            remote_group_id=3,
+        )
+        self._run(session)
+        session.refresh_from_db()
+        self.assertTrue(session.finished)
+        self.assertIn('Failed', session.status)
+        self.assertIn('mismatch', session.status)
+        self.assertEqual(taxon_group.taxonomies.count(), 0)
+
+    # -- existing mode: read-only group with wrong group ID aborts -----------
+
+    def test_existing_readonly_group_wrong_id_aborts(self):
+        taxon_group = TaxonGroupF.create(
+            is_readonly=True,
+            upstream_url='http://bims.test',
+            upstream_id='3',
+        )
+        session = self._make_session(
+            import_mode='existing',
+            module_group=taxon_group,
+            base_url='http://bims.test',
+            remote_group_id=99,
+        )
+        self._run(session)
+        session.refresh_from_db()
+        self.assertTrue(session.finished)
+        self.assertIn('Failed', session.status)
+        self.assertEqual(taxon_group.taxonomies.count(), 0)
+
+    # -- existing mode: non-readonly group is not blocked --------------------
+
+    def test_existing_non_readonly_group_not_blocked(self):
+        taxon_group = TaxonGroupF.create(is_readonly=False)
+        session = self._make_session(
+            import_mode='existing',
+            module_group=taxon_group,
+            base_url='http://any-url.test',
+            remote_group_id=999,
+        )
+        taxa = [_taxon(1, 'Free species', rank='SPECIES')]
+        self._run(session, taxa=taxa)
+        session.refresh_from_db()
+        self.assertTrue(session.finished)
+        self.assertNotIn('Failed', session.status)
+        self.assertEqual(taxon_group.taxonomies.count(), 1)
 
 
 # ===========================================================================
@@ -690,7 +1304,7 @@ class TestBimsInstanceUtilities(TestCase):
         result = get_taxon_groups('http://bims.test')
         self.assertEqual(result, payload)
         mock_get.assert_called_once_with(
-            'http://bims.test/api/module-list/', timeout=mock.ANY
+            'http://bims.test/api/module-list/', params=None, timeout=mock.ANY
         )
 
     @mock.patch(_PATCH_SLEEP, return_value=None)
@@ -732,7 +1346,7 @@ class TestBimsInstanceUtilities(TestCase):
         result = get_taxon_by_id('http://bims.test', 441)
         self.assertEqual(result, payload)
         mock_get.assert_called_once_with(
-            'http://bims.test/api/taxon/441/', timeout=mock.ANY
+            'http://bims.test/api/taxon/441/', params=None, timeout=mock.ANY
         )
 
     @mock.patch(_PATCH_SLEEP, return_value=None)

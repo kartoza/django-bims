@@ -146,6 +146,7 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
         remote_group_name = (request.POST.get('remote_group_name') or '').strip()
         import_mode = request.POST.get('import_mode', 'existing')  # 'existing' or 'new'
         taxon_group_id = request.POST.get('taxon_group')  # only used when import_mode='existing'
+        mark_readonly = request.POST.get('mark_readonly', '') == 'true'  # only used when import_mode='new'
 
         if not base_url:
             messages.error(request, 'Please enter a BIMS instance URL.')
@@ -174,6 +175,7 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
                 'remote_group_id': int(remote_group_id_raw),
                 'remote_group_name': remote_group_name,
                 'import_mode': import_mode,
+                'mark_readonly': mark_readonly,
             },
         )
 

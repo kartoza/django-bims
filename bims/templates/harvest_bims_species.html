@@ -67,7 +67,7 @@
                             <label for="previous-config" class="col-sm-3 col-form-label"><b>Previous config</b></label>
                             <div class="col-sm-9">
                                 <select class="form-control" id="previous-config">
-                                    <option value="">— select to pre-fill —</option>
+                                    <option value="">- select to pre-fill -</option>
                                     {% for cfg in previous_configs %}
                                         <option
                                             value="{{ cfg.id }}"
@@ -115,7 +115,7 @@
                             <label for="remote-group-select" class="col-sm-3 col-form-label"><b>Remote Taxon Group</b></label>
                             <div class="col-sm-9">
                                 <select class="form-control" id="remote-group-select" disabled>
-                                    <option value="">— fetch groups first —</option>
+                                    <option value="">- fetch groups first -</option>
                                 </select>
                                 <input type="hidden" name="remote_group_id" id="remote-group-id">
                                 <input type="hidden" name="remote_group_name" id="remote-group-name">
@@ -130,7 +130,7 @@
                                     <input class="form-check-input" type="radio" name="import_mode"
                                            id="mode-existing" value="existing" checked>
                                     <label class="form-check-label" for="mode-existing">
-                                        <b>Use existing taxon group</b> &mdash;
+                                        <b>Use existing taxon group</b> :
                                         import species into a local taxon group
                                     </label>
                                 </div>
@@ -138,7 +138,7 @@
                                     <input class="form-check-input" type="radio" name="import_mode"
                                            id="mode-new" value="new">
                                     <label class="form-check-label" for="mode-new">
-                                        <b>Import as new taxon group</b> &mdash;
+                                        <b>Import as new taxon group</b> :
                                         create a new local taxon group with the same name
                                     </label>
                                 </div>
@@ -153,21 +153,47 @@
                                     <select class="form-control" name="taxon_group" id="taxon-group">
                                         <option value="" disabled selected>Choose a local taxon group</option>
                                         {% for taxon_group in taxa_groups %}
-                                            <option value="{{ taxon_group.id }}">{{ taxon_group.name }}</option>
+                                            <option value="{{ taxon_group.id }}"
+                                                data-readonly="{{ taxon_group.is_readonly|lower }}"
+                                                data-upstream-url="{{ taxon_group.upstream_url }}"
+                                                data-upstream-id="{{ taxon_group.upstream_id }}">
+                                                {{ taxon_group.name }}{% if taxon_group.is_readonly %} [read-only]{% endif %}
+                                            </option>
                                         {% endfor %}
                                     </select>
                                     <small class="source-help">
                                         Species from the remote taxon group will be added to this group.
                                     </small>
+                                    <div id="readonly-group-info" style="display:none; margin-top: 6px;">
+                                        <div class="alert alert-info" style="font-size: 10pt; margin-bottom: 0; padding: 8px 12px;">
+                                            <b>Read-only group</b> - species cannot be edited locally.
+                                            Harvesting is only allowed from its bound upstream source:
+                                            <span id="readonly-upstream-label"></span>
+                                        </div>
+                                    </div>
+                                    <div id="readonly-mismatch-warning" style="display:none; margin-top: 6px;">
+                                        <div class="alert alert-warning" style="font-size: 10pt; margin-bottom: 0; padding: 8px 12px;">
+                                            <b>Source mismatch</b> - this read-only group is bound to a different
+                                            upstream instance. The harvest will be rejected.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="import-mode-section" id="new-group-section" style="display:none;">
-                            <p class="text-muted" style="margin-bottom: 0; font-size: 10pt;">
+                            <p class="text-muted" style="margin-bottom: 6px; font-size: 10pt;">
                                 A new taxon group will be created using the remote group's name.
                                 All its species will be imported into that new group.
                             </p>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="mark_readonly" id="mark-readonly" value="true">
+                                <label class="form-check-label" for="mark-readonly">
+                                    <b>Mark as read-only</b> &mdash; species in this group cannot be
+                                    edited locally and can only be re-harvested from the same upstream source.
+                                </label>
+                            </div>
                         </div>
 
                         <div style="margin-top: 16px;">
@@ -374,8 +400,32 @@
                 checkEnableHarvesting();
             });
 
-            $('#taxon-group').on('change', checkEnableHarvesting);
-            $('#base-url').on('input', checkEnableHarvesting);
+            $('#taxon-group').on('change', function () {
+                const $opt = $(this).find('option:selected');
+                const isReadonly = $opt.data('readonly') === true || $opt.data('readonly') === 'true';
+                const upstreamUrl = ($opt.data('upstream-url') || '').replace(/\/$/, '');
+                const upstreamId = String($opt.data('upstream-id') || '');
+                const currentUrl = ($('#base-url').val() || '').trim().replace(/\/$/, '');
+                const currentRemoteId = String($('#remote-group-id').val() || '').trim();
+
+                if (isReadonly && upstreamUrl) {
+                    $('#readonly-upstream-label').text(upstreamUrl + ' (group ' + upstreamId + ')');
+                    $('#readonly-group-info').show();
+                    if (currentUrl && currentRemoteId && (currentUrl !== upstreamUrl || currentRemoteId !== upstreamId)) {
+                        $('#readonly-mismatch-warning').show();
+                    } else {
+                        $('#readonly-mismatch-warning').hide();
+                    }
+                } else {
+                    $('#readonly-group-info').hide();
+                    $('#readonly-mismatch-warning').hide();
+                }
+                checkEnableHarvesting();
+            });
+            $('#base-url').on('input', function () {
+                $('#taxon-group').trigger('change');
+                checkEnableHarvesting();
+            });
 
             // Pre-fill from previous config
             $('#previous-config').on('change', function () {

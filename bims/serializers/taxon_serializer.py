@@ -224,6 +224,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     PUBLIC_EXCLUDED_FIELDS = {
         'can_be_validated',
         'taxon_group',
+        'additional_data',
         'DT_RowId',
         'proposal_id',
         'can_edit',

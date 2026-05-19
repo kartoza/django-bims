@@ -336,3 +336,148 @@ class EditTaxonFadaTest(FastTenantTestCase):
         self.assertIsNone(proposal.fada_id)
 
         self.client.logout()
+
+
+class EditTaxonReadOnlyGroupTest(FastTenantTestCase):
+    """
+    Hard-block: editing is denied for any taxon that belongs to a read-only
+    group, regardless of which group URL the user navigates through.
+    """
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.superuser = User.objects.create_user(
+            username='ro_superuser',
+            email='ro_superuser@example.com',
+            password='password',
+            is_superuser=True,
+        )
+        self.expert_user = User.objects.create_user(
+            username='ro_expert',
+            email='ro_expert@example.com',
+            password='password',
+        )
+        self.regular_user = User.objects.create_user(
+            username='ro_regular',
+            email='ro_regular@example.com',
+            password='password',
+        )
+        # A taxon that belongs to BOTH a read-only group and a normal group
+        self.shared_taxonomy = TaxonomyF.create(
+            scientific_name='Shared Species',
+            canonical_name='Shared Species',
+            rank='SPECIES',
+        )
+        self.readonly_group = TaxonGroupF.create(
+            name='Readonly Group',
+            is_readonly=True,
+            upstream_url='https://upstream.example.org',
+            upstream_id='10',
+            taxonomies=(self.shared_taxonomy,),
+            experts=(self.expert_user,),
+        )
+        self.normal_group = TaxonGroupF.create(
+            name='Normal Group',
+            is_readonly=False,
+            taxonomies=(self.shared_taxonomy,),
+            experts=(self.expert_user,),
+        )
+        # A taxon that belongs ONLY to normal groups
+        self.free_taxonomy = TaxonomyF.create(
+            scientific_name='Free Species',
+            canonical_name='Free Species',
+            rank='SPECIES',
+        )
+        self.free_group = TaxonGroupF.create(
+            name='Free Group',
+            is_readonly=False,
+            taxonomies=(self.free_taxonomy,),
+            experts=(self.expert_user,),
+        )
+
+    def _url(self, taxonomy, taxon_group):
+        return reverse('edit_taxon', kwargs={
+            'id': taxonomy.id,
+            'taxon_group_id': taxon_group.id,
+        })
+
+    # ------------------------------------------------------------------
+    # Blocked via the read-only group's own URL
+    # ------------------------------------------------------------------
+
+    def test_superuser_blocked_via_readonly_group_url(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.readonly_group))
+        self.assertEqual(response.status_code, 403)
+
+    def test_expert_blocked_via_readonly_group_url(self):
+        self.client.login(username='ro_expert', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.readonly_group))
+        self.assertEqual(response.status_code, 403)
+
+    # ------------------------------------------------------------------
+    # Hard block: also denied via the NORMAL group's URL
+    # ------------------------------------------------------------------
+
+    def test_superuser_blocked_via_normal_group_url_when_taxon_in_readonly_group(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertEqual(response.status_code, 403)
+
+    def test_expert_blocked_via_normal_group_url_when_taxon_in_readonly_group(self):
+        self.client.login(username='ro_expert', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_blocked_via_normal_group_url_when_taxon_in_readonly_group(self):
+        self.client.login(username='ro_regular', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertEqual(response.status_code, 403)
+
+    def test_post_blocked_via_normal_group_url_when_taxon_in_readonly_group(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.post(
+            self._url(self.shared_taxonomy, self.normal_group),
+            {'taxon_name': 'Should Not Save', 'rank': 'SPECIES'},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    # ------------------------------------------------------------------
+    # Blocking response renders the template (not a bare 403 page)
+    # ------------------------------------------------------------------
+
+    def test_403_response_uses_edit_taxon_template(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertTemplateUsed(response, 'edit_taxon.html')
+
+    def test_403_response_includes_blocking_group_name(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertIn(b'Readonly Group', response.content)
+
+    def test_403_response_includes_upstream_url(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertIn(b'upstream.example.org', response.content)
+
+    def test_403_response_context_has_readonly_blocked_by(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.shared_taxonomy, self.normal_group))
+        self.assertIn('readonly_blocked_by', response.context)
+        group_names = [g.name for g in response.context['readonly_blocked_by']]
+        self.assertIn('Readonly Group', group_names)
+
+    # ------------------------------------------------------------------
+    # Taxon belonging only to normal groups is not blocked
+    # ------------------------------------------------------------------
+
+    def test_superuser_allowed_for_taxon_with_no_readonly_group(self):
+        self.client.login(username='ro_superuser', password='password')
+        response = self.client.get(self._url(self.free_taxonomy, self.free_group))
+        self.assertEqual(response.status_code, 200)
+
+    def test_expert_allowed_for_taxon_with_no_readonly_group(self):
+        self.client.login(username='ro_expert', password='password')
+        response = self.client.get(self._url(self.free_taxonomy, self.free_group))
+        self.assertEqual(response.status_code, 200)
