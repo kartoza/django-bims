@@ -233,7 +233,7 @@ def fbis_catchment_generator(
         lat=lat,
         context_key='name',
         layer_name='secondary catchment',
-        tolerance=1
+        tolerance=0.5
     )
 
     catchment_code = secondary_catchment_name[:2].upper()
@@ -249,7 +249,7 @@ def fbis_catchment_generator(
                 lat=location_site.geometry_point[1],
                 context_key='river_name',
                 layer_name='river',
-                tolerance=10
+                tolerance=0.5
             )
 
     # Search river name by coordinates
@@ -259,7 +259,7 @@ def fbis_catchment_generator(
             lat=lat,
             context_key='river_name',
             layer_name='river',
-            tolerance=10
+            tolerance=0.5
         )
 
     if not river_name:
@@ -357,7 +357,7 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
         if results and 'feature' in results[0] and context_key in results[0]['feature']:
             quaternary_catchment = results[0]['feature'][context_key]
 
-    if not quaternary_catchment and not layer:
+    if not quaternary_catchment:
         catchments, catchments_data = _get_catchments_data(
             lat=lat,
             lon=lon,
@@ -447,17 +447,35 @@ def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
     site_code = ''
     quaternary_catchment_area_key = 'quaternary_catchment_area'
     quaternary_geocontext_key = 'quaternary_catchment_group'
+    context_key = 'name'
+    quaternary_catchment = ''
 
-    catchments, catchments_data = _get_catchments_data(
-        lat=lat,
-        lon=lon,
-        catchment_key=quaternary_geocontext_key
-    )
+    layer = Layer.objects.filter(
+        name__icontains=QUATERNARY_CATCHMENT_LAYER
+    ).first()
+
+    if layer:
+        features = query_features(
+            table_name=layer.query_table_name,
+            field_names=[context_key],
+            coordinates=[(lon, lat)],
+            tolerance=0.01
+        )
+        results = features.get('result', [])
+        if results and 'feature' in results[0] and context_key in results[0]['feature']:
+            quaternary_catchment = results[0]['feature'][context_key]
+
+    if not quaternary_catchment:
+        catchments, catchments_data = _get_catchments_data(
+            lat=lat,
+            lon=lon,
+            catchment_key=quaternary_geocontext_key
+        )
+        if quaternary_catchment_area_key in catchments and catchments[quaternary_catchment_area_key]:
+            quaternary_catchment = catchments[quaternary_catchment_area_key]
 
     try:
-        if quaternary_catchment_area_key in catchments:
-            site_code += catchments[quaternary_catchment_area_key]
-        site_code += '-'
+        site_code += quaternary_catchment + '-'
     except TypeError:
         pass
 
