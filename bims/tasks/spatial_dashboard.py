@@ -77,13 +77,18 @@ def spatial_dashboard_cons_status(search_parameters=None, search_process_id=None
     )
 
 
-def _compute_rli(taxa_to_modules, year_taxa_statuses, dd_categories):
+def _compute_rli(taxa_to_modules, year_taxa_statuses, dd_categories,
+                 use_fixed_pool=False):
     """Compute RLI values from per-year per-taxon statuses.
 
     Args:
         taxa_to_modules: dict mapping taxonomy_id -> set of module names
         year_taxa_statuses: dict mapping year -> list of (taxonomy_id, category)
         dd_categories: set of DD category codes
+        use_fixed_pool: if True, fix the denominator species count (N) from the
+            first assessment year so it remains constant across all years.
+            This implements the IUCN RLI rule that the species pool is anchored
+            to the first year of assessment.
 
     Returns:
         (per_module_year, aggregate_year) dicts with RLI results.
@@ -109,6 +114,24 @@ def _compute_rli(taxa_to_modules, year_taxa_statuses, dd_categories):
 
     per_module_year = {}
     aggregate_year = {}
+
+    module_n_fixed = {}
+    agg_n_fixed = None
+    if use_fixed_pool and year_taxa_statuses:
+        first_year = min(year_taxa_statuses.keys())
+        _mod_counts = defaultdict(int)
+        _agg_count = 0
+        for tid, category in year_taxa_statuses[first_year]:
+            if category in EXCLUDED_CATEGORIES:
+                continue
+            if RLI_WEIGHTS.get(category) is None:
+                continue
+            modules_for_tid = taxa_to_modules.get(tid, {'Unknown'})
+            for mod in modules_for_tid:
+                _mod_counts[mod] += 1
+            _agg_count += 1
+        module_n_fixed = dict(_mod_counts)
+        agg_n_fixed = _agg_count
 
     for year, taxa_statuses in year_taxa_statuses.items():
         module_data = defaultdict(lambda: {
@@ -144,8 +167,10 @@ def _compute_rli(taxa_to_modules, year_taxa_statuses, dd_categories):
             agg['categories'][category] += 1
 
         for mod, data in module_data.items():
-            if data['assessed'] > 0:
-                rli = 1 - (data['weighted'] / (W_MAX * data['assessed']))
+            n = module_n_fixed.get(
+                mod, data['assessed']) if use_fixed_pool else data['assessed']
+            if n > 0:
+                rli = 1 - (data['weighted'] / (W_MAX * n))
                 per_module_year[(mod, year)] = {
                     'rli': round(rli, 4),
                     'assessed': data['assessed'],
@@ -153,8 +178,9 @@ def _compute_rli(taxa_to_modules, year_taxa_statuses, dd_categories):
                     'categories': dict(data['categories']),
                 }
 
-        if agg['assessed'] > 0:
-            rli = 1 - (agg['weighted'] / (W_MAX * agg['assessed']))
+        n_agg = agg_n_fixed if (use_fixed_pool and agg_n_fixed is not None) else agg['assessed']
+        if n_agg > 0:
+            rli = 1 - (agg['weighted'] / (W_MAX * n_agg))
             aggregate_year[year] = {
                 'rli': round(rli, 4),
                 'assessed': agg['assessed'],
@@ -255,8 +281,13 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
             search = CollectionSearch(search_parameters)
             collection_results = search.process_search()
 
-            # Get distinct taxa with their module groups
-            taxa_modules_qs = collection_results.values(
+            SPECIES_RANKS = ['SPECIES', 'SUBSPECIES', 'VARIETY']
+            taxa_modules_qs = collection_results.filter(
+                taxonomy__taxonomic_status='ACCEPTED',
+                taxonomy__rank__in=SPECIES_RANKS,
+                taxonomy__origin__origin_key='indigenous',
+                taxonomy__include_in_rli=True,
+            ).values(
                 'taxonomy_id', 'module_group__name'
             ).distinct()
 
@@ -283,7 +314,6 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
                 search_process.save_to_file(results)
                 return
 
-            # Try IUCNAssessment history for proper temporal RLI
             assessments = list(
                 IUCNAssessment.objects.filter(
                     taxonomy_id__in=taxonomy_ids,
@@ -295,7 +325,6 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
                 ).order_by('taxonomy_id', 'year_published')
             )
 
-            # Build per-taxon timelines
             taxon_timelines = defaultdict(list)
             all_years = set()
             for a in assessments:
@@ -306,28 +335,19 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
                     all_years.add(year)
 
             if all_years:
-                # Primary path: compute RLI from assessment history
-                # For each assessment year, determine each taxon's status
-                # using its most recent assessment at or before that year
-                # (retrospective adjustment per IUCN RLI methodology).
-                sorted_years = sorted(all_years)
-                year_taxa_statuses = {}
-
-                for year in sorted_years:
-                    statuses = []
-                    for tid, timeline in taxon_timelines.items():
-                        status = None
-                        for assess_year, cat in timeline:
-                            if assess_year <= year:
-                                status = cat
-                            else:
-                                break
-                        if status is not None:
-                            statuses.append((tid, status))
-                    year_taxa_statuses[year] = statuses
+                # Primary path: compute RLI from assessment history.
+                # No back-casting: only species actually assessed in a given
+                # year contribute to that year's calculation. The species pool
+                # (denominator N) is fixed to the count from the first year of
+                # assessment and does not change in subsequent years.
+                year_taxa_statuses = defaultdict(list)
+                for tid, timeline in taxon_timelines.items():
+                    for assess_year, cat in timeline:
+                        year_taxa_statuses[assess_year].append((tid, cat))
 
                 per_module_year, aggregate_year = _compute_rli(
-                    taxa_to_modules, year_taxa_statuses, DD_CATEGORIES
+                    taxa_to_modules, dict(year_taxa_statuses), DD_CATEGORIES,
+                    use_fixed_pool=True,
                 )
             else:
                 # Fallback: compute a current snapshot RLI from
@@ -732,3 +752,142 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
         'Search %s is already being processed by another worker',
         search_process.process_id
     )
+
+
+@shared_task(name='bims.tasks.spatial_dashboard_national_rli', queue='search')
+def spatial_dashboard_national_cons_status(search_parameters=None, search_process_id=None):
+    """Compute RLI values per taxon module and in aggregate for three national
+    assessments: 2016 SANBI backcast, 2026 SANBI Red List, and current IUCN
+    status.  Output mirrors the IUCN RLI format (series + aggregate).
+    """
+    from collections import defaultdict
+    from bims.utils.celery import memcache_lock
+    from bims.api_views.search import CollectionSearch
+    from bims.models.search_process import (
+        SearchProcess,
+        SEARCH_PROCESSING,
+        SEARCH_FINISHED,
+    )
+    from bims.models.taxon_conservation_assessment import TaxonNationalConservationAssessment
+    from bims.models.taxonomy import Taxonomy
+    from bims.scripts.species_keys import SANBI_2016_BACKCAST, SANBI_2026_REDLIST
+
+    SPECIES_RANKS = ['SPECIES', 'SUBSPECIES', 'VARIETY']
+    DD_CATEGORIES = {'DD', 'DDD', 'DDT'}
+
+    ASSESSMENT_ORDER = [SANBI_2016_BACKCAST, SANBI_2026_REDLIST, 'Current IUCN Status']
+
+    if search_parameters is None:
+        search_parameters = {}
+
+    try:
+        search_process = SearchProcess.objects.get(id=search_process_id)
+    except SearchProcess.DoesNotExist:
+        return
+
+    lock_id = '{0}-lock-{1}'.format(search_process.file_path, search_process.process_id)
+    oid = '{0}'.format(search_process.process_id)
+
+    with memcache_lock(lock_id, oid) as acquired:
+        if not acquired:
+            logger.info(
+                'Search %s is already being processed by another worker',
+                search_process.process_id
+            )
+            return
+
+        search_process.set_status(SEARCH_PROCESSING)
+
+        if search_process.requester and 'requester' not in search_parameters:
+            search_parameters['requester'] = search_process.requester.id
+
+        search = CollectionSearch(search_parameters)
+        collection_results = search.process_search()
+
+        taxa_modules_qs = collection_results.filter(
+            taxonomy__taxonomic_status='ACCEPTED',
+            taxonomy__rank__in=SPECIES_RANKS,
+            taxonomy__origin__origin_key='indigenous',
+            taxonomy__include_in_rli=True,
+        ).values('taxonomy_id', 'module_group__name').distinct()
+
+        taxa_to_modules = defaultdict(set)
+        for row in taxa_modules_qs:
+            tid = row['taxonomy_id']
+            module = row['module_group__name'] or 'Unknown'
+            taxa_to_modules[tid].add(module)
+
+        taxonomy_ids = list(taxa_to_modules.keys())
+
+        if not taxonomy_ids:
+            search_process.set_status(SEARCH_FINISHED, False)
+            search_process.save_to_file({'series': [], 'aggregate': []})
+            return
+
+        national_rows = (
+            TaxonNationalConservationAssessment.objects
+            .filter(taxonomy_id__in=taxonomy_ids)
+            .exclude(iucn_status__isnull=True)
+            .values('taxonomy_id', 'assessment_label', 'iucn_status__category')
+        )
+        assessment_statuses = defaultdict(list)
+        for row in national_rows:
+            label = row['assessment_label']
+            if label in (SANBI_2016_BACKCAST, SANBI_2026_REDLIST):
+                assessment_statuses[label].append(
+                    (row['taxonomy_id'], row['iucn_status__category'] or '')
+                )
+
+        for row in Taxonomy.objects.filter(
+            id__in=taxonomy_ids
+        ).exclude(iucn_status__isnull=True).values('id', 'iucn_status__category'):
+            assessment_statuses['Current IUCN Status'].append(
+                (row['id'], row['iucn_status__category'] or '')
+            )
+
+        label_to_idx = {label: idx for idx, label in enumerate(ASSESSMENT_ORDER)}
+        year_taxa_statuses = {
+            label_to_idx[label]: statuses
+            for label, statuses in assessment_statuses.items()
+            if label in label_to_idx
+        }
+
+        per_module_year, aggregate_year = _compute_rli(
+            taxa_to_modules, year_taxa_statuses, DD_CATEGORIES,
+            use_fixed_pool=False,
+        )
+
+        idx_to_label = {idx: label for label, idx in label_to_idx.items()}
+
+        module_series = defaultdict(list)
+        for (mod, idx), data in per_module_year.items():
+            module_series[mod].append({
+                'label': idx_to_label[idx],
+                'value': data['rli'],
+                'num_assessed': data['assessed'],
+                'num_dd': data['dd'],
+                'categories': data['categories'],
+            })
+
+        series = []
+        for mod, points in module_series.items():
+            if not any(p['categories'] for p in points):
+                continue
+            series.append({
+                'name': mod,
+                'points': sorted(points, key=lambda p: label_to_idx[p['label']]),
+            })
+
+        aggregate = []
+        for idx, data in aggregate_year.items():
+            aggregate.append({
+                'label': idx_to_label[idx],
+                'value': data['rli'],
+                'num_assessed': data['assessed'],
+                'num_dd': data['dd'],
+                'categories': data['categories'],
+            })
+        aggregate = sorted(aggregate, key=lambda p: label_to_idx[p['label']])
+
+        search_process.set_status(SEARCH_FINISHED, False)
+        search_process.save_to_file({'series': series, 'aggregate': aggregate})
