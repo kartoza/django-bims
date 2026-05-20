@@ -1,7 +1,7 @@
 {% extends 'main_base.html' %}
 {% load static %}
 
-{% block subtitle %}Harvest BIMS Taxa{% endblock %}
+{% block subtitle %}Harvest BIMS Species{% endblock %}
 
 {% block head %}
     <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
@@ -41,7 +41,7 @@
     <div class="container">
         <div class="jumbotron csv-uploader-wrapper">
             <div class="help-block-space"></div>
-            <h3>Harvest BIMS Taxa</h3>
+            <h3>Harvest BIMS Species</h3>
             <p class="text-muted">
                 Fetches species from another BIMS instance and imports them into this instance.
             </p>
@@ -110,7 +110,6 @@
                             </div>
                         </div>
 
-                        <!-- Step 2: Remote taxon group selector (populated via AJAX) -->
                         <div class="form-group row" style="margin-top: 10px;" id="remote-group-row">
                             <label for="remote-group-select" class="col-sm-3 col-form-label"><b>Remote Taxon Group</b></label>
                             <div class="col-sm-9">
@@ -122,7 +121,6 @@
                             </div>
                         </div>
 
-                        <!-- Step 3: Import mode -->
                         <div class="form-group row" style="margin-top: 16px;" id="import-mode-row">
                             <label class="col-sm-3 col-form-label"><b>Import Mode</b></label>
                             <div class="col-sm-9">
@@ -145,7 +143,6 @@
                             </div>
                         </div>
 
-                        <!-- Local taxon group (only visible for "existing" mode) -->
                         <div class="import-mode-section" id="existing-group-section">
                             <div class="form-group row" style="margin-bottom: 0;">
                                 <label for="taxon-group" class="col-sm-3 col-form-label"><b>Local Taxon Group</b></label>
@@ -190,7 +187,7 @@
                                 <input class="form-check-input" type="checkbox"
                                        name="mark_readonly" id="mark-readonly" value="true">
                                 <label class="form-check-label" for="mark-readonly">
-                                    <b>Mark as read-only</b> &mdash; species in this group cannot be
+                                    <b>Mark as read-only</b> : species in this group cannot be
                                     edited locally and can only be re-harvested from the same upstream source.
                                 </label>
                             </div>
