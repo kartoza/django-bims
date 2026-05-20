@@ -756,9 +756,9 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
 
 @shared_task(name='bims.tasks.spatial_dashboard_national_rli', queue='search')
 def spatial_dashboard_national_cons_status(search_parameters=None, search_process_id=None):
-    """Compute RLI values per taxon module and in aggregate for three national
-    assessments: 2016 SANBI backcast, 2026 SANBI Red List, and current IUCN
-    status.  Output mirrors the IUCN RLI format (series + aggregate).
+    """Compute RLI values per taxon module and in aggregate for two national
+    assessments: 2016 SANBI backcast and 2026 SANBI Red List.
+    Output mirrors the IUCN RLI format (series + aggregate).
     """
     from collections import defaultdict
     from bims.utils.celery import memcache_lock
@@ -769,13 +769,12 @@ def spatial_dashboard_national_cons_status(search_parameters=None, search_proces
         SEARCH_FINISHED,
     )
     from bims.models.taxon_conservation_assessment import TaxonNationalConservationAssessment
-    from bims.models.taxonomy import Taxonomy
     from bims.scripts.species_keys import SANBI_2016_BACKCAST, SANBI_2026_REDLIST
 
     SPECIES_RANKS = ['SPECIES', 'SUBSPECIES', 'VARIETY']
     DD_CATEGORIES = {'DD', 'DDD', 'DDT'}
 
-    ASSESSMENT_ORDER = [SANBI_2016_BACKCAST, SANBI_2026_REDLIST, 'Current IUCN Status']
+    ASSESSMENT_ORDER = [SANBI_2016_BACKCAST, SANBI_2026_REDLIST]
 
     if search_parameters is None:
         search_parameters = {}
@@ -837,13 +836,6 @@ def spatial_dashboard_national_cons_status(search_parameters=None, search_proces
                 assessment_statuses[label].append(
                     (row['taxonomy_id'], row['iucn_status__category'] or '')
                 )
-
-        for row in Taxonomy.objects.filter(
-            id__in=taxonomy_ids
-        ).exclude(iucn_status__isnull=True).values('id', 'iucn_status__category'):
-            assessment_statuses['Current IUCN Status'].append(
-                (row['id'], row['iucn_status__category'] or '')
-            )
 
         label_to_idx = {label: idx for idx, label in enumerate(ASSESSMENT_ORDER)}
         year_taxa_statuses = {
