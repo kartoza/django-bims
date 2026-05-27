@@ -140,7 +140,15 @@ define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
             // OSM
             let osm = new ol.layer.Tile({
                 title: 'OpenStreetMap',
-                source: new ol.source.OSM()
+                source: new ol.source.OSM({
+                    tileLoadFunction: (imageTile, src) => {
+                        const img = imageTile.getImage();
+                        if (img && 'referrerPolicy' in img) {
+                            img.referrerPolicy = 'origin-when-cross-origin';
+                        }
+                        img.src = src;
+                    }
+                })
             });
             baseSourceLayers.push(osm);
 
@@ -238,7 +246,15 @@ define(['backbone', 'underscore', 'jquery'], function (Backbone, _, $) {
                         title: 'OpenStreetMap',
                         type: 'base',
                         visible: true,
-                        source: new ol.source.OSM()
+                        source: new ol.source.OSM({
+                            tileLoadFunction: (imageTile, src) => {
+                                const img = imageTile.getImage();
+                                if (img && 'referrerPolicy' in img) {
+                                    img.referrerPolicy = 'origin-when-cross-origin';
+                                }
+                                img.src = src;
+                            }
+                        })
                     })
                 )
             }
