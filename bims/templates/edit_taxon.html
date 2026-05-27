@@ -42,6 +42,33 @@
         <input type="hidden" name="next" value="{{ next }}">
 
         <div class="body-form container">
+
+            {% if readonly_blocked_by %}
+            <div class="alert alert-danger" role="alert" style="margin-top: 16px;">
+                <h5 class="alert-heading">
+                    <i class="fa fa-lock" aria-hidden="true"></i>
+                    This taxon cannot be edited
+                </h5>
+                <p>
+                    <strong>{{ object.canonical_name }}</strong> belongs to the following
+                    read-only taxon group{{ readonly_blocked_by|length|pluralize }},
+                    whose species are managed exclusively by harvesting from an upstream
+                    BIMS instance. Local edits are not permitted.
+                </p>
+                <ul class="mb-0">
+                    {% for group in readonly_blocked_by %}
+                    <li>
+                        <strong>{{ group.name }}</strong>
+                        {% if group.upstream_url %}
+                            - upstream: <code>{{ group.upstream_url }}</code>
+                            {% if group.upstream_id %}(group&nbsp;{{ group.upstream_id }}){% endif %}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <div class="dashboard-title">
                 <h2>
                     Edit {{ object.canonical_name }} ({{ object.rank }})
