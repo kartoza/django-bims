@@ -161,7 +161,15 @@ define([
             const baseLayer = [];
             if (!self.mapLocationSite) {
                 let _baseMap =  new ol.layer.Tile({
-                    source: new ol.source.OSM()
+                    source: new ol.source.OSM({
+                        tileLoadFunction: (imageTile, src) => {
+                            const img = imageTile.getImage();
+                            if (img && 'referrerPolicy' in img) {
+                                img.referrerPolicy = 'origin-when-cross-origin';
+                            }
+                            img.src = src;
+                        }
+                    })
                 });
                 $.each(baseMapLayers.reverse(), function (index, baseMapData) {
                     if (baseMapData.default_basemap) {
