@@ -90,6 +90,7 @@ from bims.api_views.user_boundary import (
 )
 from bims.api_views.documents import DocumentList
 from bims.api_views.module_summary import ModuleSummary
+from bims.api_views.meta_group_summary import MetaGroupSummary
 from bims.api_views.endemism import EndemismList
 from bims.api_views.site_search_result import SiteSearchResult
 from bims.api_views.site_by_coord import SiteByCoord
@@ -293,6 +294,9 @@ urlpatterns = [
     re_path(r'^module-summary/$',
         ModuleSummary.as_view(),
         name='module-summary'),
+    re_path(r'^metagroup-summary/$',
+        MetaGroupSummary.as_view(),
+        name='metagroup-summary'),
     re_path(r'^endemism-list/$',
         EndemismList.as_view(),
         name='endemism-list'),

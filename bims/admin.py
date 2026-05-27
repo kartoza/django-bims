@@ -150,6 +150,7 @@ from bims.models import (
     TaxonTagDescription,
     TaxonNationalConservationAssessment
 )
+from bims.models.meta_group import MetaGroup
 from bims.models.taxonomy import TaxonTag
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -1352,6 +1353,13 @@ class OccurrenceUploadTemplateInline(admin.TabularInline):
     extra = 1
 
 
+class MetaGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'gbif_key', 'display_order')
+    list_editable = ('display_order',)
+    search_fields = ('name',)
+    list_filter = ('gbif_key',)
+
+
 class TaxonGroupAdmin(admin.ModelAdmin):
     inlines = [
         TaxonGroupTaxonomyInline,
@@ -1362,6 +1370,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
         'name',
         'singular_name',
         'category',
+        'meta_group',
         'col_enabled',
     )
     search_fields = (
@@ -1371,6 +1380,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     list_filter = (
         'category',
         'col_enabled',
+        'meta_group',
     )
     filter_horizontal = (
         'experts',
@@ -1378,6 +1388,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'gbif_parent_species',
     )
+    autocomplete_fields = ('meta_group',)
 
 
 class TaxonGroupListFilter(django_admin.SimpleListFilter):
@@ -3061,6 +3072,7 @@ admin.site.register(SurveyDataValue, SurveyDataValueAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(Taxonomy, TaxonomyAdmin)
 admin.site.register(TaxonGroup, TaxonGroupAdmin)
+admin.site.register(MetaGroup, MetaGroupAdmin)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)

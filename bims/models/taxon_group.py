@@ -161,6 +161,17 @@ class TaxonGroup(models.Model):
         ),
     )
 
+    meta_group = models.ForeignKey(
+        'bims.MetaGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='taxon_groups',
+        help_text=(
+            'Broader organism group (metagroup) this module belongs to.'
+        ),
+    )
+
     class Meta:
         ordering = ('display_order',)
         permissions = (
