@@ -198,7 +198,15 @@
 
         function buildBaseLayer() {
             let baseLayer = new ol.layer.Tile({
-                source: new ol.source.OSM()
+                source: new ol.source.OSM({
+                    tileLoadFunction: (imageTile, src) => {
+                        const img = imageTile.getImage();
+                        if (img && 'referrerPolicy' in img) {
+                            img.referrerPolicy = 'origin-when-cross-origin';
+                        }
+                        img.src = src;
+                    }
+                })
             });
             if (Array.isArray(baseMapLayers) && baseMapLayers.length > 0) {
                 const reversed = baseMapLayers.slice().reverse();
