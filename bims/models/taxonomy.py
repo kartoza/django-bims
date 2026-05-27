@@ -717,7 +717,10 @@ class AbstractTaxonomy(AbstractValidation):
 
     @cached_property
     def last_modified(self):
-        from easyaudit.models import CRUDEvent
+        try:
+            from easyaudit.models import CRUDEvent
+        except (ImportError, RuntimeError):
+            return self.import_date
         last_update_event = CRUDEvent.objects.filter(
             object_id=self.id,
             content_type__model=self._meta.model_name,
@@ -745,7 +748,10 @@ class AbstractTaxonomy(AbstractValidation):
                 latest = taxon_proposal.first()
                 return latest.last_modified_by or latest.collector_user
 
-        from easyaudit.models import CRUDEvent
+        try:
+            from easyaudit.models import CRUDEvent
+        except (ImportError, RuntimeError):
+            return None
         crud_event = CRUDEvent.objects.filter(
             content_type__model=self._meta.model_name,
             object_id=self.id,

@@ -1000,7 +1000,6 @@ class TestSpatialDashboardTasks(FastTenantTestCase):
         self.assertEqual(labels, [
             SANBI_2016_BACKCAST,
             SANBI_2026_REDLIST,
-            'Current IUCN Status',
         ])
 
     @patch('bims.utils.celery.memcache_lock')

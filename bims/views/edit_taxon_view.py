@@ -1,8 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
-from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.views.generic import UpdateView
 
@@ -28,6 +28,9 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         'fada_id'
     ]
     success_url = '/taxa_management/'
+
+    # Populated by test_func() when a read-only group blocks editing.
+    _readonly_blocking_groups = None
 
     def get_object(self, queryset=None):
         taxon = get_object_or_404(
@@ -76,15 +79,44 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return context
 
     def test_func(self):
-        if self.request.user.is_superuser:
-            return True
+        # Block editing if the taxonomy belongs to ANY read-only group,
+        # regardless of which group the user is editing through.
+        readonly_groups = list(
+            TaxonGroup.objects.filter(
+                is_readonly=True,
+                taxongrouptaxonomy__taxonomy_id=self.kwargs['id'],
+            ).distinct()
+        )
+        if readonly_groups:
+            self._readonly_blocking_groups = readonly_groups
+            return False
+
         taxon_group = get_object_or_404(
             TaxonGroup,
             pk=self.kwargs['taxon_group_id']
         )
+        if self.request.user.is_superuser:
+            return True
         return taxon_group.experts.filter(
             id=self.request.user.id
         ).exists()
+
+    def handle_no_permission(self):
+        # For read-only blocks, render the edit template with an explanatory
+        # banner rather than a bare 403 so the user understands why.
+        if self._readonly_blocking_groups:
+            taxon = get_object_or_404(Taxonomy, pk=self.kwargs['id'])
+            return TemplateResponse(
+                self.request,
+                self.template_name,
+                {
+                    'object': taxon,
+                    'taxon_group_id': self.kwargs.get('taxon_group_id', ''),
+                    'readonly_blocked_by': self._readonly_blocking_groups,
+                },
+                status=403,
+            )
+        return super().handle_no_permission()
 
     def is_taxon_edited(self, taxon):
         return TaxonomyUpdateProposal.objects.filter(

@@ -315,6 +315,43 @@ class TestTaxonGroup(TestCase):
         )
 
 
+class TestTaxonGroupReadOnly(TestCase):
+    """Tests for the is_readonly / upstream_url / upstream_id fields."""
+
+    def test_defaults_are_not_readonly(self):
+        tg = TaxonGroupF.create()
+        self.assertFalse(tg.is_readonly)
+        self.assertEqual(tg.upstream_url, '')
+        self.assertEqual(tg.upstream_id, '')
+
+    def test_can_set_readonly_with_upstream_info(self):
+        tg = TaxonGroupF.create(
+            is_readonly=True,
+            upstream_url='https://fbis.example.org',
+            upstream_id='42',
+        )
+        tg.refresh_from_db()
+        self.assertTrue(tg.is_readonly)
+        self.assertEqual(tg.upstream_url, 'https://fbis.example.org')
+        self.assertEqual(tg.upstream_id, '42')
+
+    def test_readonly_group_can_be_updated_to_false(self):
+        tg = TaxonGroupF.create(is_readonly=True, upstream_url='https://x.test', upstream_id='1')
+        tg.is_readonly = False
+        tg.upstream_url = ''
+        tg.upstream_id = ''
+        tg.save()
+        tg.refresh_from_db()
+        self.assertFalse(tg.is_readonly)
+        self.assertEqual(tg.upstream_url, '')
+        self.assertEqual(tg.upstream_id, '')
+
+    def test_upstream_id_stored_as_string(self):
+        tg = TaxonGroupF.create(is_readonly=True, upstream_id='999')
+        tg.refresh_from_db()
+        self.assertEqual(tg.upstream_id, '999')
+
+
 class TestTaxonGroupTotalValidated(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()

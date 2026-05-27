@@ -172,6 +172,29 @@ class TaxonGroup(models.Model):
         ),
     )
 
+    is_readonly = models.BooleanField(
+        default=False,
+        help_text=(
+            'When enabled, species in this taxon group cannot be edited '
+            'locally. The group is managed by harvesting from an upstream '
+            'BIMS instance.'
+        ),
+    )
+
+    upstream_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='Base URL of the upstream BIMS instance this group is harvested from.',
+    )
+
+    upstream_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='ID of the taxon group on the upstream BIMS instance.',
+    )
+
     class Meta:
         ordering = ('display_order',)
         permissions = (
