@@ -1,3 +1,7 @@
+# syntax=docker/dockerfile:1
+ARG TIPPECANOE_IMAGE=dimasciput/tippecanoe:2.79.0
+FROM ${TIPPECANOE_IMAGE} AS tippecanoe-builder
+
 #--------- Generic stuff all our Dockerfiles should start with so we get caching ------------
 FROM python:3.12.3-slim-bookworm as prod
 MAINTAINER Dimas Ciputra <dimas@kartoza.com>
@@ -10,8 +14,10 @@ RUN mkdir -p /usr/src/{app,geonode}
 WORKDIR /usr/src/app
 
 # Install system dependencies
-ARG TIPPECANOE_VERSION=2.79.0
-RUN echo "Updating apt-get" && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/root/.cache/uv \
+    echo "Updating apt-get" && \
     apt-get update && \
     echo "Installing build dependencies" && \
     apt-get install -y --no-install-recommends \
@@ -20,43 +26,44 @@ RUN echo "Updating apt-get" && \
       libc-dev musl-dev libpcre3 libpcre3-dev \
       libgdal-dev gdal-bin \
       libcurl4-gnutls-dev librtmp-dev curl git ca-certificates \
-      # Tippecanoe deps
-      libprotobuf-dev protobuf-compiler zlib1g-dev libsqlite3-dev \
+      # Tippecanoe runtime deps
+      libprotobuf32 libsqlite3-0 \
       # psycopg2 deps (pg_config provider + runtime lib)
       libpq-dev libpq5 && \
-    echo "Installing Tippecanoe ${TIPPECANOE_VERSION}" && \
-    git clone --depth 1 --branch "${TIPPECANOE_VERSION}" https://github.com/felt/tippecanoe.git /tmp/tippecanoe && \
-    make -C /tmp/tippecanoe -j"$(nproc)" && make -C /tmp/tippecanoe install && \
-    tippecanoe --version && \
-    cd /usr/src/app && \
     echo "Python server" && \
-    uv pip install --no-cache uwsgi
+    uv pip install uwsgi
+
+# Copy tippecanoe binaries from builder stage
+COPY --from=tippecanoe-builder /usr/local/bin/tippecanoe /usr/local/bin/tippecanoe
+COPY --from=tippecanoe-builder /usr/local/bin/tile-join /usr/local/bin/tile-join
 
 # Add application requirements (do this while libpq-dev is still installed)
 COPY deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
 # Ensure pg_config is available, then install requirements
-RUN which pg_config && pg_config --version && \
-    uv pip install --no-cache -r /REQUIREMENTS.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    which pg_config && pg_config --version && \
+    uv pip install -r /REQUIREMENTS.txt
 
 # NOW it's safe to remove build-only deps (keep libpq5)
-RUN echo "Removing build dependencies and cleaning up" && \
+RUN echo "Removing build-only dependencies" && \
     apt-get -y --purge autoremove \
-      make g++ libpcre3-dev libprotobuf-dev protobuf-compiler zlib1g-dev libsqlite3-dev libpq-dev && \
-    rm -rf /var/lib/apt/lists/* /tmp/tippecanoe && \
-    rm -rf ~/.cache/uv
+      make g++ libpcre3-dev libpq-dev
 
 # Add and install Node.js dependencies
-RUN npm --quiet -g install yuglify && npm install -g grunt-cli
+RUN --mount=type=cache,target=/root/.npm \
+    npm --quiet -g install yuglify && npm install -g grunt-cli
 COPY deployment/docker/package.json /package.json
 COPY deployment/docker/Gruntfile.js /Gruntfile.js
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
 # Add application source code
 COPY . /home/web/django_project
 WORKDIR /home/web/django_project
 
 # Install front-end build tools and run webpack
-RUN cd bims && npm install --quiet -g webpack@5.50.0 webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
+RUN --mount=type=cache,target=/root/.npm \
+    cd bims && npm install --quiet -g webpack@5.50.0 webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
 
 # Add uWSGI configuration
 COPY deployment/docker/uwsgi.conf /uwsgi.conf
@@ -87,7 +94,9 @@ FROM prod as dev
 
 USER root
 
-RUN apt-get update && apt-get install -y openssh-server sudo
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y openssh-server sudo
 RUN mkdir /var/run/sshd
 RUN echo 'root:docker' | chpasswd
 RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
@@ -96,10 +105,13 @@ ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
 ADD deployment/docker/REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
-RUN uv pip install --no-cache -r /REQUIREMENTS-dev.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install -r /REQUIREMENTS-dev.txt
 ADD bashrc /root/.bashrc
 
-RUN apt-get install -y vim
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get install -y vim
 ADD karma.conf.docker.js /karma.conf.js
 
 EXPOSE 8080

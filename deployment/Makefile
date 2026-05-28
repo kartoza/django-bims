@@ -58,6 +58,22 @@ reset-search-results:
 	@docker compose ${ARGS} restart cache
 
 
+TIPPECANOE_VERSION ?= 2.79.0
+DOCKERHUB_USERNAME ?= dimasciput
+TIPPECANOE_IMAGE ?= $(DOCKERHUB_USERNAME)/tippecanoe:$(TIPPECANOE_VERSION)
+
+build-tippecanoe:
+	@echo
+	@echo "------------------------------------------------------------------"
+	@echo "Building tippecanoe $(TIPPECANOE_VERSION) and pushing to Docker Hub"
+	@echo "------------------------------------------------------------------"
+	@docker build \
+		--build-arg TIPPECANOE_VERSION=$(TIPPECANOE_VERSION) \
+		-t $(TIPPECANOE_IMAGE) \
+		-f docker/Dockerfile.tippecanoe \
+		docker/
+	@docker push $(TIPPECANOE_IMAGE)
+
 dbrestore:
 	@echo
 	@echo "------------------------------------------------------------------"
