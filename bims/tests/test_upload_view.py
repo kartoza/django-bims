@@ -97,6 +97,7 @@ class TestUploadView(FastTenantTestCase):
         mock_preferences.SiteSetting.recaptcha_secret_key = ""
         mock_preferences.SiteSetting.github_feedback_repo = "owner/repo"
 
+        mock_preferences.SiteSetting.github_upload_repo = "owner/repo"
         mock_preferences.SiteSetting.default_site_name = "FBIS Africa"
         mock_preferences.SiteSetting.github_app_id = "12345"
         mock_preferences.SiteSetting.github_private_key = "-----BEGIN PRIVATE KEY-----\nTEST\n-----END PRIVATE KEY-----"
@@ -141,6 +142,7 @@ class TestUploadView(FastTenantTestCase):
         mock_preferences.SiteSetting.github_app_id = "12345"
         mock_preferences.SiteSetting.github_private_key = "-----BEGIN PRIVATE KEY-----\nTEST\n-----END PRIVATE KEY-----"
         mock_preferences.SiteSetting.github_upload_assignees = "alice,bob"
+        mock_preferences.SiteSetting.github_upload_repo = "owner/repo"
 
         # Mock Google verification success
         def _mock_json_ok():
