@@ -146,6 +146,17 @@ class SiteSetting(Preferences):
         blank=True
     )
 
+    github_upload_repo = models.CharField(
+        max_length=200,
+        help_text=(
+            'GitHub repository where upload issues are created, '
+            'in "owner/repo" format (e.g. "my-org/upload-tracker"). '
+            'The GitHub App must be installed on this repository.'
+        ),
+        default='',
+        blank=True
+    )
+
     occurrence_upload_guidelines = models.FileField(
         null=True,
         blank=True,
