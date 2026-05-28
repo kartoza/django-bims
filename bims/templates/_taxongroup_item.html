@@ -66,6 +66,12 @@
           {% endif %}
         </div>
 
+        {% if taxon_group.meta_group_name %}
+          <div class="tg-meta-group">
+            <span class="taxon-group-meta-label">{{ taxon_group.meta_group_name }}</span>
+          </div>
+        {% endif %}
+
         {% if perms.bims.change_taxongroup %}
           <div style="margin-top:6px">
             {% if preferences.SiteSetting.enable_remove_all_occurrences_tool %}

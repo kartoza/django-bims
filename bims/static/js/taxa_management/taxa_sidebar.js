@@ -44,6 +44,20 @@ export const taxaSidebar = (() => {
       });
     }
 
+    function findMetaGroupByTaxonGroupId(parentId, groups) {
+        for (let i = 0; i < groups.length; i++) {
+            let group = groups[i];
+            if (group.id === parentId) {
+                return group.meta_group || null;
+            }
+            if (group.children && group.children.length > 0) {
+                let found = findMetaGroupByTaxonGroupId(parentId, group.children);
+                if (found !== undefined) return found;
+            }
+        }
+        return null;
+    }
+
     function findGbifTaxonomyByTaxonGroupId(parentId, groups) {
         let item = groups.find(item => item.id === parentId && item.gbif_parent_species);
         if (item) {
@@ -121,6 +135,7 @@ export const taxaSidebar = (() => {
         $('.extra-attribute-field').empty();
         $('.taxon-group-experts-container select').val(null).trigger('change');
         $('#edit-module-img-container').empty();
+        $('#edit-module-meta-group').val('');
 
         $('#editModuleModal').modal({
             keyboard: false
@@ -229,6 +244,11 @@ export const taxaSidebar = (() => {
                 type: 'select2:select',
             });
         }
+
+        // Meta Group
+        const metaGroupSelect = $('#edit-module-meta-group');
+        const metaGroupValue = findMetaGroupByTaxonGroupId(moduleId, taxaGroups);
+        metaGroupSelect.val(metaGroupValue || '');
 
         // Parent taxa group selection
         const selectedParent = findSelectedParent(

@@ -1353,11 +1353,28 @@ class OccurrenceUploadTemplateInline(admin.TabularInline):
     extra = 1
 
 
+class TaxonGroupInline(admin.TabularInline):
+    model = TaxonGroup
+    fk_name = 'meta_group'
+    fields = ('name', 'category', 'display_order')
+    extra = 0
+    can_delete = False
+    verbose_name = 'Taxon Group'
+    verbose_name_plural = 'Taxon Groups'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(category='Species Module')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 class MetaGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'gbif_key', 'display_order')
     list_editable = ('display_order',)
     search_fields = ('name',)
     list_filter = ('gbif_key',)
+    inlines = [TaxonGroupInline]
 
 
 class TaxonGroupAdmin(admin.ModelAdmin):
