@@ -16,11 +16,7 @@ WORKDIR /usr/src/app
 # Install system dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,target=/root/.cache/uv \
-    echo "Updating apt-get" && \
-    apt-get update && \
-    echo "Installing build dependencies" && \
-    apt-get install -y --no-install-recommends \
+    apt-get update && apt-get install -y --no-install-recommends \
       nodejs npm \
       gcc g++ make \
       libc-dev musl-dev libpcre3 libpcre3-dev \
@@ -29,8 +25,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       # Tippecanoe runtime deps
       libprotobuf32 libsqlite3-0 \
       # psycopg2 deps (pg_config provider + runtime lib)
-      libpq-dev libpq5 && \
-    echo "Python server" && \
+      libpq-dev libpq5
+
+# Install uWSGI (separate layer so apt changes don't force a pip re-run)
+RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install uwsgi
 
 # Copy tippecanoe binaries from builder stage
