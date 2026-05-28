@@ -617,6 +617,22 @@ def build_dwca(
     return zip_path, archive_url, written_ids
 
 
+def push_eml_document(config, dataset_key: str, eml_path: str) -> None:
+    """Push the EML document directly to GBIF's registry for immediate metadata update."""
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+    with open(eml_path, "r", encoding="utf-8") as f:
+        eml_content = f.read()
+    r = requests.put(
+        f"{api_url}/dataset/{dataset_key}/document",
+        data=eml_content.encode("utf-8"),
+        auth=auth,
+        timeout=30,
+        headers={"Content-Type": "application/xml"},
+    )
+    r.raise_for_status()
+
+
 def trigger_crawl_with_config(config, dataset_key: str) -> None:
     """Ask GBIF to re-crawl an existing dataset."""
     auth = HTTPBasicAuth(config.username, config.password)
@@ -731,6 +747,8 @@ def publish_gbif_data_with_config(
 
     if existing_dataset_key:
         dataset_key = existing_dataset_key
+        eml_path = os.path.join(os.path.dirname(zip_path), "eml.xml")
+        push_eml_document(config, dataset_key, eml_path)
         trigger_crawl_with_config(config, dataset_key)
     else:
         title = ref_title
