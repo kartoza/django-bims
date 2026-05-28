@@ -617,20 +617,74 @@ def build_dwca(
     return zip_path, archive_url, written_ids
 
 
-def push_eml_document(config, dataset_key: str, eml_path: str) -> None:
-    """Push the EML document directly to GBIF's registry for immediate metadata update."""
+def _contact_to_gbif_payload(contact) -> dict:
+    """Convert a GbifPublishContact instance to a GBIF registry API contact payload."""
+    import re
+    role = (getattr(contact, "role", "") or "").strip()
+    # Convert camelCase role to UPPER_SNAKE for GBIF API e.g. "pointOfContact" -> "POINT_OF_CONTACT"
+    role_upper = re.sub(r'(?<!^)(?=[A-Z])', '_', role).upper() if role else "POINT_OF_CONTACT"
+
+    payload = {"type": role_upper}
+
+    given = contact.resolved_given_name
+    sur = contact.resolved_sur_name
+    if given:
+        payload["firstName"] = given
+    if sur:
+        payload["lastName"] = sur
+    org = contact.resolved_organization_name
+    if org:
+        payload["organization"] = org
+    position = contact.resolved_position_name
+    if position:
+        payload["position"] = [position]
+    email = contact.resolved_email
+    if email:
+        payload["email"] = [email]
+    phone = (contact.phone or "").strip()
+    if phone:
+        payload["phone"] = [phone]
+    dp = (contact.delivery_point or "").strip()
+    if dp:
+        payload["address"] = [dp]
+    city = (contact.city or "").strip()
+    if city:
+        payload["city"] = city
+    postal = (contact.postal_code or "").strip()
+    if postal:
+        payload["postalCode"] = postal
+    country = (contact.country or "").strip()
+    if country:
+        payload["country"] = country
+    url = (contact.online_url or "").strip()
+    if url:
+        payload["homepage"] = [url]
+    return payload
+
+
+def sync_dataset_contacts(config, dataset_key: str, contacts: list) -> None:
+    """Replace all contacts on a GBIF dataset with the provided list via the registry API."""
     auth = HTTPBasicAuth(config.username, config.password)
     api_url = config.gbif_api_url.rstrip("/")
-    with open(eml_path, "r", encoding="utf-8") as f:
-        eml_content = f.read()
-    r = requests.put(
-        f"{api_url}/dataset/{dataset_key}/document",
-        data=eml_content.encode("utf-8"),
-        auth=auth,
-        timeout=30,
-        headers={"Content-Type": "application/xml"},
-    )
+    base = f"{api_url}/dataset/{dataset_key}/contact"
+
+    r = requests.get(base, auth=auth, timeout=30)
     r.raise_for_status()
+    for existing in r.json():
+        contact_key = existing.get("key")
+        if contact_key:
+            requests.delete(f"{base}/{contact_key}", auth=auth, timeout=30).raise_for_status()
+
+    for contact in contacts:
+        payload = _contact_to_gbif_payload(contact)
+        r = requests.post(
+            base,
+            json=payload,
+            auth=auth,
+            timeout=30,
+            headers={"Content-Type": "application/json"},
+        )
+        r.raise_for_status()
 
 
 def trigger_crawl_with_config(config, dataset_key: str) -> None:
@@ -747,8 +801,7 @@ def publish_gbif_data_with_config(
 
     if existing_dataset_key:
         dataset_key = existing_dataset_key
-        eml_path = os.path.join(os.path.dirname(zip_path), "eml.xml")
-        push_eml_document(config, dataset_key, eml_path)
+        sync_dataset_contacts(config, dataset_key, contacts)
         trigger_crawl_with_config(config, dataset_key)
     else:
         title = ref_title
