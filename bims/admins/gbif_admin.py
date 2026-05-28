@@ -307,8 +307,8 @@ class GbifPublishSessionAdmin(admin.ModelAdmin):
         "start_time",
         "duration_display",
     )
-    list_filter = ("status", "trigger", "source_reference", "gbif_config")
-    search_fields = ("dataset_key", "error_message", "source_reference__source_name")
+    list_filter = ("status", "trigger", "gbif_config")
+    search_fields = ("dataset_key", "error_message")
     readonly_fields = (
         "schedule",
         "source_reference",
