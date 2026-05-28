@@ -35,6 +35,22 @@ def dwca_dir() -> str:
     return abs_dir
 
 
+def get_publisher_name(config) -> str:
+    """Fetch the full publisher name from GBIF using publishing_org_key."""
+    if not config.publishing_org_key:
+        return ""
+    api_url = config.gbif_api_url.rstrip("/")
+    try:
+        r = requests.get(
+            f"{api_url}/organization/{config.publishing_org_key}",
+            timeout=10,
+        )
+        r.raise_for_status()
+        return r.json().get("title") or ""
+    except Exception:
+        return ""
+
+
 _ABUNDANCE_TYPE_MAP = {
     "number":                        ("individuals",     True),
     "percentage":                    ("% cover",         False),
@@ -549,7 +565,7 @@ def build_dwca(
         raise ValueError("No eligible records to export.")
 
     title = ref_title
-    publisher_name = getattr(config, 'name', None) or _site_name()
+    publisher_name = get_publisher_name(config) or getattr(config, 'name', None) or _site_name()
     abstract = (
         f"Occurrence dataset for {ref_title} uploaded to {publisher_name}."
     )
@@ -718,7 +734,7 @@ def publish_gbif_data_with_config(
         trigger_crawl_with_config(config, dataset_key)
     else:
         title = ref_title
-        publisher_name = getattr(config, 'name', None) or _site_name()
+        publisher_name = get_publisher_name(config) or getattr(config, 'name', None) or _site_name()
         description = (
             f"Occurrence dataset for {ref_title} uploaded to {publisher_name}."
         )
