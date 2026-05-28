@@ -156,9 +156,9 @@ class UploadView(UserPassesTestMixin, FormView):
         return JsonResponse({'status': 'ERROR', 'errors': form.errors}, status=400)
 
     def _get_repo_via_app(self):
-        repo_name = getattr(preferences.SiteSetting, 'github_feedback_repo', '')
+        repo_name = getattr(preferences.SiteSetting, 'github_upload_repo', '')
         if not repo_name:
-            raise Http404('Missing GitHub repository configuration')
+            raise Http404('Missing GitHub upload repository configuration')
         token, repo_full = _get_installation_token_and_repo(repo_name)
         gh = Github(auth=Auth.Token(token))
         return gh.get_repo(repo_full, lazy=False)
