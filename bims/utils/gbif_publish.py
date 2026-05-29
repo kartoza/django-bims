@@ -126,30 +126,34 @@ def write_occurrence_txt(
                 pass
 
             occurrence_id = str(r.uuid or r.pk)
-            collection_code = (getattr(getattr(r, "module_group", None), "name", "") or "BIMS")
+            collection_code = (
+                getattr(getattr(r, "module_group", None), "name", "") or "BIMS"
+            )
             catalog_number = str(r.pk)
 
             recorded_by = (r.collector or "").strip()
-            collector_user = None
 
             if not recorded_by and r.collector_user:
-                collector_user = r.collector_user
                 recorded_by = (
                     r.collector_user.get_full_name() or
                     r.collector_user.username
                 ).strip()
                 if 'admin' in recorded_by.lower():
                     recorded_by = ''
-                    collector_user = None
 
             if not recorded_by and r.owner:
                 candidate = (r.owner.get_full_name() or r.owner.username).strip()
                 if 'admin' not in candidate.lower():
                     recorded_by = candidate
-                    collector_user = r.owner
 
             row_dataset_name = dataset_name or _site_name()
             inst_code = (r.institution_id or "").strip()
+
+            collector_user = None
+            if r.collector_user:
+                collector_user = r.collector_user
+            elif r.owner:
+                collector_user = r.owner
 
             if collector_user:
                 inst_code = collector_user.organization

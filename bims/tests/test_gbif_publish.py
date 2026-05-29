@@ -583,17 +583,27 @@ class GbifPublishApiTests(FastTenantTestCase):
             owner=owner,
             institution_id="LEGACY-INST-ID",
         )
+        new_record = self._make_record(
+            source_reference,
+            collector="",
+            collector_user=owner,
+            owner=owner,
+            institution_id="LEGACY-INST-ID",
+        )
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
             zip_path, _, _ = build_dwca(
-                self.config, [record], [self.contact], source_reference
+                self.config, [record, new_record], [self.contact], source_reference
             )
 
         rows = self._read_occurrence_rows(zip_path)
         self.assertEqual(rows[0]["recordedBy"], "River Team")
         self.assertEqual(rows[0]["institutionCode"], "Owner Org")
+
+        self.assertEqual(rows[1]["recordedBy"], "River Team")
+        self.assertEqual(rows[1]["institutionCode"], "Owner Org")
 
     def test_basis_of_record_mapping_for_requested_record_types(self):
         source_reference = SourceReferenceF.create()
