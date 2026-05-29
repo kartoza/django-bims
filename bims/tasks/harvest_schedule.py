@@ -99,7 +99,6 @@ def run_scheduled_gbif_harvest(self, schema_name: str, schedule_id: int):
                     harvest_synonyms=sched.harvest_synonyms_default,
                     boundary=sched.boundary_default,
                     status="queued",
-                    source_site=None,
                     schedule=sched,
                     trigger="scheduled",
                     since_time=since,
