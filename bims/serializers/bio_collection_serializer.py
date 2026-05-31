@@ -624,6 +624,8 @@ class BioCollectionOneRowSerializer(
                 document = obj.source_reference.source
             elif isinstance(obj.source_reference,
                             SourceReferenceDatabase):
+                if obj.source_reference.source.url:
+                    url = obj.source_reference.source.url
                 if obj.source_reference.document:
                     document = obj.source_reference.document
             if not url and document:

@@ -68,7 +68,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                     source = '-'
             else:
                 try:
-                    url = col.source_reference.source.doi
+                    url = None
+                    if hasattr(col.source_reference.source, 'doi'):
+                        url = col.source_reference.source.doi
                     if not url:
                         url = col.source_reference.source.url
                 except AttributeError:

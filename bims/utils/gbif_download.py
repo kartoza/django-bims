@@ -12,7 +12,7 @@ from typing import List, Optional, Set, Callable, Dict, Any, Tuple
 import requests
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
-from django.db import connection
+from django.db import connection, transaction
 from preferences import preferences
 
 from bims.templatetags import is_fada_site
@@ -36,7 +36,6 @@ def _resume_load(harvest_session) -> dict:
 def _resume_save(harvest_session, state: dict):
     if not harvest_session:
         return
-    from django.db import transaction
     harvest_session.status = json.dumps(state, separators=(",", ":"), ensure_ascii=False)
     try:
         with transaction.atomic():
@@ -311,6 +310,17 @@ def submit_download(
     return r.text.strip().strip('"'), r.status_code
 
 
+def get_download_information(
+    key: str,
+) -> Any:
+    download_url = f'{GBIF_DOWNLOAD_URL}/{key}'
+    resp = requests.get(download_url, timeout=30)
+    if resp.status_code != 200:
+        return ""
+    info = resp.json()
+    return info
+
+
 def get_ready_download_url(
     key: str,
     auth,
@@ -330,7 +340,7 @@ def get_ready_download_url(
         log(f"{key} status={status} link={link}")
         if status in {"FAILED", "KILLED", "CANCELLED"}:
             return None
-        if link:
+        if status == "SUCCEEDED":
             probe = requests.get(link, auth=auth, stream=True, timeout=60)
             if probe.status_code == 200:
                 probe.close()
