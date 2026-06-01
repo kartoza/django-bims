@@ -180,22 +180,34 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             map.addLayer(self.highlightVector);
 
             // ---------------------------------
-            // BIODIVERSITY LAYERS
+            // BIODIVERSITY LAYERS  (DuckDB/GeoParquet → MVT → VectorTile)
             // ---------------------------------
-            var biodiversityLayersOptions = {
-                url: '/bims_proxy/' + geoserverPublicUrl + 'wms',
-                params: {
-                    LAYERS: locationSiteGeoserverLayer,
-                    FORMAT: 'image/png8',
-                    viewparams: 'where:' + defaultWMSSiteParameters
-                },
-                ratio: 1,
-                serverType: 'geoserver',
-                transition: 0
-            };
-            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
-            self.biodiversityTileLayer = new ol.layer.Tile({
-                source: self.biodiversitySource
+
+            self._visibleSiteIds = null; // null = show all; Set = show subset
+
+            var sitePointStyle = new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 6,
+                    fill: new ol.style.Fill({ color: '#d9534f' }),
+                    stroke: new ol.style.Stroke({ color: '#fff', width: 1.5 })
+                })
+            });
+
+            self.biodiversitySource = new ol.source.VectorTile({
+                format: new ol.format.MVT(),
+                url: locationSiteTileUrl,
+                tileGrid: ol.tilegrid.createXYZ({ maxZoom: 20 })
+            });
+
+            self.biodiversityTileLayer = new ol.layer.VectorTile({
+                source: self.biodiversitySource,
+                style: function (feature) {
+                    if (self._visibleSiteIds !== null &&
+                            !self._visibleSiteIds.has(feature.get('site_id'))) {
+                        return null;
+                    }
+                    return sitePointStyle;
+                }
             });
 
             let biodiversityLayerData = {
@@ -1084,6 +1096,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                                     }
                                 }
                             })
+                        } else if (layer['layer'] instanceof ol.layer.VectorTile ||
+                                   layer['layer'] instanceof ol.layer.Vector) {
+                            // VectorTile/Vector layers (e.g. Sites from GeoParquet) are
+                            // handled separately in olmap.js – skip here.
+                            return true;
                         } else {
                             const queryLayer = layer['layer'].getSource().getParams()['layers'];
                             if (queryLayer.indexOf('location_site_view') > -1) {

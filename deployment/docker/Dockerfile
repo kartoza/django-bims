@@ -58,6 +58,9 @@ WORKDIR /home/web/django_project
 # Install front-end build tools and run webpack
 RUN cd bims && npm install --quiet -g webpack@5.50.0 webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
 
+# Pre-install DuckDB spatial extension so the container works offline
+RUN python -c "import duckdb; c = duckdb.connect(); c.execute('INSTALL spatial'); c.close()"
+
 # Add uWSGI configuration
 COPY deployment/docker/uwsgi.conf /uwsgi.conf
 
