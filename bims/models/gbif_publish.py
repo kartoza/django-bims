@@ -532,4 +532,6 @@ def seed_contacts_from_source_reference_authors(sender, instance: GbifPublish, c
             individual_name_given=name_source.first_name or "",
             individual_name_sur=name_source.last_name or "",
         ))
-    GbifPublishContact.objects.bulk_create(contacts)
+    created_contacts = GbifPublishContact.objects.bulk_create(contacts)
+    for contact in created_contacts:
+        fill_gbif_publish_contact_from_user(GbifPublishContact, contact)
