@@ -107,9 +107,6 @@ class Command(BaseCommand):
         all_sites: bool = options["all_sites"]
         output_path: str | None = options.get("output")
 
-        # ------------------------------------------------------------------ #
-        # Build queryset
-        # ------------------------------------------------------------------ #
         from bims.models.location_site import LocationSite
         from bims.models.biological_collection_record import BiologicalCollectionRecord
 
@@ -161,8 +158,6 @@ class Command(BaseCommand):
         df = pd.DataFrame(records)
         gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
 
-        # Spatially sort by geohash so DuckDB can skip row groups during bbox
-        # queries — this is the key to fast tile generation for large datasets.
         try:
             import geohash2 as geohash
             gdf["_gh"] = gdf.apply(
@@ -173,9 +168,6 @@ class Command(BaseCommand):
             # geohash2 not installed – fall back to simple lat/lon sort (still helps).
             gdf = gdf.sort_values(["latitude", "longitude"]).reset_index(drop=True)
 
-        # ------------------------------------------------------------------ #
-        # Determine output path
-        # ------------------------------------------------------------------ #
         if not output_path:
             schema_name = connection.schema_name if hasattr(connection, "schema_name") else "public"
             out_dir = os.path.join(settings.MEDIA_ROOT, "geoparquet")
@@ -185,9 +177,6 @@ class Command(BaseCommand):
         out_dir = os.path.dirname(os.path.abspath(output_path))
         os.makedirs(out_dir, exist_ok=True)
 
-        # ------------------------------------------------------------------ #
-        # Write GeoParquet
-        # ------------------------------------------------------------------ #
         gdf.to_parquet(output_path, index=False, compression="snappy")
 
         self.stdout.write(
@@ -199,6 +188,8 @@ class Command(BaseCommand):
 
         # Clear the MVT tile cache so stale tiles are not served after regeneration.
         from bims.api_views.location_site_tiles import clear_tile_cache
+        from bims.api_views.location_site_hex_tiles import clear_hex_tile_cache
         schema_name = connection.schema_name if hasattr(connection, "schema_name") else "public"
         clear_tile_cache(schema_name)
+        clear_hex_tile_cache(schema_name)
         self.stdout.write("  Tile cache cleared.")

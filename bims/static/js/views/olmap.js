@@ -747,6 +747,23 @@ define([
 
             self.layers.addLayersToMap(self.map);
             this.initExtent = this.getCurrentBbox();
+
+            // Zoom threshold: below this show hex heatmap, at/above show points.
+            var HEX_MAX_ZOOM = 10;
+
+            function applyZoomMode() {
+                var zoom = self.map.getView().getZoom();
+                var showHex = zoom < HEX_MAX_ZOOM;
+                self.layers.toggleHexLayer(showHex);
+            }
+
+            // Initial state.
+            applyZoomMode();
+
+            // Switch layers and reload hex on every pan/zoom.
+            self.map.on('moveend', function () {
+                applyZoomMode();
+            });
         },
         removeLayer: function (layer) {
             this.map.removeLayer(layer);
