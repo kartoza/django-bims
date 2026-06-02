@@ -5,6 +5,7 @@ import zipfile
 import uuid
 from datetime import datetime
 from typing import Iterable, Tuple, List
+from xml.sax.saxutils import escape as _xe
 
 import requests
 from django.conf import settings
@@ -15,10 +16,7 @@ from requests.auth import HTTPBasicAuth
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-LICENSE_URL = getattr(
-    settings, "GBIF_DATASET_LICENSE",
-    "https://creativecommons.org/publicdomain/zero/1.0/legalcode"
-)
+LICENSE_URL = "https://creativecommons.org/licenses/by-nc/4.0/legalcode"
 
 def _media_url() -> str:
     return getattr(settings, "MEDIA_URL", "/media/").rstrip("/")
@@ -221,7 +219,7 @@ def write_meta_xml(path: str):
 
 
 def eml_author(author) -> str:
-    """Return EML XML snippet for one author (GeoNode Profile/User or BIMS Profile object)."""
+    """Return EML XML snippet for one author"""
     user = author
     try:
         bims_profile = user.bims_profile
@@ -229,10 +227,10 @@ def eml_author(author) -> str:
     except Exception:
         role_name = None
 
-    given = getattr(user, 'first_name', '').strip()
-    sur = getattr(user, 'last_name', '').strip()
-    email = getattr(user, 'email', '').strip()
-    org = (getattr(user, 'organization', '') or '').strip()
+    given = _xe(getattr(user, 'first_name', '').strip())
+    sur = _xe(getattr(user, 'last_name', '').strip())
+    email = _xe(getattr(user, 'email', '').strip())
+    org = _xe((getattr(user, 'organization', '') or '').strip())
 
     parts = []
     if given or sur:
@@ -245,7 +243,7 @@ def eml_author(author) -> str:
     if org:
         parts.append(f'  <organizationName>{org}</organizationName>')
     if role_name:
-        parts.append(f'  <positionName>{role_name}</positionName>')
+        parts.append(f'  <positionName>{_xe(role_name)}</positionName>')
     if email:
         parts.append(f'  <electronicMailAddress>{email}</electronicMailAddress>')
     return '\n  '.join(parts)
@@ -257,19 +255,19 @@ def eml_contact_from_model(contact) -> str:
     Applies the resolved_* properties so blank fields fall back to the linked
     user's profile data.
     """
-    given = contact.resolved_given_name
-    sur = contact.resolved_sur_name
-    org = contact.resolved_organization_name
-    position = contact.resolved_position_name
-    email = contact.resolved_email
-    phone = contact.phone.strip() if contact.phone else ""
-    url = contact.online_url.strip() if contact.online_url else ""
+    given = _xe(contact.resolved_given_name or "")
+    sur = _xe(contact.resolved_sur_name or "")
+    org = _xe(contact.resolved_organization_name or "")
+    position = _xe(contact.resolved_position_name or "")
+    email = _xe(contact.resolved_email or "")
+    phone = _xe(contact.phone.strip() if contact.phone else "")
+    url = _xe(contact.online_url.strip() if contact.online_url else "")
 
     # address sub-fields
-    dp = (contact.delivery_point or "").strip()
-    city = (contact.city or "").strip()
-    postal = (contact.postal_code or "").strip()
-    country = (contact.country or "").strip()
+    dp = _xe((contact.delivery_point or "").strip())
+    city = _xe((contact.city or "").strip())
+    postal = _xe((contact.postal_code or "").strip())
+    country = _xe((contact.country or "").strip())
 
     parts = []
     if given or sur:
@@ -304,7 +302,7 @@ def eml_contact_from_model(contact) -> str:
     if url:
         parts.append(f"  <onlineUrl>{url}</onlineUrl>")
 
-    role = (getattr(contact, "role", "") or "").strip()
+    role = _xe((getattr(contact, "role", "") or "").strip())
     if role:
         parts.append(f"  <role>{role}</role>")
 
@@ -346,20 +344,20 @@ def eml_citation(source_reference) -> str:
 
     parts = []
     if authors:
-        parts.append(authors)
+        parts.append(_xe(authors))
     if year:
-        parts.append(f"({year})")
+        parts.append(f"({_xe(year)})")
     if title:
-        parts.append(title)
+        parts.append(_xe(title))
     if journal_str:
-        parts.append(journal_str)
+        parts.append(_xe(journal_str))
     text = " ".join(parts)
     if doi_str:
-        text = f"{text}.{doi_str}."
+        text = f"{text}.{_xe(doi_str)}."
     elif text:
         text = f"{text}."
 
-    id_attr = f' identifier="{identifier}"' if identifier else ""
+    id_attr = f' identifier="{_xe(identifier)}"' if identifier else ""
     return f"<citation{id_attr}>{text}</citation>"
 
 
@@ -367,7 +365,7 @@ def intellectual_rights_text(licence=None) -> str:
     """Format a single Licence object into an intellectualRights string."""
     name = (licence.name if licence and licence.name else "Creative Commons CCZero 1.0 License")
     url = (licence.url if licence and licence.url else LICENSE_URL)
-    return f"This work is licensed under a {name} {url}."
+    return f"This work is licensed under a {_xe(name)} {_xe(url)}."
 
 
 def write_eml_xml(
@@ -375,7 +373,6 @@ def write_eml_xml(
         title: str,
         abstract: str,
         contacts: list,
-        authors: list = None,
         licences: list = None,
         citation: str = "",
         pub_date: str = ""):
@@ -383,16 +380,17 @@ def write_eml_xml(
     pub_date = pub_date or today
     site = _site_name()
 
-    if authors:
+    originators = [c for c in contacts if (getattr(c, 'role', '') or '') == 'originator']
+    if originators:
         creator_blocks = "\n".join(
-            f"  <creator>\n  {eml_author(a)}\n  </creator>"
-            for a in authors
+            f"  <creator>\n  {eml_contact_from_model(c)}\n  </creator>"
+            for c in originators
         )
     else:
         creator_blocks = (
             f"  <creator>\n"
-            f"    <individualName><surName>{site}</surName></individualName>\n"
-            f"    <organizationName>{site}</organizationName>\n"
+            f"    <individualName><surName>{_xe(site)}</surName></individualName>\n"
+            f"    <organizationName>{_xe(site)}</organizationName>\n"
             f"  </creator>"
         )
 
@@ -425,10 +423,10 @@ def write_eml_xml(
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd">
           <dataset>
-            <title>{title}</title>
+            <title>{_xe(title)}</title>
             {creator_blocks}
             <pubDate>{pub_date}</pubDate>
-            <abstract><para>{abstract}</para></abstract>
+            <abstract><para>{_xe(abstract)}</para></abstract>
             <intellectualRights>
 {rights_paras}
             </intellectualRights>
@@ -479,7 +477,7 @@ def register_dataset(
         "title": title,
         "description": description,
         "language": "eng",
-        "license": config.license_url,
+        "license": config.license.url if config.license_id and config.license.url else LICENSE_URL,
     }
 
     auth = HTTPBasicAuth(config.username, config.password)
@@ -573,12 +571,6 @@ def build_dwca(
     abstract = (
         f"Occurrence dataset for {ref_title} uploaded to {publisher_name}."
     )
-    raw_sra = list(source_reference.author_list or []) if source_reference else []
-    authors = []
-    for sra in raw_sra:
-        author_obj = getattr(sra, 'author', sra)
-        authors.append(author_obj.user if getattr(author_obj, 'user_id', None) else author_obj)
-
     seen = set()
     licences = []
     for r in records:
@@ -605,7 +597,6 @@ def build_dwca(
         title,
         abstract,
         contacts=contacts,
-        authors=authors,
         licences=licences,
         citation=citation,
         pub_date=pub_date)
@@ -815,6 +806,7 @@ def publish_gbif_data_with_config(
         )
         dataset_key = register_dataset(config, title, description)
         add_endpoint(config, dataset_key, archive_url)
+        sync_dataset_contacts(config, dataset_key, contacts)
 
     BiologicalCollectionRecord.objects.filter(
         id__in=written_ids

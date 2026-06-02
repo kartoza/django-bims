@@ -59,7 +59,6 @@ def _make_config(**kwargs):
     defaults = {
         "name": "Test",
         "gbif_api_url": "https://api.gbif-test.org/v1",
-        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
         "export_base_url": "https://example.org",
         "username": "user",
         "password": "pass",
@@ -829,6 +828,9 @@ class GbifPublishApiTests(FastTenantTestCase):
         ), mock.patch(
             "bims.utils.gbif_publish.add_endpoint",
             return_value=None,
+        ), mock.patch(
+            "bims.utils.gbif_publish.sync_dataset_contacts",
+            return_value=None,
         ):
             result = publish_gbif_data_with_config(
                 self.config, source_reference=source_reference, contacts=[self.contact]
@@ -1154,7 +1156,7 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertIn("<electronicMailAddress>lerato@saiab.ac.za</electronicMailAddress>", eml)
         self.assertIn("<phone>+27 46 603 5800</phone>", eml)
 
-    def test_build_dwca_without_contacts_uses_site_default(self):
+    def test_build_dwca_without_originator_uses_site_default_creator(self):
         source_reference = SourceReferenceF.create()
         record = self._make_record(source_reference)
         temp_dir = tempfile.mkdtemp()
@@ -1166,6 +1168,7 @@ class GbifPublishContactTests(FastTenantTestCase):
             organization_name="SAIAB",
             electronic_mail_address="lerato@saiab.ac.za",
             phone="+27 46 603 5800",
+            role=RoleType.METADATA_PROVIDER,
         )
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="TestSite"):
@@ -1175,11 +1178,11 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertIn("<contact>", eml)
         self.assertIn("TestSite", eml)
 
-    def test_contacts_not_used_as_creators(self):
-        """Contacts should appear in <contact> but NOT replace <creator> blocks."""
+    def test_originator_contacts_appear_as_creators(self):
+        """Contacts with role=originator appear in both <creator> and <contact> blocks."""
         source_reference = SourceReferenceF.create()
         record = self._make_record(source_reference)
-        contact = _make_contact(self.config, individual_name_given="ContactOnly")
+        contact = _make_contact(self.config, individual_name_given="ContactOnly", role=RoleType.ORIGINATOR)
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
@@ -1187,11 +1190,27 @@ class GbifPublishContactTests(FastTenantTestCase):
             zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
 
         eml = self._read_eml(zip_path)
-        # contact name appears inside <contact> block
         self.assertIn("<contact>", eml)
-        self.assertIn("ContactOnly", eml)
-        # but <creator> block still exists (site default since no authors on this ref)
         self.assertIn("<creator>", eml)
+        self.assertEqual(eml.count("ContactOnly"), 2)
+
+    def test_non_originator_contact_not_in_creator(self):
+        """Contacts with a non-originator role appear only in <contact>, not <creator>."""
+        source_reference = SourceReferenceF.create()
+        record = self._make_record(source_reference)
+        contact = _make_contact(self.config, individual_name_given="MetaOnly", role=RoleType.METADATA_PROVIDER)
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
+
+        eml = self._read_eml(zip_path)
+        self.assertIn("<contact>", eml)
+        self.assertIn("MetaOnly", eml)
+        # no originator - falls back to site-name default creator
+        self.assertIn("<creator>", eml)
+        self.assertNotIn("MetaOnly", eml.split("<creator>")[1].split("</creator>")[0])
 
     def test_pubdate_uses_source_reference_year(self):
         """<pubDate> should reflect the source reference publication year."""
@@ -1293,6 +1312,8 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
             "bims.utils.gbif_publish.register_dataset", return_value="ds-key"
         ), mock.patch(
             "bims.utils.gbif_publish.add_endpoint", return_value=None
+        ), mock.patch(
+            "bims.utils.gbif_publish.sync_dataset_contacts", return_value=None
         ):
             result = publish_gbif_data_with_config(
                 self.config, source_reference=sr, contacts=[self.contact]
@@ -1334,6 +1355,8 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
             "bims.utils.gbif_publish.register_dataset", return_value="ds-db-key"
         ), mock.patch(
             "bims.utils.gbif_publish.add_endpoint", return_value=None
+        ), mock.patch(
+            "bims.utils.gbif_publish.sync_dataset_contacts", return_value=None
         ):
             result = publish_gbif_data_with_config(
                 self.config, source_reference=sr, contacts=[self.contact]
@@ -1359,11 +1382,11 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
 
 
 # ---------------------------------------------------------------------------
-# EML author resolution from SourceReferenceAuthor
+# EML creator blocks from originator contacts
 # ---------------------------------------------------------------------------
 
-class GbifPublishEmlAuthorResolutionTests(FastTenantTestCase):
-    """build_dwca must resolve SourceReferenceAuthor → User/Author for EML."""
+class GbifPublishEmlCreatorTests(FastTenantTestCase):
+    """build_dwca must use originator contacts as EML <creator> blocks."""
 
     def setUp(self):
         self.config = _make_config(export_base_url="https://example.org")
@@ -1381,61 +1404,61 @@ class GbifPublishEmlAuthorResolutionTests(FastTenantTestCase):
         with zf.ZipFile(zip_path) as z:
             return z.read("eml.xml").decode("utf-8")
 
-    def test_build_dwca_eml_includes_author_from_through_model_with_user(self):
-        """Author linked to a User: EML <creator> contains first/last name."""
+    def test_build_dwca_eml_creator_from_originator_contact(self):
+        """An originator contact appears as an EML <creator> with name and email."""
         import datetime
         sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
-        user = UserF.create(first_name="Thabo", last_name="Nkosi", email="thabo@example.com")
-        author = Author.objects.create(first_name="Thabo", last_name="Nkosi", user=user)
-        SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=0)
+        contact = _make_contact(
+            self.config,
+            individual_name_given="Thabo",
+            individual_name_sur="Nkosi",
+            electronic_mail_address="thabo@example.com",
+            role=RoleType.ORIGINATOR,
+        )
         record = self._make_record(sr)
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], sr)
 
         eml = self._read_eml(zip_path)
         self.assertIn("<creator>", eml)
         self.assertIn("<givenName>Thabo</givenName>", eml)
         self.assertIn("<surName>Nkosi</surName>", eml)
 
-    def test_build_dwca_eml_includes_author_without_user(self):
-        """Author with no linked User: EML <creator> still contains first/last name."""
+    def test_build_dwca_eml_falls_back_to_site_name_when_no_originators(self):
+        """When no originator contacts exist the site-name default creator is used."""
         import datetime
         sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
-        author = Author.objects.create(first_name="Maria", last_name="Santos")
-        SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=0)
+        contact = _make_contact(self.config, role=RoleType.METADATA_PROVIDER)
         record = self._make_record(sr)
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
-        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="FallbackSite"):
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], sr)
 
         eml = self._read_eml(zip_path)
         self.assertIn("<creator>", eml)
-        self.assertIn("<givenName>Maria</givenName>", eml)
-        self.assertIn("<surName>Santos</surName>", eml)
+        self.assertIn("FallbackSite", eml)
 
-    def test_build_dwca_eml_author_order_preserved(self):
-        """Multiple authors appear in EML in their defined order."""
+    def test_build_dwca_eml_creator_order_follows_contacts_order(self):
+        """Multiple originator contacts appear as <creator> blocks in contacts list order."""
         import datetime
         sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
-        for i, (first, last) in enumerate([("First", "Author"), ("Second", "Writer")]):
-            author = Author.objects.create(first_name=first, last_name=last)
-            SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=i)
+        contact_a = _make_contact(self.config, individual_name_given="First", role=RoleType.ORIGINATOR)
+        contact_b = _make_contact(self.config, individual_name_given="Second", role=RoleType.ORIGINATOR)
         record = self._make_record(sr)
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+            zip_path, _, _ = build_dwca(self.config, [record], [contact_a, contact_b], sr)
 
         eml = self._read_eml(zip_path)
-        pos_first = eml.index("First")
-        pos_second = eml.index("Second")
-        self.assertLess(pos_first, pos_second, "First author should appear before Second in EML")
+        self.assertLess(eml.index("First"), eml.index("Second"),
+                        "First originator contact should appear before Second in EML")

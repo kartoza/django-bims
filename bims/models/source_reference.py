@@ -374,6 +374,8 @@ class SourceReferenceBibliography(SourceReference):
                     author.save()
                     if author.user:
                         users.append(author.user)
+                    else:
+                        users.append(author)
             authors = users
         if self.document:
             try:
