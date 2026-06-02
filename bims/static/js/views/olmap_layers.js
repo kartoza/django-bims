@@ -240,9 +240,15 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 featureProjection: 'EPSG:3857'
             });
             self._hexLoading = false;
+            // null = no search filter; '__empty__' = hide all; string = search view name.
+            self._hexViewName = null;
 
             self.loadHex = function () {
                 if (!self.hexLayer || !self.hexLayer.getVisible()) return;
+                if (self._hexViewName === '__empty__') {
+                    self.hexSource.clear(true);
+                    return;
+                }
                 var size = map.getSize();
                 if (!size) return;
                 var extent = map.getView().calculateExtent(size);
@@ -253,8 +259,12 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 var zoom = Math.round(map.getView().getZoom());
                 var bbox = ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + ',' +
                            ur[0].toFixed(6) + ',' + ur[1].toFixed(6);
+                var url = locationSiteHexViewUrl + '?bbox=' + bbox + '&zoom=' + zoom;
+                if (self._hexViewName) {
+                    url += '&view=' + encodeURIComponent(self._hexViewName);
+                }
                 self._hexLoading = true;
-                fetch(locationSiteHexViewUrl + '?bbox=' + bbox + '&zoom=' + zoom)
+                fetch(url)
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
                         self._hexLoading = false;

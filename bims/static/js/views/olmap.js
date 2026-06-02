@@ -904,7 +904,7 @@ define([
                 type: 'GET',
                 url: searchSiteIdsUrl + '?view=' + encodeURIComponent(viewName),
                 success: function (result) {
-                    self._applyVisibleSiteIds(new Set(result['site_ids']));
+                    self._applyVisibleSiteIds(new Set(result['site_ids']), viewName);
                 },
                 error: function () {
                     // If the view isn't ready yet keep current display.
@@ -912,17 +912,28 @@ define([
             });
         },
         clearAllLayers: function () {
-            this._applyVisibleSiteIds(new Set());
+            this._applyVisibleSiteIds(new Set(), null);
         },
         resetSitesLayer: function () {
-            this._applyVisibleSiteIds(null);
+            this._applyVisibleSiteIds(null, null);
         },
-        _applyVisibleSiteIds: function (siteIdSet) {
+        _applyVisibleSiteIds: function (siteIdSet, viewName) {
             // siteIdSet === null → show all; empty Set → hide all; Set with IDs → show subset.
             // The VectorTile layer style function reads _visibleSiteIds directly,
             // so we just update it and trigger a re-render.
             this.layers._visibleSiteIds = siteIdSet;
             this.layers.biodiversityTileLayer.changed();
+            // Keep the hex layer in sync with the same search filter.
+            if (siteIdSet === null) {
+                this.layers._hexViewName = null;
+            } else if (siteIdSet.size === 0) {
+                this.layers._hexViewName = '__empty__';
+            } else {
+                this.layers._hexViewName = viewName || null;
+            }
+            if (this.layers.hexLayer && this.layers.hexLayer.getVisible()) {
+                this.layers.loadHex();
+            }
         },
         toggleMapInteraction: function (enabled) {
             this.mapInteractionEnabled = enabled;

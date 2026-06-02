@@ -119,11 +119,13 @@ def clear_hex_tile_cache(schema: str) -> None:
 class LocationSiteHexView(View):
 
     def get(self, request):
+        import re
         import h3
         from django.http import JsonResponse
 
         bbox_str = request.GET.get("bbox", "")
         zoom_str = request.GET.get("zoom", "8")
+        view_name = request.GET.get("view", "").strip()
 
         try:
             lon_min, lat_min, lon_max, lat_max = map(float, bbox_str.split(","))
@@ -139,22 +141,54 @@ class LocationSiteHexView(View):
         if not os.path.exists(parquet_path):
             raise Http404("GeoParquet not found. Run generate_location_site_geoparquet first.")
 
+        # Resolve search-filter site IDs from a materialized view when provided.
+        site_ids: list | None = None
+        if view_name:
+            if not re.match(r'^[A-Za-z0-9_\-]+$', view_name):
+                return JsonResponse({"error": "Invalid view name."}, status=400)
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(f'SELECT site_id FROM "{view_name}"')
+                    site_ids = [row[0] for row in cursor.fetchall()]
+            except Exception:
+                site_ids = []
+            if not site_ids:
+                return JsonResponse({"type": "FeatureCollection", "features": []})
+
         resolution = ZOOM_TO_H3_RES.get(zoom, 4)
         buf = H3_RES_BUFFER.get(resolution, 0.1)
 
-        rows = _get_conn().execute(
-            """
-            SELECT ST_Y(geometry) AS lat, ST_X(geometry) AS lon
-            FROM read_parquet(?)
-            WHERE ST_Intersects(
-                geometry,
-                ST_MakeEnvelope(?, ?, ?, ?)
-            )
-            """,
-            [parquet_path,
-             lon_min - buf, lat_min - buf,
-             lon_max + buf, lat_max + buf],
-        ).fetchall()
+        if site_ids is not None:
+            placeholders = ", ".join(["?"] * len(site_ids))
+            rows = _get_conn().execute(
+                f"""
+                SELECT ST_Y(geometry) AS lat, ST_X(geometry) AS lon
+                FROM read_parquet(?)
+                WHERE ST_Intersects(
+                    geometry,
+                    ST_MakeEnvelope(?, ?, ?, ?)
+                )
+                AND site_id IN ({placeholders})
+                """,
+                [parquet_path,
+                 lon_min - buf, lat_min - buf,
+                 lon_max + buf, lat_max + buf,
+                 *site_ids],
+            ).fetchall()
+        else:
+            rows = _get_conn().execute(
+                """
+                SELECT ST_Y(geometry) AS lat, ST_X(geometry) AS lon
+                FROM read_parquet(?)
+                WHERE ST_Intersects(
+                    geometry,
+                    ST_MakeEnvelope(?, ?, ?, ?)
+                )
+                """,
+                [parquet_path,
+                 lon_min - buf, lat_min - buf,
+                 lon_max + buf, lat_max + buf],
+            ).fetchall()
 
         cell_counts: Counter = Counter()
         for lat, lon in rows:
