@@ -12,6 +12,7 @@ from django.utils.timezone import localtime
 
 from bims.models.gbif_publish import (
     PublishPeriod,
+    RoleType,
     GbifPublishConfig,
     GbifPublish,
     GbifPublishSession,
@@ -176,7 +177,7 @@ class GbifPublishConfigAdmin(admin.ModelAdmin):
             ),
         }),
         ("Dataset Settings", {
-            "fields": ("license_url", "export_base_url"),
+            "fields": ("license", "export_base_url"),
         }),
         ("Audit", {
             "fields": ("created_at", "updated_at"),
@@ -241,6 +242,20 @@ class GbifPublishAdmin(admin.ModelAdmin):
             "fields": ("last_publish", "updated_at"),
         }),
     )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not change:
+            originator_count = obj.contacts.filter(role=RoleType.ORIGINATOR).count()
+            if originator_count >= 5:
+                self.message_user(
+                    request,
+                    (
+                        f"Note: GBIF currently displays only 5 originators on the dataset page. "
+                        f"This schedule has {originator_count} originator contacts."
+                    ),
+                    messages.WARNING,
+                )
 
     def schedule_human(self, obj: GbifPublish):
         if obj.period == PublishPeriod.CUSTOM and obj.cron_expression:

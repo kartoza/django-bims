@@ -28,9 +28,13 @@ class GbifPublishConfig(models.Model):
                   "https://api.gbif-test.org/v1 (test). "
                   "Ensure credentials match the environment."
     )
-    license_url = models.URLField(
-        default="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
-        help_text="License URL for the dataset"
+    license = models.ForeignKey(
+        'bims.Licence',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gbif_configs',
+        help_text='License for the dataset (default: CC BY 4.0 - Attribution).',
     )
     export_base_url = models.URLField(
         blank=True,
