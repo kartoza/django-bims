@@ -42,6 +42,7 @@ define([
         initialSelectedEndemic: [],
         initialSelectedInvasions: [],
         initialSelectedModules: [],
+        initialSelectedMetagroups: [],
         currentSort: null,
         defaultSort: 'name',
         events: {
@@ -49,6 +50,7 @@ define([
             'keypress #search': 'searchEnter',
             'click .search-arrow': 'searchClick',
             'click .apply-filter': 'searchClick',
+            'click .clear-filter-metagroup': 'clearFilterMetagroup',
             'click .clear-filter-biodiversity-module': 'clearFilterBiodiversityModule',
             'click .clear-filter-module': 'clearFilterModule',
             'click .clear-filter': 'clearFilter',
@@ -94,6 +96,7 @@ define([
                 }
             }
             let occurrencesFilter = [
+                'metagroup-module-container',
                 'biodiversity-module-container',
                 'data-source-container',
                 'taxon-tags-container',
@@ -192,8 +195,44 @@ define([
             var nativeOriginDropdown = self.$el.find('.native-origin-dropdown');
             var nonNativeOriginDropdown = self.$el.find('.non-native-origin-dropdown');
             var moduleListContainer = self.$el.find('.module-filters');
+            var metagroupListContainer = self.$el.find('.metagroup-filters');
 
             filterParameters['orderBy'] = this.currentSort;
+
+            $.ajax({
+                type: 'GET',
+                url: '/api/metagroup-summary/',
+                dataType: 'json',
+                success: function (data) {
+                    if (!data.length) {
+                        return;
+                    }
+                    $('#metagroup-module-container').show();
+                    for (let i = 0; i < data.length; i++) {
+                        let selected = '';
+                        if ($.inArray(data[i]['id'].toString(), self.initialSelectedMetagroups) > -1) {
+                            selected = 'selected';
+                        }
+                        let $imgBox = $('<div class="module-species ' + selected + '"></div>');
+                        if (data[i]['icon']) {
+                            $imgBox.append(
+                                $('<img>').attr('src', data[i]['icon']).attr('alt', data[i]['name'])
+                            );
+                        } else {
+                            $imgBox.append(
+                                $('<div style="width:40px;height:40px;background:#ccc;border-radius:4px;"></div>')
+                            );
+                        }
+                        let $metagroupItem = $(
+                            '<div data-id="' + data[i]['id'] + '" class="metagroup-filter-item col-12 ' + selected + '" title="' + data[i]['name'] + '" style="display:flex;flex-direction:column;align-items:center;cursor:pointer;margin-bottom:6px;"></div>'
+                        );
+                        $metagroupItem.append($imgBox);
+                        $metagroupItem.append($('<small style="margin-top:-10px;text-align:center;"></small>').text(data[i]['name']));
+                        metagroupListContainer.append($metagroupItem);
+                        $metagroupItem.click(self.onMetagroupClicked);
+                    }
+                }
+            });
 
             $.ajax({
                 type: 'GET',
@@ -427,6 +466,13 @@ define([
             this.searchPanel.openSidePanel(false);
 
             $('#search-results-wrapper').html('');
+
+            // metagroup
+            if(filterParameters['mg']) {
+                $('.metagroup-module-title').addClass('filter-panel-selected');
+            } else {
+                $('.metagroup-module-title').removeClass('filter-panel-selected');
+            }
 
             // modules
             if(filterParameters['modules']) {
@@ -684,7 +730,7 @@ define([
                 'yearFrom', 'yearTo', 'userBoundary', 'referenceCategory', 'reference',
                 'endemic', 'modules', 'conservationStatus', 'spatialFilter',
                 'ecologicalCategory', 'sourceCollection', 'datasetKeys', 'abioticData', 'polygon',
-                'boundary', 'dst', 'thermalModule', 'asf'
+                'boundary', 'dst', 'thermalModule', 'asf', 'mg'
             ];
             const hasAnyTruthyValue = keysToCheck.some(key => filterParameters[key]);
             if (!hasAnyTruthyValue) {
@@ -740,6 +786,35 @@ define([
                 filterParameters['modules'] = '';
             }
         },
+        clearClickedMetagroupItems: function () {
+            $('.metagroup-filter-item').removeClass('selected');
+            $('.metagroup-filter-item .module-species').removeClass('selected');
+        },
+        clearFilterMetagroup: function () {
+            this.clearClickedMetagroupItems();
+            filterParameters['mg'] = '';
+        },
+        onMetagroupClicked: function (e) {
+            let $element = $(e.currentTarget);
+            let id = $element.data('id');
+            let isSelected = $element.hasClass('selected');
+            let metagroupParameter = (filterParameters['mg'] || '').split(',').filter(function (n) { return n; });
+            for (let i = 0; i < metagroupParameter.length; i++) {
+                if (parseInt(metagroupParameter[i]) === id) {
+                    metagroupParameter.splice(i, 1);
+                    break;
+                }
+            }
+            if (isSelected) {
+                $element.removeClass('selected');
+                $element.find('.module-species').removeClass('selected');
+            } else {
+                $element.addClass('selected');
+                $element.find('.module-species').addClass('selected');
+                metagroupParameter.push(id);
+            }
+            filterParameters['mg'] = metagroupParameter.join();
+        },
         clearFilterModule: function () {
             this.clearClickedModuleSpecies();
             $('#abiotic-data-filter').prop('checked', false);
@@ -751,6 +826,7 @@ define([
             $('#abiotic-data-filter').prop('checked', false);
             Shared.Router.initializeParameters();
             this.clearClickedModuleSpecies();
+            this.clearClickedMetagroupItems();
             this.spatialFilterView.clearLayers();
             this.searchInput.val('');
             this.searchResultCollection.clearSearchRequest();
@@ -1144,6 +1220,12 @@ define([
             // Boundary
             if (allFilters.hasOwnProperty('boundary')) {
                 this.spatialFilterView.selectedPoliticalRegions = JSON.parse(allFilters['boundary']);
+            }
+
+            // Metagroup
+            if (allFilters.hasOwnProperty('mg')) {
+                filterParameters['mg'] = allFilters['mg'];
+                self.initialSelectedMetagroups = allFilters['mg'].split(',');
             }
 
             // Species module

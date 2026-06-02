@@ -8,12 +8,13 @@ from django.contrib.sites.models import Site
 from taggit.models import Tag
 
 from bims.models import format_search_result_raw_query
+from bims.models.meta_group import MetaGroup
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF,
     LocationSiteF,
     RiverF,
-    VernacularNameF, UserF, GroupF
+    VernacularNameF, UserF, GroupF, TaxonGroupF
 )
 from bims.api_views.search import CollectionSearch
 
@@ -295,3 +296,55 @@ class TestCollectionSearch(TestCase):
                 len(result),
                 1
             )
+
+
+class TestMetagroupSearch(TestCase):
+
+    def setUp(self):
+        self.metagroup = MetaGroup.objects.create(name='TestMetaGroup')
+        self.other_metagroup = MetaGroup.objects.create(name='OtherMetaGroup')
+
+        self.taxa_mg = TaxonomyF.create(canonical_name='mg_taxon')
+        self.taxa_other = TaxonomyF.create(canonical_name='other_taxon')
+
+        self.taxon_group = TaxonGroupF.create(
+            name='MGModule',
+            meta_group=self.metagroup,
+        )
+        self.other_taxon_group = TaxonGroupF.create(
+            name='OtherModule',
+            meta_group=self.other_metagroup,
+        )
+
+        self.site = LocationSiteF.create()
+        BiologicalCollectionRecordF.create(
+            original_species_name='mg_taxon',
+            taxonomy=self.taxa_mg,
+            site=self.site,
+            module_group=self.taxon_group,
+        )
+        BiologicalCollectionRecordF.create(
+            original_species_name='other_taxon',
+            taxonomy=self.taxa_other,
+            site=self.site,
+            module_group=self.other_taxon_group,
+        )
+
+    def test_filter_by_metagroup_returns_matching_records(self):
+        filters = {'mg': str(self.metagroup.id)}
+        results = CollectionSearch(filters).process_search()
+        self.assertEqual(results.count(), 1)
+        self.assertEqual(
+            results.first().original_species_name, 'mg_taxon'
+        )
+
+    def test_filter_by_metagroup_excludes_other_metagroup(self):
+        filters = {'mg': str(self.metagroup.id)}
+        results = CollectionSearch(filters).process_search()
+        names = list(results.values_list('original_species_name', flat=True))
+        self.assertNotIn('other_taxon', names)
+
+    def test_filter_by_multiple_metagroups(self):
+        filters = {'mg': '{},{}'.format(self.metagroup.id, self.other_metagroup.id)}
+        results = CollectionSearch(filters).process_search()
+        self.assertEqual(results.count(), 2)

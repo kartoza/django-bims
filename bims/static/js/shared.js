@@ -14,7 +14,8 @@ define(['backbone', 'underscore', 'utils/storage', 'utils/color', 'utils/url', '
             "&module=<%= module %>&ecologicalCategory=<%= ecologicalCategory %>&rank=<%= rank %>"+
             "&tags=<%= tags %>&datasetKeys=<%= datasetKeys %>" +
             "&siteIdOpen=<%= siteIdOpen %>&orderBy=<%= orderBy %>&polygon=<%= polygon %>&dst=<%= dst %>&ecosystemType=<%= ecosystemType %>" +
-            "&asf=<%= encodeURIComponent(asf || '') %>",
+            "&asf=<%= encodeURIComponent(asf || '') %>" +
+            "&mg=<%= mg %>",
         LocationSiteDetailXHRRequest: null,
         WetlandDashboardXHRRequest: null,
         NewWetlandRequestInitiated: false,
