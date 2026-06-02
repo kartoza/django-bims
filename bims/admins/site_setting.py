@@ -169,6 +169,7 @@ class SiteSettingAdmin(PreferencesAdmin):
             "fields": (
                 "github_app_id",
                 "github_private_key",
+                "github_upload_repo",
                 "github_upload_assignees",
             ),
         }),

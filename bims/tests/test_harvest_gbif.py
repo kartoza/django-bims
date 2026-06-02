@@ -10,7 +10,8 @@ from django.contrib.gis.geos import Point
 from django_tenants.test.cases import FastTenantTestCase
 from urllib3.exceptions import ProtocolError
 
-from bims.models import Survey, BiologicalCollectionRecord, LocationSite, LocationType
+from bims.models import Survey, BiologicalCollectionRecord, LocationSite, LocationType, SourceReference, \
+    SourceReferenceDatabase
 from bims.tests.model_factories import (
     BiologicalCollectionRecordF,
     TaxonomyF,
@@ -193,6 +194,11 @@ def _create_single_row_zip(gbif_id: str, lon: str, lat: str, taxon_key: str) -> 
 def _mock_submit_download(*_, **__):
     return "mock-key", 200
 
+def _mock_download_information(*_, **__):
+    return {
+        "key": "XXXXXXXX",
+        "doi": "10.11111/111111"
+    }
 
 def _mock_get_ready_download_url(*_, **__):
     return "http://example.org/download.zip"
@@ -233,6 +239,7 @@ class TestHarvestGbif(FastTenantTestCase):
     # ------------------------------------------------------------------
     # Success path – first run and idempotency on the second run
     # ------------------------------------------------------------------
+    @mock.patch("bims.scripts.import_gbif_occurrences.get_download_information", _mock_download_information)
     @mock.patch("bims.scripts.import_gbif_occurrences.submit_download", _mock_submit_download)
     @mock.patch("bims.scripts.import_gbif_occurrences.get_ready_download_url", _mock_get_ready_download_url)
     @mock.patch("bims.scripts.import_gbif_occurrences.download_archive", _mock_download_archive)
@@ -259,11 +266,15 @@ class TestHarvestGbif(FastTenantTestCase):
         self.assertTrue(status)
 
         # Six records, five distinct surveys (two points share identical coords)
+        source_references = SourceReferenceDatabase.objects.filter(
+            source_name='Global Biodiversity Information Facility (GBIF)',
+            source__url='https://doi.org/10.11111/111111'
+        )
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(
                 owner__username="GBIF",
                 taxonomy=self.taxonomy,
-                source_reference__source_name="Global Biodiversity Information Facility (GBIF)",
+                source_reference_id__in=source_references,
             ).count(),
             6,
         )

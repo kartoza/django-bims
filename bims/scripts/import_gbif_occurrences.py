@@ -16,7 +16,10 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point, MultiPolygon, GEOSGeometry
 from django.contrib.gis.measure import D
 
-from bims.utils.gbif_download import submit_download, get_ready_download_url, is_canceled, download_archive
+from bims.utils.gbif_download import (
+    submit_download, get_ready_download_url, is_canceled, download_archive,
+    get_download_information
+)
 from geonode.people.models import Profile
 from preferences import preferences
 
@@ -634,8 +637,35 @@ def process_gbif_row(
         return None, True
 
 
+def create_source_reference(gbif_key):
+    download_info = get_download_information(gbif_key)
+    source_date = None
+    url = f'https://www.gbif.org/occurrence/download/{gbif_key}'
+
+    if download_info:
+        doi = download_info.get('doi', '')
+        if 'https' not in doi:
+            url = f'https://doi.org/{doi}'
+        date_str = download_info.get('created', '')
+        if date_str:
+            source_date = parse(date_str)
+
+    database_record, _ = DatabaseRecord.objects.get_or_create(
+        name="Global Biodiversity Information Facility (GBIF)",
+        url=url
+    )
+    source_reference, _ = SourceReferenceDatabase.objects.get_or_create(
+        source_name="Global Biodiversity Information Facility (GBIF)",
+        source_date=source_date,
+        source=database_record,
+        publish_to_gbif=False
+    )
+    return source_reference
+
+
 def process_gbif_response(
     zip_path: Path,
+    key: str,
     session_id: Optional[int],
     taxon_group: str,
     habitat: Optional[str] = None,
@@ -675,13 +705,7 @@ def process_gbif_response(
                 gbif_owner, _ = Profile.objects.get_or_create(
                     username="GBIF", defaults={"first_name": "GBIF.org"}
                 )
-                database_record, _ = DatabaseRecord.objects.get_or_create(
-                    name="Global Biodiversity Information Facility (GBIF)"
-                )
-                source_reference, _ = SourceReferenceDatabase.objects.get_or_create(
-                    source_name="Global Biodiversity Information Facility (GBIF)",
-                    defaults={"source": database_record},
-                )
+                source_reference = create_source_reference(key)
                 source_collection = "gbif"
 
                 harvest_session = None
@@ -864,7 +888,9 @@ def import_gbif_occurrences(
             resume_state = {}
             if harvest_session.additional_data:
                 try:
-                    resume_state = json.loads(harvest_session.additional_data) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
+                    resume_state = json.loads(
+                        harvest_session.additional_data) if isinstance(
+                        harvest_session.additional_data, str) else harvest_session.additional_data
                 except:
                     resume_state = {}
             resume_state['last_zip_file'] = str(zip_path)
@@ -875,6 +901,7 @@ def import_gbif_occurrences(
 
         error, data_count = process_gbif_response(
             zip_path,
+            key,
             session_id,
             taxon_group,
             habitat,
@@ -892,7 +919,8 @@ def import_gbif_occurrences(
             resume_state = {}
             if harvest_session.additional_data:
                 try:
-                    resume_state = json.loads(harvest_session.additional_data) if isinstance(harvest_session.additional_data, str) else harvest_session.additional_data
+                    resume_state = json.loads(harvest_session.additional_data) if isinstance(
+                        harvest_session.additional_data, str) else harvest_session.additional_data
                 except:
                     resume_state = {}
             resume_state['last_zip_file'] = None

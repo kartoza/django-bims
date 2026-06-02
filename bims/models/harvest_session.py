@@ -95,15 +95,6 @@ class HarvestSession(models.Model):
         blank=True
     )
 
-    source_site = models.ForeignKey(
-        Site,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        verbose_name="Associated Site",
-        help_text="The site this record is associated with."
-    )
-
     schedule = models.ForeignKey(
         "bims.HarvestSchedule", null=True, blank=True, on_delete=models.SET_NULL, related_name="sessions"
     )

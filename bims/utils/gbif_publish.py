@@ -35,6 +35,22 @@ def dwca_dir() -> str:
     return abs_dir
 
 
+def get_publisher_name(config) -> str:
+    """Fetch the full publisher name from GBIF using publishing_org_key."""
+    if not config.publishing_org_key:
+        return ""
+    api_url = config.gbif_api_url.rstrip("/")
+    try:
+        r = requests.get(
+            f"{api_url}/organization/{config.publishing_org_key}",
+            timeout=10,
+        )
+        r.raise_for_status()
+        return r.json().get("title") or ""
+    except Exception:
+        return ""
+
+
 _ABUNDANCE_TYPE_MAP = {
     "number":                        ("individuals",     True),
     "percentage":                    ("% cover",         False),
@@ -110,30 +126,34 @@ def write_occurrence_txt(
                 pass
 
             occurrence_id = str(r.uuid or r.pk)
-            collection_code = (getattr(getattr(r, "module_group", None), "name", "") or "BIMS")
+            collection_code = (
+                getattr(getattr(r, "module_group", None), "name", "") or "BIMS"
+            )
             catalog_number = str(r.pk)
 
             recorded_by = (r.collector or "").strip()
-            collector_user = None
 
             if not recorded_by and r.collector_user:
-                collector_user = r.collector_user
                 recorded_by = (
                     r.collector_user.get_full_name() or
                     r.collector_user.username
                 ).strip()
                 if 'admin' in recorded_by.lower():
                     recorded_by = ''
-                    collector_user = None
 
             if not recorded_by and r.owner:
                 candidate = (r.owner.get_full_name() or r.owner.username).strip()
                 if 'admin' not in candidate.lower():
                     recorded_by = candidate
-                    collector_user = r.owner
 
             row_dataset_name = dataset_name or _site_name()
             inst_code = (r.institution_id or "").strip()
+
+            collector_user = None
+            if r.collector_user:
+                collector_user = r.collector_user
+            elif r.owner:
+                collector_user = r.owner
 
             if collector_user:
                 inst_code = collector_user.organization
@@ -549,7 +569,7 @@ def build_dwca(
         raise ValueError("No eligible records to export.")
 
     title = ref_title
-    publisher_name = getattr(config, 'name', None) or _site_name()
+    publisher_name = get_publisher_name(config) or getattr(config, 'name', None) or _site_name()
     abstract = (
         f"Occurrence dataset for {ref_title} uploaded to {publisher_name}."
     )
@@ -599,6 +619,76 @@ def build_dwca(
         "//", "/").replace(":/", "://")
 
     return zip_path, archive_url, written_ids
+
+
+def _contact_to_gbif_payload(contact) -> dict:
+    """Convert a GbifPublishContact instance to a GBIF registry API contact payload."""
+    import re
+    role = (getattr(contact, "role", "") or "").strip()
+    # Convert camelCase role to UPPER_SNAKE for GBIF API e.g. "pointOfContact" -> "POINT_OF_CONTACT"
+    role_upper = re.sub(r'(?<!^)(?=[A-Z])', '_', role).upper() if role else "POINT_OF_CONTACT"
+
+    payload = {"type": role_upper}
+
+    given = contact.resolved_given_name
+    sur = contact.resolved_sur_name
+    if given:
+        payload["firstName"] = given
+    if sur:
+        payload["lastName"] = sur
+    org = contact.resolved_organization_name
+    if org:
+        payload["organization"] = org
+    position = contact.resolved_position_name
+    if position:
+        payload["position"] = [position]
+    email = contact.resolved_email
+    if email:
+        payload["email"] = [email]
+    phone = (contact.phone or "").strip()
+    if phone:
+        payload["phone"] = [phone]
+    dp = (contact.delivery_point or "").strip()
+    if dp:
+        payload["address"] = [dp]
+    city = (contact.city or "").strip()
+    if city:
+        payload["city"] = city
+    postal = (contact.postal_code or "").strip()
+    if postal:
+        payload["postalCode"] = postal
+    country = (contact.country or "").strip()
+    if country:
+        payload["country"] = country
+    url = (contact.online_url or "").strip()
+    if url:
+        payload["homepage"] = [url]
+    return payload
+
+
+def sync_dataset_contacts(config, dataset_key: str, contacts: list) -> None:
+    """Replace all contacts on a GBIF dataset with the provided list via the registry API."""
+    auth = HTTPBasicAuth(config.username, config.password)
+    api_url = config.gbif_api_url.rstrip("/")
+    base = f"{api_url}/dataset/{dataset_key}/contact"
+
+    r = requests.get(base, auth=auth, timeout=30)
+    r.raise_for_status()
+    for existing in r.json():
+        contact_key = existing.get("key")
+        if contact_key:
+            requests.delete(f"{base}/{contact_key}", auth=auth, timeout=30).raise_for_status()
+
+    for contact in contacts:
+        payload = _contact_to_gbif_payload(contact)
+        r = requests.post(
+            base,
+            json=payload,
+            auth=auth,
+            timeout=30,
+            headers={"Content-Type": "application/json"},
+        )
+        r.raise_for_status()
 
 
 def trigger_crawl_with_config(config, dataset_key: str) -> None:
@@ -715,10 +805,11 @@ def publish_gbif_data_with_config(
 
     if existing_dataset_key:
         dataset_key = existing_dataset_key
+        sync_dataset_contacts(config, dataset_key, contacts)
         trigger_crawl_with_config(config, dataset_key)
     else:
         title = ref_title
-        publisher_name = getattr(config, 'name', None) or _site_name()
+        publisher_name = get_publisher_name(config) or getattr(config, 'name', None) or _site_name()
         description = (
             f"Occurrence dataset for {ref_title} uploaded to {publisher_name}."
         )
