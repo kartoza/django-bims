@@ -445,6 +445,32 @@ class CollectionSearch(object):
             return None
 
     @property
+    def metagroup(self):
+        metagroup_query = self.get_request_data('mg')
+        if metagroup_query:
+            return metagroup_query.split(',')
+        return None
+
+    def taxon_group_ids_for_metagroups(self, metagroup_ids):
+        """Return all TaxonGroup PKs (including children) for the given metagroup IDs."""
+        top_level_ids = list(
+            TaxonGroup.objects.filter(
+                meta_group__id__in=metagroup_ids
+            ).values_list('id', flat=True)
+        )
+        all_ids = list(top_level_ids)
+        queue = list(top_level_ids)
+        while queue:
+            children = list(
+                TaxonGroup.objects.filter(
+                    parent__in=queue
+                ).values_list('id', flat=True)
+            )
+            all_ids.extend(children)
+            queue = children
+        return all_ids
+
+    @property
     def ecosystem_type(self):
         ecosystem_type = self.get_request_data('ecosystemType')
         if ecosystem_type:
@@ -978,6 +1004,15 @@ class CollectionSearch(object):
         if self.modules:
             bio = bio.filter(
                 module_group__id__in=self.modules
+            )
+            bio_filtered = True
+
+        if self.metagroup:
+            metagroup_group_ids = self.taxon_group_ids_for_metagroups(
+                self.metagroup
+            )
+            bio = bio.filter(
+                module_group__id__in=metagroup_group_ids
             )
             bio_filtered = True
 

@@ -309,6 +309,13 @@ class SiteSetting(Preferences):
         default=False,
         help_text='Display the general statistics block on the landing page.'
     )
+    show_metagroup_on_landing = models.BooleanField(
+        default=False,
+        help_text=(
+            'Display the metagroup (broader organism group) widget on the '
+            'landing page.'
+        ),
+    )
 
     enable_remove_all_occurrences_tool = models.BooleanField(
         default=False,

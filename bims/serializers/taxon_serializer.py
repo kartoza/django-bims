@@ -638,6 +638,12 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     taxa_upload_template = serializers.SerializerMethodField()
     occurrence_upload_template = serializers.SerializerMethodField()
     occurrence_upload_templates = serializers.SerializerMethodField()
+    meta_group_name = serializers.SerializerMethodField()
+
+    def get_meta_group_name(self, obj: TaxonGroup):
+        if obj.meta_group:
+            return obj.meta_group.name
+        return ''
 
     def get_occurrence_upload_templates(self, obj: TaxonGroup):
         items = obj.list_all_occurrence_templates()
@@ -713,6 +719,8 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
         model = TaxonGroup
         fields = ['id',
                   'parent',
+                  'meta_group',
+                  'meta_group_name',
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',

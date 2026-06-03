@@ -17,6 +17,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.endemism import Endemism
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_origin import TaxonOrigin
+from bims.models.meta_group import MetaGroup
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
@@ -71,6 +72,7 @@ class TaxaManagementView(TemplateView):
             ).first()
 
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
+        context['meta_groups'] = MetaGroup.objects.all().order_by('display_order', 'name').values('id', 'name')
         context['taxon_rank'] = [
             rank.name for rank in TaxonomicRank
             if rank in (TaxonomicRank.GENUS, TaxonomicRank.SPECIES)
