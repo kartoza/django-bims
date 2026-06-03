@@ -175,13 +175,6 @@ class LocationSiteOverviewData(object):
             group_data[self.GROUP_CONS_STATUS] = cons_by_group.get(group.id, [])
             biodiversity_data[group.name] = group_data
 
-        collection_with_refs = collection_results.exclude(
-            source_reference__isnull=True
-        ).distinct('source_reference')
-        biodiversity_data['source_references'] = (
-            collection_with_refs.source_references()
-        )
-
         return biodiversity_data
 
 class MultiLocationSitesOverview(SuperuserRequiredMixin, APIView, LocationSiteOverviewData):
