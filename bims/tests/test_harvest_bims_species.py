@@ -1509,6 +1509,10 @@ class TestTaxaListPublicAccess(FastTenantTestCase):
 # TaxonDetail public access and field stripping
 # ===========================================================================
 
+@mock.patch(
+    'bims.api_views.taxon.get_vernacular_names',
+    return_value={'results': []},
+)
 class TestTaxonDetailPublicAccess(FastTenantTestCase):
 
     def setUp(self):
@@ -1534,38 +1538,38 @@ class TestTaxonDetailPublicAccess(FastTenantTestCase):
         request.user = user or AnonymousUser()
         return self.view(request, pk=pk)
 
-    def test_unauthenticated_returns_200(self):
+    def test_unauthenticated_returns_200(self, _mock_vernacular):
         response = self._get(self.taxonomy.pk)
         self.assertEqual(response.status_code, 200)
 
-    def test_unknown_pk_returns_404(self):
+    def test_unknown_pk_returns_404(self, _mock_vernacular):
         response = self._get(99999)
         self.assertEqual(response.status_code, 404)
 
-    def test_public_response_strips_internal_fields(self):
+    def test_public_response_strips_internal_fields(self, _mock_vernacular):
         response = self._get(self.taxonomy.pk)
         data = response.data
         for field in _PUBLIC_STRIPPED_FIELDS:
             self.assertNotIn(field, data, msg=f'Field "{field}" should be stripped for public access')
 
-    def test_public_response_includes_core_fields(self):
+    def test_public_response_includes_core_fields(self, _mock_vernacular):
         response = self._get(self.taxonomy.pk)
         data = response.data
         for field in ('id', 'canonical_name', 'scientific_name', 'rank',
                       'gbif_key', 'author', 'taxonomic_status'):
             self.assertIn(field, data, msg=f'Core field "{field}" should be present')
 
-    def test_authenticated_response_includes_internal_fields(self):
+    def test_authenticated_response_includes_internal_fields(self, _mock_vernacular):
         response = self._get(self.taxonomy.pk, user=self.auth_user)
         data = response.data
         for field in ('DT_RowId', 'can_edit', 'children_count', 'other_group_count'):
             self.assertIn(field, data, msg=f'Field "{field}" should be present for authenticated access')
 
-    def test_public_additional_data_stripped(self):
+    def test_public_additional_data_stripped(self, _mock_vernacular):
         response = self._get(self.taxonomy.pk)
         self.assertNotIn('additional_data', response.data)
 
-    def test_authenticated_additional_data_present(self):
+    def test_authenticated_additional_data_present(self, _mock_vernacular):
         response = self._get(self.taxonomy.pk, user=self.auth_user)
         self.assertIn('additional_data', response.data)
 

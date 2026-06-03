@@ -150,16 +150,11 @@
         function fetchModuleSummary() {
             $.get('/api/module-summary').then(
                 function (data) {
-                    console.log(data);
 
                     // Check if data is still processing
                     if (data.status === 'processing') {
                         pollAttempts++;
                         if (pollAttempts < maxPollAttempts) {
-                            // Show processing message if it exists
-                            if (data.message) {
-                                console.log(data.message);
-                            }
                             // Poll again after 1 second
                             setTimeout(fetchModuleSummary, 1000);
                         } else {

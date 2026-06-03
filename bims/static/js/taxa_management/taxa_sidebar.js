@@ -347,8 +347,6 @@ export const taxaSidebar = (() => {
                 checkTaskStatus(taskId);
             },
             error: function (data) {
-                console.log("error");
-                console.log(data);
                 $removeModuleBtn.html('Remove Module');
                 $removeModuleBtn.attr('disabled', false);
                 // Hide the processing modal
@@ -429,8 +427,6 @@ export const taxaSidebar = (() => {
             },
             error: function (data) {
                 $(e.target).find('.btn-submit-text').html('Save');
-                console.log("error");
-                console.log(data);
             }
         });
     }

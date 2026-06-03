@@ -46,6 +46,8 @@ def spatial_dashboard_cons_status(search_parameters=None, search_process_id=None
             biodiversity_data = overview_data.biodiversity_data() or {}
             modules = []
             for module_name, module_data in biodiversity_data.items():
+                if module_name == 'source_references' or not isinstance(module_data, dict):
+                    continue
                 cons_status = module_data.get(
                     LocationSiteOverviewData.GROUP_CONS_STATUS, []
                 )
