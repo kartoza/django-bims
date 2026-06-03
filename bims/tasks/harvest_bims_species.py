@@ -5,16 +5,22 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import re
+from urllib.parse import urljoin, urlparse
 
 from celery import shared_task
+import requests
+from django.core.files.base import ContentFile
 from django.db import IntegrityError
 from django.utils import timezone
+from django.utils.text import slugify
 from django_tenants.utils import schema_context
 
 logger = logging.getLogger(__name__)
 
 _TAG_COLOUR_RE = re.compile(r'\s*\(#([0-9A-Fa-f]{3,6})\)\s*$')
+_REMOTE_LOGO_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'}
 
 
 def _parse_tag_list(tag_list_str: str) -> list[tuple[str, str | None]]:
@@ -92,11 +98,53 @@ def _compute_taxon_checksum(taxon_data: dict) -> str:
         'taxonomic_status': (taxon_data.get('taxonomic_status') or '').strip().upper(),
         'gbif_key': taxon_data.get('gbif_key'),
         'parent': taxon_data.get('parent'),
+        'accepted_taxonomy': taxon_data.get('accepted_taxonomy'),
+        'iucn_status_name': (taxon_data.get('iucn_status_name') or '').strip().upper(),
+        'iucn_redlist_id': taxon_data.get('iucn_redlist_id'),
         'additional_data': taxon_data.get('additional_data') or {},
         'tag_list': (taxon_data.get('tag_list') or '').strip(),
     }
     raw = json.dumps(subset, sort_keys=True, separators=(',', ':'), default=str)
     return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _resolve_remote_logo_url(base_url: str, remote_group_logo: str) -> str:
+    """Resolve a remote taxon-group logo to an absolute URL."""
+    remote_group_logo = (remote_group_logo or '').strip()
+    if not remote_group_logo:
+        return ''
+    parsed = urlparse(remote_group_logo)
+    if parsed.scheme and parsed.netloc:
+        return remote_group_logo
+    return urljoin(f'{base_url.rstrip("/")}/', remote_group_logo.lstrip('/'))
+
+
+def _download_group_logo(target_group, base_url: str, remote_group_logo: str, _log=None) -> bool:
+    """Download and attach a remote logo to a local taxon group."""
+    if not remote_group_logo or target_group.logo:
+        return False
+
+    logo_url = _resolve_remote_logo_url(base_url, remote_group_logo)
+    try:
+        response = requests.get(logo_url, timeout=30)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        if _log:
+            _log(f"Failed to download remote taxon group logo from {logo_url}: {exc}")
+        return False
+
+    ext = os.path.splitext(urlparse(logo_url).path)[1].lower()
+    if ext not in _REMOTE_LOGO_EXTENSIONS:
+        ext = '.png'
+
+    target_group.logo.save(
+        f'{slugify(target_group.name) or f"taxon-group-{target_group.id}"}{ext}',
+        ContentFile(response.content),
+        save=True,
+    )
+    if _log:
+        _log(f"Saved remote taxon group logo from {logo_url}")
+    return True
 
 
 def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
@@ -122,13 +170,13 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     Non-readonly group (default):
       - additional_data : local wins on conflict
       - canonical_name, author, taxonomic_status : never updated
-      - parent : filled only when missing locally
+      - parent, accepted_taxonomy, iucn_status, iucn_redlist_id : filled only when missing locally
       - tags : additive only
 
     Read-only group (is_readonly=True):
       - additional_data : remote wins; overridden local keys are logged
       - canonical_name, author, taxonomic_status : updated when remote differs; logged
-      - parent : always updated to match upstream
+      - parent, accepted_taxonomy, iucn_status, iucn_redlist_id : always updated to match upstream
       - tags : additive only (safe default)
     """
     from bims.models.taxonomy import Taxonomy
@@ -183,6 +231,29 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
                 )
 
     # ------------------------------------------------------------------
+    # Resolve accepted taxonomy for synonyms (depth-first, recursive)
+    # ------------------------------------------------------------------
+    accepted_taxonomy = None
+    _is_synonym = (
+        'SYNONYM' in taxonomic_status
+        or taxonomic_status == 'DOUBTFUL'
+    )
+    remote_accepted_id = taxon_data.get('accepted_taxonomy')
+    if _is_synonym and remote_accepted_id:
+        remote_accepted_id = int(remote_accepted_id)
+        if remote_accepted_id in remote_cache:
+            accepted_taxonomy = remote_cache[remote_accepted_id]
+        else:
+            accepted_data = get_taxon_by_id(base_url, remote_accepted_id)
+            if accepted_data:
+                accepted_taxonomy = _find_or_create_taxonomy(
+                    accepted_data, base_url, remote_cache,
+                    target_group=target_group,
+                    is_readonly=is_readonly,
+                    _log=_log,
+                )
+
+    # ------------------------------------------------------------------
     # Find existing local record
     # ------------------------------------------------------------------
     taxonomy = None
@@ -205,6 +276,24 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
         ).first()
 
     # ------------------------------------------------------------------
+    # Resolve IUCN status from the remote category string
+    # ------------------------------------------------------------------
+    iucn_status_name = (taxon_data.get('iucn_status_name') or '').strip().upper()
+    iucn_redlist_id = taxon_data.get('iucn_redlist_id')
+    if iucn_redlist_id:
+        try:
+            iucn_redlist_id = int(iucn_redlist_id)
+        except (TypeError, ValueError):
+            iucn_redlist_id = None
+
+    local_iucn_status = None
+    if iucn_status_name:
+        from bims.models.iucn_status import IUCNStatus
+        local_iucn_status = IUCNStatus.objects.filter(
+            category__iexact=iucn_status_name
+        ).first()
+
+    # ------------------------------------------------------------------
     # Create if not found
     # ------------------------------------------------------------------
     if taxonomy is None:
@@ -219,6 +308,12 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
             create_kwargs['gbif_key'] = gbif_key
         if parent_taxonomy:
             create_kwargs['parent'] = parent_taxonomy
+        if accepted_taxonomy:
+            create_kwargs['accepted_taxonomy'] = accepted_taxonomy
+        if local_iucn_status:
+            create_kwargs['iucn_status'] = local_iucn_status
+        if iucn_redlist_id:
+            create_kwargs['iucn_redlist_id'] = iucn_redlist_id
         taxonomy = Taxonomy.objects.create(**create_kwargs)
 
     # ------------------------------------------------------------------
@@ -265,10 +360,39 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
                 taxonomy.parent = parent_taxonomy
                 update_fields.append('parent')
 
+            if accepted_taxonomy and taxonomy.accepted_taxonomy_id != accepted_taxonomy.pk:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"accepted_taxonomy local={taxonomy.accepted_taxonomy_id!r} "
+                    f"remote={accepted_taxonomy.pk!r} — updating"
+                )
+                taxonomy.accepted_taxonomy = accepted_taxonomy
+                update_fields.append('accepted_taxonomy')
+
+            if local_iucn_status and taxonomy.iucn_status_id != local_iucn_status.pk:
+                taxonomy.iucn_status = local_iucn_status
+                update_fields.append('iucn_status')
+
+            if iucn_redlist_id and taxonomy.iucn_redlist_id != iucn_redlist_id:
+                taxonomy.iucn_redlist_id = iucn_redlist_id
+                update_fields.append('iucn_redlist_id')
+
         else:
             if parent_taxonomy and not taxonomy.parent:
                 taxonomy.parent = parent_taxonomy
                 update_fields.append('parent')
+
+            if accepted_taxonomy and not taxonomy.accepted_taxonomy_id:
+                taxonomy.accepted_taxonomy = accepted_taxonomy
+                update_fields.append('accepted_taxonomy')
+
+            if local_iucn_status and not taxonomy.iucn_status_id:
+                taxonomy.iucn_status = local_iucn_status
+                update_fields.append('iucn_status')
+
+            if iucn_redlist_id and not taxonomy.iucn_redlist_id:
+                taxonomy.iucn_redlist_id = iucn_redlist_id
+                update_fields.append('iucn_redlist_id')
 
         if update_fields:
             taxonomy.save(update_fields=update_fields)
@@ -356,6 +480,7 @@ def harvest_bims_species(session_id: int, schema_name: str):
         base_url = normalize_bims_base_url((additional.get("base_url") or "").strip())
         remote_group_id = additional.get("remote_group_id")
         remote_group_name = (additional.get("remote_group_name") or "").strip()
+        remote_group_logo = (additional.get("remote_group_logo") or "").strip()
         import_mode = additional.get("import_mode", "existing")
 
         if not base_url or not remote_group_id:
@@ -374,14 +499,16 @@ def harvest_bims_species(session_id: int, schema_name: str):
         # ------------------------------------------------------------------
         if import_mode == "new":
             group_name = remote_group_name or f"Imported from {base_url} (group {remote_group_id})"
-            if not remote_group_name:
+            if not remote_group_name or not remote_group_logo:
                 for rg in get_taxon_groups(base_url):
                     if int(rg.get('id', 0)) == remote_group_id:
                         group_name = rg.get('name', group_name)
+                        remote_group_logo = remote_group_logo or (rg.get('logo') or '').strip()
                         break
 
             from django.contrib.sites.models import Site
             mark_readonly = additional.get("mark_readonly", False)
+
             try:
                 target_group, created = TaxonGroup.objects.get_or_create(
                     name=group_name,
@@ -412,6 +539,7 @@ def harvest_bims_species(session_id: int, schema_name: str):
                     update_fields.append('is_readonly')
                 if update_fields:
                     target_group.save(update_fields=update_fields)
+            _download_group_logo(target_group, base_url, remote_group_logo, _log=_log)
             action_word = "Created" if created else "Using existing"
             _log(f"{action_word} taxon group: '{group_name}' (id={target_group.id})"
                  + (" [read-only]" if target_group.is_readonly else ""))
@@ -445,6 +573,15 @@ def harvest_bims_species(session_id: int, schema_name: str):
                     )
                     connect_bims_signals()
                     return
+
+            if not target_group.logo:
+                _logo_path = ''
+                for rg in get_taxon_groups(base_url):
+                    if int(rg.get('id', 0)) == remote_group_id:
+                        _logo_path = (rg.get('logo') or '').strip()
+                        break
+                if _logo_path:
+                    _download_group_logo(target_group, base_url, _logo_path, _log=_log)
 
         _log(
             f"Starting BIMS harvest from {base_url} "
@@ -573,6 +710,9 @@ def harvest_bims_species(session_id: int, schema_name: str):
                 finished=True,
                 additional_data=final_additional_data,
             )
+
+            if target_group.is_readonly:
+                _ensure_bims_monthly_schedule(target_group, base_url, remote_group_id, remote_group_name, _log)
         else:
             HarvestSession.objects.filter(id=session_id).update(
                 status=f"Canceled ({total_processed} taxa before cancel)",
@@ -580,3 +720,47 @@ def harvest_bims_species(session_id: int, schema_name: str):
             )
 
         connect_bims_signals()
+
+
+def _ensure_bims_monthly_schedule(target_group, base_url, remote_group_id, remote_group_name, _log=None):
+    """Create or update a monthly BIMS HarvestSchedule for a read-only taxon group."""
+    from bims.models.harvest_schedule import HarvestSchedule, HarvestPeriod, HarvestScheduleCategory
+
+    schedule, created = HarvestSchedule.objects.get_or_create(
+        module_group=target_group,
+        category=HarvestScheduleCategory.BIMS,
+        defaults={
+            'period': HarvestPeriod.MONTHLY,
+            'day_of_month': 1,
+            'enabled': True,
+            'is_fetching_species': True,
+            'bims_config': {
+                'base_url': base_url,
+                'remote_group_id': remote_group_id,
+                'remote_group_name': remote_group_name,
+            },
+        },
+    )
+    if not created:
+        update_fields = []
+        if not schedule.enabled:
+            schedule.enabled = True
+            update_fields.append('enabled')
+        config = schedule.bims_config or {}
+        new_config = {
+            'base_url': base_url,
+            'remote_group_id': remote_group_id,
+            'remote_group_name': remote_group_name,
+        }
+        if config != new_config:
+            schedule.bims_config = new_config
+            update_fields.append('bims_config')
+        if update_fields:
+            schedule.save(update_fields=update_fields)
+
+    if _log:
+        action = "Created" if created else "Updated"
+        _log(
+            f"{action} monthly BIMS harvest schedule (id={schedule.id}) "
+            f"for group '{target_group.name}'"
+        )

@@ -14,6 +14,7 @@ from django.views.generic import TemplateView
 
 from bims.models.harvest_session import HarvestSession, HarvestTrigger
 from bims.models.taxon_group import TaxonGroup
+from bims.tasks.harvest_bims_species import harvest_bims_species
 
 
 def _format_duration(session) -> str:
@@ -54,10 +55,18 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
         return self.request.user.has_perm('bims.can_harvest_species')
 
     def get_context_data(self, **kwargs):
+        from bims.models.harvest_schedule import HarvestSchedule, HarvestScheduleCategory
         ctx = super().get_context_data(**kwargs)
-        ctx['taxa_groups'] = TaxonGroup.objects.filter(
+        taxa_groups = TaxonGroup.objects.filter(
             category='SPECIES_MODULE',
         ).order_by('display_order')
+        ctx['taxa_groups'] = taxa_groups
+
+        bims_schedules = HarvestSchedule.objects.filter(
+            module_group__in=taxa_groups,
+            category=HarvestScheduleCategory.BIMS,
+        ).select_related('module_group')
+        ctx['bims_schedule_by_group'] = {s.module_group_id: s for s in bims_schedules}
 
         active_sessions = HarvestSession.objects.filter(
             Q(harvester=self.request.user) | Q(trigger=HarvestTrigger.SCHEDULED),
@@ -123,6 +132,7 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
                 'base_url': data.get('base_url', ''),
                 'remote_group_id': data.get('remote_group_id', ''),
                 'remote_group_name': data.get('remote_group_name', ''),
+                'remote_group_logo': data.get('remote_group_logo', ''),
                 'import_mode': data.get('import_mode', 'existing'),
             })
         ctx['previous_configs'] = previous_configs
@@ -144,9 +154,10 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
         base_url = (request.POST.get('base_url') or '').strip()
         remote_group_id_raw = (request.POST.get('remote_group_id') or '').strip()
         remote_group_name = (request.POST.get('remote_group_name') or '').strip()
-        import_mode = request.POST.get('import_mode', 'existing')  # 'existing' or 'new'
-        taxon_group_id = request.POST.get('taxon_group')  # only used when import_mode='existing'
-        mark_readonly = request.POST.get('mark_readonly', '') == 'true'  # only used when import_mode='new'
+        remote_group_logo = (request.POST.get('remote_group_logo') or '').strip()
+        import_mode = request.POST.get('import_mode', 'existing')
+        taxon_group_id = request.POST.get('taxon_group')
+        mark_readonly = request.POST.get('mark_readonly', '') == 'true'
 
         if not base_url:
             messages.error(request, 'Please enter a BIMS instance URL.')
@@ -162,8 +173,6 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
         if import_mode == 'existing':
             module_group_id = taxon_group_id
 
-        from bims.tasks.harvest_bims_species import harvest_bims_species
-
         harvest_session = HarvestSession.objects.create(
             harvester=request.user,
             start_time=datetime.now(),
@@ -174,6 +183,7 @@ class HarvestBimsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateVi
                 'base_url': base_url,
                 'remote_group_id': int(remote_group_id_raw),
                 'remote_group_name': remote_group_name,
+                'remote_group_logo': remote_group_logo,
                 'import_mode': import_mode,
                 'mark_readonly': mark_readonly,
             },

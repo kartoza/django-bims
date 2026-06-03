@@ -16,6 +16,7 @@ Covers:
   - TaxonDetail public access + field stripping
 """
 from unittest import mock
+import tempfile
 
 import requests as _requests
 from django.contrib.auth import get_user_model
@@ -1019,7 +1020,8 @@ class TestHarvestBimsReadOnly(FastTenantTestCase):
 
     def _make_session(self, import_mode='new', module_group=None,
                       base_url='http://bims.test', remote_group_id=3,
-                      remote_group_name='Fish', mark_readonly=False):
+                      remote_group_name='Fish', remote_group_logo='',
+                      mark_readonly=False):
         session = HarvestSession.objects.create(
             harvester=self.user,
             module_group=module_group,
@@ -1028,6 +1030,7 @@ class TestHarvestBimsReadOnly(FastTenantTestCase):
                 'base_url': base_url,
                 'remote_group_id': remote_group_id,
                 'remote_group_name': remote_group_name,
+                'remote_group_logo': remote_group_logo,
                 'import_mode': import_mode,
                 'mark_readonly': mark_readonly,
             },
@@ -1104,6 +1107,44 @@ class TestHarvestBimsReadOnly(FastTenantTestCase):
         self.assertTrue(existing_group.is_readonly)
         self.assertEqual(existing_group.upstream_url, 'http://bims.test')
         self.assertEqual(existing_group.upstream_id, '3')
+
+    def test_new_mode_downloads_remote_group_logo(self):
+        response = mock.Mock()
+        response.content = b'remote-logo-bytes'
+        response.raise_for_status.return_value = None
+        session = self._make_session(
+            import_mode='new',
+            remote_group_name='Fish',
+            remote_group_logo='media/module_logo/fish.png',
+        )
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                with mock.patch(_PATCH_DISCONNECT), \
+                     mock.patch(_PATCH_CONNECT), \
+                     mock.patch(_PATCH_PREFS) as mock_prefs, \
+                     mock.patch(_PATCH_GET_ALL_TAXA, return_value=iter([])), \
+                     mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+                     mock.patch('bims.tasks.harvest_bims_species.requests.get', return_value=response) as mock_get, \
+                     mock.patch('django.contrib.sites.models.Site.objects.get_current') as mock_site:
+                    from django.contrib.sites.models import Site
+                    mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+                    site, _ = Site.objects.get_or_create(
+                        id=1,
+                        defaults={'domain': 'example.com', 'name': 'example.com'},
+                    )
+                    mock_site.return_value = site
+                    harvest_bims_species(session.id, schema_name=self.schema_name)
+                session.refresh_from_db()
+                saved_logo_name = session.module_group.logo.name
+                with session.module_group.logo.open('rb') as logo_file:
+                    saved_logo_content = logo_file.read()
+
+        self.assertTrue(saved_logo_name.endswith('fish.png'))
+        self.assertEqual(saved_logo_content, b'remote-logo-bytes')
+        mock_get.assert_called_once_with(
+            'http://bims.test/media/module_logo/fish.png',
+            timeout=30,
+        )
 
     # -- existing mode: read-only group with matching source proceeds --------
 

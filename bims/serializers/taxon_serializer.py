@@ -727,5 +727,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'experts', 'children',
                   'taxa_upload_template',
                   'occurrence_upload_template',
-                  'occurrence_upload_templates'
+                  'occurrence_upload_templates',
+                  'is_readonly',
+                  'upstream_url',
                   ]
