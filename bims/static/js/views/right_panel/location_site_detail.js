@@ -169,6 +169,75 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 }
             }
         },
+        renderMetadata: function (sectionContainer, sourceReferences) {
+            if (!sourceReferences || sourceReferences.length === 0) return;
+            let $wrapper = $('<div style="padding: 6px 10px;"></div>');
+            $.each(sourceReferences, function (i, ref) {
+                let source = ref['Source'] || '-';
+                let cat = ref['Reference Category'] || '-';
+                let year = ref['Year'];
+                let title = ref['Title'];
+                let authors = ref['Author/s'];
+                let notes = ref['Notes'];
+                let doiUrl = ref['DOI/URL'];
+
+                let $card = $(
+                    '<div class="rp-metadata-container"></div>'
+                );
+
+                // Source name
+                $card.append('<div class="rp-metadata-source">' + source + '</div>');
+
+                // Category | Year
+                let meta = cat;
+                if (year && year !== '-') meta += ' &bull; ' + year;
+                $card.append('<div class="rp-metadata-cat">' + meta + '</div>');
+
+                // Title
+                if (title && title !== '-') {
+                    $card.append('<div class="rp-metadata-title">' + title + '</div>');
+                }
+
+                // Authors
+                if (authors && authors !== '-') {
+                    if (Array.isArray(authors)) authors = authors.join(', ');
+                    $card.append('<div class="rp-metadata-authors">' + authors + '</div>');
+                }
+
+                // DOI/URL
+                if (doiUrl && doiUrl !== '-') {
+                    let href, linkText;
+                    if (ref['is_doc'] && typeof doiUrl === 'string' && doiUrl.indexOf('/uploaded/') > -1) {
+                        href = doiUrl;
+                        linkText = 'Download';
+                    } else if (typeof doiUrl === 'string' && doiUrl.substring(0, 4) !== 'http') {
+                        href = 'http://dx.doi.org/' + doiUrl;
+                        linkText = doiUrl;
+                    } else {
+                        href = doiUrl;
+                        linkText = doiUrl;
+                    }
+                    $card.append(
+                        '<div class="rp-metadata-doi">' +
+                        '<a href="' + href + '" target="_blank" style="font-size:10px;">' + linkText + '</a>' +
+                        '</div>'
+                    );
+                }
+
+                // Notes
+                if (notes && notes !== '-') {
+                    $card.append('<div class="rp-metadata-notes">' + notes + '</div>');
+                }
+
+                if (i !== sourceReferences.length - 1) {
+                    $card.append('<div class="rp-metadata-separator"/>');
+                }
+
+                $wrapper.append($card);
+            });
+            sectionContainer.append($wrapper);
+            sectionContainer.show();
+        },
         createDataSummary: function (data) {
             var bio_data = data['biodiversity_data'];
             var origin_pie_canvas = document.getElementById('fish-rp-origin-pie');
@@ -264,6 +333,13 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
+            $siteDetailWrapper.append(
+                '<div id="rp-metadata" class="search-results-wrapper">' +
+                '<div class="search-results-total" data-visibility="false">' +
+                '<span class="search-result-title"> Metadata </span>' +
+                '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i>' +
+                '</div></div>');
+
             // Only show climate data panel if not viewing climate module results
             let currentModule = document.querySelector('input[name="module"]:checked');
             if (!currentModule || currentModule.value !== 'climate') {
@@ -329,6 +405,10 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                     self.renderLegends(self.originLegends, $('.origin-legends'));
                     self.renderLegends(self.endemismLegends, $('.endemism-legends'));
                     self.renderLegends(self.consStatusLegends, $('.cons-status-legends'));
+
+                    // Metadata
+                    console.log(data)
+                    self.renderMetadata($('#rp-metadata'), data['biodiversity_data']['source_references']);
 
                     // Only render climate data panel if not viewing climate module results
                     let currentModule = document.querySelector('input[name="module"]:checked');
@@ -489,8 +569,10 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
         renderCharts: function () {
             let self = this;
             $.each(this.charts, function (index, chart) {
-                if (chart['data'].length > 0) {
-                    self.createPieChart(chart);
+                if (typeof chart['data'] !== 'undefined') {
+                    if (chart['data'].length > 0) {
+                        self.createPieChart(chart);
+                    }
                 }
             })
         },
