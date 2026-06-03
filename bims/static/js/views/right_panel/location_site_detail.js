@@ -407,7 +407,6 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                     self.renderLegends(self.consStatusLegends, $('.cons-status-legends'));
 
                     // Metadata
-                    console.log(data)
                     self.renderMetadata($('#rp-metadata'), data['biodiversity_data']['source_references']);
 
                     // Only render climate data panel if not viewing climate module results
