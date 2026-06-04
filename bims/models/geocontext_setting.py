@@ -20,5 +20,5 @@ class GeocontextSetting(Preferences):
 
     tolerance = models.FloatField(
         default=0.0,
-        help_text='The radius tolerance for the spatial query'
+        help_text='The radius tolerance for the spatial query (in metres).'
     )

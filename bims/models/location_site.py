@@ -713,6 +713,7 @@ def generate_site_code(
     catchments_data = {}
     site_code_generator = preferences.SiteSetting.site_code_generator
     site_count_width = 5
+    ecosystem_type = ecosystem_type or ''
 
     site_name = kwargs.get('site_name', '')
     if not site_name or site_name == 'undefined':

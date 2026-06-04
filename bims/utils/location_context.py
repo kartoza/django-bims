@@ -215,7 +215,19 @@ def get_location_context_data(
             _log("[%s] [SITE %s] [%s] %s", status, site.id, key, message)
 
             if should_generate_site_code and not site.site_code:
-                scode, _ = generate_site_code(site, lat=site.latitude, lon=site.longitude)
+                river_name = ''
+                if site.river:
+                    river_name = site.river.name
+                elif site.legacy_river_name:
+                    river_name = site.legacy_river_name
+                scode, _ = generate_site_code(
+                    site,
+                    lat=site.latitude,
+                    lon=site.longitude,
+                    ecosystem_type=site.ecosystem_type or '',
+                    river_name=river_name,
+                    wetland_name=site.wetland_name or '',
+                )
                 site.site_code = scode
                 site.save(update_fields=["site_code"])
                 _log("Generated site code '%s' for site %s", scode, site.id)
