@@ -586,20 +586,23 @@ class OccurrenceProcessor(object):
                     )
 
         if not location_site.site_code:
-            site_code, catchments_data = generate_site_code(
-                location_site,
-                lat=location_site.latitude,
-                lon=location_site.longitude,
-                river_name=river_name,
-                ecosystem_type=location_site.ecosystem_type,
-                wetland_name=user_wetland_name,
-                **{
-                    "site_desc": site_description,
-                    "site_name": location_site_name
-                }
-            )
-            location_site.site_code = site_code
-            self._log(logging.DEBUG, f"Generated site_code={site_code}")
+            try:
+                site_code, catchments_data = generate_site_code(
+                    location_site,
+                    lat=location_site.latitude,
+                    lon=location_site.longitude,
+                    river_name=river_name,
+                    ecosystem_type=location_site.ecosystem_type or '',
+                    wetland_name=user_wetland_name or '',
+                    **{
+                        "site_desc": site_description,
+                        "site_name": location_site_name
+                    }
+                )
+                location_site.site_code = site_code
+                self._log(logging.DEBUG, f"Generated site_code={site_code}")
+            except Exception as e:
+                self._log(logging.WARNING, f"Site code generation failed for site id={location_site.id}: {e}")
         if accuracy_of_coordinates:
             location_site.accuracy_of_coordinates = accuracy_of_coordinates
         location_site.save()

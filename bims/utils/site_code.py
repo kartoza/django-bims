@@ -16,6 +16,7 @@ from requests.exceptions import HTTPError
 from bims.utils.get_key import get_key
 from cloud_native_gis.models import Layer
 from cloud_native_gis.utils.geometry import query_features
+from bims.utils.geometry import get_feature_data as get_river_feature_data
 from sass.models import River
 
 FBIS_CATCHMENT_KEY = 'river_catchment_areas_group'
@@ -244,22 +245,22 @@ def fbis_catchment_generator(
         elif location_site.river:
             river_name = location_site.river.name
         else:
-            river_name = get_feature_data(
+            river_name = get_river_feature_data(
                 lon=location_site.geometry_point[0],
                 lat=location_site.geometry_point[1],
-                context_key='river_name',
-                layer_name='river',
-                tolerance=0.5
+                context_key='name',
+                layer_name='SA_RIVERS',
+                tolerance=1000
             )
 
     # Search river name by coordinates
     if not river_name and lat and lon:
-        river_name = get_feature_data(
+        river_name = get_river_feature_data(
             lon=lon,
             lat=lat,
-            context_key='river_name',
-            layer_name='river',
-            tolerance=0.5
+            context_key='name',
+            layer_name='SA_RIVERS',
+            tolerance=1000
         )
 
     if not river_name:
