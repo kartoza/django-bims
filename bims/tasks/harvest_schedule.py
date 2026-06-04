@@ -128,3 +128,94 @@ def run_scheduled_gbif_harvest(self, schema_name: str, schedule_id: int):
                 "since": since.isoformat(),
                 "until": until.isoformat(),
             }
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=5,
+    soft_time_limit=50 * 60,
+    time_limit=55 * 60,
+    queue="update",
+)
+def run_scheduled_bims_harvest(self, schema_name: str, schedule_id: int):
+    """Create a BIMS HarvestSession and enqueue harvest_bims_species for a scheduled run."""
+    from bims.models.harvest_schedule import HarvestSchedule
+    from bims.models.harvest_session import HarvestSession
+    from bims.tasks.harvest_bims_species import harvest_bims_species
+
+    Tenant = get_tenant_model()
+    with schema_context(get_public_schema_name()):
+        if not Tenant.objects.filter(schema_name=schema_name).exists():
+            return {"status": "missing_tenant", "schema_name": schema_name}
+
+    with schema_context(schema_name):
+        temp_k1, temp_k2 = _tenant_lock_keys(schema_name, schedule_id)
+        with pg_advisory_lock(temp_k1, temp_k2) as locked:
+            if not locked:
+                return {"status": "lock_not_acquired", "schema": schema_name}
+
+            sched = HarvestSchedule.objects.select_related("module_group").get(id=schedule_id)
+
+            if not sched.enabled:
+                return {"status": "disabled"}
+
+            bims_config = sched.bims_config or {}
+            base_url = (bims_config.get("base_url") or "").strip()
+            remote_group_id = bims_config.get("remote_group_id")
+
+            if not base_url or not remote_group_id:
+                return {"status": "missing_bims_config", "schedule_id": schedule_id}
+
+            open_session = (
+                HarvestSession.objects.filter(schedule=sched, finished=False, canceled=False)
+                .order_by("-start_time")
+                .first()
+            )
+            if open_session:
+                return {
+                    "status": "skipped_open_session",
+                    "schema": schema_name,
+                    "open_session_id": open_session.id,
+                }
+
+            now = timezone.now()
+            session = HarvestSession.objects.create(
+                harvester=None,
+                module_group=sched.module_group,
+                start_time=now,
+                category="bims",
+                is_fetching_species=True,
+                finished=False,
+                canceled=False,
+                schedule=sched,
+                trigger="scheduled",
+                status="queued",
+                additional_data={
+                    "base_url": base_url,
+                    "remote_group_id": int(remote_group_id),
+                    "remote_group_name": bims_config.get("remote_group_name", ""),
+                    "import_mode": "existing",
+                    "mark_readonly": False,
+                },
+            )
+
+            session.log_file.save(
+                f"{schema_name}-bims-harvest-{session.id}.log",
+                ContentFile(
+                    f"[{now.isoformat()}] Scheduled BIMS harvest queued "
+                    f"(group={sched.module_group_id}, remote={remote_group_id})\n"
+                ),
+            )
+
+            harvest_bims_species.delay(session.id, schema_name=schema_name)
+
+            return {
+                "status": "enqueued",
+                "schema": schema_name,
+                "session_id": session.id,
+                "base_url": base_url,
+                "remote_group_id": remote_group_id,
+            }

@@ -147,6 +147,18 @@ export const taxaSidebar = (() => {
         setupAddModuleModal();
     }
 
+    function buildDashboardTitle(name, isReadonly, upstreamUrl) {
+        let html = `<h2>${name}`;
+        if (isReadonly && upstreamUrl) {
+            html += ` <span class="badge badge-info" style="font-size:12pt; vertical-align:middle;"><i class="fa fa-refresh" aria-hidden="true"></i> BIMS Harvest</span>`;
+        }
+        html += `</h2>`;
+        if (isReadonly && upstreamUrl) {
+            html += `<small class="text-muted"><i class="fa fa-link" aria-hidden="true"></i> Source: <a href="${upstreamUrl}" target="_blank" rel="noopener">${upstreamUrl}</a> &middot; Synced monthly</small>`;
+        }
+        return html;
+    }
+
     function handleTaxonGroupSelected(event) {
         let $elm = $(event.target);
         let maxTry = 10;
@@ -161,9 +173,10 @@ export const taxaSidebar = (() => {
             updateTaxonGroup($elm.data('id'));
         }
         selectedTaxonGroup = $elm.data('id');
-        $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
+        const isReadonly = $elm.data('is-readonly') === true || $elm.data('is-readonly') === 'true';
+        const upstreamUrl = $elm.data('upstream-url') || '';
+        $('.dashboard-title').html(buildDashboardTitle($elm.data('name'), isReadonly, upstreamUrl));
         currentSelectedTaxonGroup = selectedTaxonGroup;
-
     }
 
     function allTaxaGroups(groups) {

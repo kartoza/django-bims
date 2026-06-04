@@ -3246,7 +3246,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Target", {
-            "fields": ("module_group", "parent_species", "enabled"),
+            "fields": ("module_group", "parent_species", "enabled", "category"),
             "description": (
                 "Select a module group and optionally override the parent species. "
                 "If parent species is not set, the module group's default GBIF parent will be used."
@@ -3316,10 +3316,15 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     @admin.action(description="Run now (enqueue Celery task)")
     def action_run_now(self, request, queryset):
+        from bims.models.harvest_schedule import HarvestScheduleCategory
+        from bims.tasks.harvest_schedule import run_scheduled_bims_harvest
         count = 0
         for sched in queryset:
             schema_name = str(connection.schema_name)
-            run_scheduled_gbif_harvest.delay(schema_name, sched.id)
+            if sched.category == HarvestScheduleCategory.BIMS:
+                run_scheduled_bims_harvest.delay(schema_name, sched.id)
+            else:
+                run_scheduled_gbif_harvest.delay(schema_name, sched.id)
             count += 1
         self.message_user(
             request, f"Queued {count} run(s).", messages.SUCCESS)

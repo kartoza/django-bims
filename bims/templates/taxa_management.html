@@ -309,7 +309,20 @@
                 </div>
                 <div class="dashboard-title">
                     {% if selected_taxon_group %}
-                        <h2>{{ selected_taxon_group.name }}</h2>
+                        <h2>{{ selected_taxon_group.name }}
+                            {% if selected_taxon_group.is_readonly and selected_taxon_group.upstream_url %}
+                                <span class="badge badge-info" style="font-size:12pt; vertical-align:middle;">
+                                    <i class="fa fa-refresh" aria-hidden="true"></i> BIMS Harvest
+                                </span>
+                            {% endif %}
+                        </h2>
+                        {% if selected_taxon_group.is_readonly and selected_taxon_group.upstream_url %}
+                            <small class="text-muted">
+                                <i class="fa fa-link" aria-hidden="true"></i> Source:
+                                <a href="{{ selected_taxon_group.upstream_url }}" target="_blank" rel="noopener">{{ selected_taxon_group.upstream_url }}</a>
+                                &middot; Synced monthly
+                            </small>
+                        {% endif %}
                     {% else %}
                         <h2>Taxon Management</h2>
                     {% endif %}
