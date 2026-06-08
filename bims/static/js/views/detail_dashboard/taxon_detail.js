@@ -20,6 +20,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             'click #export-taxasite-map': 'exportTaxasiteMap',
             'click .download-taxa-records-timeline': 'downloadTaxaRecordsTimeline',
             'click .ssdd-export': 'downloadElementEvent',
+            'click .download-citation': 'downloadCitationList',
             'click .download-as-csv': 'downloadAsCSV',
         },
         apiParameters: _.template(Shared.SearchURLParametersTemplate),
@@ -50,6 +51,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
             this.iucnAssessmentsBody = this.$el.find('#fsdd-iucn-assessments-body');
             this.metadataTableList = this.$el.find('#metadata-table-list-taxon');
+            this.sourceReferenceIds = [];
 
             let biodiversityLayersOptions = {
                 url: geoserverPublicUrl + 'wms',
@@ -244,10 +246,61 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 species: taxonomy_rank['SPECIES'],
             }));
         },
+        downloadCitationList: function (e) {
+            e.preventDefault();
+            let format = $(e.currentTarget).data('format');
+            let self = this;
+            let alertModalBody = $('#alertModalBody');
+
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.');
+                $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                return;
+            }
+
+            if (!self.sourceReferenceIds || self.sourceReferenceIds.length === 0) {
+                alertModalBody.html('No source references available to download.');
+                $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                return;
+            }
+
+            showDownloadPopup('CSV', 'Citation List', function (downloadRequestId) {
+                let formData = new FormData();
+                formData.append('citation_format', format);
+                formData.append('download_request_id', downloadRequestId);
+                $.each(self.sourceReferenceIds, function (i, id) {
+                    formData.append('source_reference_ids', id);
+                });
+
+                $.ajax({
+                    url: '/api/download-citations/',
+                    type: 'POST',
+                    headers: {'X-CSRFToken': csrfmiddlewaretoken},
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function () {
+                        alertModalBody.html(
+                            'Your citation list is being generated and will be emailed to you shortly.'
+                        );
+                        $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                    },
+                    error: function (xhr) {
+                        let msg = 'Failed to generate citation list. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            msg = xhr.responseJSON.error;
+                        }
+                        alertModalBody.html(msg);
+                        $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                    }
+                });
+            }, true, null, false);
+        },
         renderMetadataTable: function (data) {
             var self = this;
             this.metadataTableList.html(' ');
             let dataSources = data['source_references'];
+            this.sourceReferenceIds = dataSources.map(function (s) { return s['ID']; });
             let order = ['Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
             let orderedDataSources = [];
             for (var j=0; j<dataSources.length; j++) {

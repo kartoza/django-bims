@@ -246,6 +246,31 @@
                             <div class="card-header-title pull-left d-inline">
                                 Metadata Table
                             </div>
+                            <div class="btn-group pull-right">
+                                <button type="button"
+                                        class="btn btn-default dropdown-toggle"
+                                        data-toggle="dropdown" aria-haspopup="true"
+                                        aria-expanded="false" style="color: black">
+                                    <i class="fa fa-download"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="ssdd-export btn dropdown-item"
+                                       data-datac="sdd-metadata-table-list"
+                                       data-title="Metadata Table">
+                                        Download Metadata Table
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="btn dropdown-item download-citation" data-format="plain" href="#">
+                                        Download Citations (Plain text)
+                                    </a>
+                                    <a class="btn dropdown-item download-citation" data-format="bibtex" href="#">
+                                        Download Citations (BibTeX)
+                                    </a>
+                                    <a class="btn dropdown-item download-citation" data-format="ris" href="#">
+                                        Download Citations (RIS)
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body">
                             <table id="metadata-table-list-taxon"  class="table table-hover custom-table metadata-table"></table>
@@ -815,12 +840,33 @@
                         <div class="card-header-title pull-left d-inline">
                             Metadata Table
                         </div>
-                        <button class="ssdd-export btn btn-default pull-right"
-                                data-datac="metadata-table-list" data-title="Metadata Table">
-                            <i class="fa fa-download"></i>
-                        </button>
+                        <div class="btn-group pull-right">
+                            <button type="button"
+                                    class="btn btn-default dropdown-toggle"
+                                    data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false" style="color: black">
+                                <i class="fa fa-download"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="ssdd-export btn dropdown-item"
+                                   data-datac="metadata-table-list"
+                                   data-title="Metadata Table">
+                                    Download Metadata Table
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="btn dropdown-item download-citation" data-format="plain" href="#">
+                                    Download Citations (Plain text)
+                                </a>
+                                <a class="btn dropdown-item download-citation" data-format="bibtex" href="#">
+                                    Download Citations (BibTeX)
+                                </a>
+                                <a class="btn dropdown-item download-citation" data-format="ris" href="#">
+                                    Download Citations (RIS)
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                    <div id= "metadata-table-list" class="card-body card-padding">
+                    <div id="metadata-table-list" class="card-body card-padding">
                         <table class="table table-hover custom-table content-body">
                         </table>
                     </div>
