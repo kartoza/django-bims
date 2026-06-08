@@ -604,6 +604,52 @@ class GbifPublishApiTests(FastTenantTestCase):
         self.assertEqual(rows[1]["recordedBy"], "River Team")
         self.assertEqual(rows[1]["institutionCode"], "Owner Org")
 
+    def test_owner_is_preferred_over_collector_user_for_recorded_by(self):
+        source_reference = SourceReferenceF.create()
+        owner = UserF.create(first_name="Owner", last_name="Person")
+        collector_user = UserF.create(first_name="Collector", last_name="Person")
+        owner.save()
+        collector_user.save()
+        record = self._make_record(
+            source_reference,
+            collector="",
+            collector_user=collector_user,
+            owner=owner,
+            institution_id="LEGACY-INST-ID",
+        )
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(
+                self.config, [record], [self.contact], source_reference
+            )
+
+        rows = self._read_occurrence_rows(zip_path)
+        self.assertEqual(rows[0]["recordedBy"], "Owner Person")
+
+    def test_owner_is_preferred_over_collector_string_for_recorded_by(self):
+        source_reference = SourceReferenceF.create()
+        owner = UserF.create(first_name="Owner", last_name="Person")
+        owner.save()
+        record = self._make_record(
+            source_reference,
+            collector="Field Collector",
+            collector_user=None,
+            owner=owner,
+            institution_id="LEGACY-INST-ID",
+        )
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(
+                self.config, [record], [self.contact], source_reference
+            )
+
+        rows = self._read_occurrence_rows(zip_path)
+        self.assertEqual(rows[0]["recordedBy"], "Owner Person")
+
     def test_basis_of_record_mapping_for_requested_record_types(self):
         source_reference = SourceReferenceF.create()
         cases = [

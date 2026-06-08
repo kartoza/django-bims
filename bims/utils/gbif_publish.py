@@ -16,7 +16,7 @@ from requests.auth import HTTPBasicAuth
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-LICENSE_URL = "https://creativecommons.org/licenses/by-nc/4.0/legalcode"
+LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/legalcode"
 
 def _media_url() -> str:
     return getattr(settings, "MEDIA_URL", "/media/").rstrip("/")
@@ -129,7 +129,15 @@ def write_occurrence_txt(
             )
             catalog_number = str(r.pk)
 
-            recorded_by = (r.collector or "").strip()
+            recorded_by = ""
+
+            if r.owner:
+                candidate = (r.owner.get_full_name() or r.owner.username).strip()
+                if 'admin' not in candidate.lower():
+                    recorded_by = candidate
+
+            if not recorded_by:
+                recorded_by = (r.collector or "").strip()
 
             if not recorded_by and r.collector_user:
                 recorded_by = (
@@ -138,11 +146,6 @@ def write_occurrence_txt(
                 ).strip()
                 if 'admin' in recorded_by.lower():
                     recorded_by = ''
-
-            if not recorded_by and r.owner:
-                candidate = (r.owner.get_full_name() or r.owner.username).strip()
-                if 'admin' not in candidate.lower():
-                    recorded_by = candidate
 
             row_dataset_name = dataset_name or _site_name()
             inst_code = (r.institution_id or "").strip()
