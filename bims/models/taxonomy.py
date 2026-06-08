@@ -1044,7 +1044,11 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
     is_synonym = "SYNONYM" in (instance.taxonomic_status or "").upper()
 
     # Set IUCN status and redlist ID before saving taxonomy
-    if instance.is_species and not instance.iucn_status:
+    is_non_native = (
+        instance.origin
+        and getattr(instance.origin, 'origin_key', '').startswith('alien')
+    )
+    if instance.is_species and not instance.iucn_status and not is_non_native:
         iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
         if iucn_status:
             instance.iucn_status = iucn_status
