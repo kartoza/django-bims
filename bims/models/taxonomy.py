@@ -1048,7 +1048,14 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         instance.origin
         and getattr(instance.origin, 'origin_key', '').startswith('alien')
     )
-    if instance.is_species and not instance.iucn_status and not is_non_native:
+    should_fetch_iucn = (
+        instance.is_species
+        and not instance.iucn_status
+        and not is_non_native
+        and not getattr(instance, "_iucn_fetch_attempted", False)
+    )
+    if should_fetch_iucn:
+        instance._iucn_fetch_attempted = True
         iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
         if iucn_status:
             instance.iucn_status = iucn_status
