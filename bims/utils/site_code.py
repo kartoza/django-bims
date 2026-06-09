@@ -240,18 +240,18 @@ def fbis_catchment_generator(
     catchment_code = secondary_catchment_name[:2].upper()
 
     if location_site and not river_name:
-        if location_site.legacy_river_name:
-            river_name = location_site.legacy_river_name
-        elif location_site.river:
-            river_name = location_site.river.name
-        else:
-            river_name = get_river_feature_data(
-                lon=location_site.geometry_point[0],
-                lat=location_site.geometry_point[1],
-                context_key='name',
-                layer_name='SA_RIVERS',
-                tolerance=1000
-            )
+        river_name = get_river_feature_data(
+            lon=location_site.geometry_point[0],
+            lat=location_site.geometry_point[1],
+            context_key='name',
+            layer_name='SA_RIVERS',
+            tolerance=1000
+        )
+        if not river_name:
+            if location_site.legacy_river_name:
+                river_name = location_site.legacy_river_name
+            elif location_site.river:
+                river_name = location_site.river.name
 
     # Search river name by coordinates
     if not river_name and lat and lon:
