@@ -148,16 +148,14 @@ def write_occurrence_txt(
                     recorded_by = ''
 
             row_dataset_name = dataset_name or _site_name()
+
             inst_code = (r.institution_id or "").strip()
-
-            collector_user = None
-            if r.collector_user:
-                collector_user = r.collector_user
-            elif r.owner:
-                collector_user = r.owner
-
-            if collector_user:
-                inst_code = collector_user.organization
+            if not inst_code or inst_code == settings.INSTITUTION_ID_DEFAULT:
+                collector_user = r.collector_user or r.owner
+                inst_code = (
+                    (collector_user.organization if collector_user else None)
+                    or inst_code
+                )
 
             dg = ""
 
