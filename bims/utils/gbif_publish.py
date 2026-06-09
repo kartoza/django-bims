@@ -16,7 +16,7 @@ from requests.auth import HTTPBasicAuth
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-LICENSE_URL = "https://creativecommons.org/licenses/by-nc/4.0/legalcode"
+LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/legalcode"
 
 def _media_url() -> str:
     return getattr(settings, "MEDIA_URL", "/media/").rstrip("/")
@@ -129,7 +129,15 @@ def write_occurrence_txt(
             )
             catalog_number = str(r.pk)
 
-            recorded_by = (r.collector or "").strip()
+            recorded_by = ""
+
+            if r.owner:
+                candidate = (r.owner.get_full_name() or r.owner.username).strip()
+                if 'admin' not in candidate.lower():
+                    recorded_by = candidate
+
+            if not recorded_by:
+                recorded_by = (r.collector or "").strip()
 
             if not recorded_by and r.collector_user:
                 recorded_by = (
@@ -139,22 +147,15 @@ def write_occurrence_txt(
                 if 'admin' in recorded_by.lower():
                     recorded_by = ''
 
-            if not recorded_by and r.owner:
-                candidate = (r.owner.get_full_name() or r.owner.username).strip()
-                if 'admin' not in candidate.lower():
-                    recorded_by = candidate
-
             row_dataset_name = dataset_name or _site_name()
+
             inst_code = (r.institution_id or "").strip()
-
-            collector_user = None
-            if r.collector_user:
-                collector_user = r.collector_user
-            elif r.owner:
-                collector_user = r.owner
-
-            if collector_user:
-                inst_code = collector_user.organization
+            if not inst_code or inst_code == settings.INSTITUTION_ID_DEFAULT:
+                collector_user = r.collector_user or r.owner
+                inst_code = (
+                    (collector_user.organization if collector_user else None)
+                    or inst_code
+                )
 
             dg = ""
 
