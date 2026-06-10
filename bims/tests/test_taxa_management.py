@@ -122,3 +122,39 @@ class TaxaManagementTest(FastTenantTestCase):
                                    {'pk': 9999, 'rejection_message': 'rejection_message'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_fada_id_param_redirects_to_taxon(self):
+        self.client.login(username='testuser', password='password')
+        self.taxonomy_1.fada_id = 'HT-99999'
+        self.taxonomy_1.save(update_fields=['fada_id'])
+        response = self.client.get(
+            reverse('taxa-management'), {'fada_id': 'HT-99999'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('taxon=', response['Location'])
+
+    def test_fada_id_param_with_fada_prefix_redirects(self):
+        self.client.login(username='testuser', password='password')
+        self.taxonomy_1.fada_id = 'HT-99999'
+        self.taxonomy_1.save(update_fields=['fada_id'])
+        response = self.client.get(
+            reverse('taxa-management'), {'fada_id': 'fada:HT-99999'}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('taxon=', response['Location'])
+
+    def test_fada_id_unknown_falls_through_to_normal_view(self):
+        self.client.login(username='testuser', password='password')
+        response = self.client.get(
+            reverse('taxa-management'), {'fada_id': 'HT-DOES-NOT-EXIST'}
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_fada_id_redirect_includes_taxon_group_selected(self):
+        self.client.login(username='testuser', password='password')
+        self.taxonomy_1.fada_id = 'HT-99999'
+        self.taxonomy_1.save(update_fields=['fada_id'])
+        response = self.client.get(
+            reverse('taxa-management'), {'fada_id': 'HT-99999'}
+        )
+        self.assertIn('selected=', response['Location'])
+

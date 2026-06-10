@@ -35,6 +35,31 @@ class TaxaManagementView(TemplateView):
         if not request.user.is_authenticated:
             if not preferences.SiteSetting.allow_public_taxa_view:
                 return redirect_to_login(request.get_full_path())
+
+        fada_id_param = request.GET.get('fada_id', '').strip()
+        if fada_id_param:
+            raw_id = (
+                fada_id_param[5:]
+                if fada_id_param.startswith('fada:')
+                else fada_id_param
+            )
+            try:
+                taxon = Taxonomy.objects.get(fada_id=raw_id)
+                taxon_group = TaxonGroup.objects.filter(
+                    taxonomies=taxon,
+                    category='SPECIES_MODULE',
+                    parent__isnull=True,
+                ).first()
+                params = {}
+                if taxon_group:
+                    params['selected'] = taxon_group.id
+                params['taxon'] = taxon.canonical_name or taxon.scientific_name or ''
+                return HttpResponseRedirect(
+                    f'{reverse("taxa-management")}?{urlencode(params)}'
+                )
+            except Taxonomy.DoesNotExist:
+                pass
+
         selected = request.GET.get('selected')
         if selected:
             try:

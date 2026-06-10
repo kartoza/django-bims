@@ -140,6 +140,36 @@ class TestChecklistVersionSnapshot(TestCase):
         self.assertEqual(cv.taxa_count, 0)
         self.assertEqual(cv.snapshot_rows.count(), 0)
 
+    def test_snapshot_checklist_id_uses_fada_prefix_when_fada_id_set(self):
+        fada_taxon = TaxonomyF.create(
+            scientific_name='Acanthophlebia', rank='GENUS', fada_id='HT-408480'
+        )
+        _add_validated(self.group, fada_taxon)
+        cv = _make_version(self.group, version='fada-1.0')
+        cv.publish(published_by=self.user)
+        row = cv.snapshot_rows.get(checklist_id='fada:HT-408480')
+        self.assertEqual(row.scientific_name, 'Acanthophlebia')
+
+    def test_snapshot_parent_checklist_id_uses_fada_prefix(self):
+        parent = TaxonomyF.create(
+            scientific_name='Acanthophlebiidae', rank='FAMILY', fada_id='HT-100'
+        )
+        child = TaxonomyF.create(
+            scientific_name='Acanthophlebia', rank='GENUS', parent=parent
+        )
+        _add_validated(self.group, parent, child)
+        cv = _make_version(self.group, version='fada-parent-1.0')
+        cv.publish(published_by=self.user)
+        child_row = cv.snapshot_rows.get(checklist_id=str(child.pk))
+        self.assertEqual(child_row.parent_checklist_id, 'fada:HT-100')
+
+    def test_snapshot_checklist_id_falls_back_to_pk_without_fada_id(self):
+        cv = _make_version(self.group, version='nofada-1.0')
+        cv.publish(published_by=self.user)
+        ids = set(cv.snapshot_rows.values_list('checklist_id', flat=True))
+        self.assertIn(str(self.taxon1.pk), ids)
+        self.assertIn(str(self.taxon2.pk), ids)
+
     def test_child_group_taxa_included_in_snapshot(self):
         """Taxa belonging to child TaxonGroups are included in the parent snapshot."""
         child_group = TaxonGroupF.create(name='FrogSubgroup', parent=self.group)

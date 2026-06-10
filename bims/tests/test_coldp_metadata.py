@@ -364,6 +364,59 @@ class TestColDPTaxonSerializer(FastTenantTestCase):
     def test_code_empty_when_no_tags(self):
         self.assertEqual(self._data()['code'], '')
 
+    def test_code_falls_back_to_zoological_for_animalia(self):
+        t = self._make(rank='KINGDOM', canonical_name='Animalia')
+        self.assertEqual(ColDPTaxonSerializer(t).data['code'], 'zoological')
+
+    def test_code_falls_back_to_botanical_for_plantae(self):
+        t = self._make(rank='KINGDOM', canonical_name='Plantae')
+        self.assertEqual(ColDPTaxonSerializer(t).data['code'], 'botanical')
+
+    def test_code_empty_for_unknown_kingdom_and_no_tags(self):
+        t = self._make(rank='KINGDOM', canonical_name='Fungi')
+        self.assertEqual(ColDPTaxonSerializer(t).data['code'], '')
+
+    def test_code_tag_takes_priority_over_kingdom(self):
+        t = self._make(rank='KINGDOM', canonical_name='Animalia')
+        t.tags.add('botanical')
+        self.assertEqual(ColDPTaxonSerializer(t).data['code'], 'botanical')
+
+    def test_code_falls_back_via_kingdom_ancestor_chain(self):
+        # Realistic scenario: species whose parent chain has a KINGDOM ancestor.
+        kingdom = self._make(rank='KINGDOM', canonical_name='Animalia')
+        genus = self._make(rank=TaxonomicRank.GENUS.name, parent=kingdom)
+        species = self._make(rank=TaxonomicRank.SPECIES.name, parent=genus)
+        self.assertEqual(ColDPTaxonSerializer(species).data['code'], 'zoological')
+
+    def test_code_empty_when_no_kingdom_in_ancestor_chain(self):
+        # Taxon with no kingdom-ranked ancestor → kingdom_name is '' → code is ''.
+        genus = self._make(rank=TaxonomicRank.GENUS.name)
+        species = self._make(rank=TaxonomicRank.SPECIES.name, parent=genus)
+        self.assertEqual(ColDPTaxonSerializer(species).data['code'], '')
+
+    def test_taxon_id_uses_fada_prefix_when_fada_id_set(self):
+        t = self._make(fada_id='HT-408480')
+        self.assertEqual(ColDPTaxonSerializer(t).data['taxonID'], 'fada:HT-408480')
+
+    def test_taxon_id_fada_prefix_takes_priority_over_site_prefix(self):
+        t = self._make(fada_id='HT-408480')
+        data = ColDPTaxonSerializer(t, context={'site_prefix': 'FBIS'}).data
+        self.assertEqual(data['taxonID'], 'fada:HT-408480')
+
+    def test_parent_id_uses_fada_prefix_when_parent_has_fada_id(self):
+        parent = self._make(rank=TaxonomicRank.GENUS.name, fada_id='HT-100')
+        t = self._make(parent=parent, taxonomic_status='ACCEPTED')
+        self.assertEqual(ColDPTaxonSerializer(t).data['parentID'], 'fada:HT-100')
+
+    def test_synonym_parent_id_uses_fada_prefix_for_accepted_taxon(self):
+        accepted = self._make(taxonomic_status='ACCEPTED', fada_id='HT-200')
+        synonym = self._make(
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+            parent=None,
+        )
+        self.assertEqual(ColDPTaxonSerializer(synonym).data['parentID'], 'fada:HT-200')
+
 
 # ---------------------------------------------------------------------------
 # ColDPTaxonView endpoint tests
