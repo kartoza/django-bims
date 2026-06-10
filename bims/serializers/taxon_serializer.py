@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from preferences import preferences
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from django.db.models import Q
 from rest_framework import serializers
 from taggit.models import Tag
 
@@ -689,8 +690,9 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             qs = TaxonGroupTaxonomy.objects.filter(taxongroup=taxon_group)
             if fada:
                 qs = qs.exclude(
-                    taxonomy__fada_id__isnull=True
-                ).exclude(taxonomy__fada_id='')
+                    (Q(taxonomy__fada_id__isnull=True) | Q(taxonomy__fada_id=''))
+                    & Q(taxonomy__aphia_id__isnull=True)
+                )
             unique_taxonomy_ids.update(qs.values_list('id', flat=True))
             for child in TaxonGroup.objects.filter(parent=taxon_group):
                 collect_taxonomy_ids(child)

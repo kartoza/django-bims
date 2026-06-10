@@ -123,6 +123,25 @@
             </div>
             {% endif %}
 
+            {% if object.aphia_id %}
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">
+                    WoRMS ID
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" disabled
+                           class="form-control form-control-sm"
+                           value="{{ object.aphia_id }}">
+                    <small class="form-text text-muted">
+                        <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id={{ object.aphia_id }}"
+                           target="_blank" rel="noopener">
+                            View on WoRMS
+                        </a>
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="form-group row">
                 <label for="rank" class="col-sm-2 col-form-label col-form-label">
                     Rank

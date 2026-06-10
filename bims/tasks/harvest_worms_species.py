@@ -180,18 +180,18 @@ def harvest_worms_species(session_id: int, schema_name: str):
                 if not child_id:
                     continue
                 child_id = int(child_id)
-                if child_id in processed_ids:
-                    continue
+                already_processed = child_id in processed_ids
 
-                row = api_record_to_csv_row(child)
-                try:
-                    processor.process(row, taxon_group, harvest_synonyms, fetch_gbif_key=True)
-                    processed_ids.add(child_id)
-                    total_processed += 1
-                    since_last_save += 1
-                except Exception as exc:
-                    _log(f"Error processing AphiaID={child_id}: {exc}")
-                    continue
+                if not already_processed:
+                    row = api_record_to_csv_row(child)
+                    try:
+                        processor.process(row, taxon_group, harvest_synonyms, fetch_gbif_key=True)
+                        processed_ids.add(child_id)
+                        total_processed += 1
+                        since_last_save += 1
+                    except Exception as exc:
+                        _log(f"Error processing AphiaID={child_id}: {exc}")
+                        continue
 
                 if (child.get("status") or "").lower() == "accepted":
                     queue.append(child_id)
