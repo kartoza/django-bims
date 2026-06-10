@@ -292,7 +292,7 @@ class ChecklistVersion(models.Model):
             .prefetch_related('vernacular_names', 'biographic_distributions')
         ):
             row = self.build_snapshot_row(taxonomy, ChecklistSnapshot.CHANGE_UNCHANGED)
-            cid = str(taxonomy.pk)
+            cid = row.checklist_id
             current_ids.add(cid)
 
             if cid not in prev_snapshot:
@@ -351,6 +351,13 @@ class ChecklistVersion(models.Model):
             'is_publishing',
         ])
 
+    @staticmethod
+    def _fada_taxon_id(obj) -> str:
+        """Return fada:{fada_id} when available, else str(pk)."""
+        if obj and getattr(obj, 'fada_id', None):
+            return f'fada:{obj.fada_id}'
+        return str(obj.pk) if obj else ''
+
     def build_snapshot_row(self, taxonomy, change_type):
         """
         Construct a ChecklistSnapshot instance (not yet saved) from a
@@ -367,14 +374,20 @@ class ChecklistVersion(models.Model):
             for tag in taxonomy.biographic_distributions.all()
         ]
 
+        parent_id = (
+            self._fada_taxon_id(taxonomy.parent)
+            if taxonomy.parent_id else ''
+        )
+        basionym_id = (
+            self._fada_taxon_id(taxonomy.accepted_taxonomy)
+            if taxonomy.accepted_taxonomy_id else ''
+        )
+
         return ChecklistSnapshot(
             checklist_version=self,
-            checklist_id=str(taxonomy.pk),
-            parent_checklist_id=str(taxonomy.parent_id) if taxonomy.parent_id else '',
-            basionym_checklist_id=(
-                str(taxonomy.accepted_taxonomy_id)
-                if taxonomy.accepted_taxonomy_id else ''
-            ),
+            checklist_id=self._fada_taxon_id(taxonomy),
+            parent_checklist_id=parent_id,
+            basionym_checklist_id=basionym_id,
             rank=taxonomy.rank or '',
             scientific_name=taxonomy.scientific_name or '',
             authorship=taxonomy.author or '',
