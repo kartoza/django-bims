@@ -120,7 +120,9 @@ def process_download_csv_taxa_list(
             taxa_qs = taxa_qs.order_by(order_by)
         if is_fada:
             from django.db.models import Q
-            taxa_qs = taxa_qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+            taxa_qs = taxa_qs.exclude(
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+            )
     else:
         taxa_qs = TaxaList.get_taxa_by_parameters(request_get)
     try:
@@ -238,7 +240,9 @@ def process_download_csv_taxa_list(
                 taxa_qs_write = taxa_qs_write.order_by(order_by)
             if is_fada:
                 from django.db.models import Q
-                taxa_qs_write = taxa_qs_write.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+                taxa_qs_write = taxa_qs_write.exclude(
+                    (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+                )
         else:
             taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
         try:

@@ -90,7 +90,9 @@ class ModuleSummary(APIView):
             taxonomic_status=TaxonomicStatus.ACCEPTED.name
         )
         if is_fada_site():
-            tg = tg.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+            tg = tg.exclude(
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+            )
         summary['total_validated'] = tg.count()
 
         return summary
@@ -113,7 +115,9 @@ class ModuleSummary(APIView):
             taxonomic_status=TaxonomicStatus.ACCEPTED.name,
         ).distinct()
         if is_fada_site():
-            qs = qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+            qs = qs.exclude(
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+            )
         return qs.count()
 
     def get_division_summary(self, collections):

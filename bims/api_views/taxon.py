@@ -767,7 +767,7 @@ class TaxaList(APIView):
         from bims.templatetags.site import is_fada_site
         if is_fada_site():
             taxon_list = taxon_list.exclude(
-                Q(fada_id__isnull=True) | Q(fada_id='')
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
             )
 
         if order:

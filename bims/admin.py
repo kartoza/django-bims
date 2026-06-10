@@ -2870,12 +2870,19 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         harvest_session = queryset.first()
 
         harvest_session.canceled = False
+        harvest_session.finished = False
         harvest_session.save()
 
         schema_name = connection.schema_name
 
         full_message = 'Resumed'
-        if harvest_session.is_fetching_species:
+        if harvest_session.category == 'worms':
+            from bims.tasks.harvest_worms_species import harvest_worms_species
+            harvest_worms_species.delay(
+                harvest_session.id,
+                schema_name=schema_name,
+            )
+        elif harvest_session.is_fetching_species:
             harvest_gbif_species.delay(
                 harvest_session.id,
                 schema_name
