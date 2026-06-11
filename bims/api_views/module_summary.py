@@ -91,7 +91,7 @@ class ModuleSummary(APIView):
         )
         if is_fada_site():
             tg = tg.exclude(
-                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
             )
         summary['total_validated'] = tg.count()
 
@@ -116,7 +116,7 @@ class ModuleSummary(APIView):
         ).distinct()
         if is_fada_site():
             qs = qs.exclude(
-                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
             )
         return qs.count()
 
