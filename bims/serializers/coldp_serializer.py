@@ -94,8 +94,10 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
         if hasattr(obj_or_pk, 'fada_id') and obj_or_pk.fada_id:
             return f'fada:{obj_or_pk.fada_id}'
         pk = getattr(obj_or_pk, 'id', obj_or_pk)
-        prefix = (self.context or {}).get('site_prefix') or (
-            getattr(preferences.SiteSetting, 'default_data_source', '') or ''
+        prefix = (
+            (self.context or {}).get('site_prefix')
+            or getattr(preferences.SiteSetting, 'default_data_source', '')
+            or ''
         ).lower()
         return f'{prefix}:{pk}' if prefix else str(pk)
 
