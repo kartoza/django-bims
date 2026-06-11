@@ -275,8 +275,8 @@ def generate_pdf_checklist(download_request, module_name, collection_records, ba
                     'collection_records': collection_records
                 }
             )
-            for taxon in taxon_serializer.data:
-                written_taxa_ids.add(taxon['id'])
+            for taxon_obj, taxon in zip(list(taxa), list(taxon_serializer.data)):
+                written_taxa_ids.add(taxon_obj.id)
                 common_name = taxon['common_name'].lower().strip()
 
                 taxon_entry = [
@@ -408,7 +408,7 @@ def process_batch(record_taxonomy_ids, writer, written_taxa_ids, collection_reco
         serializer_data = list(taxon_serializer.data)
 
         for taxon_obj, taxon in zip(taxa_list, serializer_data):
-            written_taxa_ids.add(taxon['id'])
+            written_taxa_ids.add(taxon_obj.id)
             row = dict(taxon)
             del row['id']
 

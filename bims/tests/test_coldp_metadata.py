@@ -232,7 +232,7 @@ class TestColDPTaxonSerializer(FastTenantTestCase):
     def test_taxon_id_uses_site_prefix_when_context_provided(self):
         t = self._make()
         data = ColDPTaxonSerializer(t, context={'site_prefix': 'FBIS'}).data
-        self.assertEqual(data['taxonID'], f'FBIS{t.id}')
+        self.assertEqual(data['taxonID'], f'fbis:{t.id}')
 
     def test_taxon_id_falls_back_to_plain_pk_without_context(self):
         t = self._make()
@@ -272,7 +272,7 @@ class TestColDPTaxonSerializer(FastTenantTestCase):
         ctx = {'site_prefix': 'FBIS'}
         self.assertEqual(
             ColDPTaxonSerializer(t, context=ctx).data['parentID'],
-            f'FBIS{parent.id}',
+            f'fbis:{parent.id}',
         )
 
     def test_parent_id_for_synonym_points_at_accepted(self):
@@ -285,7 +285,7 @@ class TestColDPTaxonSerializer(FastTenantTestCase):
         ctx = {'site_prefix': 'FBIS'}
         self.assertEqual(
             ColDPTaxonSerializer(synonym, context=ctx).data['parentID'],
-            f'FBIS{accepted.id}',
+            f'fbis:{accepted.id}',
         )
 
     def test_parent_id_empty_when_no_parent(self):

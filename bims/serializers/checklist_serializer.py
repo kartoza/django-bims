@@ -103,6 +103,16 @@ def get_dataset_occurrences(occurrences):
 
 
 class ChecklistBaseSerializer(SerializerContextCache):
+    id = serializers.SerializerMethodField()
+
+    def get_id(self, obj: Taxonomy) -> str:
+        if obj.fada_id:
+            return f'fada:{obj.fada_id}'
+        prefix = (
+            getattr(preferences.SiteSetting, 'default_data_source', '') or ''
+        ).lower()
+        return f'{prefix}:{obj.id}' if prefix else str(obj.id)
+
     def get_bio_data(self, obj: Taxonomy):
         if not hasattr(self, '_bio_data_cache'):
             self._bio_data_cache = {}

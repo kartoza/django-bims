@@ -17,6 +17,7 @@ import uuid as _uuid
 
 from django.conf import settings
 from django.db import models
+from preferences import preferences
 
 
 class ChecklistSnapshot(models.Model):
@@ -353,10 +354,15 @@ class ChecklistVersion(models.Model):
 
     @staticmethod
     def _fada_taxon_id(obj) -> str:
-        """Return fada:{fada_id} when available, else str(pk)."""
+        """Return fada:{fada_id} when available, else {site_prefix}:{pk}."""
         if obj and getattr(obj, 'fada_id', None):
             return f'fada:{obj.fada_id}'
-        return str(obj.pk) if obj else ''
+        if not obj:
+            return ''
+        prefix = (
+            getattr(preferences.SiteSetting, 'default_data_source', '') or ''
+        ).lower()
+        return f'{prefix}:{obj.pk}' if prefix else str(obj.pk)
 
     def build_snapshot_row(self, taxonomy, change_type):
         """
