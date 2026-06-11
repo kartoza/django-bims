@@ -692,6 +692,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                 qs = qs.exclude(
                     (Q(taxonomy__fada_id__isnull=True) | Q(taxonomy__fada_id=''))
                     & Q(taxonomy__aphia_id__isnull=True)
+                    & Q(taxonomy__taxonworks_id__isnull=True)
                 )
             unique_taxonomy_ids.update(qs.values_list('id', flat=True))
             for child in TaxonGroup.objects.filter(parent=taxon_group):

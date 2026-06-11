@@ -75,7 +75,7 @@ class TaxonGroupTotalValidated(APIView):
         qs = taxon_group.taxonomies.all()
         if is_fada_site():
             qs = qs.exclude(
-                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True)
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
             )
 
         # Validated

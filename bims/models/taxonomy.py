@@ -131,6 +131,13 @@ class AbstractTaxonomy(AbstractValidation):
         db_index=True,
     )
 
+    taxonworks_id = models.IntegerField(
+        verbose_name='TaxonWorks ID',
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     verified = models.BooleanField(
         help_text='The data has been verified',
         default=False

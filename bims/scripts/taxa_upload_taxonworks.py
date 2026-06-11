@@ -376,6 +376,8 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
         taxonomy.accepted_taxonomy = accepted_taxonomy
 
         taxonomy.additional_data = taxonworks_record_to_additional_data(record, self.base_url or "")
+        if record_id:
+            taxonomy.taxonworks_id = record_id
         taxonomy.save()
 
         is_synonym = taxonomy.taxonomic_status == "SYNONYM"
