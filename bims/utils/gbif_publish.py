@@ -617,9 +617,12 @@ def build_dwca(
     pub_date = ""
     if source_reference:
         try:
-            year = source_reference.year
-            if year:
-                pub_date = str(year)
+            if getattr(source_reference, "source_date", None):
+                pub_date = source_reference.source_date.isoformat()
+            else:
+                year = source_reference.year
+                if year and year != "-":
+                    pub_date = f"{year}-01-01"
         except Exception:
             pass
 
@@ -660,8 +663,6 @@ def _contact_to_gbif_payload(contact) -> dict:
         payload["firstName"] = given
     if sur:
         payload["lastName"] = sur
-    elif not given and org:
-        payload["lastName"] = org
     if org:
         payload["organization"] = org
     position = contact.resolved_position_name
