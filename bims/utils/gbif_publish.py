@@ -150,7 +150,7 @@ def write_occurrence_txt(
             row_dataset_name = dataset_name or _site_name()
 
             inst_code = (r.institution_id or "").strip()
-            if not inst_code or inst_code == settings.INSTITUTION_ID_DEFAULT:
+            if not inst_code or inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() == 'healthyrivers':
                 collector_user = r.collector_user or r.owner
                 inst_code = (
                     (collector_user.organization if collector_user else None)
