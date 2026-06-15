@@ -104,6 +104,9 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                   climate_exist: false
               }));
             $.each(data['biodiversity_data'], function (key, value) {
+                if (key === 'source_references') {
+                    return;
+                }
                 self.charts.push({
                     'canvas': $sectionWrapper.find("#origin-chart-" + value.module),
                     'data': value['origin'],

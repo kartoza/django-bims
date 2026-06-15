@@ -450,6 +450,9 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 climate_exist: data.climate_exist,
             }));
             $.each(data['biodiversity_data'], function (key, value) {
+                if (key === 'source_references') {
+                    return;
+                }
                 self.charts.push({
                     'canvas': $("#origin-chart-" + value.module),
                     'data': value['origin'],
