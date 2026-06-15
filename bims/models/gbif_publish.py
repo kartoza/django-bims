@@ -370,19 +370,22 @@ class GbifPublishContact(models.Model):
 
     @property
     def resolved_given_name(self):
-        return self.individual_name_given or self._user_attr("first_name")
+        return self.individual_name_given
 
     @property
     def resolved_sur_name(self):
-        return self.individual_name_sur or self._user_attr("last_name")
+        _sur_name = self.individual_name_sur
+        if not _sur_name and self.organization_name:
+            return self.organization_name
+        return _sur_name
 
     @property
     def resolved_organization_name(self):
-        return self.organization_name or self._user_attr("organization")
+        return self.organization_name
 
     @property
     def resolved_position_name(self):
-        return self.position_name or self._profile_attr()
+        return self.position_name
 
     @property
     def resolved_email(self):
