@@ -390,9 +390,9 @@ class GbifPublishContact(models.Model):
 
 
 @receiver(post_save, sender=GbifPublishContact)
-def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', **kwargs):
-    """Fill blank optional fields from the linked user's profile on save."""
-    if not instance.user_id:
+def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', created: bool, **kwargs):
+    """Fill blank optional fields from the linked user's profile on first creation only."""
+    if not created or not instance.user_id:
         return
 
     user = instance.user
@@ -538,4 +538,4 @@ def seed_contacts_from_source_reference_authors(sender, instance: GbifPublish, c
         ))
     created_contacts = GbifPublishContact.objects.bulk_create(contacts)
     for contact in created_contacts:
-        fill_gbif_publish_contact_from_user(GbifPublishContact, contact)
+        fill_gbif_publish_contact_from_user(GbifPublishContact, contact, created)

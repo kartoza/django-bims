@@ -310,19 +310,48 @@ def eml_contact_from_model(contact) -> str:
     return "\n  ".join(parts)
 
 
-def eml_citation(source_reference) -> str:
-    """Return an EML <citation> string for SourceReferenceBibliography or SourceReferenceDocument.
-    Returns empty string for any other type.
+def _authors_from_contacts(contacts) -> str:
+    """Build an author string from GBIF contacts, preferring originators."""
+    if not contacts:
+        return ""
+    originators = [c for c in contacts if (getattr(c, "role", "") or "") == "originator"]
+    pool = originators or contacts
+    names = []
+    for c in pool:
+        given = (c.resolved_given_name or "").strip()
+        sur = (c.resolved_sur_name or "").strip()
+        org = (c.resolved_organization_name or "").strip()
+        if org:
+            names.append(org)
+        elif given or sur:
+            names.append(f"{given} {sur}".strip())
+    if not names:
+        return ""
+    if len(names) == 1:
+        return names[0]
+    return ", ".join(names[:-1]) + " & " + names[-1]
+
+
+def eml_citation(source_reference, contacts=None) -> str:
+    """Return an EML <citation> string for any source reference type.
+
+    When contacts are provided, originator contacts are used as authors;
+    this falls back to all contacts, then to the reference's own author list.
     """
     from bims.models.source_reference import (
         SourceReferenceBibliography,
+        SourceReferenceDatabase,
         SourceReferenceDocument,
     )
-    if not isinstance(source_reference, (SourceReferenceBibliography, SourceReferenceDocument)):
+    if source_reference is None:
         return ""
 
-    authors = source_reference.authors
-    authors = "" if authors == "-" else authors
+    if contacts:
+        authors = _authors_from_contacts(contacts)
+    else:
+        authors = source_reference.authors
+        authors = "" if authors == "-" else authors
+
     year = source_reference.year
     year = "" if year == "-" else str(year)
     title = source_reference.title or ""
@@ -342,6 +371,8 @@ def eml_citation(source_reference) -> str:
             journal_str = abbr or name
     elif isinstance(source_reference, SourceReferenceDocument):
         identifier = (getattr(source_reference.source, "doc_url", "") or "").strip()
+    elif isinstance(source_reference, SourceReferenceDatabase):
+        identifier = (getattr(source_reference.source, "url", "") or "").strip()
 
     parts = []
     if authors:
@@ -581,7 +612,7 @@ def build_dwca(
             licences.append(lic)
     licences = licences or None
 
-    citation = eml_citation(source_reference) if source_reference else ""
+    citation = eml_citation(source_reference, contacts=contacts) if source_reference else ""
 
     pub_date = ""
     if source_reference:
@@ -620,15 +651,17 @@ def _contact_to_gbif_payload(contact) -> dict:
     # Convert camelCase role to UPPER_SNAKE for GBIF API e.g. "pointOfContact" -> "POINT_OF_CONTACT"
     role_upper = re.sub(r'(?<!^)(?=[A-Z])', '_', role).upper() if role else "POINT_OF_CONTACT"
 
-    payload = {"type": role_upper}
+    payload = {"type": role_upper, "primary": True}
 
     given = contact.resolved_given_name
     sur = contact.resolved_sur_name
+    org = contact.resolved_organization_name
     if given:
         payload["firstName"] = given
     if sur:
         payload["lastName"] = sur
-    org = contact.resolved_organization_name
+    elif not given and org:
+        payload["lastName"] = org
     if org:
         payload["organization"] = org
     position = contact.resolved_position_name
