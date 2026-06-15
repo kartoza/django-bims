@@ -249,7 +249,7 @@ define([
                         }
                         let $moduleSpecies = $(
                             '<div data-id="' + data[i]['id'] + '" class="col-lg-4 module-species ' + selected + '" title="' + data[i]['name'] + '">' +
-                            '<img src="/uploaded/' + data[i]['logo'] + '"></div>'
+                            '<img src="' + data[i]['logo'] + '"></div>'
                         );
                         moduleListContainer.append($moduleSpecies);
                         $moduleSpecies.click(self.onModuleSpeciesClicked);
