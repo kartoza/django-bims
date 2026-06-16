@@ -1,5 +1,6 @@
 import csv
 import sys
+from datetime import date
 
 from django.core.management import BaseCommand
 
@@ -136,8 +137,18 @@ class Command(BaseCommand):
         for record in records.iterator():
             old_owner = record.owner.get_full_name() or record.owner.username
             new_owner = record.collector_user.get_full_name() or record.collector_user.username
+            additional_data = record.additional_data or {}
+            if not isinstance(additional_data, dict):
+                additional_data = {}
+            additional_data['owner_fix'] = {
+                'previous_owner': old_owner,
+                'previous_owner_id': record.owner_id,
+                'fixed_date': date.today().isoformat(),
+                'fixed_by': 'fix_admin_owner command',
+            }
             BiologicalCollectionRecord.objects.filter(pk=record.pk).update(
-                owner=record.collector_user
+                owner=record.collector_user,
+                additional_data=additional_data,
             )
             updated += 1
             self.stdout.write(
