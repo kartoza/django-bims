@@ -278,7 +278,6 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.taxon_abundance = taxon_abundance
                 site_visit_taxon.collector_user = site_visit.collector
                 site_visit_taxon.source_collection = self.source_collection or ''
-                # Set correct owner
                 site_visit_taxon.owner = site_visit.owner
                 site_visit_taxon.source_reference = source_reference
 
@@ -388,6 +387,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             survey = Survey.objects.create(
                 site_id=site_id,
                 collector_user=self.request.user,
+                owner=owner,
                 validated=False
             )
             site_visit = SiteVisit.objects.create(
