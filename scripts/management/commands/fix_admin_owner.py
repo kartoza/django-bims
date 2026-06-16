@@ -136,8 +136,9 @@ class Command(BaseCommand):
         for record in records.iterator():
             old_owner = record.owner.get_full_name() or record.owner.username
             new_owner = record.collector_user.get_full_name() or record.collector_user.username
-            record.owner = record.collector_user
-            record.save(update_fields=['owner'])
+            BiologicalCollectionRecord.objects.filter(pk=record.pk).update(
+                owner=record.collector_user
+            )
             updated += 1
             self.stdout.write(
                 f'[{label}] Record {record.id}: owner {old_owner} -> {new_owner}'
