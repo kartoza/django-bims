@@ -20,20 +20,20 @@ class AbstractValidation(DataConfidenceScore):
     EMAIL_DATA_REASONS = 'reason'
     EMAIL_DATA_URL = 'data_url'
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        models.SET_NULL,
-        blank=True,
-        null=True,
-    )
     collector_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        help_text='The user object of the actual capturer/collector '
-                  'of this data',
+        verbose_name='Uploader',
         null=True,
         blank=True,
         related_name='%(class)s_collector_user',
         on_delete=models.SET_NULL
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        models.SET_NULL,
+        verbose_name='Collector/owner',
+        blank=True,
+        null=True,
     )
     analyst = models.ForeignKey(
         settings.AUTH_USER_MODEL,
