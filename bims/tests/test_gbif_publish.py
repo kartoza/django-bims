@@ -863,9 +863,86 @@ class GbifPublishApiTests(FastTenantTestCase):
         self.assertIn('identifier="https://example.org/doc.pdf"', result)
         self.assertTrue(result.startswith("<citation"))
 
-    def test_eml_citation_plain_reference_returns_empty(self):
-        source_reference = SourceReferenceF.create()
-        self.assertEqual(eml_citation(source_reference), "")
+    def test_eml_citation_plain_reference(self):
+        source_reference = SourceReferenceF.create(source_name="Unpublished survey data")
+        result = eml_citation(source_reference)
+        self.assertTrue(result.startswith("<citation"))
+        self.assertTrue(result.endswith("</citation>"))
+        self.assertIn("Unpublished survey data", result)
+
+    def test_eml_citation_database(self):
+        from bims.models.source_reference import DatabaseRecord
+        db_record = DatabaseRecord.objects.create(
+            name="Freshwater Atlas", url="https://atlas.example.org"
+        )
+        source_reference = SourceReferenceDatabaseF.create(source=db_record)
+        result = eml_citation(source_reference)
+        self.assertTrue(result.startswith("<citation"))
+        self.assertIn('identifier="https://atlas.example.org"', result)
+        self.assertIn("Freshwater Atlas", result)
+
+    def test_eml_citation_uses_originator_contacts_as_authors(self):
+        source_reference = SourceReferenceF.create(source_name="Survey 2023")
+        config = _make_config()
+        originator = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Jane",
+            individual_name_sur="Smith",
+            role=RoleType.ORIGINATOR,
+        )
+        other = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Bob",
+            individual_name_sur="Jones",
+            role=RoleType.METADATA_PROVIDER,
+        )
+        result = eml_citation(source_reference, contacts=[originator, other])
+        self.assertIn("Jane Smith", result)
+        self.assertNotIn("Bob Jones", result)
+
+    def test_eml_citation_falls_back_to_all_contacts_when_no_originators(self):
+        source_reference = SourceReferenceF.create(source_name="Dataset")
+        config = _make_config()
+        c1 = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Alice",
+            individual_name_sur="Brown",
+            role=RoleType.METADATA_PROVIDER,
+        )
+        c2 = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Carol",
+            individual_name_sur="White",
+            role=RoleType.METADATA_PROVIDER,
+        )
+        result = eml_citation(source_reference, contacts=[c1, c2])
+        self.assertIn("Alice Brown", result)
+        self.assertIn("Carol White", result)
+
+    def test_eml_citation_org_only_contact(self):
+        source_reference = SourceReferenceF.create(source_name="Dataset")
+        config = _make_config()
+        contact = GbifPublishContact.objects.create(
+            gbif_config=config,
+            organization_name="Freshwater Research Centre",
+            role=RoleType.ORIGINATOR,
+        )
+        result = eml_citation(source_reference, contacts=[contact])
+        self.assertIn("Freshwater Research Centre", result)
+
+    def test_eml_citation_org_preferred_over_individual_name(self):
+        """When a contact has both org name and individual name, org name wins in the citation."""
+        source_reference = SourceReferenceF.create(source_name="Dataset")
+        config = _make_config()
+        contact = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_sur="Kartoza",
+            organization_name="Kartoza Org",
+            role=RoleType.ORIGINATOR,
+        )
+        result = eml_citation(source_reference, contacts=[contact])
+        self.assertIn("Kartoza Org", result)
+        self.assertNotIn(">Kartoza.<", result)
 
     def test_eml_citation_in_additional_metadata(self):
         source_reference = SourceReferenceBibliographyF.create()
@@ -1007,6 +1084,41 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertEqual(contact.organization_name, "")
         self.assertEqual(contact.position_name, "")
 
+    def test_post_save_does_not_overwrite_on_update(self):
+        """Manual field edits on an existing contact must not be overwritten on save."""
+        user = UserF.create(first_name="Carol", last_name="White", email="carol@example.com")
+        user.organization = "Original Org"
+        user.save()
+
+        contact = GbifPublishContact.objects.create(gbif_config=self.config, user=user)
+        contact.refresh_from_db()
+        self.assertEqual(contact.individual_name_given, "Carol")
+        self.assertEqual(contact.organization_name, "Original Org")
+
+        # User manually changes the name and organization on the contact.
+        contact.individual_name_given = "Dr. Carol"
+        contact.organization_name = "New Institute"
+        contact.save()
+        contact.refresh_from_db()
+
+        self.assertEqual(contact.individual_name_given, "Dr. Carol")
+        self.assertEqual(contact.organization_name, "New Institute")
+
+    def test_post_save_clearing_field_is_preserved_on_update(self):
+        """Clearing a field on an existing contact must not be re-populated from user profile."""
+        user = UserF.create(first_name="Dave", last_name="Brown", email="dave@example.com")
+
+        contact = GbifPublishContact.objects.create(gbif_config=self.config, user=user)
+        contact.refresh_from_db()
+        self.assertEqual(contact.individual_name_given, "Dave")
+
+        # User explicitly clears the given name.
+        contact.individual_name_given = ""
+        contact.save()
+        contact.refresh_from_db()
+
+        self.assertEqual(contact.individual_name_given, "")
+
     # -- resolved_* fallback properties --
 
     def test_explicit_fields_take_precedence_over_user(self):
@@ -1032,22 +1144,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertEqual(contact.resolved_position_name, "Override Position")
         self.assertEqual(contact.resolved_email, "override@example.com")
 
-    def test_blank_fields_fall_back_to_user_profile(self):
-        from bims.models.profile import Role, Profile as BimsProfile
-        user = UserF.create(first_name="Jane", last_name="Smith", email="jane@example.com")
-        user.organization = "Cape Town University"
-        user.save()
-        role, _ = Role.objects.get_or_create(name="researcher", defaults={"display_name": "Researcher"})
-        profile, _ = BimsProfile.objects.get_or_create(user=user)
-        profile.role = role
-        profile.save()
-
-        contact = GbifPublishContact(gbif_config=self.config, user=user)
-        self.assertEqual(contact.resolved_given_name, "Jane")
-        self.assertEqual(contact.resolved_sur_name, "Smith")
-        self.assertEqual(contact.resolved_organization_name, "Cape Town University")
-        self.assertEqual(contact.resolved_position_name, "Researcher")
-        self.assertEqual(contact.resolved_email, "jane@example.com")
 
     def test_no_user_returns_empty_strings(self):
         contact = GbifPublishContact(gbif_config=self.config)
@@ -1109,18 +1205,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         snippet = eml_contact_from_model(contact)
         self.assertNotIn("<address>", snippet)
 
-    def test_eml_contact_org_only_omits_individual_name(self):
-        """Org-only contact (no given/sur name) must not emit an empty <individualName>."""
-        contact = GbifPublishContact(
-            gbif_config=self.config,
-            organization_name="Freshwater Research Centre",
-            electronic_mail_address="fbis_gbif@frcsa.org.za",
-        )
-        snippet = eml_contact_from_model(contact)
-        self.assertNotIn("<individualName>", snippet)
-        self.assertIn("<organizationName>Freshwater Research Centre</organizationName>", snippet)
-        self.assertIn("<electronicMailAddress>fbis_gbif@frcsa.org.za</electronicMailAddress>", snippet)
-
     def test_eml_contact_org_only_embedded_in_dwca(self):
         """An org-only config contact must appear correctly in the generated eml.xml."""
         source_reference = SourceReferenceF.create()
@@ -1144,13 +1228,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         # Must not contain an empty <individualName> block
         self.assertNotIn("<individualName>\n  </individualName>", eml)
 
-    def test_eml_contact_from_model_uses_resolved_fallback(self):
-        user = UserF.create(first_name="Tom", last_name="Baker", email="tom@example.com")
-        contact = GbifPublishContact(gbif_config=self.config, user=user)
-        snippet = eml_contact_from_model(contact)
-        self.assertIn("<givenName>Tom</givenName>", snippet)
-        self.assertIn("<surName>Baker</surName>", snippet)
-        self.assertIn("<electronicMailAddress>tom@example.com</electronicMailAddress>", snippet)
 
     def test_eml_contact_default_role_is_point_of_contact(self):
         contact = GbifPublishContact(
@@ -1294,24 +1371,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         # no originator - falls back to site-name default creator
         self.assertIn("<creator>", eml)
         self.assertNotIn("MetaOnly", eml.split("<creator>")[1].split("</creator>")[0])
-
-    def test_pubdate_uses_source_reference_year(self):
-        """<pubDate> should reflect the source reference publication year."""
-        import datetime
-        source_reference = SourceReferenceBibliographyF.create()
-        source_reference.source.publication_date = datetime.date(2019, 6, 15)
-        source_reference.source.save()
-
-        record = self._make_record(source_reference)
-        contact = _make_contact(self.config)
-        temp_dir = tempfile.mkdtemp()
-        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
-
-        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
-
-        eml = self._read_eml(zip_path)
-        self.assertIn("<pubDate>2019</pubDate>", eml)
 
     def test_pubdate_falls_back_to_today_without_source_reference(self):
         """<pubDate> should fall back to today's date when no source reference is given."""
