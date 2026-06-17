@@ -233,6 +233,10 @@ def download_collection_records(
             current_csv_row = 0
     elif rows_already_written >= total_records:
         logger.debug('Download already complete (%d rows), sending email', rows_already_written)
+        if download_request:
+            download_request.progress = f'{total_records}/{total_records}'
+            download_request.progress_updated_at = timezone.now()
+            download_request.save(update_fields=['progress', 'progress_updated_at'])
         if send_email and user_id:
             from django.contrib.auth import get_user_model
             from bims.tasks.email_csv import send_csv_via_email
