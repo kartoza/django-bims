@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Merge Climate Stations{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url 'admin:climate_climatestation_changelist' %}">Climate Stations</a>
+  &rsaquo; Merge
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Merge Climate Stations</h1>
+
+<p>
+  Select the <strong>primary station</strong> below. All climate records from the other
+  stations will be moved into the primary station. Duplicate dates (same date on both
+  primary and secondary) will be discarded - the primary station's record is kept.
+  Secondary stations will be deleted after the merge.
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="ids" value="{{ ids }}">
+
+  <fieldset class="module aligned">
+    <h2>Stations to merge</h2>
+    <table id="merge-stations-table" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Primary</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Name</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Site Code</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Latitude</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Longitude</th>
+          <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Records</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for station in stations %}
+        <tr>
+          <td style="padding:8px; border-bottom:1px solid #eee; text-align:center;">
+            <input type="radio" name="primary_station" value="{{ station.pk }}" required>
+          </td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ station.name }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ station.site_code }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ station.latitude }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ station.longitude }}</td>
+          <td style="padding:8px; border-bottom:1px solid #eee;">{{ station.climate_data.count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </fieldset>
+
+  <fieldset class="module aligned">
+    <h2>Update primary station coordinates (optional)</h2>
+    <p style="color:#666;">
+      Leave blank to keep the primary station's existing coordinates.
+      Fill both fields to update them after the merge.
+    </p>
+    <div class="form-row">
+      <label for="id_latitude">Latitude:</label>
+      <input type="number" id="id_latitude" name="latitude" step="any"
+             placeholder="e.g. -24.00322" style="width:200px;">
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <label for="id_longitude">Longitude:</label>
+      <input type="number" id="id_longitude" name="longitude" step="any"
+             placeholder="e.g. 31.74234" style="width:200px;">
+    </div>
+  </fieldset>
+
+  <div style="margin-top:16px;">
+    <input type="submit" value="Confirm Merge" class="button default"
+           onclick="return confirm('This will permanently delete the secondary stations. Continue?');">
+    <a href="{% url 'admin:climate_climatestation_changelist' %}"
+       class="button cancel-link" style="margin-left:8px;">Cancel</a>
+  </div>
+</form>
+{% endblock %}
