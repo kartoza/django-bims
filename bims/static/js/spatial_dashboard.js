@@ -792,6 +792,9 @@
                 }
 
                 const xLabels = aggregate.map(function (p) { return p.label; });
+                if (!xLabels.some(function (v) { return v.includes('2000'); })) {
+                    xLabels.unshift('2000');
+                }
 
                 const palette = [
                     '#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#00796b',
@@ -818,7 +821,10 @@
                 if (aggregate.length > 0) {
                     datasets.unshift({
                         label: 'Aggregate',
-                        data: aggregate.map(function (p) { return p.value; }),
+                        data: xLabels.map(function (lbl) {
+                            const pt = aggregate.find(function (p) { return p.label === lbl; });
+                            return pt ? pt.value : null;
+                        }),
                         borderColor: '#000',
                         backgroundColor: 'transparent',
                         fill: false,
@@ -842,10 +848,17 @@
                             scales: {
                                 xAxes: [{
                                     scaleLabel: {display: true, labelString: 'Assessment'},
+                                    ticks: {
+                                        callback: function (value, index, ticks) {
+                                            return value.split(' ')[0];
+                                        },
+                                        fontSize: 14,
+                                        fontStyle: 'bold',
+                                    }
                                 }],
                                 yAxes: [{
                                     ticks: {
-                                        min: 0,
+                                        min: 0.7,
                                         max: 1,
                                         callback: function (value) { return value.toFixed(2); }
                                     },
