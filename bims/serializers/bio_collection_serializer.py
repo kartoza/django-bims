@@ -581,11 +581,22 @@ class BioCollectionOneRowSerializer(
             return '-'
 
     def get_collector_or_owner_institute(self, obj):
-        if obj.collector_user:
-            if obj.collector_user.organization:
-                return obj.collector_user.organization
-        if obj.source_collection in ['gbif', 'virtual_museum']:
+        if (
+            obj.institution_id and
+            obj.institution_id not in {'bims', 'healthyrivers'}
+        ):
             return obj.institution_id
+
+        if (
+            obj.owner and
+            obj.owner.organization and
+            'admin' not in obj.owner.username
+        ):
+            return obj.owner.organization
+
+        if obj.collector_user and obj.collector_user.organization:
+            return obj.collector_user.organization
+
         return '-'
 
     def get_analyst(self, obj):
