@@ -256,16 +256,14 @@ class LocationSite(AbstractValidation):
 
     def get_centroid(self):
         """ Getting centroid of location site """
-
-        if (
-            self.geometry_point
-        ):
-            return self.geometry_point
-        else:
-            if self.get_geometry():
-                return self.get_geometry().centroid
-            else:
-                return None
+        try:
+            if self.location_type and self.location_type.allowed_geometry != 'POINT':
+                geometry = self.get_geometry()
+                if geometry:
+                    return geometry.centroid
+        except (LocationType.DoesNotExist, ValidationError):
+            pass
+        return self.geometry_point
 
     def get_geometry(self):
         """Function to get geometry."""

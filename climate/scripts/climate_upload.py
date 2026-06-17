@@ -164,6 +164,12 @@ class ClimateCSVUpload(DataCSVUpload):
             ).first()
 
             if location_site:
+                new_point = Point(latitude, longitude)
+                if location_site.geometry_point != new_point:
+                    location_site.latitude = latitude
+                    location_site.longitude = longitude
+                    location_site.geometry_point = new_point
+                    location_site.save()
                 return location_site
 
             # Get or create location type for weather stations
