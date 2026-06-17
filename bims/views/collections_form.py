@@ -60,6 +60,7 @@ def add_survey_occurrences(self, post_data, site_images=None) -> Survey:
     date_string = post_data.get('date', None)
     end_embargo_date = post_data.get('end_embargo_date', None)
     owner_id = post_data.get('owner_id', '').strip()
+    owner_organisation = post_data.get('owner_organisation', '').strip()
     biotope_id = post_data.get('biotope', None)
     hydroperiod = post_data.get('hydroperiod', None)
     wetland_indicator_status = post_data.get(
@@ -355,11 +356,12 @@ def add_survey_occurrences(self, post_data, site_images=None) -> Survey:
     ).update(
         end_embargo_date=end_embargo_date
     )
+    record_update = {'end_embargo_date': end_embargo_date}
+    if owner_organisation:
+        record_update['institution_id'] = owner_organisation
     BiologicalCollectionRecord.objects.filter(
         id__in=collection_record_ids
-    ).update(
-        end_embargo_date=end_embargo_date
-    )
+    ).update(**record_update)
 
     return self.survey
 
@@ -450,6 +452,8 @@ class CollectionFormView(TemplateView, SessionFormMixin):
         context = super(CollectionFormView, self).get_context_data(**kwargs)
         if not self.location_site:
             return context
+        if getattr(self.request.user, 'organization', ''):
+            context['owner_organisation'] = self.request.user.organization
         context['location_site'] = self.location_site
         context['geoserver_public_location'] = get_key(
             'GEOSERVER_PUBLIC_LOCATION')

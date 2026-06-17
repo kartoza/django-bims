@@ -161,6 +161,25 @@ class SiteVisitBaseView(View):
             return abundance_type.first().abundance_type.name
         return None
 
+    def custodian(self):
+        """Get custodian (institution_id) from collection records.
+
+        Falls back to the owner's organisation name when institution_id is a
+        generic placeholder ('bims' or 'healthyrivers').
+        """
+        from django.conf import settings
+        generic = {'bims', 'healthyrivers', getattr(settings, 'INSTITUTION_ID_DEFAULT', 'bims')}
+
+        record = self.collection_records.exclude(institution_id='').first()
+        institution_id = record.institution_id if record else ''
+
+        if institution_id.lower() in generic or not institution_id:
+            owner = self.owner()
+            if owner and getattr(owner, 'organization', ''):
+                return owner.organization
+
+        return institution_id
+
     def record_type(self):
         record_types = self.collection_records.filter(
             record_type__isnull=False
@@ -242,6 +261,7 @@ class SiteVisitBaseView(View):
             )
         )
         context['record_type_val'] = self.record_type()
+        context['custodian'] = self.custodian()
 
         context['broad_biotope_list'] = (
             Biotope.objects.broad_biotope_list(
