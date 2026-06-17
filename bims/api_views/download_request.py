@@ -78,6 +78,8 @@ class DownloadRequestApi(APIView):
                 request_date__range=(start_date, end_date),
             )
             for download_request in download_requests:
+                if download_request.request_file:
+                    continue
                 progress = download_request.progress
                 if progress:
                     try:
