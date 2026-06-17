@@ -152,6 +152,14 @@ class SourceReference(PolymorphicModel):
         ).count()
 
     @property
+    def taxa(self):
+        from bims.models.taxonomy import Taxonomy
+        return Taxonomy.objects.filter(
+            Q(source_reference__in=[self.id]) |
+            Q(source_references__in=[self.id])
+        ).distinct().count()
+
+    @property
     def water_temperature(self):
         from bims.models.water_temperature import WaterTemperature
         return WaterTemperature.objects.filter(

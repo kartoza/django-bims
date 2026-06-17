@@ -404,8 +404,14 @@ def source_reference_autocomplete(request):
     """Return matching SourceReference objects as JSON for Select2."""
     from bims.models.source_reference import SourceReference
     q = request.GET.get('term', '')
+    ids = request.GET.get('ids', '')
     results = []
-    if q:
+    if ids:
+        id_list = [i for i in ids.split(',') if i.strip().isdigit()]
+        qs = SourceReference.objects.filter(id__in=id_list)
+        for ref in qs:
+            results.append({'id': ref.id, 'text': ref.title})
+    elif q:
         qs = SourceReference.objects.filter(
             Q(source_name__icontains=q) |
             Q(sourcereferencebibliography__source__title__icontains=q) |

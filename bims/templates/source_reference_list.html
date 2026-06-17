@@ -128,6 +128,9 @@
                                 {% else %}
                                     <span class="badge badge-info badge-occurrences badge-zero">{{ source_reference.occurrences }} Occurrence Records</span>
                                 {% endif %}
+                                {% if source_reference.taxa > 0 %}
+                                    <span class="badge badge-occurrences" style="color: #555555">{{ source_reference.taxa | space_separated }} Taxa</span>
+                                {% endif %}
                                 {% if source_reference.chemical_records > 0 %}
                                     <a href='/map/#search//taxon=&module=physico_chemistry&search=&reference=["{{ source_reference.id }}"]'><span
                                             class="badge badge-info badge-occurrences">{{ source_reference.chemical_records | space_separated }} Physico-chemical data</span>

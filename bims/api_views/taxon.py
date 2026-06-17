@@ -555,6 +555,8 @@ class TaxaList(APIView):
         rank = request.GET.get('rank', '')
         ranks = request.GET.get('ranks', '').split(',')
         ranks = list(filter(None, ranks))
+        source_ref_ids = request.GET.get('sr', '').split(',')
+        source_ref_ids = list(filter(None, source_ref_ids))
         origins = request.GET.get('origins', '').split(',')
         origins = list(filter(None, origins))
         tags = request.GET.get('tags', '').split(',')
@@ -696,6 +698,11 @@ class TaxaList(APIView):
                 taxon_list = taxon_list.filter(
                     tags__name__in=tags
                 ).distinct()
+        if source_ref_ids:
+            taxon_list = taxon_list.filter(
+                Q(source_reference__in=source_ref_ids) |
+                Q(source_references__id__in=source_ref_ids)
+            ).distinct()
         if biodiversity_distributions:
             taxon_list = taxon_list.prefetch_related(
                 'biographic_distributions'

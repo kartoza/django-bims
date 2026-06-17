@@ -15,6 +15,13 @@ $('.custom-control-input').change(function (e) {
     insertParam(filterName, checkedVals);
 })
 
+$('#search-input').on('keyup', function (e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+        let value = $('#search-input').val();
+        insertParam('q', value);
+    }
+})
+
 $('.input-group-append').click(function (e) {
     let value =  $('#search-input').val();
     insertParam('q', value);

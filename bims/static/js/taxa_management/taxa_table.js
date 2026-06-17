@@ -129,6 +129,25 @@ export const taxaTable = (() => {
             templateSelection: formatTaxaSelection,
             theme: "classic"
         });
+
+        $('#source-reference-filters').select2({
+            ajax: {
+                url: '/source-reference-autocomplete/',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { term: params.term };
+                },
+                processResults: function (data) {
+                    return { results: data };
+                },
+                cache: true
+            },
+            placeholder: 'Search for a source reference',
+            minimumInputLength: 2,
+            theme: 'classic',
+            width: '100%'
+        });
     }
 
     function handleUrlParameters() {
@@ -340,6 +359,24 @@ export const taxaTable = (() => {
             totalAllFilters += parentArray.length;
             url += `&parent=${urlParams.get('parent')}`;
         }
+        if (urlParams.get('sr')) {
+            const sourceRefsParam = urlParams.get('sr');
+            const sourceRefsArray = sourceRefsParam.split(',');
+            filterSelected['sr'] = sourceRefsArray;
+            totalAllFilters += sourceRefsArray.length;
+            url += `&sr=${sourceRefsParam}`;
+            $.ajax({
+                url: '/source-reference-autocomplete/',
+                dataType: 'json',
+                data: { ids: sourceRefsParam }
+            }).done(function (data) {
+                const $select = $('#source-reference-filters');
+                data.forEach(function (item) {
+                    $select.append(new Option(item.text, item.id, true, true));
+                });
+                $select.trigger('change');
+            });
+        }
         if (Object.keys(filterSelected).length > 0) {
             $clearSearchBtn.show();
             $('#total-selected-filter').html(totalAllFilters);
@@ -406,6 +443,9 @@ export const taxaTable = (() => {
 
         const author = $('#author-filters').val().map(a => `"${a}"`).join(',');
         urlParams = insertParam('author', encodeURIComponent(author), true, false, urlParams);
+
+        const sourceReferences = $('#source-reference-filters').val();
+        urlParams = insertParam('sr', sourceReferences, true, false, urlParams);
 
         document.location.search = urlParams;
     }
