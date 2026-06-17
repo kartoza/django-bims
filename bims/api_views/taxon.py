@@ -478,6 +478,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'iucn_status',
                     'national_conservation_status',
                     'vernacular_names',
+                    'source_references',
                     'author',
                     'tags',
                     'biographic_distributions',
@@ -517,6 +518,9 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy_update_proposal.vernacular_names.set(
                     vernacular_names_instances
                 )
+            taxonomy_update_proposal.source_references.set(
+                taxonomy.source_references.values_list('id', flat=True)
+            )
 
         return Response(response)
 
