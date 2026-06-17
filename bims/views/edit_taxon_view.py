@@ -48,6 +48,9 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['rank_choices'] = self.model._meta.get_field('rank').choices
         context['taxon_group_id'] = self.kwargs.get('taxon_group_id', '')
+        context['object_source_references'] = list(
+            self.object.source_references.all()
+        )
         context['iucn_status_choices'] = IUCNStatus.objects.filter(
             national=False
         ).distinct(
@@ -274,6 +277,16 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         # The proposal is automatically approved if the user is a superuser
         # if proposal and self.request.user.is_superuser and new_proposal:
         #     proposal.approve(self.request.user)
+
+        source_reference_ids = self.request.POST.getlist('source_references')
+        if source_reference_ids is not None:
+            from bims.models.source_reference import SourceReference
+            valid_ids = list(
+                SourceReference.objects.filter(
+                    id__in=source_reference_ids
+                ).values_list('id', flat=True)
+            )
+            proposal.source_references.set(valid_ids)
 
         return redirect(self.get_success_url())
 

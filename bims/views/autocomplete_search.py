@@ -398,3 +398,20 @@ def location_context_value_autocomplete(request) -> HttpResponse:
 
     return HttpResponse(
         json.dumps(data), 'application/json')
+
+
+def source_reference_autocomplete(request):
+    """Return matching SourceReference objects as JSON for Select2."""
+    from bims.models.source_reference import SourceReference
+    q = request.GET.get('term', '')
+    results = []
+    if q:
+        qs = SourceReference.objects.filter(
+            Q(source_name__icontains=q) |
+            Q(sourcereferencebibliography__source__title__icontains=q) |
+            Q(sourcereferencedocument__source__title__icontains=q) |
+            Q(sourcereferencedatabase__source__name__icontains=q)
+        ).distinct()[:30]
+        for ref in qs:
+            results.append({'id': ref.id, 'text': ref.title})
+    return JsonResponse(results, safe=False)

@@ -1614,8 +1614,10 @@ class TaxonomyAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'parent',
         'accepted_taxonomy',
-        'source_reference'
+        'source_reference',
     )
+
+    autocomplete_fields = ['source_references']
 
     actions = [
         'merge_taxa', 'update_taxa', 'fetch_common_names',
@@ -1662,6 +1664,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         (_('References & Data'), {
             'fields': (
                 ('source_reference', 'import_date'),
+                'source_references',
                 'hierarchical_data',
                 'gbif_data',
                 'additional_data',

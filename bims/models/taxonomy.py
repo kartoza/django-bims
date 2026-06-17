@@ -816,6 +816,22 @@ class Taxonomy(AbstractTaxonomy):
         ),
     )
 
+    source_references = models.ManyToManyField(
+        SourceReference,
+        blank=True,
+        related_name='taxonomy_source_references',
+        verbose_name='External Source References',
+        help_text='Additional source references for this taxon.',
+    )
+
+    @property
+    def all_source_references(self):
+        """Return all unique SourceReference objects for this taxon."""
+        ids = set(self.source_references.values_list('id', flat=True))
+        if self.source_reference_id:
+            ids.add(self.source_reference_id)
+        return SourceReference.objects.filter(id__in=ids)
+
     def save_json_data(self, json_field):
         max_allowed = 10
         attempt = 0

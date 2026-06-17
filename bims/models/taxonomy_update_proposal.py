@@ -76,6 +76,13 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
         blank=True,
     )
 
+    source_references = models.ManyToManyField(
+        'bims.SourceReference',
+        blank=True,
+        related_name='taxonomy_proposal_source_references',
+        verbose_name='External Source References',
+    )
+
     parent = models.ForeignKey(
         verbose_name='Parent',
         to='bims.Taxonomy',
@@ -321,6 +328,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'biographic_distributions',
                     'additional_data',
                     'vernacular_names',
+                    'source_references',
                     'gbif_key',
                     'gbif_data',
                     'fada_id',
@@ -338,6 +346,9 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                         self.original_taxonomy.vernacular_names.clear()
                         self.original_taxonomy.vernacular_names.set(
                             getattr(self, field).all())
+                    elif field == 'source_references':
+                        self.original_taxonomy.source_references.set(
+                            self.source_references.all())
                     elif field == 'endemism' and getattr(self, field) is None:
                         # Don't overwrite existing endemism with None unless
                         # the original taxonomy also has no endemism
