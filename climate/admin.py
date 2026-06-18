@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path
@@ -79,7 +80,7 @@ class ClimateStationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(
-            location_type__name__iexact='Weather Station'
+            Q(location_type__name__iexact='Weather Station') | Q(climate_data__isnull=False)
         ).distinct()
 
     def climate_record_count(self, obj):
