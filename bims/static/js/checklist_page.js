@@ -114,14 +114,23 @@
                     <td>${v.created_by_name || '—'}</td>
                     <td>
                         ${v.status === 'published'
-                            ? `<button class="btn btn-sm btn-outline-secondary export-coldp-btn"
-                                       data-id="${v.id}" title="Download ColDP ZIP">
-                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                        fill="currentColor" viewBox="0 0 16 16">
-                                       <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
-                                       <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
-                                   </svg>
-                               </button>`
+                            ? `
+                               <div class="btn-group ml-1">
+                                   <button class="btn btn-sm btn-outline-success dropdown-toggle"
+                                           data-toggle="dropdown" title="Download taxa list">
+                                       <i class="fa fa-download"></i>
+                                   </button>
+                                   <div class="dropdown-menu">
+                                        <a class="dropdown-item export-coldp-btn" href="#"
+                                          data-id="${v.id}">ColDP ZIP</a>
+                                       <a class="dropdown-item checklist-dl-csv" href="#"
+                                          data-id="${v.id}">CSV Taxa List</a>
+                                       <a class="dropdown-item checklist-dl-csv-family" href="#"
+                                          data-id="${v.id}">CSV Taxa List by Family</a>
+                                       <a class="dropdown-item checklist-dl-pdf" href="#"
+                                          data-id="${v.id}">PDF</a>
+                                   </div>
+                               </div>`
                             : ''}
                         ${v.status === 'draft' && canPublishGroup(v.taxon_group)
                             ? (v.is_publishing
@@ -458,6 +467,39 @@
             saveVersion(true);
         });
     }
+
+    function handleChecklistVersionDownload(e, output, orderBy) {
+        e.preventDefault();
+        const versionId = $(e.currentTarget).data('id');
+        const title = output === 'pdf' ? 'PDF' : (orderBy === 'family' ? 'CSV Taxa List by Family' : 'CSV Taxa List');
+        showDownloadPopup(output.toUpperCase(), title, function (downloadRequestId) {
+            let url = '/download-checklist-snapshot/?checklistVersion=' + versionId +
+                '&output=' + output +
+                '&downloadRequestId=' + downloadRequestId;
+            if (orderBy) {
+                url += '&orderBy=' + orderBy;
+            }
+            fetch(url)
+                .then(function () {
+                    alert(downloadRequestMessage);
+                })
+                .catch(function () {
+                    alert('Cannot download the file');
+                });
+        }, true, null, false);
+    }
+
+    $(document).on('click', '.checklist-dl-csv', function (e) {
+        handleChecklistVersionDownload(e, 'csv', null);
+    });
+
+    $(document).on('click', '.checklist-dl-csv-family', function (e) {
+        handleChecklistVersionDownload(e, 'csv', 'family');
+    });
+
+    $(document).on('click', '.checklist-dl-pdf', function (e) {
+        handleChecklistVersionDownload(e, 'pdf', 'genus');
+    });
 
     $(document).on('click', '.export-coldp-btn', function () {
         const versionId = $(this).data('id');
