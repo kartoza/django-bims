@@ -2,11 +2,12 @@
 {% load static %}
 {% load jsonify %}
 
-{% block subtitle %}Checklist{% endblock %}
+{% block subtitle %}Taxonomic Checklist Versioning{% endblock %}
 
 {% block head %}
     <link href="{% static "css/non_validated_list.css" %}" rel="stylesheet">
     <script src="{% static 'js/libs/jquery/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <style>
         .badge-draft      { background: #6c757d; color: #fff; }
@@ -32,7 +33,7 @@
 
     <div class="container-fluid header-wrapper">
         <div class="dashboard-title">
-            <h2>Checklist</h2>
+            <h2> Taxonomic Checklist Versioning</h2>
         </div>
     </div>
 
