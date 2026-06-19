@@ -103,7 +103,10 @@ class LocationSitesSummary(APIView):
     def get(self, request):
         filters = request.GET.dict()
         search_uri = request.build_absolute_uri()
-        use_cached = ast.literal_eval(filters.get('cached', 'True'))
+        if request.user.is_anonymous or not request.user.is_superuser:
+            use_cached = True
+        else:
+            use_cached = ast.literal_eval(filters.get('cached', 'True'))
         state = 'STARTED'
 
         if 'requester' not in filters:

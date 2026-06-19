@@ -421,6 +421,15 @@ def generate_location_site_summary(
     ).distinct('source_reference')
 
     source_references = collection_with_references.source_references()
+
+    collection_with_dataset_keys = collection_results.exclude(
+        dataset_key__isnull=True
+    ).distinct('dataset_key')
+
+    dataset_source_references = collection_with_dataset_keys.dataset_source_references()
+
+    source_references += dataset_source_references
+
     times['source_references'] = time.time() - start_time
 
     # - Chemical data
