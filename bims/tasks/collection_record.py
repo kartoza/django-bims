@@ -79,8 +79,11 @@ def resume_stalled_downloads():
     from django.utils import timezone
     from django_tenants.utils import get_tenant_model, tenant_context
     from bims.models.download_request import DownloadRequest, params_from_dashboard_url
-    from bims.download.csv_download import STALE_THRESHOLD_MINUTES
+    from bims.download.csv_download import STALE_THRESHOLD_MINUTES, DOWNLOAD_EXPIRY_DAYS
     stale_cutoff = timezone.now() - timedelta(minutes=STALE_THRESHOLD_MINUTES)
+    download_expiry_cutoff = timezone.now() - timedelta(
+        days=DOWNLOAD_EXPIRY_DAYS
+    )
 
     for tenant in get_tenant_model().objects.all():
         with tenant_context(tenant):
@@ -92,6 +95,7 @@ def resume_stalled_downloads():
                 request_file='',
                 progress_updated_at__lt=stale_cutoff,
                 progress_updated_at__isnull=False,
+                request_date__gt=download_expiry_cutoff
             )
 
             for dr in stalled:

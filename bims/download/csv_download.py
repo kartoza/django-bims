@@ -21,7 +21,8 @@ from bims.models.notification import (
 from bims.utils.domain import get_current_domain
 from bims.tasks.send_notification import send_mail_notification
 
-STALE_THRESHOLD_MINUTES = 10
+STALE_THRESHOLD_MINUTES = 20
+DOWNLOAD_EXPIRY_DAYS = 30
 
 
 class CsvDownload(APIView):
