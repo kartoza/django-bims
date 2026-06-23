@@ -860,10 +860,6 @@ class OccurrenceProcessor(object):
                 if not location_site.creator:
                     location_site.creator = collectors[0]
                 location_site.save()
-                if custodian:
-                    for _collector in collectors:
-                        _collector.organization = DataCSVUpload.row_value(row, CUSTODIAN)
-                        _collector.save()
 
             # -- Optional data - Sampling effort (parsed early so process_survey
             #    can use the values to discriminate between surveys)
