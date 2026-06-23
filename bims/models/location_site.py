@@ -730,7 +730,7 @@ def generate_site_code(
             catchments_data = new_wetland_data
         elif ecosystem_type.lower() == 'open waterbody':
             site_code = open_waterbody_catchment(
-                lat, lon, river_name
+                lat, lon, river_name, location_site=location_site
             )
         else:
             site_code, catchments_data = fbis_catchment_generator(

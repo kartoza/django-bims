@@ -587,12 +587,14 @@ class OccurrenceProcessor(object):
 
         if not location_site.site_code:
             try:
+                if not ecosystem_type:
+                    ecosystem_type = location_site.ecosystem_type
                 site_code, catchments_data = generate_site_code(
                     location_site,
                     lat=location_site.latitude,
                     lon=location_site.longitude,
                     river_name=river_name,
-                    ecosystem_type=location_site.ecosystem_type or '',
+                    ecosystem_type=ecosystem_type or '',
                     wetland_name=user_wetland_name or '',
                     **{
                         "site_desc": site_description,
