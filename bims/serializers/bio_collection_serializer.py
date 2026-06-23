@@ -547,10 +547,10 @@ class BioCollectionOneRowSerializer(
         return '-'
 
     def get_collector_or_owner(self, obj):
-        if obj.collector_user:
+        if obj.owner:
             return '{first_name} {last_name}'.format(
-                first_name=obj.collector_user.first_name,
-                last_name=obj.collector_user.last_name
+                first_name=obj.owner.first_name,
+                last_name=obj.owner.last_name
             )
         if obj.additional_data:
             # If this is BioBase data, return a collector name from author of
@@ -570,6 +570,11 @@ class BioCollectionOneRowSerializer(
                          source.get_authors()])
                     s = ', and '.join(s.rsplit(', ', 1))  # last author case
                     return s
+        if obj.collector_user:
+            return '{first_name} {last_name}'.format(
+                first_name=obj.collector_user.first_name,
+                last_name=obj.collector_user.last_name
+            )
         if obj.collector:
             return obj.collector
         try:

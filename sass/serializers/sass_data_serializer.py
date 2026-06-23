@@ -161,9 +161,11 @@ class SassDataSerializer(serializers.ModelSerializer, FilterHistorySerializer):
         return obj.site_visit.sass_version
 
     def get_collector_or_owner(self, obj):
-        owner = obj.site_visit.owner
+        owner = obj.owner
         if not owner:
             owner = obj.survey.owner
+        if not owner:
+            owner = obj.site_visit.owner
         try:
             return owner.username
         except AttributeError:
