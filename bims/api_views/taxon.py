@@ -385,25 +385,30 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
 
             taxon_name = taxon_name.strip()
 
-            existing_qs = Taxonomy.objects.filter(
-                canonical_name__iexact=taxon_name
+            duplicate_qs = Taxonomy.objects.filter(
+                canonical_name__iexact=taxon_name,
+                parent=parent,
             )
+            if duplicate_qs.exists():
+                return Response(
+                    {'error': f'A taxon named "{taxon_name}" already exists under the same parent.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            if existing_qs.exists():
-                taxonomy = existing_qs.first()
-            else:
-                try:
-                    taxonomy, created = Taxonomy.objects.get_or_create(
-                        scientific_name=taxon_name,
-                        canonical_name=taxon_name,
-                        rank=rank
-                    )
-                except IntegrityError:
-                    taxonomy = Taxonomy.objects.get(
-                        scientific_name=taxon_name,
-                        canonical_name=taxon_name,
-                        rank=rank
-                    )
+            try:
+                taxonomy, created = Taxonomy.objects.get_or_create(
+                    scientific_name=taxon_name,
+                    canonical_name=taxon_name,
+                    rank=rank,
+                    parent=parent,
+                )
+            except IntegrityError:
+                taxonomy = Taxonomy.objects.get(
+                    scientific_name=taxon_name,
+                    canonical_name=taxon_name,
+                    rank=rank,
+                    parent=parent,
+                )
 
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
@@ -426,10 +431,6 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     taxon_group_id = taxon_group.id
                 except TaxonGroup.DoesNotExist:
                     pass
-
-        if taxon_group and taxonomy:
-            from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
-            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
 
         if taxonomy:
             response['id'] = taxonomy.id
@@ -469,6 +470,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             if is_fada_site() and not taxonomy.fada_id:
                 taxonomy.fada_id = f'FADA-{taxonomy.id}'
                 taxonomy.save(update_fields=['fada_id'])
+
+        if taxon_group and taxonomy:
+            from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
+            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
 
         with transaction.atomic():
             taxonomy_data = model_to_dict(
