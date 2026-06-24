@@ -62,17 +62,14 @@ class TaxonGroupTotalValidated(APIView):
 
         return accepted_q, synonym_q
 
-    def collect_taxonomy_ids(self, taxon_group):
+    def collect_taxonomy_ids(self, taxon_group, can_view_unvalidated=False):
         """
         Recursively aggregate counts for the given taxon group + children.
+        can_view_unvalidated is computed once for the top-level group in get()
+        and passed down so child groups inherit the same permission.
         """
         from bims.templatetags.site import is_fada_site
         accepted_q, synonym_q = self._status_queries()
-
-        _tg = get_object_or_404(TaxonGroup, id=taxon_group.id)
-        is_user_expert = is_expert(self.request.user, _tg)
-        is_user_contributor = is_contributor(self.request.user, _tg)
-        can_view_unvalidated = self.request.user.is_superuser or is_user_expert or is_user_contributor
 
         qs = taxon_group.taxonomies.all()
         if is_fada_site():
@@ -103,9 +100,9 @@ class TaxonGroupTotalValidated(APIView):
                 taxongrouptaxonomy__is_validated=False
             ).distinct().count()
 
-        # Recurse into children
+        # Recurse into children, propagating the same permission flag
         for child in TaxonGroup.objects.filter(parent=taxon_group):
-            self.collect_taxonomy_ids(child)
+            self.collect_taxonomy_ids(child, can_view_unvalidated=can_view_unvalidated)
 
     def get(self, request, *args, **kwargs):
         """
@@ -115,11 +112,12 @@ class TaxonGroupTotalValidated(APIView):
         taxon_group_id = kwargs.get("id")
         taxon_group = get_object_or_404(TaxonGroup, id=taxon_group_id)
 
-        self.collect_taxonomy_ids(taxon_group)
-
         is_user_expert = is_expert(request.user, taxon_group)
         is_user_contributor = is_contributor(request.user, taxon_group)
         can_view_unvalidated = request.user.is_superuser or is_user_expert or is_user_contributor
+
+        self.collect_taxonomy_ids(taxon_group, can_view_unvalidated=can_view_unvalidated)
+
         accepted_unvalidated = self.accepted_unvalidated if can_view_unvalidated else 0
         synonym_unvalidated = self.synonym_unvalidated if can_view_unvalidated else 0
 
