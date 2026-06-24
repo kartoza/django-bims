@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.models import Site
 from django.http import Http404
 from django.db import transaction
+from preferences import preferences
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -93,9 +94,10 @@ def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id, include_children=Fals
 
 def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
     """
-    Add taxa to taxon group
-    :param taxa_ids: list of taxon taxon ids
-    :param taxon_group_id: id of the taxon group
+    Add taxa to taxon group.
+    Returns a list of dicts for taxa that were rejected because they already
+    belong to another group (only when restrict_taxon_to_single_group is on).
+    Each dict has 'id' and 'name'.
     """
     taxa = Taxonomy.objects.filter(
         id__in=taxa_ids
@@ -105,11 +107,24 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
             id=taxon_group_id
         )
     except TaxonGroup.DoesNotExist:
-        return
+        return []
+
+    restrict = preferences.SiteSetting.restrict_taxon_to_single_group
+    rejected = []
+
     for taxonomy in taxa:
-        if not taxon_group.taxonomies.filter(
-            id=taxonomy.id
-        ).exists():
+        if restrict:
+            already_in_other_group = TaxonGroupTaxonomy.objects.filter(
+                taxonomy=taxonomy
+            ).exclude(taxongroup=taxon_group).exists()
+            if already_in_other_group:
+                rejected.append({
+                    'id': taxonomy.id,
+                    'name': taxonomy.canonical_name or taxonomy.scientific_name,
+                })
+                continue
+
+        if not taxon_group.taxonomies.filter(id=taxonomy.id).exists():
             create_taxon_proposal(taxonomy, taxon_group)
         taxon_group.taxonomies.add(
             taxonomy,
@@ -117,6 +132,8 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
                 'is_validated': False
             }
         )
+
+    return rejected
 
 
 class TaxaUpdateMixin(UserPassesTestMixin, APIView):
@@ -182,12 +199,13 @@ class AddTaxaToTaxonGroup(TaxaUpdateMixin):
             raise Http404('Missing required parameter')
         taxa_ids = json.loads(taxa_ids)
         taxon_group_id = int(taxon_group_id)
-        add_taxa_to_taxon_group(taxa_ids, taxon_group_id)
+        rejected = add_taxa_to_taxon_group(taxa_ids, taxon_group_id)
         return Response(
             {
                 'taxonomy_count': TaxonGroup.objects.get(
                     id=taxon_group_id
-                ).taxonomies.all().count()
+                ).taxonomies.all().count(),
+                'rejected': rejected,
             }
         )
 

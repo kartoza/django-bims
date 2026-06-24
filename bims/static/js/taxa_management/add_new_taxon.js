@@ -86,6 +86,10 @@ export const addNewTaxon = (() => {
                 'taxonGroupId': currentSelectedTaxonGroup,
             },
             success: function (response) {
+                if (response.rejected && response.rejected.length > 0) {
+                    const names = response.rejected.map(t => t.name).join(', ');
+                    alert(`The following taxa could not be added because they already belong to another group: ${names}`);
+                }
                 insertParam('validated', 'False', false, true);
             }
         });
@@ -124,15 +128,24 @@ export const addNewTaxon = (() => {
             let action = '';
             const normalizedStatus = status || '';
             if (!taxonGroupIds.includes(parseInt(currentSelectedTaxonGroup))) {
-                action = (`<button
-                type="button"
-                class="btn btn-success add-taxon-btn"
-                data-canonical-name="${canonicalName}"
-                data-key="${key}"
-                data-rank="${rank}"
-                data-status="${normalizedStatus}"
-                data-taxa-id="${taxaId}">${fontAwesomeIcon('plus')}&nbsp;ADD
-               </button>`);
+                if (typeof restrictTaxonToSingleGroup !== 'undefined' && restrictTaxonToSingleGroup && taxonGroupIds.length > 0) {
+                    action = (`<button
+                    type="button"
+                    class="btn btn-secondary"
+                    disabled
+                    title="This taxon already belongs to another group">${fontAwesomeIcon('ban')}&nbsp;Already in another group
+                   </button>`);
+                } else {
+                    action = (`<button
+                    type="button"
+                    class="btn btn-success add-taxon-btn"
+                    data-canonical-name="${canonicalName}"
+                    data-key="${key}"
+                    data-rank="${rank}"
+                    data-status="${normalizedStatus}"
+                    data-taxa-id="${taxaId}">${fontAwesomeIcon('plus')}&nbsp;ADD
+                   </button>`);
+                }
             }
             tableBody.append(`<tr>
                     <td>${scientificName}</td>

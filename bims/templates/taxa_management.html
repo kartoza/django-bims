@@ -26,6 +26,7 @@
         const isExpert = {% if is_expert %}true{% else %}false{% endif %};
         const isPublicView = {% if is_public_view %}true{% else %}false{% endif %};
         const isFadaSite = {% if fada_site %}true{% else %}false{% endif %};
+        const restrictTaxonToSingleGroup = {% if preferences.SiteSetting.restrict_taxon_to_single_group %}true{% else %}false{% endif %};
         const rejectUrl = '/api/review-taxon/';
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for an expert';
