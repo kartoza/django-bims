@@ -77,60 +77,108 @@ class AddNewTaxonTestCase(FastTenantTestCase):
         self.assertTrue('taxon_name' in response.data)
         self.assertEqual(response.data['taxon_name'], 'Test Taxon Without GBIF 2')
 
-    def test_add_new_manual_taxon_reuses_existing_taxonomy(self):
+    def test_reject_duplicate_taxon_same_name_same_parent(self):
         """
-        When a manual taxon (no gbifKey) with the same canonical_name already exists,
-        the API should reuse the existing Taxonomy instead of creating a duplicate.
+        When a manual taxon (no gbifKey) with the same canonical_name and parent
+        already exists, the API should return 400 and not create a duplicate.
         """
-        existing = TaxonomyF.create(
-            canonical_name="Manual Duplicate Taxon",
-            scientific_name="Manual Duplicate Taxon",
+        parent = TaxonomyF.create(
+            canonical_name="Parent Genus",
+            scientific_name="Parent Genus",
+            rank="genus",
+        )
+        TaxonomyF.create(
+            canonical_name="Parent Genus Duplicate",
+            scientific_name="Parent Genus Duplicate",
             rank="species",
+            parent=parent,
         )
 
         data = {
-            "taxonName": "Manual Duplicate Taxon",
+            "taxonName": "Parent Genus Duplicate",
             "taxonGroup": self.taxon_group.name,
             "rank": "species",
-            "authorName": "Some Author",
+            "parentId": parent.id,
+            "authorName": "Different Author",
         }
         response = self.client.post(reverse("add-new-taxon"), data)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("id", response.data)
-        self.assertIn("taxon_name", response.data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.data)
+        self.assertIn("already exists", response.data["error"])
 
-        # Should reuse the existing taxonomy
-        self.assertEqual(response.data["id"], existing.id)
-        self.assertEqual(response.data["taxon_name"], existing.canonical_name)
-
-        # And not create a second Taxonomy row with the same name
+        # No extra row created
         self.assertEqual(
             Taxonomy.objects.filter(
-                canonical_name__iexact="Manual Duplicate Taxon"
+                canonical_name__iexact="Parent Genus Duplicate",
+                parent=parent,
             ).count(),
             1,
         )
 
+    def test_reject_duplicate_taxon_same_name_no_parent(self):
+        """
+        When the same name is submitted twice with no parent, reject the second attempt.
+        """
+        TaxonomyF.create(
+            canonical_name="Orphan Duplicate",
+            scientific_name="Orphan Duplicate",
+            rank="family",
+            parent=None,
+        )
+
+        data = {
+            "taxonName": "Orphan Duplicate",
+            "taxonGroup": self.taxon_group.name,
+            "rank": "family",
+            "authorName": "Some Author",
+        }
+        response = self.client.post(reverse("add-new-taxon"), data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.data)
+
+    def test_allow_same_name_different_parent(self):
+        """
+        Two taxa with the same canonical name but different parents should both be
+        accepted (they are distinct taxa under different genera).
+        """
+        parent_a = TaxonomyF.create(
+            canonical_name="Genus Alpha",
+            scientific_name="Genus Alpha",
+            rank="genus",
+        )
+        parent_b = TaxonomyF.create(
+            canonical_name="Genus Beta",
+            scientific_name="Genus Beta",
+            rank="genus",
+        )
+        TaxonomyF.create(
+            canonical_name="Shared Species",
+            scientific_name="Shared Species",
+            rank="species",
+            parent=parent_a,
+        )
+
+        data = {
+            "taxonName": "Shared Species",
+            "taxonGroup": self.taxon_group.name,
+            "rank": "species",
+            "parentId": parent_b.id,
+        }
+        response = self.client.post(reverse("add-new-taxon"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("id", response.data)
+
     def test_add_synonym_automatically_adds_accepted_name_to_group(self):
         """
-        When a synonym is manually added to a taxon group,
+        When a new synonym is manually added to a taxon group,
         the accepted taxonomy should automatically be added to the same group.
         """
-        # Create an accepted taxonomy
+        # Create an accepted taxonomy (not yet in the group)
         accepted_taxonomy = TaxonomyF.create(
             canonical_name="Accepted Species",
             scientific_name="Accepted Species",
             rank="species",
             taxonomic_status="ACCEPTED"
-        )
-
-        # Create a synonym that references the accepted taxonomy
-        synonym_taxonomy = TaxonomyF.create(
-            canonical_name="Synonym Species",
-            scientific_name="Synonym Species",
-            rank="species",
-            taxonomic_status="SYNONYM",
-            accepted_taxonomy=accepted_taxonomy
         )
 
         # Verify the accepted taxonomy is NOT in the taxon group yet
@@ -141,19 +189,22 @@ class AddNewTaxonTestCase(FastTenantTestCase):
             ).exists()
         )
 
-        # Add the synonym to the taxon group
+        # Add a brand-new synonym that doesn't exist yet
         data = {
-            'taxonName': synonym_taxonomy.canonical_name,
+            'taxonName': 'New Synonym Species',
             'taxonGroup': self.taxon_group.name,
             'rank': 'species',
+            'taxonomicStatus': 'SYNONYM',
+            'acceptedTaxonomyId': accepted_taxonomy.id,
         }
         response = self.client.post(reverse('add-new-taxon'), data)
         self.assertEqual(response.status_code, 200)
 
-        # Verify the synonym was added to the group
+        # Verify the newly created synonym was added to the group
+        created_synonym = Taxonomy.objects.get(id=response.data['id'])
         self.assertTrue(
             TaxonGroupTaxonomy.objects.filter(
-                taxonomy=synonym_taxonomy,
+                taxonomy=created_synonym,
                 taxongroup=self.taxon_group
             ).exists()
         )
@@ -176,37 +227,28 @@ class AddNewTaxonTestCase(FastTenantTestCase):
 
     def test_add_synonym_when_accepted_already_in_group(self):
         """
-        When a synonym is added and the accepted taxonomy is already in the group,
-        it should not create a duplicate or error.
+        When a new synonym is added and the accepted taxonomy is already in the group,
+        ensure_accepted_taxonomy_in_group should not create a duplicate entry.
         """
-        # Create an accepted taxonomy
+        # Create an accepted taxonomy and pre-add it to the group
         accepted_taxonomy = TaxonomyF.create(
             canonical_name="Already Present Accepted",
             scientific_name="Already Present Accepted",
             rank="species",
             taxonomic_status="ACCEPTED"
         )
-
-        # Add the accepted taxonomy to the group first
         self.taxon_group.taxonomies.add(
             accepted_taxonomy,
             through_defaults={'is_validated': True}
         )
 
-        # Create a synonym that references the accepted taxonomy
-        synonym_taxonomy = TaxonomyF.create(
-            canonical_name="Synonym Of Present",
-            scientific_name="Synonym Of Present",
-            rank="species",
-            taxonomic_status="SYNONYM",
-            accepted_taxonomy=accepted_taxonomy
-        )
-
-        # Add the synonym to the taxon group
+        # Add a brand-new synonym (doesn't exist yet) referencing the accepted taxonomy
         data = {
-            'taxonName': synonym_taxonomy.canonical_name,
+            'taxonName': 'New Synonym Of Present',
             'taxonGroup': self.taxon_group.name,
             'rank': 'species',
+            'taxonomicStatus': 'SYNONYM',
+            'acceptedTaxonomyId': accepted_taxonomy.id,
         }
         response = self.client.post(reverse('add-new-taxon'), data)
         self.assertEqual(response.status_code, 200)
@@ -223,16 +265,13 @@ class AddNewTaxonTestCase(FastTenantTestCase):
 
     def test_add_non_synonym_does_not_add_extra_taxa(self):
         """
-        When a non-synonym (accepted name) is added,
-        it should not try to add any additional taxa.
+        When a brand-new non-synonym (accepted name) is added,
+        it should not trigger any additional taxa being added to the group.
         """
-        # Create an accepted taxonomy
-        accepted_taxonomy = TaxonomyF.create(
-            canonical_name="Regular Accepted",
-            scientific_name="Regular Accepted",
-            rank="species",
-            taxonomic_status="ACCEPTED",
-            accepted_taxonomy=None  # No accepted taxonomy (it IS the accepted name)
+        parent = TaxonomyF.create(
+            canonical_name="Parent Genus For Accepted",
+            scientific_name="Parent Genus For Accepted",
+            rank="genus",
         )
 
         # Count existing taxa in group before
@@ -240,11 +279,13 @@ class AddNewTaxonTestCase(FastTenantTestCase):
             taxongroup=self.taxon_group
         ).count()
 
-        # Add the accepted taxonomy to the group
+        # Add a brand-new accepted taxon (does not exist yet)
         data = {
-            'taxonName': accepted_taxonomy.canonical_name,
+            'taxonName': 'Brand New Accepted Species',
             'taxonGroup': self.taxon_group.name,
             'rank': 'species',
+            'taxonomicStatus': 'ACCEPTED',
+            'parentId': parent.id,
         }
         response = self.client.post(reverse('add-new-taxon'), data)
         self.assertEqual(response.status_code, 200)

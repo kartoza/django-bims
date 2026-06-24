@@ -71,6 +71,17 @@ export const addNewTaxon = (() => {
                 data: postData,
                 success: function (response) {
                     insertParam('validated', 'False', false, true);
+                },
+                error: function (xhr) {
+                    loading.hide();
+                    table.show();
+                    let msg = 'Failed to add taxon.';
+                    try {
+                        const resp = JSON.parse(xhr.responseText);
+                        if (resp.error) msg = resp.error;
+                    } catch (e) {}
+                    alert(msg);
+                    $taxonForm.show();
                 }
             });
             return;
