@@ -1,10 +1,11 @@
 {% load site %}
 {% is_user_expert user taxon_group.experts as user_is_expert %}
+{% is_user_contributor user taxon_group.contributors as user_is_contributor %}
 
 <li data-id="{{ taxon_group.id }}" data-name="{{ taxon_group.name }}"
     data-is-readonly="{{ taxon_group.is_readonly|lower }}"
     data-upstream-url="{{ taxon_group.upstream_url }}"
-    class="ui-state-default {% if user_is_expert %}taxon-group-expert{% endif %}">
+    class="ui-state-default {% if user_is_expert %}taxon-group-expert{% elif user_is_contributor %}taxon-group-contributor{% endif %}">
   <div class="tg-item">
     {% if perms.bims.change_taxongroup %}
       <div class="tg-drag-handle" title="Drag to reorder">
@@ -22,6 +23,10 @@
         {% if user_is_expert %}
           <div class="tg-expert-badge" title="Expert">
             <i class="fa fa-id-badge" aria-hidden="true" style="color:#403d3d; font-size:18px;"></i>
+          </div>
+        {% elif user_is_contributor %}
+          <div class="tg-expert-badge" title="Contributor">
+            <i class="fa fa-user-circle" aria-hidden="true" style="color:#5a6e8a; font-size:18px;"></i>
           </div>
         {% endif %}
 
@@ -62,7 +67,7 @@
             </div>
           </div>
 
-          {% if user.is_superuser or user_is_expert %}
+          {% if user.is_superuser or user_is_expert or user_is_contributor %}
             <div class="tg-row" id="taxon_group_unvalidated_{{ taxon_group.id }}" style="display: none">
               <span class="tg-label unvalid">Unvalidated</span>
               <div class="tg-chips">

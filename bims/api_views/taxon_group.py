@@ -223,6 +223,7 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
     - gbif-species (taxonomy id)
     - extra_attribute: can repeat multiple times
     - taxon-group-experts: can repeat multiple times
+    - taxon-group-contributors: can repeat multiple times
     - taxa_upload_template: file
     - occurrence_upload_template: file           [legacy single upload]
     - occurrence_upload_templates: <multiple files> [new multi-upload]
@@ -235,6 +236,7 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         module_id = request.POST.get('module_id', None)
         extra_attributes = request.POST.getlist('extra_attribute', [])
         new_expert_ids = request.POST.getlist('taxon-group-experts', [])
+        new_contributor_ids = request.POST.getlist('taxon-group-contributors', [])
         gbif_species = request.POST.get('gbif-species', None)
         parent_taxon_id = request.POST.get('parent-taxon', None)
         meta_group_id = request.POST.get('meta_group', None)
@@ -342,6 +344,17 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
             taxon_group.experts.set(cleaned_expert_ids)
         else:
             taxon_group.experts.clear()
+
+        if new_contributor_ids:
+            cleaned_contributor_ids = []
+            for contributor_id in new_contributor_ids:
+                try:
+                    cleaned_contributor_ids.append(int(contributor_id))
+                except (ValueError, TypeError):
+                    continue
+            taxon_group.contributors.set(cleaned_contributor_ids)
+        else:
+            taxon_group.contributors.clear()
 
         return Response(
             'Taxon group updated' if module_id else 'New taxon group added'

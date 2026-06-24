@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.api_views.taxon_update import is_expert
+from bims.api_views.taxon_update import is_expert, is_contributor
 from bims.enums import TaxonomicStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
@@ -69,8 +69,10 @@ class TaxonGroupTotalValidated(APIView):
         from bims.templatetags.site import is_fada_site
         accepted_q, synonym_q = self._status_queries()
 
-        is_user_expert = is_expert(self.request.user, get_object_or_404(TaxonGroup, id=taxon_group.id))
-        can_view_unvalidated = self.request.user.is_superuser or is_user_expert
+        _tg = get_object_or_404(TaxonGroup, id=taxon_group.id)
+        is_user_expert = is_expert(self.request.user, _tg)
+        is_user_contributor = is_contributor(self.request.user, _tg)
+        can_view_unvalidated = self.request.user.is_superuser or is_user_expert or is_user_contributor
 
         qs = taxon_group.taxonomies.all()
         if is_fada_site():
@@ -116,7 +118,8 @@ class TaxonGroupTotalValidated(APIView):
         self.collect_taxonomy_ids(taxon_group)
 
         is_user_expert = is_expert(request.user, taxon_group)
-        can_view_unvalidated = request.user.is_superuser or is_user_expert
+        is_user_contributor = is_contributor(request.user, taxon_group)
+        can_view_unvalidated = request.user.is_superuser or is_user_expert or is_user_contributor
         accepted_unvalidated = self.accepted_unvalidated if can_view_unvalidated else 0
         synonym_unvalidated = self.synonym_unvalidated if can_view_unvalidated else 0
 

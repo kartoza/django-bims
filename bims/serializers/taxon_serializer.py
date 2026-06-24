@@ -632,6 +632,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
     taxa_count = serializers.SerializerMethodField()
     experts = serializers.SerializerMethodField()
+    contributors = serializers.SerializerMethodField()
     gbif_parent_species = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
     validated_count = serializers.SerializerMethodField()
@@ -718,6 +719,12 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             many=True
         ).data
 
+    def get_contributors(self, obj: TaxonGroup):
+        return TaxonGroupExpertSerializer(
+            obj.contributors.all(),
+            many=True
+        ).data
+
     class Meta:
         model = TaxonGroup
         fields = ['id',
@@ -727,7 +734,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',
-                  'experts', 'children',
+                  'experts', 'contributors', 'children',
                   'taxa_upload_template',
                   'occurrence_upload_template',
                   'occurrence_upload_templates',
