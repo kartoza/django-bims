@@ -47,6 +47,7 @@ class TaxonTag(TagBase):
     class Meta:
         verbose_name = "Taxonomy Tag"
         verbose_name_plural = "Taxonomy Tags"
+        unique_together = [('name', 'doubtful')]
 
 
 class SpeciesGroup(models.Model):
@@ -70,6 +71,7 @@ class CustomTaggedTaxonomy(TaggedItemBase):
     class Meta:
         verbose_name = "Custom Tagged Taxonomy"
         verbose_name_plural = "Custom Tagged Taxa"
+        unique_together = [('content_object', 'tag')]
 
 
 class TaxonomyField(models.CharField):

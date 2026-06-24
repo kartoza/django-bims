@@ -581,12 +581,10 @@ class TaxaList(APIView):
         if author_names:
             authors = split_authors(author_names)
 
-        biodiversity_distributions = (
-            request.GET.get('bD', '').split(',')
-        )
-        biodiversity_distributions = (
-            list(filter(None, biodiversity_distributions))
-        )
+        biodiversity_distributions = [
+            v.strip() for v in request.GET.get('bD', '').split(',')
+            if v.strip()
+        ]
         biodiversity_distributions_filter_type = (
             request.GET.get('bDFT', 'OR')
         )
