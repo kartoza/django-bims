@@ -351,6 +351,14 @@ class SiteSetting(Preferences):
         )
     )
 
+    restrict_taxon_to_single_group = models.BooleanField(
+        default=True,
+        help_text=(
+            'When enabled, a taxon that already belongs to a taxon group '
+            'cannot be added to a different group.'
+        )
+    )
+
     github_repo_path = models.CharField(
         default='',
         blank=True,
