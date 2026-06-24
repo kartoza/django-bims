@@ -567,6 +567,7 @@ class TaxaList(APIView):
         taxonomic_status = request.GET.get('taxonomic_status', '').split(',')
         taxonomic_status = list(filter(None, taxonomic_status))
         taxon_name = request.GET.get('taxon', '').strip()
+        taxon_search_type = request.GET.get('taxon_search_type', 'contains')
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
@@ -665,10 +666,11 @@ class TaxaList(APIView):
                 queries |= Q(taxonomic_status__iexact=status)
             taxon_list = taxon_list.filter(queries)
         if taxon_name:
+            lookup = 'istartswith' if taxon_search_type == 'startswith' else 'icontains'
             taxon_list = taxon_list.filter(
-                Q(canonical_name__icontains=taxon_name) |
-                Q(accepted_taxonomy__canonical_name__icontains=taxon_name) |
-                Q(scientific_name__icontains=taxon_name)
+                Q(**{f'canonical_name__{lookup}': taxon_name}) |
+                Q(**{f'accepted_taxonomy__canonical_name__{lookup}': taxon_name}) |
+                Q(**{f'scientific_name__{lookup}': taxon_name})
             )
         if family_name:
             taxon_list = taxon_list.filter(

@@ -70,9 +70,15 @@
                     <div class="form-inline d-flex md-form form-sm mt-0"
                          style="margin-bottom: 10px;">
                         <i class="fa fa-search" aria-hidden="true"></i>
-                        <input class="form-control form-control-sm ml-3"
-                               type="text" placeholder="Taxon Name"
-                               aria-label="Search" id="taxon-name-input">
+                        <div class="ml-3" style="position: relative;">
+                            <input class="form-control form-control-sm"
+                                   type="text" placeholder="Taxon Name"
+                                   aria-label="Search" id="taxon-name-input">
+                            <div style="position: absolute; top: 100%; left: 0; font-size: 0.8rem; color: #414141; white-space: nowrap; margin-top: 1px;">
+                                <input type="checkbox" id="taxon-startswith-checkbox">
+                                <label for="taxon-startswith-checkbox" style="margin-top: -15px;margin-left: 20px;" class="mb-0">Starts with</label>
+                            </div>
+                        </div>
                         <button id="search-button"
                                 class="btn btn-success btn-md my-0 ml-sm-2"
                                 style="height: 31px; padding-top: 3px"><i class="fa fa-search" aria-hidden="true"></i> Search
