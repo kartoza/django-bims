@@ -532,3 +532,49 @@ class TestTaxonGroupTotalValidated(TestCase):
         self.assertEqual(data_user["accepted_validated"], 1)
         self.assertEqual(data_user["synonym_unvalidated"], 0)  # hidden
         self.assertEqual(data_user["total_unvalidated"], 0)
+
+    def test_contributor_sees_unvalidated_counts(self):
+        tg = TaxonGroupF.create(contributors=(self.user,))
+
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn = TaxonomyF.create(taxonomic_status="SYNONYM")
+        t_acc_u = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn_u = TaxonomyF.create(taxonomic_status="HETEROTYPIC_SYNONYM")
+
+        self._link(tg, t_acc, is_validated=True)
+        self._link(tg, t_syn, is_validated=True)
+        self._link(tg, t_acc_u, is_validated=False)
+        self._link(tg, t_syn_u, is_validated=False)
+
+        data = self._call(tg, self.user)
+
+        self.assertEqual(data["accepted_validated"], 1)
+        self.assertEqual(data["synonym_validated"], 1)
+        self.assertEqual(data["accepted_unvalidated"], 1)
+        self.assertEqual(data["synonym_unvalidated"], 1)
+        self.assertEqual(data["total_unvalidated"], 2)
+
+    def test_contributor_recurses_into_children(self):
+        parent = TaxonGroupF.create(contributors=(self.user,))
+        child = TaxonGroupF.create(parent=parent)
+
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn_u = TaxonomyF.create(taxonomic_status="SYNONYM")
+
+        self._link(child, t_acc, is_validated=True)
+        self._link(child, t_syn_u, is_validated=False)
+
+        data = self._call(parent, self.user)
+        self.assertEqual(data["accepted_validated"], 1)
+        self.assertEqual(data["synonym_unvalidated"], 1)
+        self.assertEqual(data["total_unvalidated"], 1)
+
+    def test_non_contributor_still_hidden(self):
+        tg = TaxonGroupF.create()  # user is neither expert nor contributor
+
+        t_acc_u = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        self._link(tg, t_acc_u, is_validated=False)
+
+        data = self._call(tg, self.user)
+        self.assertEqual(data["accepted_unvalidated"], 0)
+        self.assertEqual(data["total_unvalidated"], 0)

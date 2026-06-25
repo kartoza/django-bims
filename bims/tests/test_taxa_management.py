@@ -62,10 +62,32 @@ class TaxaManagementTest(FastTenantTestCase):
         self.assertIn('taxa_groups', resp.context)
         self.assertIn('taxon_rank', resp.context)
         self.assertIn('is_expert', resp.context)
+        self.assertIn('is_contributor', resp.context)
         self.assertGreater(
             len(resp.context_data['taxa_groups']),
             0
         )
+
+    def test_expert_context_flag(self):
+        self.client.login(username='testuser', password='password')
+        resp = self.client.get(reverse('taxa-management'), {'selected': self.taxon_group.id})
+        self.assertTrue(resp.context['is_expert'])
+        self.assertFalse(resp.context['is_contributor'])
+
+    def test_contributor_context_flag(self):
+        contributor = User.objects.create_user('contributor', 'contributor@example.com', 'password')
+        self.taxon_group.contributors.add(contributor)
+        self.client.login(username='contributor', password='password')
+        resp = self.client.get(reverse('taxa-management'), {'selected': self.taxon_group.id})
+        self.assertFalse(resp.context['is_expert'])
+        self.assertTrue(resp.context['is_contributor'])
+
+    def test_regular_user_not_expert_or_contributor(self):
+        regular_user = User.objects.create_user('regular', 'regular@example.com', 'password')
+        self.client.login(username='regular', password='password')
+        resp = self.client.get(reverse('taxa-management'), {'selected': self.taxon_group.id})
+        self.assertFalse(resp.context['is_expert'])
+        self.assertFalse(resp.context['is_contributor'])
 
     def test_validate_permission_check(self):
         self.client.login(username='testuser', password='password')

@@ -386,6 +386,15 @@ def is_expert(user, taxon_group):
     ).exists()
 
 
+def is_contributor(user, taxon_group):
+    """Contributors can view unvalidated taxa but cannot edit them."""
+    if not taxon_group or not user.is_authenticated:
+        return False
+    return taxon_group.contributors.filter(
+        id=user.id
+    ).exists()
+
+
 class UpdateTaxon(UserPassesTestMixin, APIView):
     """
     Provides an API endpoint for updating taxon information. Only superusers or

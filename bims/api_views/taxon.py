@@ -22,7 +22,7 @@ from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
 from bims.api_views.merge_sites import IsSuperUser
-from bims.api_views.taxon_update import is_expert
+from bims.api_views.taxon_update import is_expert, is_contributor
 from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
@@ -719,11 +719,10 @@ class TaxaList(APIView):
                 validated = validated.replace('/', '').lower() == 'true'
                 if not validated:
                     # Check if the user is a superuser or has expert permissions for the taxon group
-                    is_user_expert = is_expert(
-                        request.user,
-                        TaxonGroup.objects.get(id=taxon_group_id)
-                    )
-                    if request.user.is_superuser or is_user_expert:
+                    _taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+                    is_user_expert = is_expert(request.user, _taxon_group)
+                    is_user_contributor = is_contributor(request.user, _taxon_group)
+                    if request.user.is_superuser or is_user_expert or is_user_contributor:
                         validated_filters = {
                             'taxongrouptaxonomy__is_validated': False,
                         }
@@ -1016,10 +1015,13 @@ class TaxaList(APIView):
                     'validated': validated,
                     'is_public': is_public,
                 }).data)
-            serializer.data['is_expert'] = is_expert(
-                self.request.user,
-                TaxonGroup.objects.get(id=taxon_group_id)
-            ) if taxon_group_id and not is_public else False
+            _tg = TaxonGroup.objects.get(id=taxon_group_id) if taxon_group_id else None
+            serializer.data['is_expert'] = (
+                is_expert(self.request.user, _tg) if _tg and not is_public else False
+            )
+            serializer.data['is_contributor'] = (
+                is_contributor(self.request.user, _tg) if _tg and not is_public else False
+            )
         else:
             serializer = TaxonSerializer(
                 taxon_list,

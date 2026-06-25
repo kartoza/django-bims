@@ -120,11 +120,18 @@ class TaxaManagementView(TemplateView):
         user = self.request.user
         is_authenticated = user.is_authenticated
         context['is_public_view'] = not is_authenticated
+        selected_taxon_id = self.request.GET.get('selected')
         context['is_expert'] = (
             is_authenticated and (
                 user.is_superuser or
-                self.is_user_expert_for_taxon(self.request.GET.get('selected'))
+                self.is_user_expert_for_taxon(selected_taxon_id)
             )
+        )
+        context['is_contributor'] = (
+            is_authenticated and
+            not user.is_superuser and
+            not self.is_user_expert_for_taxon(selected_taxon_id) and
+            self.is_user_contributor_for_taxon(selected_taxon_id)
         )
         return context
 
@@ -138,3 +145,14 @@ class TaxaManagementView(TemplateView):
                 id=self.request.user.id).exists()
         except TaxonGroup.DoesNotExist:
             raise Http404("Taxon Group does not exist")
+
+    def is_user_contributor_for_taxon(self, selected_taxon_id):
+        if not selected_taxon_id:
+            return False
+        try:
+            selected_taxon_group = TaxonGroup.objects.get(
+                id=selected_taxon_id)
+            return selected_taxon_group.contributors.filter(
+                id=self.request.user.id).exists()
+        except TaxonGroup.DoesNotExist:
+            return False

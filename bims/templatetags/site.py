@@ -127,3 +127,8 @@ def get_navbar_flatpages():
 @register.simple_tag
 def is_user_expert(user, experts):
     return any(expert['username'] == user.username for expert in experts)
+
+
+@register.simple_tag
+def is_user_contributor(user, contributors):
+    return any(c['username'] == user.username for c in contributors)
