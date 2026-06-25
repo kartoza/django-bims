@@ -428,6 +428,15 @@ def generate_location_site_summary(
 
     dataset_source_references = collection_with_dataset_keys.dataset_source_references()
 
+    if dataset_source_references:
+        source_references = [
+            ref for ref in source_references
+            if not (
+                ref.get('Reference Category') == 'Database' and
+                'gbif' in ref.get('Source', '').lower()
+            )
+        ]
+
     source_references += dataset_source_references
 
     times['source_references'] = time.time() - start_time

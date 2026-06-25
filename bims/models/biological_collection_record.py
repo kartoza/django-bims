@@ -50,8 +50,9 @@ class BiologicalCollectionQuerySet(models.QuerySet):
                     if dataset.citation:
                         author_with_year = dataset.citation.split('.')[0]
                         match = re.match(r"^(.*?)\s*\((\d{4})\)$", author_with_year)
-                        author = match.group(1)
-                        year = match.group(2)
+                        if match:
+                            author = match.group(1)
+                            year = match.group(2)
 
                     item = {
                         'ID': dataset.id,
@@ -328,6 +329,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         default='',
         blank=True,
         null=True,
+    )
+
+    doi = models.CharField(
+        help_text='DOI or download URL for the GBIF harvest that produced this record',
+        max_length=512,
+        blank=True,
+        default='',
     )
 
     additional_data = JSONField(
