@@ -118,9 +118,11 @@ class Command(BaseCommand):
     def _process_tenant(self, dry_run, overwrite):
         from bims.models.biological_collection_record import BiologicalCollectionRecord
         from bims.models.biotope import Biotope, BIOTOPE_TYPE_BROAD, BIOTOPE_TYPE_SPECIFIC
+        from django.db.models import Q
 
-        qs = BiologicalCollectionRecord.objects.exclude(
-            additional_data=None
+        qs = BiologicalCollectionRecord.objects.filter(
+            Q(additional_data__has_key='Broad biotope/habitat') |
+            Q(additional_data__has_key='Specific biotope/habitat')
         )
         if not overwrite:
             qs = qs.filter(biotope__isnull=True, specific_biotope__isnull=True)
@@ -155,6 +157,9 @@ class Command(BaseCommand):
                         record.biotope = biotope
                     broad_updated += 1
                     changed = True
+                    self.stdout.write(
+                        f"  [broad]    id={record.pk} -> {broad_value!r}"
+                    )
 
             if specific_value and (overwrite or not record.specific_biotope_id):
                 biotope = self._get_or_create_biotope(
@@ -165,6 +170,9 @@ class Command(BaseCommand):
                         record.specific_biotope = biotope
                     specific_updated += 1
                     changed = True
+                    self.stdout.write(
+                        f"  [specific] id={record.pk} -> {specific_value!r}"
+                    )
 
             if changed and not dry_run:
                 BiologicalCollectionRecord.objects.filter(pk=record.pk).update(

@@ -127,6 +127,12 @@ class TaxonGroup(models.Model):
         null=True,
     )
 
+    contributors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='contributor_taxon_groups',
+    )
+
     gbif_parent_species = models.ForeignKey(
         'bims.Taxonomy',
         on_delete=models.CASCADE,
@@ -250,6 +256,21 @@ class TaxonGroup(models.Model):
 
         collect_experts(self)
         return all_experts
+
+    def get_all_contributors(self) -> set:
+        """
+        Recursively collects all unique contributors from the current
+        TaxonGroup and its entire ancestry.
+        """
+        all_contributors = set()
+
+        def collect_contributors(current_taxon_group):
+            all_contributors.update(current_taxon_group.contributors.all())
+            if current_taxon_group.parent:
+                collect_contributors(current_taxon_group.parent)
+
+        collect_contributors(self)
+        return all_contributors
 
     def get_all_children(self):
         def get_children(parent):

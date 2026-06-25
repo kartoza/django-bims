@@ -397,7 +397,7 @@ ASYNC_SIGNALS_GEONODE = ast.literal_eval(os.environ.get(
         'ASYNC_SIGNALS_GEONODE', 'False'))
 
 # Set institutionID default value
-INSTITUTION_ID_DEFAULT = os.environ.get('INSTITUTION_ID_DEFAULT', 'bims')
+INSTITUTION_ID_DEFAULT = ''
 
 
 CELERY_TASK_PROTOCOL = 1

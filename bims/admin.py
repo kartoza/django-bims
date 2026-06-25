@@ -762,6 +762,15 @@ class TaxonGroupExpertInline(admin.TabularInline):
     autocomplete_fields = ['taxongroup']
 
 
+class TaxonGroupContributorInline(admin.TabularInline):
+    """Inline to assign user as contributor for taxon groups."""
+    model = TaxonGroup.contributors.through
+    extra = 1
+    verbose_name = 'Contributor for Taxon Group'
+    verbose_name_plural = 'Contributor for Taxon Groups'
+    autocomplete_fields = ['taxongroup']
+
+
 class BimsProfileAdmin(admin.ModelAdmin):
     model = BimsProfile
     list_display = [
@@ -892,7 +901,7 @@ class SignedUpFilter(SimpleListFilter):
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
     change_form_template = 'admin/user_changeform.html'
-    inlines = [ProfileInline, TaxonGroupExpertInline]
+    inlines = [ProfileInline, TaxonGroupExpertInline, TaxonGroupContributorInline]
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -1077,6 +1086,15 @@ class CustomUserAdmin(ProfileAdmin):
         return ', '.join([str(tg.name) for tg in taxon_groups])
 
     expert_taxon_groups.short_description = 'Expert for Taxon Groups'
+
+    def contributor_taxon_groups(self, obj):
+        """Return the taxon groups where this user is a contributor."""
+        taxon_groups = TaxonGroup.objects.filter(contributors=obj)
+        if not taxon_groups.exists():
+            return '-'
+        return ', '.join([str(tg.name) for tg in taxon_groups])
+
+    contributor_taxon_groups.short_description = 'Contributor for Taxon Groups'
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
@@ -1401,6 +1419,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     )
     filter_horizontal = (
         'experts',
+        'contributors',
     )
     raw_id_fields = (
         'gbif_parent_species',

@@ -1,5 +1,8 @@
 # coding=utf-8
 """Test Taxon Group."""
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission, Group
 from django.contrib.sites.models import Site
@@ -214,6 +217,14 @@ class TestTaxonGroup(TestCase):
             "Orphaned taxon with no children in the group should be permanently deleted"
         )
 
+    def _patch_restrict(self, enabled):
+        return patch(
+            'bims.api_views.taxon_group.preferences',
+            new=SimpleNamespace(
+                SiteSetting=SimpleNamespace(restrict_taxon_to_single_group=enabled)
+            )
+        )
+
     def test_add_taxa_to_taxon_group(self):
         taxonomy_1 = TaxonomyF.create()
         taxonomy_2 = TaxonomyF.create()
@@ -221,15 +232,73 @@ class TestTaxonGroup(TestCase):
             taxonomy=taxonomy_1
         )
         taxon_group_1 = TaxonGroupF.create()
-        add_taxa_to_taxon_group(
-            [taxonomy_1.id, taxonomy_2.id],
-            taxon_group_1.id
-        )
+        with self._patch_restrict(False):
+            add_taxa_to_taxon_group(
+                [taxonomy_1.id, taxonomy_2.id],
+                taxon_group_1.id
+            )
         self.assertEqual(
             TaxonGroup.objects.get(
                 id=taxon_group_1.id).taxonomies.all().count(),
             2
         )
+
+    def test_add_taxa_restricted_when_already_in_another_group(self):
+        """When restriction is on, a taxon already in another group is rejected."""
+        taxonomy = TaxonomyF.create()
+        existing_group = TaxonGroupF.create(taxonomies=(taxonomy,))
+        target_group = TaxonGroupF.create()
+
+        with self._patch_restrict(True):
+            rejected = add_taxa_to_taxon_group([taxonomy.id], target_group.id)
+
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]['id'], taxonomy.id)
+        self.assertFalse(
+            target_group.taxonomies.filter(id=taxonomy.id).exists(),
+            'Taxon should not be added to the target group when restriction is on'
+        )
+        self.assertTrue(
+            existing_group.taxonomies.filter(id=taxonomy.id).exists(),
+            'Taxon should remain in its original group'
+        )
+
+    def test_add_taxa_allowed_when_restriction_disabled(self):
+        """When restriction is off, a taxon already in another group can still be added."""
+        taxonomy = TaxonomyF.create()
+        existing_group = TaxonGroupF.create(taxonomies=(taxonomy,))
+        target_group = TaxonGroupF.create()
+
+        with self._patch_restrict(False):
+            rejected = add_taxa_to_taxon_group([taxonomy.id], target_group.id)
+
+        self.assertEqual(rejected, [])
+        self.assertTrue(
+            target_group.taxonomies.filter(id=taxonomy.id).exists(),
+            'Taxon should be added to the target group when restriction is off'
+        )
+
+    def test_add_taxa_to_same_group_not_rejected(self):
+        """Re-adding a taxon to the group it already belongs to is not rejected."""
+        taxonomy = TaxonomyF.create()
+        taxon_group = TaxonGroupF.create(taxonomies=(taxonomy,))
+
+        with self._patch_restrict(True):
+            rejected = add_taxa_to_taxon_group([taxonomy.id], taxon_group.id)
+
+        self.assertEqual(rejected, [])
+        self.assertTrue(taxon_group.taxonomies.filter(id=taxonomy.id).exists())
+
+    def test_add_taxa_restriction_returns_empty_for_new_taxon(self):
+        """A taxon with no group membership is never rejected even when restriction is on."""
+        taxonomy = TaxonomyF.create()
+        taxon_group = TaxonGroupF.create()
+
+        with self._patch_restrict(True):
+            rejected = add_taxa_to_taxon_group([taxonomy.id], taxon_group.id)
+
+        self.assertEqual(rejected, [])
+        self.assertTrue(taxon_group.taxonomies.filter(id=taxonomy.id).exists())
 
     def test_add_taxon_group_level_2(self):
         taxon_group = TaxonGroupF.create(
@@ -463,3 +532,49 @@ class TestTaxonGroupTotalValidated(TestCase):
         self.assertEqual(data_user["accepted_validated"], 1)
         self.assertEqual(data_user["synonym_unvalidated"], 0)  # hidden
         self.assertEqual(data_user["total_unvalidated"], 0)
+
+    def test_contributor_sees_unvalidated_counts(self):
+        tg = TaxonGroupF.create(contributors=(self.user,))
+
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn = TaxonomyF.create(taxonomic_status="SYNONYM")
+        t_acc_u = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn_u = TaxonomyF.create(taxonomic_status="HETEROTYPIC_SYNONYM")
+
+        self._link(tg, t_acc, is_validated=True)
+        self._link(tg, t_syn, is_validated=True)
+        self._link(tg, t_acc_u, is_validated=False)
+        self._link(tg, t_syn_u, is_validated=False)
+
+        data = self._call(tg, self.user)
+
+        self.assertEqual(data["accepted_validated"], 1)
+        self.assertEqual(data["synonym_validated"], 1)
+        self.assertEqual(data["accepted_unvalidated"], 1)
+        self.assertEqual(data["synonym_unvalidated"], 1)
+        self.assertEqual(data["total_unvalidated"], 2)
+
+    def test_contributor_recurses_into_children(self):
+        parent = TaxonGroupF.create(contributors=(self.user,))
+        child = TaxonGroupF.create(parent=parent)
+
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        t_syn_u = TaxonomyF.create(taxonomic_status="SYNONYM")
+
+        self._link(child, t_acc, is_validated=True)
+        self._link(child, t_syn_u, is_validated=False)
+
+        data = self._call(parent, self.user)
+        self.assertEqual(data["accepted_validated"], 1)
+        self.assertEqual(data["synonym_unvalidated"], 1)
+        self.assertEqual(data["total_unvalidated"], 1)
+
+    def test_non_contributor_still_hidden(self):
+        tg = TaxonGroupF.create()  # user is neither expert nor contributor
+
+        t_acc_u = TaxonomyF.create(taxonomic_status="ACCEPTED")
+        self._link(tg, t_acc_u, is_validated=False)
+
+        data = self._call(tg, self.user)
+        self.assertEqual(data["accepted_unvalidated"], 0)
+        self.assertEqual(data["total_unvalidated"], 0)

@@ -57,6 +57,8 @@ SPECIES_KEY = 'species'
 DATASET_KEY = 'datasetKey'
 TAXON_KEY = 'taxonKey'
 MODIFIED_DATE_KEY = 'modified'
+ISSUE_KEY = 'issue'
+RECORDED_DATE_INVALID = 'RECORDED_DATE_INVALID'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 MISSING_KEY_ERROR = 'Missing taxon GBIF key'
 
@@ -80,7 +82,6 @@ ACCEPTED_BASIS_OF_RECORD = [
 ]
 
 DATE_ISSUES_TO_EXCLUDE = [
-    "RECORDED_DATE_INVALID",
     "RECORDED_DATE_MISMATCH",
     "RECORDED_DATE_UNLIKELY",
     "MODIFIED_DATE_INVALID"
@@ -376,6 +377,10 @@ def process_gbif_row(
     taxon_key = row.get(TAXON_KEY, None)
     accepted_taxon_key = row.get(ACCEPTED_TAXON_KEY, None)
 
+    raw_issues = row.get(ISSUE_KEY, '') or ''
+    gbif_issues = [i.strip() for i in raw_issues.split(';') if i.strip()]
+    has_recorded_date_invalid = RECORDED_DATE_INVALID in gbif_issues
+
     taxonomy = None
 
     if taxon_key:
@@ -407,12 +412,18 @@ def process_gbif_row(
             collection_date = parse(s)
         except Exception as e:
             log(f"Date parsing failed for event_date={s}: {e}")
-            return None, False
+            if not has_recorded_date_invalid:
+                return None, False
 
     if not collection_date:
-        log(
-            f'Date not found for {upstream_id}, skipping.'
-        )
+        if has_recorded_date_invalid:
+            log(
+                f'Date not found for {upstream_id} (GBIF flagged as {RECORDED_DATE_INVALID}), skipping.'
+            )
+        else:
+            log(
+                f'Date not found for {upstream_id}, skipping.'
+            )
         return None, False
 
     # Attempt to create or fetch GBIF dataset
@@ -426,6 +437,8 @@ def process_gbif_row(
         'fetch_from_gbif': True,
         'date_fetched': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
+    if gbif_issues:
+        additional_data['gbif_issues'] = gbif_issues
 
     site_point = Point(longitude, latitude, srid=4326)
 
@@ -514,6 +527,13 @@ def process_gbif_row(
         collection_record.validated = True
         collection_record.coordinate_uncertainty_in_meters = coord_uncertainty
         collection_record.coordinate_precision = coord_precision
+
+        if has_recorded_date_invalid:
+            collection_record.date_accuracy = 'artificial'
+            log(
+                f'--- Flagged record {upstream_id} with date_accuracy=artificial '
+                f'({RECORDED_DATE_INVALID})\n'
+            )
 
         if dataset_key:
             collection_record.dataset_key = dataset_key
@@ -606,6 +626,13 @@ def process_gbif_row(
             coordinate_uncertainty_in_meters=coord_uncertainty,
             coordinate_precision=coord_precision
         )
+
+        if has_recorded_date_invalid:
+            new_record.date_accuracy = 'artificial'
+            log(
+                f'--- Flagged new record {upstream_id} with date_accuracy=artificial '
+                f'({RECORDED_DATE_INVALID})\n'
+            )
 
         if habitat:
             new_record.collection_habitat = habitat.lower()

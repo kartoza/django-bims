@@ -232,16 +232,24 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 messageElement.style.display = 'block';
             });
         },
-        displayTaxonomyRank: function (taxonomy_rank) {
+        displayTaxonomyRank: function (taxonomy_rank, accepted_taxonomy_name) {
             let taxononomyRankList = _.template($('#taxon-detail-table').html());
             this.overviewNameTaxonTable.html(taxononomyRankList({
-                kingdom: taxonomy_rank['KINGDOM'],
-                phylum: taxonomy_rank['PHYLUM'],
-                my_class: taxonomy_rank['CLASS'],
-                order: taxonomy_rank['ORDER'],
-                family: taxonomy_rank['FAMILY'],
-                genus: taxonomy_rank['GENUS'],
-                species: taxonomy_rank['SPECIES'],
+                accepted_taxonomy_name: accepted_taxonomy_name || '',
+                kingdom: taxonomy_rank['KINGDOM'] || '',
+                phylum: taxonomy_rank['PHYLUM'] || '',
+                my_class: taxonomy_rank['CLASS'] || '',
+                order: taxonomy_rank['ORDER'] || '',
+                superfamily: taxonomy_rank['SUPERFAMILY'] || '',
+                family: taxonomy_rank['FAMILY'] || '',
+                subfamily: taxonomy_rank['SUBFAMILY'] || '',
+                tribe: taxonomy_rank['TRIBE'] || '',
+                subtribe: taxonomy_rank['SUBTRIBE'] || '',
+                genus: taxonomy_rank['GENUS'] || '',
+                subgenus: taxonomy_rank['SUBGENUS'] || '',
+                species: taxonomy_rank['SPECIES'] || '',
+                subspecies: taxonomy_rank['SUBSPECIES'] || '',
+                variety: taxonomy_rank['VARIETY'] || '',
             }));
         },
         renderMetadataTable: function (data) {
@@ -347,7 +355,9 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 taxon_class: data['taxon'],
                 gbif_id: gbif_key,
                 common_name: data['common_name'],
-                additional_data: data['taxon_additional_data']
+                additional_data: data['taxon_additional_data'],
+                taxonomic_status: data['taxonomic_status'] || '',
+                accepted_taxonomy_name: data['accepted_taxonomy_name'] || ''
             }));
 
             let recordsOverTimeData = data['records_over_time_data'];
@@ -392,7 +402,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 objectDatasets,
                 recordsOptions,
                 'taxon_occurrences');
-            this.displayTaxonomyRank(data['taxonomy_rank']);
+            this.displayTaxonomyRank(data['taxonomy_rank'], data['accepted_taxonomy_name']);
 
             if (!this.mapTaxaSite) {
                 const baseLayer = [];

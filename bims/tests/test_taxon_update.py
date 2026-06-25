@@ -481,3 +481,46 @@ class UpdateTaxonTest(FastTenantTestCase):
         # proposal.created_at (DB field) holds the original taxon's import_date
         self.assertIsNotNone(proposal.created_at)
         self.assertEqual(proposal.created_at.date(), import_date)
+
+
+class IsContributorTest(FastTenantTestCase):
+    """Tests for the is_contributor() helper and contributor edit restrictions."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.contributor = User.objects.create_user('contributor', 'contrib@example.com', 'password')
+        self.non_member = User.objects.create_user('non_member', 'non@example.com', 'password')
+        self.superuser = User.objects.create_superuser('su', 'su@example.com', 'password')
+        self.taxonomy = TaxonomyF.create(scientific_name='Test Species', canonical_name='Test Species')
+        self.taxon_group = TaxonGroupF.create(
+            name='Test Group',
+            taxonomies=(self.taxonomy,),
+            contributors=(self.contributor,)
+        )
+
+    def test_is_contributor_returns_true_for_assigned_user(self):
+        from bims.api_views.taxon_update import is_contributor
+        self.assertTrue(is_contributor(self.contributor, self.taxon_group))
+
+    def test_is_contributor_returns_false_for_non_member(self):
+        from bims.api_views.taxon_update import is_contributor
+        self.assertFalse(is_contributor(self.non_member, self.taxon_group))
+
+    def test_is_contributor_returns_false_for_none_group(self):
+        from bims.api_views.taxon_update import is_contributor
+        self.assertFalse(is_contributor(self.contributor, None))
+
+    def test_contributor_cannot_edit_taxon(self):
+        """Contributors can view but not edit — update endpoint must reject them."""
+        self.client.login(username='contributor', password='password')
+        url = reverse('update-taxon', kwargs={
+            'taxon_id': self.taxonomy.pk,
+            'taxon_group_id': self.taxon_group.pk,
+        })
+        response = self.client.put(url, {}, content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_superuser_not_affected_by_contributor_logic(self):
+        """Superusers bypass the contributor check and can always edit."""
+        from bims.api_views.taxon_update import is_contributor
+        self.assertFalse(is_contributor(self.superuser, self.taxon_group))

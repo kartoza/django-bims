@@ -20,6 +20,33 @@ function formatAuthorSelection(author) {
     return $(`<span class="author_result" data-author-id="${author.id}">${authorName}</span>`);
 }
 
+let contributorSelect = $('.contributor-auto-complete').select2({
+    ajax: {
+        url: "/user-autocomplete/",
+        dataType: "json",
+        delay: 250,
+        data: function (params) {
+            return {
+                term: params.term
+            }
+        },
+        processResults: function (data, params) {
+            params.page = params.page || 1;
+            return {
+                results: data,
+                pagination: {
+                    more: (params.page * 30) < data.total_count
+                }
+            };
+        },
+        cache: true
+    },
+    placeholder: autocompletePlaceholder,
+    minimumInputLength: 3,
+    templateResult: formatAuthor,
+    templateSelection: formatAuthorSelection
+})
+
 let authorSelect = $('.owner-auto-complete').select2({
     ajax: {
         url: "/user-autocomplete/",

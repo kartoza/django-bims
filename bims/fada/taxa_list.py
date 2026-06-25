@@ -26,8 +26,6 @@ FADA_EXCLUDED_COLUMNS = [
     'conservation_status_global', 'Conservation status global',
     'conservation_status_national', 'Conservation status national',
     'cites_listing', 'Cites listing', 'CITES listing',
-    # Scientific name and authority is excluded for FADA (author is separate)
-    'scientific_name_and_authority', 'Scientific name and authority',
 ]
 
 # Biogeographic distributions in alphabetical order
