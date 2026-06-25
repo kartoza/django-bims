@@ -13,6 +13,13 @@ from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProp
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup, OccurrenceUploadTemplate
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+from bims.models.taxon_url import TaxonURL
+
+
+class TaxonURLSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaxonURL
+        fields = ['id', 'uri', 'label']
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -49,6 +56,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     fada_id = serializers.SerializerMethodField()
     children_count = serializers.SerializerMethodField()
     other_group_count = serializers.SerializerMethodField()
+    urls = serializers.SerializerMethodField()
 
     def get_fada_id(self, obj):
         """Only return fada_id for FADA sites."""
@@ -526,6 +534,15 @@ class TaxonSerializer(serializers.ModelSerializer):
         if taxon_group_id:
             qs = qs.exclude(taxongroup_id=taxon_group_id)
         return qs.values('taxongroup').distinct().count()
+
+    def get_urls(self, obj: Taxonomy):
+        if isinstance(obj, TaxonomyUpdateProposal):
+            ad = obj.additional_data or {}
+            if 'proposed_urls' in ad:
+                return ad['proposed_urls']
+        return TaxonURLSerializer(
+            self.taxonomy_obj(obj).urls.all(), many=True
+        ).data
 
     class Meta:
         model = Taxonomy
