@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 
 from rest_framework.response import Response
@@ -22,6 +23,7 @@ class OpenSearchCollectionView(BimsApiView):
     def get(self, request):
         params = request.GET.dict()
         user = request.user
+        fuzzy_search = False
 
         try:
             from bims.opensearch.client import get_client
@@ -38,32 +40,12 @@ class OpenSearchCollectionView(BimsApiView):
         from django.db import connection
         current_schema = connection.schema_name
 
-        must_clauses = []
         # Always scope to the current tenant schema first.
         filter_clauses = [{'term': {'schema_name': current_schema}}]
         filter_clauses += self._build_security_filter(user)
 
         # --- full-text search ---
         search_query = params.get('search', '').strip()
-        if search_query:
-            must_clauses.append({
-                'multi_match': {
-                    'query': search_query,
-                    'fields': [
-                        'canonical_name^3',
-                        'scientific_name^2',
-                        'vernacular_names',
-                        'site_code',
-                        'site_name',
-                        'river_name',
-                        'original_species_name',
-                        'tags',
-                    ],
-                    'type': 'best_fields',
-                    'fuzziness': 'AUTO',
-                }
-            })
-
         # --- taxon filter ---
         taxon_ids = params.get('taxon', '')
         if taxon_ids:
@@ -150,6 +132,15 @@ class OpenSearchCollectionView(BimsApiView):
                         }
                     }
                 })
+        polygon_points = self._parse_polygon_points(params.get('polygon', ''))
+        if polygon_points:
+            filter_clauses.append({
+                'geo_polygon': {
+                    'location': {
+                        'points': polygon_points,
+                    }
+                }
+            })
 
         # --- validation ---
         validated = params.get('validated', '')
@@ -158,12 +149,23 @@ class OpenSearchCollectionView(BimsApiView):
         elif validated == 'false':
             filter_clauses.append({'term': {'is_validated': False}})
 
-        query = {
-            'bool': {
-                'must': must_clauses if must_clauses else [{'match_all': {}}],
-                'filter': filter_clauses,
-            }
-        }
+        try:
+            client = get_client()
+        except Exception as exc:
+            logger.error('OpenSearch client initialization failed: %s', exc)
+            return Response(
+                {'detail': 'Search service error.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        query = self._build_search_query(
+            client=client,
+            index_name=COLLECTIONS_INDEX,
+            search_query=search_query,
+            filter_clauses=filter_clauses,
+        )
+        fuzzy_search = query.get('_fuzzy_search', False)
+        query.pop('_fuzzy_search', None)
 
         aggs = {
             'unique_sites': {'cardinality': {'field': 'site_id'}},
@@ -196,7 +198,6 @@ class OpenSearchCollectionView(BimsApiView):
         from_ = (page - 1) * page_size
 
         try:
-            client = get_client()
             response = client.search(
                 index=COLLECTIONS_INDEX,
                 body={
@@ -259,6 +260,7 @@ class OpenSearchCollectionView(BimsApiView):
 
         return Response({
             'status': 'finished',
+            'fuzzy_search': fuzzy_search,
             'total': total_hits,
             'total_records': total_hits,
             'total_sites': unique_sites,
@@ -271,6 +273,87 @@ class OpenSearchCollectionView(BimsApiView):
             'taxa': taxa,
             'token': str(token),
         })
+
+    @staticmethod
+    def _base_text_fields():
+        return [
+            'canonical_name^4',
+            'scientific_name^3',
+            'original_species_name^3',
+            'vernacular_names^2',
+            'site_code^2',
+            'site_name^2',
+            'river_name',
+            'tags',
+        ]
+
+    def _build_search_query(self, client, index_name, search_query, filter_clauses):
+        if not search_query:
+            return {
+                'bool': {
+                    'must': [{'match_all': {}}],
+                    'filter': filter_clauses,
+                }
+            }
+
+        exact_phrase_query = {
+            'bool': {
+                'must': [{
+                    'multi_match': {
+                        'query': search_query,
+                        'fields': self._base_text_fields(),
+                        'type': 'phrase',
+                    }
+                }],
+                'filter': filter_clauses,
+            }
+        }
+        if self._query_has_hits(client, index_name, exact_phrase_query):
+            return exact_phrase_query
+
+        strict_query = {
+            'bool': {
+                'must': [{
+                    'multi_match': {
+                        'query': search_query,
+                        'fields': self._base_text_fields(),
+                        'type': 'best_fields',
+                        'operator': 'and',
+                    }
+                }],
+                'filter': filter_clauses,
+            }
+        }
+        if self._query_has_hits(client, index_name, strict_query):
+            return strict_query
+
+        fuzzy_query = {
+            'bool': {
+                'must': [{
+                    'multi_match': {
+                        'query': search_query,
+                        'fields': self._base_text_fields(),
+                        'type': 'best_fields',
+                        'fuzziness': 'AUTO',
+                    }
+                }],
+                'filter': filter_clauses,
+            },
+            '_fuzzy_search': True,
+        }
+        return fuzzy_query
+
+    @staticmethod
+    def _query_has_hits(client, index_name, query):
+        response = client.search(
+            index=index_name,
+            body={
+                'size': 0,
+                'track_total_hits': True,
+                'query': query,
+            },
+        )
+        return response.get('hits', {}).get('total', {}).get('value', 0) > 0
 
     @staticmethod
     def _create_search_token(site_ids: list, schema_name: str):
@@ -346,3 +429,64 @@ class OpenSearchCollectionView(BimsApiView):
             top_left.get('lon'),
             top_left.get('lat'),
         ]
+
+    def _parse_polygon_points(self, polygon_value):
+        if not polygon_value:
+            return None
+        try:
+            polygon_data = json.loads(polygon_value)
+        except (TypeError, ValueError):
+            return None
+
+        if isinstance(polygon_data, int):
+            return self._get_user_boundary_polygon_points(polygon_data)
+
+        if not isinstance(polygon_data, list):
+            return None
+
+        points = self._coordinates_to_polygon_points(polygon_data)
+        return points if len(points) >= 4 else None
+
+    def _get_user_boundary_polygon_points(self, boundary_id):
+        try:
+            from bims.models import UserBoundary
+            geometry = UserBoundary.objects.get(id=boundary_id).geometry
+        except Exception:
+            return None
+
+        if geometry is None:
+            return None
+
+        geometry = geometry.clone()
+        if geometry.srid and geometry.srid != 4326:
+            geometry.transform(4326)
+
+        if geometry.geom_type == 'Polygon':
+            coordinates = geometry.coords[0]
+        elif geometry.geom_type == 'MultiPolygon' and len(geometry.coords) > 0:
+            coordinates = geometry.coords[0][0]
+        else:
+            return None
+
+        points = self._coordinates_to_polygon_points(coordinates)
+        return points if len(points) >= 4 else None
+
+    @staticmethod
+    def _coordinates_to_polygon_points(coordinates):
+        points = []
+        for coordinate in coordinates:
+            if not isinstance(coordinate, (list, tuple)) or len(coordinate) < 2:
+                return []
+            lon = coordinate[0]
+            lat = coordinate[1]
+            try:
+                lon = float(lon)
+                lat = float(lat)
+            except (TypeError, ValueError):
+                return []
+            points.append({'lon': lon, 'lat': lat})
+
+        if points and (points[0]['lon'] != points[-1]['lon'] or points[0]['lat'] != points[-1]['lat']):
+            points.append(dict(points[0]))
+
+        return points

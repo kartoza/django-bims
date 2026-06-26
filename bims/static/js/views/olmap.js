@@ -196,9 +196,20 @@ define([
         clearPoint: function () {
             this.pointVectorSource.clear();
         },
+        isValidExtent: function (extent) {
+            if (!Array.isArray(extent) || extent.length !== 4) {
+                return false;
+            }
+            return extent.every(function (value) {
+                return typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value);
+            });
+        },
         zoomToExtent: function (coordinates, shouldTransform=true, updateZoom=true) {
             if (this.isBoundaryEnabled) {
                 this.fetchingRecords();
+                return false;
+            }
+            if (!this.isValidExtent(coordinates) && !this.isValidExtent(this.polygonDrawn)) {
                 return false;
             }
             this.previousZoom = this.getCurrentZoom();
@@ -208,6 +219,9 @@ define([
             }
             if (this.polygonDrawn) {
                 ext = this.polygonDrawn;
+            }
+            if (!this.isValidExtent(ext)) {
+                return false;
             }
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [

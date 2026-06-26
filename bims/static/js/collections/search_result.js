@@ -131,6 +131,17 @@ define([
             }
             this.renderCollection();
         },
+        hasValidExtent: function () {
+            if (!Array.isArray(this.extent) || this.extent.length !== 4) {
+                return false;
+            }
+            return this.extent.every(function (value) {
+                return typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value);
+            });
+        },
+        getSiteDisplayName: function (siteData) {
+            return siteData['site_code'] || siteData['name'] || '';
+        },
         renderCollection: function () {
             var self = this;
             var searchResultTitleDiv = $('<div>');
@@ -191,7 +202,7 @@ define([
                     this.searchFinishedCallback();
                 }
                 Shared.Dispatcher.trigger('map:updateBiodiversityLayerToken', this.searchToken);
-                if (this.extent.length === 4) {
+                if (this.hasValidExtent()) {
                     Shared.Dispatcher.trigger('map:zoomToExtent', this.extent, true, false);
                 }
 
@@ -238,7 +249,7 @@ define([
                         total_thermal: numberWithCommas(total_water_temperature_data),
                         total_chemical_records: numberWithCommas(total_chemical_records),
                         total_climate_records: numberWithCommas(total_climate_records),
-                        name: data['name'],
+                        name: self.getSiteDisplayName(data),
                         record_type: 'site',
                         module: self.module
                     });
@@ -261,9 +272,9 @@ define([
                     $dashboardButton.click(function () {
                         Shared.Dispatcher.trigger('multiSiteDetailPanel:show');
                     });
-                } else {
+                } else if (this.sitesData.length === 1) {
                     let siteId = this.sitesData[0]['site_id'];
-                    let siteName = this.sitesData[0]['name'];
+                    let siteName = this.getSiteDisplayName(this.sitesData[0]);
                     $dashboardButton.click(function () {
                         Shared.Dispatcher.trigger('siteDetail:show', siteId, siteName);
                     });
@@ -285,7 +296,7 @@ define([
 
                 }
             } else {
-                if (self.status === 'finished' && (this.sitesData.length === 0 || this.recordsData.length === 0)) {
+                if (self.status === 'finished' && this.sitesData.length === 0) {
                     Shared.Dispatcher.trigger('map:clearAllLayers');
                 }
             }
@@ -294,15 +305,6 @@ define([
             var siteListNumberElm = $('#site-list-number');
 
             $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
-            $searchResultsWrapper.find('.search-results-total').click();
-            $searchResultsWrapper.find('.search-results-total').unbind();
-
-            if (self.status === 'processing') {
-                taxaCount += ' ...loading';
-                siteCount += ' ...loading';
-            } else if (self.status === 'finished') {
-                $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
-            }
             taxaListNumberElm.html(taxaCount);
             siteListNumberElm.html(siteCount);
 
@@ -385,7 +387,7 @@ define([
                         }
                         let searchModel = new SearchModel({
                             id: siteData[i]['site_id'],
-                            name: siteData[i]['name'],
+                            name: self.getSiteDisplayName(siteData[i]),
                             record_type: 'site',
                             count: siteData[i]['total'] ? numberWithCommas(siteData[i]['total']) : 0,
                             survey: siteData[i]['total_survey'] ? numberWithCommas(siteData[i]['total_survey']) : 0,
