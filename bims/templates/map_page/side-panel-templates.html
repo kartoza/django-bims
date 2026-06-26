@@ -43,6 +43,7 @@
             <div class="col-1" style="padding-left: 0; padding-right: 0; text-align: center">Number of Taxa</div>
         </div>
         <% _.each(data, function (value, key) { %>
+            <% if (value.module) { %>
             <div class="row" style="height: 70px; padding-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #dee2e6; font-size: 12pt" >
                 <div class="col-2" data-toggle="popover" data-placement="right" data-trigger="hover" data-content="Test"  style="text-align: center">
                     <div class="module-icon"><img height="50" src="/uploaded/<%= value.icon %>"></div>
@@ -70,6 +71,7 @@
                     </button>
                 </div>
             </div>
+            <% } %>
         <% }); %>
         <div>
 

@@ -264,6 +264,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 '<span class="search-result-title"> Biodiversity Data </span> ' +
                 '<i class="fa fa-angle-down pull-right filter-icon-arrow"></i></div></div>');
 
+
             // Only show climate data panel if not viewing climate module results
             let currentModule = document.querySelector('input[name="module"]:checked');
             if (!currentModule || currentModule.value !== 'climate') {
@@ -371,6 +372,9 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                 climate_exist: data.climate_exist,
             }));
             $.each(data['biodiversity_data'], function (key, value) {
+                if (key === 'source_references') {
+                    return;
+                }
                 self.charts.push({
                     'canvas': $("#origin-chart-" + value.module),
                     'data': value['origin'],
@@ -489,8 +493,10 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
         renderCharts: function () {
             let self = this;
             $.each(this.charts, function (index, chart) {
-                if (chart['data'].length > 0) {
-                    self.createPieChart(chart);
+                if (typeof chart['data'] !== 'undefined') {
+                    if (chart['data'].length > 0) {
+                        self.createPieChart(chart);
+                    }
                 }
             })
         },

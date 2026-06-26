@@ -24,11 +24,13 @@
         const userCanEditTaxonGroup = {% if perms.bims.change_taxongroup %}true{% else %}false{% endif %};
         const userCanEditTaxon = {% if perms.bims.change_taxonomy %}true{% else %}false{% endif %};
         const isExpert = {% if is_expert %}true{% else %}false{% endif %};
+        const isContributor = {% if is_contributor %}true{% else %}false{% endif %};
         const isPublicView = {% if is_public_view %}true{% else %}false{% endif %};
         const isFadaSite = {% if fada_site %}true{% else %}false{% endif %};
+        const restrictTaxonToSingleGroup = {% if preferences.SiteSetting.restrict_taxon_to_single_group %}true{% else %}false{% endif %};
         const rejectUrl = '/api/review-taxon/';
         const approveUrl = '/api/review-taxon/';
-        let userAutocompletePlaceholder = 'Search for an expert';
+        let userAutocompletePlaceholder = 'Search for a user';
         const taxaGroups = {{ taxa_groups_json | safe }};
         let currentSelectedTaxonGroup = "";
         {% if selected_taxon_group %}
@@ -70,9 +72,15 @@
                     <div class="form-inline d-flex md-form form-sm mt-0"
                          style="margin-bottom: 10px;">
                         <i class="fa fa-search" aria-hidden="true"></i>
-                        <input class="form-control form-control-sm ml-3"
-                               type="text" placeholder="Taxon Name"
-                               aria-label="Search" id="taxon-name-input">
+                        <div class="ml-3" style="position: relative;">
+                            <input class="form-control form-control-sm"
+                                   type="text" placeholder="Taxon Name"
+                                   aria-label="Search" id="taxon-name-input">
+                            <div style="position: absolute; top: 100%; left: 0; font-size: 0.8rem; color: #414141; white-space: nowrap; margin-top: 1px;">
+                                <input type="checkbox" id="taxon-startswith-checkbox">
+                                <label for="taxon-startswith-checkbox" style="margin-top: -15px;margin-left: 20px;" class="mb-0">Starts with</label>
+                            </div>
+                        </div>
                         <button id="search-button"
                                 class="btn btn-success btn-md my-0 ml-sm-2"
                                 style="height: 31px; padding-top: 3px"><i class="fa fa-search" aria-hidden="true"></i> Search
@@ -309,7 +317,20 @@
                 </div>
                 <div class="dashboard-title">
                     {% if selected_taxon_group %}
-                        <h2>{{ selected_taxon_group.name }}</h2>
+                        <h2>{{ selected_taxon_group.name }}
+                            {% if selected_taxon_group.is_readonly and selected_taxon_group.upstream_url %}
+                                <span class="badge badge-info" style="font-size:12pt; vertical-align:middle;">
+                                    <i class="fa fa-refresh" aria-hidden="true"></i> BIMS Harvest
+                                </span>
+                            {% endif %}
+                        </h2>
+                        {% if selected_taxon_group.is_readonly and selected_taxon_group.upstream_url %}
+                            <small class="text-muted">
+                                <i class="fa fa-link" aria-hidden="true"></i> Source:
+                                <a href="{{ selected_taxon_group.upstream_url }}" target="_blank" rel="noopener">{{ selected_taxon_group.upstream_url }}</a>
+                                &middot; Synced monthly
+                            </small>
+                        {% endif %}
                     {% else %}
                         <h2>Taxon Management</h2>
                     {% endif %}
@@ -637,11 +658,28 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label for="taxon-group-contributors" class="col-form-label">Contributors</label>
+                            <small class="form-text text-muted mb-1">Contributors can view unvalidated taxa but cannot edit them.</small>
+                            <div class="taxon-group-contributors-container">
+                                <select name="taxon-group-contributors" class="form-control contributor-auto-complete" multiple="multiple">
+                                </select>
+                            </div>
+                        </div>
                         <div class="form-group gbif-species-container">
                             <label for="recipient-name" class="col-form-label">Parent</label>
                             <div id="parent-taxon-module-container">
 
                             </div>
+                        </div>
+                        <div class="form-group gbif-species-container">
+                            <label for="edit-module-meta-group" class="col-form-label">Meta Group</label>
+                            <select class="form-control" id="edit-module-meta-group" name="meta_group">
+                                <option value="">- None -</option>
+                                {% for mg in meta_groups %}
+                                    <option value="{{ mg.id }}">{{ mg.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="form-group gbif-species-container">
                             <label for="recipient-name" class="col-form-label">GBIF Taxonomy</label>

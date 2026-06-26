@@ -120,6 +120,19 @@ class TestColDPSnapshotView(FastTenantTestCase):
         self.assertIn(str(self.taxon1.pk), taxon_ids)
         self.assertIn(str(self.taxon2.pk), taxon_ids)
 
+    def test_taxon_id_uses_fada_prefix_when_fada_id_set(self):
+        fada_taxon = TaxonomyF.create(
+            scientific_name='Acanthophlebia', rank='GENUS', fada_id='HT-408480'
+        )
+        TaxonGroupTaxonomyF.create(
+            taxongroup=self.group, taxonomy=fada_taxon, is_validated=True
+        )
+        version = _make_published_version(self.group, version='fada-test', user=self.user)
+        response = self.client.get(self._url(version.pk))
+        taxon_ids = {r['taxonID'] for r in response.data['results']}
+        self.assertIn('fada:HT-408480', taxon_ids)
+        self.assertNotIn(str(fada_taxon.pk), taxon_ids)
+
     # ------------------------------------------------------------------
     # Filtering
     # ------------------------------------------------------------------

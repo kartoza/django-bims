@@ -54,7 +54,6 @@ define(['backbone', 'shared', 'underscore', 'jquery'], function (Backbone, Share
                     'rejection_message': self.$el.find('.rejection-message').val()
                 },
                 success: function (data) {
-                    console.log(data);
                     if (!data.hasOwnProperty('status')) {
                         return false;
                     }

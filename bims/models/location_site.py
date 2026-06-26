@@ -256,16 +256,14 @@ class LocationSite(AbstractValidation):
 
     def get_centroid(self):
         """ Getting centroid of location site """
-
-        if (
-            self.geometry_point
-        ):
-            return self.geometry_point
-        else:
-            if self.get_geometry():
-                return self.get_geometry().centroid
-            else:
-                return None
+        try:
+            if self.location_type and self.location_type.allowed_geometry != 'POINT':
+                geometry = self.get_geometry()
+                if geometry:
+                    return geometry.centroid
+        except (LocationType.DoesNotExist, ValidationError):
+            pass
+        return self.geometry_point
 
     def get_geometry(self):
         """Function to get geometry."""
@@ -713,6 +711,7 @@ def generate_site_code(
     catchments_data = {}
     site_code_generator = preferences.SiteSetting.site_code_generator
     site_count_width = 5
+    ecosystem_type = ecosystem_type or ''
 
     site_name = kwargs.get('site_name', '')
     if not site_name or site_name == 'undefined':
@@ -731,7 +730,7 @@ def generate_site_code(
             catchments_data = new_wetland_data
         elif ecosystem_type.lower() == 'open waterbody':
             site_code = open_waterbody_catchment(
-                lat, lon, river_name
+                lat, lon, river_name, location_site=location_site
             )
         else:
             site_code, catchments_data = fbis_catchment_generator(

@@ -5,6 +5,7 @@ import json
 
 from django.http import HttpResponseForbidden, JsonResponse
 from django.conf import settings
+from django.utils import timezone
 from rest_framework import serializers
 from preferences import preferences
 
@@ -284,3 +285,66 @@ def download_taxa_list(request):
         'status': 'processing',
         'filename': filename
     })
+
+
+def download_checklist_snapshot(request):
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden('Not logged in')
+
+    from bims.models.download_request import DownloadRequest
+    from bims.models.checklist_version import ChecklistVersion
+    from bims.tasks.download_taxa_list import (
+        download_checklist_snapshot_task,
+    )
+
+    version_id = request.GET.get('checklistVersion')
+    output = request.GET.get('output', 'csv')
+    order_by = request.GET.get('orderBy', None)
+    download_request_id = request.GET.get('downloadRequestId', '')
+
+    try:
+        version = ChecklistVersion.objects.select_related('taxon_group').get(pk=version_id)
+    except ChecklistVersion.DoesNotExist:
+        return JsonResponse({'error': 'Checklist version not found.'}, status=404)
+
+    current_time = datetime.datetime.now()
+    ext = 'pdf' if output == 'pdf' else 'csv'
+    filename = (
+        f'{version.taxon_group.name}-v{version.version}-'
+        f'{current_time.year}-{current_time.month}-{current_time.day}'
+    ).replace(' ', '_') + f'.{ext}'
+
+    folder = settings.PROCESSED_CSV_PATH
+    path_folder = os.path.join(settings.MEDIA_ROOT, folder)
+    path_file = os.path.join(path_folder, filename)
+
+    dr = DownloadRequest.objects.get(id=download_request_id)
+    dr.request_category = f'{version.taxon_group.name} v{version.version} Taxa List'
+    dr.save()
+
+    if not os.path.exists(path_folder):
+        os.mkdir(path_folder)
+
+    if os.path.exists(path_file):
+        dr.processing = False
+        dr.request_file = path_file
+        dr.progress_updated_at = timezone.now()
+        dr.save(update_fields=['processing', 'request_file', 'progress_updated_at'])
+        send_csv_via_email(
+            user_id=request.user.id,
+            csv_file=path_file,
+            file_name=filename,
+            approved=True
+        )
+    else:
+        download_checklist_snapshot_task.delay(
+            version_id=str(version_id),
+            output_file=path_file,
+            filename=filename,
+            user_id=request.user.id,
+            output=output,
+            order_by=order_by,
+            download_request_id=download_request_id,
+        )
+
+    return JsonResponse({'status': 'processing', 'filename': filename})

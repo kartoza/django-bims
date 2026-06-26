@@ -75,6 +75,7 @@
                                             data-base-url="{{ cfg.base_url }}"
                                             data-remote-group-id="{{ cfg.remote_group_id }}"
                                             data-remote-group-name="{{ cfg.remote_group_name }}"
+                                            data-remote-group-logo="{{ cfg.remote_group_logo }}"
                                             data-import-mode="{{ cfg.import_mode }}"
                                         >{{ cfg.label }}</option>
                                     {% endfor %}
@@ -118,6 +119,7 @@
                                 </select>
                                 <input type="hidden" name="remote_group_id" id="remote-group-id">
                                 <input type="hidden" name="remote_group_name" id="remote-group-name">
+                                <input type="hidden" name="remote_group_logo" id="remote-group-logo">
                             </div>
                         </div>
 
@@ -174,6 +176,13 @@
                                             upstream instance. The harvest will be rejected.
                                         </div>
                                     </div>
+                                    <div id="existing-schedule-info" style="display:none; margin-top: 6px;">
+                                        <div class="alert alert-success" style="font-size: 10pt; margin-bottom: 0; padding: 8px 12px;">
+                                            <i class="fa fa-calendar" aria-hidden="true"></i>
+                                            <b>Monthly harvest scheduled</b> - this group is automatically
+                                            re-harvested from the upstream BIMS instance on the 1st of each month.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -190,6 +199,13 @@
                                     <b>Mark as read-only</b> : species in this group cannot be
                                     edited locally and can only be re-harvested from the same upstream source.
                                 </label>
+                            </div>
+                            <div id="new-schedule-info" style="display:none; margin-top: 8px;">
+                                <div class="alert alert-info" style="font-size: 10pt; margin-bottom: 0; padding: 8px 12px;">
+                                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                                    <b>Monthly harvest schedule</b> - a schedule will be created automatically
+                                    to re-harvest this group from the upstream BIMS instance on the 1st of each month.
+                                </div>
                             </div>
                         </div>
 
@@ -304,6 +320,17 @@
         const updateUrl = '/api/harvest-status/';
         const harvestSessionInProgress = {% if upload_session %}true{% else %}false{% endif %};
         const harvestSessionId = {% if upload_session %}{{ upload_session.id }}{% else %}0{% endif %};
+        const bimsScheduleByGroup = {
+            {% for group_id, sched in bims_schedule_by_group.items %}
+            "{{ group_id }}": {
+                "id": {{ sched.id }},
+                "period": "{{ sched.period }}",
+                "enabled": {{ sched.enabled|lower }},
+                "day_of_month": {{ sched.day_of_month|default:"1" }},
+                "base_url": "{{ sched.bims_config.base_url|default:'' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
         let currentSessionId = 0;
 
         const updateProgress = (id, $elm) => {
@@ -350,6 +377,7 @@
                 $('#remote-group-select').prop('disabled', true).html('<option value="">Loading…</option>');
                 $('#remote-group-id').val('');
                 $('#remote-group-name').val('');
+                $('#remote-group-logo').val('');
                 checkEnableHarvesting();
 
                 $.get('/api/bims-fetch-taxon-groups/', {base_url: baseUrl})
@@ -363,7 +391,7 @@
                         }
                         let options = '<option value="" disabled selected>Choose a remote taxon group</option>';
                         groups.forEach(function (g) {
-                            options += `<option value="${g.id}" data-name="${g.name}">${g.name}</option>`;
+                            options += `<option value="${g.id}" data-name="${g.name}" data-logo="${g.logo || ''}">${g.name}</option>`;
                         });
                         $('#remote-group-select').html(options).prop('disabled', false);
                     })
@@ -382,6 +410,7 @@
                 const $opt = $(this).find('option:selected');
                 $('#remote-group-id').val($opt.val());
                 $('#remote-group-name').val($opt.data('name') || $opt.text());
+                $('#remote-group-logo').val($opt.data('logo') || '');
                 checkEnableHarvesting();
             });
 
@@ -399,6 +428,7 @@
 
             $('#taxon-group').on('change', function () {
                 const $opt = $(this).find('option:selected');
+                const groupId = $opt.val();
                 const isReadonly = $opt.data('readonly') === true || $opt.data('readonly') === 'true';
                 const upstreamUrl = ($opt.data('upstream-url') || '').replace(/\/$/, '');
                 const upstreamId = String($opt.data('upstream-id') || '');
@@ -417,7 +447,23 @@
                     $('#readonly-group-info').hide();
                     $('#readonly-mismatch-warning').hide();
                 }
+
+                const sched = groupId ? bimsScheduleByGroup[groupId] : null;
+                if (sched && sched.enabled) {
+                    $('#existing-schedule-info').show();
+                } else {
+                    $('#existing-schedule-info').hide();
+                }
+
                 checkEnableHarvesting();
+            });
+
+            $('#mark-readonly').on('change', function () {
+                if ($(this).is(':checked')) {
+                    $('#new-schedule-info').show();
+                } else {
+                    $('#new-schedule-info').hide();
+                }
             });
             $('#base-url').on('input', function () {
                 $('#taxon-group').trigger('change');
@@ -431,6 +477,7 @@
                 const baseUrl = $opt.data('base-url');
                 const remoteGroupId = $opt.data('remote-group-id');
                 const remoteGroupName = $opt.data('remote-group-name');
+                const remoteGroupLogo = $opt.data('remote-group-logo');
                 const importMode = $opt.data('import-mode');
                 const localGroupId = $opt.data('taxon-group');
 
@@ -439,12 +486,13 @@
                     // Populate the remote group selector with the saved value
                     const exists = $(`#remote-group-select option[value="${remoteGroupId}"]`).length;
                     if (!exists) {
-                        const opt = `<option value="${remoteGroupId}" data-name="${remoteGroupName}" selected>${remoteGroupName || remoteGroupId}</option>`;
+                        const opt = `<option value="${remoteGroupId}" data-name="${remoteGroupName}" data-logo="${remoteGroupLogo || ''}" selected>${remoteGroupName || remoteGroupId}</option>`;
                         $('#remote-group-select').append(opt).prop('disabled', false);
                     }
                     $('#remote-group-select').val(remoteGroupId);
                     $('#remote-group-id').val(remoteGroupId);
                     $('#remote-group-name').val(remoteGroupName || '');
+                    $('#remote-group-logo').val(remoteGroupLogo || '');
                 }
                 if (importMode) {
                     $(`input[name="import_mode"][value="${importMode}"]`).prop('checked', true).trigger('change');

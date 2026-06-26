@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from django.urls import reverse
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
@@ -370,9 +373,15 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         new_taxon_group = TaxonGroupF.create(
             experts=(self.expert_user,)
         )
-        add_taxa_to_taxon_group([
-            self.taxonomy.id
-        ], new_taxon_group.id)
+        with patch(
+            'bims.api_views.taxon_group.preferences',
+            new=SimpleNamespace(
+                SiteSetting=SimpleNamespace(restrict_taxon_to_single_group=False)
+            )
+        ):
+            add_taxa_to_taxon_group([
+                self.taxonomy.id
+            ], new_taxon_group.id)
         taxonomy_update_proposal = TaxonomyUpdateProposal.objects.filter(
             original_taxonomy=self.taxonomy,
             taxon_group=new_taxon_group,

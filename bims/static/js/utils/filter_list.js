@@ -83,6 +83,10 @@ let filterParametersJSON = {
     'tags': {
         'label': 'Taxon tags',
         'type': 'json'
+    },
+    'mg': {
+        'label': 'Organism Group',
+        'type': 'metagroup'
     }
 };
 
@@ -204,7 +208,27 @@ async function renderFilterList($div, asTable = true) {
                     }
                 });
                 tableData[data['label']] = table_data;
-            } else if (data['type'] === 'unicode') {
+            } else if (data['type'] === 'metagroup') {
+            let metagroupIds = decodeURIComponent(urlParams[key]).split(',').filter(function (n) { return n; });
+            if (metagroupIds.length > 0) {
+                let metagroupNames = [];
+                $.ajax({
+                    url: '/api/metagroup-summary/',
+                    dataType: 'json',
+                    async: false,
+                    success: function (resp) {
+                        $.each(resp, function (idx, mg) {
+                            if (metagroupIds.indexOf(mg.id.toString()) !== -1) {
+                                metagroupNames.push(mg.name);
+                            }
+                        });
+                    }
+                });
+                if (metagroupNames.length > 0) {
+                    tableData[data['label']] = metagroupNames.join(', ');
+                }
+            }
+        } else if (data['type'] === 'unicode') {
                 tableData[data['label']] = decodeURIComponent(urlParams[key]);
             } else if (data['type'] === 'json') {
                 let json_data = '';

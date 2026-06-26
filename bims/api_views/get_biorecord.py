@@ -157,15 +157,37 @@ class BioCollectionSummary(APIView):
             )
         )
 
-        taxonomy_rank = {
-            taxonomy.rank: taxonomy.scientific_name
-        }
-        taxonomy_parent = taxonomy.parent
-        while taxonomy_parent:
-            taxonomy_rank[taxonomy_parent.rank] = (
-                taxonomy_parent.canonical_name
+        # Taxonomic status and accepted name
+        taxonomic_status = taxonomy.taxonomic_status or ''
+        response_data['taxonomic_status'] = taxonomic_status
+
+        accepted_taxonomy_name = ''
+        if taxonomy.accepted_taxonomy:
+            accepted_taxonomy_name = (
+                taxonomy.accepted_taxonomy.scientific_name or ''
             )
-            taxonomy_parent = taxonomy_parent.parent
+        response_data['accepted_taxonomy_name'] = accepted_taxonomy_name
+
+        # Build full taxonomy rank hierarchy.
+        # For synonym/doubtful taxa, prefer the accepted taxonomy's parent chain
+        # so the hierarchy reflects the accepted placement.
+        is_synonym_or_doubtful = (
+            taxonomic_status.upper() == 'DOUBTFUL' or
+            'SYNONYM' in taxonomic_status.upper()
+        )
+        hierarchy_source = taxonomy
+        if is_synonym_or_doubtful and taxonomy.accepted_taxonomy:
+            hierarchy_source = taxonomy.accepted_taxonomy
+
+        taxonomy_rank = {
+            hierarchy_source.rank: hierarchy_source.scientific_name
+        }
+        hierarchy_parent = hierarchy_source.parent
+        while hierarchy_parent:
+            taxonomy_rank[hierarchy_parent.rank] = (
+                hierarchy_parent.canonical_name
+            )
+            hierarchy_parent = hierarchy_parent.parent
         response_data['taxonomy_rank'] = taxonomy_rank
 
         common_names = taxonomy.vernacular_names.filter(

@@ -1,4 +1,6 @@
 from django import forms
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from preferences.admin import PreferencesAdmin
 
@@ -89,6 +91,16 @@ class SiteSettingAdmin(PreferencesAdmin):
 
     readonly_fields = ("gbif_excluded_project_ids_effective_display",)
 
+    def changelist_view(self, request, extra_context=None):
+        obj = SiteSetting.objects.first()
+        if obj:
+            url = reverse(
+                'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name),
+                args=[obj.pk],
+            )
+            return HttpResponseRedirect(url)
+        return super().changelist_view(request, extra_context=extra_context)
+
     fieldsets = (
         (_("General"), {
             "fields": (
@@ -153,6 +165,8 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "enable_sass",
                 "enable_water_temperature",
                 "enable_climate_data",
+                "enable_harvest_worms",
+                "enable_harvest_taxonworks",
                 "enable_ecosystem_type",
                 "enable_download_request_approval",
                 "max_download_records",

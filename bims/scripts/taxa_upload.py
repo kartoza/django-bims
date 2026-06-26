@@ -1365,16 +1365,9 @@ class TaxaProcessor(object):
                     tag_label = _norm_key_label(key)
                     if any(tag_label.lower() == bd.lower() for bd in BIOGRAPHIC_DISTRIBUTIONS):
                         doubtful = (val_norm == '?')
-                        try:
-                            taxon_tag, _ = TaxonTag.objects.get_or_create(
-                                name=tag_label, doubtful=doubtful
-                            )
-                        except TaxonTag.MultipleObjectsReturned:
-                            taxon_tag = TaxonTag.objects.filter(
-                                name=tag_label, doubtful=doubtful
-                            ).order_by('id').first() or TaxonTag.objects.filter(
-                                name=tag_label
-                            ).order_by('id').first()
+                        taxon_tag, _ = TaxonTag.objects.get_or_create(
+                            name=tag_label, doubtful=doubtful
+                        )
                         if new_taxon or not use_proposal:
                             taxonomy.biographic_distributions.add(taxon_tag)
                         if use_proposal and proposal:

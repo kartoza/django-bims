@@ -173,6 +173,10 @@ export const taxaTable = (() => {
                 $clearSearchBtn.show();
             }
         }
+        if (urlParams.get('taxon_search_type') === 'startswith') {
+            $('#taxon-startswith-checkbox').prop('checked', true);
+            if (url) url += '&taxon_search_type=startswith';
+        }
         if (urlParams.get('o')) {
             const order = urlParams.get('o');
             if (url) {
@@ -418,6 +422,7 @@ export const taxaTable = (() => {
             })
         }
         urlParams = insertParam('taxon', '', true, false, urlParams);
+        urlParams = insertParam('taxon_search_type', '', true, false, urlParams);
         document.location.search = urlParams;
     }
 
@@ -425,9 +430,11 @@ export const taxaTable = (() => {
         if (!url) {
             return true;
         }
-        let taxonNameInput = $('#taxon-name-input');
-        let taxonName = taxonNameInput.val();
-        insertParam('taxon', taxonName);
+        let taxonName = $('#taxon-name-input').val();
+        let startsWith = $('#taxon-startswith-checkbox').is(':checked');
+        let params = insertParam('taxon', taxonName, true, false);
+        params = insertParam('taxon_search_type', startsWith ? 'startswith' : '', true, false, params);
+        document.location.search = params;
     }
 
     function handleValidateTaxon(taxaId) {

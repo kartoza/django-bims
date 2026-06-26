@@ -57,6 +57,8 @@ SPECIES_KEY = 'species'
 DATASET_KEY = 'datasetKey'
 TAXON_KEY = 'taxonKey'
 MODIFIED_DATE_KEY = 'modified'
+ISSUE_KEY = 'issue'
+RECORDED_DATE_INVALID = 'RECORDED_DATE_INVALID'
 DEFAULT_LOCALITY = 'No locality, from GBIF'
 MISSING_KEY_ERROR = 'Missing taxon GBIF key'
 
@@ -80,7 +82,6 @@ ACCEPTED_BASIS_OF_RECORD = [
 ]
 
 DATE_ISSUES_TO_EXCLUDE = [
-    "RECORDED_DATE_INVALID",
     "RECORDED_DATE_MISMATCH",
     "RECORDED_DATE_UNLIKELY",
     "MODIFIED_DATE_INVALID"
@@ -298,14 +299,15 @@ def assign_survey_to_record(collection_record, owner_user):
 def process_gbif_row(
     row,
     owner,
-    source_reference,
     source_collection,
     harvest_session,
     taxon_group,
     log,
-    habitat = None,
-    origin = None,
-    excluded_project_ids = None
+    source_reference=None,
+    habitat=None,
+    origin=None,
+    excluded_project_ids=None,
+    doi='',
 ) -> Tuple[Optional["BiologicalCollectionRecord"], bool]:
     """Synchronise a GBIF occurrence with *BiologicalCollectionRecord*.
 
@@ -376,6 +378,10 @@ def process_gbif_row(
     taxon_key = row.get(TAXON_KEY, None)
     accepted_taxon_key = row.get(ACCEPTED_TAXON_KEY, None)
 
+    raw_issues = row.get(ISSUE_KEY, '') or ''
+    gbif_issues = [i.strip() for i in raw_issues.split(';') if i.strip()]
+    has_recorded_date_invalid = RECORDED_DATE_INVALID in gbif_issues
+
     taxonomy = None
 
     if taxon_key:
@@ -407,12 +413,18 @@ def process_gbif_row(
             collection_date = parse(s)
         except Exception as e:
             log(f"Date parsing failed for event_date={s}: {e}")
-            return None, False
+            if not has_recorded_date_invalid:
+                return None, False
 
     if not collection_date:
-        log(
-            f'Date not found for {upstream_id}, skipping.'
-        )
+        if has_recorded_date_invalid:
+            log(
+                f'Date not found for {upstream_id} (GBIF flagged as {RECORDED_DATE_INVALID}), skipping.'
+            )
+        else:
+            log(
+                f'Date not found for {upstream_id}, skipping.'
+            )
         return None, False
 
     # Attempt to create or fetch GBIF dataset
@@ -426,6 +438,8 @@ def process_gbif_row(
         'fetch_from_gbif': True,
         'date_fetched': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
+    if gbif_issues:
+        additional_data['gbif_issues'] = gbif_issues
 
     site_point = Point(longitude, latitude, srid=4326)
 
@@ -501,7 +515,10 @@ def process_gbif_row(
         # Update the existing collection record
         collection_record.site = location_site
         collection_record.taxonomy = taxonomy
-        collection_record.source_reference = source_reference
+        if source_reference is not None:
+            collection_record.source_reference = source_reference
+        if doi:
+            collection_record.doi = doi
         collection_record.original_species_name = species
         collection_record.collector = collector
         collection_record.source_collection = source_collection
@@ -514,6 +531,13 @@ def process_gbif_row(
         collection_record.validated = True
         collection_record.coordinate_uncertainty_in_meters = coord_uncertainty
         collection_record.coordinate_precision = coord_precision
+
+        if has_recorded_date_invalid:
+            collection_record.date_accuracy = 'artificial'
+            log(
+                f'--- Flagged record {upstream_id} with date_accuracy=artificial '
+                f'({RECORDED_DATE_INVALID})\n'
+            )
 
         if dataset_key:
             collection_record.dataset_key = dataset_key
@@ -604,8 +628,16 @@ def process_gbif_row(
             additional_data=additional_data,
             dataset_key=dataset_key or '',
             coordinate_uncertainty_in_meters=coord_uncertainty,
-            coordinate_precision=coord_precision
+            coordinate_precision=coord_precision,
+            doi=doi,
         )
+
+        if has_recorded_date_invalid:
+            new_record.date_accuracy = 'artificial'
+            log(
+                f'--- Flagged new record {upstream_id} with date_accuracy=artificial '
+                f'({RECORDED_DATE_INVALID})\n'
+            )
 
         if habitat:
             new_record.collection_habitat = habitat.lower()
@@ -637,28 +669,26 @@ def process_gbif_row(
         return None, True
 
 
-def create_source_reference(gbif_key):
+def get_gbif_doi(gbif_key):
+    """Return the DOI URL for a GBIF download key."""
     download_info = get_download_information(gbif_key)
-    source_date = None
     url = f'https://www.gbif.org/occurrence/download/{gbif_key}'
-
     if download_info:
-        doi = download_info.get('doi', '')
-        if 'https' not in doi:
-            url = f'https://doi.org/{doi}'
-        date_str = download_info.get('created', '')
-        if date_str:
-            source_date = parse(date_str)
+        raw_doi = download_info.get('doi', '')
+        if raw_doi:
+            url = raw_doi if 'https' in raw_doi else f'https://doi.org/{raw_doi}'
+    return url
 
+
+def create_source_reference():
+    """Return the single shared GBIF database source reference."""
     database_record, _ = DatabaseRecord.objects.get_or_create(
         name="Global Biodiversity Information Facility (GBIF)",
-        url=url
     )
     source_reference, _ = SourceReferenceDatabase.objects.get_or_create(
         source_name="Global Biodiversity Information Facility (GBIF)",
-        source_date=source_date,
         source=database_record,
-        publish_to_gbif=False
+        publish_to_gbif=False,
     )
     return source_reference
 
@@ -705,7 +735,8 @@ def process_gbif_response(
                 gbif_owner, _ = Profile.objects.get_or_create(
                     username="GBIF", defaults={"first_name": "GBIF.org"}
                 )
-                source_reference = create_source_reference(key)
+                source_reference = create_source_reference()
+                doi_url = get_gbif_doi(key)
                 source_collection = "gbif"
 
                 harvest_session = None
@@ -733,7 +764,8 @@ def process_gbif_response(
                         log=_log,
                         habitat=habitat,
                         origin=origin,
-                        excluded_project_ids=excluded_project_ids
+                        excluded_project_ids=excluded_project_ids,
+                        doi=doi_url,
                     )
 
                     if accepted:

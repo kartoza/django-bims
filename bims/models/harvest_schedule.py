@@ -13,6 +13,11 @@ class HarvestPeriod(models.TextChoices):
     CUSTOM = "CUSTOM", "Custom (cron)"
 
 
+class HarvestScheduleCategory(models.TextChoices):
+    GBIF = "gbif", "GBIF"
+    BIMS = "bims", "BIMS Instance"
+
+
 class HarvestSchedule(models.Model):
     module_group = models.ForeignKey(
         'bims.TaxonGroup',
@@ -29,6 +34,17 @@ class HarvestSchedule(models.Model):
                   'If not set, uses the module group default.'
     )
     enabled = models.BooleanField(default=False)
+
+    category = models.CharField(
+        max_length=10,
+        choices=HarvestScheduleCategory.choices,
+        default=HarvestScheduleCategory.GBIF,
+    )
+    bims_config = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='BIMS instance config: base_url, remote_group_id, remote_group_name',
+    )
 
     period = models.CharField(
         max_length=10,
@@ -82,8 +98,13 @@ def harvest_schedule_post_delete(sender, instance: HarvestSchedule, **kwargs):
 
 @receiver(post_save, sender=HarvestSchedule)
 def sync_periodic_task(sender, instance: HarvestSchedule, **kwargs):
-    harvest_type = "species" if instance.is_fetching_species else "occurrences"
-    name = f"GBIF harvest: taxon_group={instance.module_group_id} type={harvest_type} id={instance.id}"
+    if instance.category == HarvestScheduleCategory.BIMS:
+        task_func = "bims.tasks.harvest_schedule.run_scheduled_bims_harvest"
+        name = f"BIMS harvest: taxon_group={instance.module_group_id} id={instance.id}"
+    else:
+        task_func = "bims.tasks.harvest_schedule.run_scheduled_gbif_harvest"
+        harvest_type = "species" if instance.is_fetching_species else "occurrences"
+        name = f"GBIF harvest: taxon_group={instance.module_group_id} type={harvest_type} id={instance.id}"
 
     if instance.period == HarvestPeriod.CUSTOM and instance.cron_expression:
         m, h, dom, mon, dow = (instance.cron_expression.split() + ["*"]*5)[:5]
@@ -128,7 +149,7 @@ def sync_periodic_task(sender, instance: HarvestSchedule, **kwargs):
             name=name,
             queue='update',
             defaults={
-                "task": "bims.tasks.harvest_schedule.run_scheduled_gbif_harvest",
+                "task": task_func,
                 "crontab": crontab,
                 "args": json.dumps([schema, instance.id]),
                 "enabled": instance.enabled,

@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from preferences import preferences
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from django.db.models import Q
 from rest_framework import serializers
 from taggit.models import Tag
 
@@ -631,6 +632,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
     taxa_count = serializers.SerializerMethodField()
     experts = serializers.SerializerMethodField()
+    contributors = serializers.SerializerMethodField()
     gbif_parent_species = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
     validated_count = serializers.SerializerMethodField()
@@ -638,6 +640,12 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     taxa_upload_template = serializers.SerializerMethodField()
     occurrence_upload_template = serializers.SerializerMethodField()
     occurrence_upload_templates = serializers.SerializerMethodField()
+    meta_group_name = serializers.SerializerMethodField()
+
+    def get_meta_group_name(self, obj: TaxonGroup):
+        if obj.meta_group:
+            return obj.meta_group.name
+        return ''
 
     def get_occurrence_upload_templates(self, obj: TaxonGroup):
         items = obj.list_all_occurrence_templates()
@@ -683,8 +691,10 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             qs = TaxonGroupTaxonomy.objects.filter(taxongroup=taxon_group)
             if fada:
                 qs = qs.exclude(
-                    taxonomy__fada_id__isnull=True
-                ).exclude(taxonomy__fada_id='')
+                    (Q(taxonomy__fada_id__isnull=True) | Q(taxonomy__fada_id=''))
+                    & Q(taxonomy__aphia_id__isnull=True)
+                    & Q(taxonomy__taxonworks_id__isnull=True)
+                )
             unique_taxonomy_ids.update(qs.values_list('id', flat=True))
             for child in TaxonGroup.objects.filter(parent=taxon_group):
                 collect_taxonomy_ids(child)
@@ -709,15 +719,25 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             many=True
         ).data
 
+    def get_contributors(self, obj: TaxonGroup):
+        return TaxonGroupExpertSerializer(
+            obj.contributors.all(),
+            many=True
+        ).data
+
     class Meta:
         model = TaxonGroup
         fields = ['id',
                   'parent',
+                  'meta_group',
+                  'meta_group_name',
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',
-                  'experts', 'children',
+                  'experts', 'contributors', 'children',
                   'taxa_upload_template',
                   'occurrence_upload_template',
-                  'occurrence_upload_templates'
+                  'occurrence_upload_templates',
+                  'is_readonly',
+                  'upstream_url',
                   ]

@@ -4,6 +4,13 @@
     padding-bottom: 15px;
 }
 
+.dropdown-menu-scrollable {
+    max-height: 90vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
 .dropdown-menu-left {
     margin-left: 13px;
 }

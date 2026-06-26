@@ -272,6 +272,16 @@ class SiteSetting(Preferences):
         help_text='Enable or disable Climate data'
     )
 
+    enable_harvest_worms = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Harvest from WoRMS'
+    )
+
+    enable_harvest_taxonworks = models.BooleanField(
+        default=False,
+        help_text='Enable or disable Harvest from TaxonWorks'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(
@@ -309,6 +319,13 @@ class SiteSetting(Preferences):
         default=False,
         help_text='Display the general statistics block on the landing page.'
     )
+    show_metagroup_on_landing = models.BooleanField(
+        default=False,
+        help_text=(
+            'Display the metagroup (broader organism group) widget on the '
+            'landing page.'
+        ),
+    )
 
     enable_remove_all_occurrences_tool = models.BooleanField(
         default=False,
@@ -331,6 +348,14 @@ class SiteSetting(Preferences):
             'Allow non-logged-in users to view the taxa management page. '
             'Public users will only see validated taxa. '
             'Downloading still requires login.'
+        )
+    )
+
+    restrict_taxon_to_single_group = models.BooleanField(
+        default=True,
+        help_text=(
+            'When enabled, a taxon that already belongs to a taxon group '
+            'cannot be added to a different group.'
         )
     )
 

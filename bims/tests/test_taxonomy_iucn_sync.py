@@ -4,6 +4,7 @@ from unittest import mock
 from django_tenants.test.cases import FastTenantTestCase
 
 from bims.models import IUCNStatus, Taxonomy
+from bims.models.taxon_origin import TaxonOrigin
 from bims.tests.model_factories import IUCNStatusF, TaxonomyF
 
 
@@ -252,3 +253,68 @@ class TestTaxonomyIUCNSync(FastTenantTestCase):
         synonym.refresh_from_db()
         self.assertIsNone(synonym.iucn_status)
         self.assertIsNone(synonym.iucn_redlist_id)
+
+
+@mock.patch('bims.models.taxonomy.get_iucn_status')
+class TestNonNativeIUCNSkip(FastTenantTestCase):
+    """
+    Tests that IUCN status is NOT fetched for non-native species.
+    """
+
+    def _make_origin(self, origin_key, category):
+        origin, _ = TaxonOrigin.objects.get_or_create(
+            origin_key=origin_key,
+            defaults={'category': category},
+        )
+        return origin
+
+    def test_non_native_species_skips_iucn_fetch(self, mock_iucn):
+        """A species with origin 'alien' must not trigger an IUCN API call."""
+        alien_origin = self._make_origin('alien', 'Non-Native')
+        TaxonomyF.create(
+            rank='SPECIES',
+            iucn_status=None,
+            origin=alien_origin,
+        )
+        mock_iucn.assert_not_called()
+
+    def test_alien_invasive_species_skips_iucn_fetch(self, mock_iucn):
+        """A species with origin 'alien-invasive' must not trigger an IUCN API call."""
+        alien_invasive_origin = self._make_origin('alien-invasive', 'Non-native: invasive')
+        TaxonomyF.create(
+            rank='SPECIES',
+            iucn_status=None,
+            origin=alien_invasive_origin,
+        )
+        mock_iucn.assert_not_called()
+
+    def test_alien_non_invasive_species_skips_iucn_fetch(self, mock_iucn):
+        """A species with origin 'alien-non-invasive' must not trigger an IUCN API call."""
+        alien_non_invasive_origin = self._make_origin('alien-non-invasive', 'Non-native: non-invasive')
+        TaxonomyF.create(
+            rank='SPECIES',
+            iucn_status=None,
+            origin=alien_non_invasive_origin,
+        )
+        mock_iucn.assert_not_called()
+
+    def test_native_species_triggers_iucn_fetch(self, mock_iucn):
+        """A species with 'indigenous' origin must still trigger an IUCN API call."""
+        mock_iucn.return_value = (None, None, None)
+        indigenous_origin = self._make_origin('indigenous', 'Native')
+        TaxonomyF.create(
+            rank='SPECIES',
+            iucn_status=None,
+            origin=indigenous_origin,
+        )
+        mock_iucn.assert_called_once()
+
+    def test_no_origin_species_triggers_iucn_fetch(self, mock_iucn):
+        """A species with no origin set must still trigger an IUCN API call."""
+        mock_iucn.return_value = (None, None, None)
+        TaxonomyF.create(
+            rank='SPECIES',
+            iucn_status=None,
+            origin=None,
+        )
+        mock_iucn.assert_called_once()

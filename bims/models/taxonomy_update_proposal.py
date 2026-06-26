@@ -25,6 +25,7 @@ class CustomTaggedUpdateTaxonomy(TaggedItemBase):
     class Meta:
         verbose_name = "Custom Tagged Taxonomy"
         verbose_name_plural = "Custom Tagged Taxa"
+        unique_together = [('content_object', 'tag')]
 
 
 class TaxonomyUpdateProposal(AbstractTaxonomy):

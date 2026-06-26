@@ -211,7 +211,7 @@
                             <div class="dropdown-divider"></div>
 
                             {% if user.is_superuser %}
-                                <div class="text-sm">Upload</div>
+                                <h6 class="dropdown-header">Upload</h6>
                                 <a class="dropdown-item" href="/upload-taxa/">Taxonomic Data</a>
                                 {% if not fada_site %}
                                     <a class="dropdown-item" href="/upload-collections/">Occurrence Data</a>
@@ -221,40 +221,48 @@
                                     {% endif %}
                                 {% endif %}
                                 <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Taxon Management</h6>
+                                <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
+                                <a class="dropdown-item" href="/checklist/">Taxonomic Checklist Versioning</a>
+                                <a class="dropdown-item" href="/harvest-species/">Harvest Species from GBIF</a>
                                 {% if not fada_site %}
-                                    <a class="dropdown-item" href="/harvest-collections/">Harvest From GBIF</a>
+                                    <a class="dropdown-item" href="/harvest-collections/">Harvest Occurrences from GBIF</a>
                                 {% endif %}
-                                <a class="dropdown-item" href="/harvest-species/">Harvest Species</a>
-                                <a class="dropdown-item" href="/harvest-worms/">Harvest WoRMS</a>
-                                <a class="dropdown-item" href="/harvest-taxonworks/">Harvest TaxonWorks</a>
+                                {% if preferences.SiteSetting.enable_harvest_worms %}
+                                    <a class="dropdown-item" href="/harvest-worms/">Harvest from WoRMS</a>
+                                {% endif %}
+                                {% if preferences.SiteSetting.enable_harvest_taxonworks %}
+                                    <a class="dropdown-item" href="/harvest-taxonworks/">Harvest from TaxonWorks</a>
+                                {% endif %}
                                 <a class="dropdown-item" href="/harvest-bims/">Harvest BIMS Species</a>
                                 {% if not fada_site %}
-                                    <a class="dropdown-item" href="/location-site-form/add/">Add Site</a>
-                                    <a class="dropdown-item" href="/dashboard-management/">Edit Dashboard</a>
-                                {% endif %}
-                                <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
-                                <a class="dropdown-item" href="/checklist/">Checklist</a>
-                                <a class="dropdown-item" href="/download-request/">Download Requests</a>
-                                {% if not fada_site %}
-                                    <a class="dropdown-item" href="/site-visit/list/?&inReview=True">Validate Records</a>
-                                {% endif %}
-                                {% if not fada_site %}
+                                    <div class="dropdown-divider"></div>
+                                    <h6 class="dropdown-header">Spatial Layers</h6>
                                     <a class="dropdown-item" href="/upload-spatial-layer/">Upload and Style Spatial Layer</a>
                                     <a class="dropdown-item" href="/visualization-layer/">Publish Spatial Layer on Map</a>
                                     <a class="dropdown-item" href="/context-layers/">Add Spatial Filter</a>
                                 {% endif %}
+                                <div class="dropdown-divider"></div>
+                                {% if not fada_site %}
+                                    <a class="dropdown-item" href="/location-site-form/add/">Add Site</a>
+                                    <a class="dropdown-item" href="/site-visit/list/?&inReview=True">Validate Records</a>
+                                {% endif %}
+                                <a class="dropdown-item" href="/download-request/">Download Requests</a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="/admin/">Admin Page</a>
                                 {% if not fada_site %}
                                     <a class="dropdown-item" href="/summary-report">Summary Report</a>
                                 {% endif %}
                             {% elif user.is_staff %}
+                                <h6 class="dropdown-header">Taxon Management</h6>
                                 <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
-                                <a class="dropdown-item" href="/checklist/">Checklist</a>
+                                <a class="dropdown-item" href="/checklist/">Taxonomic Checklist Versioning</a>
+                                <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="/admin/">Admin Page</a>
                             {% else %}
+                                <h6 class="dropdown-header">Taxon Management</h6>
                                 <a class="dropdown-item" href="/taxa-management/">Taxon Management</a>
-                                <a class="dropdown-item" href="/checklist/">Checklist</a>
+                                <a class="dropdown-item" href="/checklist/">Taxonomic Checklist Versioning</a>
                             {% endif %}
 
                             <div class="dropdown-divider"></div>

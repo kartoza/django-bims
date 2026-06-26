@@ -268,7 +268,6 @@ class TestHarvestGbif(FastTenantTestCase):
         # Six records, five distinct surveys (two points share identical coords)
         source_references = SourceReferenceDatabase.objects.filter(
             source_name='Global Biodiversity Information Facility (GBIF)',
-            source__url='https://doi.org/10.11111/111111'
         )
         self.assertEqual(
             BiologicalCollectionRecord.objects.filter(

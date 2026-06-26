@@ -17,6 +17,7 @@ import uuid as _uuid
 
 from django.conf import settings
 from django.db import models
+from preferences import preferences
 
 
 class ChecklistSnapshot(models.Model):
@@ -82,7 +83,42 @@ class ChecklistSnapshot(models.Model):
                                 db_column='class')
     order    = models.CharField(max_length=200, blank=True, default='')
     family   = models.CharField(max_length=200, blank=True, default='')
+    subfamily    = models.CharField(max_length=200, blank=True, default='')
+    tribe        = models.CharField(max_length=200, blank=True, default='')
+    subtribe     = models.CharField(max_length=200, blank=True, default='')
     genus    = models.CharField(max_length=200, blank=True, default='')
+    subgenus     = models.CharField(max_length=200, blank=True, default='')
+    species      = models.CharField(max_length=200, blank=True, default='')
+    subspecies   = models.CharField(max_length=200, blank=True, default='')
+    variety      = models.CharField(max_length=200, blank=True, default='')
+    species_group = models.CharField(max_length=200, blank=True, default='')
+
+    canonical_name = models.CharField(max_length=512, blank=True, default='')
+    accepted_taxon = models.CharField(
+        max_length=512, blank=True, default='',
+        help_text='Canonical name of accepted taxon (for synonyms).',
+    )
+    common_name  = models.CharField(max_length=512, blank=True, default='')
+    fada_id      = models.CharField(max_length=255, blank=True, default='')
+    cites_listing = models.CharField(max_length=255, blank=True, default='')
+
+    origin       = models.CharField(max_length=100, blank=True, default='')
+    endemism     = models.CharField(max_length=100, blank=True, default='')
+    invasion     = models.CharField(max_length=100, blank=True, default='')
+
+    conservation_status_global   = models.CharField(max_length=100, blank=True, default='')
+    conservation_status_national = models.CharField(max_length=100, blank=True, default='')
+
+    gbif_key = models.CharField(max_length=100, blank=True, default='')
+
+    tags = models.JSONField(
+        default=dict,
+        help_text='Snapshot of {tag_name: "Y"/"?"} for tags and biographic distributions.',
+    )
+    additional_data = models.JSONField(
+        default=dict, blank=True,
+        help_text='Snapshot of extra taxon attributes {attr_name: value}.',
+    )
 
     vernacular_names = models.JSONField(
         default=list,
@@ -244,7 +280,13 @@ class ChecklistVersion(models.Model):
     _DIFF_FIELDS = (
         'scientific_name', 'rank', 'authorship', 'taxonomic_status',
         'parent_checklist_id', 'basionym_checklist_id',
-        'kingdom', 'phylum', 'klass', 'order', 'family', 'genus',
+        'kingdom', 'phylum', 'klass', 'order', 'family',
+        'subfamily', 'tribe', 'subtribe', 'genus', 'subgenus',
+        'species', 'subspecies', 'variety', 'species_group',
+        'canonical_name', 'accepted_taxon', 'common_name',
+        'origin', 'endemism', 'invasion',
+        'conservation_status_global', 'conservation_status_national',
+        'gbif_key', 'fada_id', 'cites_listing',
         'vernacular_names', 'distributions', 'reference_id',
     )
 
@@ -288,11 +330,15 @@ class ChecklistVersion(models.Model):
                 taxongrouptaxonomy__is_validated=True,
             )
             .distinct()
-            .select_related('parent', 'accepted_taxonomy', 'source_reference')
-            .prefetch_related('vernacular_names', 'biographic_distributions')
+            .select_related(
+                'parent', 'accepted_taxonomy', 'source_reference',
+                'origin', 'endemism', 'iucn_status', 'national_conservation_status',
+                'invasion', 'species_group',
+            )
+            .prefetch_related('vernacular_names', 'biographic_distributions', 'tags')
         ):
             row = self.build_snapshot_row(taxonomy, ChecklistSnapshot.CHANGE_UNCHANGED)
-            cid = str(taxonomy.pk)
+            cid = row.checklist_id
             current_ids.add(cid)
 
             if cid not in prev_snapshot:
@@ -328,7 +374,26 @@ class ChecklistVersion(models.Model):
                 klass=prev.get('klass', ''),
                 order=prev.get('order', ''),
                 family=prev.get('family', ''),
+                subfamily=prev.get('subfamily', ''),
+                tribe=prev.get('tribe', ''),
+                subtribe=prev.get('subtribe', ''),
                 genus=prev.get('genus', ''),
+                subgenus=prev.get('subgenus', ''),
+                species=prev.get('species', ''),
+                subspecies=prev.get('subspecies', ''),
+                variety=prev.get('variety', ''),
+                species_group=prev.get('species_group', ''),
+                canonical_name=prev.get('canonical_name', ''),
+                accepted_taxon=prev.get('accepted_taxon', ''),
+                common_name=prev.get('common_name', ''),
+                origin=prev.get('origin', ''),
+                endemism=prev.get('endemism', ''),
+                invasion=prev.get('invasion', ''),
+                conservation_status_global=prev.get('conservation_status_global', ''),
+                conservation_status_national=prev.get('conservation_status_national', ''),
+                gbif_key=prev.get('gbif_key', ''),
+                fada_id=prev.get('fada_id', ''),
+                cites_listing=prev.get('cites_listing', ''),
                 vernacular_names=prev.get('vernacular_names', []),
                 distributions=prev.get('distributions', []),
                 reference_id=prev.get('reference_id', ''),
@@ -351,13 +416,53 @@ class ChecklistVersion(models.Model):
             'is_publishing',
         ])
 
+    @staticmethod
+    def _fada_taxon_id(obj) -> str:
+        """Return fada:{fada_id} when available, else {site_prefix}:{pk}."""
+        if obj and getattr(obj, 'fada_id', None):
+            return f'fada:{obj.fada_id}'
+        if not obj:
+            return ''
+        prefix = (
+            getattr(preferences.SiteSetting, 'default_data_source', '') or ''
+        ).lower()
+        return f'{prefix}:{obj.pk}' if prefix else str(obj.pk)
+
+    @staticmethod
+    def _iucn_display(status_obj):
+        from bims.models.iucn_status import IUCNStatus
+        if not status_obj:
+            return 'Not evaluated'
+        for code, label in IUCNStatus.CATEGORY_CHOICES:
+            if code == status_obj.category:
+                return label
+        return 'Not evaluated'
+
+    @staticmethod
+    def _species_epithet(taxonomy):
+        name = taxonomy.species_name or ''
+        genus = taxonomy.genus_name or ''
+        if genus and name.startswith(genus):
+            name = name[len(genus):].strip()
+        return name
+
+    @staticmethod
+    def _subspecies_epithet(taxonomy):
+        name = taxonomy.sub_species_name or ''
+        genus = taxonomy.genus_name or ''
+        if genus:
+            name = name.replace(genus, '', 1).strip()
+        species = ChecklistVersion._species_epithet(taxonomy)
+        if species:
+            name = name.replace(species, '', 1).strip()
+        return name
+
     def build_snapshot_row(self, taxonomy, change_type):
         """
         Construct a ChecklistSnapshot instance (not yet saved) from a
         Taxonomy object.  All lookups happen here so export is a plain
         table dump later.
         """
-
         vernacular_names = [
             {'name': v.name, 'language': v.language}
             for v in taxonomy.vernacular_names.all()
@@ -367,24 +472,75 @@ class ChecklistVersion(models.Model):
             for tag in taxonomy.biographic_distributions.all()
         ]
 
+        common_name = next(
+            (v['name'] for v in vernacular_names
+             if (v.get('language') or '').lower().startswith('en')),
+            '',
+        )
+
+        tag_dict = {}
+        for tag in list(taxonomy.tags.all()) + list(taxonomy.biographic_distributions.all()):
+            name = tag.name.strip()
+            value = '?' if '(?)' in name else 'Y'
+            tag_dict[name.replace('(?)', '').strip()] = value
+
+        variety = ''
+        if taxonomy.rank != 'SUBSPECIES':
+            variety = taxonomy.variety_name or ''
+
+        subspecies = ''
+        if taxonomy.rank != 'VARIETY':
+            subspecies = self._subspecies_epithet(taxonomy)
+
         return ChecklistSnapshot(
             checklist_version=self,
-            checklist_id=str(taxonomy.pk),
-            parent_checklist_id=str(taxonomy.parent_id) if taxonomy.parent_id else '',
+            checklist_id=self._fada_taxon_id(taxonomy),
+            parent_checklist_id=(
+                self._fada_taxon_id(taxonomy.parent) if taxonomy.parent_id else ''
+            ),
             basionym_checklist_id=(
-                str(taxonomy.accepted_taxonomy_id)
+                self._fada_taxon_id(taxonomy.accepted_taxonomy)
                 if taxonomy.accepted_taxonomy_id else ''
             ),
             rank=taxonomy.rank or '',
             scientific_name=taxonomy.scientific_name or '',
+            canonical_name=taxonomy.canonical_name or '',
             authorship=taxonomy.author or '',
             taxonomic_status=taxonomy.taxonomic_status or '',
+            accepted_taxon=(
+                taxonomy.accepted_taxonomy.canonical_name
+                if taxonomy.accepted_taxonomy_id else ''
+            ),
+            common_name=common_name,
             kingdom=taxonomy.kingdom_name,
             phylum=taxonomy.phylum_name,
             klass=taxonomy.class_name,
             order=taxonomy.order_name,
             family=taxonomy.family_name,
+            subfamily=taxonomy.sub_family_name or '',
+            tribe=taxonomy.tribe_name or '',
+            subtribe=taxonomy.sub_tribe_name or '',
             genus=taxonomy.genus_name,
+            subgenus=taxonomy.sub_genus_name or '',
+            species=self._species_epithet(taxonomy),
+            subspecies=subspecies,
+            variety=variety,
+            species_group=(
+                taxonomy.species_group.name if taxonomy.species_group else ''
+            ),
+            origin=taxonomy.origin.category if taxonomy.origin else 'Unknown',
+            endemism=taxonomy.endemism.name if taxonomy.endemism else 'Unknown',
+            invasion=(taxonomy.invasion.category or '') if taxonomy.invasion else '',
+            conservation_status_global=self._iucn_display(taxonomy.iucn_status),
+            conservation_status_national=(
+                self._iucn_display(taxonomy.national_conservation_status)
+                if taxonomy.national_conservation_status else ''
+            ),
+            gbif_key=str(taxonomy.gbif_key) if taxonomy.gbif_key else '',
+            fada_id=str(taxonomy.fada_id) if taxonomy.fada_id else '',
+            cites_listing=taxonomy.cites_listing or '',
+            additional_data=taxonomy.additional_data or {},
+            tags=tag_dict,
             vernacular_names=vernacular_names,
             distributions=distributions,
             reference_id=(

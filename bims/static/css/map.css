@@ -1982,7 +1982,7 @@ div:hover::-webkit-scrollbar {
     cursor: pointer;
 }
 
-.module-filters {
+.module-filters, .metagroup-filters {
     padding: 5px; /* msie */
 }
 

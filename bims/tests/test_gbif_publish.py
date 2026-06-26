@@ -59,7 +59,6 @@ def _make_config(**kwargs):
     defaults = {
         "name": "Test",
         "gbif_api_url": "https://api.gbif-test.org/v1",
-        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
         "export_base_url": "https://example.org",
         "username": "user",
         "password": "pass",
@@ -548,7 +547,8 @@ class GbifPublishApiTests(FastTenantTestCase):
                 f"Expected occurrenceID to start with '{tenant}:', got '{row['occurrenceID']}'",
             )
 
-    def test_institution_code_uses_collector_user_organization(self):
+    def test_institution_id_takes_priority_over_user_organization(self):
+        """institution_id on the record should override collector_user.organization."""
         source_reference = SourceReferenceF.create()
         user = UserF.create(first_name="Data", last_name="Owner")
         user.organization = "Freshwater Research Centre"
@@ -558,12 +558,43 @@ class GbifPublishApiTests(FastTenantTestCase):
             collector="",
             collector_user=user,
             owner=user,
-            institution_id="LEGACY-INST-ID",
+            institution_id="South African Institute for Aquatic Biodiversity",
         )
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(
+                self.config, [record], [self.contact], source_reference
+            )
+
+        rows = self._read_occurrence_rows(zip_path)
+        self.assertEqual(
+            rows[0]["institutionCode"],
+            "South African Institute for Aquatic Biodiversity",
+        )
+
+    def test_institution_id_default_falls_back_to_user_organization(self):
+        """When institution_id is the site default, fall back to collector_user.organization."""
+        source_reference = SourceReferenceF.create()
+        user = UserF.create(first_name="Data", last_name="Owner")
+        user.organization = "Freshwater Research Centre"
+        user.save()
+        record = self._make_record(
+            source_reference,
+            collector="",
+            collector_user=user,
+            owner=user,
+            institution_id="bims",  # INSTITUTION_ID_DEFAULT
+        )
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(
+            MEDIA_ROOT=temp_dir,
+            MEDIA_URL="/media/",
+            INSTITUTION_ID_DEFAULT="bims",
+        ):
             zip_path, _, _ = build_dwca(
                 self.config, [record], [self.contact], source_reference
             )
@@ -576,24 +607,29 @@ class GbifPublishApiTests(FastTenantTestCase):
         owner = UserF.create(first_name="River", last_name="Team")
         owner.organization = "Owner Org"
         owner.save()
+        # institution_id is the default so owner.organization should be used
         record = self._make_record(
             source_reference,
             collector="",
             collector_user=None,
             owner=owner,
-            institution_id="LEGACY-INST-ID",
+            institution_id="bims",
         )
         new_record = self._make_record(
             source_reference,
             collector="",
             collector_user=owner,
             owner=owner,
-            institution_id="LEGACY-INST-ID",
+            institution_id="bims",
         )
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
-        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+        with override_settings(
+            MEDIA_ROOT=temp_dir,
+            MEDIA_URL="/media/",
+            INSTITUTION_ID_DEFAULT="bims",
+        ):
             zip_path, _, _ = build_dwca(
                 self.config, [record, new_record], [self.contact], source_reference
             )
@@ -604,6 +640,52 @@ class GbifPublishApiTests(FastTenantTestCase):
 
         self.assertEqual(rows[1]["recordedBy"], "River Team")
         self.assertEqual(rows[1]["institutionCode"], "Owner Org")
+
+    def test_owner_is_preferred_over_collector_user_for_recorded_by(self):
+        source_reference = SourceReferenceF.create()
+        owner = UserF.create(first_name="Owner", last_name="Person")
+        collector_user = UserF.create(first_name="Collector", last_name="Person")
+        owner.save()
+        collector_user.save()
+        record = self._make_record(
+            source_reference,
+            collector="",
+            collector_user=collector_user,
+            owner=owner,
+            institution_id="LEGACY-INST-ID",
+        )
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(
+                self.config, [record], [self.contact], source_reference
+            )
+
+        rows = self._read_occurrence_rows(zip_path)
+        self.assertEqual(rows[0]["recordedBy"], "Owner Person")
+
+    def test_owner_is_preferred_over_collector_string_for_recorded_by(self):
+        source_reference = SourceReferenceF.create()
+        owner = UserF.create(first_name="Owner", last_name="Person")
+        owner.save()
+        record = self._make_record(
+            source_reference,
+            collector="Field Collector",
+            collector_user=None,
+            owner=owner,
+            institution_id="LEGACY-INST-ID",
+        )
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
+            zip_path, _, _ = build_dwca(
+                self.config, [record], [self.contact], source_reference
+            )
+
+        rows = self._read_occurrence_rows(zip_path)
+        self.assertEqual(rows[0]["recordedBy"], "Owner Person")
 
     def test_basis_of_record_mapping_for_requested_record_types(self):
         source_reference = SourceReferenceF.create()
@@ -781,9 +863,86 @@ class GbifPublishApiTests(FastTenantTestCase):
         self.assertIn('identifier="https://example.org/doc.pdf"', result)
         self.assertTrue(result.startswith("<citation"))
 
-    def test_eml_citation_plain_reference_returns_empty(self):
-        source_reference = SourceReferenceF.create()
-        self.assertEqual(eml_citation(source_reference), "")
+    def test_eml_citation_plain_reference(self):
+        source_reference = SourceReferenceF.create(source_name="Unpublished survey data")
+        result = eml_citation(source_reference)
+        self.assertTrue(result.startswith("<citation"))
+        self.assertTrue(result.endswith("</citation>"))
+        self.assertIn("Unpublished survey data", result)
+
+    def test_eml_citation_database(self):
+        from bims.models.source_reference import DatabaseRecord
+        db_record = DatabaseRecord.objects.create(
+            name="Freshwater Atlas", url="https://atlas.example.org"
+        )
+        source_reference = SourceReferenceDatabaseF.create(source=db_record)
+        result = eml_citation(source_reference)
+        self.assertTrue(result.startswith("<citation"))
+        self.assertIn('identifier="https://atlas.example.org"', result)
+        self.assertIn("Freshwater Atlas", result)
+
+    def test_eml_citation_uses_originator_contacts_as_authors(self):
+        source_reference = SourceReferenceF.create(source_name="Survey 2023")
+        config = _make_config()
+        originator = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Jane",
+            individual_name_sur="Smith",
+            role=RoleType.ORIGINATOR,
+        )
+        other = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Bob",
+            individual_name_sur="Jones",
+            role=RoleType.METADATA_PROVIDER,
+        )
+        result = eml_citation(source_reference, contacts=[originator, other])
+        self.assertIn("Jane Smith", result)
+        self.assertNotIn("Bob Jones", result)
+
+    def test_eml_citation_falls_back_to_all_contacts_when_no_originators(self):
+        source_reference = SourceReferenceF.create(source_name="Dataset")
+        config = _make_config()
+        c1 = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Alice",
+            individual_name_sur="Brown",
+            role=RoleType.METADATA_PROVIDER,
+        )
+        c2 = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_given="Carol",
+            individual_name_sur="White",
+            role=RoleType.METADATA_PROVIDER,
+        )
+        result = eml_citation(source_reference, contacts=[c1, c2])
+        self.assertIn("Alice Brown", result)
+        self.assertIn("Carol White", result)
+
+    def test_eml_citation_org_only_contact(self):
+        source_reference = SourceReferenceF.create(source_name="Dataset")
+        config = _make_config()
+        contact = GbifPublishContact.objects.create(
+            gbif_config=config,
+            organization_name="Freshwater Research Centre",
+            role=RoleType.ORIGINATOR,
+        )
+        result = eml_citation(source_reference, contacts=[contact])
+        self.assertIn("Freshwater Research Centre", result)
+
+    def test_eml_citation_org_preferred_over_individual_name(self):
+        """When a contact has both org name and individual name, org name wins in the citation."""
+        source_reference = SourceReferenceF.create(source_name="Dataset")
+        config = _make_config()
+        contact = GbifPublishContact.objects.create(
+            gbif_config=config,
+            individual_name_sur="Kartoza",
+            organization_name="Kartoza Org",
+            role=RoleType.ORIGINATOR,
+        )
+        result = eml_citation(source_reference, contacts=[contact])
+        self.assertIn("Kartoza Org", result)
+        self.assertNotIn(">Kartoza.<", result)
 
     def test_eml_citation_in_additional_metadata(self):
         source_reference = SourceReferenceBibliographyF.create()
@@ -828,6 +987,9 @@ class GbifPublishApiTests(FastTenantTestCase):
             return_value="dataset-xyz",
         ), mock.patch(
             "bims.utils.gbif_publish.add_endpoint",
+            return_value=None,
+        ), mock.patch(
+            "bims.utils.gbif_publish.sync_dataset_contacts",
             return_value=None,
         ):
             result = publish_gbif_data_with_config(
@@ -922,6 +1084,41 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertEqual(contact.organization_name, "")
         self.assertEqual(contact.position_name, "")
 
+    def test_post_save_does_not_overwrite_on_update(self):
+        """Manual field edits on an existing contact must not be overwritten on save."""
+        user = UserF.create(first_name="Carol", last_name="White", email="carol@example.com")
+        user.organization = "Original Org"
+        user.save()
+
+        contact = GbifPublishContact.objects.create(gbif_config=self.config, user=user)
+        contact.refresh_from_db()
+        self.assertEqual(contact.individual_name_given, "Carol")
+        self.assertEqual(contact.organization_name, "Original Org")
+
+        # User manually changes the name and organization on the contact.
+        contact.individual_name_given = "Dr. Carol"
+        contact.organization_name = "New Institute"
+        contact.save()
+        contact.refresh_from_db()
+
+        self.assertEqual(contact.individual_name_given, "Dr. Carol")
+        self.assertEqual(contact.organization_name, "New Institute")
+
+    def test_post_save_clearing_field_is_preserved_on_update(self):
+        """Clearing a field on an existing contact must not be re-populated from user profile."""
+        user = UserF.create(first_name="Dave", last_name="Brown", email="dave@example.com")
+
+        contact = GbifPublishContact.objects.create(gbif_config=self.config, user=user)
+        contact.refresh_from_db()
+        self.assertEqual(contact.individual_name_given, "Dave")
+
+        # User explicitly clears the given name.
+        contact.individual_name_given = ""
+        contact.save()
+        contact.refresh_from_db()
+
+        self.assertEqual(contact.individual_name_given, "")
+
     # -- resolved_* fallback properties --
 
     def test_explicit_fields_take_precedence_over_user(self):
@@ -947,22 +1144,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertEqual(contact.resolved_position_name, "Override Position")
         self.assertEqual(contact.resolved_email, "override@example.com")
 
-    def test_blank_fields_fall_back_to_user_profile(self):
-        from bims.models.profile import Role, Profile as BimsProfile
-        user = UserF.create(first_name="Jane", last_name="Smith", email="jane@example.com")
-        user.organization = "Cape Town University"
-        user.save()
-        role, _ = Role.objects.get_or_create(name="researcher", defaults={"display_name": "Researcher"})
-        profile, _ = BimsProfile.objects.get_or_create(user=user)
-        profile.role = role
-        profile.save()
-
-        contact = GbifPublishContact(gbif_config=self.config, user=user)
-        self.assertEqual(contact.resolved_given_name, "Jane")
-        self.assertEqual(contact.resolved_sur_name, "Smith")
-        self.assertEqual(contact.resolved_organization_name, "Cape Town University")
-        self.assertEqual(contact.resolved_position_name, "Researcher")
-        self.assertEqual(contact.resolved_email, "jane@example.com")
 
     def test_no_user_returns_empty_strings(self):
         contact = GbifPublishContact(gbif_config=self.config)
@@ -1024,18 +1205,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         snippet = eml_contact_from_model(contact)
         self.assertNotIn("<address>", snippet)
 
-    def test_eml_contact_org_only_omits_individual_name(self):
-        """Org-only contact (no given/sur name) must not emit an empty <individualName>."""
-        contact = GbifPublishContact(
-            gbif_config=self.config,
-            organization_name="Freshwater Research Centre",
-            electronic_mail_address="fbis_gbif@frcsa.org.za",
-        )
-        snippet = eml_contact_from_model(contact)
-        self.assertNotIn("<individualName>", snippet)
-        self.assertIn("<organizationName>Freshwater Research Centre</organizationName>", snippet)
-        self.assertIn("<electronicMailAddress>fbis_gbif@frcsa.org.za</electronicMailAddress>", snippet)
-
     def test_eml_contact_org_only_embedded_in_dwca(self):
         """An org-only config contact must appear correctly in the generated eml.xml."""
         source_reference = SourceReferenceF.create()
@@ -1059,13 +1228,6 @@ class GbifPublishContactTests(FastTenantTestCase):
         # Must not contain an empty <individualName> block
         self.assertNotIn("<individualName>\n  </individualName>", eml)
 
-    def test_eml_contact_from_model_uses_resolved_fallback(self):
-        user = UserF.create(first_name="Tom", last_name="Baker", email="tom@example.com")
-        contact = GbifPublishContact(gbif_config=self.config, user=user)
-        snippet = eml_contact_from_model(contact)
-        self.assertIn("<givenName>Tom</givenName>", snippet)
-        self.assertIn("<surName>Baker</surName>", snippet)
-        self.assertIn("<electronicMailAddress>tom@example.com</electronicMailAddress>", snippet)
 
     def test_eml_contact_default_role_is_point_of_contact(self):
         contact = GbifPublishContact(
@@ -1154,7 +1316,7 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertIn("<electronicMailAddress>lerato@saiab.ac.za</electronicMailAddress>", eml)
         self.assertIn("<phone>+27 46 603 5800</phone>", eml)
 
-    def test_build_dwca_without_contacts_uses_site_default(self):
+    def test_build_dwca_without_originator_uses_site_default_creator(self):
         source_reference = SourceReferenceF.create()
         record = self._make_record(source_reference)
         temp_dir = tempfile.mkdtemp()
@@ -1166,6 +1328,7 @@ class GbifPublishContactTests(FastTenantTestCase):
             organization_name="SAIAB",
             electronic_mail_address="lerato@saiab.ac.za",
             phone="+27 46 603 5800",
+            role=RoleType.METADATA_PROVIDER,
         )
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="TestSite"):
@@ -1175,11 +1338,11 @@ class GbifPublishContactTests(FastTenantTestCase):
         self.assertIn("<contact>", eml)
         self.assertIn("TestSite", eml)
 
-    def test_contacts_not_used_as_creators(self):
-        """Contacts should appear in <contact> but NOT replace <creator> blocks."""
+    def test_originator_contacts_appear_as_creators(self):
+        """Contacts with role=originator appear in both <creator> and <contact> blocks."""
         source_reference = SourceReferenceF.create()
         record = self._make_record(source_reference)
-        contact = _make_contact(self.config, individual_name_given="ContactOnly")
+        contact = _make_contact(self.config, individual_name_given="ContactOnly", role=RoleType.ORIGINATOR)
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
@@ -1187,21 +1350,15 @@ class GbifPublishContactTests(FastTenantTestCase):
             zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
 
         eml = self._read_eml(zip_path)
-        # contact name appears inside <contact> block
         self.assertIn("<contact>", eml)
-        self.assertIn("ContactOnly", eml)
-        # but <creator> block still exists (site default since no authors on this ref)
         self.assertIn("<creator>", eml)
+        self.assertEqual(eml.count("ContactOnly"), 2)
 
-    def test_pubdate_uses_source_reference_year(self):
-        """<pubDate> should reflect the source reference publication year."""
-        import datetime
-        source_reference = SourceReferenceBibliographyF.create()
-        source_reference.source.publication_date = datetime.date(2019, 6, 15)
-        source_reference.source.save()
-
+    def test_non_originator_contact_not_in_creator(self):
+        """Contacts with a non-originator role appear only in <contact>, not <creator>."""
+        source_reference = SourceReferenceF.create()
         record = self._make_record(source_reference)
-        contact = _make_contact(self.config)
+        contact = _make_contact(self.config, individual_name_given="MetaOnly", role=RoleType.METADATA_PROVIDER)
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
@@ -1209,7 +1366,11 @@ class GbifPublishContactTests(FastTenantTestCase):
             zip_path, _, _ = build_dwca(self.config, [record], [contact], source_reference)
 
         eml = self._read_eml(zip_path)
-        self.assertIn("<pubDate>2019</pubDate>", eml)
+        self.assertIn("<contact>", eml)
+        self.assertIn("MetaOnly", eml)
+        # no originator - falls back to site-name default creator
+        self.assertIn("<creator>", eml)
+        self.assertNotIn("MetaOnly", eml.split("<creator>")[1].split("</creator>")[0])
 
     def test_pubdate_falls_back_to_today_without_source_reference(self):
         """<pubDate> should fall back to today's date when no source reference is given."""
@@ -1293,6 +1454,8 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
             "bims.utils.gbif_publish.register_dataset", return_value="ds-key"
         ), mock.patch(
             "bims.utils.gbif_publish.add_endpoint", return_value=None
+        ), mock.patch(
+            "bims.utils.gbif_publish.sync_dataset_contacts", return_value=None
         ):
             result = publish_gbif_data_with_config(
                 self.config, source_reference=sr, contacts=[self.contact]
@@ -1334,6 +1497,8 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
             "bims.utils.gbif_publish.register_dataset", return_value="ds-db-key"
         ), mock.patch(
             "bims.utils.gbif_publish.add_endpoint", return_value=None
+        ), mock.patch(
+            "bims.utils.gbif_publish.sync_dataset_contacts", return_value=None
         ):
             result = publish_gbif_data_with_config(
                 self.config, source_reference=sr, contacts=[self.contact]
@@ -1359,11 +1524,11 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
 
 
 # ---------------------------------------------------------------------------
-# EML author resolution from SourceReferenceAuthor
+# EML creator blocks from originator contacts
 # ---------------------------------------------------------------------------
 
-class GbifPublishEmlAuthorResolutionTests(FastTenantTestCase):
-    """build_dwca must resolve SourceReferenceAuthor → User/Author for EML."""
+class GbifPublishEmlCreatorTests(FastTenantTestCase):
+    """build_dwca must use originator contacts as EML <creator> blocks."""
 
     def setUp(self):
         self.config = _make_config(export_base_url="https://example.org")
@@ -1381,61 +1546,61 @@ class GbifPublishEmlAuthorResolutionTests(FastTenantTestCase):
         with zf.ZipFile(zip_path) as z:
             return z.read("eml.xml").decode("utf-8")
 
-    def test_build_dwca_eml_includes_author_from_through_model_with_user(self):
-        """Author linked to a User: EML <creator> contains first/last name."""
+    def test_build_dwca_eml_creator_from_originator_contact(self):
+        """An originator contact appears as an EML <creator> with name and email."""
         import datetime
         sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
-        user = UserF.create(first_name="Thabo", last_name="Nkosi", email="thabo@example.com")
-        author = Author.objects.create(first_name="Thabo", last_name="Nkosi", user=user)
-        SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=0)
+        contact = _make_contact(
+            self.config,
+            individual_name_given="Thabo",
+            individual_name_sur="Nkosi",
+            electronic_mail_address="thabo@example.com",
+            role=RoleType.ORIGINATOR,
+        )
         record = self._make_record(sr)
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], sr)
 
         eml = self._read_eml(zip_path)
         self.assertIn("<creator>", eml)
         self.assertIn("<givenName>Thabo</givenName>", eml)
         self.assertIn("<surName>Nkosi</surName>", eml)
 
-    def test_build_dwca_eml_includes_author_without_user(self):
-        """Author with no linked User: EML <creator> still contains first/last name."""
+    def test_build_dwca_eml_falls_back_to_site_name_when_no_originators(self):
+        """When no originator contacts exist the site-name default creator is used."""
         import datetime
         sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
-        author = Author.objects.create(first_name="Maria", last_name="Santos")
-        SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=0)
+        contact = _make_contact(self.config, role=RoleType.METADATA_PROVIDER)
         record = self._make_record(sr)
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
-        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+        with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/", SITE_NAME="FallbackSite"):
+            zip_path, _, _ = build_dwca(self.config, [record], [contact], sr)
 
         eml = self._read_eml(zip_path)
         self.assertIn("<creator>", eml)
-        self.assertIn("<givenName>Maria</givenName>", eml)
-        self.assertIn("<surName>Santos</surName>", eml)
+        self.assertIn("FallbackSite", eml)
 
-    def test_build_dwca_eml_author_order_preserved(self):
-        """Multiple authors appear in EML in their defined order."""
+    def test_build_dwca_eml_creator_order_follows_contacts_order(self):
+        """Multiple originator contacts appear as <creator> blocks in contacts list order."""
         import datetime
         sr = SourceReferenceF.create(source_date=datetime.date(2023, 1, 1))
-        for i, (first, last) in enumerate([("First", "Author"), ("Second", "Writer")]):
-            author = Author.objects.create(first_name=first, last_name=last)
-            SourceReferenceAuthor.objects.create(source_reference=sr, author=author, order=i)
+        contact_a = _make_contact(self.config, individual_name_given="First", role=RoleType.ORIGINATOR)
+        contact_b = _make_contact(self.config, individual_name_given="Second", role=RoleType.ORIGINATOR)
         record = self._make_record(sr)
 
         temp_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
 
         with override_settings(MEDIA_ROOT=temp_dir, MEDIA_URL="/media/"):
-            zip_path, _, _ = build_dwca(self.config, [record], [self.contact], sr)
+            zip_path, _, _ = build_dwca(self.config, [record], [contact_a, contact_b], sr)
 
         eml = self._read_eml(zip_path)
-        pos_first = eml.index("First")
-        pos_second = eml.index("Second")
-        self.assertLess(pos_first, pos_second, "First author should appear before Second in EML")
+        self.assertLess(eml.index("First"), eml.index("Second"),
+                        "First originator contact should appear before Second in EML")

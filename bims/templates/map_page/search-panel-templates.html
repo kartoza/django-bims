@@ -78,6 +78,26 @@
         </div>
         {% endif %}
 
+        <div id="metagroup-module-container" style="display: none">
+            <div class="row sub-filter">
+                <div class="col-lg-12 subtitle metagroup-module-title">
+                    META ORGANISM GROUP <i
+                        class="fa fa-angle-up pull-right filter-icon-arrow"></i><i
+                        class="fa fa-angle-down pull-right filter-icon-arrow"></i>
+                </div>
+            </div>
+            <div style="display: none" data-toggle="tooltip" data-placement="top" class="metagroup-filters-wrapper">
+                <div class="metagroup-filters row" ></div>
+                <div class="button-filter-wrapper button-filter-metagroup">
+                    <button class="apply-filter"><i class="fa fa-check"
+                                                    aria-hidden="true"></i> Apply
+                    </button>
+                    <button class="clear-filter clear-filter-metagroup"><i class="fa fa-times"
+                                                                           aria-hidden="true"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
         {% if bims_preferences.enable_module_filter %}
             <div id="biodiversity-module-container">
                 <div class="row sub-filter">

@@ -43,8 +43,10 @@ from bims.models import (
     SourceReferenceDatabase,
     AbundanceType,
     SourceReferenceDocument,
-    SamplingEffortMeasure
+    SamplingEffortMeasure,
+    ORIGIN_CATEGORIES,
 )
+from bims.models.taxon_origin import TaxonOrigin
 from td_biblio.models.bibliography import Entry, Author, AuthorEntryRank
 from td_biblio.utils.loaders import DOILoader, DOILoaderError
 from bims.utils.fetch_gbif import (
@@ -563,9 +565,26 @@ class Command(BaseCommand):
                 return None
         if taxonomy and self.row_value(record, SPECIES_NAME) not in str(taxonomy.canonical_name):
             taxonomy.legacy_canonical_name = self.row_value(record, SPECIES_NAME)
-        # update the taxonomy endemism if different or empty
-        if not taxonomy.endemism or taxonomy.endemism != endemism:
+        # resolve origin from CSV — only if the column is present and non-empty
+        origin = None
+        if ORIGIN in record and self.row_value(record, ORIGIN):
+            origin_key = ORIGIN_CATEGORIES.get(
+                self.row_value(record, ORIGIN).lower().strip(), ''
+            )
+            if origin_key:
+                origin = TaxonOrigin.objects.filter(origin_key=origin_key).first()
+
+        needs_save = False
+        # update the taxonomy endemism only when the CSV provides a value
+        # to avoid overwriting existing endemism with None when the column is absent or empty
+        if endemism and taxonomy.endemism != endemism:
             taxonomy.endemism = endemism
+            needs_save = True
+        # update origin only when the CSV provides a value — never clear an existing origin
+        if origin and taxonomy.origin != origin:
+            taxonomy.origin = origin
+            needs_save = True
+        if needs_save:
             taxonomy.save()
         if self.group:
             self.group.taxonomies.add(taxonomy)
@@ -786,7 +805,7 @@ class Command(BaseCommand):
                     collectors = create_users_from_string(self.row_value(record, COLLECTOR_OR_OWNER))
                     optional_records['collector'] = self.row_value(record, COLLECTOR_OR_OWNER)
                     if len(collectors) > 0:
-                        optional_records['collector_user'] = collectors[0]
+                        optional_records['owner'] = collectors[0]
                         # Add owner and creator to location site
                         # if it doesnt exist yet
                         if not location_site.owner:
@@ -808,16 +827,16 @@ class Command(BaseCommand):
                         self.survey, _ = Survey.objects.get_or_create(
                             site=location_site,
                             date=sampling_date,
-                            collector_user=collectors[0] if len(collectors) > 0 else None,
-                            owner=superusers[0]
+                            owner=collectors[0] if len(collectors) > 0 else None,
+                            collector_user=superusers[0]
                         )
                     except Survey.MultipleObjectsReturned:
                         self.survey = Survey.objects.filter(
                             site=location_site,
                             date=sampling_date,
-                            collector_user=collectors[0] if len(
+                            owner=collectors[0] if len(
                                 collectors) > 0 else None,
-                            owner=superusers[0]
+                            collector_user=superusers[0]
                         )[0]
 
                     all_survey_data = {
@@ -1056,7 +1075,7 @@ class Command(BaseCommand):
                         )
 
                     collection_record.notes = self.row_value(record, NOTES)
-                    collection_record.owner = superusers[0]
+                    collection_record.collector_user = superusers[0]
                     collection_record.additional_data = additional_data
                     collection_record.source_collection = source_collection
                     collection_record.survey = self.survey

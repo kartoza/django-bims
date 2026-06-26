@@ -22,7 +22,7 @@ from rest_framework.pagination import PageNumberPagination
 from taggit.models import Tag
 
 from bims.api_views.merge_sites import IsSuperUser
-from bims.api_views.taxon_update import is_expert
+from bims.api_views.taxon_update import is_expert, is_contributor
 from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
@@ -385,25 +385,30 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
 
             taxon_name = taxon_name.strip()
 
-            existing_qs = Taxonomy.objects.filter(
-                canonical_name__iexact=taxon_name
+            duplicate_qs = Taxonomy.objects.filter(
+                canonical_name__iexact=taxon_name,
+                parent=parent,
             )
+            if duplicate_qs.exists():
+                return Response(
+                    {'error': f'A taxon named "{taxon_name}" already exists under the same parent.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            if existing_qs.exists():
-                taxonomy = existing_qs.first()
-            else:
-                try:
-                    taxonomy, created = Taxonomy.objects.get_or_create(
-                        scientific_name=taxon_name,
-                        canonical_name=taxon_name,
-                        rank=rank
-                    )
-                except IntegrityError:
-                    taxonomy = Taxonomy.objects.get(
-                        scientific_name=taxon_name,
-                        canonical_name=taxon_name,
-                        rank=rank
-                    )
+            try:
+                taxonomy, created = Taxonomy.objects.get_or_create(
+                    scientific_name=taxon_name,
+                    canonical_name=taxon_name,
+                    rank=rank,
+                    parent=parent,
+                )
+            except IntegrityError:
+                taxonomy = Taxonomy.objects.get(
+                    scientific_name=taxon_name,
+                    canonical_name=taxon_name,
+                    rank=rank,
+                    parent=parent,
+                )
 
         if taxon_group_id:
             taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
@@ -426,10 +431,6 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     taxon_group_id = taxon_group.id
                 except TaxonGroup.DoesNotExist:
                     pass
-
-        if taxon_group and taxonomy:
-            from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
-            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
 
         if taxonomy:
             response['id'] = taxonomy.id
@@ -469,6 +470,10 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             if is_fada_site() and not taxonomy.fada_id:
                 taxonomy.fada_id = f'FADA-{taxonomy.id}'
                 taxonomy.save(update_fields=['fada_id'])
+
+        if taxon_group and taxonomy:
+            from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group
+            ensure_accepted_taxonomy_in_group(taxonomy, taxon_group)
 
         with transaction.atomic():
             taxonomy_data = model_to_dict(
@@ -567,6 +572,7 @@ class TaxaList(APIView):
         taxonomic_status = request.GET.get('taxonomic_status', '').split(',')
         taxonomic_status = list(filter(None, taxonomic_status))
         taxon_name = request.GET.get('taxon', '').strip()
+        taxon_search_type = request.GET.get('taxon_search_type', 'contains')
         is_gbif = request.GET.get('is_gbif', '')
         is_iucn = request.GET.get('is_iucn', '')
         validated = request.GET.get('validated', 'True')
@@ -581,12 +587,10 @@ class TaxaList(APIView):
         if author_names:
             authors = split_authors(author_names)
 
-        biodiversity_distributions = (
-            request.GET.get('bD', '').split(',')
-        )
-        biodiversity_distributions = (
-            list(filter(None, biodiversity_distributions))
-        )
+        biodiversity_distributions = [
+            v.strip() for v in request.GET.get('bD', '').split(',')
+            if v.strip()
+        ]
         biodiversity_distributions_filter_type = (
             request.GET.get('bDFT', 'OR')
         )
@@ -667,10 +671,11 @@ class TaxaList(APIView):
                 queries |= Q(taxonomic_status__iexact=status)
             taxon_list = taxon_list.filter(queries)
         if taxon_name:
+            lookup = 'istartswith' if taxon_search_type == 'startswith' else 'icontains'
             taxon_list = taxon_list.filter(
-                Q(canonical_name__icontains=taxon_name) |
-                Q(accepted_taxonomy__canonical_name__icontains=taxon_name) |
-                Q(scientific_name__icontains=taxon_name)
+                Q(**{f'canonical_name__{lookup}': taxon_name}) |
+                Q(**{f'accepted_taxonomy__canonical_name__{lookup}': taxon_name}) |
+                Q(**{f'scientific_name__{lookup}': taxon_name})
             )
         if family_name:
             taxon_list = taxon_list.filter(
@@ -714,11 +719,10 @@ class TaxaList(APIView):
                 validated = validated.replace('/', '').lower() == 'true'
                 if not validated:
                     # Check if the user is a superuser or has expert permissions for the taxon group
-                    is_user_expert = is_expert(
-                        request.user,
-                        TaxonGroup.objects.get(id=taxon_group_id)
-                    )
-                    if request.user.is_superuser or is_user_expert:
+                    _taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
+                    is_user_expert = is_expert(request.user, _taxon_group)
+                    is_user_contributor = is_contributor(request.user, _taxon_group)
+                    if request.user.is_superuser or is_user_expert or is_user_contributor:
                         validated_filters = {
                             'taxongrouptaxonomy__is_validated': False,
                         }
@@ -767,7 +771,7 @@ class TaxaList(APIView):
         from bims.templatetags.site import is_fada_site
         if is_fada_site():
             taxon_list = taxon_list.exclude(
-                Q(fada_id__isnull=True) | Q(fada_id='')
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
             )
 
         if order:
@@ -1011,10 +1015,13 @@ class TaxaList(APIView):
                     'validated': validated,
                     'is_public': is_public,
                 }).data)
-            serializer.data['is_expert'] = is_expert(
-                self.request.user,
-                TaxonGroup.objects.get(id=taxon_group_id)
-            ) if taxon_group_id and not is_public else False
+            _tg = TaxonGroup.objects.get(id=taxon_group_id) if taxon_group_id else None
+            serializer.data['is_expert'] = (
+                is_expert(self.request.user, _tg) if _tg and not is_public else False
+            )
+            serializer.data['is_contributor'] = (
+                is_contributor(self.request.user, _tg) if _tg and not is_public else False
+            )
         else:
             serializer = TaxonSerializer(
                 taxon_list,

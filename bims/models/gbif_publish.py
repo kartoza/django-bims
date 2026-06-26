@@ -28,9 +28,13 @@ class GbifPublishConfig(models.Model):
                   "https://api.gbif-test.org/v1 (test). "
                   "Ensure credentials match the environment."
     )
-    license_url = models.URLField(
-        default="https://creativecommons.org/publicdomain/zero/1.0/legalcode",
-        help_text="License URL for the dataset"
+    license = models.ForeignKey(
+        'bims.Licence',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gbif_configs',
+        help_text='License for the dataset (default: CC BY 4.0 - Attribution).',
     )
     export_base_url = models.URLField(
         blank=True,
@@ -366,19 +370,22 @@ class GbifPublishContact(models.Model):
 
     @property
     def resolved_given_name(self):
-        return self.individual_name_given or self._user_attr("first_name")
+        return self.individual_name_given
 
     @property
     def resolved_sur_name(self):
-        return self.individual_name_sur or self._user_attr("last_name")
+        _sur_name = self.individual_name_sur
+        if not _sur_name and self.organization_name:
+            return self.organization_name
+        return _sur_name
 
     @property
     def resolved_organization_name(self):
-        return self.organization_name or self._user_attr("organization")
+        return self.organization_name
 
     @property
     def resolved_position_name(self):
-        return self.position_name or self._profile_attr()
+        return self.position_name
 
     @property
     def resolved_email(self):
@@ -386,9 +393,9 @@ class GbifPublishContact(models.Model):
 
 
 @receiver(post_save, sender=GbifPublishContact)
-def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', **kwargs):
-    """Fill blank optional fields from the linked user's profile on save."""
-    if not instance.user_id:
+def fill_gbif_publish_contact_from_user(sender, instance: 'GbifPublishContact', created: bool, **kwargs):
+    """Fill blank optional fields from the linked user's profile on first creation only."""
+    if not created or not instance.user_id:
         return
 
     user = instance.user
@@ -534,4 +541,4 @@ def seed_contacts_from_source_reference_authors(sender, instance: GbifPublish, c
         ))
     created_contacts = GbifPublishContact.objects.bulk_create(contacts)
     for contact in created_contacts:
-        fill_gbif_publish_contact_from_user(GbifPublishContact, contact)
+        fill_gbif_publish_contact_from_user(GbifPublishContact, contact, created)

@@ -49,7 +49,7 @@ class ModuleList(APIView):
             try:
                 logo = get_thumbnail(
                     _module.logo, 'x80', crop='center'
-                ).name
+                ).url
             except ValueError:
                 logo = ''
             taxon_group_list.append({

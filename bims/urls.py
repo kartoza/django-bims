@@ -40,7 +40,8 @@ from bims.views.boundary_upload import (
 from bims.views.documents import SourceReferenceBimsDocumentUploadView
 from bims.views.under_development import UnderDevelopmentView
 from bims.views.download_csv_taxa_list import (
-    download_taxa_list
+    download_taxa_list,
+    download_checklist_snapshot,
 )
 from bims.views.autocomplete_search import (
     autocomplete,
@@ -158,6 +159,9 @@ urlpatterns = [
     re_path(r'^download-taxa-list/$',
             download_taxa_list,
             name='taxa-list-download'),
+    re_path(r'^download-checklist-snapshot/$',
+            download_checklist_snapshot,
+            name='checklist-snapshot-download'),
     re_path(r'^autocomplete/$', autocomplete, name='autocomplete-search'),
     re_path(r'^user-autocomplete/$',
             user_autocomplete,

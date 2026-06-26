@@ -1,3 +1,15 @@
+.taxon-group-meta-label {
+    display: inline-block;
+    font-size: 10px;
+    color: #fff;
+    background-color: #6c757d;
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    vertical-align: middle;
+    padding-top: 4px;
+}
+
 .total-data {
     color: #444444;
     border-radius: 10px;
@@ -195,7 +207,7 @@ ul.pagination li.current a {
     padding: 10px;
 }
 
-.taxon-group-experts-container .select2-container {
+.taxon-group-experts-container .select2-container, .taxon-group-contributors-container .select2-container {
     width: 100% !important;
 }
 
@@ -343,7 +355,7 @@ table {
 }
 
 #taxon-name-input {
-    width: 25%;
+    width: 250px;
 }
 
 /* Diff styling for table cells */

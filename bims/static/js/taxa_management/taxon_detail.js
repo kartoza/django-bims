@@ -254,6 +254,12 @@ export const taxonDetail = (() => {
                                 <div class="col-8">${data.fada_id ? data.fada_id : ''}</div>
                             </div>
                             ` : ''}
+                            ${typeof data.aphia_id !== 'undefined' && data.aphia_id ? `
+                                <div class="dt-item col-12 row">
+                                    <div class="col-4"><strong>Aphia ID</strong></div>
+                                    <div class="col-8">${data.aphia_id}</div>
+                                </div>
+                            `: ''}
                         </div>
                     </div>
                 </div>

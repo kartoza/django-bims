@@ -17,6 +17,7 @@ from bims.models.taxonomy import Taxonomy
 from bims.models.endemism import Endemism
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_origin import TaxonOrigin
+from bims.models.meta_group import MetaGroup
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
 
 
@@ -34,6 +35,31 @@ class TaxaManagementView(TemplateView):
         if not request.user.is_authenticated:
             if not preferences.SiteSetting.allow_public_taxa_view:
                 return redirect_to_login(request.get_full_path())
+
+        fada_id_param = request.GET.get('fada_id', '').strip()
+        if fada_id_param:
+            raw_id = (
+                fada_id_param[5:]
+                if fada_id_param.startswith('fada:')
+                else fada_id_param
+            )
+            try:
+                taxon = Taxonomy.objects.get(fada_id=raw_id)
+                taxon_group = TaxonGroup.objects.filter(
+                    taxonomies=taxon,
+                    category='SPECIES_MODULE',
+                    parent__isnull=True,
+                ).first()
+                params = {}
+                if taxon_group:
+                    params['selected'] = taxon_group.id
+                params['taxon'] = taxon.canonical_name or taxon.scientific_name or ''
+                return HttpResponseRedirect(
+                    f'{reverse("taxa-management")}?{urlencode(params)}'
+                )
+            except Taxonomy.DoesNotExist:
+                pass
+
         selected = request.GET.get('selected')
         if selected:
             try:
@@ -71,6 +97,7 @@ class TaxaManagementView(TemplateView):
             ).first()
 
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
+        context['meta_groups'] = MetaGroup.objects.all().order_by('display_order', 'name').values('id', 'name')
         context['taxon_rank'] = [
             rank.name for rank in TaxonomicRank
             if rank in (TaxonomicRank.GENUS, TaxonomicRank.SPECIES)
@@ -93,11 +120,18 @@ class TaxaManagementView(TemplateView):
         user = self.request.user
         is_authenticated = user.is_authenticated
         context['is_public_view'] = not is_authenticated
+        selected_taxon_id = self.request.GET.get('selected')
         context['is_expert'] = (
             is_authenticated and (
                 user.is_superuser or
-                self.is_user_expert_for_taxon(self.request.GET.get('selected'))
+                self.is_user_expert_for_taxon(selected_taxon_id)
             )
+        )
+        context['is_contributor'] = (
+            is_authenticated and
+            not user.is_superuser and
+            not self.is_user_expert_for_taxon(selected_taxon_id) and
+            self.is_user_contributor_for_taxon(selected_taxon_id)
         )
         return context
 
@@ -111,3 +145,14 @@ class TaxaManagementView(TemplateView):
                 id=self.request.user.id).exists()
         except TaxonGroup.DoesNotExist:
             raise Http404("Taxon Group does not exist")
+
+    def is_user_contributor_for_taxon(self, selected_taxon_id):
+        if not selected_taxon_id:
+            return False
+        try:
+            selected_taxon_group = TaxonGroup.objects.get(
+                id=selected_taxon_id)
+            return selected_taxon_group.contributors.filter(
+                id=self.request.user.id).exists()
+        except TaxonGroup.DoesNotExist:
+            return False

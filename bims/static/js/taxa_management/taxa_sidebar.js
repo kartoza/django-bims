@@ -44,6 +44,20 @@ export const taxaSidebar = (() => {
       });
     }
 
+    function findMetaGroupByTaxonGroupId(parentId, groups) {
+        for (let i = 0; i < groups.length; i++) {
+            let group = groups[i];
+            if (group.id === parentId) {
+                return group.meta_group || null;
+            }
+            if (group.children && group.children.length > 0) {
+                let found = findMetaGroupByTaxonGroupId(parentId, group.children);
+                if (found !== undefined) return found;
+            }
+        }
+        return null;
+    }
+
     function findGbifTaxonomyByTaxonGroupId(parentId, groups) {
         let item = groups.find(item => item.id === parentId && item.gbif_parent_species);
         if (item) {
@@ -101,6 +115,22 @@ export const taxaSidebar = (() => {
         return experts;
     }
 
+    function findContributorsByTaxonGroupId(parentId, taxonGroups) {
+        let contributors = [];
+        taxonGroups.forEach(item => {
+            if (item.children.length > 0) {
+                contributors = findContributorsByTaxonGroupId(parentId, item.children);
+            }
+            if (item.id === parentId && item.contributors && item.contributors.length > 0) {
+                contributors = item.contributors;
+            }
+            if (contributors.length > 0) {
+                return true;
+            }
+        });
+        return contributors;
+    }
+
     function addExpertsToSelect(experts) {
         let expertIds = [];
         experts.forEach(expert => {
@@ -112,6 +142,17 @@ export const taxaSidebar = (() => {
         authorSelect.trigger('change');
     }
 
+    function addContributorsToSelect(contributors) {
+        let contributorIds = [];
+        contributors.forEach(contributor => {
+            let newOption = new Option(contributor.full_name, contributor.id, false, false);
+            contributorSelect.append(newOption);
+            contributorIds.push(contributor.id);
+        });
+        contributorSelect.val(contributorIds);
+        contributorSelect.trigger('change');
+    }
+
     function setupAddModuleModal() {
         $('#moduleModalLabel').text('Add Module');
         $('.gbif-species-container').hide();
@@ -120,7 +161,9 @@ export const taxaSidebar = (() => {
         $("#inputLogo").val('');
         $('.extra-attribute-field').empty();
         $('.taxon-group-experts-container select').val(null).trigger('change');
+        $('.taxon-group-contributors-container select').val(null).trigger('change');
         $('#edit-module-img-container').empty();
+        $('#edit-module-meta-group').val('');
 
         $('#editModuleModal').modal({
             keyboard: false
@@ -130,6 +173,18 @@ export const taxaSidebar = (() => {
     function handleAddNewModuleSelected(event) {
         event.preventDefault();
         setupAddModuleModal();
+    }
+
+    function buildDashboardTitle(name, isReadonly, upstreamUrl) {
+        let html = `<h2>${name}`;
+        if (isReadonly && upstreamUrl) {
+            html += ` <span class="badge badge-info" style="font-size:12pt; vertical-align:middle;"><i class="fa fa-refresh" aria-hidden="true"></i> BIMS Harvest</span>`;
+        }
+        html += `</h2>`;
+        if (isReadonly && upstreamUrl) {
+            html += `<small class="text-muted"><i class="fa fa-link" aria-hidden="true"></i> Source: <a href="${upstreamUrl}" target="_blank" rel="noopener">${upstreamUrl}</a> &middot; Synced monthly</small>`;
+        }
+        return html;
     }
 
     function handleTaxonGroupSelected(event) {
@@ -146,9 +201,10 @@ export const taxaSidebar = (() => {
             updateTaxonGroup($elm.data('id'));
         }
         selectedTaxonGroup = $elm.data('id');
-        $('.dashboard-title').html(`<h2>${$elm.data('name')}</h2>`);
+        const isReadonly = $elm.data('is-readonly') === true || $elm.data('is-readonly') === 'true';
+        const upstreamUrl = $elm.data('upstream-url') || '';
+        $('.dashboard-title').html(buildDashboardTitle($elm.data('name'), isReadonly, upstreamUrl));
         currentSelectedTaxonGroup = selectedTaxonGroup;
-
     }
 
     function allTaxaGroups(groups) {
@@ -217,6 +273,12 @@ export const taxaSidebar = (() => {
         let experts = findExpertsByTaxonGroupId(moduleId, taxaGroups);
         addExpertsToSelect(experts);
 
+        // Contributors
+        contributorSelect.empty();
+        contributorSelect.val(null).trigger('change');
+        let contributors = findContributorsByTaxonGroupId(moduleId, taxaGroups);
+        addContributorsToSelect(contributors);
+
         // GBIF Species
         let taxaAutoComplete = $('#edit-module-taxa-autocomplete');
         taxaAutoComplete.empty();
@@ -229,6 +291,11 @@ export const taxaSidebar = (() => {
                 type: 'select2:select',
             });
         }
+
+        // Meta Group
+        const metaGroupSelect = $('#edit-module-meta-group');
+        const metaGroupValue = findMetaGroupByTaxonGroupId(moduleId, taxaGroups);
+        metaGroupSelect.val(metaGroupValue || '');
 
         // Parent taxa group selection
         const selectedParent = findSelectedParent(
@@ -327,8 +394,6 @@ export const taxaSidebar = (() => {
                 checkTaskStatus(taskId);
             },
             error: function (data) {
-                console.log("error");
-                console.log(data);
                 $removeModuleBtn.html('Remove Module');
                 $removeModuleBtn.attr('disabled', false);
                 // Hide the processing modal
@@ -387,9 +452,13 @@ export const taxaSidebar = (() => {
         e.preventDefault();
         let formData = new FormData(this);
         formData.delete('taxon-group-experts');
-
         $('.owner-auto-complete').select2('data').forEach(function(item) {
             formData.append('taxon-group-experts', item.id);
+        });
+
+        formData.delete('taxon-group-contributors');
+        $('.contributor-auto-complete').select2('data').forEach(function(item) {
+            formData.append('taxon-group-contributors', item.id);
         });
 
         let url = '/api/update-taxon-group/';
@@ -409,8 +478,6 @@ export const taxaSidebar = (() => {
             },
             error: function (data) {
                 $(e.target).find('.btn-submit-text').html('Save');
-                console.log("error");
-                console.log(data);
             }
         });
     }

@@ -150,6 +150,7 @@ from bims.models import (
     TaxonTagDescription,
     TaxonNationalConservationAssessment
 )
+from bims.models.meta_group import MetaGroup
 from bims.models.taxonomy import TaxonTag
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
@@ -761,6 +762,15 @@ class TaxonGroupExpertInline(admin.TabularInline):
     autocomplete_fields = ['taxongroup']
 
 
+class TaxonGroupContributorInline(admin.TabularInline):
+    """Inline to assign user as contributor for taxon groups."""
+    model = TaxonGroup.contributors.through
+    extra = 1
+    verbose_name = 'Contributor for Taxon Group'
+    verbose_name_plural = 'Contributor for Taxon Groups'
+    autocomplete_fields = ['taxongroup']
+
+
 class BimsProfileAdmin(admin.ModelAdmin):
     model = BimsProfile
     list_display = [
@@ -891,7 +901,7 @@ class SignedUpFilter(SimpleListFilter):
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
     change_form_template = 'admin/user_changeform.html'
-    inlines = [ProfileInline, TaxonGroupExpertInline]
+    inlines = [ProfileInline, TaxonGroupExpertInline, TaxonGroupContributorInline]
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -1076,6 +1086,15 @@ class CustomUserAdmin(ProfileAdmin):
         return ', '.join([str(tg.name) for tg in taxon_groups])
 
     expert_taxon_groups.short_description = 'Expert for Taxon Groups'
+
+    def contributor_taxon_groups(self, obj):
+        """Return the taxon groups where this user is a contributor."""
+        taxon_groups = TaxonGroup.objects.filter(contributors=obj)
+        if not taxon_groups.exists():
+            return '-'
+        return ', '.join([str(tg.name) for tg in taxon_groups])
+
+    contributor_taxon_groups.short_description = 'Contributor for Taxon Groups'
 
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
@@ -1352,6 +1371,30 @@ class OccurrenceUploadTemplateInline(admin.TabularInline):
     extra = 1
 
 
+class TaxonGroupInline(admin.TabularInline):
+    model = TaxonGroup
+    fk_name = 'meta_group'
+    fields = ('name', 'category', 'display_order')
+    extra = 0
+    can_delete = False
+    verbose_name = 'Taxon Group'
+    verbose_name_plural = 'Taxon Groups'
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(category='Species Module')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class MetaGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'gbif_key', 'display_order')
+    list_editable = ('display_order',)
+    search_fields = ('name',)
+    list_filter = ('gbif_key',)
+    inlines = [TaxonGroupInline]
+
+
 class TaxonGroupAdmin(admin.ModelAdmin):
     inlines = [
         TaxonGroupTaxonomyInline,
@@ -1362,6 +1405,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
         'name',
         'singular_name',
         'category',
+        'meta_group',
         'col_enabled',
     )
     search_fields = (
@@ -1371,13 +1415,16 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     list_filter = (
         'category',
         'col_enabled',
+        'meta_group',
     )
     filter_horizontal = (
         'experts',
+        'contributors',
     )
     raw_id_fields = (
         'gbif_parent_species',
     )
+    autocomplete_fields = ('meta_group',)
 
 
 class TaxonGroupListFilter(django_admin.SimpleListFilter):
@@ -1609,6 +1656,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'gbif_key',
                 'fada_id',
                 'aphia_id',
+                'taxonworks_id',
                 'last_modified_by',
                 'subgenus',
                 'verified',
@@ -2842,12 +2890,19 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         harvest_session = queryset.first()
 
         harvest_session.canceled = False
+        harvest_session.finished = False
         harvest_session.save()
 
         schema_name = connection.schema_name
 
         full_message = 'Resumed'
-        if harvest_session.is_fetching_species:
+        if harvest_session.category == 'worms':
+            from bims.tasks.harvest_worms_species import harvest_worms_species
+            harvest_worms_species.delay(
+                harvest_session.id,
+                schema_name=schema_name,
+            )
+        elif harvest_session.is_fetching_species:
             harvest_gbif_species.delay(
                 harvest_session.id,
                 schema_name
@@ -3061,6 +3116,7 @@ admin.site.register(SurveyDataValue, SurveyDataValueAdmin)
 admin.site.register(NonBiodiversityLayer, NonBiodiversityLayerAdmin)
 admin.site.register(Taxonomy, TaxonomyAdmin)
 admin.site.register(TaxonGroup, TaxonGroupAdmin)
+admin.site.register(MetaGroup, MetaGroupAdmin)
 
 admin.site.register(Boundary, BoundaryAdmin)
 admin.site.register(BoundaryType, admin.ModelAdmin)
@@ -3217,7 +3273,7 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Target", {
-            "fields": ("module_group", "parent_species", "enabled"),
+            "fields": ("module_group", "parent_species", "enabled", "category"),
             "description": (
                 "Select a module group and optionally override the parent species. "
                 "If parent species is not set, the module group's default GBIF parent will be used."
@@ -3287,10 +3343,15 @@ class HarvestScheduleAdmin(admin.ModelAdmin):
 
     @admin.action(description="Run now (enqueue Celery task)")
     def action_run_now(self, request, queryset):
+        from bims.models.harvest_schedule import HarvestScheduleCategory
+        from bims.tasks.harvest_schedule import run_scheduled_bims_harvest
         count = 0
         for sched in queryset:
             schema_name = str(connection.schema_name)
-            run_scheduled_gbif_harvest.delay(schema_name, sched.id)
+            if sched.category == HarvestScheduleCategory.BIMS:
+                run_scheduled_bims_harvest.delay(schema_name, sched.id)
+            else:
+                run_scheduled_gbif_harvest.delay(schema_name, sched.id)
             count += 1
         self.message_user(
             request, f"Queued {count} run(s).", messages.SUCCESS)

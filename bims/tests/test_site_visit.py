@@ -255,6 +255,60 @@ class TestSiteVisitView(FastTenantTestCase):
         self.assertTrue(Survey.objects.get(id=self.survey.id).validated)
 
 
+class TestSiteVisitDetailCustodian(FastTenantTestCase):
+    """Tests for custodian (Owner Organisation) display on site-visit detail page."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.owner = UserF.create()
+        self.collector = UserF.create()
+        self.survey = SurveyF.create(
+            id=9001,
+            collector_user=self.collector,
+            owner=self.owner,
+        )
+
+    def test_custodian_from_institution_id(self):
+        """Detail view context includes custodian from institution_id."""
+        BiologicalCollectionRecordF.create(
+            survey=self.survey,
+            institution_id='ScienceOrg'
+        )
+        response = self.client.get('/site-visit/detail/9001/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['custodian'], 'ScienceOrg')
+
+    def test_custodian_falls_back_to_owner_org_for_bims(self):
+        """custodian shows owner.organization when institution_id is 'bims'."""
+        self.owner.organization = 'OwnerInstitute'
+        self.owner.save()
+        BiologicalCollectionRecordF.create(
+            survey=self.survey,
+            institution_id='bims'
+        )
+        response = self.client.get('/site-visit/detail/9001/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['custodian'], 'OwnerInstitute')
+
+    def test_custodian_falls_back_to_owner_org_for_healthyrivers(self):
+        """custodian shows owner.organization when institution_id is 'healthyrivers'."""
+        self.owner.organization = 'RiverKeepers'
+        self.owner.save()
+        BiologicalCollectionRecordF.create(
+            survey=self.survey,
+            institution_id='healthyrivers'
+        )
+        response = self.client.get('/site-visit/detail/9001/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['custodian'], 'RiverKeepers')
+
+    def test_custodian_empty_when_no_records(self):
+        """custodian is empty string when there are no collection records."""
+        response = self.client.get('/site-visit/detail/9001/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['custodian'], '')
+
+
 def threaded_function(arg, schema_name):
     # Set the schema for this thread
     with schema_context(schema_name):

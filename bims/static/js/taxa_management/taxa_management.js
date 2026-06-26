@@ -318,6 +318,12 @@ export const taxaManagement = (() => {
         });
     }
 
+    function buildFilterNotice() {
+        $('#download-filter-notice')
+            .html('This will download the current taxa list as displayed.')
+            .show();
+    }
+
     function handleDownloadPdf(e, order_by = 'genus') {
         if (typeof isPublicView !== 'undefined' && isPublicView) {
             e.preventDefault();
@@ -331,6 +337,7 @@ export const taxaManagement = (() => {
         if (order_by === 'family') {
             pdfChecklistTitle += ' by Family';
         }
+        buildFilterNotice();
         showDownloadPopup('PDF', pdfChecklistTitle, function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
@@ -348,7 +355,7 @@ export const taxaManagement = (() => {
                     alert(downloadRequestMessage);
                 })
                 .catch(() => alert('Cannot download the file'));
-        }, true, null, false)
+        }, true, () => $('#download-filter-notice').hide(), false)
     }
 
     function handleDownloadCsv(e) {
@@ -360,6 +367,7 @@ export const taxaManagement = (() => {
         const $target = $(e.target);
         const targetHtml = $target.html();
         const targetWidth = $target.width();
+        buildFilterNotice();
         showDownloadPopup('CSV', 'Taxa List', function (downloadRequestId) {
             $target.prop('disabled', true);
             $target.html(`<div style="width: ${targetWidth}px;"><img src="/static/images/default/grid/loading.gif" width="20"/></div>`);
@@ -376,7 +384,7 @@ export const taxaManagement = (() => {
                     alert(downloadRequestMessage);
                 })
                 .catch(() => alert('Cannot download the file'));
-        }, true, null, false)
+        }, true, () => $('#download-filter-notice').hide(), false)
     }
 
     const onEditTaxonFormChanged = (elm, event='change') => {
