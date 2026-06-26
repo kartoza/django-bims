@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+from django.conf import settings
 from django.db.models import Max, Min
 from django.views.generic import TemplateView
 from django.contrib.flatpages.models import FlatPage
@@ -45,6 +46,9 @@ class MapPageView(TemplateView):
                 self.request.user)
         context['geoserver_public_location'] = get_key(
             'GEOSERVER_PUBLIC_LOCATION')
+        context['MARTIN_URL'] = settings.MARTIN_URL
+        from django.db import connection as db_connection
+        context['schema_name'] = db_connection.schema_name
 
         categories = BiologicalCollectionRecord.CATEGORY_CHOICES
         context['collection_category'] = [list(x) for x in categories]

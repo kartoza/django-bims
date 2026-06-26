@@ -58,6 +58,7 @@ SHARED_APPS = (
     'django.contrib.humanize',
     'django.contrib.gis',
     'django.contrib.flatpages',
+    'django.contrib.postgres',
 
     # Utility
     'drf_yasg',

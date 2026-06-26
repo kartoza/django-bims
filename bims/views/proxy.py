@@ -41,5 +41,5 @@ def proxy_request(request, path):
     return HttpResponse(
         response.content,
         status=response.status_code,
-        content_type=response.headers['content-type']
+        content_type=response.headers.get('content-type', 'application/octet-stream')
     )

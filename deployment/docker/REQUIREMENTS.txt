@@ -108,3 +108,5 @@ drf-yasg==1.21.15
 git+https://github.com/kartoza/CloudNativeGIS.git@0.0.5bims
 
 django-cryptography-5==2.0.3
+
+opensearch-py==2.8.0

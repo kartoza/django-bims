@@ -123,3 +123,10 @@ FIPS_HYDROBASIN_FIELD = os.environ.get('FIPS_HYDROBASIN_FIELD', 'HYBAS_ID')
 MIDDLEWARE += (
     'bims.middleware.RedirectHomePageMiddleware',
 )
+
+# OpenSearch
+OPENSEARCH_HOST = os.environ.get('OPENSEARCH_HOST', 'localhost')
+OPENSEARCH_PORT = int(os.environ.get('OPENSEARCH_PORT', 9200))
+
+# Martin vector tile server
+MARTIN_URL = os.environ.get('MARTIN_URL', 'http://localhost:3000')

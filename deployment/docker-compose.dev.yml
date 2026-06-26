@@ -2,6 +2,7 @@ version: '3.7'
 volumes:
   rabbitmq:
   geoserver-datadir:
+  opensearch-data:
 x-common-django:
   &default-common-django
   build:
@@ -40,6 +41,9 @@ x-common-django:
     - VIRTUAL_HOST=bims.kartoza.com
     - VIRTUAL_PORT=8080
     - PYTHONPATH=/home/web/django_project/
+    - OPENSEARCH_HOST=opensearch
+    - OPENSEARCH_PORT=9200
+    - MARTIN_URL=http://martin:3000
   restart: unless-stopped
   user: root
   volumes:
@@ -80,7 +84,7 @@ services:
       POSTGRES_PASS: ${POSTGRES_PASS:-docker}
       POSTGRES_DBNAME: ${POSTGRES_DBNAME:-gis}
     volumes:
-      - ./pg/postgres_data:/var/lib/postgresql
+      - ./pg_fbis/postgres_data:/var/lib/postgresql
       - ./backups:/backups
       - ./sql:/sql
     ports:
@@ -91,7 +95,7 @@ services:
     profiles:
       - dev
     volumes:
-      - ./pg/postgres_data:/var/lib/postgresql
+      - ./pg_fbis/postgres_data:/var/lib/postgresql
       - ./backups:/backups
       - ./restore-db.sh:/restore-db.sh
       - ./revoke.sql:/revoke.sql
@@ -122,6 +126,37 @@ services:
     ports:
       - "63305:8080"
 
+  martin:
+    container_name: bims_dev_martin
+    image: ghcr.io/maplibre/martin:v0.14.2
+    profiles:
+      - dev
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-docker}:${POSTGRES_PASS:-docker}@db:5432/${POSTGRES_DBNAME:-gis}
+    volumes:
+      - ./martin/config.yaml:/config.yaml:ro
+    command: --config /config.yaml
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  opensearch:
+    container_name: bims_dev_opensearch
+    image: opensearchproject/opensearch:2
+    profiles:
+      - dev
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms16g -Xmx16g
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+
   rabbitmq:
     container_name: bims_dev_rabbitmq
     image: rabbitmq:3.7-alpine
@@ -148,6 +183,10 @@ services:
       - ./media:/home/web/media:rw
       - ./scheduler-data:/home/scheduler-data
     command: celery --app=bims.celery:app worker -Q search,update,geocontext -B -l debug
+    networks:
+      default:
+        aliases:
+          - fbis.local
 
   dev:
     <<: *default-common-django
@@ -158,6 +197,8 @@ services:
       - db
       - rabbitmq
       - worker
+      - opensearch
+      - martin
     ports:
       # for django test server
       - "63302:8080"
@@ -165,3 +206,7 @@ services:
       - "63303:22"
       # for debugpy
       - "5678:5678"
+    networks:
+      default:
+        aliases:
+          - fbis.local

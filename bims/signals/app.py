@@ -8,3 +8,5 @@ class SignalsConfig(AppConfig):
 
     def ready(self):
         import bims.signals.group_profile  # noqa
+        from bims.signals.opensearch import connect_opensearch_signals
+        connect_opensearch_signals()
