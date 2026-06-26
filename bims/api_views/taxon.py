@@ -331,9 +331,10 @@ class TaxonProposalDetail(TaxonDetail):
         except TaxonomyUpdateProposal.DoesNotExist:
             raise Http404
 
-    def get_serializer_data(self, pk):
+    def get_serializer_data(self, pk, is_public=False):
         serializer = TaxonDetailSerializer(
-            TaxonomyUpdateProposal.objects.get(pk=pk)
+            TaxonomyUpdateProposal.objects.get(pk=pk),
+            context={'is_public': is_public}
         )
         return serializer.data
 

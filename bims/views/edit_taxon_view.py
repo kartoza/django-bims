@@ -9,6 +9,7 @@ from django.views.generic import UpdateView
 from bims.api_views.taxon_update import is_expert, create_taxon_proposal, update_taxon_proposal
 from bims.models import TaxonGroup, TaxonomyUpdateProposal, IUCNStatus, Endemism, TaxonGroupTaxonomy, SpeciesGroup
 from bims.models.taxonomy import Taxonomy
+from bims.models.taxon_url import TaxonURL
 
 
 class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -54,6 +55,18 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             'order', 'category', 'national'
         )
         context['next'] = self.request.GET.get('next', '')
+        # When a pending proposal exists, show its proposed URLs so the user
+        # edits the proposed state rather than the live taxonomy state.
+        proposed_urls = None
+        if isinstance(self.object, TaxonomyUpdateProposal):
+            ad = self.object.additional_data or {}
+            if 'proposed_urls' in ad:
+                proposed_urls = ad['proposed_urls']
+        context['taxon_urls'] = (
+            proposed_urls
+            if proposed_urls is not None
+            else TaxonURL.objects.filter(taxonomy_id=self.kwargs['id'])
+        )
         taxon_obj = self.object
         status = (taxon_obj.taxonomic_status or '').upper()
         is_synonym_or_doubtful = (
@@ -270,6 +283,28 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
                 messages.success(
                     self.request,
                     'Taxonomy updated successfully')
+
+            # Store proposed URL changes in the proposal so they are only
+            # applied once the proposal is approved (and reverted on rejection).
+            uris = self.request.POST.getlist('url_uri')
+            labels = self.request.POST.getlist('url_label')
+            ids = self.request.POST.getlist('url_id')
+            proposed_urls = []
+            for i, (uri, label) in enumerate(zip(uris, labels)):
+                uri = uri.strip()
+                label = label.strip()
+                if not uri or not label:
+                    continue
+                raw_id = ids[i] if i < len(ids) else ''
+                proposed_urls.append({
+                    'id': int(raw_id) if raw_id else None,
+                    'uri': uri,
+                    'label': label,
+                })
+            ad = dict(proposal.additional_data or {})
+            ad['proposed_urls'] = proposed_urls
+            proposal.additional_data = ad
+            proposal.save(update_fields=['additional_data'])
 
         # The proposal is automatically approved if the user is a superuser
         # if proposal and self.request.user.is_superuser and new_proposal:

@@ -8,6 +8,7 @@ from taggit.models import TaggedItemBase
 
 from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, TaxonTag
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+from bims.models.taxon_url import TaxonURL
 from bims.tasks.send_notification import send_mail_notification
 from bims.utils.domain import get_current_domain
 
@@ -339,6 +340,36 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                         self.original_taxonomy.vernacular_names.clear()
                         self.original_taxonomy.vernacular_names.set(
                             getattr(self, field).all())
+                    elif field == 'additional_data':
+                        # Strip the internal URL-proposal key before copying
+                        # to the taxonomy, then apply URL changes.
+                        ad = dict(getattr(self, field) or {})
+                        proposed_urls = ad.pop('proposed_urls', None)
+                        setattr(self.original_taxonomy, field, ad)
+                        if proposed_urls is not None:
+                            submitted_ids = []
+                            for url_data in proposed_urls:
+                                url_id = url_data.get('id')
+                                uri = (url_data.get('uri') or '').strip()
+                                label = (url_data.get('label') or '').strip()
+                                if not uri or not label:
+                                    continue
+                                if url_id:
+                                    TaxonURL.objects.filter(
+                                        id=url_id,
+                                        taxonomy=self.original_taxonomy,
+                                    ).update(uri=uri, label=label)
+                                    submitted_ids.append(url_id)
+                                else:
+                                    obj = TaxonURL.objects.create(
+                                        taxonomy=self.original_taxonomy,
+                                        uri=uri,
+                                        label=label,
+                                    )
+                                    submitted_ids.append(obj.id)
+                            TaxonURL.objects.filter(
+                                taxonomy=self.original_taxonomy,
+                            ).exclude(id__in=submitted_ids).delete()
                     elif field == 'endemism' and getattr(self, field) is None:
                         # Don't overwrite existing endemism with None unless
                         # the original taxonomy also has no endemism

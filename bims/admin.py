@@ -148,7 +148,8 @@ from bims.models import (
     UploadRequest, UploadType, CertaintyHierarchy,
     FilterPanelInfo,
     TaxonTagDescription,
-    TaxonNationalConservationAssessment
+    TaxonNationalConservationAssessment,
+    TaxonURL,
 )
 from bims.models.meta_group import MetaGroup
 from bims.models.taxonomy import TaxonTag
@@ -1261,6 +1262,12 @@ class EndemismAdmin(admin.ModelAdmin):
     merge_endemisms.short_description = 'Merge endemism'
 
 
+class TaxonURLInline(admin.TabularInline):
+    model = TaxonURL
+    extra = 1
+    fields = ['uri', 'label']
+
+
 class TaxonImagesInline(admin.TabularInline):
     model = TaxonImage
     raw_id_fields = (
@@ -1725,7 +1732,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     extract_author.short_description = "Extract author"
 
-    inlines = [TaxonImagesInline]
+    inlines = [TaxonImagesInline, TaxonURLInline]
 
     class Media:
         css = {

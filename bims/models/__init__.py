@@ -85,3 +85,4 @@ from bims.models.taxon_tag_description import TaxonTagDescription
 from bims.models.licence import Licence
 from bims.models.taxonomy_checklist import TaxonomyChecklist
 from bims.models.checklist_version import ChecklistVersion
+from bims.models.taxon_url import TaxonURL
