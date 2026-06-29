@@ -142,6 +142,11 @@
                                            data-id="${v.id}" data-version="${v.version}"
                                            title="Publish checklist version">
                                        Publish
+                                   </button>
+                                   <button class="btn btn-sm btn-outline-danger delete-draft-btn ml-1"
+                                           data-id="${v.id}" data-version="${v.version}"
+                                           title="Remove draft">
+                                       Remove
                                    </button>`)
                             : ''}
                         ${v.status === 'published' && canPublishGroup(v.taxon_group)
@@ -293,6 +298,105 @@
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Contributors state — live list edited inside the modal before saving
+    // -----------------------------------------------------------------------
+    let _contributors = [];   // [{user, first_name, last_name, email, organisation, note}]
+    let _orgCounter  = 0;     // generates temporary IDs for org-only rows
+
+    function renderContributors() {
+        const $list = $('#av-contributors-list');
+        if (!_contributors.length) {
+            $list.html('<p class="text-muted small mb-0">No contributors. Add an organisation above.</p>');
+            return;
+        }
+        const rows = _contributors.map(function (c, idx) {
+            const nameCell = c.user
+                ? `<span class="font-weight-bold">${escHtml(c.first_name)} ${escHtml(c.last_name)}</span>`
+                : '<em class="text-muted">Organisation only</em>';
+            const emailCell = c.user
+                ? `<small class="text-muted">${escHtml(c.email)}</small>`
+                : '';
+            return `
+                <div class="border rounded p-2 mb-2 contributor-row" data-idx="${idx}">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div style="flex:1">
+                      <div>${nameCell} ${emailCell}</div>
+                      <div class="mt-1 d-flex flex-wrap" style="gap:6px">
+                        <input type="text"
+                               class="form-control form-control-sm contributor-org"
+                               placeholder="Organisation (optional)"
+                               value="${escHtml(c.organisation)}"
+                               style="max-width:220px">
+                        <input type="text"
+                               class="form-control form-control-sm contributor-note"
+                               placeholder="Note / role (optional)"
+                               value="${escHtml(c.note)}"
+                               style="max-width:240px">
+                      </div>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger ml-2 remove-contributor-btn"
+                            data-idx="${idx}" title="Remove">
+                        &times;
+                    </button>
+                  </div>
+                </div>`;
+        });
+        $list.html(rows.join(''));
+    }
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function syncContributorFields() {
+        $('#av-contributors-list').find('.contributor-row').each(function () {
+            const idx = parseInt($(this).data('idx'), 10);
+            if (_contributors[idx] !== undefined) {
+                _contributors[idx].organisation = $(this).find('.contributor-org').val().trim();
+                _contributors[idx].note         = $(this).find('.contributor-note').val().trim();
+            }
+        });
+    }
+
+    async function loadGroupMembers(groupId) {
+        const $loading = $('#av-contributors-loading');
+        $loading.removeClass('d-none');
+        _contributors = [];
+        renderContributors();
+        try {
+            const resp = await fetch(
+                `/api/checklist-version/group-members/?taxon_group=${groupId}`,
+                { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+            );
+            if (resp.ok) {
+                _contributors = await resp.json();
+            }
+        } catch (e) { /* silent */ }
+        finally { $loading.addClass('d-none'); }
+        renderContributors();
+    }
+
+    $(document).on('click', '.remove-contributor-btn', function () {
+        syncContributorFields();
+        const idx = parseInt($(this).data('idx'), 10);
+        _contributors.splice(idx, 1);
+        renderContributors();
+    });
+
+    $('#btn-add-org-contributor').on('click', function () {
+        syncContributorFields();
+        _contributors.push({ user: null, first_name: '', last_name: '', email: '', organisation: '', note: '' });
+        renderContributors();
+        // Focus the last org input
+        $('#av-contributors-list .contributor-org').last().focus();
+    });
+
     if (canPublish) {
         $('#add-version-modal').on('show.bs.modal', function () {
             $('#add-version-error, #add-version-success').addClass('d-none').text('');
@@ -300,10 +404,13 @@
             const groupId = $groupSelect.val();
             $('#av-group').val(groupId);
             loadPreviousVersions(groupId);
+            loadGroupMembers(groupId);
         });
 
         $('#av-group').on('change', function () {
-            loadPreviousVersions($(this).val());
+            const groupId = $(this).val();
+            loadPreviousVersions(groupId);
+            loadGroupMembers(groupId);
         });
 
         function buildPayload() {
@@ -337,7 +444,61 @@
             return payload;
         }
 
+        async function syncContributorsAfterCreate(versionId) {
+            syncContributorFields();
+            const contribBase = `${apiBase}${versionId}/contributors/`;
+            let serverContribs = [];
+            try {
+                const r = await fetch(contribBase, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (r.ok) {
+                    serverContribs = await r.json();
+                }
+            } catch (e) { /* non-critical, skip */ }
+
+            const desiredUserIds = new Set(
+                _contributors.filter(function (c) { return c.user; }).map(function (c) { return c.user; })
+            );
+
+            const ops = [];
+            serverContribs.forEach(function (sc) {
+                if (sc.user && !desiredUserIds.has(sc.user)) {
+                    ops.push(fetch(`${contribBase}${sc.id}/`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    }));
+                } else if (sc.user) {
+                    const desired = _contributors.find(function (c) { return c.user === sc.user; });
+                    if (desired && (desired.organisation !== sc.organisation || desired.note !== sc.note)) {
+                        ops.push(fetch(`${contribBase}${sc.id}/`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({ organisation: desired.organisation, note: desired.note })
+                        }));
+                    }
+                }
+            });
+
+            _contributors.filter(function (c) { return !c.user; }).forEach(function (c) {
+                ops.push(fetch(contribBase, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ organisation: c.organisation, note: c.note })
+                }));
+            });
+
+            await Promise.all(ops);
+        }
+
         async function saveVersion(publish) {
+            syncContributorFields();
             const payload = buildPayload();
             if (!payload) {
                 return;
@@ -369,6 +530,9 @@
                 }
                 const data = await resp.json();
 
+                // 2. Sync contributor edits (remove/update/add) against the auto-created list
+                await syncContributorsAfterCreate(data.id);
+
                 if (!publish) {
                     showSuccess(`Draft "${data.version}" saved.`);
                     setTimeout(function () {
@@ -378,7 +542,7 @@
                     return;
                 }
 
-                // 2. Kick off async publish — server sets is_publishing=True immediately
+                // 3. Kick off async publish — server sets is_publishing=True immediately
                 //    and returns 202 before the snapshot work completes.
                 const pubResp = await fetch(`${apiBase}${data.id}/publish/`, {
                     method: 'POST',
@@ -390,12 +554,12 @@
                     return;
                 }
 
-                // 3. Close modal and reload — list now shows "Publishing" status
+                // 4. Close modal and reload — list now shows "Publishing" status
                 $('#add-version-modal').modal('hide');
                 reload();
                 showPublishingBanner(data.id, data.version);
 
-                // 4. Poll until is_publishing clears (Celery task finished)
+                // 5. Poll until is_publishing clears (Celery task finished)
                 pollPublishing(data.id);
 
             } catch (e) {
@@ -595,6 +759,31 @@
         }
     });
 
+    $(document).on('click', '.delete-draft-btn', async function () {
+        const $button = $(this);
+        const versionId = $button.data('id');
+        const versionLabel = $button.data('version');
+
+        if (!confirm(`Delete draft version "${versionLabel}"? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${apiBase}${versionId}/delete-draft/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok) {
+                throw new Error(data.detail || `HTTP ${response.status}`);
+            }
+            $button.closest('tr').remove();
+            updateTableStateAfterRowRemoval();
+        } catch (error) {
+            alert(`Failed to delete draft: ${error.message}`);
+        }
+    });
+
     $(document).on('click', '.version-detail-link', async function (e) {
         e.preventDefault();
         const id = $(this).data('id');
@@ -652,6 +841,20 @@
                     <dt class="col-sm-4">Published at</dt>
                     <dd class="col-sm-8">${fmtDate(v.published_at)}</dd>
                 </dl>
+                ${(v.contributors && v.contributors.length) ? `
+                <hr>
+                <h6>Contributors</h6>
+                <ul class="list-unstyled mb-0">
+                    ${v.contributors.map(function (c) {
+                        const name = (c.first_name || c.last_name)
+                            ? `<strong>${escHtml(c.first_name)} ${escHtml(c.last_name)}</strong>`
+                            : '<em class="text-muted">Organisation only</em>';
+                        const org  = c.organisation ? ` &middot; ${escHtml(c.organisation)}` : '';
+                        const email = c.email ? ` &middot; <a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a>` : '';
+                        const note = c.note ? ` <small class="text-muted">(${escHtml(c.note)})</small>` : '';
+                        return `<li class="mb-1">${name}${org}${email}${note}</li>`;
+                    }).join('')}
+                </ul>` : ''}
             `);
         } catch (e) {
             $body.html(`<p class="text-danger">Failed to load: ${e.message}</p>`);

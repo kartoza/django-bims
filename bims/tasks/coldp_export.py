@@ -175,7 +175,7 @@ def build_coldp_source_entries(name_usage_rows):
 def export_coldp_zip(download_request_id, checklist_version_id):
     from django.utils import timezone
 
-    from bims.models.checklist_version import ChecklistSnapshot, ChecklistVersion
+    from bims.models.checklist_version import ChecklistSnapshot, ChecklistVersion, ChecklistVersionContributor
     from bims.models.download_request import DownloadRequest
     from bims.tasks.email_csv import send_csv_via_email
 
@@ -336,6 +336,31 @@ def export_coldp_zip(download_request_id, checklist_version_id):
     source_entries = build_coldp_source_entries(name_usage_rows)
     if source_entries:
         metadata['source'] = source_entries
+
+    contrib_qs = (
+        ChecklistVersionContributor.objects
+        .filter(checklist_version=version)
+        .select_related('user')
+        .order_by('order', 'id')
+    )
+    contributor_agents = []
+    for cv in contrib_qs:
+        agent = {}
+        if cv.user:
+            if cv.user.first_name:
+                agent['given'] = cv.user.first_name
+            if cv.user.last_name:
+                agent['family'] = cv.user.last_name
+            if cv.user.email:
+                agent['email'] = cv.user.email
+        if cv.organisation:
+            agent['organisation'] = cv.organisation
+        if cv.note:
+            agent['note'] = cv.note
+        if agent:
+            contributor_agents.append(agent)
+    if contributor_agents:
+        metadata['contributor'] = contributor_agents
 
     metadata_yaml = yaml.dump(
         metadata,

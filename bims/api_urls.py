@@ -4,7 +4,9 @@ from bims.api_views.coldp import ColDPMetadataView, ColDPTaxonView, ColDPSnapsho
 from bims.api_views.checklist_version import (
     ChecklistVersionListView, ChecklistVersionDetailView,
     ChecklistVersionPublishView, ChecklistVersionExportView,
-    ChecklistVersionDeleteView,
+    ChecklistVersionDeleteView, ChecklistVersionDraftDeleteView,
+    ChecklistVersionContributorListView, ChecklistVersionContributorDetailView,
+    TaxonGroupMembersView,
 )
 from bims.api_views.checklist import DownloadChecklistAPIView
 from bims.api_views.clear_cache import ClearCacheView
@@ -575,5 +577,25 @@ urlpatterns = [
         'checklist-version/<uuid:pk>/delete/',
         ChecklistVersionDeleteView.as_view(),
         name='checklist-version-delete',
+    ),
+    path(
+        'checklist-version/<uuid:pk>/delete-draft/',
+        ChecklistVersionDraftDeleteView.as_view(),
+        name='checklist-version-delete-draft',
+    ),
+    path(
+        'checklist-version/<uuid:pk>/contributors/',
+        ChecklistVersionContributorListView.as_view(),
+        name='checklist-version-contributors',
+    ),
+    path(
+        'checklist-version/<uuid:pk>/contributors/<int:contributor_id>/',
+        ChecklistVersionContributorDetailView.as_view(),
+        name='checklist-version-contributor-detail',
+    ),
+    path(
+        'checklist-version/group-members/',
+        TaxonGroupMembersView.as_view(),
+        name='checklist-version-group-members',
     ),
 ]

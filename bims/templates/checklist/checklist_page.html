@@ -119,7 +119,7 @@
 {% if can_create_version %}
 <div class="modal fade" id="add-version-modal" tabindex="-1" role="dialog"
      aria-labelledby="add-version-modal-label" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="add-version-modal-label">
@@ -175,6 +175,17 @@
                     <textarea id="av-notes" class="form-control" rows="3"
                               placeholder="Internal release notes…"></textarea>
                 </div>
+
+                <hr>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="mb-0">Contributors</label>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            id="btn-add-org-contributor">+ Add Organisation</button>
+                </div>
+                <div id="av-contributors-loading" class="text-muted small d-none">
+                    <span class="spinner-border spinner-border-sm"></span> Loading…
+                </div>
+                <div id="av-contributors-list"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"

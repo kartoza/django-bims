@@ -20,6 +20,51 @@ from django.db import models
 from preferences import preferences
 
 
+class ChecklistVersionContributor(models.Model):
+    """
+    A person or organisation credited as a contributor to a ChecklistVersion.
+
+    Rows are auto-populated from the TaxonGroup's experts and contributors
+    when a version is created, and can be edited or removed before publishing.
+    Org-only entries (user=None) can be added manually by admins.
+    """
+    checklist_version = models.ForeignKey(
+        'ChecklistVersion',
+        on_delete=models.CASCADE,
+        related_name='version_contributors',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='checklist_contributions',
+        help_text='Linked user account (null for organisation-only entries).',
+    )
+    organisation = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text='Organisation name (editable; used for org-only entries too).',
+    )
+    note = models.TextField(
+        blank=True,
+        default='',
+        help_text='Contribution role or free-text note (e.g. "Data curation").',
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'Checklist Version Contributor'
+        verbose_name_plural = 'Checklist Version Contributors'
+
+    def __str__(self):
+        if self.user_id:
+            return self.user.get_full_name() or self.user.username
+        return self.organisation or 'Organisation contributor'
+
+
 class ChecklistSnapshot(models.Model):
     """
     One pre-rendered checklist NameUsage row per taxon per ChecklistVersion.
