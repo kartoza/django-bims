@@ -66,6 +66,11 @@ class OpenSearchCollectionView(BimsApiView):
             filter_clauses.append({
                 'terms': {'module_group_id': [int(m) for m in modules.split(',') if m]}
             })
+        spatial_filter_clause = self._build_spatial_filter_clause(
+            params.get('spatialFilter', '')
+        )
+        if spatial_filter_clause:
+            filter_clauses.append(spatial_filter_clause)
 
         # --- ecosystem type ---
         ecosystem_type = params.get('ecosystemType', '')
@@ -354,6 +359,56 @@ class OpenSearchCollectionView(BimsApiView):
             },
         )
         return response.get('hits', {}).get('total', {}).get('value', 0) > 0
+
+    def _build_spatial_filter_clause(self, spatial_filter_value):
+        spatial_filters = self._parse_json_param(spatial_filter_value)
+        if not spatial_filters:
+            return None
+
+        should_clauses = []
+        for spatial_filter in spatial_filters:
+            if not isinstance(spatial_filter, str):
+                continue
+
+            parts = spatial_filter.split(',')
+            if len(parts) < 2:
+                continue
+
+            filter_type = parts[0]
+            spatial_key = parts[1]
+
+            if filter_type == 'group':
+                should_clauses.append({
+                    'term': {'location_context_groups': spatial_key}
+                })
+                continue
+
+            if filter_type != 'value' or len(parts) < 3:
+                continue
+
+            value = ','.join(parts[2:])
+            should_clauses.append({
+                'term': {'location_context_values': f'{spatial_key}|{value}'}
+            })
+
+        if not should_clauses:
+            return None
+
+        return {
+            'bool': {
+                'should': should_clauses,
+                'minimum_should_match': 1,
+            }
+        }
+
+    @staticmethod
+    def _parse_json_param(raw_value):
+        if not raw_value:
+            return None
+        try:
+            return json.loads(raw_value)
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _create_search_token(site_ids: list, schema_name: str):

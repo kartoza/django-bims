@@ -77,6 +77,7 @@ from bims.views.site_visit import (
 from bims.views.taxa_management import TaxaManagementView
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
+from bims.views.opensearch_reindex import OpenSearchReindexView
 from bims.views.source_reference import (
     SourceReferenceListView,
     EditSourceReferenceView,
@@ -138,6 +139,9 @@ urlpatterns = [
     re_path(r'^under-development/$',
             UnderDevelopmentView.as_view(), name='under-development'),
     re_path(r'^tracking/$', dashboard, name='tracking-dashboard'),
+    re_path(r'^opensearch-reindex/$',
+            OpenSearchReindexView.as_view(),
+            name='opensearch-reindex'),
     re_path(r'^get_feature/$',
             GetFeatureInfo.as_view(),
             name='get-feature'),

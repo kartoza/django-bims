@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block body_class %}opensearch-reindex{% endblock %}
+
+{% block body_outer %}
+<div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <h1>OpenSearch Reindex Tracker</h1>
+            <p class="text-muted">
+                Tracks OpenSearch reindex runs and tenant progress.
+            </p>
+        </div>
+    </div>
+
+    {% if active_run %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    Active run: #{{ active_run.id }} |
+                    {{ active_run.completed_tenants }}/{{ active_run.total_tenants }} tenants completed
+                    {% if active_run.failed_tenants %}
+                        | {{ active_run.failed_tenants }} failed
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            {% if runs %}
+                {% for run in runs %}
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Run #{{ run.id }}</strong>
+                                <span class="ml-2 badge badge-{% if run.status == 'completed' %}success{% elif run.status == 'running' %}info{% elif run.status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                    {{ run.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="text-muted">
+                                Started {{ run.started_at }}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3"><strong>Recreate:</strong> {{ run.recreate|yesno:"Yes,No" }}</div>
+                                <div class="col-md-3"><strong>Chunk size:</strong> {{ run.chunk_size }}</div>
+                                <div class="col-md-3"><strong>Schema filter:</strong> {{ run.requested_schema|default:"All tenants" }}</div>
+                                <div class="col-md-3"><strong>Finished:</strong> {{ run.finished_at|default:"In progress" }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-4"><strong>Total tenants:</strong> {{ run.total_tenants }}</div>
+                                <div class="col-md-4"><strong>Completed:</strong> {{ run.completed_tenants }}</div>
+                                <div class="col-md-4"><strong>Failed:</strong> {{ run.failed_tenants }}</div>
+                            </div>
+                            {% if run.error %}
+                                <div class="alert alert-danger">
+                                    {{ run.error }}
+                                </div>
+                            {% endif %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th>Tenant</th>
+                                        <th>Status</th>
+                                        <th>Records Indexed</th>
+                                        <th>Started</th>
+                                        <th>Finished</th>
+                                        <th>Error</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for tenant_status in run.tenant_statuses.all %}
+                                        <tr>
+                                            <td>{{ tenant_status.schema_name }}</td>
+                                            <td>{{ tenant_status.get_status_display }}</td>
+                                            <td>{{ tenant_status.records_indexed }}</td>
+                                            <td>{{ tenant_status.started_at|default:"-" }}</td>
+                                            <td>{{ tenant_status.finished_at|default:"-" }}</td>
+                                            <td>{{ tenant_status.error|default:"-" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">
+                    No OpenSearch reindex runs have been recorded yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

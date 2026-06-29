@@ -20,6 +20,7 @@ def index_collection_record(record_id: int, schema_name: str):
                 'module_group',
                 'owner',
             ).prefetch_related(
+                'site__locationcontext_set__group',
                 'taxonomy__tags',
                 'taxonomy__vernacular_names',
                 'taxonomy__taxongroup_set',

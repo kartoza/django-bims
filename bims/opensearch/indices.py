@@ -52,6 +52,8 @@ COLLECTIONS_MAPPING = {
             },
             'ecosystem_type': {'type': 'keyword'},
             'location': {'type': 'geo_point'},
+            'location_context_groups': {'type': 'keyword'},
+            'location_context_values': {'type': 'keyword'},
 
             # --- collection record ---
             'collection_date': {'type': 'date', 'format': 'yyyy-MM-dd'},

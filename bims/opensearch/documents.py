@@ -66,6 +66,8 @@ def build_document(record, schema_name: str) -> dict:
     site_name = ''
     river_name = ''
     ecosystem_type = ''
+    location_context_groups = []
+    location_context_values = []
     if site:
         site_id = site.id
         site_code = site.site_code or ''
@@ -73,6 +75,9 @@ def build_document(record, schema_name: str) -> dict:
         if site.river:
             river_name = site.river.name or ''
         ecosystem_type = site.ecosystem_type or ''
+        location_context_groups, location_context_values = (
+            build_location_context_tokens(site)
+        )
 
     end_embargo_date = None
     if record.end_embargo_date:
@@ -99,6 +104,8 @@ def build_document(record, schema_name: str) -> dict:
         'river_name': river_name,
         'ecosystem_type': ecosystem_type,
         'location': location,
+        'location_context_groups': location_context_groups,
+        'location_context_values': location_context_values,
         'collection_date': (
             record.collection_date.strftime('%Y-%m-%d')
             if record.collection_date else None
@@ -111,6 +118,27 @@ def build_document(record, schema_name: str) -> dict:
         'ready_for_validation': record.ready_for_validation,
         'end_embargo_date': end_embargo_date,
     }
+
+
+def build_location_context_tokens(site) -> tuple:
+    groups = set()
+    values = set()
+
+    for context in site.locationcontext_set.all():
+        group = context.group
+        if not group or not group.key:
+            continue
+
+        group_tokens = [group.key]
+        if group.layer_identifier:
+            group_tokens.append(f'{group.key}.{group.layer_identifier}')
+
+        for token in group_tokens:
+            groups.add(token)
+            if context.value:
+                values.add(f'{token}|{context.value}')
+
+    return sorted(groups), sorted(values)
 
 
 def index_record(record, schema_name: str = None):
@@ -173,6 +201,7 @@ def bulk_index(schema_name: str, chunk_size=500) -> int:
                 'module_group',
                 'owner',
             ).prefetch_related(
+                'site__locationcontext_set__group',
                 'taxonomy__tags',
                 'taxonomy__vernacular_names',
                 'taxonomy__taxongroup_set',
