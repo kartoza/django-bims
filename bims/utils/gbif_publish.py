@@ -73,7 +73,7 @@ def write_occurrence_txt(
     path: str,
     records: Iterable[BiologicalCollectionRecord],
     dataset_name: str = "",
-) -> List[int]:
+) -> Tuple[List[int], int]:
     from django.db import connection
     tenant_name = connection.schema_name
 
@@ -85,6 +85,7 @@ def write_occurrence_txt(
         "dataGeneralizations", "license"
     ]
     written_ids: List[int] = []
+    missing_inst_code: int = 0
     with open(path, "w", newline="\n", encoding="utf-8") as f:
         w = csv.writer(f, delimiter="\t")
         w.writerow(header)
@@ -150,12 +151,12 @@ def write_occurrence_txt(
             row_dataset_name = dataset_name or _site_name()
 
             inst_code = (r.institution_id or "").strip()
-            if not inst_code or inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() == 'healthyrivers':
-                collector_user = r.collector_user or r.owner
-                inst_code = (
-                    (collector_user.organization if collector_user else None)
-                    or inst_code
-                )
+            if (
+                inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() in ['healthyrivers', 'bims']
+            ):
+                inst_code = ""
+            if not inst_code:
+                missing_inst_code += 1
 
             dg = ""
 
@@ -191,7 +192,7 @@ def write_occurrence_txt(
             ]
             w.writerow(row)
             written_ids.append(r.id)
-    return written_ids
+    return written_ids, missing_inst_code
 
 def write_meta_xml(path: str):
     meta = f"""<archive xmlns="http://rs.tdwg.org/dwc/text/" metadata="eml.xml">
@@ -594,7 +595,7 @@ def build_dwca(
 
     ref_title = source_reference.title if source_reference else _site_name()
 
-    written_ids = write_occurrence_txt(occ_path, records, dataset_name=ref_title)
+    written_ids, missing_inst_code = write_occurrence_txt(occ_path, records, dataset_name=ref_title)
     if not written_ids:
         raise ValueError("No eligible records to export.")
 
@@ -643,6 +644,15 @@ def build_dwca(
     rel_media = os.path.relpath(zip_path, settings.MEDIA_ROOT)
     archive_url = f"{base_url}{_media_url()}/{rel_media}".replace(
         "//", "/").replace(":/", "://")
+
+    if missing_inst_code:
+        raise ValueError(
+            f"The DwC-A archive was created at {archive_url} but was NOT published to GBIF: "
+            f"{missing_inst_code} occurrence(s) are missing a Custodian (institution code). "
+            f"Please update the Custodian field for all occurrences and re-publish, "
+            f"or use the 'Update Custodian from GBIF Archive' tool in the admin to backfill "
+            f"from the generated archive."
+        )
 
     return zip_path, archive_url, written_ids
 
