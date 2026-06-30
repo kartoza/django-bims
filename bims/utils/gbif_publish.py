@@ -165,6 +165,11 @@ def write_occurrence_txt(
                 inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() in ['healthyrivers', 'bims', 'fbis']
             ):
                 inst_code = ""
+                for user in (r.collector_user, r.owner):
+                    if user and getattr(user, "organization", None):
+                        inst_code = user.organization.strip()
+                        if inst_code:
+                            break
             if not inst_code:
                 missing_inst_code += 1
 
