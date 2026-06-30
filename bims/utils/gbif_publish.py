@@ -18,6 +18,16 @@ from bims.models.biological_collection_record import BiologicalCollectionRecord
 
 LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/legalcode"
 
+
+class DwcaArchiveNotPublishedError(ValueError):
+    """Raised when a DwC-A archive is created but cannot be published."""
+
+    def __init__(self, message: str, archive_url: str, records_published: int = 0):
+        super().__init__(message)
+        self.archive_url = archive_url
+        self.records_published = records_published
+
+
 def _media_url() -> str:
     return getattr(settings, "MEDIA_URL", "/media/").rstrip("/")
 
@@ -152,7 +162,7 @@ def write_occurrence_txt(
 
             inst_code = (r.institution_id or "").strip()
             if (
-                inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() in ['healthyrivers', 'bims']
+                inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() in ['healthyrivers', 'bims', 'fbis']
             ):
                 inst_code = ""
             if not inst_code:
@@ -646,12 +656,14 @@ def build_dwca(
         "//", "/").replace(":/", "://")
 
     if missing_inst_code:
-        raise ValueError(
+        raise DwcaArchiveNotPublishedError(
             f"The DwC-A archive was created at {archive_url} but was NOT published to GBIF: "
             f"{missing_inst_code} occurrence(s) are missing a Custodian (institution code). "
             f"Please update the Custodian field for all occurrences and re-publish, "
             f"or use the 'Update Custodian from GBIF Archive' tool in the admin to backfill "
-            f"from the generated archive."
+            f"from the generated archive.",
+            archive_url=archive_url,
+            records_published=len(written_ids),
         )
 
     return zip_path, archive_url, written_ids
