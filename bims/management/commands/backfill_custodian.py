@@ -112,7 +112,7 @@ class Command(BaseCommand):
 
         sessions = UploadSession.objects.filter(
             category='collections',
-        ).exclude(process_file='').exclude(process_file__isnull=True)
+        ).exclude(process_file='').exclude(process_file__isnull=True).order_by('id')
 
         if session_id is not None:
             sessions = sessions.filter(id=session_id)
@@ -126,6 +126,10 @@ class Command(BaseCommand):
             for session in sessions.iterator():
                 try:
                     result = self._process_session(session, dry_run)
+                    self.stdout.write(
+                        f'  Session {session.id}: '
+                        f'updated={result["updated"]}, skipped={result["skipped"]}'
+                    )
                 except Exception as exc:
                     logger.warning(
                         'Session %s: unexpected error, skipping session - %s: %s',
@@ -188,7 +192,7 @@ class Command(BaseCommand):
             return result
 
         text = self._decode(raw)
-        del raw  # free raw bytes; decoded text is all we need now
+        del raw
 
         if text is None:
             self.stdout.write(
@@ -198,7 +202,7 @@ class Command(BaseCommand):
             return result
 
         reader = csv.DictReader(StringIO(text))
-        del text  # StringIO holds its own copy; release the decoded string
+        del text
 
         try:
             norm = self._normalise_headers(reader.fieldnames)

@@ -177,6 +177,30 @@ class TestBackfillCustodian(FastTenantTestCase):
         self.assertIn('updated=4', output)
         self.assertIn('skipped=1', output)
 
+    def test_later_session_overwrites_earlier_custodian(self):
+        """When the same UUID appears in two sessions, the higher-id session wins."""
+        record_uuid = str(uuid.uuid4())
+        record = BiologicalCollectionRecordF.create(
+            site=self.site,
+            uuid=record_uuid,
+            institution_id='Wrong',
+        )
+        # Older upload: custodian X
+        _make_session(_make_csv([{
+            'UUID': record_uuid,
+            'Collector/Owner Institute': 'Custodian X',
+        }]), name='upload_old.csv')
+        # Newer upload: custodian updated to Y
+        _make_session(_make_csv([{
+            'UUID': record_uuid,
+            'Collector/Owner Institute': 'Custodian Y',
+        }]), name='upload_new.csv')
+
+        self._call()
+
+        record.refresh_from_db()
+        self.assertEqual(record.institution_id, 'Custodian Y')
+
     def test_uses_lowercase_custodian_column_variant(self):
         """'Collector/owner institute' (lowercase o/i) must also be recognised."""
         record_uuid = str(uuid.uuid4())
