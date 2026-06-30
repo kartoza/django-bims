@@ -339,6 +339,40 @@ class TestBackfillCustodian(FastTenantTestCase):
 
         self.assertIn('no custodian column', output)
 
+    def test_malformed_csv_does_not_stop_subsequent_sessions(self):
+        """A CSV parse error in one session must not prevent others from being processed."""
+        # Session 1: malformed CSV - unquoted field containing a newline
+        bad_csv = (
+            'UUID,Taxon,Collector/Owner Institute\n'
+            'some-uuid,"bad\nfield",Institute A\n'
+        )
+        session_bad = UploadSessionF.create(category='collections')
+        session_bad.process_file.save(
+            'bad.csv', ContentFile(bad_csv.encode('utf-8'))
+        )
+
+        # Session 2: valid CSV that should still be processed
+        record_uuid = str(uuid.uuid4())
+        record = BiologicalCollectionRecordF.create(
+            site=self.site,
+            uuid=record_uuid,
+            institution_id='Wrong',
+        )
+        session_good = UploadSessionF.create(category='collections')
+        session_good.process_file.save(
+            'good.csv',
+            ContentFile(_make_csv([{
+                'UUID': record_uuid,
+                'Collector/Owner Institute': 'SAEON',
+            }]).encode('utf-8')),
+        )
+
+        output = self._call()
+
+        record.refresh_from_db()
+        self.assertEqual(record.institution_id, 'SAEON')
+        self.assertIn('updated=1', output)
+
     # ------------------------------------------------------------------
     # Session filter
     # ------------------------------------------------------------------

@@ -124,7 +124,18 @@ class Command(BaseCommand):
         disconnect_bims_signals()
         try:
             for session in sessions.iterator():
-                result = self._process_session(session, dry_run)
+                try:
+                    result = self._process_session(session, dry_run)
+                except Exception as exc:
+                    logger.warning(
+                        'Session %s: unexpected error, skipping session - %s: %s',
+                        session.id, type(exc).__name__, exc,
+                    )
+                    self.stdout.write(
+                        f'  Session {session.id}: unexpected error, skipping - {exc}'
+                    )
+                    totals['no_file'] += 1
+                    continue
                 for key in totals:
                     totals[key] += result[key]
         finally:
@@ -189,8 +200,14 @@ class Command(BaseCommand):
         reader = csv.DictReader(StringIO(text))
         del text  # StringIO holds its own copy; release the decoded string
 
-        # Accessing .fieldnames reads the header row from the StringIO buffer.
-        norm = self._normalise_headers(reader.fieldnames)
+        try:
+            norm = self._normalise_headers(reader.fieldnames)
+        except csv.Error as exc:
+            self.stdout.write(
+                f'  Session {session.id}: CSV parse error reading headers, skipping - {exc}'
+            )
+            result['no_file'] = 1
+            return result
 
         uuid_col = norm.get(UUID_KEY.upper())
         if not uuid_col:
@@ -212,54 +229,61 @@ class Command(BaseCommand):
 
         from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-        for row in reader:  # stream one row at a time; no full list in memory
-            uuid_val = (row.get(uuid_col) or '').strip()
-            custodian = (row.get(custodian_col) or '').strip()
+        try:
+            for row in reader:  # stream one row at a time; no full list in memory
+                uuid_val = (row.get(uuid_col) or '').strip()
+                custodian = (row.get(custodian_col) or '').strip()
 
-            if not uuid_val or not custodian or custodian == '-':
-                result['skipped'] += 1
-                continue
+                if not uuid_val or not custodian or custodian == '-':
+                    result['skipped'] += 1
+                    continue
 
-            if len(custodian) > INSTITUTION_ID_MAX_LENGTH:
-                self.stdout.write(
-                    f'  Session {session.id}: UUID={uuid_val}: custodian value '
-                    f'exceeds {INSTITUTION_ID_MAX_LENGTH} chars, skipping row.'
-                )
-                result['skipped'] += 1
-                continue
+                if len(custodian) > INSTITUTION_ID_MAX_LENGTH:
+                    self.stdout.write(
+                        f'  Session {session.id}: UUID={uuid_val}: custodian value '
+                        f'exceeds {INSTITUTION_ID_MAX_LENGTH} chars, skipping row.'
+                    )
+                    result['skipped'] += 1
+                    continue
 
-            try:
-                record = BiologicalCollectionRecord.objects.get(uuid=uuid_val)
-            except BiologicalCollectionRecord.DoesNotExist:
-                result['skipped'] += 1
-                continue
-            except BiologicalCollectionRecord.MultipleObjectsReturned:
-                self.stdout.write(
-                    f'  Session {session.id}: multiple records for UUID {uuid_val}, skipping row.'
-                )
-                result['skipped'] += 1
-                continue
-            except Exception as exc:
-                logger.warning(
-                    'Session %s: unexpected error looking up UUID %s: %s',
-                    session.id, uuid_val, exc,
-                )
-                result['skipped'] += 1
-                continue
+                try:
+                    record = BiologicalCollectionRecord.objects.get(uuid=uuid_val)
+                except BiologicalCollectionRecord.DoesNotExist:
+                    result['skipped'] += 1
+                    continue
+                except BiologicalCollectionRecord.MultipleObjectsReturned:
+                    self.stdout.write(
+                        f'  Session {session.id}: multiple records for UUID {uuid_val}, skipping row.'
+                    )
+                    result['skipped'] += 1
+                    continue
+                except Exception as exc:
+                    logger.warning(
+                        'Session %s: unexpected error looking up UUID %s: %s',
+                        session.id, uuid_val, exc,
+                    )
+                    result['skipped'] += 1
+                    continue
 
-            if record.institution_id == custodian:
-                result['skipped'] += 1
-                continue
+                if record.institution_id == custodian:
+                    result['skipped'] += 1
+                    continue
 
-            if dry_run:
-                self.stdout.write(
-                    f'  [DRY RUN] UUID={uuid_val}: '
-                    f'institution_id "{record.institution_id}" -> "{custodian}"'
-                )
-            else:
-                record.institution_id = custodian
-                record.save(update_fields=['institution_id'])
+                if dry_run:
+                    self.stdout.write(
+                        f'  [DRY RUN] UUID={uuid_val}: '
+                        f'institution_id "{record.institution_id}" -> "{custodian}"'
+                    )
+                else:
+                    record.institution_id = custodian
+                    record.save(update_fields=['institution_id'])
 
-            result['updated'] += 1
+                result['updated'] += 1
+
+        except csv.Error as exc:
+            self.stdout.write(
+                f'  Session {session.id}: CSV parse error at line {reader.line_num}, '
+                f'skipping remaining rows - {exc}'
+            )
 
         return result
