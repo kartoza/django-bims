@@ -3,6 +3,10 @@ LEDET-BIMS documentation
 
 Technical documentation for the Project.
 
+User/admin guides:
+
+- [Meta Groups Admin Guide](metagroup_admin_guide.md)
+
 Firstly you need to be in django-bims folder and then access the management command in the docker container
  with.
 
@@ -28,7 +32,6 @@ It writes the results to the specified file.
 You can choose the output format. rst (reStructuredText) or md (Markdown). Default format is rst.
 
 ```python manage.py listing_models --format md```
-
 
 
 
