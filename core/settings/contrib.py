@@ -391,6 +391,12 @@ LOGGING = {
             "handlers": ["console"], "level": "ERROR", },
         "celery": {
             'handlers': ['celery', 'console'], 'level': 'DEBUG', },
+        "opensearch": {
+            'handlers': ["console"], 'level': 'WARNING', },
+        "opensearchpy": {
+            'handlers': ["console"], 'level': 'WARNING', },
+        "opensearchpy.trace": {
+            'handlers': ["console"], 'level': 'WARNING', },
     },
 }
 

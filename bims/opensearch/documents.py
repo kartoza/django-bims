@@ -172,13 +172,15 @@ def delete_record(record_id: int, schema_name: str = None):
         )
 
 
-def bulk_index(schema_name: str, chunk_size=500) -> int:
+def bulk_index(schema_name: str, chunk_size=500, on_progress=None) -> int:
     """
     Bulk-index all BiologicalCollectionRecords for a tenant schema.
 
     Uses manual ID-based chunking instead of .iterator() because Django's
     prefetch_related is silently ignored with .iterator(), which causes 3+
     extra queries per record (vernacular_names, tags, taxongroup_set).
+
+    on_progress: optional callable(total_indexed_so_far) called after each chunk.
     """
     from opensearchpy.helpers import bulk
     from bims.models.biological_collection_record import BiologicalCollectionRecord
@@ -222,5 +224,7 @@ def bulk_index(schema_name: str, chunk_size=500) -> int:
                 '%d errors in chunk starting at offset %d for schema %s',
                 len(errors), offset, schema_name,
             )
+        if on_progress:
+            on_progress(total_ok)
 
     return total_ok
