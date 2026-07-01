@@ -98,7 +98,7 @@ def overview_site_detail(site_id: int):
     location_context_filters = (
         LocationContextFilterGroupOrder.objects.filter(
             show_in_dashboard=True
-        ).order_by('group_display_order')
+        ).order_by('filter__display_order', 'group_display_order')
     )
 
     for context_filter in location_context_filters:

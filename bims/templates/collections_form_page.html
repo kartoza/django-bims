@@ -147,7 +147,8 @@
                 <div class="col-sm-10">
                     <input type="text" name="date"
                            class="form-control form-control-sm"
-                           id="date" placeholder="" required>
+                           id="date" placeholder=""
+                           value="{{ request.GET.date|default:'' }}" required>
                     <div class="invalid-feedback">
                         Please provide a valid date
                     </div>
