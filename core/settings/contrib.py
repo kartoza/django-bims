@@ -58,6 +58,7 @@ SHARED_APPS = (
     'django.contrib.humanize',
     'django.contrib.gis',
     'django.contrib.flatpages',
+    'django.contrib.postgres',
 
     # Utility
     'drf_yasg',
@@ -390,6 +391,12 @@ LOGGING = {
             "handlers": ["console"], "level": "ERROR", },
         "celery": {
             'handlers': ['celery', 'console'], 'level': 'DEBUG', },
+        "opensearch": {
+            'handlers': ["console"], 'level': 'WARNING', },
+        "opensearchpy": {
+            'handlers': ["console"], 'level': 'WARNING', },
+        "opensearchpy.trace": {
+            'handlers': ["console"], 'level': 'WARNING', },
     },
 }
 

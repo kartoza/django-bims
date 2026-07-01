@@ -111,7 +111,7 @@ define([
             Shared.Dispatcher.on('map:clearAllLayers', this.clearAllLayers, this);
             Shared.Dispatcher.on('map:addLayer', this.addLayer, this);
             Shared.Dispatcher.on('map:removeLayer', this.removeLayer, this);
-            Shared.Dispatcher.on('map:updateBiodiversityLayerParams', this.updateBiodiversityLayerParams, this);
+            Shared.Dispatcher.on('map:updateBiodiversityLayerToken', this.updateBiodiversityLayerToken, this);
             Shared.Dispatcher.on('map:updateClusterBiologicalCollectionTaxon', this.updateClusterBiologicalCollectionTaxonID, this);
 
             Shared.Dispatcher.on('map:showMapLegends', this.showMapLegends, this);
@@ -196,9 +196,20 @@ define([
         clearPoint: function () {
             this.pointVectorSource.clear();
         },
+        isValidExtent: function (extent) {
+            if (!Array.isArray(extent) || extent.length !== 4) {
+                return false;
+            }
+            return extent.every(function (value) {
+                return typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value);
+            });
+        },
         zoomToExtent: function (coordinates, shouldTransform=true, updateZoom=true) {
             if (this.isBoundaryEnabled) {
                 this.fetchingRecords();
+                return false;
+            }
+            if (!this.isValidExtent(coordinates) && !this.isValidExtent(this.polygonDrawn)) {
                 return false;
             }
             this.previousZoom = this.getCurrentZoom();
@@ -208,6 +219,9 @@ define([
             }
             if (this.polygonDrawn) {
                 ext = this.polygonDrawn;
+            }
+            if (!this.isValidExtent(ext)) {
+                return false;
             }
             this.map.getView().fit(ext, {
                 size: this.map.getSize(), padding: [
@@ -935,31 +949,24 @@ define([
             }
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
         },
-        updateBiodiversityLayerParams: function (query) {
-            query = query.replaceAll(',', '\\,');
-            query = query.replaceAll(';', '\\;');
-            let newParams = {
-                layers: locationSiteGeoserverLayer,
-                format: 'image/png',
-                viewparams: 'where:' + tenant + '."' + query + '"'
-            };
-            this.layers.biodiversitySource.updateParams(newParams);
+        updateBiodiversityLayerToken: function (token) {
+            if (!token) return;
+            var newUrl = '/bims_proxy/' + martinUrl +
+                '/search_location_sites/{z}/{x}/{y}?token=' + token +
+                '&schema=' + currentSchema;
+            this.layers.biodiversitySource.setUrl(newUrl);
+            this.layers.biodiversitySource.refresh();
+            this.layers.biodiversityTileLayer.setVisible(true);
         },
         clearAllLayers: function () {
-            let newParams = {
-                layers: locationSiteGeoserverLayer,
-                format: 'image/png',
-                viewparams: 'where:' + emptyWMSSiteParameter
-            };
-            this.layers.biodiversitySource.updateParams(newParams);
+            this.layers.biodiversityTileLayer.setVisible(false);
+            this.layers.biodiversitySource.setUrl(
+                '/bims_proxy/' + martinUrl +
+                '/search_location_sites/{z}/{x}/{y}?token=__empty__&schema=' + currentSchema
+            );
         },
         resetSitesLayer: function () {
-            let newParams = {
-                layers: locationSiteGeoserverLayer,
-                format: 'image/png',
-                viewparams: 'where:' + defaultWMSSiteParameters
-            };
-            this.layers.biodiversitySource.updateParams(newParams);
+            this.layers.biodiversityTileLayer.setVisible(false);
         },
         toggleMapInteraction: function (enabled) {
             this.mapInteractionEnabled = enabled;

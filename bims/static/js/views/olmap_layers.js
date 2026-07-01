@@ -180,22 +180,22 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             map.addLayer(self.highlightVector);
 
             // ---------------------------------
-            // BIODIVERSITY LAYERS
+            // BIODIVERSITY LAYERS (Martin vector tiles)
             // ---------------------------------
-            var biodiversityLayersOptions = {
-                url: '/bims_proxy/' + geoserverPublicUrl + 'wms',
-                params: {
-                    LAYERS: locationSiteGeoserverLayer,
-                    FORMAT: 'image/png8',
-                    viewparams: 'where:' + defaultWMSSiteParameters
-                },
-                ratio: 1,
-                serverType: 'geoserver',
-                transition: 0
-            };
-            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
-            self.biodiversityTileLayer = new ol.layer.Tile({
-                source: self.biodiversitySource
+            self.biodiversitySource = new ol.source.VectorTile({
+                format: new ol.format.MVT(),
+                url: '/bims_proxy/' + martinUrl + '/search_location_sites/{z}/{x}/{y}?token=__empty__&schema=' + currentSchema,
+            });
+            self.biodiversityTileLayer = new ol.layer.VectorTile({
+                source: self.biodiversitySource,
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 6,
+                        fill: new ol.style.Fill({ color: '#18a090' }),
+                        stroke: new ol.style.Stroke({ color: '#ffffff', width: 1.5 }),
+                    }),
+                }),
+                visible: false,
             });
 
             let biodiversityLayerData = {

@@ -7,7 +7,7 @@ define([
     return Backbone.Collection.extend({
         model: SearchModel,
         url: "",
-        searchUrl: "/api/collection-search/",
+        searchUrl: "/api/opensearch/collection-search/",
         siteResultUrl: "/api/site-search-result/",
         taxaResultUrl: "/api/taxa-search-result/",
         viewCollection: [],
@@ -112,70 +112,35 @@ define([
             this.searchXHR = this.fetch({
                 success: function () {
                     Shared.CurrentState.SEARCH = true;
-                },
-                complete: function () {
-                    let timeout = 2000;
-
-                    // initial search should have a small timeout
-                    if (self.initialSearch) {
-                        timeout = 500;
-                        self.initialSearch = false;
-                        self.secondSearch = true;
-                    }
-
-                    // post initial search can have bigger timeout
-                    if (self.secondSearch) {
-                        timeout = 1000;
-                        self.secondSearch = true;
-                    }
-
-                    if (self.status === 'processing') {
-                        setTimeout(function () {
-                            self.getSearchResults()
-                        }, timeout);
-                    }
                 }
             });
             return this.searchXHR;
         },
         parse: function (response) {
             this.module = document.querySelector('input[name="module"]:checked').value;
-            if (response.hasOwnProperty('records')) {
-                this.recordsData = response['records'];
-            }
-            if (response.hasOwnProperty('sites')) {
-                this.sitesData = response['sites'];
-            }
-            if (response.hasOwnProperty('fuzzy_search')) {
-                this.isFuzzySearch = response['fuzzy_search'];
-            }
-            if (response.hasOwnProperty('status')) {
-                this.status = response['status'];
-            }
-            if (response.hasOwnProperty('total_records')) {
-                this.totalRecords = response['total_records'];
-            }
-            if (this.module !== 'occurrence') {
-                if (response['total']) {
-                    this.totalRecords = response['total'];
-                }
-            }
-            if (response.hasOwnProperty('total_sites')) {
-                this.totalSites = response['total_sites'];
-            }
-            if (response.hasOwnProperty('total_unique_taxa')) {
-                this.totalTaxa = response['total_unique_taxa'];
-            }
-            if (response.hasOwnProperty('sites_raw_query')) {
-                this.sitesRawQuery = response['sites_raw_query'];
-            }
-            if (response.hasOwnProperty('process_id')) {
-                this.processID = response['process_id'];
-            }
-            if (response.hasOwnProperty('extent')) {
-                this.extent = response['extent'];
+            // taxa is returned as 'taxa' by OpenSearch API, sites sidebar data as 'sites'
+            this.recordsData = response['taxa'] || response['records'] || [];
+            this.sitesData = response['sites'] || [];
+            this.status = response['status'] || 'finished';
+            this.totalRecords = response['total_records'] || response['total'] || 0;
+            this.totalSites = response['total_sites'] || 0;
+            this.totalTaxa = response['total_unique_taxa'] || 0;
+            this.extent = response['extent'] || [];
+            if (response['token']) {
+                this.searchToken = response['token'];
             }
             this.renderCollection();
+        },
+        hasValidExtent: function () {
+            if (!Array.isArray(this.extent) || this.extent.length !== 4) {
+                return false;
+            }
+            return this.extent.every(function (value) {
+                return typeof value === 'number' && !Number.isNaN(value) && Number.isFinite(value);
+            });
+        },
+        getSiteDisplayName: function (siteData) {
+            return siteData['site_code'] || siteData['name'] || '';
         },
         renderCollection: function () {
             var self = this;
@@ -236,8 +201,8 @@ define([
                 if (this.searchFinishedCallback) {
                     this.searchFinishedCallback();
                 }
-                Shared.Dispatcher.trigger('map:updateBiodiversityLayerParams', this.sitesRawQuery);
-                if (this.extent.length === 4) {
+                Shared.Dispatcher.trigger('map:updateBiodiversityLayerToken', this.searchToken);
+                if (this.hasValidExtent()) {
                     Shared.Dispatcher.trigger('map:zoomToExtent', this.extent, true, false);
                 }
 
@@ -284,7 +249,7 @@ define([
                         total_thermal: numberWithCommas(total_water_temperature_data),
                         total_chemical_records: numberWithCommas(total_chemical_records),
                         total_climate_records: numberWithCommas(total_climate_records),
-                        name: data['name'],
+                        name: self.getSiteDisplayName(data),
                         record_type: 'site',
                         module: self.module
                     });
@@ -307,9 +272,9 @@ define([
                     $dashboardButton.click(function () {
                         Shared.Dispatcher.trigger('multiSiteDetailPanel:show');
                     });
-                } else {
+                } else if (this.sitesData.length === 1) {
                     let siteId = this.sitesData[0]['site_id'];
-                    let siteName = this.sitesData[0]['name'];
+                    let siteName = this.getSiteDisplayName(this.sitesData[0]);
                     $dashboardButton.click(function () {
                         Shared.Dispatcher.trigger('siteDetail:show', siteId, siteName);
                     });
@@ -331,7 +296,7 @@ define([
 
                 }
             } else {
-                if (self.status === 'finished' && (this.sitesData.length === 0 || this.recordsData.length === 0)) {
+                if (self.status === 'finished' && this.sitesData.length === 0) {
                     Shared.Dispatcher.trigger('map:clearAllLayers');
                 }
             }
@@ -340,15 +305,6 @@ define([
             var siteListNumberElm = $('#site-list-number');
 
             $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
-            $searchResultsWrapper.find('.search-results-total').click();
-            $searchResultsWrapper.find('.search-results-total').unbind();
-
-            if (self.status === 'processing') {
-                taxaCount += ' ...loading';
-                siteCount += ' ...loading';
-            } else if (self.status === 'finished') {
-                $searchResultsWrapper.find('.search-results-total').click(self.hideAll);
-            }
             taxaListNumberElm.html(taxaCount);
             siteListNumberElm.html(siteCount);
 
@@ -382,11 +338,11 @@ define([
         },
         fetchMoreTaxa: function () {
             var self = this;
-            var siteResultUrl = this.taxaResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreTaxa;
+            var url = this.searchUrl + this.filters + '&page=' + this.pageMoreTaxa;
             $.ajax({
-                url: siteResultUrl,
+                url: url,
                 success: function (data) {
-                    var taxaData = data['data'];
+                    var taxaData = data['taxa'] || [];
                     for (var i = 0; i < taxaData.length; i++) {
                         var searchModel = new SearchModel({
                             id: taxaData[i]['taxon_id'],
@@ -396,32 +352,26 @@ define([
                             count: numberWithCommas(taxaData[i]['total']),
                             survey: numberWithCommas(taxaData[i]['total_survey']),
                         });
-                        var searchResultView = new SearchResultView({
-                            model: searchModel
-                        });
-                        self.viewCollection.push(searchResultView);
+                        self.viewCollection.push(new SearchResultView({ model: searchModel }));
                     }
-                    if (data['has_next']) {
+                    if (taxaData.length > 0) {
                         self.viewCollection.push(new SearchResultView({
-                            model: new SearchModel({
-                            name: 'Show More',
-                            record_type: 'show-more-taxa'
-                            })
+                            model: new SearchModel({ name: 'Show More', record_type: 'show-more-taxa' })
                         }));
                         self.pageMoreTaxa += 1;
                     } else {
-                        self.pageMoreTaxa = 2
+                        self.pageMoreTaxa = 2;
                     }
                 }
-            })
+            });
         },
         fetchMoreSites: function (page) {
             var self = this;
-            var siteResultUrl = this.siteResultUrl + '?process_id=' + this.processID + '&page=' + this.pageMoreSites;
+            var siteResultUrl = this.searchUrl + this.filters + '&page=' + this.pageMoreSites;
             $.ajax({
                 url: siteResultUrl,
                 success: function (data) {
-                    var siteData = data['data'];
+                    var siteData = data['sites'] || [];
                     for (var i = 0; i < siteData.length; i++) {
                         let total_water_temperature_data = 0;
                         let total_chemical_records = 0;
@@ -437,7 +387,7 @@ define([
                         }
                         let searchModel = new SearchModel({
                             id: siteData[i]['site_id'],
-                            name: siteData[i]['name'],
+                            name: self.getSiteDisplayName(siteData[i]),
                             record_type: 'site',
                             count: siteData[i]['total'] ? numberWithCommas(siteData[i]['total']) : 0,
                             survey: siteData[i]['total_survey'] ? numberWithCommas(siteData[i]['total_survey']) : 0,
@@ -451,18 +401,13 @@ define([
                         });
                         self.viewCollection.push(searchResultView);
                     }
-                    if (data['has_next']) {
-                        let showMoreButton = new SearchModel({
-                            name: 'Show More',
-                            record_type: 'show-more-site'
-                        });
-                        let showMoreSiteView = new SearchResultView({
-                            model: showMoreButton
-                        });
-                        self.viewCollection.push(showMoreSiteView);
+                    if (siteData.length > 0) {
+                        self.viewCollection.push(new SearchResultView({
+                            model: new SearchModel({ name: 'Show More', record_type: 'show-more-site' })
+                        }));
                         self.pageMoreSites += 1;
                     } else {
-                        self.pageMoreSites = 2
+                        self.pageMoreSites = 2;
                     }
                 }
             })

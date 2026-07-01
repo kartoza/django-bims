@@ -60,6 +60,7 @@ from bims.api_views.reference_category import ReferenceCategoryList
 from bims.api_views.category_filter import CategoryList
 from bims.api_views.reference_list import ReferenceList, ReferenceEntryList
 from bims.api_views.search import CollectionSearchAPIView
+from bims.api_views.opensearch_search import OpenSearchCollectionView
 from bims.api_views.thermal_data import ThermalDataApiView, WaterTemperatureThresholdApiView
 from bims.api_views.validate_object import (
     ValidateSite,
@@ -226,6 +227,8 @@ urlpatterns = [
         ChemicalRecordDownloader.as_view()),
     re_path(r'^collection-search/$',
         CollectionSearchAPIView.as_view(), name='collection-search'),
+    re_path(r'^opensearch/collection-search/$',
+        OpenSearchCollectionView.as_view(), name='opensearch-collection-search'),
     re_path(r'^search-module/$',
         SearchModuleAPIView.as_view(), name='search-module'),
     re_path(r'^boundary/geojson$',

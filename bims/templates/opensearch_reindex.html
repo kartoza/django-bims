@@ -1,0 +1,116 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>OpenSearch Reindex</h1>
+
+{% if messages %}
+    {% for message in messages %}
+        <p class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<div style="border:1px solid #ccc; padding:16px; margin-bottom:24px; max-width:480px;">
+    <h2 style="margin-top:0;">Start New Reindex</h2>
+    {% if active_run %}
+        <p style="color:#666;">A reindex is already running (run #{{ active_run.pk }}).</p>
+        <button disabled class="button">Start Reindex</button>
+    {% else %}
+        <form method="post">
+            {% csrf_token %}
+            <p>
+                <label for="chunk_size"><strong>Chunk size:</strong></label><br>
+                <input type="number" id="chunk_size" name="chunk_size" value="500" min="1" style="width:120px;">
+            </p>
+            <p>
+                <label for="requested_schema"><strong>Schema (leave blank for all tenants):</strong></label><br>
+                <input type="text" id="requested_schema" name="requested_schema" placeholder="e.g. tenant1" style="width:240px;">
+            </p>
+            <p>
+                <label>
+                    <input type="checkbox" name="recreate">
+                    <strong>Recreate index</strong> (drops and rebuilds the index)
+                </label>
+            </p>
+            <input type="submit" value="Start Reindex" class="button default">
+        </form>
+    {% endif %}
+</div>
+
+{% if active_run %}
+    <p style="color:#417690;">
+        <strong>Active run #{{ active_run.pk }}:</strong>
+        {{ active_run.completed_tenants }}/{{ active_run.total_tenants }} tenants completed
+        {% if active_run.failed_tenants %} | {{ active_run.failed_tenants }} failed{% endif %}
+    </p>
+{% endif %}
+
+<h2>Recent Runs</h2>
+{% if runs %}
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="background:#f8f8f8;">
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Run</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Status</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Recreate</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Chunk size</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Schema filter</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Tenants (done/total/failed)</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Started</th>
+                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Finished</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for run in runs %}
+            <tr>
+                <td style="padding:8px; border:1px solid #ddd;">#{{ run.pk }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.get_status_display }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.recreate|yesno:"Yes,No" }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.chunk_size }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.requested_schema|default:"All" }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.completed_tenants }}/{{ run.total_tenants }}/{{ run.failed_tenants }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.started_at }}</td>
+                <td style="padding:8px; border:1px solid #ddd;">{{ run.finished_at|default:"-" }}</td>
+            </tr>
+            {% if run.error %}
+            <tr>
+                <td colspan="8" style="padding:8px; border:1px solid #ddd; color:#ba2121;">{{ run.error }}</td>
+            </tr>
+            {% endif %}
+            {% if run.tenant_statuses.all %}
+            <tr>
+                <td colspan="8" style="padding:0; border:1px solid #ddd;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+                        <thead>
+                            <tr style="background:#f0f0f0;">
+                                <th style="padding:4px 8px; border-bottom:1px solid #ddd;">Tenant</th>
+                                <th style="padding:4px 8px; border-bottom:1px solid #ddd;">Status</th>
+                                <th style="padding:4px 8px; border-bottom:1px solid #ddd;">Records</th>
+                                <th style="padding:4px 8px; border-bottom:1px solid #ddd;">Started</th>
+                                <th style="padding:4px 8px; border-bottom:1px solid #ddd;">Finished</th>
+                                <th style="padding:4px 8px; border-bottom:1px solid #ddd;">Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for ts in run.tenant_statuses.all %}
+                            <tr>
+                                <td style="padding:4px 8px;">{{ ts.schema_name }}</td>
+                                <td style="padding:4px 8px;">{{ ts.get_status_display }}</td>
+                                <td style="padding:4px 8px;">{{ ts.records_indexed }}</td>
+                                <td style="padding:4px 8px;">{{ ts.started_at|default:"-" }}</td>
+                                <td style="padding:4px 8px;">{{ ts.finished_at|default:"-" }}</td>
+                                <td style="padding:4px 8px; color:#ba2121;">{{ ts.error|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No reindex runs recorded yet.</p>
+{% endif %}
+{% endblock content %}

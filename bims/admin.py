@@ -137,6 +137,8 @@ from bims.models import (
     CITESListingInfo,
     ImportTask,
     Invasion,
+    OpenSearchReindexRun,
+    OpenSearchReindexTenantStatus,
     TaxonOrigin,
     FlatPageExtension,
     TagGroup,
@@ -3009,6 +3011,58 @@ class ImportTaskAdmin(admin.ModelAdmin):
     list_display = ('celery_task_id', 'in_progress', 'created_at', 'updated_at')
     list_filter = ('in_progress', 'created_at', 'updated_at')
     search_fields = ('celery_task_id',)
+
+
+@admin.register(OpenSearchReindexRun)
+class OpenSearchReindexRunAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'status',
+        'recreate',
+        'requested_schema',
+        'total_tenants',
+        'completed_tenants',
+        'failed_tenants',
+        'started_at',
+        'finished_at',
+    )
+    list_filter = ('status', 'recreate', 'started_at', 'finished_at')
+    search_fields = ('requested_schema', 'error')
+    readonly_fields = (
+        'status',
+        'recreate',
+        'chunk_size',
+        'requested_schema',
+        'total_tenants',
+        'completed_tenants',
+        'failed_tenants',
+        'started_at',
+        'finished_at',
+        'error',
+    )
+
+
+@admin.register(OpenSearchReindexTenantStatus)
+class OpenSearchReindexTenantStatusAdmin(admin.ModelAdmin):
+    list_display = (
+        'run',
+        'schema_name',
+        'status',
+        'records_indexed',
+        'started_at',
+        'finished_at',
+    )
+    list_filter = ('status', 'started_at', 'finished_at')
+    search_fields = ('schema_name', 'error')
+    readonly_fields = (
+        'run',
+        'schema_name',
+        'status',
+        'records_indexed',
+        'started_at',
+        'finished_at',
+        'error',
+    )
 
 
 class FlatPageExtensionInline(admin.StackedInline):

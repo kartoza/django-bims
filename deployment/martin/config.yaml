@@ -1,0 +1,10 @@
+listen_addresses: '0.0.0.0:3000'
+
+postgres:
+  connection_string: ${DATABASE_URL}
+  pool_size: 20
+  # Only auto-publish function sources, not raw tables.
+  # The search_location_sites function will be added in a later migration.
+  auto_publish:
+    tables: false
+    functions: true
