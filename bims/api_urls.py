@@ -10,6 +10,7 @@ from bims.api_views.checklist_version import (
 )
 from bims.api_views.checklist import DownloadChecklistAPIView
 from bims.api_views.clear_cache import ClearCacheView
+from bims.api_views.update_custodian_from_gbif import UpdateCustodianFromGbifArchive
 from bims.api_views.geocontext import (
     IsHarvestingGeocontext, HarvestGeocontextView, ClearHarvestingGeocontextCache,
     GetGeocontextLogLinesView
@@ -525,6 +526,9 @@ urlpatterns = [
     path('harvest-iucn-status/',
          HarvestIUCNStatus.as_view(),
          name='harvest_iucn_status'),
+    path('update-custodian-from-gbif/',
+         UpdateCustodianFromGbifArchive.as_view(),
+         name='update_custodian_from_gbif'),
     path('layer/<uuid:uuid>/',
          LayerByUUIDView.as_view(),
          name='layer-by-uuid'),
