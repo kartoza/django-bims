@@ -23,6 +23,19 @@ from bims.models import (
 from climate.models import Climate
 from bims.enums import TaxonomicGroupCategory
 from bims.tasks import location_sites_overview
+from bims.tasks.opensearch_location_sites_overview import opensearch_location_sites_overview
+
+
+def _pick_overview_task():
+    try:
+        from django.conf import settings
+        if getattr(settings, 'OPENSEARCH_HOST', None):
+            from bims.opensearch.client import get_client
+            get_client().info()
+            return opensearch_location_sites_overview
+    except Exception:
+        pass
+    return location_sites_overview
 from bims.utils.api_view import BimsApiView
 from bims.utils.search_process import get_or_create_search_process
 from sass.models.site_visit_taxon import SiteVisitTaxon
@@ -228,7 +241,7 @@ class MultiLocationSitesBackgroundOverview(BimsApiView):
         search_process.set_process_id(process_id)
         search_process.set_status(SEARCH_PROCESSING)
 
-        task = location_sites_overview.delay(
+        task = _pick_overview_task().delay(
             search_parameters=parameters,
             search_process_id=search_process.id
         )

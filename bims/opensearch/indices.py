@@ -61,6 +61,15 @@ COLLECTIONS_MAPPING = {
             'original_species_name': {'type': 'text'},
             'data_type': {'type': 'keyword'},
 
+            # --- collection attributes ---
+            'sampling_method': {'type': 'keyword'},
+            'biotope': {'type': 'keyword'},
+            'national_conservation_status': {'type': 'keyword'},
+
+            # --- taxonomy classification ---
+            'taxonomy_rank': {'type': 'keyword'},
+            'taxonomy_status': {'type': 'keyword'},
+
             # --- validation / access control ---
             'owner_id': {'type': 'integer'},
             'is_validated': {'type': 'boolean'},
@@ -80,8 +89,19 @@ def create_index(recreate=False):
     exists = client.indices.exists(index=COLLECTIONS_INDEX)
     if exists:
         if not recreate:
+            update_mapping()
             return
         logger.info('Deleting existing index %s', COLLECTIONS_INDEX)
         client.indices.delete(index=COLLECTIONS_INDEX)
     logger.info('Creating index %s', COLLECTIONS_INDEX)
     client.indices.create(index=COLLECTIONS_INDEX, body=COLLECTIONS_MAPPING)
+
+
+def update_mapping():
+    """Add any new fields to an existing index without recreation."""
+    client = get_client()
+    new_properties = COLLECTIONS_MAPPING['mappings']['properties']
+    try:
+        client.indices.put_mapping(index=COLLECTIONS_INDEX, body={'properties': new_properties})
+    except Exception as exc:
+        logger.warning('Could not update index mapping: %s', exc)

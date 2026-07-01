@@ -29,6 +29,7 @@ def build_document(record, schema_name: str) -> dict:
     tags = []
     endemism = None
     conservation_status = None
+    national_conservation_status = None
     origin = None
     taxonomy_id = None
 
@@ -43,6 +44,8 @@ def build_document(record, schema_name: str) -> dict:
         endemism = taxonomy.endemism.name if taxonomy.endemism else None
         if hasattr(taxonomy, 'iucn_status') and taxonomy.iucn_status:
             conservation_status = taxonomy.iucn_status.category
+        if hasattr(taxonomy, 'national_conservation_status') and taxonomy.national_conservation_status:
+            national_conservation_status = taxonomy.national_conservation_status.category
         origin = (
             taxonomy.origin.origin_key
             if taxonomy.origin_id and taxonomy.origin
@@ -83,6 +86,20 @@ def build_document(record, schema_name: str) -> dict:
     if record.end_embargo_date:
         end_embargo_date = record.end_embargo_date.strftime('%Y-%m-%d')
 
+    sampling_method = None
+    if record.sampling_method_id and record.sampling_method:
+        sampling_method = record.sampling_method.sampling_method or None
+
+    biotope = None
+    if record.biotope_id and record.biotope:
+        biotope = record.biotope.name or None
+
+    taxonomy_rank = None
+    taxonomy_status = None
+    if taxonomy:
+        taxonomy_rank = getattr(taxonomy, 'rank', None) or None
+        taxonomy_status = getattr(taxonomy, 'taxonomic_status', None) or None
+
     return {
         'schema_name': schema_name,
         'record_id': record.id,
@@ -94,7 +111,12 @@ def build_document(record, schema_name: str) -> dict:
         'tags': tags,
         'endemism': endemism,
         'conservation_status': conservation_status,
+        'national_conservation_status': national_conservation_status,
         'origin': origin,
+        'sampling_method': sampling_method,
+        'biotope': biotope,
+        'taxonomy_rank': taxonomy_rank,
+        'taxonomy_status': taxonomy_status,
         'module_group_id': module_group_id,
         'module_group_name': module_group_name,
         'taxon_group_ids': taxon_group_ids,
@@ -199,9 +221,12 @@ def bulk_index(schema_name: str, chunk_size=500, on_progress=None) -> int:
                 'site__river',
                 'taxonomy__endemism',
                 'taxonomy__iucn_status',
+                'taxonomy__national_conservation_status',
                 'taxonomy__origin',
                 'module_group',
                 'owner',
+                'sampling_method',
+                'biotope',
             ).prefetch_related(
                 'site__locationcontext_set__group',
                 'taxonomy__tags',

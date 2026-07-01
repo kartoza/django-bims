@@ -41,6 +41,9 @@ from bims.tasks.collection_record import download_gbif_ids
 from bims.tasks.location_site_summary import (
     generate_location_site_summary
 )
+from bims.tasks.opensearch_location_site_summary import (
+    opensearch_location_site_summary
+)
 from bims.tasks.prune_outside_boundary import (
     prune_outside_boundary_gbif
 )
@@ -96,6 +99,19 @@ class LocationSiteDetail(APIView):
         return Response(serializer.data)
 
 
+def _pick_summary_task():
+    """Return the OpenSearch summary task if OS is reachable, else the DB task."""
+    try:
+        from django.conf import settings
+        if getattr(settings, 'OPENSEARCH_HOST', None):
+            from bims.opensearch.client import get_client
+            get_client().info()
+            return opensearch_location_site_summary
+    except Exception:
+        pass
+    return generate_location_site_summary
+
+
 class LocationSitesSummary(APIView):
     """
         List cached location site summary based on collection record search.
@@ -118,16 +134,18 @@ class LocationSitesSummary(APIView):
             requester=self.request.user
         )
 
+        summary_task = _pick_summary_task()
+
         if not use_cached:
             return Response(
-                generate_location_site_summary(
+                summary_task(
                     filters,
                     search_process.id
                 )
             )
 
         if created:
-            async_result = generate_location_site_summary.delay(
+            async_result = summary_task.delay(
                 filters,
                 search_process.id
             )
@@ -155,7 +173,7 @@ class LocationSitesSummary(APIView):
                     })
 
                 if state == 'PENDING':
-                    async_result = generate_location_site_summary.delay(
+                    async_result = summary_task.delay(
                         filters,
                         search_process.id
                     )

@@ -1,4 +1,3 @@
-import datetime
 import json
 import logging
 
@@ -38,121 +37,24 @@ class OpenSearchCollectionView(BimsApiView):
         page_size = int(params.get('page_size', MAX_PAGINATED_SITES))
 
         from django.db import connection
+        from bims.opensearch.query_builder import build_filter_clauses, parse_extent
         current_schema = connection.schema_name
 
-        # Always scope to the current tenant schema first.
-        filter_clauses = [{'term': {'schema_name': current_schema}}]
-        filter_clauses += self._build_security_filter(user)
+        # Resolve the effective requester - may differ from the logged-in user
+        # when the frontend passes a requester_id param (mirrors legacy search).
+        requester = user
+        requester_id = params.get('requester_id', '')
+        if requester_id and (user.is_superuser or user.is_staff):
+            from django.contrib.auth import get_user_model
+            try:
+                requester = get_user_model().objects.get(id=int(requester_id))
+            except (get_user_model().DoesNotExist, ValueError):
+                pass
+
+        filter_clauses = build_filter_clauses(params, requester, current_schema)
 
         # --- full-text search ---
         search_query = params.get('search', '').strip()
-        # --- taxon filter ---
-        taxon_ids = params.get('taxon', '')
-        if taxon_ids:
-            filter_clauses.append({
-                'terms': {'taxonomy_id': [int(t) for t in taxon_ids.split(',') if t]}
-            })
-
-        # --- site filter ---
-        site_ids = params.get('siteId', '')
-        if site_ids:
-            filter_clauses.append({
-                'terms': {'site_id': [int(s) for s in site_ids.split(',') if s]}
-            })
-
-        # --- module / taxon group filter ---
-        modules = params.get('modules', '')
-        if modules:
-            filter_clauses.append({
-                'terms': {'module_group_id': [int(m) for m in modules.split(',') if m]}
-            })
-        spatial_filter_clause = self._build_spatial_filter_clause(
-            params.get('spatialFilter', '')
-        )
-        if spatial_filter_clause:
-            filter_clauses.append(spatial_filter_clause)
-
-        # --- ecosystem type ---
-        ecosystem_type = params.get('ecosystemType', '')
-        if ecosystem_type:
-            values = [v for v in ecosystem_type.split(',') if v]
-            if 'Unspecified' in values:
-                values = [v.replace('Unspecified', '') for v in values]
-            filter_clauses.append({'terms': {'ecosystem_type': values}})
-
-        # --- conservation status ---
-        conservation_status = params.get('conservationStatus', '')
-        if conservation_status:
-            import json as _json
-            try:
-                statuses = _json.loads(conservation_status)
-            except (ValueError, TypeError):
-                statuses = [conservation_status]
-            if statuses:
-                filter_clauses.append({'terms': {'conservation_status': statuses}})
-
-        # --- endemism ---
-        endemic = params.get('endemic', '')
-        if endemic:
-            import json as _json
-            try:
-                endemism_values = _json.loads(endemic)
-            except (ValueError, TypeError):
-                endemism_values = [endemic]
-            if endemism_values:
-                filter_clauses.append({'terms': {'endemism': endemism_values}})
-
-        # --- tags ---
-        tags = params.get('tags', '')
-        if tags:
-            import json as _json
-            try:
-                tag_list = _json.loads(tags)
-            except (ValueError, TypeError):
-                tag_list = [t.strip() for t in tags.split(',') if t.strip()]
-            if tag_list:
-                filter_clauses.append({'terms': {'tags': tag_list}})
-
-        # --- date range ---
-        year_from = params.get('yearFrom', '')
-        year_to = params.get('yearTo', '')
-        if year_from or year_to:
-            date_range = {}
-            if year_from:
-                date_range['gte'] = f'{year_from}-01-01'
-            if year_to:
-                date_range['lte'] = f'{year_to}-12-31'
-            filter_clauses.append({'range': {'collection_date': date_range}})
-
-        # --- bounding box / polygon ---
-        bbox = params.get('bbox', '')
-        if bbox:
-            parts = [float(v) for v in bbox.split(',')]
-            if len(parts) == 4:
-                filter_clauses.append({
-                    'geo_bounding_box': {
-                        'location': {
-                            'top_left': {'lat': parts[3], 'lon': parts[0]},
-                            'bottom_right': {'lat': parts[1], 'lon': parts[2]},
-                        }
-                    }
-                })
-        polygon_points = self._parse_polygon_points(params.get('polygon', ''))
-        if polygon_points:
-            filter_clauses.append({
-                'geo_polygon': {
-                    'location': {
-                        'points': polygon_points,
-                    }
-                }
-            })
-
-        # --- validation ---
-        validated = params.get('validated', '')
-        if validated == 'true':
-            filter_clauses.append({'term': {'is_validated': True}})
-        elif validated == 'false':
-            filter_clauses.append({'term': {'is_validated': False}})
 
         try:
             client = get_client()
@@ -233,7 +135,7 @@ class OpenSearchCollectionView(BimsApiView):
         agg_data = response.get('aggregations', {})
         unique_sites = agg_data.get('unique_sites', {}).get('value', 0)
         unique_taxa = agg_data.get('unique_taxa', {}).get('value', 0)
-        extent = self._parse_extent(agg_data.get('extent', {}))
+        extent = parse_extent(agg_data.get('extent', {}))
 
         site_id_buckets = agg_data.get('site_id_buckets', {})
         site_ids = [b['key'] for b in site_id_buckets.get('buckets', [])]
@@ -360,56 +262,6 @@ class OpenSearchCollectionView(BimsApiView):
         )
         return response.get('hits', {}).get('total', {}).get('value', 0) > 0
 
-    def _build_spatial_filter_clause(self, spatial_filter_value):
-        spatial_filters = self._parse_json_param(spatial_filter_value)
-        if not spatial_filters:
-            return None
-
-        should_clauses = []
-        for spatial_filter in spatial_filters:
-            if not isinstance(spatial_filter, str):
-                continue
-
-            parts = spatial_filter.split(',')
-            if len(parts) < 2:
-                continue
-
-            filter_type = parts[0]
-            spatial_key = parts[1]
-
-            if filter_type == 'group':
-                should_clauses.append({
-                    'term': {'location_context_groups': spatial_key}
-                })
-                continue
-
-            if filter_type != 'value' or len(parts) < 3:
-                continue
-
-            value = ','.join(parts[2:])
-            should_clauses.append({
-                'term': {'location_context_values': f'{spatial_key}|{value}'}
-            })
-
-        if not should_clauses:
-            return None
-
-        return {
-            'bool': {
-                'should': should_clauses,
-                'minimum_should_match': 1,
-            }
-        }
-
-    @staticmethod
-    def _parse_json_param(raw_value):
-        if not raw_value:
-            return None
-        try:
-            return json.loads(raw_value)
-        except (TypeError, ValueError):
-            return None
-
     @staticmethod
     def _create_search_token(site_ids: list, schema_name: str):
         from bims.models.search_token import SearchToken
@@ -419,129 +271,3 @@ class OpenSearchCollectionView(BimsApiView):
         )
         return token.token
 
-    def _build_security_filter(self, user) -> list:
-        """
-        Build filter clauses that enforce data access rules:
-        - public records are always visible
-        - embargoed records are visible only to their owner
-        - sensitive/private records are visible only if the user belongs
-          to the corresponding group (handled downstream via data_type field)
-        """
-        today = datetime.date.today().strftime('%Y-%m-%d')
-        clauses = []
-
-        if user.is_anonymous:
-            # Only public, non-embargoed records
-            clauses.append({'term': {'data_type': 'public'}})
-            clauses.append({
-                'bool': {
-                    'should': [
-                        {'bool': {'must_not': {'exists': {'field': 'end_embargo_date'}}}},
-                        {'range': {'end_embargo_date': {'lte': today}}},
-                    ],
-                    'minimum_should_match': 1,
-                }
-            })
-        elif user.is_superuser or user.is_staff:
-            pass  # no restrictions
-        else:
-            # Authenticated non-staff: public + own embargoed + group-accessible
-            from django.contrib.auth.models import Group
-            user_group_names = list(
-                user.groups.values_list('name', flat=True)
-            )
-            allowed_data_types = ['public']
-            if 'SensitiveDataGroup' in user_group_names:
-                allowed_data_types.append('sensitive')
-            if 'PrivateDataGroup' in user_group_names:
-                allowed_data_types.append('private')
-
-            embargo_clause = {
-                'bool': {
-                    'should': [
-                        {'bool': {'must_not': {'exists': {'field': 'end_embargo_date'}}}},
-                        {'range': {'end_embargo_date': {'lte': today}}},
-                        {'term': {'owner_id': user.id}},
-                    ],
-                    'minimum_should_match': 1,
-                }
-            }
-            clauses.append({'terms': {'data_type': allowed_data_types}})
-            clauses.append(embargo_clause)
-
-        return clauses
-
-    @staticmethod
-    def _parse_extent(geo_bounds: dict) -> list:
-        bounds = geo_bounds.get('bounds', {})
-        if not bounds:
-            return []
-        top_left = bounds.get('top_left', {})
-        bottom_right = bounds.get('bottom_right', {})
-        return [
-            bottom_right.get('lon'),
-            bottom_right.get('lat'),
-            top_left.get('lon'),
-            top_left.get('lat'),
-        ]
-
-    def _parse_polygon_points(self, polygon_value):
-        if not polygon_value:
-            return None
-        try:
-            polygon_data = json.loads(polygon_value)
-        except (TypeError, ValueError):
-            return None
-
-        if isinstance(polygon_data, int):
-            return self._get_user_boundary_polygon_points(polygon_data)
-
-        if not isinstance(polygon_data, list):
-            return None
-
-        points = self._coordinates_to_polygon_points(polygon_data)
-        return points if len(points) >= 4 else None
-
-    def _get_user_boundary_polygon_points(self, boundary_id):
-        try:
-            from bims.models import UserBoundary
-            geometry = UserBoundary.objects.get(id=boundary_id).geometry
-        except Exception:
-            return None
-
-        if geometry is None:
-            return None
-
-        geometry = geometry.clone()
-        if geometry.srid and geometry.srid != 4326:
-            geometry.transform(4326)
-
-        if geometry.geom_type == 'Polygon':
-            coordinates = geometry.coords[0]
-        elif geometry.geom_type == 'MultiPolygon' and len(geometry.coords) > 0:
-            coordinates = geometry.coords[0][0]
-        else:
-            return None
-
-        points = self._coordinates_to_polygon_points(coordinates)
-        return points if len(points) >= 4 else None
-
-    @staticmethod
-    def _coordinates_to_polygon_points(coordinates):
-        points = []
-        for coordinate in coordinates:
-            if not isinstance(coordinate, (list, tuple)) or len(coordinate) < 2:
-                return []
-            lon = coordinate[0]
-            lat = coordinate[1]
-            try:
-                lon = float(lon)
-                lat = float(lat)
-            except (TypeError, ValueError):
-                return []
-            points.append({'lon': lon, 'lat': lat})
-
-        if points and (points[0]['lon'] != points[-1]['lon'] or points[0]['lat'] != points[-1]['lat']):
-            points.append(dict(points[0]))
-
-        return points

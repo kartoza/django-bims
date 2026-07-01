@@ -32,6 +32,8 @@ from bims.tasks.prune_outside_boundary import prune_outside_boundary_gbif
 from bims.tasks.module_summary import generate_module_summary
 from bims.tasks.spatial_dashboard import *  # noqa
 from bims.tasks.opensearch_index import opensearch_reindex  # noqa
+from bims.tasks.opensearch_location_site_summary import opensearch_location_site_summary  # noqa
+from bims.tasks.opensearch_location_sites_overview import opensearch_location_sites_overview  # noqa
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')
