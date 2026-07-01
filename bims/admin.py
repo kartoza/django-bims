@@ -643,7 +643,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'abundance_number',
         'biotope',
         'record_type',
-        'sampling_method'
+        'sampling_method',
+        'institution_id',
     )
     raw_id_fields = (
         'site',
@@ -669,7 +670,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'uuid',
         'site__site_code',
         'upstream_id',
-        'source_collection'
+        'source_collection',
+        'institution_id',
     )
     actions = ['export_as_csv']
 

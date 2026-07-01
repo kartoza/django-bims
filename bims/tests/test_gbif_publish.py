@@ -420,6 +420,7 @@ class GbifPublishApiTests(FastTenantTestCase):
         self.contact = _make_contact(self.config)
 
     def _make_record(self, source_reference, **kwargs):
+        kwargs.setdefault("institution_id", "Test Institution")
         survey = SurveyF.create(validated=True)
         return BiologicalCollectionRecordF.create(
             survey=survey,
@@ -1279,6 +1280,7 @@ class GbifPublishContactTests(FastTenantTestCase):
     # -- contacts in EML via build_dwca --
 
     def _make_record(self, source_reference, **kwargs):
+        kwargs.setdefault("institution_id", "Test Institution")
         survey = SurveyF.create(validated=True)
         return BiologicalCollectionRecordF.create(
             survey=survey,
@@ -1407,6 +1409,7 @@ class GbifPublishEligibilityGateTests(FastTenantTestCase):
             survey=survey,
             source_reference=source_reference,
             data_type="public",
+            institution_id="Test Institution",
         )
 
     def _add_author(self, source_reference):
@@ -1540,6 +1543,7 @@ class GbifPublishEmlCreatorTests(FastTenantTestCase):
             survey=survey,
             source_reference=source_reference,
             data_type="public",
+            institution_id="Test Institution",
         )
 
     def _read_eml(self, zip_path):

@@ -244,6 +244,62 @@
             outsideWrapper.appendChild(removeOutsideBtn);
             outsideWrapper.appendChild(dryRunLabel);
             targetElement.appendChild(outsideWrapper);
+
+            // -- Update Custodian from GBIF Archive --
+            const custodianWrapper = document.createElement('div');
+            custodianWrapper.style.border = '1px solid #ccc';
+            custodianWrapper.style.borderRadius = '4px';
+            custodianWrapper.style.padding = '10px';
+            custodianWrapper.style.display = 'inline-block';
+
+            const custodianTitle = document.createElement('div');
+            custodianTitle.textContent = 'Update Custodian from GBIF Archive:';
+            custodianTitle.style.fontWeight = 'bold';
+            custodianTitle.style.marginBottom = '5px';
+
+            const gbifFileInput = document.createElement('input');
+            gbifFileInput.type = 'file';
+            gbifFileInput.accept = '.zip,.txt';
+
+            const gbifUploadBtn = document.createElement('a');
+            gbifUploadBtn.href = '#';
+            gbifUploadBtn.className = 'grp-button grp-primary';
+            gbifUploadBtn.textContent = 'Upload & Update';
+            gbifUploadBtn.style.marginLeft = '8px';
+
+            gbifUploadBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+                const file = gbifFileInput.files[0];
+                if (!file) {
+                    alert('Please select a GBIF DwC-A ZIP archive or occurrence.txt file first.');
+                    return;
+                }
+                const formData = new FormData();
+                formData.append('file', file);
+                gbifUploadBtn.textContent = 'Uploading…';
+                fetch("{% url 'update_custodian_from_gbif' %}", {
+                    method: 'POST',
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    credentials: 'same-origin',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || JSON.stringify(data));
+                    window.location.href = '/admin/';
+                })
+                .catch(error => {
+                    console.error('Error updating custodian:', error);
+                    alert('An unexpected error occurred. Please try again.');
+                    gbifUploadBtn.textContent = 'Upload & Update';
+                });
+            });
+
+            custodianWrapper.appendChild(custodianTitle);
+            custodianWrapper.appendChild(gbifFileInput);
+            custodianWrapper.appendChild(gbifUploadBtn);
+            targetElement.appendChild(custodianWrapper);
+
         } else {
             console.warn("Element with class 'g-d-c' not found.");
         }

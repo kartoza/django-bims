@@ -174,6 +174,9 @@ def run_scheduled_gbif_publish(self, schema_name: str, publish_id: int, trigger:
                 session.status = PublishStatus.NO_RECORDS
                 session.end_time = timezone.now()
                 session.error_message = str(e)
+                archive_url = getattr(e, "archive_url", "")
+                if archive_url:
+                    session.archive_url = archive_url
                 session.save()
 
                 return {

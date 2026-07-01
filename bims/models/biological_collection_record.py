@@ -267,6 +267,7 @@ class BiologicalCollectionRecord(AbstractValidation):
                   'object(s) or information referred to in the record.',
         max_length=200,
         verbose_name='Custodian',
+        blank=True
     )
 
     sampling_method = models.ForeignKey(
