@@ -69,6 +69,7 @@ COLLECTIONS_MAPPING = {
             # --- taxonomy classification ---
             'taxonomy_rank': {'type': 'keyword'},
             'taxonomy_status': {'type': 'keyword'},
+            'include_in_rli': {'type': 'boolean'},
 
             # --- validation / access control ---
             'owner_id': {'type': 'integer'},

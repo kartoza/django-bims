@@ -34,6 +34,14 @@ from bims.tasks.spatial_dashboard import *  # noqa
 from bims.tasks.opensearch_index import opensearch_reindex  # noqa
 from bims.tasks.opensearch_location_site_summary import opensearch_location_site_summary  # noqa
 from bims.tasks.opensearch_location_sites_overview import opensearch_location_sites_overview  # noqa
+from bims.tasks.opensearch_spatial_dashboard import (  # noqa
+    opensearch_spatial_dashboard_summary,
+    opensearch_spatial_dashboard_cons_status,
+    opensearch_spatial_dashboard_map,
+    opensearch_spatial_dashboard_rli,
+    opensearch_spatial_dashboard_national_cons_status,
+    opensearch_spatial_dashboard_species_download,
+)
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')

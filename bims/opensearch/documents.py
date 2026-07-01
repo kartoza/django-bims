@@ -96,9 +96,11 @@ def build_document(record, schema_name: str) -> dict:
 
     taxonomy_rank = None
     taxonomy_status = None
+    include_in_rli = False
     if taxonomy:
         taxonomy_rank = getattr(taxonomy, 'rank', None) or None
         taxonomy_status = getattr(taxonomy, 'taxonomic_status', None) or None
+        include_in_rli = bool(getattr(taxonomy, 'include_in_rli', False))
 
     return {
         'schema_name': schema_name,
@@ -117,6 +119,7 @@ def build_document(record, schema_name: str) -> dict:
         'biotope': biotope,
         'taxonomy_rank': taxonomy_rank,
         'taxonomy_status': taxonomy_status,
+        'include_in_rli': include_in_rli,
         'module_group_id': module_group_id,
         'module_group_name': module_group_name,
         'taxon_group_ids': taxon_group_ids,

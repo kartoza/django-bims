@@ -28,9 +28,27 @@ from bims.tasks.spatial_dashboard import (
 from bims.utils.search_process import get_or_create_search_process
 
 
+def _opensearch_available():
+    try:
+        from django.conf import settings
+        if not getattr(settings, 'OPENSEARCH_HOST', None):
+            return False
+        from bims.opensearch.client import get_client
+        get_client().info()
+        return True
+    except Exception:
+        return False
+
+
 class SpatialDashboardBaseApiView(LoginRequiredMixin, APIView):
     search_type = None
     task = None
+    os_task = None
+
+    def _pick_task(self):
+        if self.os_task is not None and _opensearch_available():
+            return self.os_task
+        return self.task
 
     def get(self, request):
         search_uri = request.build_absolute_uri()
@@ -53,7 +71,7 @@ class SpatialDashboardBaseApiView(LoginRequiredMixin, APIView):
 
         search_process.set_process_id(process_id)
         search_process.set_status(SEARCH_PROCESSING)
-        task = self.task.delay(
+        task = self._pick_task().delay(
             search_parameters=request.GET.dict(),
             search_process_id=search_process.id
         )
@@ -71,18 +89,30 @@ class SpatialDashboardBaseApiView(LoginRequiredMixin, APIView):
 
 
 class SpatialDashboardConsStatusApiView(SpatialDashboardBaseApiView):
+    from bims.tasks.opensearch_spatial_dashboard import (
+        opensearch_spatial_dashboard_cons_status,
+    )
     search_type = SPATIAL_DASHBOARD_CONS_STATUS
     task = spatial_dashboard_cons_status
+    os_task = opensearch_spatial_dashboard_cons_status
 
 
 class SpatialDashboardRliApiView(SpatialDashboardBaseApiView):
+    from bims.tasks.opensearch_spatial_dashboard import (
+        opensearch_spatial_dashboard_rli,
+    )
     search_type = SPATIAL_DASHBOARD_RLI
     task = spatial_dashboard_rli
+    os_task = opensearch_spatial_dashboard_rli
 
 
 class SpatialDashboardMapApiView(SpatialDashboardBaseApiView):
+    from bims.tasks.opensearch_spatial_dashboard import (
+        opensearch_spatial_dashboard_map,
+    )
     search_type = SPATIAL_DASHBOARD_MAP
     task = spatial_dashboard_map
+    os_task = opensearch_spatial_dashboard_map
 
     def get(self, request):
         search_url = request.build_absolute_uri().replace(
@@ -111,15 +141,27 @@ class SpatialDashboardMapApiView(SpatialDashboardBaseApiView):
 
 
 class SpatialDashboardSummaryApiView(SpatialDashboardBaseApiView):
+    from bims.tasks.opensearch_spatial_dashboard import (
+        opensearch_spatial_dashboard_summary,
+    )
     search_type = SPATIAL_DASHBOARD_SUMMARY
     task = spatial_dashboard_summary
+    os_task = opensearch_spatial_dashboard_summary
 
 
 class SpatialDashboardSpeciesDownloadApiView(SpatialDashboardBaseApiView):
+    from bims.tasks.opensearch_spatial_dashboard import (
+        opensearch_spatial_dashboard_species_download,
+    )
     search_type = SPATIAL_DASHBOARD_SPECIES_DOWNLOAD
     task = spatial_dashboard_species_download
+    os_task = opensearch_spatial_dashboard_species_download
 
 
 class SpatialDashboardNationalConsStatusApiView(SpatialDashboardBaseApiView):
+    from bims.tasks.opensearch_spatial_dashboard import (
+        opensearch_spatial_dashboard_national_cons_status,
+    )
     search_type = SPATIAL_DASHBOARD_NATIONAL_CONS_STATUS
     task = spatial_dashboard_national_cons_status
+    os_task = opensearch_spatial_dashboard_national_cons_status
