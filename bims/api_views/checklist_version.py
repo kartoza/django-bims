@@ -515,6 +515,44 @@ class ChecklistVersionExportView(APIView):
         return response
 
 
+class ChecklistVersionUpdateView(APIView):
+    """
+    PATCH /api/checklist-version/<uuid>/update/
+    Update notes and doi on a published ChecklistVersion (managers only).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            obj = ChecklistVersion.objects.select_related('taxon_group').get(pk=pk)
+        except ChecklistVersion.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not _can_manage(request.user, obj):
+            return Response(
+                {'detail': 'Admin or taxon group expert access required.'},
+                status=403,
+            )
+        if obj.status != ChecklistVersion.STATUS_PUBLISHED:
+            return Response(
+                {'detail': 'Only published checklist versions can be edited this way.'},
+                status=400,
+            )
+
+        update_fields = []
+        if 'notes' in request.data:
+            obj.notes = request.data['notes']
+            update_fields.append('notes')
+        if 'doi' in request.data:
+            obj.doi = request.data['doi']
+            update_fields.append('doi')
+
+        if update_fields:
+            obj.save(update_fields=update_fields)
+
+        return Response(ChecklistVersionSerializer(obj, context={'request': request}).data)
+
+
 class ChecklistVersionContributorListView(APIView):
     """
     GET  /api/checklist-version/<uuid>/contributors/  — list contributors

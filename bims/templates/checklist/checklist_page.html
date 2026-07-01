@@ -85,7 +85,6 @@
                             <th>Changes</th>
                             <th>DOI</th>
                             <th>Published</th>
-                            <th>Published by</th>
                             <th>Created by</th>
                             <th>Actions</th>
                         </tr>
@@ -199,6 +198,61 @@
     </div>
 </div>
 {% endif %}
+
+{% if can_publish %}
+<div class="modal fade" id="edit-version-modal" tabindex="-1" role="dialog"
+     aria-labelledby="edit-version-modal-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edit-version-modal-label">Edit Published Version</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="edit-version-error" class="alert alert-danger d-none"></div>
+                <input type="hidden" id="ev-id">
+                <div class="form-group">
+                    <label for="ev-doi">DOI</label>
+                    <input type="text" id="ev-doi" class="form-control"
+                           placeholder="https://doi.org/10.XXXX/YYYY">
+                </div>
+                <div class="form-group">
+                    <label for="ev-notes">Notes</label>
+                    <textarea id="ev-notes" class="form-control" rows="4"
+                              placeholder="Release notes…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-save-edit">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="remove-version-modal" tabindex="-1" role="dialog"
+     aria-labelledby="remove-version-modal-label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="remove-version-modal-label">Remove Published Version</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="remove-version-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="btn-confirm-remove">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="modal fade" id="version-detail-modal" tabindex="-1" role="dialog"
      aria-labelledby="version-detail-modal-label" aria-hidden="true">

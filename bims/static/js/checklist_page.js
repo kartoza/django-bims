@@ -110,51 +110,55 @@
                         ? `<a href="${v.doi}" target="_blank" rel="noopener">${v.doi.length > 35 ? v.doi.substring(0, 35) + '…' : v.doi}</a>`
                         : '—'}</td>
                     <td>${fmtDate(v.published_at)}</td>
-                    <td>${v.published_by_name || '—'}</td>
                     <td>${v.created_by_name || '—'}</td>
-                    <td>
-                        ${v.status === 'published'
-                            ? `
-                               <div class="btn-group ml-1">
-                                   <button class="btn btn-sm btn-outline-success dropdown-toggle"
-                                           data-toggle="dropdown" title="Download taxa list">
-                                       <i class="fa fa-download"></i>
-                                   </button>
-                                   <div class="dropdown-menu">
-                                        <a class="dropdown-item export-coldp-btn" href="#"
-                                          data-id="${v.id}">ColDP ZIP</a>
-                                       <a class="dropdown-item checklist-dl-csv" href="#"
-                                          data-id="${v.id}">CSV Taxa List</a>
-                                       <a class="dropdown-item checklist-dl-csv-family" href="#"
-                                          data-id="${v.id}">CSV Taxa List by Family</a>
-                                       <a class="dropdown-item checklist-dl-pdf" href="#"
-                                          data-id="${v.id}">PDF</a>
-                                   </div>
-                               </div>`
-                            : ''}
+                    <td class="text-nowrap">
+                        ${v.status === 'published' ? `
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary dropdown-toggle"
+                                        data-toggle="dropdown" title="Download">
+                                    <i class="fa fa-download"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item export-coldp-btn" href="#"
+                                       data-id="${v.id}">ColDP ZIP</a>
+                                    <a class="dropdown-item checklist-dl-csv" href="#"
+                                       data-id="${v.id}">CSV Taxa List</a>
+                                    <a class="dropdown-item checklist-dl-csv-family" href="#"
+                                       data-id="${v.id}">CSV Taxa List by Family</a>
+                                    <a class="dropdown-item checklist-dl-pdf" href="#"
+                                       data-id="${v.id}">PDF</a>
+                                </div>
+                            </div>
+                            ${canPublishGroup(v.taxon_group) ? `
+                            <button class="btn btn-sm btn-outline-secondary edit-version-btn ml-1"
+                                    data-id="${v.id}" data-version="${v.version}"
+                                    data-doi="${escHtml(v.doi || '')}"
+                                    data-notes="${escHtml(v.notes || '')}"
+                                    title="Edit Notes &amp; DOI">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger remove-version-btn ml-1"
+                                    data-id="${v.id}" data-version="${v.version}"
+                                    title="Remove published version">
+                                <i class="fa fa-trash"></i>
+                            </button>` : ''}
+                        ` : ''}
                         ${v.status === 'draft' && canPublishGroup(v.taxon_group)
                             ? (v.is_publishing
-                                ? `<span class="text-muted ml-1">
+                                ? `<span class="text-muted">
                                        <span class="spinner-border spinner-border-sm" role="status"></span>
                                        Processing…
                                    </span>`
-                                : `<button class="btn btn-sm btn-outline-primary publish-version-btn ml-1"
+                                : `<button class="btn btn-sm btn-outline-primary publish-version-btn"
                                            data-id="${v.id}" data-version="${v.version}"
-                                           title="Publish checklist version">
-                                       Publish
+                                           title="Publish this version">
+                                       <i class="fa fa-check"></i> Publish
                                    </button>
                                    <button class="btn btn-sm btn-outline-danger delete-draft-btn ml-1"
                                            data-id="${v.id}" data-version="${v.version}"
-                                           title="Remove draft">
-                                       Remove
+                                           title="Delete draft">
+                                       <i class="fa fa-trash"></i>
                                    </button>`)
-                            : ''}
-                        ${v.status === 'published' && canPublishGroup(v.taxon_group)
-                            ? `<button class="btn btn-sm btn-outline-danger remove-version-btn ml-1"
-                                       data-id="${v.id}" data-version="${v.version}"
-                                       title="Remove published checklist version">
-                                   Remove
-                               </button>`
                             : ''}
                     </td>
                 </tr>`;
@@ -194,7 +198,7 @@
                 $paginator.show();
             }
         } catch (e) {
-            $tbody.html(`<tr><td colspan="9" class="text-danger">Failed to load: ${e.message}</td></tr>`);
+            $tbody.html(`<tr><td colspan="8" class="text-danger">Failed to load: ${e.message}</td></tr>`);
             $table.show();
         } finally {
             $loading.hide();
@@ -727,35 +731,47 @@
         }
     });
 
-    $(document).on('click', '.remove-version-btn', async function () {
-        const $button = $(this);
-        const versionId = $button.data('id');
-        const versionLabel = $button.data('version');
+    let _removeVersionId = null;
+    let _removeVersionRow = null;
 
-        if (!confirm(`Remove published version ${versionLabel}? This will run in the background and cannot be undone.`)) {
-            return;
-        }
+    $(document).on('click', '.remove-version-btn', function () {
+        _removeVersionId = $(this).data('id');
+        _removeVersionRow = $(this).closest('tr');
+        const label = $(this).data('version');
+        $('#remove-version-message').text(
+            `Remove published version ${label}? This will run in the background and cannot be undone.`
+        );
+        $('#btn-confirm-remove').prop('disabled', false).text('Remove');
+        $('#remove-version-modal').modal('show');
+    });
+
+    $('#btn-confirm-remove').on('click', async function () {
+        if (!_removeVersionId) return;
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('Removing…');
 
         try {
-            const response = await fetch(`${apiBase}${versionId}/delete/`, {
+            const response = await fetch(`${apiBase}${_removeVersionId}/delete/`, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': csrfToken }
             });
-            const data = await response.json().catch(function () {
-                return {};
-            });
+            const data = await response.json().catch(function () { return {}; });
             if (!response.ok) {
                 throw new Error(data.detail || `HTTP ${response.status}`);
             }
-            $button.closest('tr').remove();
-            updateTableStateAfterRowRemoval();
+            $('#remove-version-modal').modal('hide');
+            if (_removeVersionRow) {
+                _removeVersionRow.remove();
+                updateTableStateAfterRowRemoval();
+            }
             $('#alertModalBody').html(data.message || 'Checklist removal queued.');
-            $('#alertModal').modal({
-                keyboard: false,
-                backdrop: 'static'
-            });
+            $('#alertModal').modal({ keyboard: false, backdrop: 'static' });
         } catch (error) {
+            $('#remove-version-modal').modal('hide');
             alert(`Failed to remove version: ${error.message}`);
+        } finally {
+            _removeVersionId = null;
+            _removeVersionRow = null;
         }
     });
 
@@ -781,6 +797,47 @@
             updateTableStateAfterRowRemoval();
         } catch (error) {
             alert(`Failed to delete draft: ${error.message}`);
+        }
+    });
+
+    $(document).on('click', '.edit-version-btn', function () {
+        const $btn = $(this);
+        $('#ev-id').val($btn.data('id'));
+        $('#ev-doi').val($btn.data('doi'));
+        $('#ev-notes').val($btn.data('notes'));
+        $('#edit-version-error').addClass('d-none').text('');
+        $('#edit-version-modal').modal('show');
+    });
+
+    $('#btn-save-edit').on('click', async function () {
+        const versionId = $('#ev-id').val();
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('Saving…');
+        $('#edit-version-error').addClass('d-none').text('');
+
+        try {
+            const resp = await fetch(`${apiBase}${versionId}/update/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    doi: $('#ev-doi').val().trim(),
+                    notes: $('#ev-notes').val().trim(),
+                }),
+            });
+            const data = await resp.json().catch(function () { return {}; });
+            if (!resp.ok) {
+                $('#edit-version-error').text(data.detail || 'Save failed.').removeClass('d-none');
+                return;
+            }
+            $('#edit-version-modal').modal('hide');
+            reload();
+        } catch (e) {
+            $('#edit-version-error').text('Request failed: ' + e.message).removeClass('d-none');
+        } finally {
+            $btn.prop('disabled', false).text('Save');
         }
     });
 

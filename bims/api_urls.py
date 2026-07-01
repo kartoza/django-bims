@@ -6,7 +6,7 @@ from bims.api_views.checklist_version import (
     ChecklistVersionPublishView, ChecklistVersionExportView,
     ChecklistVersionDeleteView, ChecklistVersionDraftDeleteView,
     ChecklistVersionContributorListView, ChecklistVersionContributorDetailView,
-    TaxonGroupMembersView,
+    TaxonGroupMembersView, ChecklistVersionUpdateView,
 )
 from bims.api_views.checklist import DownloadChecklistAPIView
 from bims.api_views.clear_cache import ClearCacheView
@@ -586,6 +586,11 @@ urlpatterns = [
         'checklist-version/<uuid:pk>/delete-draft/',
         ChecklistVersionDraftDeleteView.as_view(),
         name='checklist-version-delete-draft',
+    ),
+    path(
+        'checklist-version/<uuid:pk>/update/',
+        ChecklistVersionUpdateView.as_view(),
+        name='checklist-version-update',
     ),
     path(
         'checklist-version/<uuid:pk>/contributors/',
