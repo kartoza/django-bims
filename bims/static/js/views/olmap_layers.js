@@ -219,9 +219,37 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 "data": "",
             }
             styles['name'] = name;
+            // WebGL/Mapbox-GL layout props that ol-mapbox-style's canvas
+            // renderer ignores. Kept in a list so we can strip them from
+            // symbol layers below (they only add noise to the style).
+            const ignoredSymbolLayout = [
+                'text-pitch-alignment',
+                'text-rotation-alignment',
+                'icon-rotation-alignment',
+                'icon-translate-anchor',
+                'icon-pitch-alignment'
+            ];
             for (let i = 0; i < styles['layers'].length; i++) {
-                styles['layers'][i]['id'] = `${name}-${i}`;
-                styles['layers'][i]['source'] = name
+                const layer = styles['layers'][i];
+                layer['id'] = `${name}-${i}`;
+                layer['source'] = name;
+
+                // Safety net for line labels: OpenLayers rejects label
+                // placement along simplified geometry when text-max-angle is
+                // very low, so labels disappear at low zoom. Clamp it up and
+                // drop layout props the canvas renderer can't use.
+                if (layer['type'] === 'symbol' && layer['layout']) {
+                    const layout = layer['layout'];
+                    ignoredSymbolLayout.forEach((prop) => {
+                        delete layout[prop];
+                    });
+                    if (layout['symbol-placement'] === 'line') {
+                        if (typeof layout['text-max-angle'] === 'undefined' ||
+                            layout['text-max-angle'] < 30) {
+                            layout['text-max-angle'] = 30;
+                        }
+                    }
+                }
             }
             return styles
         },
