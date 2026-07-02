@@ -776,6 +776,16 @@ class AbstractTaxonomy(AbstractValidation):
 
         return None
 
+    def find_ancestor_by_rank(self, target_rank: str, max_depth: int = 10):
+        current = self.parent
+        depth = 0
+        while current and depth < max_depth:
+            if current.rank and current.rank.upper() == target_rank.upper():
+                return current
+            current = current.parent
+            depth += 1
+        return None
+
 class Taxonomy(AbstractTaxonomy):
     CATEGORY_CHOICES = (
         (ORIGIN_CATEGORIES['non-native'], 'Non-Native'),
