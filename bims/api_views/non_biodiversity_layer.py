@@ -3,6 +3,7 @@ import csv
 import re
 
 from braces.views import SuperuserRequiredMixin
+from django.utils.text import slugify
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -113,8 +114,15 @@ class LayerGroupView(SuperuserRequiredMixin, APIView):
         name = data.get('name')
         description = data.get('description', '')
         order = LayerGroup.objects.all().count() + 1
+        base_slug = slugify(name)
+        slug = base_slug
+        counter = 1
+        while LayerGroup.objects.filter(slug=slug).exists():
+            slug = f'{base_slug}-{counter}'
+            counter += 1
         layer_group = LayerGroup.objects.create(
             name=name,
+            slug=slug,
             description=description,
             order=order
         )
@@ -145,13 +153,22 @@ class LayerGroupView(SuperuserRequiredMixin, APIView):
         data = request.data
         if data.get('id'):
             try:
-                group = LayerGroup.objects.get(
-                    id=data.get('id'))
+                group = LayerGroup.objects.get(id=data.get('id'))
+                if 'add_layer_id' in data:
+                    layer = NonBiodiversityLayer.objects.get(id=data['add_layer_id'])
+                    group.layers.add(layer)
+                    return Response({"message": "Layer added to group."}, status=200)
+                if 'remove_layer_id' in data:
+                    layer = NonBiodiversityLayer.objects.get(id=data['remove_layer_id'])
+                    group.layers.remove(layer)
+                    return Response({"message": "Layer removed from group."}, status=200)
                 group.name = data.get('name')
                 group.description = data.get('description', '')
                 group.save()
             except LayerGroup.DoesNotExist:
                 return Response({'error': 'Group not found.'}, status=404)
+            except NonBiodiversityLayer.DoesNotExist:
+                return Response({'error': 'Layer not found.'}, status=404)
 
         return Response(
             {"message": "Group updated successfully."}, status=200)
@@ -169,6 +186,8 @@ class VisualizationLayers(SuperuserRequiredMixin, APIView):
         abstract = data.get('abstract', '')
         order = NonBiodiversityLayer.objects.all().count() + 1
 
+        group_id = data.get('group_id')
+
         if layer_type == 'native_layer':
             non_biodiversity_layer = NonBiodiversityLayer.objects.create(
                 name=name,
@@ -179,17 +198,29 @@ class VisualizationLayers(SuperuserRequiredMixin, APIView):
             )
             non_biodiversity_layer.native_layer.abstract = abstract
             non_biodiversity_layer.native_layer.save()
+            if group_id:
+                try:
+                    group = LayerGroup.objects.get(id=int(group_id))
+                    group.layers.add(non_biodiversity_layer)
+                except LayerGroup.DoesNotExist:
+                    pass
             return Response(
                 {
                     "message": "layer created successfully.",
                 }, status=201)
         elif layer_type == 'wms':
-            NonBiodiversityLayer.objects.create(
+            non_biodiversity_layer = NonBiodiversityLayer.objects.create(
                 name=name,
                 wms_url=wms_layer_url,
                 wms_layer_name=wms_layer_name,
                 order=order
             )
+            if group_id:
+                try:
+                    group = LayerGroup.objects.get(id=int(group_id))
+                    group.layers.add(non_biodiversity_layer)
+                except LayerGroup.DoesNotExist:
+                    pass
             return Response(
                 {
                     "message": "layer created successfully.",
