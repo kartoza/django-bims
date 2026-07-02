@@ -855,13 +855,13 @@ class TestSpatialDashboardTasks(FastTenantTestCase):
         self.assertNotIn('EN', year_2020['categories'])
 
     # ------------------------------------------------------------------
-    # RLI — include_in_rli flag
+    # RLI — global IUCN data is independent of national RLI flag
     # ------------------------------------------------------------------
 
     @patch('bims.utils.celery.memcache_lock')
-    def test_rli_excludes_taxa_not_flagged(self, mock_lock):
-        """Taxa without include_in_rli=True must not contribute to the RLI,
-        even if they are native, accepted, and species-rank."""
+    def test_rli_includes_taxa_not_flagged_when_iucn_data_exists(self, mock_lock):
+        """Global IUCN RLI must use IUCN data even when the national
+        include_in_rli flag is false."""
         from bims.tasks.spatial_dashboard import spatial_dashboard_rli
 
         mock_lock.return_value.__enter__ = lambda s: True
@@ -908,11 +908,60 @@ class TestSpatialDashboardTasks(FastTenantTestCase):
         aggregate = results['aggregate']
 
         year_2020 = next(p for p in aggregate if p['year'] == 2020)
-        # Only taxa_1 (LC) contributes; unflagged CR taxon must be excluded
+        # taxa_1 (LC) and unflagged_taxon (CR) both contribute to global RLI.
+        self.assertEqual(year_2020['num_assessed'], 2)
+        # RLI = 1 - (0+4)/(5×2) = 0.6
+        self.assertEqual(year_2020['value'], 0.6)
+        self.assertEqual(year_2020['categories']['CR'], 1)
+
+    @patch('bims.utils.celery.memcache_lock')
+    def test_rli_excludes_taxa_without_module_group(self, mock_lock):
+        """Taxa without a module group must not produce an Unknown module."""
+        from bims.tasks.spatial_dashboard import spatial_dashboard_rli
+
+        mock_lock.return_value.__enter__ = lambda s: True
+        mock_lock.return_value.__exit__ = lambda s, *a: None
+
+        iucn_en = IUCNStatusF.create(category='EN', national=False)
+        site = LocationSiteF.create()
+
+        ungrouped_taxon = TaxonomyF.create(
+            scientific_name='Ungrouped Species',
+            canonical_name='Ungrouped Species',
+            rank='SPECIES',
+            taxonomic_status='ACCEPTED',
+            origin=_native_origin(),
+            iucn_status=iucn_en,
+        )
+        BiologicalCollectionRecordF.create(
+            taxonomy=ungrouped_taxon,
+            collection_date='2020-01-01',
+            site=site,
+            module_group=None,
+            validated=True,
+        )
+
+        IUCNAssessment.objects.create(
+            taxonomy=self.taxa_1, assessment_id=6101,
+            year_published=2020, red_list_category_code='LC',
+        )
+        IUCNAssessment.objects.create(
+            taxonomy=ungrouped_taxon, assessment_id=6102,
+            year_published=2020, red_list_category_code='EN',
+        )
+
+        search_process = self._create_search_process(SPATIAL_DASHBOARD_RLI)
+        spatial_dashboard_rli(
+            search_parameters={'search': 'Species'},
+            search_process_id=search_process.id,
+        )
+        search_process.refresh_from_db()
+        results = search_process.get_file_if_exits()
+
+        self.assertNotIn('Unknown', [s['name'] for s in results['series']])
+        year_2020 = next(p for p in results['aggregate'] if p['year'] == 2020)
         self.assertEqual(year_2020['num_assessed'], 1)
-        # RLI = 1 - 0/(5×1) = 1.0
-        self.assertEqual(year_2020['value'], 1.0)
-        self.assertNotIn('CR', year_2020['categories'])
+        self.assertNotIn('EN', year_2020['categories'])
 
     # ------------------------------------------------------------------
     # RLI — fallback to current iucn_status
