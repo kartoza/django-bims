@@ -222,7 +222,6 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             for (let i = 0; i < styles['layers'].length; i++) {
                 styles['layers'][i]['id'] = `${name}-${i}`;
                 styles['layers'][i]['source'] = name
-                styles['layers'][i]['minzoom'] = 0
             }
             return styles
         },
