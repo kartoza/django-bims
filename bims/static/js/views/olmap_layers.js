@@ -499,7 +499,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             let existingLegend = this.getLegendElement(id);
             let content = (
                 '<b>' + name + '</b><br>' +
-                '<img src="' + scr + '" style="width:20px;height:20px;" />'
+                '<img src="' + scr + '" style="max-width:100%;" />'
             )
             if (existingLegend.length > 0) {
                 existingLegend.html(content)
@@ -727,7 +727,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             let checked = '';
             const allChildren = layerGroup['layers'];
             const checkedChildren = allChildren.filter(function (layer) {
-                const layerObj = self.layers[layer['name']];
+                const layerObj = self.layers[layer['wms_layer_name']] || self.layers[layer['name']];
                 return layerObj && layerObj.visibleInDefault;
             });
             if (checkedChildren.length === 0) {
@@ -763,7 +763,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
 
             $.each(allChildren.reverse(), function (idx, layer) {
                 let layerName = layer['name'];
-                let layerData = self.layers[layer['name']];
+                let layerData = self.layers[layer['wms_layer_name']] || self.layers[layer['name']];
+                if (!layerData) return;
                 let layerTransparency = Shared.StorageUtil.getItemDict(layerName, 'transparency');
                 if (layerTransparency !== null) {
                     currentLayerTransparency = layerTransparency * 100;
@@ -853,7 +854,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             if (!Object.keys(this.layers).length) return false;
             if (this.layerGroups.hasOwnProperty(layername)) {
                 $.each(this.layerGroups[layername].layers, function (_, layer) {
-                    self.layers[layer.name].layer.setOpacity(opacity);
+                    let layerKey = layer.wms_layer_name || layer.name;
+                    if (self.layers[layerKey]) {
+                        self.layers[layerKey].layer.setOpacity(opacity);
+                    }
                 });
                 return true;
             }
@@ -923,11 +927,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                             self.layerGroups[key],
                         )
                         $.each(self.layerGroups[key]['layers'], function (key, value) {
-                            let layerName = value['name'];
-                            if (!self.layers[layerName]) {
+                            let layerKey = value['wms_layer_name'] || value['name'];
+                            if (!self.layers[layerKey]) {
                                 return
                             }
-                            let _layer = self.layers[layerName]['layer'];
+                            let _layer = self.layers[layerKey]['layer'];
                             if (!_layer.get('added')) {
                                 _layer.set('added', true);
                                 self.map.addLayer(_layer);
@@ -990,6 +994,17 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 }
             });
             self.renderTransparencySlider();
+
+            // Pin Sites and Rivers to the top of the selector
+            var $list = $('#layers-selector');
+            var $rivers = $list.children('[data-layer-title="Rivers"]');
+            if ($rivers.length) {
+                $rivers.prependTo($list);
+            }
+            var $sites = $list.children('[data-layer-title="Sites"]');
+            if ($sites.length) {
+                $sites.prependTo($list);
+            }
 
             $('.layer-selector-input').change(function (e) {
                 const input = $(e.target);
