@@ -9,6 +9,7 @@ from bims.tests.model_factories import (
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup, IUCNStatus, TaxonExtraAttribute
+from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.views.download_csv_taxa_list import TaxaCSVSerializer
 from bims.admin import TaxonomyAdminForm
 
@@ -158,6 +159,32 @@ class TaxaCSVSerializerTest(TestCase):
         self.assertEqual(serialized_data['TEST'], '?')
         self.assertTrue(len(serializer.context.get('tags')) > 0)
 
+    def test_serializers_use_parent_genus_for_provisional_species_name(self):
+        genus = Taxonomy.objects.create(
+            canonical_name='Enteromius',
+            scientific_name='Enteromius',
+            rank='GENUS',
+        )
+        species = Taxonomy.objects.create(
+            canonical_name='Enteromius sp. South Africa',
+            scientific_name='Enteromius sp. South Africa',
+            rank='SPECIES',
+            parent=genus,
+            hierarchical_data={
+                'genus_name': 'Enteromius sp.',
+                'species_name': 'sp. South Africa',
+            },
+        )
+
+        taxon_data = TaxonSerializer(
+            species,
+            context={'validated': True}
+        ).data
+        csv_data = TaxaCSVSerializer(species).data
+
+        self.assertEqual(taxon_data['genus'], 'Enteromius')
+        self.assertEqual(csv_data['genus'], 'Enteromius')
+
 
 class TestClearTaxaNotAssociatedInTaxonGroup(FastTenantTestCase):
     """
@@ -218,10 +245,14 @@ class TestClearTaxaNotAssociatedInTaxonGroup(FastTenantTestCase):
         self.assertEqual(res["deleted"], 0)
 
         sample = res.get("sample_taxa_to_delete", [])
-        for line in sample:
-            self.assertNotIn(str(self.leaf.id), line)
-            self.assertNotIn(str(self.mid.id), line)
-            self.assertNotIn(str(self.root.id), line)
+        sample_ids = {
+            int(line.split(":", 1)[0])
+            for line in sample
+            if line.split(":", 1)[0].isdigit()
+        }
+        self.assertNotIn(self.leaf.id, sample_ids)
+        self.assertNotIn(self.mid.id, sample_ids)
+        self.assertNotIn(self.root.id, sample_ids)
 
     def test_real_run_deletes_unlinked_unreferenced_taxa(self):
         doomed = TaxonomyF.create(rank="species", canonical_name="Doomed")

@@ -16,6 +16,17 @@ from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 from bims.models.taxon_url import TaxonURL
 
 
+def clean_provisional_genus_name(genus_name, genus_ancestor=None):
+    genus_name = ' '.join((genus_name or '').split())
+    if (
+        genus_name
+        and genus_ancestor
+        and re.search(r'(^|\s)spp?\.?(\s|$)', genus_name, re.IGNORECASE)
+    ):
+        return genus_ancestor.canonical_name
+    return genus_name
+
+
 class TaxonURLSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaxonURL
@@ -161,22 +172,14 @@ class TaxonSerializer(serializers.ModelSerializer):
             return f"{original_str if original_str else '-'} → {proposed_str}"
         return original_str
 
-    def _find_ancestor_by_rank(self, obj: Taxonomy, target_rank: str, max_depth: int = 10):
-        """Traverse parent hierarchy to find an ancestor with the specified rank."""
-        current = obj.parent
-        depth = 0
-        while current and depth < max_depth:
-            if current.rank and current.rank.upper() == target_rank.upper():
-                return current
-            current = current.parent
-            depth += 1
-        return None
-
     def _get_genus_name(self, obj: Taxonomy):
         """Get genus name from hierarchy or hierarchical_data."""
+        genus_ancestor = obj.find_ancestor_by_rank('GENUS')
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
-            return obj.hierarchical_data['genus_name']
-        genus_ancestor = self._find_ancestor_by_rank(obj, 'GENUS')
+            return clean_provisional_genus_name(
+                obj.hierarchical_data['genus_name'],
+                genus_ancestor
+            )
         if genus_ancestor:
             return genus_ancestor.canonical_name
         return obj.genus_name
@@ -187,18 +190,22 @@ class TaxonSerializer(serializers.ModelSerializer):
             return obj.canonical_name
         if obj.subgenus:
             return obj.subgenus.canonical_name
-        subgenus_ancestor = self._find_ancestor_by_rank(obj, 'SUBGENUS')
+        subgenus_ancestor = obj.find_ancestor_by_rank('SUBGENUS')
         if subgenus_ancestor:
             return subgenus_ancestor.canonical_name
         return None
 
     def get_genus(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
+        genus_ancestor = obj.find_ancestor_by_rank('GENUS')
         if not validated:
-            return obj.genus_name
+            return clean_provisional_genus_name(obj.genus_name, genus_ancestor)
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
-            return obj.hierarchical_data['genus_name']
-        return obj.genus_name
+            return clean_provisional_genus_name(
+                obj.hierarchical_data['genus_name'],
+                genus_ancestor
+            )
+        return clean_provisional_genus_name(obj.genus_name, genus_ancestor)
 
     def get_family(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
