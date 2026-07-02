@@ -761,14 +761,14 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
 
             let currentLayerTransparency = null;
 
-            $.each(allChildren.reverse(), function (idx, layer) {
-                let layerName = layer['name'];
-                let layerData = self.layers[layer['wms_layer_name']] || self.layers[layer['name']];
+            $.each(allChildren.slice().reverse(), function (idx, layer) {
+                let layerKey = layer['wms_layer_name'] || layer['name'];
+                let layerData = self.layers[layerKey];
                 if (!layerData) return;
-                let layerTransparency = Shared.StorageUtil.getItemDict(layerName, 'transparency');
+                let layerTransparency = Shared.StorageUtil.getItemDict(layerKey, 'transparency');
                 if (layerTransparency !== null) {
                     currentLayerTransparency = layerTransparency * 100;
-                    self.changeLayerTransparency(layerName, layerTransparency);
+                    self.changeLayerTransparency(layerKey, layerTransparency);
                 } else {
                     currentLayerTransparency = 100;
                 }
@@ -1487,7 +1487,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 } else {
                     key = $li.find('.layer-selector-input').val();
                     for (const [, g] of Object.entries(self.layerGroups)) {
-                        if (g.layers.find(l => l.name === key)) {
+                        if (g.layers.find(l => l.wms_layer_name === key || l.name === key)) {
                             key = g.name;
                             break;
                         }
@@ -1496,7 +1496,8 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 if (seen[key]) return;
                 seen[key] = true;
                 if (isGroup) {
-                    order = Shared.StorageUtil.getItemDict(self.layerGroups[key]['layers'][0].name, 'order');
+                    const firstLayer = self.layerGroups[key]['layers'][0];
+                    order = Shared.StorageUtil.getItemDict(firstLayer.wms_layer_name || firstLayer.name, 'order');
                 } else {
                     order = Shared.StorageUtil.getItemDict(key, 'order');
                 }
