@@ -102,7 +102,7 @@ class TaxonHierarchySerializer(serializers.ModelSerializer):
         
         if (
             obj.accepted_taxonomy and
-            obj.is_synonym_or_doubtful and
+            obj.is_synonym and
             obj.accepted_taxonomy.rank in ('SUBSPECIES', 'VARIETY')
         ):
             return ''

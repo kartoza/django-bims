@@ -234,10 +234,7 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     # Resolve accepted taxonomy for synonyms (depth-first, recursive)
     # ------------------------------------------------------------------
     accepted_taxonomy = None
-    _is_synonym = (
-        'SYNONYM' in taxonomic_status
-        or taxonomic_status == 'DOUBTFUL'
-    )
+    _is_synonym = 'SYNONYM' in taxonomic_status
     remote_accepted_id = taxon_data.get('accepted_taxonomy')
     if _is_synonym and remote_accepted_id:
         remote_accepted_id = int(remote_accepted_id)

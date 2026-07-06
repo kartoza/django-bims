@@ -351,14 +351,15 @@ class TestTaxaUpload(FastTenantTestCase):
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
-    def test_synonym_and_doubtful_species_have_no_parent(
+    def test_synonym_has_no_parent_doubtful_keeps_parent(
             self,
             mock_fetch_all_species_from_gbif,
             mock_finish
     ):
         """
-        Synonym or doubtful taxa should not keep any parent relationship when
-        imported to avoid polluting the accepted hierarchy.
+        Synonym taxa should not keep any parent relationship when imported, to
+        avoid polluting the accepted hierarchy. Doubtful taxa, however, are
+        treated like accepted taxa and should retain their own parent.
         """
         mock_finish.return_value = None
         mock_fetch_all_species_from_gbif.return_value = None
@@ -396,9 +397,14 @@ class TestTaxaUpload(FastTenantTestCase):
             msg='Synonym species should remain detached from any parent.'
         )
 
-        self.assertIsNone(
+        self.assertIsNotNone(
             doubtful_taxon.parent,
-            msg='Doubtful species should remain detached from any parent.'
+            msg='Doubtful species should retain its own genus parent.'
+        )
+        self.assertEqual(
+            doubtful_taxon.parent.canonical_name,
+            'Dubius',
+            msg='Doubtful species should be parented to its genus.'
         )
 
         self.assertIsNotNone(

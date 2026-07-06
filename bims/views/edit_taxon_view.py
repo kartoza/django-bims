@@ -69,10 +69,8 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         )
         taxon_obj = self.object
         status = (taxon_obj.taxonomic_status or '').upper()
-        is_synonym_or_doubtful = (
-            status == 'DOUBTFUL' or 'SYNONYM' in status
-        )
-        if is_synonym_or_doubtful and getattr(taxon_obj, 'accepted_taxonomy', None):
+        is_synonym = 'SYNONYM' in status
+        if is_synonym and getattr(taxon_obj, 'accepted_taxonomy', None):
             context['hierarchy_taxon'] = taxon_obj.accepted_taxonomy
         else:
             context['hierarchy_taxon'] = taxon_obj
@@ -169,7 +167,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
         parent = data.get('parent')
         status = (data.get('taxonomic_status') or taxon.taxonomic_status or '').upper()
-        is_synonym_or_doubtful = status == 'DOUBTFUL' or 'SYNONYM' in status
+        is_synonym = 'SYNONYM' in status
 
         if parent:
             if 'subspecies' in current_rank.lower():
@@ -210,12 +208,12 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         data['fada_id'] = self.request.POST.get('fada_id', '').strip() or None
 
         subgenus_id = self.request.POST.get('subgenus', '').strip()
-        if is_synonym_or_doubtful and subgenus_id:
+        if is_synonym and subgenus_id:
             try:
                 data['subgenus'] = Taxonomy.objects.get(pk=int(subgenus_id))
             except (ValueError, Taxonomy.DoesNotExist):
                 data['subgenus'] = None
-        elif is_synonym_or_doubtful:
+        elif is_synonym:
             data['subgenus'] = None
 
         new_proposal = False

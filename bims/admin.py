@@ -1544,14 +1544,15 @@ class QualityCheckFilter(django_admin.SimpleListFilter):
     TOP_LEVEL_RANKS = ['DOMAIN', 'KINGDOM', 'Domain', 'Kingdom']
 
     def _accepted_no_parent_q(self):
+        # Accepted and doubtful taxa are expected to have their own parent.
         return Q(
-            taxonomic_status='ACCEPTED',
+            Q(taxonomic_status='ACCEPTED') | Q(taxonomic_status='DOUBTFUL'),
             parent__isnull=True,
         ) & ~Q(rank__in=self.TOP_LEVEL_RANKS)
 
     def _synonym_no_accepted_q(self):
         return Q(
-            Q(taxonomic_status='DOUBTFUL') | Q(taxonomic_status__icontains='SYNONYM'),
+            taxonomic_status__icontains='SYNONYM',
             accepted_taxonomy__isnull=True,
         )
 
@@ -1563,8 +1564,8 @@ class QualityCheckFilter(django_admin.SimpleListFilter):
         return (
             ('all_passed', 'All passed (100%)'),
             ('has_issues', 'Has issues'),
-            ('accepted_no_parent', 'Accepted missing parent'),
-            ('synonym_no_accepted', 'Synonym/Doubtful missing accepted taxon'),
+            ('accepted_no_parent', 'Accepted/Doubtful missing parent'),
+            ('synonym_no_accepted', 'Synonym missing accepted taxon'),
             ('no_upstream_id', 'Missing upstream ID'),
         )
 
@@ -1838,8 +1839,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     def quality_check(self, obj):
         status = (obj.taxonomic_status or '').upper()
-        is_accepted = status == 'ACCEPTED'
-        is_synonym_or_doubtful = status == 'DOUBTFUL' or 'SYNONYM' in status
+        is_accepted = status in ['ACCEPTED', 'DOUBTFUL']
+        is_synonym = 'SYNONYM' in status
 
         checks = []
         issues = []
@@ -1851,7 +1852,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 checks.append(False)
                 issues.append('Missing parent taxon')
 
-        if is_synonym_or_doubtful:
+        if is_synonym:
             if obj.accepted_taxonomy_id:
                 checks.append(True)
             else:

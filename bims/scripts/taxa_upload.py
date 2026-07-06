@@ -738,8 +738,10 @@ class TaxaProcessor(object):
         use_proposal = not auto_validate
 
         taxonomic_status = _safe_strip(self.get_row_value(row, TAXONOMIC_STATUS))
+        # Doubtful taxa are treated like accepted taxa: they keep their own
+        # parent hierarchy and do not need an accepted taxon. Only synonyms are
+        # detached from parents and resolved to an accepted taxon.
         is_synonym = 'synonym' in (taxonomic_status or '').lower().strip()
-        is_doubtful = 'doubtful' in (taxonomic_status or '').lower().strip()
 
         taxon_name = _safe_strip(self.get_row_value(row, TAXON))
         csv_taxon = taxon_name
@@ -768,7 +770,7 @@ class TaxaProcessor(object):
         # Subgenus species are not fetched by name from GBIF (GBIF doesn't
         # distinguish subgenus in name lookups), but synonyms still need GBIF
         # to resolve acceptedKey, so allow fetching for them.
-        if is_species and subgenus and not (is_synonym or is_doubtful):
+        if is_species and subgenus and not is_synonym:
             should_fetch_from_gbif = False
 
         # on_gbif flag
@@ -934,7 +936,7 @@ class TaxaProcessor(object):
         # FADA id (integer part)
         fada_id = self.get_row_value(row, FADA_ID)
 
-        if is_synonym or is_doubtful:
+        if is_synonym:
             accepted_taxon_val = self.get_row_value(row, ACCEPTED_TAXON)
             if accepted_taxon_val:
                 accepted_taxon = Taxonomy.objects.filter(
@@ -961,7 +963,7 @@ class TaxaProcessor(object):
 
         # Parent check: parent must not have same name as the taxon
         # Exception: sub-ranks can have the same name as their parent non-sub rank
-        if not is_synonym and not is_doubtful:
+        if not is_synonym:
             parent = self.get_parent(row, parent_rank(rank))
             if parent:
                 current_rank_upper = _safe_upper(rank)
@@ -1039,7 +1041,7 @@ class TaxaProcessor(object):
                     )
                     if taxa_with_subgenus.exists():
                         taxa = taxa_with_subgenus
-                    elif is_synonym or is_doubtful:
+                    elif is_synonym:
                         # A synonym may share a canonical name with an accepted taxon
                         # of a different subgenus. Prefer existing records that have
                         # no subgenus set (previously imported synonyms lacking this
@@ -1075,7 +1077,7 @@ class TaxaProcessor(object):
                         taxonomy = candidate
                         logger.debug('%s already in the system', taxon_name)
 
-                        if (is_synonym or is_doubtful) and taxonomy.parent:
+                        if is_synonym and taxonomy.parent:
                             taxonomy.parent = None
                 elif taxa.exists():
                     taxonomy = taxa.first()
@@ -1098,8 +1100,8 @@ class TaxaProcessor(object):
                 )
                 if taxonomy:
                     new_taxon = True
-                    # Ensure synonyms and doubtful species don't have parents
-                    if (is_synonym or is_doubtful) and taxonomy.parent:
+                    # Ensure synonyms don't have parents
+                    if is_synonym and taxonomy.parent:
                         taxonomy.parent = None
 
             if not taxonomy and on_gbif and should_fetch_from_gbif:
@@ -1130,8 +1132,8 @@ class TaxaProcessor(object):
                 )
                 if taxonomy:
                     new_taxon = True
-                    # Ensure synonyms and doubtful species don't have parents
-                    if (is_synonym or is_doubtful) and taxonomy.parent:
+                    # Ensure synonyms don't have parents
+                    if is_synonym and taxonomy.parent:
                         taxonomy.parent = None
 
             # Ensure we have a taxonomy; if GBIF didn't return, construct one with a valid parent
@@ -1144,13 +1146,13 @@ class TaxaProcessor(object):
                     current_try += 1
                     parent_name = parent_rank(parent_name)
 
-                if not is_synonym and not is_doubtful:
+                if not is_synonym:
                     parent = self.get_parent(row, parent_name)
                     if not parent:
                         self.handle_error(row=row, message='Data not found from GBIF for this taxon and its parents')
                         return
                 else:
-                    # Synonyms and doubtful species should not have a parent
+                    # Synonyms should not have a parent
                     parent = None
                 new_taxon = True
                 taxonomy, _ = Taxonomy.objects.get_or_create(
@@ -1185,8 +1187,8 @@ class TaxaProcessor(object):
                     subgenus_taxon = subgenus_taxon.first()
                 taxonomy.subgenus = subgenus_taxon
 
-            # Backfill parent and author if missing (skip for synonyms and doubtful species)
-            if taxonomy and not taxonomy.parent and not is_synonym and not is_doubtful:
+            # Backfill parent and author if missing (skip for synonyms)
+            if taxonomy and not taxonomy.parent and not is_synonym:
                 # Ensure taxonomy is not its own parent (check by pk if both are saved)
                 if parent and taxonomy.pk and parent.pk == taxonomy.pk:
                     self.handle_error(row=row, message='Taxonomy cannot be its own parent')
@@ -1215,8 +1217,8 @@ class TaxaProcessor(object):
                 )
                 taxonomy = refreshed or taxonomy
 
-                # Ensure synonyms and doubtful species don't have parents after refresh
-                if (is_synonym or is_doubtful) and taxonomy.parent:
+                # Ensure synonyms don't have parents after refresh
+                if is_synonym and taxonomy.parent:
                     taxonomy.parent = None
 
                 # For FADA sites, ensure CSV taxonomic_status is always preserved after GBIF refresh
@@ -1243,14 +1245,14 @@ class TaxaProcessor(object):
             )
 
             # Validate parents for accepted taxon
-            if not is_synonym and not is_doubtful:
+            if not is_synonym:
                 ok, message = self.validate_parents(taxon=taxonomy, row=row)
                 if not ok:
                     self.handle_error(row=row, message=message)
                     return
 
-            # Only set proposal parent for accepted taxa (not synonyms or doubtful species)
-            if use_proposal and proposal and not is_synonym and not is_doubtful:
+            # Only set proposal parent for accepted/doubtful taxa (not synonyms)
+            if use_proposal and proposal and not is_synonym:
                 # Ensure proposal is not its own parent
                 if taxonomy.parent and proposal.pk and taxonomy.parent.pk == proposal.pk:
                     self.handle_error(row=row, message='Proposal cannot be its own parent')
@@ -1406,7 +1408,7 @@ class TaxaProcessor(object):
                     taxonomy.gbif_data = fresh_data
                     taxonomy.save(update_fields=['gbif_data'])
 
-            if (is_synonym or is_doubtful) and not accepted_taxon:
+            if is_synonym and not accepted_taxon:
                 accepted_key = (taxonomy.gbif_data or {}).get('acceptedKey', '')
                 if accepted_key:
                     accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()

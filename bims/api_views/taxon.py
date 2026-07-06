@@ -357,9 +357,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         family_id = self.request.POST.get('familyId', None)
         accepted_taxonomy_id = self.request.POST.get('acceptedTaxonomyId', None)
         taxonomic_status = (self.request.POST.get('taxonomicStatus') or '').strip().upper()
-        is_synonym_or_doubtful = (
-            taxonomic_status == 'DOUBTFUL' or 'SYNONYM' in taxonomic_status
-        )
+        is_synonym = 'SYNONYM' in taxonomic_status
         parent = None
 
         if family_id:
@@ -371,8 +369,8 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if gbif_key:
             taxonomy = update_taxonomy_from_gbif(
                 key=gbif_key,
-                fetch_parent=not is_synonym_or_doubtful,
-                get_vernacular=not is_synonym_or_doubtful
+                fetch_parent=not is_synonym,
+                get_vernacular=not is_synonym
             )
 
         elif taxon_name and rank:
@@ -455,7 +453,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 taxonomy.ready_to_be_validate()
                 taxonomy.send_new_taxon_email(taxon_group_id)
 
-            if parent and not is_synonym_or_doubtful:
+            if parent and not is_synonym:
                 taxonomy.parent = parent
                 taxonomy.save()
 

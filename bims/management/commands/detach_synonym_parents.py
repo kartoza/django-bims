@@ -1,5 +1,9 @@
 # coding=utf-8
-"""Detach parents from synonym and doubtful taxa."""
+"""Detach parents from synonym taxa.
+
+Doubtful taxa are intentionally left untouched: they are treated like accepted
+taxa and keep their own parent hierarchy.
+"""
 
 import sys
 
@@ -11,12 +15,11 @@ except ImportError:  # pragma: no cover - tenant support optional
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.db.models import Q
 
 
 class Command(BaseCommand):
     help = (
-        "Ensure synonym and doubtful taxa do not have parent references. "
+        "Ensure synonym taxa do not have parent references. "
         "Supports multi-tenant deployments via --tenant/--all-tenants."
     )
 
@@ -93,19 +96,18 @@ class Command(BaseCommand):
         dry_run = options.get("dry_run", False)
 
         qs = Taxonomy.objects.filter(
-            Q(taxonomic_status__iexact="DOUBTFUL")
-            | Q(taxonomic_status__icontains="SYNONYM")
+            taxonomic_status__icontains="SYNONYM"
         ).exclude(parent__isnull=True)
 
         to_update = qs.count()
         if not to_update:
-            self.stdout.write(self.style.SUCCESS("No synonym/doubtful taxa with parents found."))
+            self.stdout.write(self.style.SUCCESS("No synonym taxa with parents found."))
             return
 
         if dry_run:
             self.stdout.write(
                 self.style.WARNING(
-                    f"[dry-run] Would detach {to_update} synonym/doubtful taxa from parents."
+                    f"[dry-run] Would detach {to_update} synonym taxa from parents."
                 )
             )
             return
@@ -115,7 +117,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Detached {updated} synonym/doubtful taxa from their parents."
+                f"Detached {updated} synonym taxa from their parents."
             )
         )
 
