@@ -508,6 +508,20 @@ class SiteSetting(Preferences):
         ),
     )
 
+    gbif_harvest_exclusion_rules = JSONField(
+        blank=True,
+        null=True,
+        default=list,
+        help_text=(
+            "JSON list of rules applied during GBIF harvesting. Each rule is an object "
+            "with 'field' (DwC field name), 'condition' (not_empty | equals | contains | "
+            "greater_than | less_than), optional 'value', and optional 'description'. "
+            "A record matching ANY rule is skipped. "
+            "Example: [{\"field\": \"informationWithheld\", \"condition\": \"not_empty\", "
+            "\"description\": \"Skip obscured/withheld coordinates\"}]"
+        ),
+    )
+
     google_analytics_key = models.CharField(
         max_length=255,
         blank=True,
@@ -524,6 +538,38 @@ class SiteSetting(Preferences):
             "Default is 'Invasion'. SANParks uses 'National NEMBA Status'."
         )
     )
+
+    # ------------------------------------------------------------------
+    # Default exclusion rules applied when the field is empty/null.
+    # Stored here so callers always get a safe baseline.
+    # ------------------------------------------------------------------
+    GBIF_DEFAULT_EXCLUSION_RULES = [
+        {
+            "field": "informationWithheld",
+            "condition": "not_empty",
+            "description": (
+                "Skip records where the data provider has withheld or obscured "
+                "coordinate information (e.g. iNaturalist observer-requested obscuring)."
+            ),
+        },
+        {
+            "field": "coordinateUncertaintyInMeters",
+            "condition": "greater_than",
+            "value": 10000,
+            "description": (
+                "Skip records with coordinate uncertainty greater than 10 km. "
+                "iNaturalist sets obscured records to ~28,311 m."
+            ),
+        },
+    ]
+
+    @property
+    def gbif_exclusion_rules_effective(self) -> list:
+        """Return configured rules, falling back to the default baseline."""
+        rules = self.gbif_harvest_exclusion_rules
+        if rules is None or not isinstance(rules, list):
+            return self.GBIF_DEFAULT_EXCLUSION_RULES
+        return rules
 
     def _tenant_default_exclusions(self) -> set[str]:
         """Default per tenant: for FBIS tenant, exclude 'fbis'."""
