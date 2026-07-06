@@ -5,6 +5,19 @@ from preferences.models import Preferences
 from django_cryptography.fields import encrypt
 
 
+def gbif_default_exclusion_rules():
+    return [
+        {
+            "field": "informationWithheld",
+            "condition": "not_empty",
+            "description": (
+                "Skip records where the data provider has withheld or obscured "
+                "coordinate information (e.g. iNaturalist observer-requested obscuring)."
+            ),
+        }
+    ]
+
+
 class SiteSetting(Preferences):
     SITE_CODE_GENERATOR_CHOICES = (
         ('bims', 'BIMS (2 Site Name + 2 Site Description + Site count)'),
@@ -511,7 +524,7 @@ class SiteSetting(Preferences):
     gbif_harvest_exclusion_rules = JSONField(
         blank=True,
         null=True,
-        default=list,
+        default=gbif_default_exclusion_rules,
         help_text=(
             "JSON list of rules applied during GBIF harvesting. Each rule is an object "
             "with 'field' (DwC field name), 'condition' (not_empty | equals | contains | "
@@ -543,25 +556,7 @@ class SiteSetting(Preferences):
     # Default exclusion rules applied when the field is empty/null.
     # Stored here so callers always get a safe baseline.
     # ------------------------------------------------------------------
-    GBIF_DEFAULT_EXCLUSION_RULES = [
-        {
-            "field": "informationWithheld",
-            "condition": "not_empty",
-            "description": (
-                "Skip records where the data provider has withheld or obscured "
-                "coordinate information (e.g. iNaturalist observer-requested obscuring)."
-            ),
-        },
-        {
-            "field": "coordinateUncertaintyInMeters",
-            "condition": "greater_than",
-            "value": 10000,
-            "description": (
-                "Skip records with coordinate uncertainty greater than 10 km. "
-                "iNaturalist sets obscured records to ~28,311 m."
-            ),
-        },
-    ]
+    GBIF_DEFAULT_EXCLUSION_RULES = gbif_default_exclusion_rules()
 
     @property
     def gbif_exclusion_rules_effective(self) -> list:
