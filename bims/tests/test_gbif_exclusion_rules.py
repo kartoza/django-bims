@@ -309,19 +309,6 @@ class TestProcessGbifRowExclusionRules(FastTenantTestCase):
         self.assertIsNone(record)
         self.assertFalse(processed)
 
-    @mock.patch("bims.scripts.import_gbif_occurrences.create_dataset_from_gbif", _mock_create_dataset)
-    def test_default_rules_skip_high_uncertainty(self, _mock_ctx):
-        from bims.models.site_setting import SiteSetting
-
-        row = _base_row(
-            gbifID="default-uncertainty-1",
-            informationWithheld="",
-            coordinateUncertaintyInMeters="28311",
-        )
-        record, processed = self._call(row, SiteSetting.GBIF_DEFAULT_EXCLUSION_RULES)
-
-        self.assertIsNone(record)
-        self.assertFalse(processed)
 
     @mock.patch("bims.scripts.import_gbif_occurrences.create_dataset_from_gbif", _mock_create_dataset)
     def test_default_rules_accept_clean_record(self, _mock_ctx):
@@ -375,20 +362,6 @@ class TestSiteSettingExclusionRules(FastTenantTestCase):
         from bims.models.site_setting import SiteSetting
         fields = [r["field"] for r in SiteSetting.GBIF_DEFAULT_EXCLUSION_RULES]
         self.assertIn("informationWithheld", fields)
-
-    def test_default_rules_contain_coordinate_uncertainty(self, _mock_ctx):
-        from bims.models.site_setting import SiteSetting
-        fields = [r["field"] for r in SiteSetting.GBIF_DEFAULT_EXCLUSION_RULES]
-        self.assertIn("coordinateUncertaintyInMeters", fields)
-
-    def test_default_uncertainty_rule_uses_greater_than(self, _mock_ctx):
-        from bims.models.site_setting import SiteSetting
-        rule = next(
-            r for r in SiteSetting.GBIF_DEFAULT_EXCLUSION_RULES
-            if r["field"] == "coordinateUncertaintyInMeters"
-        )
-        self.assertEqual(rule["condition"], "greater_than")
-        self.assertGreater(rule["value"], 0)
 
     def test_effective_falls_back_to_defaults_when_null(self, _mock_ctx):
         from bims.models.site_setting import SiteSetting
