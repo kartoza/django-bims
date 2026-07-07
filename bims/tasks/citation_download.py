@@ -1,5 +1,6 @@
 # coding=utf-8
 import io
+import re
 import zipfile
 from datetime import datetime
 
@@ -15,6 +16,12 @@ logger = get_task_logger(__name__)
 # Citation formatters
 # ------------------------------------------------------------------ #
 
+def _bibtex_authors(authors_str: str) -> str:
+    """Normalise an author string to BibTeX's 'A and B and C' convention."""
+    parts = [p.strip() for p in authors_str.replace('&', ',').split(',') if p.strip()]
+    return ' and '.join(parts)
+
+
 def _bibtex_key(ref):
     """Derive a simple BibTeX cite key: <surname><year><first-title-word>."""
     authors = ref.authors or ''
@@ -23,14 +30,14 @@ def _bibtex_key(ref):
     year = str(ref.year) if ref.year and str(ref.year) != '-' else 'nd'
     title = ref.title or ''
     first_word = title.split()[0].lower() if title and title != 'Unpublished data' else ''
-    return f'{surname}{year}{first_word}'
+    return re.sub(r'[^\w]', '', f'{surname}{year}{first_word}')
 
 
 def _format_bibtex(ref):
     """Return a BibTeX entry string for a SourceReference."""
     key = _bibtex_key(ref)
     title = ref.title or ''
-    authors = ref.authors or ''
+    authors = _bibtex_authors(ref.authors or '')
     year = ref.year
 
     entry_type = 'misc'
@@ -54,15 +61,21 @@ def _format_bibtex(ref):
             src = ref.sourcereferencedocument.source
             url = src.doc_url or (src.doc_file.url if src.doc_file else '')
             if url:
-                extra_fields['url'] = url
+                extra_fields['url'] = _absolute_url(url)
         except Exception:  # noqa
             pass
+        institution = (
+            ref.reference_source
+            if ref.reference_source and ref.reference_source != '-'
+            else authors or 'Unknown'
+        )
+        extra_fields['institution'] = institution
     elif ref.is_database():
         entry_type = 'misc'
         try:
             url = ref.sourcereferencedatabase.source.url or ''
             if url:
-                extra_fields['url'] = url
+                extra_fields['url'] = _absolute_url(url)
         except Exception:  # noqa
             pass
     elif ref.note:
@@ -73,6 +86,9 @@ def _format_bibtex(ref):
         fields.append(f'  year = {{{year}}}')
     for field_name, value in extra_fields.items():
         fields.append(f'  {field_name} = {{{value}}}')
+    if entry_type == 'unpublished':
+        note = ref.note if ref.note and ref.note != '-' else 'Unpublished data'
+        fields.append(f'  note = {{{note}}}')
 
     body = ',\n'.join(fields)
     return f'@{entry_type}{{{key},\n{body}\n}}\n'
@@ -121,7 +137,7 @@ def _format_ris(ref):
             src = ref.sourcereferencedocument.source
             url = src.doc_url or (src.doc_file.url if src.doc_file else '')
             if url:
-                lines.append(f'UR  - {url}')
+                lines.append(f'UR  - {_absolute_url(url)}')
     except Exception:  # noqa
         pass
 
@@ -129,7 +145,7 @@ def _format_ris(ref):
         if ref.is_database():
             url = ref.sourcereferencedatabase.source.url or ''
             if url:
-                lines.append(f'UR  - {url}')
+                lines.append(f'UR  - {_absolute_url(url)}')
     except Exception:  # noqa
         pass
 
@@ -158,6 +174,7 @@ def _format_plain(ref):
         elif ref.is_published_report():
             src = ref.sourcereferencedocument.source
             doi_url = src.doc_url or (src.doc_file.url if src.doc_file else '')
+            doi_url = _absolute_url(doi_url)
         elif ref.is_database():
             doi_url = ref.sourcereferencedatabase.source.url or ''
     except Exception:  # noqa
@@ -183,6 +200,99 @@ def _file_extension(citation_format):
     return {'bibtex': 'bib', 'ris': 'ris'}.get(citation_format, 'txt')
 
 
+def _absolute_url(url: str) -> str:
+    """Prefix a relative URL with the current tenant host."""
+    if url and url.startswith('/'):
+        return f'https://{get_current_domain()}{url}'
+    return url
+
+
+# ------------------------------------------------------------------ #
+# Dataset (GBIF occurrence dataset) citation helpers
+# ------------------------------------------------------------------ #
+
+def _parse_dataset_author_year(dataset):
+    """Extract author string and year from dataset.citation."""
+    author, year = '', ''
+    if dataset.citation:
+        author_with_year = dataset.citation.split('.')[0]
+        match = re.match(r'^(.*?)\s*\((\d{4})\)$', author_with_year)
+        if match:
+            author = match.group(1)
+            year = match.group(2)
+    return author, year
+
+
+def _dataset_url(dataset):
+    """Return a full URL, prefixing bare DOIs with https://doi.org/."""
+    url = dataset.url or ''
+    if url and url.startswith('10.'):
+        return f'https://doi.org/{url}'
+    return url
+
+
+def _format_dataset_bibtex(dataset):
+    author, year = _parse_dataset_author_year(dataset)
+    # GBIF authors are "Lastname Initial" - take first token of first segment.
+    first_segment = author.replace('&', ',').split(',')[0].strip()
+    surname = first_segment.split()[0] if first_segment else 'unknown'
+    author = _bibtex_authors(author)
+    # Strip characters invalid in BibTeX keys (commas, spaces, dots, etc.)
+    first_word = re.sub(r'[^\w]', '', dataset.name.split()[0].lower()) if dataset.name else ''
+    key = re.sub(r'[^\w]', '', f'{surname}{year}{first_word}')
+    fields = [f'  author = {{{author}}}', f'  title = {{{dataset.name}}}']
+    if year:
+        fields.append(f'  year = {{{year}}}')
+    fields.append('  publisher = {Global Biodiversity Information Facility (GBIF)}')
+    url = _dataset_url(dataset)
+    if url:
+        fields.append(f'  url = {{{url}}}')
+    body = ',\n'.join(fields)
+    return f'@misc{{{key},\n{body}\n}}\n'
+
+
+def _format_dataset_ris(dataset):
+    author, year = _parse_dataset_author_year(dataset)
+    lines = ['TY  - DATA']
+    if author:
+        for a in author.replace('&', ',').split(','):
+            a = a.strip()
+            if a:
+                lines.append(f'AU  - {a}')
+    if dataset.name:
+        lines.append(f'TI  - {dataset.name}')
+    if year:
+        lines.append(f'PY  - {year}')
+    lines.append('PB  - Global Biodiversity Information Facility (GBIF)')
+    raw_url = dataset.url or ''
+    if raw_url.startswith('10.'):
+        lines.append(f'DO  - {raw_url}')
+    elif raw_url:
+        lines.append(f'UR  - {raw_url}')
+    lines.append('ER  - ')
+    return '\n'.join(lines) + '\n'
+
+
+def _format_dataset_plain(dataset):
+    author, year = _parse_dataset_author_year(dataset)
+    authors_str = author if author else 'Unknown'
+    year_str = year if year else 'n.d.'
+    parts = [f'{authors_str} ({year_str}). {dataset.name}.']
+    parts.append(' Global Biodiversity Information Facility (GBIF).')
+    url = _dataset_url(dataset)
+    if url:
+        parts.append(f' {url}')
+    return ''.join(parts)
+
+
+def _format_dataset(dataset, citation_format):
+    if citation_format == 'bibtex':
+        return _format_dataset_bibtex(dataset)
+    if citation_format == 'ris':
+        return _format_dataset_ris(dataset)
+    return _format_dataset_plain(dataset)
+
+
 # ------------------------------------------------------------------ #
 # Celery task
 # ------------------------------------------------------------------ #
@@ -193,9 +303,11 @@ def generate_citation_download(
         source_reference_ids: list,
         citation_format: str,
         user_id: int,
+        dataset_ids: list = None,
 ) -> str:
     """
-    Format source references as a citation file and email it to the user.
+    Format source references and GBIF occurrence dataset references as a
+    citation file and email it to the user.
     """
     from django.contrib.auth import get_user_model
     from django.conf import settings
@@ -204,6 +316,7 @@ def generate_citation_download(
     from django.template.loader import render_to_string
     from bims.models.source_reference import SourceReference
     from bims.models.download_request import DownloadRequest
+    from bims.models.dataset import Dataset
 
     User = get_user_model()
 
@@ -227,7 +340,8 @@ def generate_citation_download(
         return _fail(f'User {user_id} not found')
 
     refs = list(SourceReference.objects.filter(id__in=source_reference_ids))
-    total = len(refs)
+    datasets = list(Dataset.objects.filter(id__in=(dataset_ids or [])))
+    total = len(refs) + len(datasets)
 
     if total == 0:
         return _fail('No matching source references found')
@@ -243,18 +357,26 @@ def generate_citation_download(
             dr.progress = f'{i}/{total}'
             dr.save(update_fields=['progress'])
 
+        for j, dataset in enumerate(datasets, start=len(refs) + 1):
+            try:
+                lines.append(_format_dataset(dataset, citation_format))
+            except Exception as exc:
+                logger.warning('Failed to format dataset %s: %s', dataset.id, exc)
+            dr.progress = f'{j}/{total}'
+            dr.save(update_fields=['progress'])
+
         content = separator.join(lines)
         ext = _file_extension(citation_format)
         file_name = f'citations_{datetime.today().strftime("%Y%m%d")}'
 
-        # Attach the generated file to the DownloadRequest so it is retrievable
-        # via the download-request file API endpoint.
+        # Attach the generated citation file to the DownloadRequest so it is
+        # retrievable via the download-request file API endpoint.
         dr.request_file.save(
             f'{file_name}.{ext}',
             ContentFile(content.encode('utf-8')),
             save=False,
         )
-        dr.request_category = file_name
+        dr.request_category = f'{file_name}_{citation_format}'
         dr.processing = False
         dr.rejected = False
         dr.progress = f'{total}/{total}'
@@ -264,7 +386,6 @@ def generate_citation_download(
     except Exception as exc:
         return _fail(str(exc))
 
-    # Zip the file for the email attachment
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(f'{file_name}.{ext}', content)

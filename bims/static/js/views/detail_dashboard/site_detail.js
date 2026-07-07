@@ -1616,7 +1616,9 @@ define([
                 return;
             }
 
-            if (!self.sourceReferenceIds || self.sourceReferenceIds.length === 0) {
+            let hasRefs = self.sourceReferenceIds && self.sourceReferenceIds.length > 0;
+            let hasDatasets = self.datasetIds && self.datasetIds.length > 0;
+            if (!hasRefs && !hasDatasets) {
                 alertModalBody.html('No source references available to download.');
                 $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
                 return;
@@ -1626,8 +1628,11 @@ define([
                 let formData = new FormData();
                 formData.append('citation_format', format);
                 formData.append('download_request_id', downloadRequestId);
-                $.each(self.sourceReferenceIds, function (i, id) {
+                $.each(self.sourceReferenceIds || [], function (i, id) {
                     formData.append('source_reference_ids', id);
+                });
+                $.each(self.datasetIds || [], function (i, id) {
+                    formData.append('dataset_ids', id);
                 });
 
                 $.ajax({
@@ -1661,7 +1666,12 @@ define([
             let ulDiv = container.find('.content-body');
             ulDiv.html(' ');
             let dataSources = data['source_references'];
-            this.sourceReferenceIds = dataSources.map(function (s) { return s['ID']; });
+            this.sourceReferenceIds = dataSources
+                .filter(function (s) { return s['Reference Category'] !== 'Occurrence dataset'; })
+                .map(function (s) { return s['ID']; });
+            this.datasetIds = dataSources
+                .filter(function (s) { return s['Reference Category'] === 'Occurrence dataset'; })
+                .map(function (s) { return s['ID']; });
             let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
             let hiddenKeys = ['is_doc']; // Don't show this key in table
             let orderedDataSources = [];

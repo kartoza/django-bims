@@ -41,9 +41,16 @@ class DownloadCitationsApi(APIView):
             int(i) for i in raw_ids if str(i).strip().isdigit()
         ]
 
-        if not source_reference_ids:
+        raw_dataset_ids = request.POST.getlist('dataset_ids')
+        if not raw_dataset_ids:
+            raw_dataset_ids = request.POST.get('dataset_ids', '').split(',')
+        dataset_ids = [
+            int(i) for i in raw_dataset_ids if str(i).strip().isdigit()
+        ]
+
+        if not source_reference_ids and not dataset_ids:
             return Response(
-                {'error': 'No source_reference_ids provided'},
+                {'error': 'No source_reference_ids or dataset_ids provided'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -57,6 +64,7 @@ class DownloadCitationsApi(APIView):
         download_request.download_params = {
             'citation_format': citation_format,
             'source_reference_ids': source_reference_ids,
+            'dataset_ids': dataset_ids,
         }
         download_request.processing = True
         download_request.save(update_fields=['download_params', 'processing'])
@@ -67,6 +75,7 @@ class DownloadCitationsApi(APIView):
             source_reference_ids=source_reference_ids,
             citation_format=citation_format,
             user_id=request.user.id,
+            dataset_ids=dataset_ids,
         )
 
         return Response(
