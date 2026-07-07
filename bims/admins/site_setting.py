@@ -1,4 +1,8 @@
+import json
+
 from django import forms
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from preferences.admin import PreferencesAdmin
 
@@ -17,10 +21,37 @@ SECRET_INPUTS = [
 ]
 
 
+class PrettyJSONWidget(forms.Textarea):
+    def format_value(self, value):
+        if value in (None, ""):
+            return ""
+        try:
+            if isinstance(value, str):
+                value = json.loads(value)
+            return json.dumps(value, indent=2, ensure_ascii=False)
+        except (TypeError, ValueError):
+            return value
+
+
 class SiteSettingAdminForm(forms.ModelForm):
     class Meta:
         model = SiteSetting
         fields = '__all__'
+
+    gbif_harvest_exclusion_rules = forms.JSONField(
+        required=False,
+        widget=PrettyJSONWidget(
+            attrs={
+                'rows': 12,
+                'cols': 100,
+                'style': 'font-family:monospace;',
+            }
+        ),
+        help_text=SiteSetting._meta.get_field(
+            'gbif_harvest_exclusion_rules'
+        ).help_text,
+        label=_('GBIF harvest exclusion rules'),
+    )
 
     recaptcha_secret_key = forms.CharField(
         widget=forms.PasswordInput(render_value=True),
@@ -89,6 +120,16 @@ class SiteSettingAdmin(PreferencesAdmin):
 
     readonly_fields = ("gbif_excluded_project_ids_effective_display",)
 
+    def changelist_view(self, request, extra_context=None):
+        obj = SiteSetting.objects.first()
+        if obj:
+            url = reverse(
+                'admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name),
+                args=[obj.pk],
+            )
+            return HttpResponseRedirect(url)
+        return super().changelist_view(request, extra_context=extra_context)
+
     fieldsets = (
         (_("General"), {
             "fields": (
@@ -153,6 +194,8 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "enable_sass",
                 "enable_water_temperature",
                 "enable_climate_data",
+                "enable_harvest_worms",
+                "enable_harvest_taxonworks",
                 "enable_ecosystem_type",
                 "enable_download_request_approval",
                 "max_download_records",
@@ -197,6 +240,7 @@ class SiteSettingAdmin(PreferencesAdmin):
             "fields": (
                 "gbif_username",
                 "gbif_password",
+                "gbif_harvest_exclusion_rules",
                 "gbif_excluded_project_ids",
                 "gbif_excluded_project_ids_effective_display"
             ),

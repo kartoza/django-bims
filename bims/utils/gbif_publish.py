@@ -16,7 +16,17 @@ from requests.auth import HTTPBasicAuth
 
 from bims.models.biological_collection_record import BiologicalCollectionRecord
 
-LICENSE_URL = "https://creativecommons.org/licenses/by-nc/4.0/legalcode"
+LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/legalcode"
+
+
+class DwcaArchiveNotPublishedError(ValueError):
+    """Raised when a DwC-A archive is created but cannot be published."""
+
+    def __init__(self, message: str, archive_url: str, records_published: int = 0):
+        super().__init__(message)
+        self.archive_url = archive_url
+        self.records_published = records_published
+
 
 def _media_url() -> str:
     return getattr(settings, "MEDIA_URL", "/media/").rstrip("/")
@@ -73,7 +83,7 @@ def write_occurrence_txt(
     path: str,
     records: Iterable[BiologicalCollectionRecord],
     dataset_name: str = "",
-) -> List[int]:
+) -> Tuple[List[int], int]:
     from django.db import connection
     tenant_name = connection.schema_name
 
@@ -85,6 +95,7 @@ def write_occurrence_txt(
         "dataGeneralizations", "license"
     ]
     written_ids: List[int] = []
+    missing_inst_code: int = 0
     with open(path, "w", newline="\n", encoding="utf-8") as f:
         w = csv.writer(f, delimiter="\t")
         w.writerow(header)
@@ -129,7 +140,12 @@ def write_occurrence_txt(
             )
             catalog_number = str(r.pk)
 
-            recorded_by = (r.collector or "").strip()
+            recorded_by = ""
+
+            if not recorded_by and r.owner:
+                candidate = (r.owner.get_full_name() or r.owner.username).strip()
+                if 'admin' not in candidate.lower():
+                    recorded_by = candidate
 
             if not recorded_by and r.collector_user:
                 recorded_by = (
@@ -139,22 +155,23 @@ def write_occurrence_txt(
                 if 'admin' in recorded_by.lower():
                     recorded_by = ''
 
-            if not recorded_by and r.owner:
-                candidate = (r.owner.get_full_name() or r.owner.username).strip()
-                if 'admin' not in candidate.lower():
-                    recorded_by = candidate
+            if not recorded_by:
+                recorded_by = (r.collector or "").strip()
 
             row_dataset_name = dataset_name or _site_name()
+
             inst_code = (r.institution_id or "").strip()
-
-            collector_user = None
-            if r.collector_user:
-                collector_user = r.collector_user
-            elif r.owner:
-                collector_user = r.owner
-
-            if collector_user:
-                inst_code = collector_user.organization
+            if (
+                inst_code == settings.INSTITUTION_ID_DEFAULT or inst_code.lower() in ['healthyrivers', 'bims', 'fbis']
+            ):
+                inst_code = ""
+                for user in (r.collector_user, r.owner):
+                    if user and getattr(user, "organization", None):
+                        inst_code = user.organization.strip()
+                        if inst_code:
+                            break
+            if not inst_code:
+                missing_inst_code += 1
 
             dg = ""
 
@@ -190,7 +207,7 @@ def write_occurrence_txt(
             ]
             w.writerow(row)
             written_ids.append(r.id)
-    return written_ids
+    return written_ids, missing_inst_code
 
 def write_meta_xml(path: str):
     meta = f"""<archive xmlns="http://rs.tdwg.org/dwc/text/" metadata="eml.xml">
@@ -309,19 +326,48 @@ def eml_contact_from_model(contact) -> str:
     return "\n  ".join(parts)
 
 
-def eml_citation(source_reference) -> str:
-    """Return an EML <citation> string for SourceReferenceBibliography or SourceReferenceDocument.
-    Returns empty string for any other type.
+def _authors_from_contacts(contacts) -> str:
+    """Build an author string from GBIF contacts, preferring originators."""
+    if not contacts:
+        return ""
+    originators = [c for c in contacts if (getattr(c, "role", "") or "") == "originator"]
+    pool = originators or contacts
+    names = []
+    for c in pool:
+        given = (c.resolved_given_name or "").strip()
+        sur = (c.resolved_sur_name or "").strip()
+        org = (c.resolved_organization_name or "").strip()
+        if org:
+            names.append(org)
+        elif given or sur:
+            names.append(f"{given} {sur}".strip())
+    if not names:
+        return ""
+    if len(names) == 1:
+        return names[0]
+    return ", ".join(names[:-1]) + " & " + names[-1]
+
+
+def eml_citation(source_reference, contacts=None) -> str:
+    """Return an EML <citation> string for any source reference type.
+
+    When contacts are provided, originator contacts are used as authors;
+    this falls back to all contacts, then to the reference's own author list.
     """
     from bims.models.source_reference import (
         SourceReferenceBibliography,
+        SourceReferenceDatabase,
         SourceReferenceDocument,
     )
-    if not isinstance(source_reference, (SourceReferenceBibliography, SourceReferenceDocument)):
+    if source_reference is None:
         return ""
 
-    authors = source_reference.authors
-    authors = "" if authors == "-" else authors
+    if contacts:
+        authors = _authors_from_contacts(contacts)
+    else:
+        authors = source_reference.authors
+        authors = "" if authors == "-" else authors
+
     year = source_reference.year
     year = "" if year == "-" else str(year)
     title = source_reference.title or ""
@@ -341,6 +387,8 @@ def eml_citation(source_reference) -> str:
             journal_str = abbr or name
     elif isinstance(source_reference, SourceReferenceDocument):
         identifier = (getattr(source_reference.source, "doc_url", "") or "").strip()
+    elif isinstance(source_reference, SourceReferenceDatabase):
+        identifier = (getattr(source_reference.source, "url", "") or "").strip()
 
     parts = []
     if authors:
@@ -562,7 +610,7 @@ def build_dwca(
 
     ref_title = source_reference.title if source_reference else _site_name()
 
-    written_ids = write_occurrence_txt(occ_path, records, dataset_name=ref_title)
+    written_ids, missing_inst_code = write_occurrence_txt(occ_path, records, dataset_name=ref_title)
     if not written_ids:
         raise ValueError("No eligible records to export.")
 
@@ -580,14 +628,17 @@ def build_dwca(
             licences.append(lic)
     licences = licences or None
 
-    citation = eml_citation(source_reference) if source_reference else ""
+    citation = eml_citation(source_reference, contacts=contacts) if source_reference else ""
 
     pub_date = ""
     if source_reference:
         try:
-            year = source_reference.year
-            if year:
-                pub_date = str(year)
+            if getattr(source_reference, "source_date", None):
+                pub_date = source_reference.source_date.isoformat()
+            else:
+                year = source_reference.year
+                if year and year != "-":
+                    pub_date = f"{year}-01-01"
         except Exception:
             pass
 
@@ -609,6 +660,17 @@ def build_dwca(
     archive_url = f"{base_url}{_media_url()}/{rel_media}".replace(
         "//", "/").replace(":/", "://")
 
+    if missing_inst_code:
+        raise DwcaArchiveNotPublishedError(
+            f"The DwC-A archive was created at {archive_url} but was NOT published to GBIF: "
+            f"{missing_inst_code} occurrence(s) are missing a Custodian (institution code). "
+            f"Please update the Custodian field for all occurrences and re-publish, "
+            f"or use the 'Update Custodian from GBIF Archive' tool in the admin to backfill "
+            f"from the generated archive.",
+            archive_url=archive_url,
+            records_published=len(written_ids),
+        )
+
     return zip_path, archive_url, written_ids
 
 
@@ -619,15 +681,15 @@ def _contact_to_gbif_payload(contact) -> dict:
     # Convert camelCase role to UPPER_SNAKE for GBIF API e.g. "pointOfContact" -> "POINT_OF_CONTACT"
     role_upper = re.sub(r'(?<!^)(?=[A-Z])', '_', role).upper() if role else "POINT_OF_CONTACT"
 
-    payload = {"type": role_upper}
+    payload = {"type": role_upper, "primary": True}
 
     given = contact.resolved_given_name
     sur = contact.resolved_sur_name
+    org = contact.resolved_organization_name
     if given:
         payload["firstName"] = given
     if sur:
         payload["lastName"] = sur
-    org = contact.resolved_organization_name
     if org:
         payload["organization"] = org
     position = contact.resolved_position_name

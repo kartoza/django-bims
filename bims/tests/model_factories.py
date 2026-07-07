@@ -289,6 +289,15 @@ class TaxonGroupF(factory.django.DjangoModelFactory):
                 self.experts.add(expert)
 
     @factory.post_generation
+    def contributors(self, create, extracted, **kwargs):
+        if not create:
+            return
+
+        if extracted:
+            for contributor in extracted:
+                self.contributors.add(contributor)
+
+    @factory.post_generation
     def taxonomies(self, create, extracted, **kwargs):
         if not create:
             # Simple build, do nothing.

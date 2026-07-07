@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from preferences import preferences
 from django.contrib.auth import get_user_model
 from django.contrib.sites.models import Site
+from django.db.models import Q
 from rest_framework import serializers
 from taggit.models import Tag
 
@@ -12,6 +13,24 @@ from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonomyUpdateProp
 from bims.models.iucn_status import IUCNStatus
 from bims.models.taxon_group import TaxonGroup, OccurrenceUploadTemplate
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+from bims.models.taxon_url import TaxonURL
+
+
+def clean_provisional_genus_name(genus_name, genus_ancestor=None):
+    genus_name = ' '.join((genus_name or '').split())
+    if (
+        genus_name
+        and genus_ancestor
+        and re.search(r'(^|\s)spp?\.?(\s|$)', genus_name, re.IGNORECASE)
+    ):
+        return genus_ancestor.canonical_name
+    return genus_name
+
+
+class TaxonURLSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TaxonURL
+        fields = ['id', 'uri', 'label']
 
 
 class TaxonSerializer(serializers.ModelSerializer):
@@ -48,6 +67,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     fada_id = serializers.SerializerMethodField()
     children_count = serializers.SerializerMethodField()
     other_group_count = serializers.SerializerMethodField()
+    urls = serializers.SerializerMethodField()
 
     def get_fada_id(self, obj):
         """Only return fada_id for FADA sites."""
@@ -152,22 +172,14 @@ class TaxonSerializer(serializers.ModelSerializer):
             return f"{original_str if original_str else '-'} → {proposed_str}"
         return original_str
 
-    def _find_ancestor_by_rank(self, obj: Taxonomy, target_rank: str, max_depth: int = 10):
-        """Traverse parent hierarchy to find an ancestor with the specified rank."""
-        current = obj.parent
-        depth = 0
-        while current and depth < max_depth:
-            if current.rank and current.rank.upper() == target_rank.upper():
-                return current
-            current = current.parent
-            depth += 1
-        return None
-
     def _get_genus_name(self, obj: Taxonomy):
         """Get genus name from hierarchy or hierarchical_data."""
+        genus_ancestor = obj.find_ancestor_by_rank('GENUS')
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
-            return obj.hierarchical_data['genus_name']
-        genus_ancestor = self._find_ancestor_by_rank(obj, 'GENUS')
+            return clean_provisional_genus_name(
+                obj.hierarchical_data['genus_name'],
+                genus_ancestor
+            )
         if genus_ancestor:
             return genus_ancestor.canonical_name
         return obj.genus_name
@@ -178,18 +190,22 @@ class TaxonSerializer(serializers.ModelSerializer):
             return obj.canonical_name
         if obj.subgenus:
             return obj.subgenus.canonical_name
-        subgenus_ancestor = self._find_ancestor_by_rank(obj, 'SUBGENUS')
+        subgenus_ancestor = obj.find_ancestor_by_rank('SUBGENUS')
         if subgenus_ancestor:
             return subgenus_ancestor.canonical_name
         return None
 
     def get_genus(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
+        genus_ancestor = obj.find_ancestor_by_rank('GENUS')
         if not validated:
-            return obj.genus_name
+            return clean_provisional_genus_name(obj.genus_name, genus_ancestor)
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
-            return obj.hierarchical_data['genus_name']
-        return obj.genus_name
+            return clean_provisional_genus_name(
+                obj.hierarchical_data['genus_name'],
+                genus_ancestor
+            )
+        return clean_provisional_genus_name(obj.genus_name, genus_ancestor)
 
     def get_family(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
@@ -526,6 +542,15 @@ class TaxonSerializer(serializers.ModelSerializer):
             qs = qs.exclude(taxongroup_id=taxon_group_id)
         return qs.values('taxongroup').distinct().count()
 
+    def get_urls(self, obj: Taxonomy):
+        if isinstance(obj, TaxonomyUpdateProposal):
+            ad = obj.additional_data or {}
+            if 'proposed_urls' in ad:
+                return ad['proposed_urls']
+        return TaxonURLSerializer(
+            self.taxonomy_obj(obj).urls.all(), many=True
+        ).data
+
     class Meta:
         model = Taxonomy
         exclude = ('gbif_data', 'vernacular_names', 'iucn_data', 'hierarchical_data')
@@ -631,6 +656,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
     extra_attributes = serializers.SerializerMethodField()
     taxa_count = serializers.SerializerMethodField()
     experts = serializers.SerializerMethodField()
+    contributors = serializers.SerializerMethodField()
     gbif_parent_species = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
     validated_count = serializers.SerializerMethodField()
@@ -689,8 +715,10 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             qs = TaxonGroupTaxonomy.objects.filter(taxongroup=taxon_group)
             if fada:
                 qs = qs.exclude(
-                    taxonomy__fada_id__isnull=True
-                ).exclude(taxonomy__fada_id='')
+                    (Q(taxonomy__fada_id__isnull=True) | Q(taxonomy__fada_id=''))
+                    & Q(taxonomy__aphia_id__isnull=True)
+                    & Q(taxonomy__taxonworks_id__isnull=True)
+                )
             unique_taxonomy_ids.update(qs.values_list('id', flat=True))
             for child in TaxonGroup.objects.filter(parent=taxon_group):
                 collect_taxonomy_ids(child)
@@ -715,6 +743,12 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
             many=True
         ).data
 
+    def get_contributors(self, obj: TaxonGroup):
+        return TaxonGroupExpertSerializer(
+            obj.contributors.all(),
+            many=True
+        ).data
+
     class Meta:
         model = TaxonGroup
         fields = ['id',
@@ -724,7 +758,7 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'gbif_parent_species',
                   'name', 'category', 'logo', 'extra_attributes',
                   'taxa_count', 'unvalidated_count', 'validated_count',
-                  'experts', 'children',
+                  'experts', 'contributors', 'children',
                   'taxa_upload_template',
                   'occurrence_upload_template',
                   'occurrence_upload_templates',

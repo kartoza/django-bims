@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import Count
 
 from bims.utils.mail import mail_superusers, get_domain_name
+from bims.utils.iucn import get_iucn_status, get_iucn_assessments, normalize_iucn_category_code
 from tenants.models import Domain
 
 logger = get_task_logger(__name__)
@@ -35,11 +36,6 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
     Harvest (or update) IUCN Red-List information for the requested taxa.
     """
     from bims.models import Taxonomy, IUCNAssessment, IUCNStatus
-    from bims.utils.iucn import (
-        get_iucn_status,
-        get_iucn_assessments,
-        normalize_iucn_category_code,
-    )
 
     def _has_meaningful_iucn_data(taxon_obj: Taxonomy | None) -> bool:
         """Return True if the taxon already has a non-placeholder IUCN status/url."""
@@ -71,6 +67,7 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
         "accepted_taxonomy",
         "iucn_status",
         "accepted_taxonomy__iucn_status",
+        "origin",
     )
 
     total = qs.count()
@@ -83,6 +80,9 @@ def fetch_iucn_status(taxa_ids: list[int] | None = None, *, batch_size: int = 10
     assessments_updated = 0
 
     for taxon in qs:
+        if taxon.origin and getattr(taxon.origin, 'origin_key', '').startswith('alien'):
+            continue
+
         status_obj, sis_id, url = get_iucn_status(taxon=taxon)
 
         if status_obj is None:

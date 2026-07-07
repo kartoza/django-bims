@@ -240,18 +240,18 @@ def fbis_catchment_generator(
     catchment_code = secondary_catchment_name[:2].upper()
 
     if location_site and not river_name:
-        if location_site.legacy_river_name:
-            river_name = location_site.legacy_river_name
-        elif location_site.river:
-            river_name = location_site.river.name
-        else:
-            river_name = get_river_feature_data(
-                lon=location_site.geometry_point[0],
-                lat=location_site.geometry_point[1],
-                context_key='name',
-                layer_name='SA_RIVERS',
-                tolerance=1000
-            )
+        river_name = get_river_feature_data(
+            lon=location_site.geometry_point[0],
+            lat=location_site.geometry_point[1],
+            context_key='name',
+            layer_name='SA_RIVERS',
+            tolerance=1000
+        )
+        if not river_name:
+            if location_site.legacy_river_name:
+                river_name = location_site.legacy_river_name
+            elif location_site.river:
+                river_name = location_site.river.name
 
     # Search river name by coordinates
     if not river_name and lat and lon:
@@ -436,13 +436,15 @@ def fips_generator(lat: float, lon: float) -> str:
     return cont_code + basin_code + subbasin_code + hydrobasin_code
 
 
-def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
+def open_waterbody_catchment(
+        lat, lon, user_open_waterbody_name: str, location_site=None) -> str:
     """
     Generates a catchment code for a given open waterbody based on location and data.
 
     :param user_open_waterbody_name: Open waterbody name from user
     :param lat: Latitude of the location site
     :param lon: Longitude of the location site
+    :param location_site: Optional LocationSite used as a fallback name source
     :return: The generated catchment code, e.g. L112-NAME
     """
     site_code = ''
@@ -480,7 +482,23 @@ def open_waterbody_catchment(lat, lon, user_open_waterbody_name: str) -> str:
     except TypeError:
         pass
 
-    if user_open_waterbody_name:
-        site_code += user_open_waterbody_name.replace(' ', '')[:4]
+    owb_name = user_open_waterbody_name
+
+    if not owb_name:
+        owb_name = get_river_feature_data(
+            lon=lon,
+            lat=lat,
+            context_key='name',
+            layer_name='SA_RIVERS',
+            tolerance=1000
+        )
+
+    if not owb_name and location_site:
+        if location_site.legacy_river_name:
+            owb_name = location_site.legacy_river_name
+        elif location_site.river:
+            owb_name = location_site.river.name
+
+    site_code += (owb_name or 'UNSPECIFIED').replace(' ', '')[:4].upper()
 
     return site_code

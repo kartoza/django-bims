@@ -6,6 +6,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import {Badge, Button} from "reactstrap";
 import VisualizationLayerForm from "./AddVisualizationLayer";
 import LayerGroupForm from "./AddLayerGroup";
+import AddLayerToGroup from "./AddLayerToGroup";
 
 
 const VisualizationLayersList = (props) => {
@@ -15,6 +16,8 @@ const VisualizationLayersList = (props) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isGroupFormOpen, setIsGroupFormOpen] = useState(false);
     const [selectedLayer, setSelectedLayer] = useState(null);
+    const [targetGroup, setTargetGroup] = useState(null);
+    const [isAddToGroupOpen, setIsAddToGroupOpen] = useState(false);
 
     const [visualizationLayers, setVisualizationLayers] = useState([]);
 
@@ -108,7 +111,8 @@ const VisualizationLayersList = (props) => {
     }, []);
 
     const toggleForm = () => {
-        setIsFormOpen(!isFormOpen)
+        setIsFormOpen(!isFormOpen);
+        if (isFormOpen) setTargetGroup(null);
     }
 
     const onSortEnd = (oldIndex, newIndex) => {
@@ -128,7 +132,30 @@ const VisualizationLayersList = (props) => {
 
     const toggleAddVisualizationLayer = () => {
         setSelectedLayer(null);
+        setTargetGroup(null);
         setIsFormOpen(!isFormOpen);
+    }
+
+    const handleRemoveLayerFromGroup = async (e, layer, groupId) => {
+        e.stopPropagation();
+        const isConfirmed = window.confirm(`Remove "${layer.name}" from this group?`);
+        if (!isConfirmed) return;
+        try {
+            await axios.put(
+                layerGroupApi,
+                { id: groupId, remove_layer_id: layer.id },
+                { headers: { 'X-CSRFToken': props.csrfToken, 'Content-Type': 'application/json' } }
+            );
+            fetchVisualizationLayers();
+        } catch (error) {
+            console.error('Failed to remove layer from group:', error);
+        }
+    };
+
+    const handleAddLayerToGroup = (e, group) => {
+        e.stopPropagation();
+        setTargetGroup(group);
+        setIsAddToGroupOpen(true);
     }
 
     const toggleAddLayerGroup = () => {
@@ -143,6 +170,10 @@ const VisualizationLayersList = (props) => {
 
     const filteredLayers = visualizationLayers.filter(group =>
         group.name.toLowerCase().includes(filterText.toLowerCase())
+    );
+
+    const allFlatLayers = visualizationLayers.flatMap((item) =>
+        item.type === 'LayerGroup' ? (item.layers || []) : [item]
     );
 
     const onAdded = () => {
@@ -209,6 +240,30 @@ const VisualizationLayersList = (props) => {
                   >
                     <i className="bi bi-pencil" />
                   </Button>
+                  {layer.type === 'LayerGroup' && (
+                    <Button
+                      color="success"
+                      size="sm"
+                      outline
+                      onClick={(e) => handleAddLayerToGroup(e, layer)}
+                      style={{ float: 'right', right: 0, marginTop: -5, marginRight: 5 }}
+                      title="Add layer to this group"
+                    >
+                      <i className="bi bi-plus" /> Add Layer
+                    </Button>
+                  )}
+                  {layer.type === 'Layer' && parentId && (
+                    <Button
+                      color="secondary"
+                      size="sm"
+                      outline
+                      onClick={(e) => handleRemoveLayerFromGroup(e, layer, parentId)}
+                      style={{ float: 'right', right: 0, marginTop: -5, marginRight: 5 }}
+                      title="Remove from group"
+                    >
+                      <i className="bi bi-box-arrow-right" />
+                    </Button>
+                  )}
                 </div>
                 {layer.type === 'LayerGroup' && (
                   <div style={{ paddingLeft: 10 }}>{renderLayersOrGroups(layer.layers, layer.id)}</div>
@@ -256,6 +311,14 @@ const VisualizationLayersList = (props) => {
 
             <VisualizationLayerForm isOpen={isFormOpen} toggle={toggleForm} csrfToken={props.csrfToken} onAdded={onAdded} selectedLayer={selectedLayer}/>
             <LayerGroupForm isOpen={isGroupFormOpen} selectedGroup={selectedLayer} onAdded={onAdded} toggle={() => setIsGroupFormOpen(!isGroupFormOpen)} csrfToken={props.csrfToken}/>
+            <AddLayerToGroup
+                isOpen={isAddToGroupOpen}
+                toggle={() => setIsAddToGroupOpen(false)}
+                group={targetGroup}
+                allLayers={allFlatLayers}
+                csrfToken={props.csrfToken}
+                onAdded={onAdded}
+            />
 
         </div>
     );

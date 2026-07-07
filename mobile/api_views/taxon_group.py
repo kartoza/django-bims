@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.api_views.taxon_update import is_expert
+from bims.api_views.taxon_update import is_expert, is_contributor
 from bims.enums import TaxonomicStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.serializers.taxon_serializer import TaxonGroupSerializer
@@ -62,19 +62,20 @@ class TaxonGroupTotalValidated(APIView):
 
         return accepted_q, synonym_q
 
-    def collect_taxonomy_ids(self, taxon_group):
+    def collect_taxonomy_ids(self, taxon_group, can_view_unvalidated=False):
         """
         Recursively aggregate counts for the given taxon group + children.
+        can_view_unvalidated is computed once for the top-level group in get()
+        and passed down so child groups inherit the same permission.
         """
         from bims.templatetags.site import is_fada_site
         accepted_q, synonym_q = self._status_queries()
 
-        is_user_expert = is_expert(self.request.user, get_object_or_404(TaxonGroup, id=taxon_group.id))
-        can_view_unvalidated = self.request.user.is_superuser or is_user_expert
-
         qs = taxon_group.taxonomies.all()
         if is_fada_site():
-            qs = qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+            qs = qs.exclude(
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
+            )
 
         # Validated
         self.accepted_validated += qs.filter(
@@ -99,9 +100,9 @@ class TaxonGroupTotalValidated(APIView):
                 taxongrouptaxonomy__is_validated=False
             ).distinct().count()
 
-        # Recurse into children
+        # Recurse into children, propagating the same permission flag
         for child in TaxonGroup.objects.filter(parent=taxon_group):
-            self.collect_taxonomy_ids(child)
+            self.collect_taxonomy_ids(child, can_view_unvalidated=can_view_unvalidated)
 
     def get(self, request, *args, **kwargs):
         """
@@ -111,10 +112,12 @@ class TaxonGroupTotalValidated(APIView):
         taxon_group_id = kwargs.get("id")
         taxon_group = get_object_or_404(TaxonGroup, id=taxon_group_id)
 
-        self.collect_taxonomy_ids(taxon_group)
-
         is_user_expert = is_expert(request.user, taxon_group)
-        can_view_unvalidated = request.user.is_superuser or is_user_expert
+        is_user_contributor = is_contributor(request.user, taxon_group)
+        can_view_unvalidated = request.user.is_superuser or is_user_expert or is_user_contributor
+
+        self.collect_taxonomy_ids(taxon_group, can_view_unvalidated=can_view_unvalidated)
+
         accepted_unvalidated = self.accepted_unvalidated if can_view_unvalidated else 0
         synonym_unvalidated = self.synonym_unvalidated if can_view_unvalidated else 0
 

@@ -385,38 +385,3 @@ table#filter-history-table {
 .card-header .btn-default {
     background-color: rgba(var(--secondary-accent-color), 0.4);
 }
-
-.rp-metadata-container {
-    padding:8px;
-    font-size:11px;
-    background:#fff;
-}
-
-.rp-metadata-source {
-    font-weight:600; margin-bottom:3px; word-break:break-word;
-}
-
-.rp-metadata-cat {
-    color:#888; margin-bottom:3px;
-}
-
-.rp-metadata-title {
-    font-style:italic; margin-bottom:3px; word-break:break-word;
-}
-
-.rp-metadata-authors {
-    color:#555; margin-bottom:3px; word-break:break-word;
-}
-
-.rp-metadata-doi {
-    word-break:break-all; margin-bottom:2px;
-}
-
-.rp-metadata-notes {
-    color:#999; font-size:10px; margin-top:2px; word-break:break-word;
-}
-
-.rp-metadata-separator {
-    padding-top: 10px;
-    border-bottom: 1px solid #dcdada;
-}

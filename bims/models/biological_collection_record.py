@@ -3,6 +3,7 @@
 
 """
 import json
+import re
 import uuid
 from django.conf import settings
 from django.db import models
@@ -13,6 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from preferences import preferences
 from bims.models.location_site import LocationSite
+from bims.models.dataset import Dataset
 from bims.utils.gbif import update_collection_record
 from bims.models.validation import AbstractValidation
 from bims.models.taxonomy import Taxonomy
@@ -22,13 +24,52 @@ from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.models.bims_document import BimsDocument
 from bims.models.survey import Survey
 from bims.enums.ecosystem_type import (
-    ECOSYSTEM_TYPE_CHOICES, HYDROPERIOD_CHOICES
+    ECOSYSTEM_TYPE_CHOICES
 )
 from bims.models.record_type import RecordType
 from td_biblio.models import Entry
 
 
+
+
 class BiologicalCollectionQuerySet(models.QuerySet):
+
+    def dataset_source_references(self):
+        unique_dataset = []
+        source_references = []
+        for col in self:
+            if col.dataset_key and col.dataset_key not in unique_dataset:
+                unique_dataset.append(col.dataset_key)
+                dataset = Dataset.objects.filter(
+                    uuid=col.dataset_key
+                ).first()
+                if dataset:
+
+                    author = ''
+                    year = ''
+                    if dataset.citation:
+                        author_with_year = dataset.citation.split('.')[0]
+                        match = re.match(r"^(.*?)\s*\((\d{4})\)$", author_with_year)
+                        if match:
+                            author = match.group(1)
+                            year = match.group(2)
+
+                    item = {
+                        'ID': dataset.id,
+                        'Reference Category': 'Occurrence dataset',
+                        'Author/s': author,
+                        'Year': year,
+                        'Title': dataset.name,
+                        'Source': 'Global Biodiversity Information Facility (GBIF)',
+                        'DOI/URL': dataset.url,
+                        'is_doc': False,
+                        'Notes': ''
+                    }
+                    source_references.append(item)
+        return sorted(
+            source_references, key=lambda i: (
+                i['Title'], i['Author/s']))
+
     def source_references(self):
         source_references = []
         unique_source_references = []
@@ -226,6 +267,7 @@ class BiologicalCollectionRecord(AbstractValidation):
                   'object(s) or information referred to in the record.',
         max_length=200,
         verbose_name='Custodian',
+        blank=True
     )
 
     sampling_method = models.ForeignKey(
@@ -288,6 +330,13 @@ class BiologicalCollectionRecord(AbstractValidation):
         default='',
         blank=True,
         null=True,
+    )
+
+    doi = models.CharField(
+        help_text='DOI or download URL for the GBIF harvest that produced this record',
+        max_length=512,
+        blank=True,
+        default='',
     )
 
     additional_data = JSONField(

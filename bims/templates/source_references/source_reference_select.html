@@ -147,9 +147,16 @@
 
     $('.add-source-reference').click(function () {
       const urlParams = new URLSearchParams(window.location.search);
-      let nextUrl = window.location.pathname + '?siteId=' + urlParams.get('siteId');
-      if (urlParams.get('module')) {
-          nextUrl += '&' + urlParams.get('module');
+      urlParams.delete('sr');
+      urlParams.delete('srt');
+      const dateValue = $('#date').val();
+      if (dateValue) {
+          urlParams.set('date', dateValue);
+      }
+      let nextUrl = window.location.pathname;
+      const queryString = urlParams.toString();
+      if (queryString) {
+          nextUrl += '?' + queryString;
       }
       let encodedNextUrl = encodeURIComponent(nextUrl);
 

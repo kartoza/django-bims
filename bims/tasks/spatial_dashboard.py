@@ -288,7 +288,7 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
                 taxonomy__taxonomic_status='ACCEPTED',
                 taxonomy__rank__in=SPECIES_RANKS,
                 taxonomy__origin__origin_key='indigenous',
-                taxonomy__include_in_rli=True,
+                module_group__name__isnull=False,
             ).values(
                 'taxonomy_id', 'module_group__name'
             ).distinct()
@@ -296,7 +296,7 @@ def spatial_dashboard_rli(search_parameters=None, search_process_id=None):
             taxa_to_modules = defaultdict(set)
             for row in taxa_modules_qs:
                 tid = row['taxonomy_id']
-                module = row['module_group__name'] or 'Unknown'
+                module = row['module_group__name']
                 taxa_to_modules[tid].add(module)
 
             taxonomy_ids = list(taxa_to_modules.keys())
@@ -810,12 +810,13 @@ def spatial_dashboard_national_cons_status(search_parameters=None, search_proces
             taxonomy__rank__in=SPECIES_RANKS,
             taxonomy__origin__origin_key='indigenous',
             taxonomy__include_in_rli=True,
+            module_group__name__isnull=False,
         ).values('taxonomy_id', 'module_group__name').distinct()
 
         taxa_to_modules = defaultdict(set)
         for row in taxa_modules_qs:
             tid = row['taxonomy_id']
-            module = row['module_group__name'] or 'Unknown'
+            module = row['module_group__name']
             taxa_to_modules[tid].add(module)
 
         taxonomy_ids = list(taxa_to_modules.keys())

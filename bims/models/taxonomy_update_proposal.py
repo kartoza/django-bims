@@ -8,6 +8,7 @@ from taggit.models import TaggedItemBase
 
 from bims.models.taxonomy import Taxonomy, AbstractTaxonomy, TaxonTag
 from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+from bims.models.taxon_url import TaxonURL
 from bims.tasks.send_notification import send_mail_notification
 from bims.utils.domain import get_current_domain
 
@@ -25,6 +26,7 @@ class CustomTaggedUpdateTaxonomy(TaggedItemBase):
     class Meta:
         verbose_name = "Custom Tagged Taxonomy"
         verbose_name_plural = "Custom Tagged Taxa"
+        unique_together = [('content_object', 'tag')]
 
 
 class TaxonomyUpdateProposal(AbstractTaxonomy):
@@ -240,10 +242,25 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
             )
 
             if self.new_data:
-                TaxonGroupTaxonomy.objects.filter(
-                    taxongroup=self.taxon_group,
-                    taxonomy=self.original_taxonomy
-                ).delete()
+                taxonomy = self.original_taxonomy
+                taxon_group = self.taxon_group
+                accepted_taxonomy = taxonomy.accepted_taxonomy if taxonomy else None
+
+                self._delete_taxonomy_if_orphaned(taxonomy, taxon_group)
+
+                if accepted_taxonomy and taxon_group:
+                    accepted_has_own_proposal = TaxonomyUpdateProposal.objects.filter(
+                        original_taxonomy=accepted_taxonomy,
+                        taxon_group=taxon_group,
+                    ).exclude(id=self.id).exists()
+                    other_synonyms_in_group = TaxonGroupTaxonomy.objects.filter(
+                        taxongroup=taxon_group,
+                        taxonomy__accepted_taxonomy=accepted_taxonomy,
+                    ).exists()
+                    if not accepted_has_own_proposal and not other_synonyms_in_group:
+                        self._delete_taxonomy_if_orphaned(
+                            accepted_taxonomy, taxon_group
+                        )
             else:
                 TaxonGroupTaxonomy.objects.filter(
                     taxongroup=self.taxon_group,
@@ -251,6 +268,43 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                 ).update(
                     is_validated=True
                 )
+
+    def _delete_taxonomy_if_orphaned(self, taxonomy, taxon_group):
+        """
+        Remove a taxonomy from the given taxon group and permanently delete it
+        if it is no longer referenced by any other group or validated record.
+
+        Returns True if the taxonomy was deleted, False otherwise.
+        """
+        if not taxonomy or not taxon_group:
+            return False
+
+        from bims.models.biological_collection_record import (
+            BiologicalCollectionRecord
+        )
+        from bims.models.survey import Survey
+
+        TaxonGroupTaxonomy.objects.filter(
+            taxongroup=taxon_group,
+            taxonomy=taxonomy,
+        ).delete()
+
+        # Keep the taxon if it still belongs to another group.
+        if TaxonGroupTaxonomy.objects.filter(taxonomy=taxonomy).exists():
+            return False
+
+        records = BiologicalCollectionRecord.objects.filter(taxonomy=taxonomy)
+        site_visits = Survey.objects.filter(id__in=records.values('survey'))
+
+        # Never delete a taxon that is referenced by a validated record.
+        if site_visits.filter(validated=True).exists():
+            return False
+
+        for unvalidated_site_visit in site_visits.filter(validated=False):
+            unvalidated_site_visit.reject('Taxon is rejected')
+        records.delete()
+        taxonomy.delete()
+        return True
 
     def validate_taxon(self, taxon_group, taxonomy):
         TaxonGroupTaxonomy.objects.filter(
@@ -338,6 +392,36 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                         self.original_taxonomy.vernacular_names.clear()
                         self.original_taxonomy.vernacular_names.set(
                             getattr(self, field).all())
+                    elif field == 'additional_data':
+                        # Strip the internal URL-proposal key before copying
+                        # to the taxonomy, then apply URL changes.
+                        ad = dict(getattr(self, field) or {})
+                        proposed_urls = ad.pop('proposed_urls', None)
+                        setattr(self.original_taxonomy, field, ad)
+                        if proposed_urls is not None:
+                            submitted_ids = []
+                            for url_data in proposed_urls:
+                                url_id = url_data.get('id')
+                                uri = (url_data.get('uri') or '').strip()
+                                label = (url_data.get('label') or '').strip()
+                                if not uri or not label:
+                                    continue
+                                if url_id:
+                                    TaxonURL.objects.filter(
+                                        id=url_id,
+                                        taxonomy=self.original_taxonomy,
+                                    ).update(uri=uri, label=label)
+                                    submitted_ids.append(url_id)
+                                else:
+                                    obj = TaxonURL.objects.create(
+                                        taxonomy=self.original_taxonomy,
+                                        uri=uri,
+                                        label=label,
+                                    )
+                                    submitted_ids.append(obj.id)
+                            TaxonURL.objects.filter(
+                                taxonomy=self.original_taxonomy,
+                            ).exclude(id__in=submitted_ids).delete()
                     elif field == 'endemism' and getattr(self, field) is None:
                         # Don't overwrite existing endemism with None unless
                         # the original taxonomy also has no endemism

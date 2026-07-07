@@ -36,6 +36,7 @@ const VisualizationLayerForm = (props) => {
             setLayerType(props.selectedLayer.native_layer ? 'native_layer' : 'wms');
             setName(props.selectedLayer.name)
             setWmsLayerName(props.selectedLayer.wms_layer_name)
+            setWmsUrl(props.selectedLayer.wms_url ?? '')
             setAbstract(props.selectedLayer.native_layer_abstract)
             if (props.selectedLayer.native_layer) {
                 handleSelectLayer(props.selectedLayer.native_layer, props.selectedLayer.native_style_id)
@@ -88,6 +89,9 @@ const VisualizationLayerForm = (props) => {
             layerData['layer_id'] = layerId;
         }
         layerData['abstract'] = abstract;
+        if (props.groupId) {
+            layerData['group_id'] = props.groupId;
+        }
         try {
             const response = await axios.post('/api/visualization-layers/', layerData, {
                 headers: {
@@ -113,6 +117,7 @@ const VisualizationLayerForm = (props) => {
         layerData['name'] = name;
         if (layerType === 'wms') {
             layerData['wms_layer_name'] = wmsLayerName;
+            layerData['wms_url'] = wmsUrl;
             layerData['wms_layer_url'] = wmsUrl;
             layerData['native_layer_style'] = null;
             layerData['native_layer'] = null;
@@ -179,7 +184,7 @@ const VisualizationLayerForm = (props) => {
 
     return (
         <Modal isOpen={props.isOpen} toggle={props.toggle}>
-            <ModalHeader>Visualization Layer Form</ModalHeader>
+            <ModalHeader>{props.groupName ? `Add Layer to "${props.groupName}"` : 'Visualization Layer Form'}</ModalHeader>
             <ModalBody>
                 <ButtonGroup style={{marginBottom: 20}}>
                     <Button

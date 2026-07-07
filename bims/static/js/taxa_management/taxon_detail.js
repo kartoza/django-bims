@@ -254,6 +254,20 @@ export const taxonDetail = (() => {
                                 <div class="col-8">${data.fada_id ? data.fada_id : ''}</div>
                             </div>
                             ` : ''}
+                            ${typeof data.aphia_id !== 'undefined' && data.aphia_id ? `
+                                <div class="dt-item col-12 row">
+                                    <div class="col-4"><strong>Aphia ID</strong></div>
+                                    <div class="col-8">${data.aphia_id}</div>
+                                </div>
+                            `: ''}
+                            ${data.urls && data.urls.length ? `
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>URL References</strong></div>
+                                <div class="col-8">
+                                    ${data.urls.map(u => `<div><a href="${u.uri}" target="_blank" rel="noopener noreferrer">${u.label}</a></div>`).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>

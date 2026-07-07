@@ -163,9 +163,6 @@ class ClimateCSVUpload(DataCSVUpload):
                 name__iexact=station_name,
             ).first()
 
-            if location_site:
-                return location_site
-
             # Get or create location type for weather stations
             location_type, _ = LocationType.objects.get_or_create(
                 name='Weather Station',
@@ -174,6 +171,18 @@ class ClimateCSVUpload(DataCSVUpload):
                     'description': 'Climate monitoring weather station'
                 }
             )
+
+            if location_site:
+                new_point = Point(longitude, latitude)
+                if location_site.geometry_point != new_point:
+                    location_site.latitude = latitude
+                    location_site.longitude = longitude
+                    location_site.geometry_point = new_point
+                    location_site.save()
+                if location_site.location_type != location_type:
+                    location_site.location_type = location_type
+                    location_site.save()
+                return location_site
 
             # Create new location site
             location_site = LocationSite.objects.create(

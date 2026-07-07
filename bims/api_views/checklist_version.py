@@ -13,10 +13,46 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.models.checklist_version import ChecklistVersion
+from bims.models.checklist_version import ChecklistVersion, ChecklistVersionContributor
 from bims.models.download_request import DownloadRequest
 from bims.models.taxon_group import TaxonGroup
 from bims.utils.filepath import ensure_within_dir, sanitize_path_component
+
+
+def _auto_populate_contributors(version):
+    """Create ChecklistVersionContributor rows from the taxon group's experts + contributors."""
+    group = version.taxon_group
+    seen_user_ids = set()
+    rows = []
+    order = 0
+    for user in list(group.experts.all()) + list(group.contributors.all()):
+        if user.pk in seen_user_ids:
+            continue
+        seen_user_ids.add(user.pk)
+        rows.append(ChecklistVersionContributor(
+            checklist_version=version,
+            user=user,
+            organisation=(getattr(user, 'organization', '') or '').strip(),
+            order=order,
+        ))
+        order += 1
+    if rows:
+        ChecklistVersionContributor.objects.bulk_create(rows)
+
+
+def _can_manage(user, version):
+    return user.is_superuser or version.taxon_group.experts.filter(id=user.id).exists()
+
+
+class ChecklistVersionContributorSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name', read_only=True, default='')
+    last_name = serializers.CharField(source='user.last_name', read_only=True, default='')
+    email = serializers.EmailField(source='user.email', read_only=True, default='')
+
+    class Meta:
+        model = ChecklistVersionContributor
+        fields = ['id', 'user', 'first_name', 'last_name', 'email', 'organisation', 'note', 'order']
+        read_only_fields = ['id', 'user', 'first_name', 'last_name', 'email']
 
 
 class ChecklistVersionSerializer(serializers.ModelSerializer):
@@ -25,6 +61,7 @@ class ChecklistVersionSerializer(serializers.ModelSerializer):
     )
     published_by_name = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
+    contributors = serializers.SerializerMethodField()
 
     class Meta:
         model = ChecklistVersion
@@ -48,6 +85,7 @@ class ChecklistVersionSerializer(serializers.ModelSerializer):
             'created_by_name',
             'previous_version',
             'license',
+            'contributors',
         ]
 
     def get_published_by_name(self, obj):
@@ -59,6 +97,12 @@ class ChecklistVersionSerializer(serializers.ModelSerializer):
         if obj.created_by:
             return obj.created_by.get_full_name() or obj.created_by.username
         return None
+
+    def get_contributors(self, obj):
+        return ChecklistVersionContributorSerializer(
+            obj.version_contributors.select_related('user').order_by('order', 'id'),
+            many=True,
+        ).data
 
 
 class ChecklistVersionCreateSerializer(serializers.ModelSerializer):
@@ -72,6 +116,7 @@ class ChecklistVersionCreateSerializer(serializers.ModelSerializer):
             'previous_version',
             'license',
         ]
+        validators = []  # suppress auto-generated UniqueTogetherValidator; custom check in validate()
 
     def validate(self, attrs):
         taxon_group = attrs.get('taxon_group')
@@ -88,7 +133,9 @@ class ChecklistVersionCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
-        return ChecklistVersion.objects.create(**validated_data)
+        version = ChecklistVersion.objects.create(**validated_data)
+        _auto_populate_contributors(version)
+        return version
 
 
 class ChecklistVersionPagination(PageNumberPagination):
@@ -290,6 +337,30 @@ class ChecklistVersionPublishView(APIView):
         )
 
 
+class ChecklistVersionDraftDeleteView(APIView):
+    """DELETE a draft checklist version immediately (synchronous)."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            obj = ChecklistVersion.objects.select_related('taxon_group').get(pk=pk)
+        except ChecklistVersion.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not _can_manage(request.user, obj):
+            return Response(
+                {'detail': 'Admin or taxon group expert access required.'},
+                status=403,
+            )
+        if obj.status != ChecklistVersion.STATUS_DRAFT:
+            return Response(
+                {'detail': 'Only draft checklist versions can be deleted this way.'},
+                status=400,
+            )
+        obj.delete()
+        return Response({'message': 'Draft deleted.'}, status=200)
+
+
 class ChecklistVersionDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -442,3 +513,160 @@ class ChecklistVersionExportView(APIView):
         )
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+class ChecklistVersionUpdateView(APIView):
+    """
+    PATCH /api/checklist-version/<uuid>/update/
+    Update notes and doi on a published ChecklistVersion (managers only).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            obj = ChecklistVersion.objects.select_related('taxon_group').get(pk=pk)
+        except ChecklistVersion.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        if not _can_manage(request.user, obj):
+            return Response(
+                {'detail': 'Admin or taxon group expert access required.'},
+                status=403,
+            )
+        if obj.status != ChecklistVersion.STATUS_PUBLISHED:
+            return Response(
+                {'detail': 'Only published checklist versions can be edited this way.'},
+                status=400,
+            )
+
+        update_fields = []
+        if 'notes' in request.data:
+            obj.notes = request.data['notes']
+            update_fields.append('notes')
+        if 'doi' in request.data:
+            obj.doi = request.data['doi']
+            update_fields.append('doi')
+
+        if update_fields:
+            obj.save(update_fields=update_fields)
+
+        return Response(ChecklistVersionSerializer(obj, context={'request': request}).data)
+
+
+class ChecklistVersionContributorListView(APIView):
+    """
+    GET  /api/checklist-version/<uuid>/contributors/  — list contributors
+    POST /api/checklist-version/<uuid>/contributors/  — add org-only contributor
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_version(self, pk):
+        try:
+            return ChecklistVersion.objects.select_related('taxon_group').get(pk=pk)
+        except ChecklistVersion.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        version = self._get_version(pk)
+        if not version:
+            return Response({'detail': 'Not found.'}, status=404)
+        qs = version.version_contributors.select_related('user')
+        return Response(ChecklistVersionContributorSerializer(qs, many=True).data)
+
+    def post(self, request, pk):
+        version = self._get_version(pk)
+        if not version:
+            return Response({'detail': 'Not found.'}, status=404)
+        if not _can_manage(request.user, version):
+            return Response({'detail': 'Admin or expert access required.'}, status=403)
+        organisation = request.data.get('organisation', '').strip()
+        if not organisation:
+            return Response({'detail': 'organisation is required for org-only entries.'}, status=400)
+        order = version.version_contributors.count()
+        contributor = ChecklistVersionContributor.objects.create(
+            checklist_version=version,
+            user=None,
+            organisation=organisation,
+            note=request.data.get('note', '').strip(),
+            order=order,
+        )
+        return Response(ChecklistVersionContributorSerializer(contributor).data, status=201)
+
+
+class ChecklistVersionContributorDetailView(APIView):
+    """
+    PATCH  /api/checklist-version/<uuid>/contributors/<id>/  — update organisation/note
+    DELETE /api/checklist-version/<uuid>/contributors/<id>/  — remove
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_objects(self, pk, contributor_id):
+        try:
+            version = ChecklistVersion.objects.select_related('taxon_group').get(pk=pk)
+        except ChecklistVersion.DoesNotExist:
+            return None, None
+        try:
+            contributor = version.version_contributors.get(pk=contributor_id)
+        except ChecklistVersionContributor.DoesNotExist:
+            return version, None
+        return version, contributor
+
+    def patch(self, request, pk, contributor_id):
+        version, contributor = self._get_objects(pk, contributor_id)
+        if not version:
+            return Response({'detail': 'Not found.'}, status=404)
+        if not contributor:
+            return Response({'detail': 'Contributor not found.'}, status=404)
+        if not _can_manage(request.user, version):
+            return Response({'detail': 'Admin or expert access required.'}, status=403)
+        if 'organisation' in request.data:
+            contributor.organisation = request.data['organisation']
+        if 'note' in request.data:
+            contributor.note = request.data['note']
+        contributor.save(update_fields=['organisation', 'note'])
+        return Response(ChecklistVersionContributorSerializer(contributor).data)
+
+    def delete(self, request, pk, contributor_id):
+        version, contributor = self._get_objects(pk, contributor_id)
+        if not version:
+            return Response({'detail': 'Not found.'}, status=404)
+        if not contributor:
+            return Response({'detail': 'Contributor not found.'}, status=404)
+        if not _can_manage(request.user, version):
+            return Response({'detail': 'Admin or expert access required.'}, status=403)
+        contributor.delete()
+        return Response(status=204)
+
+
+class TaxonGroupMembersView(APIView):
+    """
+    GET /api/checklist-version/group-members/?taxon_group=<id>
+    Returns the experts + contributors of a TaxonGroup as a contributor preview,
+    used to pre-populate the "Add Version" modal before the version is created.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        group_id = request.query_params.get('taxon_group')
+        if not group_id:
+            return Response({'detail': 'taxon_group is required.'}, status=400)
+        try:
+            group = TaxonGroup.objects.get(pk=group_id)
+        except TaxonGroup.DoesNotExist:
+            return Response({'detail': 'Not found.'}, status=404)
+
+        seen = set()
+        members = []
+        for user in list(group.experts.all()) + list(group.contributors.all()):
+            if user.pk in seen:
+                continue
+            seen.add(user.pk)
+            members.append({
+                'user': user.pk,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'organisation': (getattr(user, 'organization', '') or '').strip(),
+                'note': '',
+            })
+        return Response(members)

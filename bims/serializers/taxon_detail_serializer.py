@@ -1,7 +1,10 @@
 from rest_framework import serializers
 
 from bims.models import Taxonomy
-from bims.serializers.taxon_serializer import TaxonSerializer
+from bims.serializers.taxon_serializer import (
+    TaxonSerializer,
+    clean_provisional_genus_name,
+)
 
 
 class TaxonHierarchySerializer(serializers.ModelSerializer):
@@ -46,11 +49,15 @@ class TaxonHierarchySerializer(serializers.ModelSerializer):
 
     def get_genus(self, obj: Taxonomy):
         validated = self.context.get('validated', False)
+        genus_ancestor = obj.find_ancestor_by_rank('GENUS')
         if not validated:
-            return obj.genus_name
+            return clean_provisional_genus_name(obj.genus_name, genus_ancestor)
         if obj.hierarchical_data and 'genus_name' in obj.hierarchical_data:
-            return obj.hierarchical_data['genus_name']
-        return obj.genus_name
+            return clean_provisional_genus_name(
+                obj.hierarchical_data['genus_name'],
+                genus_ancestor
+            )
+        return clean_provisional_genus_name(obj.genus_name, genus_ancestor)
 
     def get_family(self, obj: Taxonomy):
         validated = self.context.get('validated', False)

@@ -110,37 +110,55 @@
                         ? `<a href="${v.doi}" target="_blank" rel="noopener">${v.doi.length > 35 ? v.doi.substring(0, 35) + '…' : v.doi}</a>`
                         : '—'}</td>
                     <td>${fmtDate(v.published_at)}</td>
-                    <td>${v.published_by_name || '—'}</td>
                     <td>${v.created_by_name || '—'}</td>
-                    <td>
-                        ${v.status === 'published'
-                            ? `<button class="btn btn-sm btn-outline-secondary export-coldp-btn"
-                                       data-id="${v.id}" title="Download ColDP ZIP">
-                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                        fill="currentColor" viewBox="0 0 16 16">
-                                       <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
-                                       <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
-                                   </svg>
-                               </button>`
-                            : ''}
+                    <td class="text-nowrap">
+                        ${v.status === 'published' ? `
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary dropdown-toggle"
+                                        data-toggle="dropdown" title="Download">
+                                    <i class="fa fa-download"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item export-coldp-btn" href="#"
+                                       data-id="${v.id}">ColDP ZIP</a>
+                                    <a class="dropdown-item checklist-dl-csv" href="#"
+                                       data-id="${v.id}">CSV Taxa List</a>
+                                    <a class="dropdown-item checklist-dl-csv-family" href="#"
+                                       data-id="${v.id}">CSV Taxa List by Family</a>
+                                    <a class="dropdown-item checklist-dl-pdf" href="#"
+                                       data-id="${v.id}">PDF</a>
+                                </div>
+                            </div>
+                            ${canPublishGroup(v.taxon_group) ? `
+                            <button class="btn btn-sm btn-outline-secondary edit-version-btn ml-1"
+                                    data-id="${v.id}" data-version="${v.version}"
+                                    data-doi="${escHtml(v.doi || '')}"
+                                    data-notes="${escHtml(v.notes || '')}"
+                                    title="Edit Notes &amp; DOI">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger remove-version-btn ml-1"
+                                    data-id="${v.id}" data-version="${v.version}"
+                                    title="Remove published version">
+                                <i class="fa fa-trash"></i>
+                            </button>` : ''}
+                        ` : ''}
                         ${v.status === 'draft' && canPublishGroup(v.taxon_group)
                             ? (v.is_publishing
-                                ? `<span class="text-muted ml-1">
+                                ? `<span class="text-muted">
                                        <span class="spinner-border spinner-border-sm" role="status"></span>
                                        Processing…
                                    </span>`
-                                : `<button class="btn btn-sm btn-outline-primary publish-version-btn ml-1"
+                                : `<button class="btn btn-sm btn-outline-primary publish-version-btn"
                                            data-id="${v.id}" data-version="${v.version}"
-                                           title="Publish checklist version">
-                                       Publish
+                                           title="Publish this version">
+                                       <i class="fa fa-check"></i> Publish
+                                   </button>
+                                   <button class="btn btn-sm btn-outline-danger delete-draft-btn ml-1"
+                                           data-id="${v.id}" data-version="${v.version}"
+                                           title="Delete draft">
+                                       <i class="fa fa-trash"></i>
                                    </button>`)
-                            : ''}
-                        ${v.status === 'published' && canPublishGroup(v.taxon_group)
-                            ? `<button class="btn btn-sm btn-outline-danger remove-version-btn ml-1"
-                                       data-id="${v.id}" data-version="${v.version}"
-                                       title="Remove published checklist version">
-                                   Remove
-                               </button>`
                             : ''}
                     </td>
                 </tr>`;
@@ -180,7 +198,7 @@
                 $paginator.show();
             }
         } catch (e) {
-            $tbody.html(`<tr><td colspan="9" class="text-danger">Failed to load: ${e.message}</td></tr>`);
+            $tbody.html(`<tr><td colspan="8" class="text-danger">Failed to load: ${e.message}</td></tr>`);
             $table.show();
         } finally {
             $loading.hide();
@@ -284,6 +302,105 @@
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Contributors state — live list edited inside the modal before saving
+    // -----------------------------------------------------------------------
+    let _contributors = [];   // [{user, first_name, last_name, email, organisation, note}]
+    let _orgCounter  = 0;     // generates temporary IDs for org-only rows
+
+    function renderContributors() {
+        const $list = $('#av-contributors-list');
+        if (!_contributors.length) {
+            $list.html('<p class="text-muted small mb-0">No contributors. Add an organisation above.</p>');
+            return;
+        }
+        const rows = _contributors.map(function (c, idx) {
+            const nameCell = c.user
+                ? `<span class="font-weight-bold">${escHtml(c.first_name)} ${escHtml(c.last_name)}</span>`
+                : '<em class="text-muted">Organisation only</em>';
+            const emailCell = c.user
+                ? `<small class="text-muted">${escHtml(c.email)}</small>`
+                : '';
+            return `
+                <div class="border rounded p-2 mb-2 contributor-row" data-idx="${idx}">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div style="flex:1">
+                      <div>${nameCell} ${emailCell}</div>
+                      <div class="mt-1 d-flex flex-wrap" style="gap:6px">
+                        <input type="text"
+                               class="form-control form-control-sm contributor-org"
+                               placeholder="Organisation (optional)"
+                               value="${escHtml(c.organisation)}"
+                               style="max-width:220px">
+                        <input type="text"
+                               class="form-control form-control-sm contributor-note"
+                               placeholder="Note / role (optional)"
+                               value="${escHtml(c.note)}"
+                               style="max-width:240px">
+                      </div>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger ml-2 remove-contributor-btn"
+                            data-idx="${idx}" title="Remove">
+                        &times;
+                    </button>
+                  </div>
+                </div>`;
+        });
+        $list.html(rows.join(''));
+    }
+
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function syncContributorFields() {
+        $('#av-contributors-list').find('.contributor-row').each(function () {
+            const idx = parseInt($(this).data('idx'), 10);
+            if (_contributors[idx] !== undefined) {
+                _contributors[idx].organisation = $(this).find('.contributor-org').val().trim();
+                _contributors[idx].note         = $(this).find('.contributor-note').val().trim();
+            }
+        });
+    }
+
+    async function loadGroupMembers(groupId) {
+        const $loading = $('#av-contributors-loading');
+        $loading.removeClass('d-none');
+        _contributors = [];
+        renderContributors();
+        try {
+            const resp = await fetch(
+                `/api/checklist-version/group-members/?taxon_group=${groupId}`,
+                { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+            );
+            if (resp.ok) {
+                _contributors = await resp.json();
+            }
+        } catch (e) { /* silent */ }
+        finally { $loading.addClass('d-none'); }
+        renderContributors();
+    }
+
+    $(document).on('click', '.remove-contributor-btn', function () {
+        syncContributorFields();
+        const idx = parseInt($(this).data('idx'), 10);
+        _contributors.splice(idx, 1);
+        renderContributors();
+    });
+
+    $('#btn-add-org-contributor').on('click', function () {
+        syncContributorFields();
+        _contributors.push({ user: null, first_name: '', last_name: '', email: '', organisation: '', note: '' });
+        renderContributors();
+        // Focus the last org input
+        $('#av-contributors-list .contributor-org').last().focus();
+    });
+
     if (canPublish) {
         $('#add-version-modal').on('show.bs.modal', function () {
             $('#add-version-error, #add-version-success').addClass('d-none').text('');
@@ -291,10 +408,13 @@
             const groupId = $groupSelect.val();
             $('#av-group').val(groupId);
             loadPreviousVersions(groupId);
+            loadGroupMembers(groupId);
         });
 
         $('#av-group').on('change', function () {
-            loadPreviousVersions($(this).val());
+            const groupId = $(this).val();
+            loadPreviousVersions(groupId);
+            loadGroupMembers(groupId);
         });
 
         function buildPayload() {
@@ -328,7 +448,61 @@
             return payload;
         }
 
+        async function syncContributorsAfterCreate(versionId) {
+            syncContributorFields();
+            const contribBase = `${apiBase}${versionId}/contributors/`;
+            let serverContribs = [];
+            try {
+                const r = await fetch(contribBase, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (r.ok) {
+                    serverContribs = await r.json();
+                }
+            } catch (e) { /* non-critical, skip */ }
+
+            const desiredUserIds = new Set(
+                _contributors.filter(function (c) { return c.user; }).map(function (c) { return c.user; })
+            );
+
+            const ops = [];
+            serverContribs.forEach(function (sc) {
+                if (sc.user && !desiredUserIds.has(sc.user)) {
+                    ops.push(fetch(`${contribBase}${sc.id}/`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRFToken': csrfToken }
+                    }));
+                } else if (sc.user) {
+                    const desired = _contributors.find(function (c) { return c.user === sc.user; });
+                    if (desired && (desired.organisation !== sc.organisation || desired.note !== sc.note)) {
+                        ops.push(fetch(`${contribBase}${sc.id}/`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            },
+                            body: JSON.stringify({ organisation: desired.organisation, note: desired.note })
+                        }));
+                    }
+                }
+            });
+
+            _contributors.filter(function (c) { return !c.user; }).forEach(function (c) {
+                ops.push(fetch(contribBase, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ organisation: c.organisation, note: c.note })
+                }));
+            });
+
+            await Promise.all(ops);
+        }
+
         async function saveVersion(publish) {
+            syncContributorFields();
             const payload = buildPayload();
             if (!payload) {
                 return;
@@ -360,6 +534,9 @@
                 }
                 const data = await resp.json();
 
+                // 2. Sync contributor edits (remove/update/add) against the auto-created list
+                await syncContributorsAfterCreate(data.id);
+
                 if (!publish) {
                     showSuccess(`Draft "${data.version}" saved.`);
                     setTimeout(function () {
@@ -369,7 +546,7 @@
                     return;
                 }
 
-                // 2. Kick off async publish — server sets is_publishing=True immediately
+                // 3. Kick off async publish — server sets is_publishing=True immediately
                 //    and returns 202 before the snapshot work completes.
                 const pubResp = await fetch(`${apiBase}${data.id}/publish/`, {
                     method: 'POST',
@@ -381,12 +558,12 @@
                     return;
                 }
 
-                // 3. Close modal and reload — list now shows "Publishing" status
+                // 4. Close modal and reload — list now shows "Publishing" status
                 $('#add-version-modal').modal('hide');
                 reload();
                 showPublishingBanner(data.id, data.version);
 
-                // 4. Poll until is_publishing clears (Celery task finished)
+                // 5. Poll until is_publishing clears (Celery task finished)
                 pollPublishing(data.id);
 
             } catch (e) {
@@ -459,6 +636,39 @@
         });
     }
 
+    function handleChecklistVersionDownload(e, output, orderBy) {
+        e.preventDefault();
+        const versionId = $(e.currentTarget).data('id');
+        const title = output === 'pdf' ? 'PDF' : (orderBy === 'family' ? 'CSV Taxa List by Family' : 'CSV Taxa List');
+        showDownloadPopup(output.toUpperCase(), title, function (downloadRequestId) {
+            let url = '/download-checklist-snapshot/?checklistVersion=' + versionId +
+                '&output=' + output +
+                '&downloadRequestId=' + downloadRequestId;
+            if (orderBy) {
+                url += '&orderBy=' + orderBy;
+            }
+            fetch(url)
+                .then(function () {
+                    alert(downloadRequestMessage);
+                })
+                .catch(function () {
+                    alert('Cannot download the file');
+                });
+        }, true, null, false);
+    }
+
+    $(document).on('click', '.checklist-dl-csv', function (e) {
+        handleChecklistVersionDownload(e, 'csv', null);
+    });
+
+    $(document).on('click', '.checklist-dl-csv-family', function (e) {
+        handleChecklistVersionDownload(e, 'csv', 'family');
+    });
+
+    $(document).on('click', '.checklist-dl-pdf', function (e) {
+        handleChecklistVersionDownload(e, 'pdf', 'genus');
+    });
+
     $(document).on('click', '.export-coldp-btn', function () {
         const versionId = $(this).data('id');
         showDownloadPopup(
@@ -521,35 +731,113 @@
         }
     });
 
-    $(document).on('click', '.remove-version-btn', async function () {
+    let _removeVersionId = null;
+    let _removeVersionRow = null;
+
+    $(document).on('click', '.remove-version-btn', function () {
+        _removeVersionId = $(this).data('id');
+        _removeVersionRow = $(this).closest('tr');
+        const label = $(this).data('version');
+        $('#remove-version-message').text(
+            `Remove published version ${label}? This will run in the background and cannot be undone.`
+        );
+        $('#btn-confirm-remove').prop('disabled', false).text('Remove');
+        $('#remove-version-modal').modal('show');
+    });
+
+    $('#btn-confirm-remove').on('click', async function () {
+        if (!_removeVersionId) return;
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('Removing…');
+
+        try {
+            const response = await fetch(`${apiBase}${_removeVersionId}/delete/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            const data = await response.json().catch(function () { return {}; });
+            if (!response.ok) {
+                throw new Error(data.detail || `HTTP ${response.status}`);
+            }
+            $('#remove-version-modal').modal('hide');
+            if (_removeVersionRow) {
+                _removeVersionRow.remove();
+                updateTableStateAfterRowRemoval();
+            }
+            $('#alertModalBody').html(data.message || 'Checklist removal queued.');
+            $('#alertModal').modal({ keyboard: false, backdrop: 'static' });
+        } catch (error) {
+            $('#remove-version-modal').modal('hide');
+            alert(`Failed to remove version: ${error.message}`);
+        } finally {
+            _removeVersionId = null;
+            _removeVersionRow = null;
+        }
+    });
+
+    $(document).on('click', '.delete-draft-btn', async function () {
         const $button = $(this);
         const versionId = $button.data('id');
         const versionLabel = $button.data('version');
 
-        if (!confirm(`Remove published version ${versionLabel}? This will run in the background and cannot be undone.`)) {
+        if (!confirm(`Delete draft version "${versionLabel}"? This cannot be undone.`)) {
             return;
         }
 
         try {
-            const response = await fetch(`${apiBase}${versionId}/delete/`, {
+            const response = await fetch(`${apiBase}${versionId}/delete-draft/`, {
                 method: 'POST',
                 headers: { 'X-CSRFToken': csrfToken }
             });
-            const data = await response.json().catch(function () {
-                return {};
-            });
+            const data = await response.json().catch(function () { return {}; });
             if (!response.ok) {
                 throw new Error(data.detail || `HTTP ${response.status}`);
             }
             $button.closest('tr').remove();
             updateTableStateAfterRowRemoval();
-            $('#alertModalBody').html(data.message || 'Checklist removal queued.');
-            $('#alertModal').modal({
-                keyboard: false,
-                backdrop: 'static'
-            });
         } catch (error) {
-            alert(`Failed to remove version: ${error.message}`);
+            alert(`Failed to delete draft: ${error.message}`);
+        }
+    });
+
+    $(document).on('click', '.edit-version-btn', function () {
+        const $btn = $(this);
+        $('#ev-id').val($btn.data('id'));
+        $('#ev-doi').val($btn.data('doi'));
+        $('#ev-notes').val($btn.data('notes'));
+        $('#edit-version-error').addClass('d-none').text('');
+        $('#edit-version-modal').modal('show');
+    });
+
+    $('#btn-save-edit').on('click', async function () {
+        const versionId = $('#ev-id').val();
+        const $btn = $(this);
+        $btn.prop('disabled', true).text('Saving…');
+        $('#edit-version-error').addClass('d-none').text('');
+
+        try {
+            const resp = await fetch(`${apiBase}${versionId}/update/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    doi: $('#ev-doi').val().trim(),
+                    notes: $('#ev-notes').val().trim(),
+                }),
+            });
+            const data = await resp.json().catch(function () { return {}; });
+            if (!resp.ok) {
+                $('#edit-version-error').text(data.detail || 'Save failed.').removeClass('d-none');
+                return;
+            }
+            $('#edit-version-modal').modal('hide');
+            reload();
+        } catch (e) {
+            $('#edit-version-error').text('Request failed: ' + e.message).removeClass('d-none');
+        } finally {
+            $btn.prop('disabled', false).text('Save');
         }
     });
 
@@ -610,6 +898,20 @@
                     <dt class="col-sm-4">Published at</dt>
                     <dd class="col-sm-8">${fmtDate(v.published_at)}</dd>
                 </dl>
+                ${(v.contributors && v.contributors.length) ? `
+                <hr>
+                <h6>Contributors</h6>
+                <ul class="list-unstyled mb-0">
+                    ${v.contributors.map(function (c) {
+                        const name = (c.first_name || c.last_name)
+                            ? `<strong>${escHtml(c.first_name)} ${escHtml(c.last_name)}</strong>`
+                            : '<em class="text-muted">Organisation only</em>';
+                        const org  = c.organisation ? ` &middot; ${escHtml(c.organisation)}` : '';
+                        const email = c.email ? ` &middot; <a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a>` : '';
+                        const note = c.note ? ` <small class="text-muted">(${escHtml(c.note)})</small>` : '';
+                        return `<li class="mb-1">${name}${org}${email}${note}</li>`;
+                    }).join('')}
+                </ul>` : ''}
             `);
         } catch (e) {
             $body.html(`<p class="text-danger">Failed to load: ${e.message}</p>`);

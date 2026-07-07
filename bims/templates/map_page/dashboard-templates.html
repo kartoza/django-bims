@@ -287,6 +287,18 @@
         <div class="col-4 title_column">Taxon</div>
         <div class="col-8"><%= taxon_class %></div>
     </div>
+    <% if (taxonomic_status) { %>
+    <div class="row">
+        <div class="col-4 title_column">Taxonomic Status</div>
+        <div class="col-8"><%= taxonomic_status %></div>
+    </div>
+    <% } %>
+    <% if (accepted_taxonomy_name) { %>
+    <div class="row">
+        <div class="col-4 title_column">Accepted Name</div>
+        <div class="col-8"><em><%= accepted_taxonomy_name %></em></div>
+    </div>
+    <% } %>
     <div class="row">
         <div class="col-4 title_column">Common Name</div>
         <div class="col-8"><%= common_name %></div>
@@ -332,34 +344,99 @@
 
 <script type="text/template" id="taxon-detail-table">
     <div class="container taxon-dashboard-detail table">
+        <% if (accepted_taxonomy_name) { %>
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info" style="border-radius: 0; margin-top: 10px; font-size: 0.85em; padding: 8px 12px; margin-bottom: 8px;">
+                    Showing hierarchical information for <em><%= accepted_taxonomy_name %></em>.
+                </div>
+            </div>
+        </div>
+        <% } %>
+        <% if (kingdom) { %>
         <div class="row">
             <div class="col-4 title_column">Kingdom</div>
             <div class="col-8"><%= kingdom %></div>
         </div>
+        <% } %>
+        <% if (phylum) { %>
         <div class="row">
             <div class="col-4 title_column">Phylum</div>
             <div class="col-8"><%= phylum %></div>
         </div>
+        <% } %>
+        <% if (my_class) { %>
         <div class="row">
             <div class="col-4 title_column">Class</div>
             <div class="col-8"><%= my_class %></div>
         </div>
+        <% } %>
+        <% if (order) { %>
         <div class="row">
             <div class="col-4 title_column">Order</div>
             <div class="col-8"><%= order %></div>
         </div>
+        <% } %>
+        <% if (superfamily) { %>
+        <div class="row">
+            <div class="col-4 title_column">Superfamily</div>
+            <div class="col-8"><%= superfamily %></div>
+        </div>
+        <% } %>
+        <% if (family) { %>
         <div class="row">
             <div class="col-4 title_column">Family</div>
             <div class="col-8"><%= family %></div>
         </div>
+        <% } %>
+        <% if (subfamily) { %>
+        <div class="row">
+            <div class="col-4 title_column">Subfamily</div>
+            <div class="col-8"><%= subfamily %></div>
+        </div>
+        <% } %>
+        <% if (tribe) { %>
+        <div class="row">
+            <div class="col-4 title_column">Tribe</div>
+            <div class="col-8"><%= tribe %></div>
+        </div>
+        <% } %>
+        <% if (subtribe) { %>
+        <div class="row">
+            <div class="col-4 title_column">Subtribe</div>
+            <div class="col-8"><%= subtribe %></div>
+        </div>
+        <% } %>
+        <% if (genus) { %>
         <div class="row">
             <div class="col-4 title_column">Genus</div>
             <div class="col-8"><%= genus %></div>
         </div>
+        <% } %>
+        <% if (subgenus) { %>
+        <div class="row">
+            <div class="col-4 title_column">Subgenus</div>
+            <div class="col-8"><%= subgenus %></div>
+        </div>
+        <% } %>
+        <% if (species) { %>
         <div class="row">
             <div class="col-4 title_column">Species</div>
             <div class="col-8"><%= species %></div>
         </div>
+        <% } %>
+        <% if (subspecies) { %>
+        <div class="row">
+            <div class="col-4 title_column">Subspecies</div>
+            <div class="col-8"><%= subspecies %></div>
+        </div>
+        <% } %>
+        <% if (variety) { %>
+        <div class="row">
+            <div class="col-4 title_column">Variety</div>
+            <div class="col-8"><%= variety %></div>
+        </div>
+        <% } %>
     </div>
 </script>
 

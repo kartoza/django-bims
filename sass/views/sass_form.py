@@ -185,6 +185,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
         post_dictionary,
         date,
         survey=None):
+        owner_organisation = post_dictionary.get('owner_organisation', '').strip()
         biotope_labels = {
             'S': 'SIC/SOOC',
             'Veg': 'MV/AQV',
@@ -278,9 +279,10 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                 site_visit_taxon.taxon_abundance = taxon_abundance
                 site_visit_taxon.collector_user = site_visit.collector
                 site_visit_taxon.source_collection = self.source_collection or ''
-                # Set correct owner
                 site_visit_taxon.owner = site_visit.owner
                 site_visit_taxon.source_reference = source_reference
+                if owner_organisation:
+                    site_visit_taxon.institution_id = owner_organisation
 
                 end_embargo_date = post_dictionary.get('end_embargo_date', None)
                 if end_embargo_date:
@@ -388,6 +390,7 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             survey = Survey.objects.create(
                 site_id=site_id,
                 collector_user=self.request.user,
+                owner=owner,
                 validated=False
             )
             site_visit = SiteVisit.objects.create(
@@ -699,8 +702,26 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
                     id__in=site_visit_taxon.values_list('source_reference', flat=True)
                 )
                 context['end_embargo_date'] = site_visit_taxon.first().end_embargo_date
+
+            from django.conf import settings
+            generic_orgs = {
+                'bims', 'healthyrivers',
+                getattr(settings, 'INSTITUTION_ID_DEFAULT', 'bims').lower()
+            }
+            taxon_with_org = SiteVisitTaxon.objects.filter(
+                site_visit=self.site_visit
+            ).exclude(institution_id='').first()
+            institution_id = taxon_with_org.institution_id if taxon_with_org else ''
+            if institution_id and institution_id.lower() not in generic_orgs:
+                context['owner_organisation'] = institution_id
+            elif owner and getattr(owner, 'organization', ''):
+                context['owner_organisation'] = owner.organization
+            elif institution_id:
+                context['owner_organisation'] = institution_id
         else:
             owner = self.request.user
+            if getattr(owner, 'organization', ''):
+                context['owner_organisation'] = owner.organization
 
         if owner:
             context['owner'] = owner

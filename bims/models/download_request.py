@@ -205,7 +205,6 @@ class DownloadRequest(models.Model):
         null=True,
         max_length=300,
         blank=True,
-        validators=[validate_file_extension]
     )
     notes = models.TextField(
         null=True,

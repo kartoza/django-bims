@@ -3,6 +3,16 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from bims.models.location_site import LocationSite
 
 
+class ClimateStation(LocationSite):
+    """Proxy model representing a LocationSite used as a climate station."""
+
+    class Meta:
+        proxy = True
+        app_label = 'climate'
+        verbose_name = 'Climate Station'
+        verbose_name_plural = 'Climate Stations'
+
+
 class Climate(models.Model):
     """
     Climate data model for storing daily weather measurements.

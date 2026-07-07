@@ -43,6 +43,7 @@ define([
         initialSelectedInvasions: [],
         initialSelectedModules: [],
         initialSelectedMetagroups: [],
+        hasMetagroups: false,
         currentSort: null,
         defaultSort: 'name',
         events: {
@@ -110,6 +111,9 @@ define([
                 $('.occurrence-sort').show();
                 for (let container of occurrencesFilter) {
                     if (document.getElementById(container)) {
+                        if (container === 'metagroup-module-container' && !this.hasMetagroups) {
+                            continue;
+                        }
                         document.getElementById(container).style.display = 'block';
                     }
                 }
@@ -207,6 +211,7 @@ define([
                     if (!data.length) {
                         return;
                     }
+                    self.hasMetagroups = true;
                     $('#metagroup-module-container').show();
                     for (let i = 0; i < data.length; i++) {
                         let selected = '';
@@ -249,7 +254,7 @@ define([
                         }
                         let $moduleSpecies = $(
                             '<div data-id="' + data[i]['id'] + '" class="col-lg-4 module-species ' + selected + '" title="' + data[i]['name'] + '">' +
-                            '<img src="/uploaded/' + data[i]['logo'] + '"></div>'
+                            '<img src="' + data[i]['logo'] + '"></div>'
                         );
                         moduleListContainer.append($moduleSpecies);
                         $moduleSpecies.click(self.onModuleSpeciesClicked);

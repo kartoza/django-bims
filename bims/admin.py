@@ -148,7 +148,8 @@ from bims.models import (
     UploadRequest, UploadType, CertaintyHierarchy,
     FilterPanelInfo,
     TaxonTagDescription,
-    TaxonNationalConservationAssessment
+    TaxonNationalConservationAssessment,
+    TaxonURL,
 )
 from bims.models.meta_group import MetaGroup
 from bims.models.taxonomy import TaxonTag
@@ -642,7 +643,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'abundance_number',
         'biotope',
         'record_type',
-        'sampling_method'
+        'sampling_method',
+        'institution_id',
     )
     raw_id_fields = (
         'site',
@@ -668,7 +670,8 @@ class BiologicalCollectionAdmin(admin.ModelAdmin, ExportCsvMixin):
         'uuid',
         'site__site_code',
         'upstream_id',
-        'source_collection'
+        'source_collection',
+        'institution_id',
     )
     actions = ['export_as_csv']
 
@@ -759,6 +762,15 @@ class TaxonGroupExpertInline(admin.TabularInline):
     extra = 1
     verbose_name = 'Expert for Taxon Group'
     verbose_name_plural = 'Expert for Taxon Groups'
+    autocomplete_fields = ['taxongroup']
+
+
+class TaxonGroupContributorInline(admin.TabularInline):
+    """Inline to assign user as contributor for taxon groups."""
+    model = TaxonGroup.contributors.through
+    extra = 1
+    verbose_name = 'Contributor for Taxon Group'
+    verbose_name_plural = 'Contributor for Taxon Groups'
     autocomplete_fields = ['taxongroup']
 
 
@@ -892,7 +904,7 @@ class SignedUpFilter(SimpleListFilter):
 class CustomUserAdmin(ProfileAdmin):
     add_form = UserCreateForm
     change_form_template = 'admin/user_changeform.html'
-    inlines = [ProfileInline, TaxonGroupExpertInline]
+    inlines = [ProfileInline, TaxonGroupExpertInline, TaxonGroupContributorInline]
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -1078,6 +1090,15 @@ class CustomUserAdmin(ProfileAdmin):
 
     expert_taxon_groups.short_description = 'Expert for Taxon Groups'
 
+    def contributor_taxon_groups(self, obj):
+        """Return the taxon groups where this user is a contributor."""
+        taxon_groups = TaxonGroup.objects.filter(contributors=obj)
+        if not taxon_groups.exists():
+            return '-'
+        return ', '.join([str(tg.name) for tg in taxon_groups])
+
+    contributor_taxon_groups.short_description = 'Contributor for Taxon Groups'
+
     def save_model(self, request, obj, form, change):
         if obj.pk is None:
             obj.is_active = False
@@ -1243,6 +1264,12 @@ class EndemismAdmin(admin.ModelAdmin):
     merge_endemisms.short_description = 'Merge endemism'
 
 
+class TaxonURLInline(admin.TabularInline):
+    model = TaxonURL
+    extra = 1
+    fields = ['uri', 'label']
+
+
 class TaxonImagesInline(admin.TabularInline):
     model = TaxonImage
     raw_id_fields = (
@@ -1401,6 +1428,7 @@ class TaxonGroupAdmin(admin.ModelAdmin):
     )
     filter_horizontal = (
         'experts',
+        'contributors',
     )
     raw_id_fields = (
         'gbif_parent_species',
@@ -1637,6 +1665,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'gbif_key',
                 'fada_id',
                 'aphia_id',
+                'taxonworks_id',
                 'last_modified_by',
                 'subgenus',
                 'verified',
@@ -1705,7 +1734,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
 
     extract_author.short_description = "Extract author"
 
-    inlines = [TaxonImagesInline]
+    inlines = [TaxonImagesInline, TaxonURLInline]
 
     class Media:
         css = {
@@ -2870,12 +2899,19 @@ class HarvestSessionAdmin(admin.ModelAdmin):
         harvest_session = queryset.first()
 
         harvest_session.canceled = False
+        harvest_session.finished = False
         harvest_session.save()
 
         schema_name = connection.schema_name
 
         full_message = 'Resumed'
-        if harvest_session.is_fetching_species:
+        if harvest_session.category == 'worms':
+            from bims.tasks.harvest_worms_species import harvest_worms_species
+            harvest_worms_species.delay(
+                harvest_session.id,
+                schema_name=schema_name,
+            )
+        elif harvest_session.is_fetching_species:
             harvest_gbif_species.delay(
                 harvest_session.id,
                 schema_name

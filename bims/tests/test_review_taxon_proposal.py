@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from django.urls import reverse
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
@@ -370,9 +373,15 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
         new_taxon_group = TaxonGroupF.create(
             experts=(self.expert_user,)
         )
-        add_taxa_to_taxon_group([
-            self.taxonomy.id
-        ], new_taxon_group.id)
+        with patch(
+            'bims.api_views.taxon_group.preferences',
+            new=SimpleNamespace(
+                SiteSetting=SimpleNamespace(restrict_taxon_to_single_group=False)
+            )
+        ):
+            add_taxa_to_taxon_group([
+                self.taxonomy.id
+            ], new_taxon_group.id)
         taxonomy_update_proposal = TaxonomyUpdateProposal.objects.filter(
             original_taxonomy=self.taxonomy,
             taxon_group=new_taxon_group,
@@ -409,6 +418,160 @@ class ReviewTaxonProposalTest(FastTenantTestCase):
             ).exists()
         )
         self.client.logout()
+
+    def test_reject_new_taxon_deletes_orphaned_taxonomy(self):
+        """
+        Rejecting a newly-added (new_data) taxon must remove it from the taxa
+        table, not merely unlink it from the group.
+        """
+        taxon = TaxonomyF.create(
+            scientific_name='Brand New Taxon',
+            canonical_name='Brand New Taxon',
+        )
+        group = TaxonGroupF.create(
+            name='New Data Group',
+            taxonomies=(taxon,),
+            experts=(self.expert_user,),
+        )
+        proposal = TaxonomyUpdateProposalF.create(
+            original_taxonomy=taxon,
+            taxon_group=group,
+            taxon_group_under_review=group,
+            new_data=True,
+        )
+
+        proposal.reject_data(self.expert_user, 'rejected')
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=taxon.id).exists()
+        )
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=group, taxonomy_id=taxon.id
+            ).exists()
+        )
+
+    def test_reject_new_taxon_kept_when_in_another_group(self):
+        """
+        A rejected new taxon that still belongs to another group must be
+        unlinked from the reviewed group but not deleted.
+        """
+        taxon = TaxonomyF.create(
+            scientific_name='Shared Taxon',
+            canonical_name='Shared Taxon',
+        )
+        group_a = TaxonGroupF.create(
+            name='Group A',
+            taxonomies=(taxon,),
+            experts=(self.expert_user,),
+        )
+        group_b = TaxonGroupF.create(
+            name='Group B',
+            taxonomies=(taxon,),
+        )
+        proposal = TaxonomyUpdateProposalF.create(
+            original_taxonomy=taxon,
+            taxon_group=group_a,
+            taxon_group_under_review=group_a,
+            new_data=True,
+        )
+
+        proposal.reject_data(self.expert_user, 'rejected')
+
+        self.assertTrue(
+            Taxonomy.objects.filter(id=taxon.id).exists()
+        )
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=group_a, taxonomy_id=taxon.id
+            ).exists()
+        )
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=group_b, taxonomy_id=taxon.id
+            ).exists()
+        )
+
+    def test_reject_new_synonym_deletes_orphaned_accepted_taxonomy(self):
+        """
+        When a rejected synonym pulled its accepted taxonomy into the group as
+        a dependency, and nothing else in the group needs it, the accepted
+        taxonomy is cleaned up too.
+        """
+        accepted = TaxonomyF.create(
+            scientific_name='Accepted Name',
+            canonical_name='Accepted Name',
+            taxonomic_status='ACCEPTED',
+        )
+        synonym = TaxonomyF.create(
+            scientific_name='Synonym Name',
+            canonical_name='Synonym Name',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+        group = TaxonGroupF.create(
+            name='Synonym Group',
+            taxonomies=(synonym, accepted),
+            experts=(self.expert_user,),
+        )
+        proposal = TaxonomyUpdateProposalF.create(
+            original_taxonomy=synonym,
+            taxon_group=group,
+            taxon_group_under_review=group,
+            new_data=True,
+        )
+
+        proposal.reject_data(self.expert_user, 'rejected')
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=synonym.id).exists()
+        )
+        self.assertFalse(
+            Taxonomy.objects.filter(id=accepted.id).exists()
+        )
+
+    def test_reject_new_synonym_keeps_accepted_taxonomy_with_own_proposal(self):
+        """
+        The accepted taxonomy must be preserved when it was proposed on its own
+        (has its own pending proposal), even if a related synonym is rejected.
+        """
+        accepted = TaxonomyF.create(
+            scientific_name='Independent Accepted',
+            canonical_name='Independent Accepted',
+            taxonomic_status='ACCEPTED',
+        )
+        synonym = TaxonomyF.create(
+            scientific_name='Dependent Synonym',
+            canonical_name='Dependent Synonym',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=accepted,
+        )
+        group = TaxonGroupF.create(
+            name='Mixed Group',
+            taxonomies=(synonym, accepted),
+            experts=(self.expert_user,),
+        )
+        synonym_proposal = TaxonomyUpdateProposalF.create(
+            original_taxonomy=synonym,
+            taxon_group=group,
+            taxon_group_under_review=group,
+            new_data=True,
+        )
+        TaxonomyUpdateProposalF.create(
+            original_taxonomy=accepted,
+            taxon_group=group,
+            taxon_group_under_review=group,
+            new_data=True,
+        )
+
+        synonym_proposal.reject_data(self.expert_user, 'rejected')
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=synonym.id).exists()
+        )
+        self.assertTrue(
+            Taxonomy.objects.filter(id=accepted.id).exists()
+        )
 
     def test_superuser_update_taxon(self):
         self.client.login(username='superuser', password='password')

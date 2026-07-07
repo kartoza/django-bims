@@ -123,6 +123,25 @@
             </div>
             {% endif %}
 
+            {% if object.aphia_id %}
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">
+                    WoRMS ID
+                </label>
+                <div class="col-sm-10">
+                    <input type="text" disabled
+                           class="form-control form-control-sm"
+                           value="{{ object.aphia_id }}">
+                    <small class="form-text text-muted">
+                        <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id={{ object.aphia_id }}"
+                           target="_blank" rel="noopener">
+                            View on WoRMS
+                        </a>
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="form-group row">
                 <label for="rank" class="col-sm-2 col-form-label col-form-label">
                     Rank
@@ -400,6 +419,44 @@
                 </div>
             </div>
 
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">URL References</label>
+                <div class="col-sm-10">
+                    <table class="table table-sm" id="url-references-table">
+                        <thead>
+                            <tr>
+                                <th style="width:35%">Label</th>
+                                <th>URI</th>
+                                <th style="width:60px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="url-references-body">
+                            {% for url in taxon_urls %}
+                            <tr>
+                                <td>
+                                    <input type="hidden" name="url_id" value="{{ url.id|default:'' }}">
+                                    <input type="text" name="url_label" value="{{ url.label }}"
+                                           class="form-control form-control-sm" placeholder="Label" required>
+                                </td>
+                                <td>
+                                    <input type="url" name="url_uri" value="{{ url.uri }}"
+                                           class="form-control form-control-sm" placeholder="https://…" required>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-danger url-remove-btn">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="add-url-btn">
+                        + Add URL
+                    </button>
+                </div>
+            </div>
+
             <div class="form-group submit-holder">
                 {% if update %}
                     {% if allow_to_edit %}
@@ -477,6 +534,37 @@
         function openGbif() {
             window.open('https://gbif.org/species/' + document.getElementById('gbif_key').value, '_blank');
         }
+
+        (function () {
+            const body = document.getElementById('url-references-body');
+
+            function newRow() {
+                const tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td>' +
+                        '<input type="hidden" name="url_id" value="">' +
+                        '<input type="text" name="url_label" class="form-control form-control-sm" placeholder="Label" required>' +
+                    '</td>' +
+                    '<td>' +
+                        '<input type="url" name="url_uri" class="form-control form-control-sm" placeholder="https://…" required>' +
+                    '</td>' +
+                    '<td>' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger url-remove-btn"><i class="fa fa-times"></i></button>' +
+                    '</td>';
+                return tr;
+            }
+
+            document.getElementById('add-url-btn').addEventListener('click', function () {
+                body.appendChild(newRow());
+            });
+
+            body.addEventListener('click', function (e) {
+                const btn = e.target.closest('.url-remove-btn');
+                if (btn) {
+                    btn.closest('tr').remove();
+                }
+            });
+        })();
     </script>
 
 {% endblock %}

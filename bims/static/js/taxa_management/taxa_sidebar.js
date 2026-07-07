@@ -115,6 +115,22 @@ export const taxaSidebar = (() => {
         return experts;
     }
 
+    function findContributorsByTaxonGroupId(parentId, taxonGroups) {
+        let contributors = [];
+        taxonGroups.forEach(item => {
+            if (item.children.length > 0) {
+                contributors = findContributorsByTaxonGroupId(parentId, item.children);
+            }
+            if (item.id === parentId && item.contributors && item.contributors.length > 0) {
+                contributors = item.contributors;
+            }
+            if (contributors.length > 0) {
+                return true;
+            }
+        });
+        return contributors;
+    }
+
     function addExpertsToSelect(experts) {
         let expertIds = [];
         experts.forEach(expert => {
@@ -126,6 +142,17 @@ export const taxaSidebar = (() => {
         authorSelect.trigger('change');
     }
 
+    function addContributorsToSelect(contributors) {
+        let contributorIds = [];
+        contributors.forEach(contributor => {
+            let newOption = new Option(contributor.full_name, contributor.id, false, false);
+            contributorSelect.append(newOption);
+            contributorIds.push(contributor.id);
+        });
+        contributorSelect.val(contributorIds);
+        contributorSelect.trigger('change');
+    }
+
     function setupAddModuleModal() {
         $('#moduleModalLabel').text('Add Module');
         $('.gbif-species-container').hide();
@@ -134,6 +161,7 @@ export const taxaSidebar = (() => {
         $("#inputLogo").val('');
         $('.extra-attribute-field').empty();
         $('.taxon-group-experts-container select').val(null).trigger('change');
+        $('.taxon-group-contributors-container select').val(null).trigger('change');
         $('#edit-module-img-container').empty();
         $('#edit-module-meta-group').val('');
 
@@ -244,6 +272,12 @@ export const taxaSidebar = (() => {
         authorSelect.val(null).trigger('change');
         let experts = findExpertsByTaxonGroupId(moduleId, taxaGroups);
         addExpertsToSelect(experts);
+
+        // Contributors
+        contributorSelect.empty();
+        contributorSelect.val(null).trigger('change');
+        let contributors = findContributorsByTaxonGroupId(moduleId, taxaGroups);
+        addContributorsToSelect(contributors);
 
         // GBIF Species
         let taxaAutoComplete = $('#edit-module-taxa-autocomplete');
@@ -418,9 +452,13 @@ export const taxaSidebar = (() => {
         e.preventDefault();
         let formData = new FormData(this);
         formData.delete('taxon-group-experts');
-
         $('.owner-auto-complete').select2('data').forEach(function(item) {
             formData.append('taxon-group-experts', item.id);
+        });
+
+        formData.delete('taxon-group-contributors');
+        $('.contributor-auto-complete').select2('data').forEach(function(item) {
+            formData.append('taxon-group-contributors', item.id);
         });
 
         let url = '/api/update-taxon-group/';

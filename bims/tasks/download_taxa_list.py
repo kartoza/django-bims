@@ -31,6 +31,35 @@ from bims.utils.domain import get_current_domain
 logger = logging.getLogger(__name__)
 
 
+SNAPSHOT_FIXED_HEADERS = [
+    'taxon_rank', 'kingdom', 'phylum', 'class_name', 'order',
+    'family', 'subfamily', 'tribe', 'subtribe',
+    'genus', 'subgenus', 'species', 'subspecies', 'variety', 'species_group',
+    'taxon', 'scientific_name_and_authority', 'author',
+    'taxonomic_status', 'accepted_taxon',
+    'common_name', 'origin', 'endemism', 'invasion',
+    'conservation_status_global', 'conservation_status_national',
+    'on_gbif', 'gbif_link', 'fada_id', 'cites_listing',
+]
+
+SNAPSHOT_HEADER_LABELS = {
+    'class_name': CLASS,
+    'taxon_rank': TAXON_RANK,
+    'taxon': 'Taxon',
+    'scientific_name_and_authority': 'Scientific Name And Authority',
+    'author': 'Authors',
+    'accepted_taxon': 'Accepted Taxon',
+    'common_name': 'Common Name',
+    'conservation_status_global': 'Conservation Status Global',
+    'conservation_status_national': 'Conservation Status National',
+    'on_gbif': 'On GBIF',
+    'gbif_link': 'GBIF Link',
+    'fada_id': 'FADA ID',
+    'cites_listing': 'CITES Listing',
+    'species_group': 'Species Group',
+}
+
+
 def process_download_csv_taxa_list(
         request,
         csv_file_path,
@@ -120,7 +149,9 @@ def process_download_csv_taxa_list(
             taxa_qs = taxa_qs.order_by(order_by)
         if is_fada:
             from django.db.models import Q
-            taxa_qs = taxa_qs.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+            taxa_qs = taxa_qs.exclude(
+                (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
+            )
     else:
         taxa_qs = TaxaList.get_taxa_by_parameters(request_get)
     try:
@@ -238,7 +269,9 @@ def process_download_csv_taxa_list(
                 taxa_qs_write = taxa_qs_write.order_by(order_by)
             if is_fada:
                 from django.db.models import Q
-                taxa_qs_write = taxa_qs_write.exclude(Q(fada_id__isnull=True) | Q(fada_id=''))
+                taxa_qs_write = taxa_qs_write.exclude(
+                    (Q(fada_id__isnull=True) | Q(fada_id='')) & Q(aphia_id__isnull=True) & Q(taxonworks_id__isnull=True)
+                )
         else:
             taxa_qs_write = TaxaList.get_taxa_by_parameters(request_get)
         try:
@@ -325,12 +358,84 @@ def process_download_csv_taxa_list(
         pass
 
 
+class _Styles:
+    pass
+
+
+def _get_checklist_pdf_styles() -> _Styles:
+    font_dir = os.path.join(settings.STATIC_ROOT, 'fonts', 'garamond')
+    if not os.path.isdir(font_dir):
+        font_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            'static', 'fonts', 'garamond'
+        )
+    pdfmetrics.registerFont(TTFont('Garamond', os.path.join(font_dir, 'EBGaramond-Regular.ttf')))
+    pdfmetrics.registerFont(TTFont('Garamond-Bold', os.path.join(font_dir, 'EBGaramond-Bold.ttf')))
+    pdfmetrics.registerFont(TTFont('Garamond-Italic', os.path.join(font_dir, 'EBGaramond-Italic.ttf')))
+    pdfmetrics.registerFont(TTFont('Garamond-BoldItalic', os.path.join(font_dir, 'EBGaramond-BoldItalic.ttf')))
+    registerFontFamily(
+        'Garamond',
+        normal='Garamond',
+        bold='Garamond-Bold',
+        italic='Garamond-Italic',
+        boldItalic='Garamond-BoldItalic',
+    )
+
+    base = getSampleStyleSheet()
+
+    s = _Styles()
+    s.title = ParagraphStyle('TitleStyle', parent=base['Normal'],
+        fontName='Garamond-Bold', fontSize=22, leading=22, alignment=TA_LEFT)
+    s.generated = ParagraphStyle('GeneratedStyle', parent=base['Normal'],
+        fontName='Garamond-Italic', fontSize=10, leading=12, alignment=TA_LEFT)
+    s.group = ParagraphStyle('GroupStyle', parent=base['Normal'],
+        fontName='Garamond-Bold', fontSize=12, leading=14)
+    s.species = ParagraphStyle('SpeciesStyle', parent=base['Normal'],
+        fontName='Garamond', fontSize=11, leading=14)
+    s.synonym = ParagraphStyle('SynonymStyle', parent=s.species, leftIndent=15)
+    s.heading = ParagraphStyle('HeadingStyle', parent=base['Normal'],
+        fontName='Garamond-Bold', fontSize=12, leading=14, alignment=TA_LEFT)
+    s.citation = ParagraphStyle('CitationStyle', parent=base['Normal'],
+        fontName='Garamond', fontSize=10, leading=12, alignment=TA_LEFT)
+    return s
+
+
+def _build_checklist_pdf_header(title, taxon_group, styles):
+    from bims.models import TaxonGroupCitation
+
+    paragraphs = []
+    paragraphs.append(Paragraph(title, styles.title))
+    paragraphs.append(Spacer(1, 6))
+    paragraphs.append(Paragraph(
+        f'(generated {datetime.datetime.now().strftime("%a %b %d %H:%M:%S %Y")} '
+        f'from {get_current_domain()})',
+        styles.generated,
+    ))
+    paragraphs.append(Spacer(1, 6))
+
+    citations = (
+        TaxonGroupCitation.objects
+        .filter(taxon_group=taxon_group)
+        .order_by('-year', '-access_date', '-updated_at', '-created_at')
+    )
+    if citations.exists():
+        paragraphs.append(Paragraph('To be cited as:', styles.heading))
+        for c in citations:
+            paragraphs.append(Paragraph(c.formatted_citation, styles.citation))
+        paragraphs.append(Spacer(1, 6))
+
+    paragraphs.append(Paragraph(
+        '<i>= denotes a synonym of the accepted taxon above it.</i>', styles.citation
+    ))
+    paragraphs.append(Spacer(1, 12))
+    return paragraphs
+
+
 def process_download_pdf_taxa_list(
         request, pdf_file_path, filename, user_id, taxon_group_id, download_request_id, order_by=None):
     from bims.tasks import send_csv_via_email
     from bims.models.taxon_group import TaxonGroup
     from bims.api_views.taxon import TaxaList
-    from bims.models import TaxonGroupCitation
 
     if not order_by:
         order_by = 'genus'
@@ -341,112 +446,11 @@ def process_download_pdf_taxa_list(
             self.user = user
 
     def get_checklist_paragraphs(taxon_group, taxonomies):
-        """
-        Build a list of Paragraph objects for the textual "checklist" portion,
-        using CormorantGaramond Serif fonts.
-        """
-        font_dir = os.path.join(settings.STATIC_ROOT, 'fonts', 'garamond')
-        if not os.path.isdir(font_dir):
-            font_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                'static', 'fonts', 'garamond'
-            )
-        pdfmetrics.registerFont(TTFont('Garamond', os.path.join(font_dir, 'EBGaramond-Regular.ttf')))
-        pdfmetrics.registerFont(TTFont('Garamond-Bold', os.path.join(font_dir, 'EBGaramond-Bold.ttf')))
-        pdfmetrics.registerFont(TTFont('Garamond-Italic', os.path.join(font_dir, 'EBGaramond-Italic.ttf')))
-        pdfmetrics.registerFont(TTFont('Garamond-BoldItalic', os.path.join(font_dir, 'EBGaramond-BoldItalic.ttf')))
+        st = _get_checklist_pdf_styles()
 
-        registerFontFamily(
-            'Garamond',
-            normal='Garamond',
-            bold='Garamond-Bold',
-            italic='Garamond-Italic',
-            boldItalic='Garamond-BoldItalic'
+        paragraphs = _build_checklist_pdf_header(
+            f'{taxon_group.name} Checklist', taxon_group, st
         )
-
-        # Get the default stylesheet
-        styles = getSampleStyleSheet()
-
-        title_style = ParagraphStyle(
-            name="TitleStyle",
-            parent=styles['Normal'],
-            fontName='Garamond-Bold',
-            fontSize=22,
-            leading=22,
-            alignment=TA_LEFT,
-        )
-
-        generated_style = ParagraphStyle(
-            name="GeneratedStyle",
-            parent=styles['Normal'],
-            fontName='Garamond-Italic',
-            fontSize=10,
-            leading=12,
-            alignment=TA_LEFT,
-        )
-
-        genus_style = ParagraphStyle(
-            name="GenusStyle",
-            parent=styles['Normal'],
-            fontName='Garamond-Bold',
-            fontSize=12,
-            leading=14,
-        )
-
-        species_style = ParagraphStyle(
-            name="SpeciesStyle",
-            parent=styles['Normal'],
-            fontName='Garamond',
-            fontSize=11,
-            leading=14,
-        )
-
-        syn_style = ParagraphStyle(
-            'SynonymStyle',
-            parent=species_style,
-            leftIndent=15,
-        )
-
-        heading_style = ParagraphStyle(
-            name="HeadingStyle", parent=styles['Normal'],
-            fontName='Garamond-Bold', fontSize=12, leading=14, alignment=TA_LEFT,
-        )
-        citation_style = ParagraphStyle(
-            name="CitationStyle", parent=styles['Normal'],
-            fontName='Garamond', fontSize=10, leading=12, alignment=TA_LEFT,
-        )
-
-        paragraphs = []
-
-        title_text = f"{taxon_group.name} Checklist"
-        paragraphs.append(Paragraph(title_text, title_style))
-        paragraphs.append(Spacer(1, 6))
-
-        current_site = get_current_domain()
-        generated_text = (
-            f"(generated {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')} "
-            f"from {current_site})"
-        )
-        paragraphs.append(Paragraph(generated_text, generated_style))
-        paragraphs.append(Spacer(1, 6))
-
-        # --- Citations ---
-        citations = (
-            TaxonGroupCitation.objects
-            .filter(taxon_group=taxon_group)
-            .order_by('-year', '-access_date', '-updated_at', '-created_at')
-        )
-        if citations.exists():
-            paragraphs.append(Paragraph("To be cited as:", heading_style))
-            for c in citations:
-                paragraphs.append(Paragraph(c.formatted_citation, citation_style))
-            paragraphs.append(Spacer(1, 6))
-
-        paragraphs.append(Paragraph(
-            "<i>= denotes a synonym of the accepted taxon above it.</i>",
-            citation_style
-        ))
-        paragraphs.append(Spacer(1, 12))
 
         order_by_dict = {}
         species_qs = taxonomies.filter(
@@ -474,7 +478,6 @@ def process_download_pdf_taxa_list(
                 }
             order_by_dict[key_id]['species'].append(s)
 
-        # Sort by key canonical name
         order_by_dict = OrderedDict(
             sorted(order_by_dict.items(), key=lambda item: item[1]['canonical_name']))
 
@@ -484,7 +487,7 @@ def process_download_pdf_taxa_list(
             if info['author'] and info['author'] not in header_line:
                 header_author += f" {info['author']}"
 
-            paragraphs.append(Paragraph(f"<i>{header_line}</i>{header_author}", genus_style))
+            paragraphs.append(Paragraph(f"<i>{header_line}</i>{header_author}", st.group))
             paragraphs.append(Spacer(1, 10))
 
             for s_obj in info['species']:
@@ -493,17 +496,13 @@ def process_download_pdf_taxa_list(
                     sp_line += f" {s_obj.author}"
                 if "type species" in (s_obj.additional_data or {}):
                     sp_line += " (Type species for genus)"
+                paragraphs.append(Paragraph(sp_line, st.species))
 
-                paragraphs.append(Paragraph(sp_line, species_style))
-
-                synonyms = Taxonomy.objects.filter(
-                    accepted_taxonomy=s_obj
-                )
-                for syn in synonyms:
+                for syn in Taxonomy.objects.filter(accepted_taxonomy=s_obj):
                     syn_lin = f'= <i>{syn.canonical_name}</i>'
                     if syn.author:
                         syn_lin += f" {syn.author}"
-                    paragraphs.append(Paragraph(syn_lin, syn_style))
+                    paragraphs.append(Paragraph(syn_lin, st.synonym))
 
             paragraphs.append(Spacer(1, 10))
 
@@ -593,3 +592,174 @@ def download_taxa_list(
     logger.info(
         'Csv %s is already being processed by another worker',
         csv_file)
+
+
+def _snapshot_row_to_dict(row):
+    on_gbif = 'Yes' if row.gbif_key else 'No'
+    gbif_link = f'https://www.gbif.org/species/{row.gbif_key}' if row.gbif_key else '-'
+    return {
+        'taxon_rank': row.rank.capitalize() if row.rank else '',
+        'kingdom': row.kingdom,
+        'phylum': row.phylum,
+        'class_name': row.klass,
+        'order': row.order,
+        'family': row.family,
+        'subfamily': row.subfamily,
+        'tribe': row.tribe,
+        'subtribe': row.subtribe,
+        'genus': row.genus,
+        'subgenus': row.subgenus,
+        'species': row.species,
+        'subspecies': row.subspecies,
+        'variety': row.variety,
+        'species_group': row.species_group,
+        'taxon': row.canonical_name,
+        'scientific_name_and_authority': row.scientific_name,
+        'author': row.authorship,
+        'taxonomic_status': row.taxonomic_status,
+        'accepted_taxon': row.accepted_taxon,
+        'common_name': row.common_name,
+        'origin': row.origin,
+        'endemism': row.endemism,
+        'invasion': row.invasion,
+        'conservation_status_global': row.conservation_status_global,
+        'conservation_status_national': row.conservation_status_national,
+        'on_gbif': on_gbif,
+        'gbif_link': gbif_link,
+        'fada_id': row.fada_id,
+        'cites_listing': row.cites_listing,
+    }
+
+
+def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
+    checklist_style = _get_checklist_pdf_styles()
+
+    story = _build_checklist_pdf_header(
+        f'{version.taxon_group.name} v{version.version} Checklist',
+        version.taxon_group,
+        checklist_style,
+    )
+
+    synonym_map = {}
+    for syn in snapshots.filter(taxonomic_status__icontains='synonym'):
+        if syn.basionym_checklist_id:
+            synonym_map.setdefault(syn.basionym_checklist_id, []).append(syn)
+
+    accepted = snapshots.filter(
+        rank__in=['SPECIES', 'SUBSPECIES'],
+    ).exclude(taxonomic_status__icontains='synonym').order_by('scientific_name')
+
+    group_key = 'family' if order_by == 'family' else 'genus'
+    groups = OrderedDict()
+    for s in accepted:
+        key_name = (s.family if group_key == 'family' else s.genus) or ''
+        if not key_name:
+            continue
+        groups.setdefault(key_name, []).append(s)
+
+    for group_name, species_list in OrderedDict(sorted(groups.items())).items():
+        story.append(Paragraph(f'<i>{group_name}</i>', checklist_style.group))
+        story.append(Spacer(1, 10))
+        for s in species_list:
+            sp_line = f'<i>{s.scientific_name}</i>'
+            if s.authorship:
+                sp_line += f' {s.authorship}'
+            story.append(Paragraph(sp_line, checklist_style.species))
+            for syn in synonym_map.get(s.checklist_id, []):
+                syn_line = f'= <i>{syn.scientific_name}</i>'
+                if syn.authorship:
+                    syn_line += f' {syn.authorship}'
+                story.append(Paragraph(syn_line, checklist_style.synonym))
+        story.append(Spacer(1, 10))
+
+    SimpleDocTemplate(
+        output_file, pagesize=A4,
+        rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=50,
+    ).build(story)
+
+
+def write_snapshot_csv(snapshots, output_file, order_by=None):
+    if order_by == 'family':
+        snapshots = snapshots.order_by('family', 'genus', 'canonical_name')
+    else:
+        snapshots = snapshots.order_by('genus', 'canonical_name')
+
+    extra_attr_keys = []
+    tag_keys = []
+    for row in snapshots.only('additional_data', 'tags').iterator(chunk_size=2000):
+        for k in (row.additional_data or {}):
+            if k not in extra_attr_keys:
+                extra_attr_keys.append(k)
+        for k in (row.tags or {}):
+            if k not in tag_keys:
+                tag_keys.append(k)
+
+    all_keys = SNAPSHOT_FIXED_HEADERS + extra_attr_keys + tag_keys
+    headers = [
+        SNAPSHOT_HEADER_LABELS.get(k, k.replace('_', ' ').capitalize())
+        for k in all_keys
+    ]
+
+    with open(output_file, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(headers)
+        for row in snapshots.iterator(chunk_size=2000):
+            d = _snapshot_row_to_dict(row)
+            for k in extra_attr_keys:
+                d[k] = (row.additional_data or {}).get(k, '')
+            for k in tag_keys:
+                d[k] = (row.tags or {}).get(k, '')
+            writer.writerow([d.get(k, '') for k in all_keys])
+
+
+@shared_task(name='bims.tasks.download_checklist_snapshot', queue='update')
+def download_checklist_snapshot_task(
+        version_id, output_file, filename, user_id,
+        output='csv', order_by=None, download_request_id=''):
+    from bims.models.checklist_version import ChecklistSnapshot, ChecklistVersion
+    from bims.models.download_request import DownloadRequest
+
+    try:
+        version = ChecklistVersion.objects.select_related('taxon_group').get(pk=version_id)
+    except ChecklistVersion.DoesNotExist:
+        logger.error('ChecklistVersion %s not found', version_id)
+        return
+
+    snapshots = (
+        ChecklistSnapshot.objects
+        .filter(checklist_version=version)
+        .exclude(change_type=ChecklistSnapshot.CHANGE_DELETED)
+        .order_by('scientific_name')
+    )
+
+    if output == 'csv':
+        write_snapshot_csv(snapshots, output_file, order_by)
+    else:
+        write_snapshot_pdf(snapshots, version, output_file, order_by)
+
+    if download_request_id:
+        from django.utils import timezone
+        try:
+            dr = DownloadRequest.objects.get(id=download_request_id)
+            total = snapshots.count()
+            dr.progress = f'{total}/{total}'
+            dr.processing = False
+            dr.request_file = output_file
+            dr.progress_updated_at = timezone.now()
+            dr.save(update_fields=['progress', 'processing', 'request_file', 'progress_updated_at'])
+        except DownloadRequest.DoesNotExist:
+            pass
+
+    from bims.tasks import send_csv_via_email
+    UserModel = get_user_model()
+    try:
+        user = UserModel.objects.get(id=user_id)
+        send_csv_via_email(
+            user_id=user.id,
+            csv_file=output_file,
+            file_name=filename,
+            approved=True,
+            download_request_id=download_request_id,
+        )
+    except UserModel.DoesNotExist:
+        pass

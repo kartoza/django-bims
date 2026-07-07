@@ -47,6 +47,7 @@ class TaxonTag(TagBase):
     class Meta:
         verbose_name = "Taxonomy Tag"
         verbose_name_plural = "Taxonomy Tags"
+        unique_together = [('name', 'doubtful')]
 
 
 class SpeciesGroup(models.Model):
@@ -70,6 +71,7 @@ class CustomTaggedTaxonomy(TaggedItemBase):
     class Meta:
         verbose_name = "Custom Tagged Taxonomy"
         verbose_name_plural = "Custom Tagged Taxa"
+        unique_together = [('content_object', 'tag')]
 
 
 class TaxonomyField(models.CharField):
@@ -126,6 +128,13 @@ class AbstractTaxonomy(AbstractValidation):
 
     aphia_id = models.IntegerField(
         verbose_name='WoRMS AphiaID',
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    taxonworks_id = models.IntegerField(
+        verbose_name='TaxonWorks ID',
         null=True,
         blank=True,
         db_index=True,
@@ -446,16 +455,11 @@ class AbstractTaxonomy(AbstractValidation):
             return ''
 
         if rank_name == TaxonomicRank.GENUS.name:
-            # For GENUS, preserve subgenus notation: "Peltoperla (Peltoperla) anna"
-            # → "Peltoperla (Peltoperla)"
-            prefix = self._genus_prefix_from_canonical(canonical)
-            if prefix:
-                return prefix
             return tokens[0]
 
         if rank_name == TaxonomicRank.SPECIES.name:
-            # Return only the specific epithet, not the full binomial.
-            return self._specific_epithet_from_canonical(canonical)
+            meaningful = [t for t in tokens if not (t.startswith('(') and t.endswith(')'))]
+            return meaningful[1] if len(meaningful) >= 2 else ''
 
         markers = {
             'sp', 'spp', 'subsp', 'ssp', 'var', 'subvar', 'forma',
@@ -506,7 +510,7 @@ class AbstractTaxonomy(AbstractValidation):
         _parent = _taxon.parent if _taxon.parent else None
         _species_canonical = (
             _taxon.canonical_name
-            if _rank in ('SPECIES', 'SUBSPECIES') else None
+            if _rank == 'SPECIES' else None
         )
 
         while (
@@ -515,7 +519,7 @@ class AbstractTaxonomy(AbstractValidation):
                 and current_try < limit
         ):
             current_try += 1
-            if _rank in ('SPECIES', 'SUBSPECIES') and _species_canonical is None:
+            if _rank == 'SPECIES' and _species_canonical is None:
                 _species_canonical = _taxon.canonical_name
             _taxon = _parent
             _rank = _taxon.rank
@@ -770,6 +774,16 @@ class AbstractTaxonomy(AbstractValidation):
         if crud_event.exists():
             return crud_event.first().user
 
+        return None
+
+    def find_ancestor_by_rank(self, target_rank: str, max_depth: int = 10):
+        current = self.parent
+        depth = 0
+        while current and depth < max_depth:
+            if current.rank and current.rank.upper() == target_rank.upper():
+                return current
+            current = current.parent
+            depth += 1
         return None
 
 class Taxonomy(AbstractTaxonomy):
@@ -1044,7 +1058,18 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
     is_synonym = "SYNONYM" in (instance.taxonomic_status or "").upper()
 
     # Set IUCN status and redlist ID before saving taxonomy
-    if instance.is_species and not instance.iucn_status:
+    is_non_native = (
+        instance.origin
+        and getattr(instance.origin, 'origin_key', '').startswith('alien')
+    )
+    should_fetch_iucn = (
+        instance.is_species
+        and not instance.iucn_status
+        and not is_non_native
+        and not getattr(instance, "_iucn_fetch_attempted", False)
+    )
+    if should_fetch_iucn:
+        instance._iucn_fetch_attempted = True
         iucn_status, sis_id, iucn_url = get_iucn_status(taxon=instance)
         if iucn_status:
             instance.iucn_status = iucn_status

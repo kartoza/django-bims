@@ -1,3 +1,4 @@
+from preferences import preferences
 from rest_framework import serializers
 
 from bims.models.taxonomy import Taxonomy
@@ -22,6 +23,11 @@ CODE_VALUES = (
     'cultivar', 'phytosociological', 'bio',
 )
 
+KINGDOM_CODE_MAP = {
+    'animalia': 'zoological',
+    'plantae': 'botanical',
+}
+
 
 class ColDPTaxonSerializer(serializers.ModelSerializer):
     """
@@ -33,6 +39,7 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
 
     taxonID = serializers.SerializerMethodField()
     parentID = serializers.SerializerMethodField()
+    basionymID = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     scientificName = serializers.SerializerMethodField()
     authorship = serializers.SerializerMethodField()
@@ -57,6 +64,7 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
         fields = [
             'taxonID',
             'parentID',
+            'basionymID',
             'status',
             'scientificName',
             'authorship',
@@ -77,20 +85,37 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
             'species',
         ]
 
-    def _taxon_id(self, pk) -> str:
-        """Build a site-scoped taxon ID, e.g. FBIS123 or FADA123."""
-        prefix = (self.context or {}).get('site_prefix', '')
-        return f'{prefix}{pk}' if prefix else str(pk)
+    def _taxon_id(self, obj_or_pk) -> str:
+        """
+        Return fada:{fada_id} when the object has a FADA ID set.
+        Falls back to {site_prefix}{pk}, reading site_prefix from context
+        first, then from SiteSetting.default_data_source.
+        """
+        if hasattr(obj_or_pk, 'fada_id') and obj_or_pk.fada_id:
+            return f'fada:{obj_or_pk.fada_id}'
+        pk = getattr(obj_or_pk, 'id', obj_or_pk)
+        prefix = (
+            (self.context or {}).get('site_prefix')
+            or getattr(preferences.SiteSetting, 'default_data_source', '')
+            or ''
+        ).lower()
+        return f'{prefix}:{pk}' if prefix else str(pk)
 
     def get_taxonID(self, obj):
-        return self._taxon_id(obj.id)
+        return self._taxon_id(obj)
+
+    def get_basionymID(self, obj):
+        status_raw = (obj.taxonomic_status or '').upper()
+        if status_raw in SYNONYM_STATUSES and obj.accepted_taxonomy_id:
+            return self._taxon_id(obj.accepted_taxonomy or obj.accepted_taxonomy_id)
+        return ''
 
     def get_parentID(self, obj):
         status_raw = (obj.taxonomic_status or '').upper()
         if status_raw in SYNONYM_STATUSES and obj.accepted_taxonomy_id:
-            return self._taxon_id(obj.accepted_taxonomy_id)
+            return self._taxon_id(obj.accepted_taxonomy or obj.accepted_taxonomy_id)
         if obj.parent_id:
-            return self._taxon_id(obj.parent_id)
+            return self._taxon_id(obj.parent or obj.parent_id)
         return ''
 
     def get_status(self, obj):
@@ -121,15 +146,16 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
 
     def get_code(self, obj):
         """
-        Return the nomenclatural code derived from tags.
-        First tag matching: botanical, zoological, bacterial, virus,
-        cultivar, phytosociological, bio (case-insensitive).
+        Return the nomenclatural code.
+        Tags take priority; falls back to kingdom: Animalia → zoological,
+        Plantae → botanical.
         """
         tag_names = {tag.name.lower() for tag in obj.tags.all()}
         for code in CODE_VALUES:
             if code in tag_names:
                 return code
-        return ''
+        return KINGDOM_CODE_MAP.get(
+            (obj.kingdom_name or '').lower(), '')
 
     def get_kingdom(self, obj):
         return obj.kingdom_name or ''

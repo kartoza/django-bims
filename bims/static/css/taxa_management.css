@@ -207,7 +207,7 @@ ul.pagination li.current a {
     padding: 10px;
 }
 
-.taxon-group-experts-container .select2-container {
+.taxon-group-experts-container .select2-container, .taxon-group-contributors-container .select2-container {
     width: 100% !important;
 }
 
@@ -355,7 +355,7 @@ table {
 }
 
 #taxon-name-input {
-    width: 25%;
+    width: 250px;
 }
 
 /* Diff styling for table cells */

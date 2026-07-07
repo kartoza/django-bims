@@ -206,7 +206,7 @@ class TestLocationSiteFormView(FastTenantTestCase):
     def test_LocationSiteFormUpdateView_station_name_label(self):
         """
         Test that the update form shows 'Station Name' label when the
-        location site's location type is 'Weather Station'.
+        location site's location type is Weather Station'.
         """
         user = UserF.create()
         self.client.login(
