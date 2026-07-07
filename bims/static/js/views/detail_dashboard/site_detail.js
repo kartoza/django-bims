@@ -62,6 +62,7 @@ define([
             'click .download-as-csv': 'downloadAsCSV',
             'click .download-chem-csv': 'downloadChemRecordsAsCSV',
             'click .ssdd-export': 'downloadElementEvent',
+            'click .download-citation': 'downloadCitationList',
             'click .download-chart-image': 'downloadChartImage',
             'click #chem-graph-export': 'downloadChemGraphs',
             'click .btn-html-img': 'convertToPNG',
@@ -533,6 +534,7 @@ define([
             this.siteName.html('');
             this.siteNameWrapper.hide();
             this.uniqueSites = [];
+            this.sourceReferenceIds = [];
             this.totalRecords.html('0');
             this.siteMarkers.html('');
             this.occurrenceData = {};
@@ -1602,6 +1604,61 @@ define([
                 this.$el.find('.download-as-csv').hide();
             }
         },
+        downloadCitationList: function (e) {
+            e.preventDefault();
+            let format = $(e.currentTarget).data('format');
+            let self = this;
+            let alertModalBody = $('#alertModalBody');
+
+            if (!is_logged_in) {
+                alertModalBody.html('Please log in first.');
+                $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                return;
+            }
+
+            let hasRefs = self.sourceReferenceIds && self.sourceReferenceIds.length > 0;
+            let hasDatasets = self.datasetIds && self.datasetIds.length > 0;
+            if (!hasRefs && !hasDatasets) {
+                alertModalBody.html('No source references available to download.');
+                $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                return;
+            }
+
+            showDownloadPopup('CSV', 'Citation List', function (downloadRequestId) {
+                let formData = new FormData();
+                formData.append('citation_format', format);
+                formData.append('download_request_id', downloadRequestId);
+                $.each(self.sourceReferenceIds || [], function (i, id) {
+                    formData.append('source_reference_ids', id);
+                });
+                $.each(self.datasetIds || [], function (i, id) {
+                    formData.append('dataset_ids', id);
+                });
+
+                $.ajax({
+                    url: '/api/download-citations/',
+                    type: 'POST',
+                    headers: {'X-CSRFToken': csrfmiddlewaretoken},
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function () {
+                        alertModalBody.html(
+                            'Your citation list is being generated and will be emailed to you shortly.'
+                        );
+                        $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                    },
+                    error: function (xhr) {
+                        let msg = 'Failed to generate citation list. Please try again.';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            msg = xhr.responseJSON.error;
+                        }
+                        alertModalBody.html(msg);
+                        $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+                    }
+                });
+            }, true, null, false);
+        },
         renderMetadataTable: function (data, container=null) {
             if (!container) {
                 container = $('#ssdd-metadata-table');
@@ -1609,6 +1666,12 @@ define([
             let ulDiv = container.find('.content-body');
             ulDiv.html(' ');
             let dataSources = data['source_references'];
+            this.sourceReferenceIds = dataSources
+                .filter(function (s) { return s['Reference Category'] !== 'Occurrence dataset'; })
+                .map(function (s) { return s['ID']; });
+            this.datasetIds = dataSources
+                .filter(function (s) { return s['Reference Category'] === 'Occurrence dataset'; })
+                .map(function (s) { return s['ID']; });
             let order = ['is_doc', 'Reference Category', 'Author/s', 'Year', 'Title', 'Source', 'DOI/URL', 'Notes'];
             let hiddenKeys = ['is_doc']; // Don't show this key in table
             let orderedDataSources = [];

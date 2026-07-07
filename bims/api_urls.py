@@ -147,6 +147,7 @@ from bims.api_views.download_request import (
     DownloadRequestFileApi,
     DownloadRequestUploadApi,
 )
+from bims.api_views.citation_download import DownloadCitationsApi
 from bims.api_views.wetland_data import WetlandDataApiView
 from bims.views.cites import TaxaCitesStatusAPIView
 from mobile.api_views.taxon_group import TaxonGroupTotalValidated
@@ -441,6 +442,10 @@ urlpatterns = [
     re_path(r'^download-request/(?P<download_request_id>\d+)/upload/$',
         DownloadRequestUploadApi.as_view(),
         name='download-request-upload'
+        ),
+    re_path(r'^download-citations/$',
+        DownloadCitationsApi.as_view(),
+        name='download-citations'
         ),
     re_path(r'^gbif-ids/download/$',
         GbifIdsDownloader.as_view()),
